@@ -25,7 +25,7 @@ export interface DirectorStitchPreviewStudioProps {
   preview: DirectorPreviewMeta;
   onSuggestEdit?: (prompt: string) => void;
   disabled?: boolean;
-  /** First tab when the studio opens — preview page prefers live HTML when available. */
+  /** First tab when the studio opens — screenshot matches Stitch web fidelity. */
   defaultTab?: "preview" | "screenshot" | "export";
   className?: string;
 }
@@ -94,8 +94,8 @@ function resolveDefaultTab(
   if (preferred === "export") return "export";
   if (preferred === "screenshot" && hasRenderableImage) return "screenshot";
   if (preferred === "preview" && hasRenderableHtml) return "preview";
-  if (hasRenderableHtml) return "preview";
   if (hasRenderableImage) return "screenshot";
+  if (hasRenderableHtml) return "preview";
   return "export";
 }
 
@@ -154,13 +154,14 @@ export default function DirectorStitchPreviewStudio({
 
   useEffect(() => {
     if (autoTabbedRef.current === preview.conceptId) return;
-    if (!hasRenderableHtml || tab === "preview") return;
+    const target = resolveDefaultTab(hasRenderableHtml, hasRenderableImage, defaultTab);
+    if (tab === target) return;
     if (autoTabTimerRef.current) {
       clearTimeout(autoTabTimerRef.current);
     }
     autoTabTimerRef.current = setTimeout(() => {
       autoTabbedRef.current = preview.conceptId;
-      setTab(resolveDefaultTab(true, hasRenderableImage, defaultTab ?? "preview"));
+      setTab(target);
     }, 800);
     return () => {
       if (autoTabTimerRef.current) {
@@ -195,15 +196,15 @@ export default function DirectorStitchPreviewStudio({
 
   const tabs = useMemo(() => {
     const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [];
-    if (hasRenderableHtml) {
-      list.push({ id: "preview", label: WIRELINE_STITCH_UI.previewTabLabel, icon: Monitor });
-    }
     if (hasRenderableImage) {
       list.push({
         id: "screenshot",
         label: WIRELINE_STITCH_UI.screenshotTabLabel,
         icon: LayoutTemplate,
       });
+    }
+    if (hasRenderableHtml) {
+      list.push({ id: "preview", label: WIRELINE_STITCH_UI.previewTabLabel, icon: Monitor });
     }
     list.push({ id: "export", label: "Export", icon: Download });
     return list;

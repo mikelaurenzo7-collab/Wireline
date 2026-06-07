@@ -206,16 +206,51 @@ export function extractStitchInlineHtml(payload: unknown): Buffer | undefined {
 /** Stitch often returns a tiny grid placeholder PNG before HTML/screenshot packaging finishes. */
 export const STITCH_PLACEHOLDER_IMAGE_MAX_BYTES = 25_000;
 
+/** Minimum HTML payload before we consider compose started (not a stub). */
+export const STITCH_HTML_MIN_BYTES = 2_048;
+
 export function isLikelyStitchPlaceholderImage(buf: Buffer): boolean {
   return buf.byteLength <= STITCH_PLACEHOLDER_IMAGE_MAX_BYTES;
 }
 
-/** HTML is authoritative; image-only counts on the final poll when it is not a grid placeholder. */
+/** True when Stitch exported a real screenshot (preferred for in-app preview fidelity). */
+export function isPolishedStitchImage(buf: Buffer): boolean {
+  return buf.byteLength > 0 && !isLikelyStitchPlaceholderImage(buf);
+}
+
+/**
+ * Reject early wireframe HTML (bare links, no CSS) that Stitch serves before compose finishes.
+ * Production HTML must ship embedded styles — external-only sheets break blob iframe previews.
+ */
+export function isPolishedStitchHtml(buf: Buffer): boolean {
+  if (buf.byteLength < STITCH_HTML_MIN_BYTES) return false;
+  const text = buf.toString("utf8");
+  if (!/<html[\s>]|<!doctype\s+html/i.test(text)) return false;
+
+  const hasStyleBlock = /<style[\s>]/i.test(text);
+  const inlineStyleCount = (text.match(/\sstyle\s*=/gi) ?? []).length;
+  const bareLinkCount = (text.match(/<a\s+[^>]*href/gi) ?? []).length;
+
+  if (bareLinkCount >= 5 && !hasStyleBlock && inlineStyleCount < 3) {
+    return false;
+  }
+
+  if (hasStyleBlock) return true;
+  if (inlineStyleCount >= 8) return true;
+
+  return false;
+}
+
+/**
+ * Assets are ready when we have a polished screenshot or styled HTML.
+ * Screenshots match Stitch web UI fidelity; unstyled early HTML is never shown.
+ */
 export function stitchScreenAssetsReady(
   assets: { html?: Buffer; image?: Buffer },
   options: { allowImageFallback?: boolean } = {},
 ): boolean {
-  if (assets.html && assets.html.byteLength > 50) return true;
+  if (assets.image && isPolishedStitchImage(assets.image)) return true;
+  if (assets.html && isPolishedStitchHtml(assets.html)) return true;
   if (
     options.allowImageFallback &&
     assets.image &&

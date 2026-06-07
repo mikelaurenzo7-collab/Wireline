@@ -8,6 +8,7 @@ import {
   pickCompatibleStitchProject,
   extractStitchScreens,
   isLikelyStitchPlaceholderImage,
+  isPolishedStitchHtml,
   stitchScreenAssetsReady,
 } from "./google-stitch-mcp-client";
 
@@ -66,18 +67,33 @@ describe("google stitch mcp parsing", () => {
     expect(screens[0]?.projectId).toBe("4044680601076201931");
   });
 
-  it("waits for HTML before accepting placeholder screenshots", () => {
+  it("waits for polished assets before packaging previews", () => {
     const grid = Buffer.alloc(4_000);
-    const html = Buffer.from(
-      "<!DOCTYPE html><html><body><main>Ready for preview with enough bytes</main></body></html>",
+    const wireframe = Buffer.from(
+      "<!DOCTYPE html><html><body>" +
+        "<a href='/'>Home</a><a href='/about'>About</a><a href='/contact'>Contact</a>" +
+        "<a href='/pricing'>Pricing</a><a href='/blog'>Blog</a><a href='/login'>Login</a>" +
+        "</body></html>",
+    );
+    const polishedHtml = Buffer.from(
+      "<!DOCTYPE html><html><head><style>body{font-family:sans-serif;color:#111;background:#f5f0e8}" +
+        "a{color:inherit;text-decoration:none}main{padding:2rem}</style></head><body><main>" +
+        "Ready for preview with enough bytes and real embedded styling for the client UI. ".repeat(
+          40,
+        ) +
+        "</main></body></html>",
     );
     const png = Buffer.alloc(120_000);
 
     expect(isLikelyStitchPlaceholderImage(grid)).toBe(true);
     expect(isLikelyStitchPlaceholderImage(png)).toBe(false);
+    expect(isPolishedStitchHtml(wireframe)).toBe(false);
+    expect(isPolishedStitchHtml(polishedHtml)).toBe(true);
     expect(stitchScreenAssetsReady({ image: grid })).toBe(false);
     expect(stitchScreenAssetsReady({ image: grid }, { allowImageFallback: true })).toBe(false);
-    expect(stitchScreenAssetsReady({ html })).toBe(true);
+    expect(stitchScreenAssetsReady({ html: wireframe })).toBe(false);
+    expect(stitchScreenAssetsReady({ html: polishedHtml })).toBe(true);
+    expect(stitchScreenAssetsReady({ image: png })).toBe(true);
     expect(stitchScreenAssetsReady({ image: png }, { allowImageFallback: true })).toBe(true);
   });
 

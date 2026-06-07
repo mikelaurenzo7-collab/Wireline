@@ -37,6 +37,21 @@ export function getGoogleStitchTimeoutMs(): number {
   return Number.isFinite(n) && n > 30_000 ? Math.min(n, 540_000) : DEFAULT_STITCH_TIMEOUT_MS;
 }
 
+/** Poll schedule after generate_screen_from_text — Stitch compose can take 3–5 min. */
+export function getStitchComposePollDelaysMs(): number[] {
+  const budgetMs = Math.max(120_000, getGoogleStitchTimeoutMs() - 150_000);
+  const delays = [0];
+  let elapsed = 0;
+  let step = 5_000;
+  while (elapsed < budgetMs) {
+    elapsed += step;
+    delays.push(elapsed);
+    if (step < 10_000) step = 8_000;
+    else step = 10_000;
+  }
+  return delays;
+}
+
 /**
  * Default Stitch project — numeric ID from stitch.withgoogle.com/projects/{id}.
  * This is NOT GOOGLE_CLOUD_PROJECT (GCP console); Wireline uses API-key auth only.

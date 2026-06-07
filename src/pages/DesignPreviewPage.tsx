@@ -58,7 +58,7 @@ export default function DesignPreviewPage() {
         ) : (
           <DirectorStitchPreviewStudio
             preview={preview}
-            defaultTab="preview"
+            defaultTab="screenshot"
             onSuggestEdit={(prompt) => {
               navigate(`/chat?prompt=${encodeURIComponent(prompt)}`);
             }}

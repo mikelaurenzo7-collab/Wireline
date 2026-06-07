@@ -5,9 +5,14 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { BRAND } from "../constants/brand-colors";
 import { isSsrfUrl } from "./webhook-validators";
-import { WIRELINE_STITCH_DESIGN_BRIEF, WIRELINE_STITCH_DARK_DESIGN_BRIEF, wantsStitchMediaRequest } from "./director-stitch-intent";
+import {
+  CLIENT_STITCH_DELIVERY_BRIEF,
+  WIRELINE_STITCH_DARK_DESIGN_BRIEF,
+  WIRELINE_STITCH_DESIGN_BRIEF,
+  wantsStitchMediaRequest,
+  wantsWirelineProductDesign,
+} from "./director-stitch-intent";
 import type { StitchMediaOperation } from "./director-stitch-intent";
 import {
   hasConfiguredTenantBranding,
@@ -205,9 +210,9 @@ export function parseStitchDesignBrief(
   if (tone) styleBits.push(`Tone: ${tone}`);
   if (branding.primaryProduct) styleBits.push(`Offer: ${branding.primaryProduct}`);
 
-  const originalRequest = history
-    .map((h) => h.content)
-    .find((content) => wantsStitchMediaRequest(content)) || operatorMessage;
+  const originalRequest =
+    history.map((h) => h.content).find((content) => wantsStitchMediaRequest(content)) ||
+    operatorMessage;
 
   return {
     businessName,
@@ -253,9 +258,12 @@ export function stitchClarifyingQuestions(missing: StitchBriefField[]): string[]
   });
 }
 
-function typographyFromBranding(useBranding: boolean): string {
-  if (useBranding) {
+function typographyFromBranding(useBranding: boolean, operatorRequest: string): string {
+  if (wantsWirelineProductDesign(operatorRequest)) {
     return "Plus Jakarta Sans for UI, Fraunces italic for display headlines, JetBrains Mono for labels.";
+  }
+  if (useBranding) {
+    return "Readable sans for UI with one distinctive display face matched to the client's industry and tone.";
   }
   return "Choose readable sans for UI with one distinctive display face — avoid generic Inter-only stacks.";
 }
@@ -266,18 +274,16 @@ function colorSection(
   brief: StitchDesignBrief,
 ): string {
   if (useBranding && (branding.primaryColor || branding.brandLogoUrl)) {
-    const lines = [
-      `- Primary: ${branding.primaryColor || BRAND.purple}`,
-      `- Paper: ${BRAND.paper} · Ink: ${BRAND.ink}`,
-    ];
+    const lines = [`- Primary accent: ${branding.primaryColor || "infer from industry"}`];
     const logoUrl = safeBrandingLogoUrl(branding.brandLogoUrl);
     if (logoUrl) lines.push(`- Logo reference: ${logoUrl}`);
+    lines.push("- Neutrals and surfaces: infer from industry and tone in the operator request");
     return lines.join("\n");
   }
   if (brief.tone) {
-    return `- Infer palette from tone (${brief.tone}) and industry — premium cream surfaces, one confident accent.`;
+    return `- Infer palette from tone (${brief.tone}) and industry — cohesive surfaces and one confident accent.`;
   }
-  return `- Infer a cohesive palette from the request — no generic purple-gradient AI template.`;
+  return `- Infer a cohesive palette from the request — no Wireline purple, no generic AI-purple template.`;
 }
 
 export function buildStitchDesignMarkdown(input: {
@@ -292,12 +298,26 @@ export function buildStitchDesignMarkdown(input: {
     : title;
 
   const designSystem = useAccountBranding
-    ? "Account brand kit (Admin → Branding) with Wireline editorial layout patterns."
-    : "Prompt-derived visual system (no saved account branding).";
+    ? "Client account brand kit (Admin → Branding) merged with the operator request."
+    : "Prompt-derived visual system from the operator request (no saved account branding).";
 
-  const isDark = /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(brief.operatorRequest) || 
-                 /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(brief.styleNotes);
-  const deliveryBrief = isDark ? WIRELINE_STITCH_DARK_DESIGN_BRIEF : WIRELINE_STITCH_DESIGN_BRIEF;
+  const isDark =
+    /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(brief.operatorRequest) ||
+    /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(brief.styleNotes);
+  const wirelineProduct = wantsWirelineProductDesign(brief.operatorRequest);
+  const deliveryBrief = wirelineProduct
+    ? isDark
+      ? WIRELINE_STITCH_DARK_DESIGN_BRIEF
+      : WIRELINE_STITCH_DESIGN_BRIEF
+    : CLIENT_STITCH_DELIVERY_BRIEF;
+
+  const surfacesLine = wirelineProduct
+    ? isDark
+      ? "dark UI surfaces, premium dark-mode"
+      : "warm cream paper, sharp editorial corners, accessible contrast"
+    : isDark
+      ? "dark UI surfaces matched to the client's industry"
+      : "surfaces and contrast matched to the client's industry and tone";
 
   return [
     `# Design brief — ${title}`,
@@ -314,8 +334,8 @@ export function buildStitchDesignMarkdown(input: {
     brief.styleNotes ? `- Notes: ${brief.styleNotes}` : "",
     "",
     "## Visual system",
-    `- Typography: ${typographyFromBranding(useAccountBranding)}`,
-    `- Surfaces: ${isDark ? "dark UI surfaces, premium dark-mode" : "warm cream paper, sharp editorial corners, accessible contrast"}`,
+    `- Typography: ${typographyFromBranding(useAccountBranding, brief.operatorRequest)}`,
+    `- Surfaces: ${surfacesLine}`,
     `- Components: clear CTAs, realistic industry copy, mobile-first unless desktop requested`,
     "",
     "## Screen scope",

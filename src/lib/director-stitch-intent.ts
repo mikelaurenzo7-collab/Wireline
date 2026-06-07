@@ -79,13 +79,9 @@ export function resolveEffectiveStitchDeviceType(
 
 export function resolveStitchModelId(message: string): StitchModelId {
   if (/\b(fast|quick|draft|rapid)\b/i.test(message)) return "GEMINI_3_FLASH";
-  if (/\b(polish|production|high[\s-]?fi|pixel[\s-]?perfect)\b/i.test(message)) {
-    return "GEMINI_3_1_PRO";
-  }
-  if (wantsWebsiteDeliverable(message) || /\blanding\s+page\b/i.test(message)) {
-    return "GEMINI_3_1_PRO";
-  }
-  return "GEMINI_3_FLASH";
+  const envDefault = process.env.GOOGLE_STITCH_DEFAULT_MODEL?.trim();
+  if (envDefault === "GEMINI_3_FLASH") return "GEMINI_3_FLASH";
+  return "GEMINI_3_1_PRO";
 }
 
 export function resolveStitchMediaOperation(
@@ -123,13 +119,57 @@ export function resolveStitchVariantOptions(message: string): {
   return { variantCount, creativeRange, aspects };
 }
 
-/** Compact Aurora Cream brief — appended to every Stitch generation for on-brand output. */
+/** Legacy Wireline product UI brief — only when the operator explicitly asks for Wireline surfaces. */
 export const WIRELINE_STITCH_DESIGN_BRIEF =
   'Wireline "Aurora Cream" design system: paper #EFE9DC, ink #1A1614, brand #4F1E7B→#3B154C gradient CTAs, Fraunces italic headlines, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), cream glass top shells, purple aurora-ring on active states. Premium B2B SaaS — production-ready, not generic AI-purple template.';
 
-/** Compact Aurora Dark brief — appended to every Stitch generation for on-brand output in dark mode. */
+/** Legacy Wireline dark product UI brief — only for explicit Wireline dark-mode requests. */
 export const WIRELINE_STITCH_DARK_DESIGN_BRIEF =
   'Wireline "Aurora Dark" design system: paper #0D0D11, ink #E2E8F0, brand #7C3AED→#4C1D95 gradient CTAs, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), dark glassmorphism panels with 1px border-white/10 and backdrop-blur-md, purple aurora-glow on active states. Premium B2B SaaS dashboard — production-ready, dark mode, not generic AI-purple template.';
+
+/** Default delivery rules for client-owned Stitch renders (not Wireline product UI). */
+export const CLIENT_STITCH_DELIVERY_BRIEF =
+  "Design exclusively for the client's business, product, and audience named in the request. Use their industry, tone, and palette — never default to Wireline branding, Wireline Director, agent orchestration dashboards, or generic purple SaaS templates unless the operator explicitly asked for Wireline product UI.";
+
+const WIRELINE_PRODUCT_SIGNAL =
+  /\b(wireline\s+(?:director|mission\s+control|console|dashboard|app\s+ui|product\s+ui|aurora)|design\s+(?:the\s+)?wireline|wireline\s+design\s+system|aurora\s+cream)\b/i;
+
+/** True when the operator is designing Wireline's own product surfaces (not a client deliverable). */
+export function wantsWirelineProductDesign(message: string): boolean {
+  return WIRELINE_PRODUCT_SIGNAL.test(message.trim());
+}
+
+/** Strip design.md to the sections Stitch needs (operator request + brand context). */
+export function condenseStitchDesignBriefMarkdown(markdown: string): string {
+  const lines = markdown.split("\n");
+  const kept: string[] = [];
+  let inOperator = false;
+  for (const line of lines) {
+    if (/^### Operator request\b/i.test(line)) {
+      inOperator = true;
+      kept.push(line);
+      continue;
+    }
+    if (inOperator && /^## /.test(line) && !/^### /.test(line)) break;
+    if (inOperator) kept.push(line);
+  }
+  if (kept.length > 1) return kept.join("\n").trim();
+
+  const sections: string[] = [];
+  const brand = markdown.match(/## Brand[\s\S]*?(?=\n## |\n### Operator request|$)/i)?.[0]?.trim();
+  const product = markdown
+    .match(/## Product context[\s\S]*?(?=\n## |\n### Operator request|$)/i)?.[0]
+    ?.trim();
+  const visual = markdown
+    .match(/## Visual system[\s\S]*?(?=\n## |\n### Operator request|$)/i)?.[0]
+    ?.trim();
+  const operator = markdown.match(/### Operator request[\s\S]*?(?=\n## Delivery|$)/i)?.[0]?.trim();
+  const delivery = markdown.match(/## Delivery[\s\S]*?(?=\nShip semantic|$)/i)?.[0]?.trim();
+  for (const block of [brand, product, visual, operator, delivery]) {
+    if (block) sections.push(block);
+  }
+  return sections.join("\n\n").trim() || markdown.trim();
+}
 
 /** Enrich operator text into a Stitch-ready structured prompt. */
 export function buildStitchGenerationPrompt(
@@ -144,10 +184,17 @@ export function buildStitchGenerationPrompt(
   const hasDarkTheme =
     /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(base) ||
     (briefRaw && /\b(dark[\s-]?mode|dark[\s-]?theme|darker)\b/i.test(briefRaw));
-  const fallbackBrief = hasDarkTheme
-    ? WIRELINE_STITCH_DARK_DESIGN_BRIEF
-    : WIRELINE_STITCH_DESIGN_BRIEF;
 
-  const briefForStitch = briefRaw ? briefRaw.slice(0, 2500) : fallbackBrief;
-  return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
+  let briefForStitch: string;
+  if (briefRaw) {
+    briefForStitch = condenseStitchDesignBriefMarkdown(briefRaw).slice(0, 2500);
+  } else if (wantsWirelineProductDesign(base)) {
+    briefForStitch = hasDarkTheme
+      ? WIRELINE_STITCH_DARK_DESIGN_BRIEF
+      : WIRELINE_STITCH_DESIGN_BRIEF;
+  } else {
+    briefForStitch = CLIENT_STITCH_DELIVERY_BRIEF;
+  }
+
+  return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the client's industry and brand — not Wireline unless explicitly requested.`;
 }

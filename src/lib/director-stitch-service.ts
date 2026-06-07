@@ -50,7 +50,11 @@ import {
   fetchStitchAssetUrl,
   sanitizeStitchAssetUrl,
 } from "./google-stitch-asset-url";
-import { getGoogleStitchProjectId, isGoogleStitchConfigured } from "./google-stitch-config";
+import {
+  getGoogleStitchProjectId,
+  getStitchComposePollDelaysMs,
+  isGoogleStitchConfigured,
+} from "./google-stitch-config";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -249,16 +253,13 @@ async function fetchScreenAssets(
   return { html: htmlPacked, image: imagePacked, screen: screenRecord };
 }
 
-/** Stitch screenshot/HTML can lag the screen record — poll until at least one asset is ready. */
+/** Stitch screenshot/HTML can lag the screen record — poll until polished assets are ready. */
 async function fetchScreenAssetsWithRetry(
   runtime: GoogleStitchRuntime,
   screen: Screen,
   signal?: AbortSignal,
 ): Promise<{ html?: Buffer; image?: Buffer; screen: Record<string, unknown> }> {
-  const delaysMs = [
-    0, 4_000, 8_000, 12_000, 18_000, 24_000, 32_000, 40_000, 50_000, 60_000, 72_000, 84_000, 96_000,
-    110_000, 125_000, 140_000, 155_000, 170_000, 185_000, 200_000,
-  ];
+  const delaysMs = getStitchComposePollDelaysMs();
   let last = await fetchScreenAssets(runtime, screen, signal);
   for (let i = 1; i < delaysMs.length; i++) {
     const finalAttempt = i === delaysMs.length - 1;
@@ -299,7 +300,15 @@ async function listStitchScreens(
   try {
     return await withStitchAbort(signal, () => project.screens());
   } catch (e) {
-    log.warn("stitch list screens failed", { projectId, error: getErrorMessage(e) });
+    const err = mapStitchError(e);
+    if (err.code === "AUTH_FAILED" || err.code === "PERMISSION_DENIED") {
+      throw err;
+    }
+    log.warn("stitch list screens failed", {
+      projectId,
+      error: getErrorMessage(e),
+      code: err.code,
+    });
     return [];
   }
 }
@@ -330,7 +339,7 @@ async function ensureStitchProject(
 
   const envProjectId = getGoogleStitchProjectId();
   if (envProjectId) {
-    return { projectId: envProjectId, screenId: "", projectTitle: "Wireline Director" };
+    return { projectId: envProjectId, screenId: "", projectTitle: "Client designs" };
   }
 
   onProgress?.("Loading Stitch projects…");
@@ -340,7 +349,7 @@ async function ensureStitchProject(
     return {
       projectId: picked.projectId,
       screenId: "",
-      projectTitle: picked.title || "Wireline Director",
+      projectTitle: picked.title || "Client designs",
     };
   }
 
@@ -449,12 +458,14 @@ async function runStitchOperation(
   if (generated?.screenId) return [generated];
 
   onProgress?.("Waiting for Wireline Design to finish composing…");
-  for (let attempt = 0; attempt < 12; attempt++) {
-    await sleepMs(attempt === 0 ? 5_000 : 6_000, signal);
+  const pollDelays = getStitchComposePollDelaysMs();
+  const pollAttempts = Math.max(1, pollDelays.length - 1);
+  for (let attempt = 1; attempt < pollDelays.length; attempt++) {
+    await sleepMs(pollDelays[attempt]! - pollDelays[attempt - 1]!, signal);
     const listed = await listStitchScreens(runtime, projectId, signal);
     const screens = pickNewestStitchScreens(listed, knownBefore);
-    if (screens.length > 0) return screens.slice(0, 5);
-    onProgress?.(`Still composing… (${attempt + 1}/12)`);
+    if (screens.length > 0) return [screens[0]!];
+    onProgress?.(`Still composing… (${attempt}/${pollAttempts})`);
   }
 
   throw new GoogleStitchError("Stitch returned no screens", "VALIDATION_ERROR", true);
@@ -628,7 +639,7 @@ export async function finalizeDirectorStitchScreen(input: {
   try {
     const deviceType = input.deviceType ?? resolveStitchDeviceType(input.operatorMessage);
     const screen = runtime.stitch.project(input.projectId).screen(input.screenId);
-    const assets = await fetchScreenAssets(runtime, screen, input.signal);
+    const assets = await fetchScreenAssetsWithRetry(runtime, screen, input.signal);
     const packaged = await packageStitchScreenAssets({
       userId: input.userId,
       operatorMessage: input.operatorMessage,
