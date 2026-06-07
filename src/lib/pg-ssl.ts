@@ -1,4 +1,4 @@
-import type { PoolConfig } from "pg";
+import type { ConnectionOptions } from "node:tls";
 
 /**
  * Resolve the correct SSL configuration for a `pg` Pool/Client.
@@ -16,7 +16,9 @@ import type { PoolConfig } from "pg";
  * `PGSSLMODE=disable` forces SSL off for any host (useful for self-hosted
  * Postgres without TLS).
  */
-export function resolvePgSsl(connectionString = process.env.POSTGRES_URL ?? ""): PoolConfig["ssl"] {
+export function resolvePgSsl(
+  connectionString = process.env.POSTGRES_URL ?? "",
+): boolean | ConnectionOptions {
   if (process.env.PGSSLMODE === "disable") return false;
 
   const isLocal = /(?:@|\/\/)(?:localhost|127\.0\.0\.1|::1)\b/.test(connectionString);
