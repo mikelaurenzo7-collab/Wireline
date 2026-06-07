@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { artifactIdFromDirectorSignedUrl } from "./useDirectorArtifactInlineSrc";
+import {
+  artifactIdFromDirectorSignedUrl,
+  shouldDeferSignedBlobCacheEntryRevocation,
+} from "./useDirectorArtifactInlineSrc";
 
 describe("artifactIdFromDirectorSignedUrl", () => {
   it("extracts artifact ids from relative signed preview URLs", () => {
@@ -20,5 +23,19 @@ describe("artifactIdFromDirectorSignedUrl", () => {
 
   it("ignores non-director artifact URLs", () => {
     expect(artifactIdFromDirectorSignedUrl("https://example.com/file.png")).toBeUndefined();
+  });
+});
+
+describe("shouldDeferSignedBlobCacheEntryRevocation", () => {
+  it("defers revocation when refresh bypass discards the active blob URL", () => {
+    const activeSrc = "blob:active-preview";
+
+    expect(shouldDeferSignedBlobCacheEntryRevocation(activeSrc, activeSrc)).toBe(true);
+  });
+
+  it("allows immediate revocation when discarded cache entry is not active", () => {
+    expect(
+      shouldDeferSignedBlobCacheEntryRevocation("blob:cached-preview", "blob:active-preview"),
+    ).toBe(false);
   });
 });

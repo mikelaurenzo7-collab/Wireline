@@ -35,6 +35,13 @@ export interface DirectorArtifactInlineSrc {
 const signedBlobCache = new Map<string, { src: string; expiresAt: number }>();
 const SIGNED_BLOB_CACHE_TTL_MS = 5 * 60 * 1000;
 
+export function shouldDeferSignedBlobCacheEntryRevocation(
+  cachedSrc: string | undefined,
+  activeSrc: string | undefined,
+): boolean {
+  return Boolean(cachedSrc && cachedSrc === activeSrc);
+}
+
 function revokeObjectUrlIfUncached(src: string | undefined) {
   if (!src) return;
   for (const cached of signedBlobCache.values()) {
@@ -98,7 +105,8 @@ export function useDirectorArtifactBlobSrc(
 
     const cacheKey = `${artifactId}:${inline ? 1 : 0}`;
     const cached = signedBlobCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
+    const shouldDiscardSignedBlobCacheEntry = refreshKey !== 0;
+    if (cached && cached.expiresAt > Date.now() && !shouldDiscardSignedBlobCacheEntry) {
       revokePending();
       if (activeBlobRef.current && activeBlobRef.current !== cached.src) {
         pendingRevokeRef.current = activeBlobRef.current;
@@ -110,8 +118,12 @@ export function useDirectorArtifactBlobSrc(
       return;
     }
     if (cached) {
-      revokeObjectUrlIfUncached(cached.src);
       signedBlobCache.delete(cacheKey);
+      if (shouldDeferSignedBlobCacheEntryRevocation(cached.src, activeBlobRef.current)) {
+        pendingRevokeRef.current = cached.src;
+      } else {
+        revokeObjectUrlIfUncached(cached.src);
+      }
     }
 
     let cancelled = false;
@@ -139,8 +151,13 @@ export function useDirectorArtifactBlobSrc(
           src: nextBlobUrl,
           expiresAt: Date.now() + SIGNED_BLOB_CACHE_TTL_MS,
         });
+        const previouslyPendingRevoke = pendingRevokeRef.current;
         revokePending();
-        if (activeBlobRef.current && activeBlobRef.current !== nextBlobUrl) {
+        if (
+          activeBlobRef.current &&
+          activeBlobRef.current !== nextBlobUrl &&
+          activeBlobRef.current !== previouslyPendingRevoke
+        ) {
           pendingRevokeRef.current = activeBlobRef.current;
         }
         activeBlobRef.current = nextBlobUrl;
@@ -154,13 +171,17 @@ export function useDirectorArtifactBlobSrc(
 
     return () => {
       cancelled = true;
-      revokePending();
     };
   }, [artifactId, inline, enabled, refreshKey]);
 
   useEffect(() => {
     return () => {
-      if (activeBlobRef.current) {
+      const pendingRevoke = pendingRevokeRef.current;
+      if (pendingRevoke) {
+        revokeObjectUrlIfUncached(pendingRevoke);
+        pendingRevokeRef.current = undefined;
+      }
+      if (activeBlobRef.current && activeBlobRef.current !== pendingRevoke) {
         revokeObjectUrlIfUncached(activeBlobRef.current);
         activeBlobRef.current = undefined;
       }
