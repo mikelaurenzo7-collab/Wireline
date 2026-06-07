@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inArray } from "drizzle-orm";
 import { generateToken } from "../../src/lib/auth-service";
 import { SESSION_COOKIE_NAME } from "../../src/lib/session-cookie";
+import { resolvePgSsl } from "../../src/lib/pg-ssl";
 import * as schema from "../../src/db/schema";
 
 const hasDbUrl = Boolean(process.env.POSTGRES_URL);
@@ -21,6 +22,7 @@ async function canReachDb(): Promise<boolean> {
     const { Client } = await import("pg");
     const client = new Client({
       connectionString: process.env.POSTGRES_URL,
+      ssl: resolvePgSsl(),
       connectionTimeoutMillis: 4000,
     });
     await client.connect();
