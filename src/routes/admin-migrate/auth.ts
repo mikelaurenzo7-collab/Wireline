@@ -1,8 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- admin migration routes normalize heterogeneous legacy rows during one-off backfills. */
+ 
 
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
-import { authenticateUser } from "../../middleware/auth";
+import { isOwnerEmail } from "../../lib/auth-service";
+import { getSessionTokenFromRequest } from "../../lib/session-cookie";
+import { verifyInternalJwt } from "../../lib/auth-utils";
+import { requireInternalJwtSecret } from "../../lib/internal-jwt-secret";
 import type { AuthenticatedRequest } from "../../types/auth";
 
 /**
@@ -31,20 +34,37 @@ function authorizeMigration(req: Request, res: Response): boolean {
       /* fall through to owner-email check */
     }
   }
-  const ownerEmail = process.env.OWNER_EMAIL;
   const user = (req as AuthenticatedRequest).user;
-  if (ownerEmail && user?.email === ownerEmail) return true;
+  if (isOwnerEmail(user?.email)) return true;
   res.status(403).json({ error: "Owner only." });
   return false;
 }
 
-// Permissive middleware — runs authenticateUser if a bearer token is
-// present (so req.user populates for the owner-email check), otherwise
-// skips auth (so the X-Migration-Token path works without a session).
-function optionalAuth(req: Request, res: Response, next: NextFunction) {
-  const hasBearer = (req.headers.authorization || "").startsWith("Bearer ");
-  if (!hasBearer) return next();
-  return (authenticateUser as any)(req, res, next);
+/**
+ * Best-effort session attach for migration routes: populates req.user from the
+ * httpOnly cookie or Bearer token without rejecting unauthenticated callers
+ * (X-Migration-Token-only CI paths still work).
+ */
+async function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const authedReq = req as AuthenticatedRequest;
+  if (authedReq.user?.id) return next();
+
+  const token = getSessionTokenFromRequest(req);
+  if (!token) return next();
+
+  try {
+    const payload = await verifyInternalJwt(token, requireInternalJwtSecret());
+    if (payload?.sub && payload.email) {
+      authedReq.user = {
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role || "authenticated",
+      };
+    }
+  } catch {
+    /* unauthenticated migration-token callers proceed without req.user */
+  }
+  return next();
 }
 
 export { authorizeMigration, optionalAuth };

@@ -6,6 +6,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import PageTransition from "../components/layout/PageTransition";
 import RouteFallback from "../components/layout/RouteFallback";
 import NotFound from "../components/layout/NotFound";
+import OwnerOnlyRoute from "../components/OwnerOnlyRoute";
 
 import { ActivityRedirect } from "./LegacyRedirects";
 
@@ -67,7 +68,9 @@ export default function AppRoutes() {
             element={
               <PageTransition>
                 <ErrorBoundary>
-                  <FounderDashboard />
+                  <OwnerOnlyRoute>
+                    <FounderDashboard />
+                  </OwnerOnlyRoute>
                 </ErrorBoundary>
               </PageTransition>
             }

@@ -118,14 +118,22 @@ async function purchaseTwilioLocalNumber(
   if (candidates.length === 0) return null;
 
   const chosen = candidates[0];
-  const purchased = await client.incomingPhoneNumbers.create({
-    phoneNumber: chosen.phoneNumber,
-    smsUrl,
-    smsMethod: "POST",
-    friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
-  });
-
-  return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };
+  try {
+    const purchased = await client.incomingPhoneNumbers.create({
+      phoneNumber: chosen.phoneNumber,
+      smsUrl,
+      smsMethod: "POST",
+      friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
+    });
+    return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };
+  } catch (err) {
+    // Trial caps, billing blocks, etc. — fall through to Vapi pool provisioning.
+    log.warn("Twilio number purchase unavailable, trying Vapi pool", {
+      userId,
+      error: getErrorMessage(err),
+    });
+    return null;
+  }
 }
 
 async function removeTwilioNumberByE164(phoneNumber: string): Promise<void> {

@@ -155,7 +155,7 @@ function StaffRow({
 
 export default function FounderDashboard() {
   const { error: toastError, success: toastSuccess } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [selected, setSelected] = useState<StaffMember | null>(null);
   const [provisionedIds, setProvisionedIds] = useState<Set<string> | null>(null);
   const [broadcast, setBroadcast] = useState("");
@@ -213,8 +213,23 @@ export default function FounderDashboard() {
     }
   };
 
-  if (user && user.is_owner !== true) {
-    return <Navigate to="/" replace />;
+  if (authLoading) {
+    return (
+      <ClientRouteViewport>
+        <div
+          className="flex flex-1 min-h-[40vh] items-center justify-center text-muted"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading"
+        >
+          <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+        </div>
+      </ClientRouteViewport>
+    );
+  }
+
+  if (!user?.is_owner) {
+    return <Navigate to="/ops" replace />;
   }
 
   if (selected) {

@@ -794,7 +794,9 @@ router.post(
         extraAgents: userSettings?.extraAgents,
       });
       const subscriptionStatus = entitlement.subscriptionStatus;
-      if (subscriptionStatus !== "active") {
+      // Trialing tenants create their first agent via Fast Start — enforceTrialAgentCap
+      // already gated email verification + trial caps before this handler runs.
+      if (subscriptionStatus !== "active" && subscriptionStatus !== "trialing") {
         return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
       }
 
