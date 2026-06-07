@@ -368,6 +368,7 @@ async function ensureStitchProject(
   throw new GoogleStitchError(
     "No Stitch project available for UI generation. Create a project at stitch.withgoogle.com (TEXT_TO_UI), then set GOOGLE_STITCH_PROJECT_ID in Vercel.",
     "VALIDATION_ERROR",
+    true,
   );
 }
 

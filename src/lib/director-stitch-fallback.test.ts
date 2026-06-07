@@ -117,18 +117,30 @@ describe("director stitch fallback", () => {
     }
   });
 
-  it("configured Stitch with auth failure returns clear fail copy", async () => {
+  it("configured Stitch with auth failure still falls back to chat design", async () => {
     vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
       kind: "hard-failure",
       error: new GoogleStitchError("invalid API key", "AUTH_FAILED"),
     });
 
     const result = await resolveStitchDirectorPath(input);
-    expect(result.kind).toBe("stitch-failed");
-    if (result.kind === "stitch-failed") {
-      expect(result.turn.reply).toMatch(/credentials|configuration/i);
-      expect(result.turn.reply).toMatch(/admin/i);
-      expect(result.turn.previews).toEqual([]);
+    expect(result.kind).toBe("llm-fallback");
+    if (result.kind === "llm-fallback") {
+      expect(result.fallback.deliverableGuidance).toContain("GOOGLE_STITCH_API_KEY");
+      expect(result.fallback.artifacts[0]).toMatchObject({ name: "design.md" });
+    }
+  });
+
+  it("configured Stitch with hard transport failure falls back to chat design", async () => {
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
+      kind: "hard-failure",
+      error: new GoogleStitchError("Stitch Transport Error", "TOOL_ERROR", false),
+    });
+
+    const result = await resolveStitchDirectorPath(input);
+    expect(result.kind).toBe("llm-fallback");
+    if (result.kind === "llm-fallback") {
+      expect(result.fallback.deliverableGuidance).toContain("live render did not finish");
     }
   });
 

@@ -28,7 +28,7 @@ export interface StitchSession {
 }
 
 const STITCH_UI_MEDIA_SIGNAL =
-  /\b(ui\s+mockup|mockup|wireframe|screen\s+design|app\s+screen|dashboard\s+design|hero\s+(?:image|section|banner)|homepage\s+hero|homepage\s+design|landing\s+(?:page\s+)?design|visual\s+design|generate\s+(?:a\s+)?(?:ui|screen|mockup|prototype|banner)|design\s+(?:a\s+|the\s+)?(?:[\w-]+\s+)*?(?:ui|app|mobile|screen|mockup)|mobile\s+app\s+ui|web\s+app\s+ui|product\s+design|interface\s+design|figma(?:\s+style)?)\b/i;
+  /\b(ui\s+mockup|mockup|wireframe|screen\s+design|app\s+screen|admin\s+dashboard|dashboard\s+design|operator\s+dashboard|hero\s+(?:image|section|banner)|homepage\s+hero|homepage\s+design|landing\s+(?:page\s+)?design|visual\s+design|generate\s+(?:a\s+)?(?:ui|screen|mockup|prototype|banner)|design\s+(?:a\s+|the\s+)?(?:[\w-]+\s+)*?(?:ui|app|mobile|screen|mockup|dashboard)|mobile\s+app\s+ui|web\s+app\s+ui|product\s+design|interface\s+design|figma(?:\s+style)?)\b/i;
 
 const STITCH_EDIT_SIGNAL =
   /\b(edit|change|update|revise|retouch|tweak|adjust|refine|make\s+(?:it|the)|darker|lighter|sidebar|swap\s+(?:the\s+)?hero|new\s+color|different\s+font)\b/i;
@@ -39,7 +39,12 @@ const STITCH_VARIANT_SIGNAL =
 const STITCH_BUILD_SITE_SIGNAL =
   /\b(multi-?page|full\s+(?:website|site)|build\s+(?:out\s+)?(?:the\s+)?(?:whole|entire)\s+site|several\s+pages|all\s+pages|complete\s+site|site\s+build)\b/i;
 
-/** UI / visual media that Stitch should render (not logo vector creative tools). */
+/**
+ * Content classifier for design-shaped operator messages — used for design.md,
+ * deliverable guidance, and Opus escalation. It does NOT route Stitch turns;
+ * routing is gated by the Design composer toggle (`designMode`), clarify
+ * follow-ups, or an existing Stitch session edit/variant.
+ */
 export function wantsStitchMediaRequest(message: string): boolean {
   const trimmed = message.trim();
   if (!trimmed || wantsLogoCreativePath(trimmed)) return false;

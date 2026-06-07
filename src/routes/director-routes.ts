@@ -801,7 +801,7 @@ router.post(
               })
             : { kind: "none" as const };
 
-        if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
+        if (stitchPath.kind === "stitch") {
           const stitchTurn = stitchPath.turn;
           reply = stitchTurn.reply;
           previews = stitchTurn.previews;
@@ -847,6 +847,7 @@ router.post(
                 forceDeep: req.body?.forceDeep === true,
                 modelSelection: resolved.selection,
                 deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+                designRenderFallback: Boolean(stitchDesignFallback),
               });
               reply = turn.reply;
               suggestions = turn.suggestions;
@@ -871,6 +872,7 @@ router.post(
             }
 
             if (
+              !stitchDesignFallback &&
               isDirectorStubReply(reply) &&
               wantsLongDeliverable(operatorMessage) &&
               resolved.selection.provider === "wireline"
@@ -888,6 +890,7 @@ router.post(
                   shallowOnly: true,
                   modelSelection: { provider: "wireline", tier: "sonnet" },
                   deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+                  designRenderFallback: false,
                 });
                 if (!isDirectorStubReply(retry.reply)) {
                   reply = retry.reply;
@@ -1140,7 +1143,7 @@ router.post(
           })
         : { kind: "none" as const };
 
-      if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
+      if (stitchPath.kind === "stitch") {
         const stitchTurn = stitchPath.turn;
         sendStitchMeta();
         sse.write("thinking_end", {
@@ -1175,6 +1178,12 @@ router.post(
 
       if (stitchPath.kind === "llm-fallback") {
         stitchDesignFallback = stitchPath.fallback;
+        sse.write("thinking_start", {});
+        sse.write("thinking_chunk", { text: STITCH_DESIGN_LLM_REASONING });
+        sse.write("thinking_end", {
+          thinking: STITCH_DESIGN_LLM_REASONING,
+          durationMs: 0,
+        });
       }
 
       const streamCtx = await buildDirectorStreamContext({
@@ -1186,6 +1195,7 @@ router.post(
         forceDeep: req.body?.forceDeep === true,
         modelSelection,
         deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+        designRenderFallback: Boolean(stitchDesignFallback),
       });
 
       const streamMeta = directorStreamMetaModel(streamCtx);
@@ -1230,6 +1240,7 @@ router.post(
         let reply = normalized.reply || "";
 
         if (
+          !stitchDesignFallback &&
           isDirectorStubReply(reply) &&
           wantsLongDeliverable(operatorMessage) &&
           streamCtx.llmProvider === "wireline"
@@ -1248,6 +1259,7 @@ router.post(
             shallowOnly: true,
             modelSelection: { provider: "wireline", tier: "sonnet" },
             deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+            designRenderFallback: false,
           });
           if (!isDirectorStubReply(retry.reply)) {
             normalized = {

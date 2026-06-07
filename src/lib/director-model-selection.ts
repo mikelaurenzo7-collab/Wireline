@@ -94,7 +94,7 @@ export function resolveDirectorLlm(input: {
     return {
       provider: "wireline",
       model: input.claudeOpus,
-      deepThink: true,
+      deepThink: input.deepThink === true,
       maxTokens: resolveDirectorMaxTokens({ opus: true, longDeliverable }),
       modelKind: "opus",
       modelLabel: "Opus",

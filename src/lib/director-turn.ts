@@ -84,6 +84,8 @@ export interface DirectorTurnInput {
   modelSelection?: DirectorChatModelSelection;
   /** Override deliverable system guidance (e.g. Stitch → Claude design fallback). */
   deliverableGuidance?: string;
+  /** Stitch failed — force Opus for the HTML prototype fallback (not adaptive thinking). */
+  designRenderFallback?: boolean;
 }
 
 async function loadBusinessContext(userId: string): Promise<DirectorBusinessContext | undefined> {
@@ -345,17 +347,28 @@ export async function buildDirectorStreamContext(
   const autoOpusEligible =
     !input.shallowOnly &&
     !focusId &&
-    (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
+    (input.designRenderFallback === true ||
+      input.forceDeep === true ||
+      wantsOpusModel(input.operatorMessage));
   const deepThinkEligible =
     !input.shallowOnly &&
     !focusId &&
     (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
   const skipAdaptiveThinking =
-    longDeliverable && !wantsDeepAnalysis(input.operatorMessage) && input.forceDeep !== true;
+    input.designRenderFallback === true ||
+    (longDeliverable &&
+      !wantsDeepAnalysis(input.operatorMessage) &&
+      input.forceDeep !== true);
+
+  const modelSelection =
+    input.designRenderFallback === true &&
+    (input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION).provider === "wireline"
+      ? { provider: "wireline" as const, tier: "opus" as const }
+      : input.modelSelection;
 
   const llm = resolveDirectorLlm({
-    selection: input.modelSelection,
+    selection: modelSelection,
     autoOpus: autoOpusEligible,
     deepThink: deepThinkEligible,
     longDeliverable,

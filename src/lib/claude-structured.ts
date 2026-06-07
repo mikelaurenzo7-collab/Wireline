@@ -90,6 +90,10 @@ export async function runStructuredWithThinking<T = any>(
   const model =
     opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
 
+  // Anthropic rejects adaptive thinking when tool_choice forces a specific tool.
+  // Use auto tool choice for deep-think paths (single registered tool still wins).
+  const useAdaptiveThinking = opts.deepThink === true;
+
   const body: Anthropic.MessageCreateParams = {
     model,
     max_tokens: opts.maxTokens ?? 4096,
@@ -103,11 +107,13 @@ export async function runStructuredWithThinking<T = any>(
         ]
       : opts.system,
     tools: [opts.tool],
-    tool_choice: { type: "tool", name: opts.tool.name },
+    tool_choice: useAdaptiveThinking
+      ? { type: "auto" }
+      : { type: "tool", name: opts.tool.name },
     messages: [{ role: "user", content: opts.user }],
   };
 
-  if (opts.deepThink) {
+  if (useAdaptiveThinking) {
     // Verified against @anthropic-ai/sdk@^0.92 typings:
     //   - `ThinkingConfigAdaptive { type: 'adaptive' }` is a member of
     //     `ThinkingConfigParam`.
@@ -175,6 +181,8 @@ export async function runStructuredStream<T = any>(
   const model =
     opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
 
+  const useAdaptiveThinking = opts.deepThink === true;
+
   const body: Anthropic.MessageCreateParams = {
     model,
     max_tokens: opts.maxTokens ?? 4096,
@@ -188,11 +196,13 @@ export async function runStructuredStream<T = any>(
         ]
       : opts.system,
     tools: [opts.tool],
-    tool_choice: { type: "tool", name: opts.tool.name },
+    tool_choice: useAdaptiveThinking
+      ? { type: "auto" }
+      : { type: "tool", name: opts.tool.name },
     messages: [{ role: "user", content: opts.user }],
   };
 
-  if (opts.deepThink) {
+  if (useAdaptiveThinking) {
     body.thinking = { type: "adaptive" };
     body.output_config = { effort: "high" };
   }

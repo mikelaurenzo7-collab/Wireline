@@ -18,6 +18,7 @@ import {
   type DirectorStitchTurnAttempt,
   type DirectorStitchTurnResult,
 } from "./director-stitch-service";
+import { GoogleStitchError } from "./google-stitch-mcp-client";
 import { log } from "./server-context";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 
@@ -42,7 +43,6 @@ export interface StitchDirectorPathInput {
 
 export type StitchDirectorPathResult =
   | { kind: "stitch"; turn: DirectorStitchTurnResult }
-  | { kind: "stitch-failed"; turn: DirectorStitchTurnResult }
   | { kind: "llm-fallback"; fallback: StitchDesignLlmFallback }
   | { kind: "none" };
 
@@ -95,59 +95,60 @@ export async function prepareStitchDesignBriefContext(input: {
   };
 }
 
-export async function buildStitchDesignLlmFallback(
-  input: StitchDirectorPathInput,
-): Promise<StitchDesignLlmFallback> {
-  const ctx = await prepareStitchDesignBriefContext(input);
-  return {
-    ...ctx,
-    deliverableGuidance: buildStitchChatDesignGuidance(
-      input.operatorMessage,
-      ctx.designBriefMarkdown,
-    ),
-  };
+function buildStitchFailureGuidanceNote(error?: GoogleStitchError): string {
+  if (!error) {
+    return "## Stitch live render\nLive pixel rendering is unavailable on this workspace — still ship the HTML prototype in chat.";
+  }
+  if (error.code === "AUTH_FAILED") {
+    return [
+      "## Stitch live render",
+      "Credentials or project configuration blocked the live render.",
+      "Open `reply` with one line that live Wireline Design could not finish — then deliver the same brief as an HTML prototype (do not stop at an error-only message).",
+      "Mention that an admin should verify GOOGLE_STITCH_API_KEY and GOOGLE_STITCH_PROJECT_ID if they want live previews again.",
+    ].join("\n");
+  }
+  if (error.code === "VALIDATION_ERROR") {
+    return [
+      "## Stitch live render",
+      "The Stitch project or request was rejected before a screen could render.",
+      "Open `reply` with one line that live Wireline Design could not finish — then deliver the HTML prototype from design.md.",
+    ].join("\n");
+  }
+  return [
+    "## Stitch live render",
+    "The live render did not finish (timeout, transport, or packaging).",
+    "Open `reply` with one line that live Wireline Design could not finish — then deliver the HTML prototype from design.md.",
+  ].join("\n");
 }
 
-function buildStitchUnavailableTurn(
-  attempt: Extract<DirectorStitchTurnAttempt, { kind: "hard-failure" }>,
-): DirectorStitchTurnResult {
-  const isAuthFailure = attempt.error.code === "AUTH_FAILED";
-  const isValidationFailure = attempt.error.code === "VALIDATION_ERROR";
-  const reply = isAuthFailure
-    ? [
-        "Wireline Design is unavailable because its Stitch credentials or workspace configuration could not be validated.",
-        "",
-        "Ask an admin to check the Stitch API key, project ID, and UI-generation access, then try again.",
-      ].join("\n")
-    : isValidationFailure
-      ? [
-          "Wireline Design can't render this request because the Stitch setup or request is not valid.",
-          "",
-          "Ask an admin to check the Stitch project configuration, or revise the design request and try again.",
-        ].join("\n")
-      : WIRELINE_STITCH_UI.failReply;
-
+export async function buildStitchDesignLlmFallback(
+  input: StitchDirectorPathInput,
+  failure?: GoogleStitchError,
+): Promise<StitchDesignLlmFallback> {
+  const ctx = await prepareStitchDesignBriefContext(input);
+  const deliverableGuidance = [
+    buildStitchChatDesignGuidance(input.operatorMessage, ctx.designBriefMarkdown),
+    buildStitchFailureGuidanceNote(failure),
+  ].join("\n\n");
   return {
-    reply,
-    previews: [],
-    artifacts: [],
-    thinkingSummary: isAuthFailure
-      ? "Wireline Design credentials unavailable"
-      : isValidationFailure
-        ? "Wireline Design configuration invalid"
-        : "Wireline Design render timed out",
-    durationMs: 0,
+    ...ctx,
+    deliverableGuidance,
   };
 }
 
 async function buildLlmFallbackResult(
   input: StitchDirectorPathInput,
+  stitchAttempt: Exclude<DirectorStitchTurnAttempt, { kind: "turn" }>,
 ): Promise<Extract<StitchDirectorPathResult, { kind: "llm-fallback" }>> {
-  const fallback = await buildStitchDesignLlmFallback(input);
+  const failure =
+    stitchAttempt.kind === "hard-failure" || stitchAttempt.kind === "recoverable-failure"
+      ? stitchAttempt.error
+      : undefined;
+  const fallback = await buildStitchDesignLlmFallback(input, failure);
   return { kind: "llm-fallback", fallback };
 }
 
-/** Try Stitch; use chat fallback only for disabled or recoverable render/package failures. */
+/** Try Stitch; on any failure Claude Opus delivers the same brief as an HTML prototype in chat. */
 export async function resolveStitchDirectorPath(
   input: StitchDirectorPathInput,
 ): Promise<StitchDirectorPathResult> {
@@ -168,29 +169,15 @@ export async function resolveStitchDirectorPath(
     return { kind: "stitch", turn: stitchAttempt.turn };
   }
 
-  if (stitchAttempt.kind === "not-configured") {
-    log.info("director stitch unavailable — falling back to chat design", {
-      userId: input.userId,
-    });
-    return buildLlmFallbackResult(input);
-  }
-
-  if (stitchAttempt.kind === "recoverable-failure") {
-    log.info("director stitch recoverable failure — falling back to chat design", {
-      userId: input.userId,
-      code: stitchAttempt.error.code,
-    });
-    return buildLlmFallbackResult(input);
-  }
-
-  log.info("director stitch hard failure — returning operator fail copy", {
+  log.info("director stitch unavailable — falling back to chat design", {
     userId: input.userId,
-    code: stitchAttempt.error.code,
+    attemptKind: stitchAttempt.kind,
+    code:
+      stitchAttempt.kind === "hard-failure" || stitchAttempt.kind === "recoverable-failure"
+        ? stitchAttempt.error.code
+        : undefined,
   });
-  return {
-    kind: "stitch-failed",
-    turn: buildStitchUnavailableTurn(stitchAttempt),
-  };
+  return buildLlmFallbackResult(input, stitchAttempt);
 }
 
 export const STITCH_DESIGN_LLM_MODEL_LABEL = WIRELINE_STITCH_UI.modelLabel;

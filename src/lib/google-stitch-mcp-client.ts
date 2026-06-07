@@ -45,7 +45,7 @@ export function unwrapStitchToolPayload(result: unknown): unknown {
         ?.map((c) => c.text)
         .filter(Boolean)
         .join("\n") || "Stitch tool failed";
-    throw new GoogleStitchError(msg, "TOOL_ERROR");
+    throw new GoogleStitchError(msg, "TOOL_ERROR", true);
   }
   if (envelope.structuredContent !== undefined) return envelope.structuredContent;
   const text = envelope.content?.find((c) => c.type === "text" && c.text)?.text;
@@ -409,7 +409,11 @@ export class GoogleStitchMcpClient {
       }
       const envelope = json as { error?: { message?: string }; result?: unknown };
       if (envelope.error) {
-        throw new GoogleStitchError(envelope.error.message || "Stitch MCP error", "TOOL_ERROR");
+        throw new GoogleStitchError(
+          envelope.error.message || "Stitch MCP error",
+          "TOOL_ERROR",
+          true,
+        );
       }
       return unwrapStitchToolPayload(envelope.result) as T;
     } catch (e) {

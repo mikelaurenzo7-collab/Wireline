@@ -76,6 +76,22 @@ describe("runStructured prompt caching", () => {
     await runStructured({ system: "STABLE FRAME", user: "u", tool: TOOL });
     expect(recordedSystem()).toBe("STABLE FRAME");
   });
+
+  it("uses auto tool_choice with adaptive thinking (forced tool + thinking is rejected by API)", async () => {
+    createMock.mockResolvedValue(structuredReply());
+    await runStructured({ system: "s", user: "u", tool: TOOL, deepThink: true });
+    const body = createMock.mock.calls[0][0];
+    expect(body.tool_choice).toEqual({ type: "auto" });
+    expect(body.thinking).toEqual({ type: "adaptive" });
+  });
+
+  it("forces the registered tool when adaptive thinking is off", async () => {
+    createMock.mockResolvedValue(structuredReply());
+    await runStructured({ system: "s", user: "u", tool: TOOL });
+    const body = createMock.mock.calls[0][0];
+    expect(body.tool_choice).toEqual({ type: "tool", name: "probe" });
+    expect(body.thinking).toBeUndefined();
+  });
 });
 
 describe("runCompletion prompt caching", () => {

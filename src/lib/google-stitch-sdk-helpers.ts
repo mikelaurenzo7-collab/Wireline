@@ -30,16 +30,25 @@ function isLikelyPlatformTimeout(message: string): boolean {
   );
 }
 
+function isLikelyStitchTransportFailure(message: string): boolean {
+  return /stitch transport|transport error|fetch failed|failed to fetch|network error|503|502|529|overloaded|econnrefused|enotfound/i.test(
+    message,
+  );
+}
+
 export function mapStitchError(error: unknown): GoogleStitchError {
   if (error instanceof GoogleStitchError) return error;
   if (isStitchErrorLike(error)) {
     return new GoogleStitchError(error.message, error.code, error.recoverable);
   }
   const message = error instanceof Error ? error.message : String(error);
-  if (isLikelyPlatformTimeout(message)) {
+  if (isLikelyPlatformTimeout(message) || isLikelyStitchTransportFailure(message)) {
     return new GoogleStitchError(message, "NETWORK_ERROR", true);
   }
-  return new GoogleStitchError(message, "UNKNOWN_ERROR", false);
+  if (/tool failed|stitch tool|mcp error/i.test(message)) {
+    return new GoogleStitchError(message, "TOOL_ERROR", true);
+  }
+  return new GoogleStitchError(message, "UNKNOWN_ERROR", true);
 }
 
 export function screenEntityToRecord(screen: StitchScreenLike): Record<string, unknown> {

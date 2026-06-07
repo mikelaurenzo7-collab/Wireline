@@ -14,9 +14,15 @@ describe("mapStitchError", () => {
     expect(mapStitchError(original)).toBe(original);
   });
 
-  it("treats unknown errors as non-recoverable", () => {
+  it("treats Stitch transport failures as recoverable network errors", () => {
+    const err = mapStitchError(new Error("Stitch Transport Error"));
+    expect(err.code).toBe("NETWORK_ERROR");
+    expect(err.recoverable).toBe(true);
+  });
+
+  it("treats unknown errors as recoverable so chat design fallback can run", () => {
     const err = mapStitchError(new Error("something unexpected"));
     expect(err.code).toBe("UNKNOWN_ERROR");
-    expect(err.recoverable).toBe(false);
+    expect(err.recoverable).toBe(true);
   });
 });

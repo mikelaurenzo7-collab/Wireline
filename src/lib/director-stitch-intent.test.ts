@@ -22,6 +22,14 @@ describe("director stitch intent", () => {
     expect(wantsStitchMediaRequest("Generate 3 logo concepts for my brand")).toBe(false);
   });
 
+  it("routes admin dashboard requests to Stitch media", () => {
+    expect(
+      wantsStitchMediaRequest(
+        "make me an admin dashboard for this website — Wireline is the company",
+      ),
+    ).toBe(true);
+  });
+
   it("routes named app screens (e.g. Vault) to Stitch", () => {
     expect(
       wantsStitchMediaRequest(

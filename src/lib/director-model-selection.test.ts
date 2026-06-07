@@ -56,6 +56,23 @@ describe("resolveDirectorLlm", () => {
     expect(r.deepThink).toBe(false);
     expect(r.modelLabel).toBe("GPT-4o");
   });
+
+  it("pins Opus without adaptive thinking unless explicitly requested", () => {
+    const pinned = resolveDirectorLlm({
+      ...claude,
+      selection: { provider: "wireline", tier: "opus" },
+    });
+    expect(pinned.model).toBe("opus-id");
+    expect(pinned.modelKind).toBe("opus");
+    expect(pinned.deepThink).toBe(false);
+
+    const pinnedDeep = resolveDirectorLlm({
+      ...claude,
+      selection: { provider: "wireline", tier: "opus" },
+      deepThink: true,
+    });
+    expect(pinnedDeep.deepThink).toBe(true);
+  });
 });
 
 describe("isOpenRouterModelId", () => {
