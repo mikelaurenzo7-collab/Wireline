@@ -52,9 +52,6 @@ export const VAPI_TRANSCRIBER_CONFIG = {
   endpointing: 40,
 };
 
-/** Buffer before shipping LLM tokens to TTS (prevents micro speed-ups on dense strings). */
-export const VAPI_INPUT_MIN_CHARACTERS = 24;
-
 /** STT + turn-taking strategy. Flux integrates EOT; Nova uses LiveKit on top. */
 export type VapiTranscriberMode = "nova-livekit" | "flux-eot";
 

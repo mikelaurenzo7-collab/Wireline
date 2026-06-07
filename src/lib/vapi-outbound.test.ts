@@ -22,4 +22,14 @@ describe("formatVapiCallError", () => {
   it("returns a friendly fallback for empty bodies", () => {
     expect(formatVapiCallError("")).toMatch(/voice carrier/i);
   });
+
+  it("surfaces deprecated inputMinCharacters rejections", () => {
+    expect(
+      formatVapiCallError(
+        JSON.stringify({
+          message: ["assistant.property inputMinCharacters should not exist"],
+        }),
+      ),
+    ).toMatch(/inputMinCharacters/i);
+  });
 });

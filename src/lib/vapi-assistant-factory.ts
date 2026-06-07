@@ -23,11 +23,7 @@ import {
   type AgentRuntimeProfile,
 } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
-import {
-  getVoiceLatencyProfile,
-  resolveVapiSpeechPipeline,
-  VAPI_INPUT_MIN_CHARACTERS,
-} from "./voice-agent-profile";
+import { getVoiceLatencyProfile, resolveVapiSpeechPipeline } from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -655,16 +651,6 @@ Today is ${currentDateTime}.
     // assistant; the previous fixed-timeout behaviour was prone to
     // either interrupting (too short) or feeling sluggish (too long).
     startSpeakingPlan: speechPipeline.startSpeakingPlan,
-    // Input normalization — prevent TTS speed-up on dense token sequences
-    // like email addresses, phone numbers, URLs. ElevenLabs treats these
-    // as rapid-fire tokens and compresses their duration. The
-    // inputMinCharacters setting forces a minimum chunk size so the synth
-    // doesn't sprint through short high-density bursts.
-    // Increased from 10 → 30 to further smooth cadence: with Opus
-    // producing more measured, complete sentences, we buffer longer
-    // before shipping to TTS, resulting in more natural phrasing
-    // boundaries and eliminating micro-speed-ups on partial sentences.
-    inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,
