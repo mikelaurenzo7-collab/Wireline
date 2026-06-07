@@ -84,13 +84,6 @@ export interface DirectorTurnInput {
   modelSelection?: DirectorChatModelSelection;
   /** Override deliverable system guidance (e.g. Stitch → Claude design fallback). */
   deliverableGuidance?: string;
-  /**
-   * Pre-rendered per-account Situation Report (uncaptured leads, overdue
-   * callbacks, stalled deals, recovery, fleet health, per-agent direction).
-   * Injected into the fleet system prompt so the Director opens every turn
-   * already growth-focused.
-   */
-  situationReport?: string;
   /** Stitch failed — force Opus for the HTML prototype fallback (not adaptive thinking). */
   designRenderFallback?: boolean;
 }
@@ -462,7 +455,6 @@ export async function buildDirectorStreamContext(
     integrationPrompt,
     deliverableGuidance:
       input.deliverableGuidance ?? buildDirectorDeliverableGuidance(input.operatorMessage),
-    situationReport: input.situationReport,
   });
 
   const transcript = input.history
