@@ -1,0 +1,10 @@
+<<<<<<< SEARCH
+  const briefForStitch = briefRaw ? briefRaw.slice(0, 2500) : fallbackBrief;
+=======
+  let briefForStitch = fallbackBrief;
+  if (briefRaw) {
+    // Strip "## Delivery" noise block if present to save tokens for Claude/Gemini
+    const cleanBrief = briefRaw.split("## Delivery")[0].trim();
+    briefForStitch = cleanBrief.slice(0, 2500);
+  }
+>>>>>>> REPLACE

@@ -148,6 +148,11 @@ export function buildStitchGenerationPrompt(
     ? WIRELINE_STITCH_DARK_DESIGN_BRIEF
     : WIRELINE_STITCH_DESIGN_BRIEF;
 
-  const briefForStitch = briefRaw ? briefRaw.slice(0, 2500) : fallbackBrief;
+  let briefForStitch = fallbackBrief;
+  if (briefRaw) {
+    // Strip "## Delivery" noise block if present to save tokens for Claude/Gemini
+    const cleanBrief = briefRaw.split("## Delivery")[0].trim();
+    briefForStitch = cleanBrief.slice(0, 2500);
+  }
   return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the industry in the request.`;
 }
