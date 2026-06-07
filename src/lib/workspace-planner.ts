@@ -488,9 +488,17 @@ function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | nu
  * Anything malformed, out-of-allowlist, or no-op is silently dropped so the
  * UI only ever sees actionable, executable proposals.
  */
-export function normalizePlan(raw: RawDirectAgent, opts?: { agentId?: string }): WorkspacePlan {
+/** Agent workspace chat keeps replies short; Director coach mode needs room for roleplay. */
+const WORKSPACE_REPLY_MAX = 2000;
+const COACH_DIRECTOR_REPLY_MAX = 32_000;
+
+export function normalizePlan(
+  raw: RawDirectAgent,
+  opts?: { agentId?: string; coachAsDirector?: boolean },
+): WorkspacePlan {
+  const replyMax = opts?.coachAsDirector ? COACH_DIRECTOR_REPLY_MAX : WORKSPACE_REPLY_MAX;
   const reply =
-    clampString(raw.reply, 2000) || "Got it — let me know what you'd like me to adjust.";
+    clampString(raw.reply, replyMax) || "Got it — let me know what you'd like me to adjust.";
 
   const changes: ProposedChange[] = [];
   const seenFields = new Set<WorkspaceFieldKey>();

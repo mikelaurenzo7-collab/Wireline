@@ -416,7 +416,7 @@ export async function buildDirectorStreamContext(
         focusAgentName: ctx.agent.name || undefined,
         researchSources: research?.sources,
         normalize: (raw) => {
-          const plan = normalizePlan(raw, { agentId: focusId });
+          const plan = normalizePlan(raw, { agentId: focusId, coachAsDirector: true });
           const base = workspaceToTurnResult(plan, focusId, ctx.agent.name, research?.sources);
           return {
             ...base,

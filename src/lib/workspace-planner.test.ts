@@ -125,6 +125,18 @@ describe("normalizePlan — reply fallback", () => {
     expect(plan.toolToggles).toHaveLength(0);
     expect(plan.actions).toHaveLength(0);
   });
+
+  it("allows long replies in Director coach mode", () => {
+    const longReply = "x".repeat(2500);
+    const plan = normalizePlan({ reply: longReply }, { coachAsDirector: true });
+    expect(plan.reply).toHaveLength(2500);
+  });
+
+  it("clamps agent workspace replies at 2000 characters", () => {
+    const longReply = "y".repeat(2500);
+    const plan = normalizePlan({ reply: longReply });
+    expect(plan.reply).toHaveLength(2000);
+  });
 });
 
 describe("planWorkspace", () => {
