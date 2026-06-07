@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   PhoneIncoming,
   PhoneOutgoing,
@@ -102,13 +102,18 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
     if (!loadingMore && hasMore) fetchCalls(offset, true);
   };
 
-  const filteredCalls = calls.filter((call) => {
-    const matchesSearch =
-      call.customer_number?.includes(search) ||
-      call.summary?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || call.direction === filter;
-    return matchesSearch && matchesFilter;
-  });
+  // ⚡ Bolt Performance Optimization: Memoize filtered calls
+  // Prevents re-computing the filtered list on every render (e.g. when typing,
+  // switching tabs, or playing audio), reducing main thread work for large call logs.
+  const filteredCalls = useMemo(() => {
+    return calls.filter((call) => {
+      const matchesSearch =
+        call.customer_number?.includes(search) ||
+        call.summary?.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = filter === "all" || call.direction === filter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [calls, search, filter]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
