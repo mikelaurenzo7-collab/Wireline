@@ -2,7 +2,9 @@
  * When Wireline Design (Stitch) cannot render, Claude delivers the same
  * design brief as an HTML/CSS prototype in chat.
  */
-import { buildDirectorDeliverableGuidance, wantsStitchMediaRequest } from "./director-deliverables";
+import { buildDirectorDeliverableGuidance } from "./director-deliverables";
+import { shouldRouteDirectorMessageToStitch } from "./director-stitch-intent";
+import { loadLatestStitchSession } from "./director-stitch-session";
 import {
   buildStitchDesignBriefArtifact,
   buildStitchDesignMarkdown,
@@ -145,7 +147,14 @@ async function buildLlmFallbackResult(
 export async function resolveStitchDirectorPath(
   input: StitchDirectorPathInput,
 ): Promise<StitchDirectorPathResult> {
-  if (!wantsStitchMediaRequest(input.operatorMessage)) {
+  const stitchSession = await loadLatestStitchSession(input.userId);
+  if (
+    !shouldRouteDirectorMessageToStitch(input.operatorMessage, {
+      stitchOptions: input.stitchOptions,
+      history: input.history,
+      stitchSession,
+    })
+  ) {
     return { kind: "none" };
   }
 

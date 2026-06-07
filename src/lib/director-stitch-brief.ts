@@ -38,7 +38,7 @@ export interface StitchDesignBrief {
 export type StitchBriefField = "business" | "audience" | "goal" | "pages";
 
 const INDUSTRY_RE =
-  /\b(hvac|plumbing|roofing|legal|law\s+firm|dental|medical|real\s+estate|restaurant|cleaning|landscaping|insurance|saas|contractor|home\s+services|auto\s+repair|salon|fitness|accounting)\b/i;
+  /\b(hvac|plumbing|roofing|legal|law\s+firm|dental|medical|real\s+estate|restaurant|cleaning|landscaping|insurance|saas|contractor|home\s+services|auto\s+repair|salon|fitness|accounting|meditation|wellness|mindfulness)\b/i;
 
 const AUDIENCE_RE =
   /\b(homeowners?|businesses?|b2b|b2c|consumers?|patients?|tenants?|buyers?|sellers?|families|contractors?|operators?|founders?|small\s+business)\b/i;
@@ -48,7 +48,7 @@ const GOAL_RE =
 
 /** CTAs and hyphenated variants that GOAL_RE misses (e.g. book-now). */
 const GOAL_CTA_RE =
-  /\b(book[\s-]?now|book\s+a\b|schedule(?:\s+a)?\b|get\s+(?:a\s+)?quote|request\s+(?:a\s+)?quote|call\s+(?:us|now)|contact\s+(?:us|form)|sign[\s-]?up|cta|call[\s-]?to[\s-]?action)\b/i;
+  /\b(book[\s-]?now|book\s+a\b|schedule(?:\s+a)?\b|get\s+(?:a\s+)?quote|request\s+(?:a\s+)?quote|call\s+(?:us|now)|contact\s+(?:us|form)|sign[\s-]?up|get\s+started|onboarding|cta|call[\s-]?to[\s-]?action)\b/i;
 
 const LANDING_SECTION_RE =
   /\b(hero|services?|testimonials?|pricing|about|contact|faq|footer|features?|portfolio|gallery|how\s+it\s+works|team|reviews?)\b/i;
@@ -120,6 +120,10 @@ function pickMatch(text: string, re: RegExp): string {
 }
 
 function inferBusinessName(text: string, branding: StitchTenantBranding): string {
+  const calledMatch = text.match(
+    /\b(?:called|named)\s+([A-Z][\w&'.-]+(?:\s+[A-Z][\w&'.-]+){0,3})/i,
+  );
+  if (calledMatch?.[1]) return calledMatch[1].trim();
   const forMatch = text.match(/\bfor\s+([A-Z][\w&'.-]+(?:\s+[A-Z][\w&'.-]+){0,4})/);
   if (forMatch?.[1]) return forMatch[1].trim();
   const companyMatch = text.match(
@@ -148,6 +152,7 @@ function inferAudience(corpus: string, industry: string): string {
 }
 
 function inferPrimaryGoal(corpus: string): string {
+  if (/\bonboarding\b/i.test(corpus)) return "onboarding";
   const direct = pickMatch(corpus, GOAL_RE);
   if (direct) return direct;
   if (GOAL_CTA_RE.test(corpus)) {
@@ -230,8 +235,17 @@ export function missingStitchBriefFields(
   brief: StitchDesignBrief,
   operation: StitchMediaOperation,
   hasSession: boolean,
+  options?: { designMode?: boolean },
 ): StitchBriefField[] {
   if (hasSession && (operation === "edit" || operation === "variants")) return [];
+
+  if (
+    options?.designMode &&
+    brief.operatorRequest.trim().length >= 12 &&
+    operation !== "build_site"
+  ) {
+    return [];
+  }
 
   const missing: StitchBriefField[] = [];
   if (!brief.businessName && !brief.industry) missing.push("business");

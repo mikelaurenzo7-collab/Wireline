@@ -6,6 +6,7 @@ import {
   wantsLogoCreativePath,
   wantsWebsiteDeliverable,
 } from "./director-deliverables";
+import type { StitchBriefOptions } from "./director-stitch-branding";
 
 export type StitchDeviceType = "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
 export type StitchMediaOperation = "generate" | "edit" | "variants" | "build_site";
@@ -47,6 +48,52 @@ export function wantsStitchMediaRequest(message: string): boolean {
   if (/\b(mockup|wireframe|prototype)\b/i.test(trimmed) && !wantsCodeDeliverable(trimmed)) {
     return true;
   }
+  return false;
+}
+
+const STITCH_CLARIFY_REPLY_SIGNAL =
+  /before i generate screens|need a bit more context|reply with the missing details/i;
+
+/** True when the operator turned on Wireline Design in the composer. */
+export function isStitchDesignModeActive(stitchOptions?: StitchBriefOptions): boolean {
+  return stitchOptions?.designMode === true;
+}
+
+/** Director asked for brief fields — the next operator message should stay on the Stitch path. */
+export function hasPendingStitchClarifyInHistory(
+  history: Array<{ role: "operator" | "director"; content: string }>,
+): boolean {
+  const lastDirector = [...history].reverse().find((h) => h.role === "director");
+  if (!lastDirector) return false;
+  return STITCH_CLARIFY_REPLY_SIGNAL.test(lastDirector.content);
+}
+
+/**
+ * Single gate for Stitch routing — explicit Design toggle or answering a Stitch clarify turn.
+ * Keyword sniffing alone does not enter design mode (avoids fleet vs design confusion).
+ */
+/** Follow-up edits/variants after a Stitch screen exists in this thread. */
+export function shouldRouteStitchSessionFollowUp(
+  operatorMessage: string,
+  session: StitchSession | null | undefined,
+): boolean {
+  if (!session?.screenId || !session?.projectId) return false;
+  const operation = resolveStitchMediaOperation(operatorMessage.trim(), session);
+  return operation === "edit" || operation === "variants" || operation === "build_site";
+}
+
+export function shouldRouteDirectorMessageToStitch(
+  operatorMessage: string,
+  options?: {
+    stitchOptions?: StitchBriefOptions;
+    history?: Array<{ role: "operator" | "director"; content: string }>;
+    stitchSession?: StitchSession | null;
+  },
+): boolean {
+  if (!operatorMessage.trim()) return false;
+  if (isStitchDesignModeActive(options?.stitchOptions)) return true;
+  if (hasPendingStitchClarifyInHistory(options?.history ?? [])) return true;
+  if (shouldRouteStitchSessionFollowUp(operatorMessage, options?.stitchSession)) return true;
   return false;
 }
 

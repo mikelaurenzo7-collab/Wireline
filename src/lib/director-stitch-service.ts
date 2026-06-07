@@ -827,7 +827,9 @@ export async function prepareStitchDirectorTurn(
     branding,
     useAccountBranding,
   });
-  const missing = missingStitchBriefFields(brief, operation, Boolean(priorSession));
+  const missing = missingStitchBriefFields(brief, operation, Boolean(priorSession), {
+    designMode: input.stitchOptions?.designMode === true,
+  });
 
   if (missing.length > 0) {
     const clarifyingQuestions = stitchClarifyingQuestions(missing);

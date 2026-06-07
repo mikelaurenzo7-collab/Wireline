@@ -479,6 +479,7 @@ export const directorChatModelSelectionSchema = z.discriminatedUnion("provider",
 ]);
 
 export const directorStitchOptionsSchema = z.object({
+  designMode: z.boolean().optional(),
   useAccountBranding: z.boolean().optional(),
 });
 

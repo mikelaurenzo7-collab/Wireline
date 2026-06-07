@@ -8,6 +8,10 @@ vi.mock("./director-stitch-service", () => ({
   tryDirectorStitchTurn: vi.fn(),
 }));
 
+vi.mock("./director-stitch-session", () => ({
+  loadLatestStitchSession: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("./director-stitch-brief", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./director-stitch-brief")>();
   return {
@@ -35,6 +39,7 @@ describe("director stitch fallback", () => {
     userId: "user-1",
     operatorMessage: "Design a landing page for homeowners who need emergency plumbing",
     history: [] as Array<{ role: "operator" | "director"; content: string }>,
+    stitchOptions: { designMode: true as const },
   };
 
   it("builds chat design guidance with design.md and html prototype instructions", () => {
@@ -131,8 +136,41 @@ describe("director stitch fallback", () => {
     const result = await resolveStitchDirectorPath({
       ...input,
       operatorMessage: "How is my fleet doing this week?",
+      stitchOptions: undefined,
     });
     expect(result.kind).toBe("none");
     expect(tryDirectorStitchTurn).not.toHaveBeenCalled();
+  });
+
+  it("routes clarify follow-ups without design keywords", async () => {
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
+      kind: "turn",
+      turn: {
+        reply: "Rendered",
+        previews: [{ kind: "stitch" }],
+        artifacts: [],
+        thinkingSummary: "Done",
+        durationMs: 10,
+      },
+    });
+
+    const result = await resolveStitchDirectorPath({
+      userId: "user-1",
+      operatorMessage: "Stillmind is a consumer meditation app for stressed professionals.",
+      history: [
+        {
+          role: "operator",
+          content:
+            "Design a minimal mobile onboarding screen for a meditation app called Stillmind",
+        },
+        {
+          role: "director",
+          content:
+            "Before I generate screens, I need a bit more context (business, audience, goal).",
+        },
+      ],
+      stitchOptions: { designMode: true },
+    });
+    expect(result.kind).toBe("stitch");
   });
 });

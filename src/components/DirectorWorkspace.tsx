@@ -82,7 +82,11 @@ import {
   buildStitchPreviewPageUrl,
   stitchPreviewPageUrlIsValid,
 } from "../lib/director-stitch-preview-route";
-import { wantsStitchMediaRequest } from "../lib/director-stitch-intent";
+import {
+  hasPendingStitchClarifyInHistory,
+  shouldRouteDirectorMessageToStitch,
+} from "../lib/director-stitch-intent";
+import type { StitchBriefOptions } from "../lib/director-stitch-branding";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
@@ -277,7 +281,80 @@ export default function DirectorWorkspace({
   const stitchPendingTimerRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
   const stitchPendingElapsedRef = useRef<Record<string, number>>({});
   const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
+  const [designMode, setDesignMode] = useState(false);
   const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
+  const stitchClarifyPending = useMemo(
+    () =>
+      hasPendingStitchClarifyInHistory(
+        messages
+          .filter((m) => m.role === "operator" || m.role === "director")
+          .map((m) => ({ role: m.role, content: m.content })),
+      ),
+    [messages],
+  );
+
+  useEffect(() => {
+    if (stitchClarifyPending && !designMode) {
+      setDesignMode(true);
+    }
+  }, [stitchClarifyPending, designMode]);
+
+  const stitchThreadHistory = useMemo(
+    () =>
+      messages
+        .filter((m) => m.role === "operator" || m.role === "director")
+        .map((m) => ({ role: m.role, content: m.content })),
+    [messages],
+  );
+
+  const latestStitchSession = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
+      if (message?.role === "director" && message.stitchSession?.screenId) {
+        return message.stitchSession;
+      }
+    }
+    return null;
+  }, [messages]);
+
+  const buildStitchComposerOptions = useCallback(
+    (trimmed: string): StitchBriefOptions | undefined => {
+      if (!featureFlags.stitchMedia) return undefined;
+      const stitchOptionsProbe: StitchBriefOptions | undefined = designMode
+        ? { designMode: true }
+        : undefined;
+      const route = shouldRouteDirectorMessageToStitch(trimmed, {
+        stitchOptions: stitchOptionsProbe,
+        history: stitchThreadHistory,
+        stitchSession: latestStitchSession,
+      });
+      if (!route) return undefined;
+      return {
+        ...(designMode || stitchClarifyPending ? { designMode: true } : {}),
+        useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
+      };
+    },
+    [
+      designMode,
+      featureFlags.stitchMedia,
+      latestStitchSession,
+      stitchBrandingAvailable,
+      stitchClarifyPending,
+      stitchThreadHistory,
+      useStitchAccountBranding,
+    ],
+  );
+
+  const shouldUseStitchComposer = useCallback(
+    (trimmed: string) =>
+      featureFlags.stitchMedia &&
+      shouldRouteDirectorMessageToStitch(trimmed, {
+        stitchOptions: designMode ? { designMode: true } : undefined,
+        history: stitchThreadHistory,
+        stitchSession: latestStitchSession,
+      }),
+    [designMode, featureFlags.stitchMedia, latestStitchSession, stitchThreadHistory],
+  );
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -706,6 +783,7 @@ export default function DirectorWorkspace({
       },
     ) => {
       try {
+        const stitchOptions = buildStitchComposerOptions(trimmed);
         const r = await authFetch("/api/director/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -714,14 +792,9 @@ export default function DirectorWorkspace({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
-            ...(featureFlags.stitchMedia && wantsStitchMediaRequest(trimmed)
-              ? {
-                  stitchOptions: {
-                    useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
-                  },
-                }
-              : {}),
+            ...(stitchOptions ? { stitchOptions } : {}),
             ...(!focusAgentId &&
+            !designMode &&
             chatModelSelection.provider === "wireline" &&
             (forceDeep || wantsDeepAnalysis(trimmed))
               ? { forceDeep: true }
@@ -766,10 +839,9 @@ export default function DirectorWorkspace({
       toastError,
       focusAgentId,
       forceDeep,
+      designMode,
       chatModelSelection,
-      featureFlags.stitchMedia,
-      stitchBrandingAvailable,
-      useStitchAccountBranding,
+      buildStitchComposerOptions,
     ],
   );
   sendNonStreamingRef.current = sendNonStreaming;
@@ -984,10 +1056,7 @@ export default function DirectorWorkspace({
       setIsSending(true);
       setComposerAccessory(null);
 
-      const stitchOptions =
-        featureFlags.stitchMedia && wantsStitchMediaRequest(trimmed)
-          ? { useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding }
-          : undefined;
+      const stitchOptions = buildStitchComposerOptions(trimmed);
 
       const payload = {
         content: trimmed,
@@ -996,6 +1065,7 @@ export default function DirectorWorkspace({
         ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
         ...(stitchOptions ? { stitchOptions } : {}),
         ...(!focusAgentId &&
+        !designMode &&
         chatModelSelection.provider === "wireline" &&
         (forceDeep || wantsDeepAnalysis(trimmed))
           ? { forceDeep: true }
@@ -1003,8 +1073,7 @@ export default function DirectorWorkspace({
         modelSelection: chatModelSelection,
       };
 
-      const useStitchPost =
-        !opts?.approval && trimmed && featureFlags.stitchMedia && wantsStitchMediaRequest(trimmed);
+      const useStitchPost = !opts?.approval && trimmed && shouldUseStitchComposer(trimmed);
 
       if (useStitchPost) {
         pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
@@ -1077,9 +1146,9 @@ export default function DirectorWorkspace({
       focusAgentId,
       forceDeep,
       chatModelSelection,
-      featureFlags.stitchMedia,
-      stitchBrandingAvailable,
-      useStitchAccountBranding,
+      buildStitchComposerOptions,
+      designMode,
+      shouldUseStitchComposer,
     ],
   );
 
@@ -1245,6 +1314,7 @@ export default function DirectorWorkspace({
       setStitchPollExhausted({});
       setComposerAccessory(null);
       setForceDeep(false);
+      setDesignMode(false);
       setInput("");
       toastSuccess("Thread cleared", "Conversation and artifacts removed");
     } catch {
@@ -2228,6 +2298,8 @@ export default function DirectorWorkspace({
             <DirectorComposerContextStrip
               focusAgentName={focusedAgent?.name}
               onClearCoach={focusAgentId ? clearCoachFocus : undefined}
+              designModeActive={designMode && featureFlags.stitchMedia}
+              onClearDesignMode={() => setDesignMode(false)}
             />
 
             <Textarea
@@ -2243,9 +2315,11 @@ export default function DirectorWorkspace({
               placeholder={
                 isSending
                   ? "Director is working…"
-                  : focusedAgent
-                    ? `Coach ${focusedAgent.name} via Director…`
-                    : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
+                  : designMode && featureFlags.stitchMedia
+                    ? WIRELINE_STITCH_UI.designModePlaceholder
+                    : focusedAgent
+                      ? `Coach ${focusedAgent.name} via Director…`
+                      : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
               }
               className={cn(
                 WL_DIRECTOR_CLASSES.composerInput,
@@ -2301,6 +2375,14 @@ export default function DirectorWorkspace({
                 chatModelSelection={chatModelSelection}
                 onChatModelChange={setChatModelSelection}
                 stitchMediaEnabled={featureFlags.stitchMedia}
+                designMode={designMode}
+                onToggleDesignMode={() => {
+                  setDesignMode((on) => {
+                    const next = !on;
+                    if (next) setForceDeep(false);
+                    return next;
+                  });
+                }}
                 useStitchAccountBranding={useStitchAccountBranding}
                 onToggleStitchAccountBranding={() => setUseStitchAccountBranding((v) => !v)}
                 stitchBrandingAvailable={stitchBrandingAvailable}

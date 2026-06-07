@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildStitchGenerationPrompt,
   CLIENT_STITCH_DELIVERY_BRIEF,
+  hasPendingStitchClarifyInHistory,
   resolveEffectiveStitchDeviceType,
   resolveStitchMediaOperation,
   resolveStitchModelId,
+  shouldRouteDirectorMessageToStitch,
+  shouldRouteStitchSessionFollowUp,
   WIRELINE_STITCH_DESIGN_BRIEF,
   wantsStitchMediaRequest,
   wantsWirelineProductDesign,
@@ -78,6 +81,42 @@ describe("director stitch intent", () => {
     expect(resolveStitchMediaOperation("Build the full multi-page site", session)).toBe(
       "build_site",
     );
+  });
+
+  it("routes only when Design mode, clarify follow-up, or stitch session edit", () => {
+    expect(
+      shouldRouteDirectorMessageToStitch("Design a landing page", {
+        stitchOptions: { designMode: true },
+      }),
+    ).toBe(true);
+    expect(
+      shouldRouteDirectorMessageToStitch("Design a landing page", {
+        stitchOptions: undefined,
+      }),
+    ).toBe(false);
+    expect(
+      shouldRouteDirectorMessageToStitch("Stillmind is a consumer app", {
+        history: [
+          { role: "operator", content: "Design a mobile onboarding screen" },
+          {
+            role: "director",
+            content: "Before I generate screens, I need a bit more context.",
+          },
+        ],
+      }),
+    ).toBe(true);
+    expect(hasPendingStitchClarifyInHistory([])).toBe(false);
+    expect(
+      shouldRouteStitchSessionFollowUp("Make the hero darker", {
+        projectId: "123",
+        screenId: "456",
+      }),
+    ).toBe(true);
+    expect(
+      shouldRouteDirectorMessageToStitch("Make the hero darker", {
+        stitchSession: { projectId: "123", screenId: "456" },
+      }),
+    ).toBe(true);
   });
 
   it("preserves prior device type for edit and variant follow-ups", () => {

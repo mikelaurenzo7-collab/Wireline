@@ -13,6 +13,8 @@ export interface StitchTenantBranding {
 }
 
 export interface StitchBriefOptions {
+  /** Operator enabled Wireline Design mode in the composer — route every message to Stitch. */
+  designMode?: boolean;
   /** When true, merge account branding into design.md (default: true if branding exists). */
   useAccountBranding?: boolean;
 }

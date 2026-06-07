@@ -206,6 +206,8 @@ describe("Wireline Director design contract", () => {
   });
 
   it("stitch UI copy is Wireline-branded without vendor marketing", () => {
+    expect(WIRELINE_STITCH_UI.designModeToggleLabel).toBe("Design");
+    expect(WIRELINE_STITCH_UI.designModePlaceholder.length).toBeGreaterThan(20);
     expect(WIRELINE_STITCH_UI.badgeLabel).toBe("Wireline Design");
     expect(WIRELINE_STITCH_UI.deviceChromeLabel).not.toMatch(/google/i);
     expect(WIRELINE_STITCH_UI.loadingHint).toMatch(/3–5 minutes/);

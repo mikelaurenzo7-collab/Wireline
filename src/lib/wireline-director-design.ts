@@ -431,6 +431,13 @@ export const DIRECTOR_COMPOSER_CONTEXT = {
 export const WIRELINE_STITCH_UI = {
   modelLabel: "Wireline Design",
   badgeLabel: "Wireline Design",
+  designModeToggleLabel: "Design",
+  designModeToggleHint:
+    "Wireline Design mode — every message builds UI screens until you turn this off. Fleet chat stays separate when Design is off.",
+  designModePlaceholder:
+    "Describe the screen, landing page, or app flow to design — e.g. mobile onboarding for a meditation app…",
+  designModeContextLabel: "Wireline Design",
+  clearDesignModeLabel: "Exit design mode",
   brandingToggleLabel: "Account branding",
   brandingToggleHint:
     "When on, Wireline Design pulls your Admin → Branding kit (name, color, logo) into design.md before rendering.",

@@ -10,13 +10,14 @@
 import type { ReactNode } from "react";
 import {
   Brain,
+  Bot,
   ChevronDown,
+  LayoutTemplate,
   Loader2,
   Palette,
   Paperclip,
   Plug,
   Sparkles,
-  Bot,
   Wrench,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -116,6 +117,8 @@ export interface DirectorComposerToolbarProps {
   chatModelSelection?: DirectorChatModelSelection;
   onChatModelChange?: (next: DirectorChatModelSelection) => void;
   stitchMediaEnabled?: boolean;
+  designMode?: boolean;
+  onToggleDesignMode?: () => void;
   useStitchAccountBranding?: boolean;
   onToggleStitchAccountBranding?: () => void;
   stitchBrandingAvailable?: boolean;
@@ -134,14 +137,20 @@ export function DirectorComposerToolbar({
   chatModelSelection,
   onChatModelChange,
   stitchMediaEnabled = false,
+  designMode = false,
+  onToggleDesignMode,
   useStitchAccountBranding = true,
   onToggleStitchAccountBranding,
   stitchBrandingAvailable = false,
 }: DirectorComposerToolbarProps) {
   const showDeepToggle =
-    !focusAgentId && onToggleForceDeep && chatModelSelection?.provider !== "openrouter";
+    !focusAgentId &&
+    !designMode &&
+    onToggleForceDeep &&
+    chatModelSelection?.provider !== "openrouter";
+  const showDesignToggle = stitchMediaEnabled && onToggleDesignMode;
   const showStitchBrandingToggle =
-    stitchMediaEnabled && onToggleStitchAccountBranding && stitchBrandingAvailable;
+    designMode && stitchMediaEnabled && onToggleStitchAccountBranding && stitchBrandingAvailable;
 
   return (
     <div className={WL_DIRECTOR_CLASSES.composerToolbarScroll}>
@@ -199,6 +208,32 @@ export function DirectorComposerToolbar({
               ) : null
             }
           />
+        )}
+        {showDesignToggle && (
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            disableAnimations
+            disabled={isSending}
+            onClick={onToggleDesignMode}
+            aria-pressed={designMode}
+            title={WIRELINE_STITCH_UI.designModeToggleHint}
+            className={cn(
+              WL_DIRECTOR_CLASSES.composerToolChip,
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+              designMode &&
+                cn(
+                  WL_DIRECTOR_CLASSES.composerToolChipActive,
+                  "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+                ),
+              "h-auto touch-press rounded-full shadow-none",
+            )}
+          >
+            <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">{WIRELINE_STITCH_UI.designModeToggleLabel}</span>
+            <span className="sm:hidden">Design</span>
+          </ShadButton>
         )}
         {showStitchBrandingToggle && (
           <ShadButton

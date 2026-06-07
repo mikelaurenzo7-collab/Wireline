@@ -100,6 +100,21 @@ describe("director stitch brief", () => {
     expect(missingStitchBriefFields(brief, "generate", false)).toEqual([]);
   });
 
+  it("skips clarifiers in explicit Design mode for substantive prompts", () => {
+    const prompt =
+      "Design a minimal mobile onboarding screen for a meditation app called Stillmind — soft teal gradient, welcome headline, Get Started button";
+    const brief = parseStitchDesignBrief(prompt, [], {
+      brandName: null,
+      brandLogoUrl: null,
+      primaryColor: null,
+      businessName: null,
+      businessType: null,
+      primaryProduct: null,
+    });
+    expect(brief.businessName).toBe("Stillmind");
+    expect(missingStitchBriefFields(brief, "generate", false, { designMode: true })).toEqual([]);
+  });
+
   it("still clarifies on vague one-liners", () => {
     const brief = parseStitchDesignBrief("Design a landing page", [], {
       brandName: null,
