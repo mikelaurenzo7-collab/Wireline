@@ -8,7 +8,7 @@
     "background": "#EFE9DC",
     "text_primary": "#1A1614",
     "text_secondary": "rgba(26, 22, 20, 0.7)",
-    "brand_accent": "#4F1E7B",
+    "brand_accent": "#8B3FD6",
     "surface": "#EFE9DC",
     "surface_glass": "rgba(239, 233, 220, 0.7)",
     "border": "rgba(26, 22, 20, 0.1)",
@@ -19,11 +19,11 @@
     "inverse_border": "rgba(239, 233, 220, 0.15)"
   },
   "typography": {
-    "import_instructions": "Import Fraunces, DM Sans, and IBM Plex Mono from Google Fonts.",
+    "import_instructions": "Fonts are self-hosted via @fontsource with no render-blocking Google Fonts CSS.",
     "font_families": {
       "heading": "'Fraunces', serif",
-      "body": "'DM Sans', sans-serif",
-      "mono": "'IBM Plex Mono', monospace"
+      "body": "'Plus Jakarta Sans', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
     },
     "hierarchy": {
       "h1": "font-serif text-5xl lg:text-6xl tracking-tight leading-none text-[#1A1614]",
@@ -53,7 +53,7 @@
   },
   "components": {
     "buttons": {
-      "primary": "bg-[#4F1E7B] text-white font-sans text-sm font-medium px-6 py-3 rounded-none hover:bg-[#3d1660] transition-colors duration-300",
+      "primary": "bg-[#8B3FD6] text-white font-sans text-sm font-medium px-6 py-3 rounded-none hover:bg-[#6B2B99] transition-colors duration-300",
       "secondary": "bg-transparent text-[#1A1614] font-sans text-sm font-medium px-6 py-3 rounded-none border border-[#1A1614]/20 hover:border-[#1A1614] transition-colors duration-300",
       "text_link": "text-[#1A1614] font-sans text-sm font-medium hover:text-[#4F1E7B] transition-colors duration-300 underline-offset-4 hover:underline"
     },

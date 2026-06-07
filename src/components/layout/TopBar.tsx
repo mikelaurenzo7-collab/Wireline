@@ -188,7 +188,7 @@ export default function TopBar({
           </span>
         )}
         {isDrawer && NAV_SHORTCUT_HINTS[item.path] && !badge && (
-          <kbd className="relative z-10 ml-auto shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border border-black/10 bg-black/[0.03] text-muted leading-none">
+          <kbd className="relative z-10 ml-auto shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded border border-ink/[0.10] bg-black/[0.03] text-muted leading-none">
             {NAV_SHORTCUT_HINTS[item.path]}
           </kbd>
         )}

@@ -66,6 +66,20 @@ function ToastItem({ toast }: { toast: Toast }) {
           {toast.message && (
             <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
           )}
+          {toast.action && (
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              disableAnimations
+              onClick={() => {
+                toast.action?.onClick();
+              }}
+              className="h-auto mt-1 px-0 py-0 text-[11px] font-semibold text-brand hover:text-brand-deep"
+            >
+              {toast.action.label}
+            </ShadButton>
+          )}
         </div>
         <ShadButton
           type="button"

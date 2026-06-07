@@ -30,7 +30,7 @@ export default function WorkspaceTopBar({
   return (
     <header
       className={cn(
-        "workspace-top-bar sticky top-0 z-30 shrink-0 border-b border-black/[0.07] bg-paper/97 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.65)_inset]",
+        "workspace-top-bar sticky top-0 z-30 shrink-0 border-b border-ink/[0.07] bg-paper/97 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.65)_inset]",
         className,
       )}
     >

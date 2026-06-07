@@ -7,7 +7,8 @@ export interface Toast {
   type: ToastType;
   title: string;
   message?: string;
-  duration?: number; // ms; 0 = persist until dismissed
+  duration?: number;
+  action?: { label: string; onClick: () => void };
 }
 
 interface ToastContextValue {

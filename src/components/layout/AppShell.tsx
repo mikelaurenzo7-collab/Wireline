@@ -267,8 +267,14 @@ export default function AppShell() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
-        <AuroraBackdrop />
+      <div
+        className="min-h-dvh flex flex-col items-center justify-center p-12 text-center relative overflow-hidden"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        aria-label="Console initializing"
+      >
+        <span className="sr-only">Console initializing</span>
         <div className="relative w-36 h-36 md:w-44 md:h-44 mb-10 md:mb-12 animate-spin-slow">
           <div
             className="absolute inset-0 rounded-full"

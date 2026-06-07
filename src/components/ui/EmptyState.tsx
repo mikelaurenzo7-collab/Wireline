@@ -75,6 +75,8 @@ export function EmptyState({
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+      role="status"
+      aria-live="polite"
       className={cn(
         "wl-empty-state flex flex-col items-center justify-center text-center px-6",
         showConstellation && WL_SIGNAL_CLASSES.emptyStateSignal,
