@@ -8,6 +8,10 @@ export default defineConfig({
     // they are not double-collected by vitest.
     include: ["src/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts"],
     environment: "node",
+    // React component specs (.test.tsx) opt into jsdom via a
+    // `// @vitest-environment jsdom` docblock at the top of the file; the
+    // default node environment stays for the server/unit suites.
+    setupFiles: ["./vitest.setup.ts"],
     globals: false,
     // Keep server bundling tools out of the way during unit runs.
     pool: "forks",

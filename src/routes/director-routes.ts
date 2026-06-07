@@ -889,7 +889,8 @@ router.post(
                   forceDeep: false,
                   shallowOnly: true,
                   modelSelection: { provider: "wireline", tier: "sonnet" },
-                  deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+                  // stitchDesignFallback is narrowed to undefined inside this guard
+                  deliverableGuidance: undefined,
                   designRenderFallback: false,
                 });
                 if (!isDirectorStubReply(retry.reply)) {
@@ -1258,7 +1259,8 @@ router.post(
             forceDeep: false,
             shallowOnly: true,
             modelSelection: { provider: "wireline", tier: "sonnet" },
-            deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+            // stitchDesignFallback is narrowed to undefined inside this guard
+            deliverableGuidance: undefined,
             designRenderFallback: false,
           });
           if (!isDirectorStubReply(retry.reply)) {

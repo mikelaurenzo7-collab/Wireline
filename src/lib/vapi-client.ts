@@ -605,7 +605,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         assistant: {
           ...vapiPayload.assistant,
           model: {
-            ...vapiPayload.assistant.model,
+            ...(vapiPayload.assistant.model as Record<string, unknown>),
             provider: VAPI_VOICE_FALLBACK_PROVIDER,
             model: VAPI_VOICE_FALLBACK_MODEL,
           },

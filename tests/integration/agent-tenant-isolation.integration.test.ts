@@ -7,7 +7,32 @@ import { generateToken } from "../../src/lib/auth-service";
 import { SESSION_COOKIE_NAME } from "../../src/lib/session-cookie";
 import * as schema from "../../src/db/schema";
 
-const hasDb = Boolean(process.env.POSTGRES_URL);
+const hasDbUrl = Boolean(process.env.POSTGRES_URL);
+
+/**
+ * `POSTGRES_URL` being set does not guarantee the database is reachable from
+ * the current runner (sandboxes, offline CI shards, etc.). Probe a short-lived
+ * connection so the suite skips cleanly instead of crashing the beforeAll hook
+ * with ECONNRESET when the host is unreachable.
+ */
+async function canReachDb(): Promise<boolean> {
+  if (!hasDbUrl) return false;
+  try {
+    const { Client } = await import("pg");
+    const client = new Client({
+      connectionString: process.env.POSTGRES_URL,
+      connectionTimeoutMillis: 4000,
+    });
+    await client.connect();
+    await client.query("select 1");
+    await client.end();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const hasDb = await canReachDb();
 
 function sessionCookie(userId: string, email: string): string {
   const token = generateToken({ id: userId, email });

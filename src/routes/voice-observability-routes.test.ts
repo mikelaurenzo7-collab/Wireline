@@ -4,7 +4,7 @@
  */
 import express from "express";
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => {
   const state = {
@@ -126,7 +126,12 @@ async function buildApp() {
 }
 
 describe("voice observability routes", () => {
+  // Tests in this suite assume no webhook secret is configured unless a
+  // specific test opts in. Clear any ambient VAPI_WEBHOOK_SECRET (which leaks
+  // in from the host environment) so the default-path tests are deterministic.
+  const AMBIENT_VAPI_SECRET = process.env.VAPI_WEBHOOK_SECRET;
   beforeEach(() => {
+    delete process.env.VAPI_WEBHOOK_SECRET;
     h.state.calls = [
       {
         id: 1,
@@ -146,6 +151,11 @@ describe("voice observability routes", () => {
       },
     ];
     vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    if (AMBIENT_VAPI_SECRET === undefined) delete process.env.VAPI_WEBHOOK_SECRET;
+    else process.env.VAPI_WEBHOOK_SECRET = AMBIENT_VAPI_SECRET;
   });
 
   describe("POST /api/voice/metrics", () => {
