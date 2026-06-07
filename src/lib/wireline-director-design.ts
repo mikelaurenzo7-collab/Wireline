@@ -464,7 +464,7 @@ export const WIRELINE_STITCH_UI = {
     "If it keeps failing, check that UI generation is enabled for your workspace or contact support.",
   ].join("\n"),
   packagingPendingReply: [
-    "Your screen is composed in Wireline Design — I'm finishing the HTML preview now.",
+    "Your screen is composed in Wireline Design — packaging preview now.",
     "",
     "This page will update automatically when packaging completes (usually under a minute).",
     "",

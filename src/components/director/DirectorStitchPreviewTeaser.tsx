@@ -1,6 +1,14 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, LayoutTemplate, Loader2, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowUpRight,
+  LayoutTemplate,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import { motion } from "motion/react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import {
   buildStitchPreviewPageUrl,
@@ -13,6 +21,9 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export interface DirectorStitchPreviewTeaserProps {
   preview: DirectorPreviewMeta;
+  /** When true the card is rendered inside a multi-preview grid and suppresses the standalone
+   *  open-preview button (the surrounding grid component provides one shared action row). */
+  inGrid?: boolean;
 }
 
 function deviceLabel(device?: DirectorPreviewMeta["deviceType"]): string {
@@ -28,23 +39,109 @@ function deviceLabel(device?: DirectorPreviewMeta["deviceType"]): string {
   }
 }
 
-/**
- * In-thread Stitch render — shows the actual screenshot (or live HTML) inline so the
- * design renders fully in chat, with a link out to the full preview studio (tabs + export).
- */
-export default function DirectorStitchPreviewTeaser({ preview }: DirectorStitchPreviewTeaserProps) {
-  const ready = useStitchPreviewReady(preview);
-  const [imageBroken, setImageBroken] = useState(false);
-  const hasPage = stitchPreviewPageUrlIsValid(preview);
-  const previewUrl = hasPage ? buildStitchPreviewPageUrl(preview) : null;
-
+function DeviceFrame({
+  preview,
+  ready,
+  imageBroken,
+  onRetryImage,
+}: {
+  preview: DirectorPreviewMeta;
+  ready: ReturnType<typeof useStitchPreviewReady>;
+  imageBroken: boolean;
+  onRetryImage: () => void;
+}) {
   const mobile = preview.deviceType === "MOBILE" || preview.deviceType === "TABLET";
   const showImage = Boolean(ready.imageSrc) && !imageBroken;
   const showHtml = !showImage && Boolean(ready.htmlSrc);
   const showCanvas = showImage || showHtml;
 
   return (
-    <div className="w-full max-w-md rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm">
+    <div className="mt-3">
+      <div
+        className={cn(
+          "wl-stitch-device mx-auto overflow-hidden",
+          mobile ? "wl-stitch-device--mobile" : "wl-stitch-device--desktop",
+        )}
+      >
+        <div className="wl-stitch-device-chrome">
+          <span className="wl-stitch-device-dot" aria-hidden="true" />
+          <span className="wl-stitch-device-dot wl-stitch-device-dot--mid" aria-hidden="true" />
+          <span className="wl-stitch-device-dot wl-stitch-device-dot--dim" aria-hidden="true" />
+          <span className="wl-stitch-device-url" aria-hidden="true">
+            {WIRELINE_STITCH_UI.deviceChromeLabel}
+          </span>
+        </div>
+        <div className="wl-stitch-device-screen">
+          {showImage && (
+            <img
+              src={ready.imageSrc}
+              alt={preview.title}
+              loading="lazy"
+              onError={() => onRetryImage?.()}
+              className="block w-full max-h-[420px] object-contain object-top bg-paper dark:bg-velvet"
+            />
+          )}
+          {showHtml && (
+            <iframe
+              title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
+              src={ready.htmlSrc}
+              className="wl-stitch-live-iframe"
+              sandbox="allow-scripts allow-same-origin"
+            />
+          )}
+          {!showCanvas && !ready.failed && (
+            <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
+              <Loader2 className="w-5 h-5 text-brand/50 animate-spin" />
+              <p className="text-[11px] text-muted">Loading the rendered preview…</p>
+            </div>
+          )}
+          {!showCanvas && ready.failed && (
+            <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
+              <AlertCircle className="w-5 h-5 text-muted/60" />
+              <p className="text-[11px] text-muted">{WIRELINE_STITCH_UI.fallbackCopy}</p>
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
+                onClick={onRetryImage}
+                className="mt-1 h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry preview
+              </ShadButton>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * In-thread Stitch render — shows the actual screenshot (or live HTML) inline so the
+ * design renders fully in chat, with a link out to the full preview studio (tabs + export).
+ *
+ * When rendered inside a multi-preview grid the standalone action row is suppressed.
+ */
+export default function DirectorStitchPreviewTeaser({
+  preview,
+  inGrid = false,
+}: DirectorStitchPreviewTeaserProps) {
+  const ready = useStitchPreviewReady(preview);
+  const [imageBroken, setImageBroken] = useState(false);
+  const hasPage = stitchPreviewPageUrlIsValid(preview);
+  const previewUrl = hasPage ? buildStitchPreviewPageUrl(preview) : null;
+
+  const handleImageError = useCallback(() => setImageBroken(true), []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={WIRELINE_STITCH_UI.previewTeaserTitle}
+      className="w-full max-w-md rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm"
+    >
       <div className="flex items-start gap-3">
         <span className="shrink-0 flex h-9 w-9 items-center justify-center rounded-md bg-brand/12 border border-brand/20 text-brand">
           <LayoutTemplate className="w-4 h-4" />
@@ -66,51 +163,93 @@ export default function DirectorStitchPreviewTeaser({ preview }: DirectorStitchP
         </div>
       </div>
 
-      {/* Inline render — the design itself, framed like a device, capped for the chat thread. */}
-      <div className="mt-3">
-        <div
-          className={cn(
-            "wl-stitch-device mx-auto overflow-hidden",
-            mobile ? "wl-stitch-device--mobile" : "wl-stitch-device--desktop",
-          )}
-        >
-          <div className="wl-stitch-device-chrome">
-            <span className="wl-stitch-device-dot" />
-            <span className="wl-stitch-device-dot wl-stitch-device-dot--mid" />
-            <span className="wl-stitch-device-dot wl-stitch-device-dot--dim" />
-            <span className="wl-stitch-device-url">{WIRELINE_STITCH_UI.deviceChromeLabel}</span>
-          </div>
-          <div className="wl-stitch-device-screen">
-            {showImage && (
-              <img
-                src={ready.imageSrc}
-                alt={preview.title}
-                loading="lazy"
-                onError={() => setImageBroken(true)}
-                className="block w-full max-h-[420px] object-contain object-top bg-paper dark:bg-velvet"
-              />
-            )}
-            {showHtml && (
-              <iframe
-                title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
-                src={ready.htmlSrc}
-                className="wl-stitch-live-iframe"
-                sandbox="allow-scripts allow-same-origin"
-                loading="lazy"
-              />
-            )}
-            {!showCanvas && (
-              <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
-                <Loader2 className="w-5 h-5 text-brand/50 animate-spin" />
-                <p className="text-[11px] text-muted">
-                  {ready.failed ? WIRELINE_STITCH_UI.fallbackCopy : "Loading the rendered preview…"}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <DeviceFrame
+        preview={preview}
+        ready={ready}
+        imageBroken={imageBroken}
+        onRetryImage={handleImageError}
+      />
 
+      {previewUrl && !inGrid && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-3 flex flex-wrap gap-2"
+        >
+          <ShadButton
+            asChild
+            className="h-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep"
+          >
+            <Link to={previewUrl}>
+              {WIRELINE_STITCH_UI.previewTeaserAction}
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </ShadButton>
+        </motion.div>
+      )}
+      {previewUrl && inGrid && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-2 flex flex-wrap gap-2"
+        >
+          <ShadButton
+            asChild
+            variant="ghost"
+            size="sm"
+            disableAnimations
+            className="h-auto px-2 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+          >
+            <Link to={previewUrl}>
+              {WIRELINE_STITCH_UI.previewTeaserAction}
+              <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </ShadButton>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+export interface DirectorStitchPreviewVariantGridProps {
+  previews: DirectorPreviewMeta[];
+}
+
+/**
+ * Renders multiple Stitch previews (variants, multi-screen) as a side-by-side labeled grid
+ * with a shared open-preview action anchored to the first preview.
+ */
+export function DirectorStitchPreviewVariantGrid({
+  previews,
+}: DirectorStitchPreviewVariantGridProps) {
+  if (previews.length === 0) return null;
+  if (previews.length === 1) {
+    return <DirectorStitchPreviewTeaser preview={previews[0]} />;
+  }
+
+  const first = previews[0];
+  const hasPage = stitchPreviewPageUrlIsValid(first);
+  const previewUrl = hasPage ? buildStitchPreviewPageUrl(first) : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full max-w-2xl"
+    >
+      <div
+        className={cn(
+          "grid gap-3",
+          previews.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+        )}
+      >
+        {previews.map((p) => (
+          <DirectorStitchPreviewTeaser key={p.conceptId} preview={p} inGrid />
+        ))}
+      </div>
       {previewUrl && (
         <div className="mt-3 flex flex-wrap gap-2">
           <ShadButton
@@ -124,6 +263,6 @@ export default function DirectorStitchPreviewTeaser({ preview }: DirectorStitchP
           </ShadButton>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

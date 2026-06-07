@@ -31,9 +31,19 @@ export interface DirectorArtifactInlineSrc {
   error: boolean;
 }
 
+/** Simple in-memory µ-cache for signed blob URLs scoped to the browser session. */
+const signedBlobCache = new Map<string, { src: string; expiresAt: number }>();
+const SIGNED_BLOB_CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
  * Fetches a fresh signed artifact URL (session cookie) and exposes a blob: URL
  * suitable for <img> and <iframe> without forcing a download.
+ *
+ * Uses a session-scoped cache (5-minute TTL) so navigating between /chat and
+ * /design/preview does not re-fetch the same artifacts every time.
+ *
+ * Blob URL revocation is deferred across renders to avoid invalidating
+ * currently-displayed images in React Strict Mode double-mount scenarios.
  */
 export function useDirectorArtifactBlobSrc(
   artifactId: string | undefined,
@@ -44,22 +54,42 @@ export function useDirectorArtifactBlobSrc(
   const [src, setSrc] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const blobRef = useRef<string | undefined>(undefined);
+  const activeBlobRef = useRef<string | undefined>(undefined);
+  const pendingRevokeRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    const revokeBlob = () => {
-      if (blobRef.current) {
-        URL.revokeObjectURL(blobRef.current);
-        blobRef.current = undefined;
+    const revokePending = () => {
+      if (pendingRevokeRef.current) {
+        URL.revokeObjectURL(pendingRevokeRef.current);
+        pendingRevokeRef.current = undefined;
       }
     };
 
     if (!artifactId || !enabled) {
-      revokeBlob();
+      revokePending();
+      pendingRevokeRef.current = activeBlobRef.current;
+      activeBlobRef.current = undefined;
       setSrc(undefined);
       setLoading(false);
       setError(false);
       return;
+    }
+
+    const cacheKey = `${artifactId}:${inline ? 1 : 0}`;
+    const cached = signedBlobCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      revokePending();
+      if (activeBlobRef.current && activeBlobRef.current !== cached.src) {
+        pendingRevokeRef.current = activeBlobRef.current;
+      }
+      activeBlobRef.current = cached.src;
+      setSrc(cached.src);
+      setLoading(false);
+      setError(false);
+      return;
+    }
+    if (cached) {
+      signedBlobCache.delete(cacheKey);
     }
 
     let cancelled = false;
@@ -82,9 +112,16 @@ export function useDirectorArtifactBlobSrc(
         }
         const blob = await asset.blob();
         if (cancelled) return;
-        revokeBlob();
         const nextBlobUrl = URL.createObjectURL(blob);
-        blobRef.current = nextBlobUrl;
+        signedBlobCache.set(cacheKey, {
+          src: nextBlobUrl,
+          expiresAt: Date.now() + SIGNED_BLOB_CACHE_TTL_MS,
+        });
+        revokePending();
+        if (activeBlobRef.current && activeBlobRef.current !== nextBlobUrl) {
+          pendingRevokeRef.current = activeBlobRef.current;
+        }
+        activeBlobRef.current = nextBlobUrl;
         setSrc(nextBlobUrl);
       } catch {
         if (!cancelled) setError(true);
@@ -95,10 +132,18 @@ export function useDirectorArtifactBlobSrc(
 
     return () => {
       cancelled = true;
-      revokeBlob();
-      setSrc(undefined);
+      revokePending();
     };
   }, [artifactId, inline, enabled]);
+
+  useEffect(() => {
+    return () => {
+      if (activeBlobRef.current) {
+        URL.revokeObjectURL(activeBlobRef.current);
+        activeBlobRef.current = undefined;
+      }
+    };
+  }, []);
 
   return { src, loading, error };
 }
