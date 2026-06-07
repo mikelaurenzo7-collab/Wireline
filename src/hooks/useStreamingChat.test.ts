@@ -2,7 +2,7 @@
  * useStreamingChat — unit tests for SSE streaming hook logic.
  */
 import { describe, it, expect } from "vitest";
-import { parseSseEvents } from "./useStreamingChat";
+import { parseSseEvents, type SseParserState } from "./useStreamingChat";
 
 describe("useStreamingChat module", () => {
   it("exports the hook and expected types", async () => {
@@ -22,11 +22,56 @@ describe("useStreamingChat module", () => {
     expect(phases).toHaveLength(6);
   });
 
-  it("parseSseEvents handles trailing buffer without newline", () => {
+  it("parseSseEvents retains event state across calls until a blank-line boundary", () => {
     const events: Array<{ event: string; data: Record<string, unknown> }> = [];
-    parseSseEvents(["event: done", 'data: {"reply":"ok"}'], (event, data) => {
-      events.push({ event, data });
-    });
+    const state: SseParserState = { dataLines: [] };
+
+    parseSseEvents(
+      ["event: activity"],
+      (event, data) => {
+        events.push({ event, data });
+      },
+      state,
+    );
+    parseSseEvents(
+      ['data: {"step":"reading"}', ""],
+      (event, data) => {
+        events.push({ event, data });
+      },
+      state,
+    );
+
+    expect(events).toEqual([{ event: "activity", data: { step: "reading" } }]);
+  });
+
+  it("parseSseEvents handles multi-line data payloads", () => {
+    const events: Array<{ event: string; data: Record<string, unknown> }> = [];
+    const state: SseParserState = { dataLines: [] };
+
+    parseSseEvents(
+      ["event: activity", "data: {", 'data:   "step": "reading"', "data: }", ""],
+      (event, data) => {
+        events.push({ event, data });
+      },
+      state,
+    );
+
+    expect(events).toEqual([{ event: "activity", data: { step: "reading" } }]);
+  });
+
+  it("parseSseEvents flushes trailing buffer without a final blank line", () => {
+    const events: Array<{ event: string; data: Record<string, unknown> }> = [];
+    const state: SseParserState = { dataLines: [] };
+
+    parseSseEvents(
+      ["event: done", 'data: {"reply":"ok"}'],
+      (event, data) => {
+        events.push({ event, data });
+      },
+      state,
+      { flush: true },
+    );
+
     expect(events).toEqual([{ event: "done", data: { reply: "ok" } }]);
   });
 

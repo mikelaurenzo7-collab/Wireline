@@ -54,28 +54,76 @@ interface UseStreamingChatOptions {
   ) => void;
 }
 
-/** Parse one SSE event block from a line batch. Exported for tests. */
+export interface SseParserState {
+  currentEvent?: string;
+  dataLines: string[];
+}
+
+interface ParseSseEventsOptions {
+  /** Dispatch the event currently buffered even if no blank line has arrived yet. */
+  flush?: boolean;
+}
+
+const getSseFieldValue = (line: string, field: string): string | undefined => {
+  const prefix = `${field}:`;
+  if (!line.startsWith(prefix)) return undefined;
+  const value = line.slice(prefix.length);
+  return value.startsWith(" ") ? value.slice(1) : value;
+};
+
+const resetSseParserState = (state: SseParserState): void => {
+  state.currentEvent = undefined;
+  state.dataLines = [];
+};
+
+const dispatchSseEvent = (
+  state: SseParserState,
+  handleEvent: (event: string, data: Record<string, unknown>) => void,
+): void => {
+  if (!state.currentEvent || state.dataLines.length === 0) {
+    resetSseParserState(state);
+    return;
+  }
+
+  try {
+    const data = JSON.parse(state.dataLines.join("\n")) as Record<string, unknown>;
+    handleEvent(state.currentEvent, data);
+  } catch {
+    // Non-JSON data payload, skip
+  } finally {
+    resetSseParserState(state);
+  }
+};
+
+/** Parse SSE line batches incrementally. Exported for tests. */
 export function parseSseEvents(
   lines: string[],
   handleEvent: (event: string, data: Record<string, unknown>) => void,
+  state: SseParserState = { dataLines: [] },
+  options: ParseSseEventsOptions = {},
 ): void {
-  let currentEvent = "";
   for (const rawLine of lines) {
     const line = rawLine.replace(/\r$/, "");
-    if (line.startsWith("event: ")) {
-      currentEvent = line.slice(7).trim();
-    } else if (line.startsWith("data: ") && currentEvent) {
-      const dataStr = line.slice(6);
-      try {
-        const data = JSON.parse(dataStr) as Record<string, unknown>;
-        handleEvent(currentEvent, data);
-      } catch {
-        // Non-JSON data line, skip
-      }
-      currentEvent = "";
-    } else if (line === "") {
-      currentEvent = "";
+
+    if (line === "") {
+      dispatchSseEvent(state, handleEvent);
+      continue;
     }
+
+    const event = getSseFieldValue(line, "event");
+    if (event !== undefined) {
+      state.currentEvent = event.trim();
+      continue;
+    }
+
+    const data = getSseFieldValue(line, "data");
+    if (data !== undefined) {
+      state.dataLines.push(data);
+    }
+  }
+
+  if (options.flush) {
+    dispatchSseEvent(state, handleEvent);
   }
 }
 
@@ -185,6 +233,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        const parserState: SseParserState = { dataLines: [] };
 
         const handleEvent = (event: string, data: Record<string, unknown>) => {
           bumpIdleTimeout();
@@ -278,13 +327,15 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
           buffer = lines.pop() || "";
-          parseSseEvents(lines, handleEvent);
+          parseSseEvents(lines, handleEvent, parserState);
         }
 
-        if (buffer.trim()) {
-          parseSseEvents(buffer.split("\n"), handleEvent);
+        buffer += decoder.decode();
+        if (buffer.length > 0) {
+          parseSseEvents(buffer.split("\n"), handleEvent, parserState);
           buffer = "";
         }
+        parseSseEvents([], handleEvent, parserState, { flush: true });
 
         if (controller.signal.aborted) {
           finishWithPartialReply();
