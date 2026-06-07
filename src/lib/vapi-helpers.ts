@@ -5,6 +5,7 @@ import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
 } from "./tenant-integration-connections";
+import { DEFAULT_AGENT_ROLE } from "./agent-constants";
 
 // Webhook auth secret. Production rejects webhooks when this is unset
 // (see routes/vapi/index.ts); dev accepts all when unset. We never ship a
@@ -157,6 +158,20 @@ export function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): s
       `- [${new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}] ${(c.direction || "call").toUpperCase()} | Intent: ${c.intent_label || "unknown"} | Tone: ${c.sentiment || "neutral"} | ${c.summary}`,
   );
   return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately — do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
+}
+
+/** Map Wireline persona roles (wireline_sales, etc.) to voice-runtime role keys. */
+const OUTBOUND_VOICE_ROLE_ALIASES: Record<string, string> = {
+  wireline_sales: "sales",
+  wireline_reception: "receptionist",
+  wireline_support: "customer_service",
+  wireline_technical: "technical_support",
+  wireline_onboarding: "scheduler",
+};
+
+export function mapOutboundVoiceRole(role: string | null | undefined): string {
+  if (!role) return DEFAULT_AGENT_ROLE;
+  return OUTBOUND_VOICE_ROLE_ALIASES[role] ?? role.replace(/^wireline_/, "");
 }
 
 export const OUTBOUND_ARCHETYPE_BY_ROLE: Record<string, string> = {

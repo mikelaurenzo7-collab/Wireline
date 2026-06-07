@@ -18,8 +18,10 @@ import {
   OUTBOUND_ARCHETYPE_BY_ROLE,
   getArchetypeConfig,
   ROLE_SPECIFIC_PROTOCOLS,
-  buildRoleToolDefs,
+  buildRoleToolDefsForTenant,
+  mapOutboundVoiceRole,
 } from "./vapi-helpers";
+import { normalizeOutboundNumber } from "./dialer-compliance";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
@@ -114,6 +116,37 @@ export type PlaceCallResult = {
   callId?: string;
 };
 
+/** Turn raw Vapi error JSON into a short operator-facing message. */
+export function formatVapiCallError(errBody: string): string {
+  const trimmed = errBody.trim();
+  if (!trimmed) return "Voice carrier rejected the call. Try again in a moment.";
+
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      message?: string | string[];
+      error?: string;
+      errors?: Array<{ message?: string }>;
+    };
+    const parts: string[] = [];
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      parts.push(parsed.message.trim());
+    } else if (Array.isArray(parsed.message)) {
+      parts.push(...parsed.message.map((m) => String(m).trim()).filter(Boolean));
+    }
+    if (parsed.error?.trim()) parts.push(parsed.error.trim());
+    if (Array.isArray(parsed.errors)) {
+      for (const e of parsed.errors) {
+        if (e.message?.trim()) parts.push(e.message.trim());
+      }
+    }
+    if (parts.length > 0) return parts.join(" ");
+  } catch {
+    // Not JSON — fall through to raw slice.
+  }
+
+  return trimmed.length > 280 ? `${trimmed.slice(0, 280)}…` : trimmed;
+}
+
 function buildOutboundFirstMessage(
   role: string,
   agentName: string,
@@ -178,7 +211,17 @@ export async function placeOutboundCall(opts: {
     };
   }
 
-  if (customerNumber && (await isDncBlocked(userId, customerNumber))) {
+  const dialNumber = normalizeOutboundNumber(customerNumber);
+  const dialDigits = dialNumber.replace(/\D/g, "");
+  if (!dialDigits || dialDigits.length < 10) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Invalid phone number. Use E.164 format like +14155551234.",
+    };
+  }
+
+  if (dialNumber && (await isDncBlocked(userId, dialNumber))) {
     return {
       ok: false,
       status: 403,
@@ -303,7 +346,7 @@ export async function placeOutboundCall(opts: {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const outboundAgentRole = agentConfig.role || DEFAULT_AGENT_ROLE;
+  const outboundAgentRole = mapOutboundVoiceRole(agentConfig.role || DEFAULT_AGENT_ROLE);
   const archetype =
     OUTBOUND_ARCHETYPE_BY_ROLE[outboundAgentRole] || agentConfig.archetype || "The Closer";
   const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
@@ -433,43 +476,50 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
     ? `${process.env.APP_URL}/api/vapi-webhook?agentId=${agentId}`
     : undefined;
   const speechPipeline = resolveVapiSpeechPipeline();
+  const outboundFunctions = await buildRoleToolDefsForTenant(
+    agentConfig.role || outboundAgentRole,
+    agentConfig.enabledTools,
+    userId,
+    settings?.aiTier,
+    {
+      twilioMessaging: !!settings?.twilioMessagingEnabled,
+      twilioLookup: !!settings?.twilioLookupEnabled,
+    },
+  );
 
-  const vapiPayload = {
-    phoneNumberId: outboundPhoneNumberId,
-    customer: { number: customerNumber },
-    assistant: {
-      name: agentConfig.name || "Wireline Outbound Agent",
-      firstMessage:
-        agentConfig.firstMessage ||
-        buildOutboundFirstMessage(
-          outboundAgentRole,
-          agentConfig.name || "your representative",
-          customerName,
-        ),
-      backgroundSound: agentConfig.ambientNoise || "off",
-      responseDelaySeconds: 0,
-      numWordsToInterruptAssistant: 2,
-      backgroundDenoisingEnabled: false,
-      startSpeakingPlan: speechPipeline.startSpeakingPlan,
-      transcriber: speechPipeline.transcriber,
-      ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
-      serverUrlSecret: process.env.VAPI_WEBHOOK_SECRET,
-      serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
-      // Buffer text before shipping to TTS — prevents cadence speed-ups
-      // on short dense token bursts (emails, phone numbers, URLs).
-      inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
-      model: {
-        provider: voiceLlmProvider,
-        model: voiceLlmModel,
-        ...(voiceSelection.fallbackModels?.length
-          ? { fallbackModels: voiceSelection.fallbackModels }
-          : {}),
-        systemPrompt: finalSystemPrompt,
-        temperature: llmTemp,
-        functions: buildRoleToolDefs(outboundAgentRole),
-      },
-      recordingEnabled: true,
-      voice: (() => {
+  const assistantPayload: Record<string, unknown> = {
+    name: agentConfig.name || "Wireline Outbound Agent",
+    firstMessage:
+      agentConfig.firstMessage ||
+      buildOutboundFirstMessage(
+        outboundAgentRole,
+        agentConfig.name || "your representative",
+        customerName,
+      ),
+    backgroundSound: agentConfig.ambientNoise || "off",
+    responseDelaySeconds: 0,
+    numWordsToInterruptAssistant: 2,
+    backgroundDenoisingEnabled: false,
+    startSpeakingPlan: speechPipeline.startSpeakingPlan,
+    transcriber: speechPipeline.transcriber,
+    ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
+    serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
+    // Buffer text before shipping to TTS — prevents cadence speed-ups
+    // on short dense token bursts (emails, phone numbers, URLs).
+    inputMinCharacters: VAPI_INPUT_MIN_CHARACTERS,
+    model: {
+      provider: voiceLlmProvider,
+      model: voiceLlmModel,
+      ...(voiceSelection.fallbackModels?.length
+        ? { fallbackModels: voiceSelection.fallbackModels }
+        : {}),
+      systemPrompt: finalSystemPrompt,
+      temperature: llmTemp,
+    },
+    // Match inbound assistant factory — Vapi rejects tools nested under model.
+    functions: outboundFunctions,
+    recordingEnabled: true,
+    voice: (() => {
         // ElevenLabs voice config (per-agent). Three knob groups:
         //   1. speed (0.7–1.2, default 1.0) — speaking rate.
         //   2. fine-tuning (stability, similarityBoost, style,
@@ -515,7 +565,17 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
           ...(provider === "11labs" ? { stability, similarityBoost, style, useSpeakerBoost } : {}),
         };
       })(),
-    },
+  };
+
+  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET?.trim();
+  if (webhookSecret) {
+    assistantPayload.serverUrlSecret = webhookSecret;
+  }
+
+  const vapiPayload = {
+    phoneNumberId: outboundPhoneNumberId,
+    customer: { number: dialNumber },
+    assistant: assistantPayload,
   };
 
   try {
@@ -573,7 +633,14 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
 
     if (!vapiResponse.ok) {
       const errBody = await vapiResponse.text();
-      return { ok: false, status: 502, error: `Vapi API Error: ${errBody}` };
+      log.warn("Vapi placeOutboundCall rejected", {
+        userId,
+        agentId,
+        customerNumber: dialNumber,
+        status: vapiResponse.status,
+        error: errBody.slice(0, 500),
+      });
+      return { ok: false, status: 502, error: formatVapiCallError(errBody) };
     }
     const vapiData = await vapiResponse.json();
     return { ok: true, status: 200, callId: vapiData.id };
@@ -585,6 +652,10 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       agentId,
       customerNumber,
     });
-    return { ok: false, status: 502, error: `Vapi API Error (retries exhausted): ${errMsg}` };
+    return {
+      ok: false,
+      status: 502,
+      error: `Voice carrier unavailable after retries: ${errMsg}`,
+    };
   }
 }
