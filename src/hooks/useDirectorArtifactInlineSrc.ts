@@ -32,8 +32,21 @@ export interface DirectorArtifactInlineSrc {
 }
 
 /** Simple in-memory µ-cache for signed blob URLs scoped to the browser session. */
-const signedBlobCache = new Map<string, { src: string; expiresAt: number }>();
+interface SignedBlobCacheEntry {
+  src: string;
+  expiresAt: number;
+}
+
+const signedBlobCache = new Map<string, SignedBlobCacheEntry>();
 const SIGNED_BLOB_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export function shouldDiscardSignedBlobCacheEntry(
+  cached: SignedBlobCacheEntry | undefined,
+  bypassCache: boolean,
+  now = Date.now(),
+): cached is SignedBlobCacheEntry {
+  return Boolean(cached && (bypassCache || cached.expiresAt <= now));
+}
 
 function revokeObjectUrlIfUncached(src: string | undefined) {
   if (!src) return;
@@ -110,7 +123,7 @@ export function useDirectorArtifactBlobSrc(
       setError(false);
       return;
     }
-    if (cached && (bypassCache || cached.expiresAt <= Date.now())) {
+    if (shouldDiscardSignedBlobCacheEntry(cached, bypassCache)) {
       signedBlobCache.delete(cacheKey);
       revokeObjectUrlIfUncached(cached.src);
     }
