@@ -1,8 +1,28 @@
 import { describe, it, expect } from "vitest";
 import {
   renderSituationReport,
+  pct,
+  verdictRank,
+  buildAgentDirection,
+  type AgentAggRow,
   type DirectorClientIntelligence,
 } from "./director-client-intelligence";
+
+function aggRow(overrides: Partial<AgentAggRow> = {}): AgentAggRow {
+  return {
+    agentId: "agent-1",
+    calls: 20,
+    booked: 6,
+    avgScore: 60,
+    negatives: 1,
+    csatSum: 0,
+    csatCount: 0,
+    ttftSum: 0,
+    ttftCount: 0,
+    errors: 0,
+    ...overrides,
+  };
+}
 
 function baseIntel(
   overrides: Partial<DirectorClientIntelligence> = {},

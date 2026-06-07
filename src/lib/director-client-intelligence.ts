@@ -73,7 +73,7 @@ export interface DirectorClientIntelligence {
 
 export type DirectorClientIntelligenceResult = DirectorClientIntelligence | { ok: false };
 
-function pct(curr: number, prev: number): number | null {
+export function pct(curr: number, prev: number): number | null {
   if (prev <= 0) return curr > 0 ? 100 : null;
   return Math.round(((curr - prev) / prev) * 100);
 }
@@ -281,7 +281,7 @@ export async function loadDirectorClientIntelligence(
   }
 }
 
-interface AgentAggRow {
+export interface AgentAggRow {
   agentId: string | null;
   calls: number;
   booked: number;
@@ -294,7 +294,7 @@ interface AgentAggRow {
   errors: number;
 }
 
-function verdictRank(v: DirectorAgentDirection["verdict"]): number {
+export function verdictRank(v: DirectorAgentDirection["verdict"]): number {
   switch (v) {
     case "Critical":
       return 4;
@@ -310,7 +310,7 @@ function verdictRank(v: DirectorAgentDirection["verdict"]): number {
 }
 
 /** Turn one aggregate row into a verdict + ordered tuning recommendations. */
-function buildAgentDirection(row: AgentAggRow, agentName: string): DirectorAgentDirection {
+export function buildAgentDirection(row: AgentAggRow, agentName: string): DirectorAgentDirection {
   const calls = row.calls ?? 0;
   const bookings = row.booked ?? 0;
   const bookRate = calls > 0 ? bookings / calls : 0;
