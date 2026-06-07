@@ -499,11 +499,8 @@ function buildStitchReply(
       ? `${screenCount} design variant${screenCount === 1 ? "" : "s"}`
       : operation === "edit"
         ? "updated screen"
-        : // `build_site` has no dedicated Stitch tool yet, so it falls back to the
-          // standard generate path. Describe the real output (screen count) instead
-          // of claiming a multi-page build that wasn't produced.
-          operation === "build_site" && screenCount > 1
-          ? `${screenCount}-screen site build`
+        : operation === "build_site"
+          ? "multi-page site build"
           : "UI screen";
   return [
     `I built your **${opLabel}** (${deviceType.toLowerCase()}).`,
@@ -748,7 +745,9 @@ export async function runDirectorStitchTurn(
       const wallLeftMs = requestDeadlineMs - Date.now() - 10_000;
       const screensLeft = screens.length - i;
       const perScreenBudget =
-        screensLeft > 1 ? Math.max(15_000, Math.floor(wallLeftMs / screensLeft)) : wallLeftMs;
+        screensLeft > 1
+          ? Math.max(15_000, Math.floor(wallLeftMs / screensLeft))
+          : wallLeftMs;
       const assets =
         wallLeftMs < 8_000
           ? await fetchScreenAssets(runtime, screen, input.signal)

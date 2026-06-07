@@ -4,7 +4,6 @@ import {
   CLIENT_STITCH_DELIVERY_BRIEF,
   hasPendingStitchClarifyInHistory,
   resolveEffectiveStitchDeviceType,
-  resolveStitchDeviceType,
   resolveStitchMediaOperation,
   resolveStitchModelId,
   shouldRouteDirectorMessageToStitch,
