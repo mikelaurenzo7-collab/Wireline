@@ -11,7 +11,11 @@ import { ActionItemSchema } from "./action-types";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
-import { enrichLead as apolloEnrich, searchLeads as apolloSearch } from "./apollo-service";
+import {
+  apolloPlatformConfigured,
+  enrichLead as apolloEnrich,
+  searchLeads as apolloSearch,
+} from "./apollo-service";
 import { purgeAccount } from "./account-deletion";
 
 type SupportedCrmType = "salesforce" | "hubspot";
@@ -100,6 +104,13 @@ async function syncCallActivityToCrm(input: {
     crmType: input.crmType,
     callId: input.callId,
   });
+}
+
+async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
+  await drizzle
+    .update(schema.jobs)
+    .set({ result, updatedAt: new Date() })
+    .where(eq(schema.jobs.id, jobId));
 }
 
 /**
@@ -613,51 +624,92 @@ export async function handleJob(job: JobRow): Promise<void> {
 
     if (!settings?.prospectingEnabled) {
       log.info("Prospecting disabled for user", { userId: p.userId });
+      await persistJobResult(job.id, {
+        skipped: true,
+        reason: "prospecting_disabled",
+        leadsFound: 0,
+        leadsAdded: 0,
+      });
       return;
     }
 
+    const apolloReady = apolloPlatformConfigured();
     log.info("Starting autonomous prospecting", {
       userId: p.userId,
       titles: settings.targetTitles,
+      apolloReady,
     });
 
-    try {
-      const leads = await apolloSearch(
-        {
-          titles: settings.targetTitles || [],
-          industries: settings.targetIndustries || [],
-          states: settings.targetStates || [],
-          employee_ranges: settings.targetEmployeeRanges || [],
-          limit: 10,
-        },
-        p.userId,
-      );
-
-      let added = 0;
-      for (const lead of leads) {
-        try {
-          await drizzle.insert(schema.outboundLeads).values({
-            userId: p.userId,
-            customerName: `${lead.first_name} ${lead.last_name}`,
-            customerNumber: lead.phone,
-            email: lead.email,
-            status: "New",
-            context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`,
-          });
-          added++;
-        } catch {
-          void 0; /* ignore duplicate lead / constraint violations */
-        }
-      }
-
-      log.info("Autonomous prospecting complete", {
-        userId: p.userId,
-        leadsFound: leads.length,
-        leadsAdded: added,
+    if (!apolloReady) {
+      await persistJobResult(job.id, {
+        skipped: true,
+        reason: "apollo_not_configured",
+        leadsFound: 0,
+        leadsAdded: 0,
+        hint: "Connect Apollo in Settings → Integrations or set APOLLO_API_KEY on the platform.",
       });
-    } catch (error) {
-      log.error("Autonomous prospecting failed", { error: getErrorMessage(error) });
+      return;
     }
+
+    const leads = await apolloSearch(
+      {
+        titles: (settings.targetTitles as string[]) || [],
+        industries: (settings.targetIndustries as string[]) || [],
+        states: (settings.targetStates as string[]) || [],
+        employee_ranges: (settings.targetEmployeeRanges as string[]) || [],
+        limit: 10,
+      },
+      p.userId,
+    );
+
+    let added = 0;
+    for (const lead of leads) {
+      try {
+        await drizzle.insert(schema.outboundLeads).values({
+          userId: p.userId,
+          customerName: `${lead.first_name} ${lead.last_name}`,
+          customerNumber: lead.phone,
+          email: lead.email,
+          status: "New",
+          context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`,
+        });
+        added++;
+      } catch {
+        void 0; /* ignore duplicate lead / constraint violations */
+      }
+    }
+
+    await persistJobResult(job.id, {
+      leadsFound: leads.length,
+      leadsAdded: added,
+      apolloReady: true,
+    });
+
+    log.info("Autonomous prospecting complete", {
+      userId: p.userId,
+      leadsFound: leads.length,
+      leadsAdded: added,
+    });
+  }
+
+  if (job.type === "knowledge_from_url") {
+    const p = job.payload as {
+      userId: string;
+      url: string;
+      agentContext?: string;
+      maxEntries?: number;
+      maxPages?: number;
+    };
+    if (!claudeBrain.isClaudeAvailable()) {
+      throw new Error("Claude is not configured — cannot crawl URL for knowledge.");
+    }
+    const result = await claudeBrain.knowledgeFromUrl({
+      url: p.url,
+      agentContext: p.agentContext,
+      maxEntries: p.maxEntries ?? 12,
+      maxPages: p.maxPages ?? 5,
+    });
+    await persistJobResult(job.id, result as Record<string, unknown>);
   }
 
   if (job.type === "campaign_dial") {

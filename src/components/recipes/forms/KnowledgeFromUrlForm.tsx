@@ -24,6 +24,7 @@ export function KnowledgeFromUrlForm({
   const [crawl, setCrawl] = useState(false);
   const [maxPages, setMaxPages] = useState(8);
   const [loading, setLoading] = useState(false);
+  const [crawlProgress, setCrawlProgress] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -34,26 +35,90 @@ export function KnowledgeFromUrlForm({
     if (!agentId && agents[0]) setAgentId(agents[0].id);
   }, [agents, agentId]);
 
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const pollJobUntilDone = async (jobId: string) => {
+    const deadline = Date.now() + 8 * 60 * 1000;
+    let kicked = false;
+    while (Date.now() < deadline) {
+      if (!kicked) {
+        await authFetch(`/api/jobs/${jobId}/run`, { method: "POST" });
+        kicked = true;
+      }
+      const pollRes = await authFetch(`/api/jobs/${jobId}`);
+      const pollBody = await pollRes.json();
+      if (!pollRes.ok) throw new Error(pollBody.error || "Failed to check crawl status");
+      const status = pollBody.job?.status as string;
+      if (status === "done") return pollBody.job?.result;
+      if (status === "failed" || status === "dead") {
+        throw new Error(pollBody.job?.error || "Site crawl failed");
+      }
+      setCrawlProgress(
+        status === "running" ? "Crawling pages and extracting facts…" : "Queued — starting crawl…",
+      );
+      await sleep(2500);
+      if (status === "pending") {
+        await authFetch(`/api/jobs/${jobId}/run`, { method: "POST" });
+      }
+    }
+    throw new Error("Crawl timed out — check back in a few minutes or try fewer pages.");
+  };
+
   const run = async () => {
     setLoading(true);
     setErr(null);
+    setCrawlProgress(null);
     setResult(null);
     setSelected(new Set());
     setApplied(null);
     try {
-      const r = await authFetch("/api/claude/knowledge-from-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, agentContext, maxPages: crawl ? maxPages : 1 }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error);
+      let data: any;
+      if (crawl) {
+        const enqueueRes = await authFetch("/api/jobs/knowledge-crawl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, agentContext, maxPages, maxEntries: 20 }),
+        });
+        const enqueueBody = await enqueueRes.json();
+        if (!enqueueRes.ok) throw new Error(enqueueBody.error);
+        if (!enqueueBody.jobId) throw new Error("Crawl job was not created");
+        setCrawlProgress("Queued — starting crawl…");
+        data = await pollJobUntilDone(enqueueBody.jobId);
+      } else {
+        const r = await authFetch("/api/claude/knowledge-from-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, agentContext, maxPages: 1 }),
+        });
+        data = await r.json();
+        if (!r.ok) {
+          if (r.status === 504 || String(data.error || "").includes("timeout")) {
+            const enqueueRes = await authFetch("/api/jobs/knowledge-crawl", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url, agentContext, maxPages: 1, maxEntries: 12 }),
+            });
+            const enqueueBody = await enqueueRes.json();
+            if (!enqueueRes.ok) throw new Error(enqueueBody.error);
+            setCrawlProgress("Single-page fetch running in background…");
+            data = await pollJobUntilDone(enqueueBody.jobId);
+          } else {
+            throw new Error(data.error);
+          }
+        }
+      }
+      if (!data?.entries?.length) {
+        throw new Error(
+          "No knowledge entries extracted — try a different URL or add agent context.",
+        );
+      }
       setResult(data);
       setSelected(new Set((data.entries || []).map((_: any, i: number) => i)));
     } catch (e: any) {
       setErr(e.message);
     } finally {
       setLoading(false);
+      setCrawlProgress(null);
     }
   };
 
@@ -176,6 +241,12 @@ export function KnowledgeFromUrlForm({
         label={crawl ? `Crawl ${maxPages} pages` : "Fetch & Extract"}
       />
 
+      {crawlProgress && (
+        <div className="rounded-md wl-panel border border-brand/30 p-4 flex items-center gap-3 text-sm text-ink/80">
+          <Loader2 className="w-4 h-4 animate-spin text-brand shrink-0" />
+          <span>{crawlProgress}</span>
+        </div>
+      )}
       {err && <ErrCard error={err} />}
       {result && (
         <div className="space-y-4 pt-3">

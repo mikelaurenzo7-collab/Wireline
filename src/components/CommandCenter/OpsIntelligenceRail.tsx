@@ -82,6 +82,7 @@ export function OpsIntelligenceRail({
             onClick={async () => {
               if (activatingGrowth) return;
               onActivatingGrowthChange(true);
+              const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
               try {
                 const res = await authFetch("/api/jobs/prospect", { method: "POST" });
                 if (!res.ok) {
@@ -89,19 +90,92 @@ export function OpsIntelligenceRail({
                   throw new Error(body.error || `HTTP ${res.status}`);
                 }
                 const body = (await res.json().catch(() => ({}))) as {
+                  jobId?: string | null;
                   prospectingEnabled?: boolean;
+                  apolloReady?: boolean;
                 };
                 if (body.prospectingEnabled === false) {
                   toastInfo(
                     "Prospecting is disabled",
                     "Open Settings → Growth to enable autonomous prospecting and configure targeting.",
                   );
-                } else {
+                  return;
+                }
+                if (body.apolloReady === false) {
+                  toastInfo(
+                    "Apollo not connected",
+                    "Set APOLLO_API_KEY on the platform or connect Apollo in Settings → Integrations.",
+                  );
+                  return;
+                }
+                if (!body.jobId) {
                   toastSuccess(
                     "Growth engine queued",
                     "New leads will appear in Outbound when sourcing completes.",
                   );
+                  return;
                 }
+
+                const deadline = Date.now() + 90_000;
+                let kicked = false;
+                while (Date.now() < deadline) {
+                  if (!kicked) {
+                    await authFetch(`/api/jobs/${body.jobId}/run`, { method: "POST" });
+                    kicked = true;
+                  }
+                  const pollRes = await authFetch(`/api/jobs/${body.jobId}`);
+                  const pollBody = (await pollRes.json().catch(() => ({}))) as {
+                    job?: {
+                      status?: string;
+                      error?: string;
+                      result?: {
+                        reason?: string;
+                        leadsFound?: number;
+                        leadsAdded?: number;
+                        hint?: string;
+                      };
+                    };
+                  };
+                  const job = pollBody.job;
+                  if (job?.status === "done") {
+                    const result = job.result;
+                    if (result?.reason === "apollo_not_configured") {
+                      toastInfo(
+                        "Apollo not connected",
+                        result.hint ||
+                          "Connect Apollo in Settings → Integrations to source live leads.",
+                      );
+                      return;
+                    }
+                    const added = result?.leadsAdded ?? 0;
+                    const found = result?.leadsFound ?? 0;
+                    if (added > 0) {
+                      toastSuccess(
+                        `${added} new lead${added === 1 ? "" : "s"} added`,
+                        `Apollo returned ${found} match${found === 1 ? "" : "es"} — check Outbound.`,
+                      );
+                    } else {
+                      toastInfo(
+                        "Prospecting complete",
+                        found > 0
+                          ? `${found} matches found — duplicates may already be in your queue.`
+                          : "No matches for your ICP this run. Try broadening titles or geography in Growth settings.",
+                      );
+                    }
+                    return;
+                  }
+                  if (job?.status === "failed" || job?.status === "dead") {
+                    throw new Error(job.error || "Prospecting job failed");
+                  }
+                  await sleep(2500);
+                  if (job?.status === "pending") {
+                    await authFetch(`/api/jobs/${body.jobId}/run`, { method: "POST" });
+                  }
+                }
+                toastSuccess(
+                  "Growth engine queued",
+                  "Sourcing is still running — new leads will appear in Outbound shortly.",
+                );
               } catch (err) {
                 const error = err as Error;
                 toastError(

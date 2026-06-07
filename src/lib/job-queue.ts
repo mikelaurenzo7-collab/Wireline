@@ -50,6 +50,7 @@ export type JobType =
   | "calendar_sync" // Sync Google/Outlook calendars
   | "proactive_lead_enrichment" // Async lead enrichment
   | "autonomous_prospecting" // AI-driven lead discovery
+  | "knowledge_from_url" // Async site crawl → structured knowledge entries
   | "cadence_tick" // Multi-touch outbound cadence step processor
   | "auto_qa_score" // Auto-QA every completed call → chains adaptive_optimization on low score
   | "sweep_orphan_supervisor_subs" // Daily janitor: delete subscription rows whose callId no longer references a call_log row
@@ -182,17 +183,59 @@ export async function claimJob(db: DrizzleDB, typeFilter?: JobType[]): Promise<a
   });
 }
 
+/** Atomically claim one pending job owned by a specific tenant (serverless kick). */
+export async function claimJobById(
+  db: DrizzleDB,
+  jobId: string,
+  userId: string,
+): Promise<any | null> {
+  return await db.transaction(async (tx) => {
+    const [job] = await tx
+      .select()
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.id, jobId),
+          eq(schema.jobs.userId, userId),
+          eq(schema.jobs.status, "pending"),
+          lte(schema.jobs.runAt, new Date()),
+        ),
+      )
+      .limit(1)
+      .for("update", { skipLocked: true });
+
+    if (!job) return null;
+
+    const updatedRows = (await tx
+      .update(schema.jobs)
+      .set({
+        status: "running" as JobStatus,
+        startedAt: new Date(),
+        attempts: (job.attempts ?? 0) + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, job.id))
+      .returning()) as Array<typeof job>;
+    return updatedRows[0] ?? null;
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Completion helpers
 // ─────────────────────────────────────────────────────────────────
 
-export async function completeJob(db: DrizzleDB, jobId: string): Promise<void> {
+export async function completeJob(
+  db: DrizzleDB,
+  jobId: string,
+  result?: JobPayload,
+): Promise<void> {
   await db
     .update(schema.jobs)
     .set({
       status: "done" as JobStatus,
       finishedAt: new Date(),
       error: null,
+      ...(result !== undefined ? { result } : {}),
       updatedAt: new Date(),
     })
     .where(eq(schema.jobs.id, jobId));
