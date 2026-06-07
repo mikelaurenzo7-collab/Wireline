@@ -11,8 +11,11 @@ import {
   resolveUseAccountBranding,
   type StitchBriefOptions,
 } from "./director-stitch-brief";
-import { tryDirectorStitchTurn, type DirectorStitchTurnResult } from "./director-stitch-service";
-import { isGoogleStitchConfigured } from "./google-stitch-config";
+import {
+  tryDirectorStitchTurn,
+  type DirectorStitchTurnAttempt,
+  type DirectorStitchTurnResult,
+} from "./director-stitch-service";
 import { log } from "./server-context";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 
@@ -103,7 +106,42 @@ export async function buildStitchDesignLlmFallback(
   };
 }
 
-/** Try Stitch; on failure return LLM fallback context for the same design brief. */
+function buildStitchUnavailableTurn(
+  attempt: Extract<DirectorStitchTurnAttempt, { kind: "hard-failure" }>,
+): DirectorStitchTurnResult {
+  const isAuthFailure = attempt.error.code === "AUTH_FAILED";
+  const isValidationFailure = attempt.error.code === "VALIDATION_ERROR";
+  const reply = isAuthFailure
+    ? [
+        "Wireline Design is unavailable because its Stitch credentials or workspace configuration could not be validated.",
+        "",
+        "Ask an admin to check the Stitch API key, project ID, and UI-generation access, then try again.",
+      ].join("\n")
+    : isValidationFailure
+      ? [
+          "Wireline Design can't render this request because the Stitch setup or request is not valid.",
+          "",
+          "Ask an admin to check the Stitch project configuration, or revise the design request and try again.",
+        ].join("\n")
+      : WIRELINE_STITCH_UI.failReply;
+
+  return {
+    reply,
+    previews: [],
+    artifacts: [],
+    thinkingSummary: WIRELINE_STITCH_UI.chatFallbackReasoning,
+    durationMs: 0,
+  };
+}
+
+async function buildLlmFallbackResult(
+  input: StitchDirectorPathInput,
+): Promise<Extract<StitchDirectorPathResult, { kind: "llm-fallback" }>> {
+  const fallback = await buildStitchDesignLlmFallback(input);
+  return { kind: "llm-fallback", fallback };
+}
+
+/** Try Stitch; use chat fallback only for disabled or recoverable render/package failures. */
 export async function resolveStitchDirectorPath(
   input: StitchDirectorPathInput,
 ): Promise<StitchDirectorPathResult> {
@@ -111,32 +149,35 @@ export async function resolveStitchDirectorPath(
     return { kind: "none" };
   }
 
-  const stitchTurn = await tryDirectorStitchTurn(input);
-  if (stitchTurn) {
-    return { kind: "stitch", turn: stitchTurn };
+  const stitchAttempt = await tryDirectorStitchTurn(input);
+
+  if (stitchAttempt.kind === "turn") {
+    return { kind: "stitch", turn: stitchAttempt.turn };
   }
 
-  if (isGoogleStitchConfigured()) {
-    log.info("director stitch render failed — returning operator fail copy", {
+  if (stitchAttempt.kind === "not-configured") {
+    log.info("director stitch unavailable — falling back to chat design", {
       userId: input.userId,
     });
-    return {
-      kind: "stitch-failed",
-      turn: {
-        reply: WIRELINE_STITCH_UI.failReply,
-        previews: [],
-        artifacts: [],
-        thinkingSummary: WIRELINE_STITCH_UI.chatFallbackReasoning,
-        durationMs: 0,
-      },
-    };
+    return buildLlmFallbackResult(input);
   }
 
-  log.info("director stitch unavailable — falling back to chat design", {
+  if (stitchAttempt.kind === "recoverable-failure") {
+    log.info("director stitch recoverable failure — falling back to chat design", {
+      userId: input.userId,
+      code: stitchAttempt.error.code,
+    });
+    return buildLlmFallbackResult(input);
+  }
+
+  log.info("director stitch hard failure — returning operator fail copy", {
     userId: input.userId,
+    code: stitchAttempt.error.code,
   });
-  const fallback = await buildStitchDesignLlmFallback(input);
-  return { kind: "llm-fallback", fallback };
+  return {
+    kind: "stitch-failed",
+    turn: buildStitchUnavailableTurn(stitchAttempt),
+  };
 }
 
 export const STITCH_DESIGN_LLM_MODEL_LABEL = WIRELINE_STITCH_UI.modelLabel;

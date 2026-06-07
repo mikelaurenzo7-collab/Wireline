@@ -47,12 +47,14 @@ describe("director stitch clarify gate", () => {
   });
 
   it("tryDirectorStitchTurn returns clarify instead of null when Stitch is off", async () => {
-    const turn = await tryDirectorStitchTurn({
+    const attempt = await tryDirectorStitchTurn({
       userId: "user-1",
       operatorMessage: "Design a landing page",
       history: [],
     });
-    expect(turn).not.toBeNull();
-    expect(turn?.clarifyingQuestions?.length).toBeGreaterThan(0);
+    expect(attempt.kind).toBe("turn");
+    if (attempt.kind === "turn") {
+      expect(attempt.turn.clarifyingQuestions?.length).toBeGreaterThan(0);
+    }
   });
 });

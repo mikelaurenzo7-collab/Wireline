@@ -8,10 +8,6 @@ vi.mock("./director-stitch-service", () => ({
   tryDirectorStitchTurn: vi.fn(),
 }));
 
-vi.mock("./google-stitch-config", () => ({
-  isGoogleStitchConfigured: vi.fn(() => false),
-}));
-
 vi.mock("./director-stitch-brief", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./director-stitch-brief")>();
   return {
@@ -28,13 +24,11 @@ vi.mock("./director-stitch-brief", async (importOriginal) => {
 });
 
 import { tryDirectorStitchTurn } from "./director-stitch-service";
-import { isGoogleStitchConfigured } from "./google-stitch-config";
-import { WIRELINE_STITCH_UI } from "./wireline-director-design";
+import { GoogleStitchError } from "./google-stitch-mcp-client";
 
 describe("director stitch fallback", () => {
   beforeEach(() => {
     vi.mocked(tryDirectorStitchTurn).mockReset();
-    vi.mocked(isGoogleStitchConfigured).mockReturnValue(false);
   });
 
   const input = {
@@ -53,12 +47,15 @@ describe("director stitch fallback", () => {
 
   it("returns clarify turns as stitch without LLM fallback", async () => {
     vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
-      reply: "Before I generate screens, I need a bit more context.",
-      previews: [],
-      artifacts: [{ name: "design.md" }],
-      clarifyingQuestions: ["Who is the primary audience?"],
-      thinkingSummary: "Gathering design requirements",
-      durationMs: 5,
+      kind: "turn",
+      turn: {
+        reply: "Before I generate screens, I need a bit more context.",
+        previews: [],
+        artifacts: [{ name: "design.md" }],
+        clarifyingQuestions: ["Who is the primary audience?"],
+        thinkingSummary: "Gathering design requirements",
+        durationMs: 5,
+      },
     });
 
     const result = await resolveStitchDirectorPath({
@@ -70,11 +67,14 @@ describe("director stitch fallback", () => {
 
   it("returns stitch turn when render succeeds", async () => {
     vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
-      reply: "Rendered",
-      previews: [{ kind: "stitch" }],
-      artifacts: [],
-      thinkingSummary: "Done",
-      durationMs: 10,
+      kind: "turn",
+      turn: {
+        reply: "Rendered",
+        previews: [{ kind: "stitch" }],
+        artifacts: [],
+        thinkingSummary: "Done",
+        durationMs: 10,
+      },
     });
 
     const result = await resolveStitchDirectorPath(input);
@@ -84,8 +84,8 @@ describe("director stitch fallback", () => {
     }
   });
 
-  it("falls back to LLM design context when stitch returns null and Stitch is off", async () => {
-    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce(null);
+  it("unconfigured Stitch continues using LLM fallback", async () => {
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({ kind: "not-configured" });
 
     const result = await resolveStitchDirectorPath(input);
     expect(result.kind).toBe("llm-fallback");
@@ -98,14 +98,32 @@ describe("director stitch fallback", () => {
     }
   });
 
-  it("returns stitch-failed copy when stitch returns null but Stitch is configured", async () => {
-    vi.mocked(isGoogleStitchConfigured).mockReturnValue(true);
-    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce(null);
+  it("configured Stitch with transient render failure uses LLM fallback", async () => {
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
+      kind: "recoverable-failure",
+      error: new GoogleStitchError("Stitch returned no screens", "VALIDATION_ERROR", true),
+    });
+
+    const result = await resolveStitchDirectorPath(input);
+    expect(result.kind).toBe("llm-fallback");
+    if (result.kind === "llm-fallback") {
+      expect(result.fallback.deliverableGuidance).toContain("Wireline Design (chat mode");
+      expect(result.fallback.artifacts[0]).toMatchObject({ name: "design.md" });
+    }
+  });
+
+  it("configured Stitch with auth failure returns clear fail copy", async () => {
+    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
+      kind: "hard-failure",
+      error: new GoogleStitchError("invalid API key", "AUTH_FAILED"),
+    });
 
     const result = await resolveStitchDirectorPath(input);
     expect(result.kind).toBe("stitch-failed");
     if (result.kind === "stitch-failed") {
-      expect(result.turn.reply).toBe(WIRELINE_STITCH_UI.failReply);
+      expect(result.turn.reply).toMatch(/credentials|configuration/i);
+      expect(result.turn.reply).toMatch(/admin/i);
+      expect(result.turn.previews).toEqual([]);
     }
   });
 
