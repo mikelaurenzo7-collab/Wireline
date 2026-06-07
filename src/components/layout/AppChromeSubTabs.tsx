@@ -31,8 +31,10 @@ export default function AppChromeSubTabs({
 
   return (
     <div
+      role="group"
+      aria-label={secondary ? "Page section navigation" : undefined}
       className={cn(
-        "shrink-0 flex items-center gap-1.5 min-w-0",
+        "shrink-0 flex items-center gap-1.5 min-w-0 max-w-full overflow-x-auto tab-strip-scroll",
         density === "compact" ? "mb-0" : "",
         className,
       )}
@@ -41,7 +43,7 @@ export default function AppChromeSubTabs({
         tabs={primary.tabs}
         activeId={primary.activeId}
         onChange={primary.setActiveId}
-        aria-label={primary.ariaLabel}
+        aria-label={secondary ? `${primary.ariaLabel} — choose category` : primary.ariaLabel}
         layoutIdPrefix={primary.layoutIdPrefix}
         density={density}
         className="mb-0 md:mb-0 justify-start lg:justify-start"
@@ -53,7 +55,7 @@ export default function AppChromeSubTabs({
             tabs={secondary.tabs}
             activeId={secondary.activeId}
             onChange={secondary.setActiveId}
-            aria-label={secondary.ariaLabel}
+            aria-label={`${secondary.ariaLabel} — choose view`}
             layoutIdPrefix={secondary.layoutIdPrefix}
             density={density}
             className="mb-0 md:mb-0 justify-start lg:justify-start"

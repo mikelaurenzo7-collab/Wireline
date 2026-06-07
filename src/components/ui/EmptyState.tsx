@@ -132,7 +132,11 @@ export function EmptyState({
                   className={cn(
                     "rounded-full touch-press w-full sm:w-auto justify-center",
                     isPrimary && "app-primary-action",
+                    isPrimary &&
+                      compact &&
+                      "!normal-case !tracking-normal !text-[11px] !font-semibold",
                     !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
+                    !isPrimary && compact && "normal-case tracking-normal text-[11px] font-medium",
                   )}
                 >
                   {internal ? (
@@ -154,7 +158,11 @@ export function EmptyState({
                 className={cn(
                   "rounded-full touch-press",
                   isPrimary && "app-primary-action",
+                  isPrimary &&
+                    compact &&
+                    "!normal-case !tracking-normal !text-[11px] !font-semibold",
                   !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
+                  !isPrimary && compact && "normal-case tracking-normal text-[11px] font-medium",
                 )}
               >
                 {action.label}

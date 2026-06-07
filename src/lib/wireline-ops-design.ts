@@ -76,7 +76,7 @@ export const OPS_CHANNEL_EMPTY = {
     description: "Active conversations stream here in real time — listen in, coach, or escalate.",
     actions: [
       { label: "View call history", to: "/phone" },
-      { label: "Coach in Chat", to: "/chat", primary: true },
+      { label: "Coach in chat", to: "/chat", primary: true },
     ],
   },
   fleetRail: {
@@ -158,8 +158,8 @@ export const OPS_CHANNEL_EMPTY = {
     description:
       "Create your first agent in Chat or Fleet, then return here for knowledge, voice, and flow.",
     actions: [
-      { label: "Go to Chat", to: "/chat", primary: true },
-      { label: "Open Fleet", to: "/agents" },
+      { label: "Go to chat", to: "/chat", primary: true },
+      { label: "Open fleet", to: "/agents" },
     ],
   },
   integrations: {
@@ -190,7 +190,7 @@ export const OPS_CHANNEL_EMPTY = {
       "No operator approvals waiting. Autonomous actions land here when agents need your sign-off.",
     actions: [
       { label: "Open live floor", to: "/ops?tab=floor", primary: true },
-      { label: "Coach in Chat", to: "/chat" },
+      { label: "Coach in chat", to: "/chat" },
     ],
   },
   sentiment: {

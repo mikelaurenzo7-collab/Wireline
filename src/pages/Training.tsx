@@ -159,8 +159,17 @@ export default function Training() {
       <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
         <aside className="shrink-0 lg:w-[280px] flex flex-col lg:min-h-0 lg:self-stretch">
           {/* Mobile: horizontal agent strip — fleet chip rhythm */}
-          <div className="lg:hidden flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
-            {agents.map((agent) => agentRow(agent, true))}
+          <div className="lg:hidden relative">
+            <div
+              className="flex items-center gap-2 overflow-x-auto tab-strip-scroll pb-2 pr-8"
+              aria-label="Select agent to train"
+            >
+              {agents.map((agent) => agentRow(agent, true))}
+            </div>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-paper via-paper/80 to-transparent"
+            />
           </div>
 
           {/* Desktop: vertical fleet-style list */}

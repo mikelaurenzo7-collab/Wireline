@@ -23,12 +23,11 @@ export default function ThemeToggle({ className, variant = "inverse", compact = 
   const { theme, toggleTheme, resolvedTheme } = useTheme();
 
   const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
-  const label =
-    theme === "system"
-      ? `Theme: system (${resolvedTheme}). Switch to light.`
-      : theme === "dark"
-        ? "Theme: dark. Switch to system."
-        : "Theme: light. Switch to dark.";
+  const nextMode =
+    theme === "system" ? "light mode" : theme === "light" ? "dark mode" : "system preference";
+  const currentMode =
+    theme === "system" ? `system (${resolvedTheme})` : theme === "light" ? "light" : "dark";
+  const label = `Theme: ${currentMode}. Activate ${nextMode}.`;
 
   return (
     <ShadButton

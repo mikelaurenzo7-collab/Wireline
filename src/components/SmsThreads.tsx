@@ -204,11 +204,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       >
         <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
           <ChannelInboxGrid>
-            <ChannelInboxListPane
-              label="All conversations"
-              count={threads.length}
-              detailOpen={!!activeId}
-            >
+            <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
               {loading ? (
                 <ClientRouteLoading
                   icon={<MessageSquare className="w-5 h-5" />}

@@ -157,7 +157,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                           onClick={() => promoteToDirective(lesson)}
                           disabled={isPromoting === lesson.id}
                           title="Promote to directive"
-                          className="h-7 px-2.5 rounded-md border-brand/25 text-brand text-[9px] uppercase tracking-[0.25em] hover:bg-brand/15"
+                          className="h-7 px-2.5 rounded-md border-brand/35 bg-brand/8 text-brand-deep text-[9px] uppercase tracking-[0.2em] hover:bg-brand/15 hover:text-brand-deep"
                         >
                           {isPromoting === lesson.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

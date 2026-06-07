@@ -168,8 +168,8 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           )}
         >
           <Panel
-            title={`${filteredCalls.length} calls`}
-            hint={loading ? "Loading…" : "All calls"}
+            title={embedded ? "Call history" : `${filteredCalls.length} calls`}
+            hint={embedded ? "All calls" : loading ? "Loading…" : "All calls"}
             icon={Database}
             scroll
             flush

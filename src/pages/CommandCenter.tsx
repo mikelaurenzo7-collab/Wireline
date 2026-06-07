@@ -395,7 +395,7 @@ export default function LiveOps() {
   const totalSentiment = sentimentData.reduce((s, d) => s + d.value, 0);
   const pendingActions = actions.filter((a) => a.status === "pending").length;
   const escalations = calls.filter((c) => c.status === "escalated").length;
-  const fleetAgentCount = agentsHydrated ? (stats?.agents?.length ?? agents.length) : 0;
+  const fleetAgentCount = agentsHydrated ? Math.max(stats?.agents?.length ?? 0, agents.length) : 0;
   const pulseLoading = loading || presenceLoading || !agentsHydrated;
 
   return (
@@ -456,7 +456,12 @@ export default function LiveOps() {
                       "flex-1 min-h-0 flex flex-col overflow-hidden",
                     )}
                   >
-                    <LiveFloorPanel calls={calls} agents={agents} loading={presenceLoading} />
+                    <LiveFloorPanel
+                      calls={calls}
+                      agents={agents}
+                      loading={presenceLoading}
+                      agentsLoading={!agentsHydrated}
+                    />
                   </div>
                 </section>
               )}

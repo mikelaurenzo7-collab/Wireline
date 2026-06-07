@@ -38,9 +38,11 @@ type Props = {
   calls: FloorCall[];
   agents: FloorAgent[];
   loading?: boolean;
+  /** True while `/api/agents` is in flight — avoids empty fleet flash. */
+  agentsLoading?: boolean;
 };
 
-export function LiveFloorPanel({ calls, agents, loading }: Props) {
+export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }: Props) {
   const { info } = useToast();
   const { user } = useAuth();
 
@@ -448,9 +450,17 @@ export function LiveFloorPanel({ calls, agents, loading }: Props) {
               <Users className="w-3.5 h-3.5 text-brand" />
               Fleet
             </h3>
-            <span className="chrome-subtle tabular-nums">{agents.length} agents</span>
+            <span className="chrome-subtle tabular-nums">
+              {agentsLoading ? "…" : `${agents.length} agent${agents.length === 1 ? "" : "s"}`}
+            </span>
           </div>
-          {agents.length === 0 ? (
+          {agentsLoading ? (
+            <ClientRouteLoading
+              icon={<Users className="w-5 h-5" />}
+              label="Loading fleet"
+              className="flex-1 min-h-[8rem] py-4"
+            />
+          ) : agents.length === 0 ? (
             <EmptyState
               icon={Users}
               eyebrow={OPS_CHANNEL_EMPTY.fleetRail.eyebrow}

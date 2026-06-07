@@ -182,8 +182,8 @@ export const AGENT_ROLES = [
     value: "customer_service",
     label: "Customer Service",
     description: "Handles inbound issues and support",
-    color: "success",
-    tw: ROLE_TW.success,
+    color: "brandSoft",
+    tw: ROLE_TW.brandSoft,
   },
   {
     value: "scheduler",

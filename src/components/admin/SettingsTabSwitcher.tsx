@@ -72,7 +72,7 @@ export default function SettingsTabSwitcher({
   return (
     <div
       className={cn(
-        "shrink-0 flex items-center justify-start gap-1",
+        "shrink-0 flex items-center justify-start gap-1 min-w-0 max-w-full overflow-x-auto tab-strip-scroll",
         density === "compact" ? "mb-0" : "mb-2 md:mb-3",
         className,
       )}
@@ -81,7 +81,7 @@ export default function SettingsTabSwitcher({
     >
       <div
         className={cn(
-          "app-tab-strip wl-subtab-strip tab-strip-scroll flex items-center gap-0.5 wl-panel border border-black/8 max-w-full",
+          "app-tab-strip wl-subtab-strip flex items-center gap-0.5 wl-panel border border-black/8 w-max min-w-full",
           density === "compact" ? "p-0.5 border-0 bg-transparent shadow-none" : "p-0.5",
         )}
       >

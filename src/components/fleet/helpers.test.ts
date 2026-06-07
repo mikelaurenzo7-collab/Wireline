@@ -96,4 +96,11 @@ describe("getRoleMeta", () => {
     expect(getRoleMeta(undefined).value).toBe("customer_service");
     expect(getRoleMeta("nonsense").value).toBe("customer_service");
   });
+
+  it("keeps customer_service on the purple brand family (not signal green)", () => {
+    const cs = getRoleMeta("customer_service");
+    expect(cs.tw.text).toBe("text-brand");
+    expect(cs.tw.bg).toBe("bg-brand/8");
+    expect(cs.tw.text).not.toContain("wl-text-success");
+  });
 });

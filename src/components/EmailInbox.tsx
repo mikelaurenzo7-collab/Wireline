@@ -358,11 +358,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       >
         <Panel title="Inbox" hint="THREADS & REPLIES" icon={Inbox} flush className="h-full">
           <ChannelInboxGrid>
-            <ChannelInboxListPane
-              label="All conversations"
-              count={threads.length}
-              detailOpen={!!selectedThread}
-            >
+            <ChannelInboxListPane label="All conversations" detailOpen={!!selectedThread}>
               <AnimatePresence mode="sync">
                 {loading ? (
                   <PanelSkeleton rows={6} />
