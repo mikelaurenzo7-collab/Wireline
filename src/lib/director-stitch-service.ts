@@ -621,7 +621,27 @@ export async function finalizeDirectorStitchScreen(input: {
   try {
     const deviceType = input.deviceType ?? resolveStitchDeviceType(input.operatorMessage);
     const screen = runtime.stitch.project(input.projectId).screen(input.screenId);
+
+    // Probe getHtml/getImage before full asset fetch to surface diagnostics
+    const [htmlUrl, imageUrl] = await Promise.all([
+      withStitchAbort(input.signal, () => screen.getHtml()).catch(() => ""),
+      withStitchAbort(input.signal, () => screen.getImage()).catch(() => ""),
+    ]);
+    log.info("stitch finalize asset probe", {
+      screenId: input.screenId,
+      projectId: input.projectId,
+      htmlUrl: htmlUrl ? htmlUrl.slice(0, 120) : "(empty)",
+      imageUrl: imageUrl ? imageUrl.slice(0, 120) : "(empty)",
+    });
+
     const assets = await fetchScreenAssets(runtime, screen, input.signal);
+    log.info("stitch finalize assets fetched", {
+      screenId: input.screenId,
+      projectId: input.projectId,
+      htmlBytes: assets.html?.byteLength ?? 0,
+      imageBytes: assets.image?.byteLength ?? 0,
+    });
+
     const packaged = await packageStitchScreenAssets({
       userId: input.userId,
       operatorMessage: input.operatorMessage,
