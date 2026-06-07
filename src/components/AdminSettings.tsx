@@ -136,6 +136,7 @@ export default function AdminSettings() {
       );
       return "subscription";
     }
+    if (qsRaw === "growth") return "flywheel";
     const qs = qsRaw as AdminTab;
     return VALID_TABS.includes(qs) ? qs : "branding";
   })();

@@ -44,6 +44,8 @@ const REQUIRED_LEGACY_REDIRECTS: { path: string; target: string }[] = [
   { path: "/director", target: "/chat" },
   { path: "/account", target: "/admin?tab=subscription" },
   { path: "/billing", target: "/admin?tab=subscription" },
+  { path: "/admin/growth", target: "/admin?tab=flywheel" },
+  { path: "/ops/actions", target: "/ops?tab=intel" },
   { path: "/activity", target: "ActivityRedirect" },
 ];
 

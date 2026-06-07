@@ -112,8 +112,26 @@ export function resolveAppPageSubTabRoute(pathname: string): AppPageSubTabRoute 
   return APP_PAGE_SUB_TAB_ROUTES.find((r) => r.pathname === pathname);
 }
 
+/** Human-friendly ?tab= values from docs, emails, and legacy links. */
+const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {
+  "/ops": {
+    actions: "intel",
+    action: "intel",
+  },
+};
+
+export function normalizeAppPageSubTabParam(
+  route: AppPageSubTabRoute,
+  tabParam: string | null,
+): string | null {
+  if (!tabParam) return null;
+  const alias = APP_PAGE_TAB_ALIASES[route.pathname]?.[tabParam.toLowerCase()];
+  return alias ?? tabParam;
+}
+
 export function resolveAppPageSubTabId(route: AppPageSubTabRoute, tabParam: string | null): string {
-  if (tabParam && route.tabs.some((t) => t.id === tabParam)) return tabParam;
+  const normalized = normalizeAppPageSubTabParam(route, tabParam) ?? tabParam;
+  if (normalized && route.tabs.some((t) => t.id === normalized)) return normalized;
   return route.defaultTab;
 }
 

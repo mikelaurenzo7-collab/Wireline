@@ -3241,7 +3241,7 @@ html, body, .marketing-surface, .app-surface {
 }
 
 .marketing-has-sticky-cta {
-  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 1024px) {
@@ -3253,7 +3253,7 @@ html, body, .marketing-surface, .app-surface {
 /* Footer sits above the fixed mobile CTA so links stay tappable */
 @media (max-width: 1023px) {
   .marketing-footer-above-sticky {
-    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
 
   .marketing-surface {

@@ -133,6 +133,8 @@ export default function AppRoutes() {
           <Route path="/account" element={<Navigate to="/admin?tab=subscription" replace />} />
           <Route path="/account/*" element={<Navigate to="/admin?tab=subscription" replace />} />
           <Route path="/billing" element={<Navigate to="/admin?tab=subscription" replace />} />
+          <Route path="/admin/growth" element={<Navigate to="/admin?tab=flywheel" replace />} />
+          <Route path="/ops/actions" element={<Navigate to="/ops?tab=intel" replace />} />
           <Route path="/appointments" element={<Navigate to="/phone?tab=appointments" replace />} />
           <Route path="/activity" element={<ActivityRedirect />} />
           <Route path="/knowledge" element={<Navigate to="/training?tab=database" replace />} />

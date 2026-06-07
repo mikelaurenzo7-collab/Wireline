@@ -203,6 +203,7 @@ export function DirectorCapabilityCatalog({
               size="sm"
               disableAnimations
               onClick={() => onPickExample(item.example)}
+              title={item.description}
               className={cn(
                 "group h-auto text-left items-start gap-2 px-3 py-2.5 rounded-md border-border/80",
                 "hover:border-brand/25 hover:bg-brand/[0.03]",
@@ -218,7 +219,7 @@ export function DirectorCapabilityCatalog({
                 <span
                   className={cn(
                     WL_DIRECTOR_CLASSES.metaCaption,
-                    "block text-muted-foreground leading-snug mt-0.5 line-clamp-2",
+                    "block text-muted-foreground leading-snug mt-0.5 line-clamp-3 text-pretty",
                   )}
                 >
                   {item.description}

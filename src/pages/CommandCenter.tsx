@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
+import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
 import { log } from "../lib/server-logger";
 import { authFetch, refreshSessionIfNeeded } from "../lib/api";
 import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/LiveFloorPanel";
@@ -37,6 +38,8 @@ type LiveCall = {
   status: "active" | "escalated";
   thought?: string;
 };
+
+const OPS_ROUTE = resolveAppPageSubTabRoute("/ops")!;
 
 type OpsTabId = "floor" | "intel" | "analytics";
 
@@ -106,9 +109,7 @@ type TaskPayload = {
 export default function LiveOps() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const activeTab: OpsTabId =
-    tabParam === "intel" || tabParam === "analytics" || tabParam === "floor" ? tabParam : "floor";
+  const activeTab = resolveAppPageSubTabId(OPS_ROUTE, searchParams.get("tab")) as OpsTabId;
 
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [agents, setAgents] = useState<FloorAgent[]>([]);

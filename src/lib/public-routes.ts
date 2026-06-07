@@ -3,6 +3,29 @@ export function isMarketingHomePath(pathname: string): boolean {
   return pathname === "/" || pathname === "";
 }
 
+const MARKETING_PUBLIC_PATHS = new Set([
+  "/pricing",
+  "/compare",
+  "/about",
+  "/support",
+  "/showcase",
+  "/developers",
+  "/blog",
+  "/status",
+  "/changelog",
+  "/security",
+  "/not-found",
+  "/404",
+]);
+
+/** Broader marketing surface — must not block on session hydration. */
+export function isMarketingPublicPath(pathname: string): boolean {
+  if (MARKETING_PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/blog/")) return true;
+  if (pathname.startsWith("/for/")) return true;
+  return false;
+}
+
 /** Sign-in / sign-up gates (including legacy /auth aliases). */
 export function isAuthPortalPath(pathname: string): boolean {
   return (
@@ -19,5 +42,7 @@ export function isAuthPortalPath(pathname: string): boolean {
  * Keeps marketing and auth usable when the session API is slow or down.
  */
 export function isSessionOptionalPublicPath(pathname: string): boolean {
-  return isMarketingHomePath(pathname) || isAuthPortalPath(pathname);
+  return (
+    isMarketingHomePath(pathname) || isAuthPortalPath(pathname) || isMarketingPublicPath(pathname)
+  );
 }
