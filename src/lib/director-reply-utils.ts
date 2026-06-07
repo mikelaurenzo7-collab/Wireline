@@ -115,7 +115,15 @@ export function operatorTurnHasDirectorReply(
           (p) => !!p && typeof p === "object" && (p as { kind?: string }).kind === "stitch",
         );
       const clarifying = Array.isArray(m.clarifyingQuestions) && m.clarifyingQuestions.length > 0;
-      if (isStitch && (isSubstantiveDirectorReply(m.content) || clarifying)) return true;
+      const packagingPending =
+        typeof (m as { stitchAssetsPending?: boolean }).stitchAssetsPending === "boolean" &&
+        (m as { stitchAssetsPending?: boolean }).stitchAssetsPending === true;
+      if (
+        isStitch &&
+        (isSubstantiveDirectorReply(m.content) || clarifying || packagingPending)
+      ) {
+        return true;
+      }
       continue;
     }
 

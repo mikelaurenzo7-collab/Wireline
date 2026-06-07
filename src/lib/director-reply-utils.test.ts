@@ -56,6 +56,24 @@ describe("director-reply-utils", () => {
     ).toBe(true);
   });
 
+  it("treats stitch packaging-pending turns as recovered stitch replies", () => {
+    expect(
+      operatorTurnHasDirectorReply(
+        [
+          { role: "operator", content: "Design an admin dashboard" },
+          {
+            role: "director",
+            content: "Your screen is composed — packaging preview now.",
+            modelLabel: "Wireline Design",
+            stitchAssetsPending: true,
+          },
+        ],
+        "Design an admin dashboard",
+        { requireStitch: true },
+      ),
+    ).toBe(true);
+  });
+
   it("treats stitch clarifying questions as a recovered director reply", () => {
     expect(
       operatorTurnHasDirectorReply(

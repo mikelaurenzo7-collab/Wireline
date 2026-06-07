@@ -22,6 +22,11 @@ describe("DirectorWorkspace Stitch polling structure", () => {
     expect(src).not.toContain("stitchAssetsPending: false } : m");
   });
 
+  it("stops finalize polling after repeated missing-session responses", () => {
+    expect(src).toContain("finalizeNotFoundStreak");
+    expect(src).toContain("finalizeNotFoundStreak >= 6");
+  });
+
   it("guards stale Stitch polls when a thread is cleared or unmounted", () => {
     expect(src).toContain("stitchThreadVersionRef.current += 1");
     expect(src).toContain("stitchPollRef.current.clear()");

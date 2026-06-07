@@ -1301,7 +1301,7 @@ router.post(
               modelProvider: meta.modelProvider ?? normalized.modelProvider,
               modelId: meta.modelId ?? normalized.modelId,
             };
-          } else if (wantsLongDeliverable(operatorMessage)) {
+          } else if (wantsLongDeliverable(operatorMessage) && !stitchDesignFallback) {
             sse.write("error", {
               message: "Could not generate a complete deliverable — try again in a moment.",
             });
@@ -1359,7 +1359,7 @@ router.post(
           return;
         }
         log.error("director stream failed", { error: getErrorMessage(e) });
-        const deliverableTurn = wantsLongDeliverable(operatorMessage);
+        const deliverableTurn = wantsLongDeliverable(operatorMessage) && !stitchDesignFallback;
         try {
           const turn = await planDirectorTurnResilient({
             userId: req.user.id,
@@ -1370,9 +1370,13 @@ router.post(
             focusAgentId,
             forceDeep: deliverableTurn ? false : req.body?.forceDeep === true,
             shallowOnly: deliverableTurn,
-            modelSelection: deliverableTurn
-              ? { provider: "wireline", tier: "sonnet" }
-              : modelSelection,
+            modelSelection: stitchDesignFallback
+              ? { provider: "wireline", tier: "opus" }
+              : deliverableTurn
+                ? { provider: "wireline", tier: "sonnet" }
+                : modelSelection,
+            deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+            designRenderFallback: Boolean(stitchDesignFallback),
           });
           if (
             isDirectorStubReply(turn.reply) &&

@@ -106,7 +106,13 @@ export function resolveStitchDeviceType(message: string): StitchDeviceType {
   const m = message.toLowerCase();
   if (/\b(mobile|phone|ios|android|smartphone)\b/.test(m)) return "MOBILE";
   if (/\b(tablet|ipad)\b/.test(m)) return "TABLET";
-  if (/\b(desktop|wide|monitor|1440)\b/.test(m)) return "DESKTOP";
+  if (
+    /\b(desktop|wide|monitor|1440|admin\s+dashboard|operator\s+dashboard|dashboard|console|mission\s+control)\b/.test(
+      m,
+    )
+  ) {
+    return "DESKTOP";
+  }
   if (wantsWebsiteDeliverable(message) || /\b(homepage|landing)\b/i.test(m)) return "MOBILE";
   return "AGNOSTIC";
 }

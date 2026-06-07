@@ -465,6 +465,7 @@ export default function DirectorWorkspace({
         delete next[message.id];
         return next;
       });
+      let finalizeNotFoundStreak = 0;
       for (const waitMs of waits) {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         if (stitchThreadVersionRef.current !== threadVersion) {
@@ -488,8 +489,22 @@ export default function DirectorWorkspace({
         } catch {
           continue;
         }
-        if (r.status === 202) continue;
+        if (r.status === 202) {
+          finalizeNotFoundStreak = 0;
+          continue;
+        }
+        if (r.status === 404) {
+          finalizeNotFoundStreak += 1;
+          // Pending session metadata can lag the first poll — stop after repeated misses.
+          if (finalizeNotFoundStreak >= 6) {
+            setStitchPollExhausted((prev) => ({ ...prev, [message.id]: true }));
+            stitchPollRef.current.delete(message.id);
+            return false;
+          }
+          continue;
+        }
         if (!r.ok) continue;
+        finalizeNotFoundStreak = 0;
         const data = await r.json().catch(() => null);
         if (!data || !data.ok || !Array.isArray(data.previews) || data.previews.length === 0) {
           continue;

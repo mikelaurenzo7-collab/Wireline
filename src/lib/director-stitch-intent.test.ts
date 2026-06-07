@@ -127,6 +127,12 @@ describe("director stitch intent", () => {
     ).toBe(true);
   });
 
+  it("uses desktop canvas for admin dashboards", () => {
+    expect(resolveStitchDeviceType("make me an admin dashboard for trywireline.com")).toBe(
+      "DESKTOP",
+    );
+  });
+
   it("preserves prior device type for edit and variant follow-ups", () => {
     const session = { projectId: "123", screenId: "456", deviceType: "MOBILE" as const };
 
