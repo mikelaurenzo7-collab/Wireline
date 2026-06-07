@@ -1,10 +1,15 @@
 export function isAllowedStitchAssetHost(host: string): boolean {
+  const h = host.toLowerCase();
   return (
-    /\.googleapis\.com$/i.test(host) ||
-    /\.googleusercontent\.com$/i.test(host) ||
-    /\.gstatic\.com$/i.test(host) ||
-    /\.cloud\.google\.com$/i.test(host) ||
-    /\.withgoogle\.com$/i.test(host)
+    /\.googleapis\.com$/i.test(h) ||
+    /\.googleusercontent\.com$/i.test(h) ||
+    /\.gstatic\.com$/i.test(h) ||
+    /\.cloud\.google\.com$/i.test(h) ||
+    /\.withgoogle\.com$/i.test(h) ||
+    // Stitch HTML assets are served from contribution.usercontent.google.com
+    // and potentially other *.google.com subdomains.
+    /\.google\.com$/i.test(h) ||
+    h === "google.com"
   );
 }
 

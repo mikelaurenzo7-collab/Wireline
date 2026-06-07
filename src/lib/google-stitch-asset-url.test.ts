@@ -13,9 +13,26 @@ describe("google stitch asset url", () => {
     );
   });
 
+  it("allows Stitch HTML asset host (contribution.usercontent.google.com)", () => {
+    expect(isAllowedStitchAssetHost("contribution.usercontent.google.com")).toBe(true);
+    expect(
+      sanitizeStitchAssetUrl(
+        "https://contribution.usercontent.google.com/download?c=abc123",
+      ),
+    ).toContain("contribution.usercontent.google.com");
+  });
+
+  it("allows other google.com subdomains", () => {
+    expect(isAllowedStitchAssetHost("storage.google.com")).toBe(true);
+    expect(isAllowedStitchAssetHost("stitch.google.com")).toBe(true);
+    expect(isAllowedStitchAssetHost("lh3.googleusercontent.com")).toBe(true);
+  });
+
   it("blocks non-Google hosts", () => {
     expect(isAllowedStitchAssetHost("evil.example")).toBe(false);
     expect(sanitizeStitchAssetUrl("https://evil.example/steal-key")).toBe("");
+    expect(isAllowedStitchAssetHost("fakegoogle.com")).toBe(false);
+    expect(isAllowedStitchAssetHost("google.com.evil.org")).toBe(false);
   });
 
   it("downloads signed GCS assets with plain fetch (no API key header)", async () => {
