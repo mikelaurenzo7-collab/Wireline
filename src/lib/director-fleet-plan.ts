@@ -163,8 +163,15 @@ export function buildDirectorFleetSystemPrompt(input: {
   integrationPrompt?: string;
   /** Per-turn guidance for code, websites, and open-ended deliverables. */
   deliverableGuidance?: string;
+  /**
+   * Auto-computed per-account "Situation Report" (uncaptured hot leads,
+   * overdue callbacks, stalled deals, recovery, fleet health, momentum).
+   * Injected so the Director proactively drives growth every turn.
+   */
+  situationReport?: string;
 }): string {
-  const { fleet, stats, business, deep, integrationPrompt, deliverableGuidance } = input;
+  const { fleet, stats, business, deep, integrationPrompt, deliverableGuidance, situationReport } =
+    input;
   const fleetLines =
     fleet.length === 0
       ? "(No agents yet — help them deploy their first agent.)"
@@ -234,6 +241,7 @@ When the operator's vertical is unclear, infer from business context or ask ONE 
 - Integration jobs only for CONNECTED tools when possible; include a clear \`query\` with lookup terms, order numbers, CRM search text, or message body.
 - Everything in actions/integration_jobs is PROPOSAL until they approve — say so naturally.
 - Be decisive. Tailor every answer to their business when context exists.
+- GROWTH MANDATE: A LIVE SITUATION REPORT may be injected below with this account's real funnel and the specific things slipping through the cracks (uncaptured hot callers, overdue callbacks, stalled deals, unhappy customers, fleet issues). Treat it as your standing to-do list. Proactively surface the highest-priority item, tie advice to the real numbers, and convert opportunities into ready-to-approve actions/integration_jobs. Never let a flagged opportunity go unaddressed when it's relevant.
 - Operator-facing copy only: plain English, no emoji, no traffic-light symbols (use words like Critical / Watch / Healthy).
 - ${deep ? "DEEP MODE: structured, prioritized, cross-fleet analysis." : "Default: tight, skimmable, action-oriented."}
 
@@ -242,7 +250,7 @@ Fleet:
 ${fleetLines}
 
 ${statsLine}
-
+${situationReport ? `\n${situationReport}\n` : ""}
 Available integrations (via integration_jobs):
 ${integrationLines}
 ${deliverableGuidance ? `\n${deliverableGuidance}` : ""}`;

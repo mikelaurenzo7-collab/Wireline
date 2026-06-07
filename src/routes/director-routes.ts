@@ -28,6 +28,10 @@ import {
 } from "../lib/director-executor";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/director-fleet-plan";
 import {
+  loadDirectorClientIntelligence,
+  renderSituationReport,
+} from "../lib/director-client-intelligence";
+import {
   planDirectorTurnResilient,
   buildDirectorStreamContext,
   type DirectorTurnResult,
@@ -144,6 +148,30 @@ async function loadDirectorWeekStats(
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Load the full per-account intelligence once and derive both the legacy
+ * `stats` line and the rich Situation Report from it. Falls back to the
+ * lightweight week-stats loader if the intelligence query degrades, so the
+ * Director always gets at least basic funnel numbers.
+ */
+async function loadDirectorContextIntel(userId: string): Promise<{
+  stats: { calls7d?: number; bookings7d?: number; openTasks?: number } | undefined;
+  situationReport: string | undefined;
+}> {
+  const intel = await loadDirectorClientIntelligence(userId);
+  if (intel.ok) {
+    return {
+      stats: {
+        calls7d: intel.funnel.calls7d,
+        bookings7d: intel.funnel.bookings7d,
+        openTasks: intel.openTasks,
+      },
+      situationReport: renderSituationReport(intel) || undefined,
+    };
+  }
+  return { stats: await loadDirectorWeekStats(userId), situationReport: undefined };
 }
 
 function directorTurnToStreamDone(turn: DirectorTurnResult) {
@@ -703,7 +731,7 @@ router.post(
 
       const fleet = await loadFleetSafe(req.user.id);
 
-      const stats = await loadDirectorWeekStats(req.user.id);
+      const { stats, situationReport } = await loadDirectorContextIntel(req.user.id);
 
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
@@ -843,6 +871,7 @@ router.post(
                 history,
                 fleet,
                 stats,
+                situationReport,
                 focusAgentId,
                 forceDeep: req.body?.forceDeep === true,
                 modelSelection: resolved.selection,
@@ -885,6 +914,7 @@ router.post(
                   history,
                   fleet,
                   stats,
+                  situationReport,
                   focusAgentId,
                   forceDeep: false,
                   shallowOnly: true,
@@ -1060,7 +1090,7 @@ router.post(
       sse.onClientDisconnect(() => streamAbort.abort());
 
       const fleet = await loadFleetSafe(req.user.id);
-      const stats = await loadDirectorWeekStats(req.user.id);
+      const { stats, situationReport } = await loadDirectorContextIntel(req.user.id);
 
       const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
 
@@ -1255,6 +1285,7 @@ router.post(
             history,
             fleet,
             stats,
+            situationReport,
             focusAgentId,
             forceDeep: false,
             shallowOnly: true,
@@ -1369,6 +1400,7 @@ router.post(
             history,
             fleet,
             stats,
+            situationReport,
             focusAgentId,
             forceDeep: deliverableTurn ? false : req.body?.forceDeep === true,
             shallowOnly: deliverableTurn,
