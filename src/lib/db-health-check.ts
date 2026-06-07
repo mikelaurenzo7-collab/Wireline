@@ -10,6 +10,7 @@
 
 import { Pool } from "pg";
 import { log } from "./server-context";
+import { resolvePgSsl } from "./pg-ssl";
 
 export interface HealthCheckResult {
   healthy: boolean;
@@ -53,7 +54,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     return result;
   }
 
-  const pool = new Pool({ connectionString: dbUrl });
+  const pool = new Pool({ connectionString: dbUrl, ssl: resolvePgSsl(dbUrl) });
 
   try {
     const client = await pool.connect();

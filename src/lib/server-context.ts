@@ -9,6 +9,7 @@ import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
 import { createRbacMiddleware } from "../middleware/require-role";
 import { QuotaTracker, type PlanTier } from "./tenant-quotas";
+import { resolvePgSsl } from "./pg-ssl";
 
 export async function fetchWithTimeout(
   url: string,
@@ -26,6 +27,7 @@ export async function fetchWithTimeout(
 
 const pool = new Pool({
   connectionString: process.env.POSTGRES_URL,
+  ssl: resolvePgSsl(),
   // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
   max: 5,
   min: 0,
