@@ -42,6 +42,7 @@ export interface DirectorPreviewMeta {
   htmlArtifactId?: string;
   imageArtifactId?: string;
   deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
+  renderId?: string;
 }
 
 export interface DirectorProposalsMeta {
@@ -65,7 +66,15 @@ export interface DirectorStitchSessionMeta {
   screenId: string;
   projectTitle?: string;
   deviceType?: DirectorPreviewMeta["deviceType"];
+  renderId?: string;
+  operatorMessage?: string;
 }
+
+export type DirectorStitchSessionLookup = Pick<
+  DirectorStitchSessionMeta,
+  "projectId" | "screenId"
+> &
+  Partial<Pick<DirectorStitchSessionMeta, "renderId" | "deviceType">>;
 
 export interface DirectorMessageMetadata {
   suggestions?: DirectorSuggestionMeta[];
@@ -183,38 +192,61 @@ export function buildDirectorMetadataFromTurn(
 
 export function stitchSessionMatches(
   meta: DirectorMessageMetadata,
-  session: Pick<DirectorStitchSessionMeta, "projectId" | "screenId">,
+  session: DirectorStitchSessionLookup,
 ): boolean {
-  return (
-    meta.stitchSession?.projectId === session.projectId &&
-    meta.stitchSession?.screenId === session.screenId
-  );
+  const candidate = meta.stitchSession;
+  if (!candidate) return false;
+  if (candidate.projectId !== session.projectId || candidate.screenId !== session.screenId) {
+    return false;
+  }
+  if (session.deviceType && candidate.deviceType && candidate.deviceType !== session.deviceType) {
+    return false;
+  }
+  if (session.renderId) return candidate.renderId === session.renderId;
+  if (candidate.renderId) return false;
+  return true;
 }
 
 export function completedStitchPreviewsForSession(
   meta: DirectorMessageMetadata,
-  session: Pick<DirectorStitchSessionMeta, "projectId" | "screenId">,
+  session: DirectorStitchSessionLookup,
 ): DirectorPreviewMeta[] | null {
   if (!stitchSessionMatches(meta, session)) return null;
   const previews = (meta.previews ?? []).filter(
-    (preview) => preview.conceptId === session.screenId && preview.kind === "stitch",
+    (preview) =>
+      preview.conceptId === session.screenId &&
+      preview.kind === "stitch" &&
+      (!session.renderId || preview.renderId === session.renderId) &&
+      (!session.deviceType || !preview.deviceType || preview.deviceType === session.deviceType),
   );
   return previews.length > 0 ? previews : null;
 }
 
 export function mergeCompletedStitchPreviewMetadata(
   meta: DirectorMessageMetadata,
-  session: Pick<DirectorStitchSessionMeta, "projectId" | "screenId">,
+  session: DirectorStitchSessionLookup,
   previews: DirectorPreviewMeta[],
 ): DirectorMessageMetadata | null {
   if (!stitchSessionMatches(meta, session) || previews.length === 0) return null;
+  const nextPreviews = [
+    ...(meta.previews ?? []).filter(
+      (preview) =>
+        preview.kind !== "stitch" ||
+        preview.conceptId !== session.screenId ||
+        (session.renderId ? preview.renderId !== session.renderId : Boolean(preview.renderId)) ||
+        (session.deviceType && preview.deviceType && preview.deviceType !== session.deviceType),
+    ),
+    ...previews,
+  ];
   const next: DirectorMessageMetadata = {
     ...meta,
-    previews,
+    previews: nextPreviews,
     stitchSession: {
       ...(meta.stitchSession ?? {}),
       projectId: session.projectId,
       screenId: session.screenId,
+      renderId: session.renderId ?? meta.stitchSession?.renderId,
+      deviceType: session.deviceType ?? meta.stitchSession?.deviceType,
     },
   };
   delete next.stitchAssetsPending;

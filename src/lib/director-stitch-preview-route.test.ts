@@ -16,6 +16,7 @@ describe("director stitch preview route", () => {
       htmlArtifactId: "101",
       imageArtifactId: "202",
       deviceType: "MOBILE" as const,
+      renderId: "render-abc",
     };
     const url = buildStitchPreviewPageUrl(preview);
     expect(url).toContain("/design/preview?");
@@ -26,6 +27,7 @@ describe("director stitch preview route", () => {
     expect(parsed?.htmlArtifactId).toBe("101");
     expect(parsed?.imageArtifactId).toBe("202");
     expect(parsed?.deviceType).toBe("MOBILE");
+    expect(parsed?.renderId).toBe("render-abc");
     expect(parsed?.title).toBe("Mobile screen");
   });
 

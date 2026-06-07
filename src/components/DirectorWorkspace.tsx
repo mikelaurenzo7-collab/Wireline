@@ -153,6 +153,7 @@ interface DirectorPreview {
   htmlArtifactId?: string;
   imageArtifactId?: string;
   deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
+  renderId?: string;
 }
 
 interface DirectorStitchSession {
@@ -160,6 +161,8 @@ interface DirectorStitchSession {
   screenId: string;
   projectTitle?: string;
   deviceType?: DirectorPreview["deviceType"];
+  renderId?: string;
+  operatorMessage?: string;
 }
 
 interface DirectorMessage {
@@ -255,6 +258,7 @@ export default function DirectorWorkspace({
   });
   const [stitchRendering, setStitchRendering] = useState(false);
   const [stitchPrompt, setStitchPrompt] = useState("");
+  const [stitchPollExhausted, setStitchPollExhausted] = useState<Record<string, true>>({});
   const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
   const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
   const [loadDegraded, setLoadDegraded] = useState(false);
@@ -269,6 +273,7 @@ export default function DirectorWorkspace({
   messagesRef.current = messages;
   /** Stitch finalize polls already started this mount — dedupes resume across reloads/streams. */
   const stitchPollRef = useRef<Set<string>>(new Set());
+  const stitchThreadVersionRef = useRef(0);
   const liveSequenceKeyRef = useRef<string | null>(null);
   const sendNonStreamingRef = useRef<
     | ((
@@ -346,14 +351,28 @@ export default function DirectorWorkspace({
     async (message: DirectorMessage, operatorMessage: string) => {
       const session = message.stitchSession;
       if (!session?.projectId || !session.screenId) return false;
+      const threadVersion = stitchThreadVersionRef.current;
 
       const waits = [
-        2_000, 5_000, 8_000, 10_000, 12_000, 15_000, 15_000, 20_000, 20_000, 25_000, 25_000, 30_000,
-        30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000, 30_000,
-        30_000, 30_000,
+        2_000,
+        5_000,
+        8_000,
+        10_000,
+        12_000,
+        ...Array.from({ length: 48 }, () => 30_000),
       ];
+      setStitchPollExhausted((prev) => {
+        if (!prev[message.id]) return prev;
+        const next = { ...prev };
+        delete next[message.id];
+        return next;
+      });
       for (const waitMs of waits) {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
+        if (stitchThreadVersionRef.current !== threadVersion) {
+          stitchPollRef.current.delete(message.id);
+          return false;
+        }
         let r: Response;
         try {
           r = await authFetch("/api/director/stitch/finalize", {
@@ -362,7 +381,8 @@ export default function DirectorWorkspace({
             body: JSON.stringify({
               projectId: session.projectId,
               screenId: session.screenId,
-              operatorMessage,
+              renderId: session.renderId,
+              operatorMessage: operatorMessage || session.operatorMessage,
               deviceType: session.deviceType,
             }),
           });
@@ -374,6 +394,10 @@ export default function DirectorWorkspace({
         const data = await r.json().catch(() => null);
         if (!data || !data.ok || !Array.isArray(data.previews) || data.previews.length === 0) {
           continue;
+        }
+        if (stitchThreadVersionRef.current !== threadVersion) {
+          stitchPollRef.current.delete(message.id);
+          return false;
         }
 
         setMessages((prev) =>
@@ -396,13 +420,17 @@ export default function DirectorWorkspace({
             return merged;
           });
         }
+        setStitchPollExhausted((prev) => {
+          if (!prev[message.id]) return prev;
+          const next = { ...prev };
+          delete next[message.id];
+          return next;
+        });
+        stitchPollRef.current.delete(message.id);
         return true;
       }
-      // Polling window exhausted without packaged assets — clear the pending flag so the
-      // thread stops claiming an imminent update and the operator can re-run the prompt.
-      setMessages((prev) =>
-        prev.map((m) => (m.id === message.id ? { ...m, stitchAssetsPending: false } : m)),
-      );
+      setStitchPollExhausted((prev) => ({ ...prev, [message.id]: true }));
+      stitchPollRef.current.delete(message.id);
       return false;
     },
     [],
@@ -419,6 +447,15 @@ export default function DirectorWorkspace({
     return "";
   }, []);
 
+  const startStitchFinalizePoll = useCallback(
+    (message: DirectorMessage) => {
+      if (stitchPollRef.current.has(message.id)) return;
+      stitchPollRef.current.add(message.id);
+      void pollStitchFinalize(message, operatorMessageForReply(message.id));
+    },
+    [operatorMessageForReply, pollStitchFinalize],
+  );
+
   // Resume Stitch finalize polling for any pending render — inline reply, streamed reply,
   // recovered turn, or a page reload all surface here. Without this, a screen that finishes
   // packaging after the initial request is stranded in "packaging…" forever and the preview
@@ -429,11 +466,18 @@ export default function DirectorWorkspace({
       const session = m.stitchSession;
       if (!session?.projectId || !session.screenId) continue;
       if (m.previews && m.previews.length > 0) continue;
-      if (stitchPollRef.current.has(m.id)) continue;
-      stitchPollRef.current.add(m.id);
-      void pollStitchFinalize(m, operatorMessageForReply(m.id));
+      startStitchFinalizePoll(m);
     }
-  }, [messages, pollStitchFinalize, operatorMessageForReply]);
+  }, [messages, startStitchFinalizePoll]);
+
+  useEffect(() => {
+    const pollSet = stitchPollRef.current;
+    const versionRef = stitchThreadVersionRef;
+    return () => {
+      versionRef.current += 1;
+      pollSet.clear();
+    };
+  }, []);
 
   const loadMessages = useCallback(async () => {
     if (authLoading) return;
@@ -1209,9 +1253,12 @@ export default function DirectorWorkspace({
     try {
       const r = await authFetch("/api/director/messages", { method: "DELETE" });
       if (!r.ok) throw new Error("Clear failed");
+      stitchThreadVersionRef.current += 1;
+      stitchPollRef.current.clear();
       setMessages([]);
       setArtifacts([]);
       setResolved({});
+      setStitchPollExhausted({});
       setComposerAccessory(null);
       setForceDeep(false);
       setIntegrationLiveActions([]);
@@ -1906,10 +1953,25 @@ export default function DirectorWorkspace({
                         m.stitchSession?.screenId && (
                           <div className="w-full max-w-md flex items-center gap-2.5 rounded-md border border-brand/20 bg-brand/[0.05] px-3.5 py-3">
                             <Loader2 className="w-4 h-4 text-brand animate-spin shrink-0" />
-                            <p className="text-[11px] text-muted leading-relaxed">
-                              Finishing the render — this updates automatically when packaging
-                              completes.
-                            </p>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <p className="text-[11px] text-muted leading-relaxed">
+                                {stitchPollExhausted[m.id]
+                                  ? "Still rendering in Stitch — packaging can take longer than usual."
+                                  : "Finishing the render — this updates automatically when packaging completes."}
+                              </p>
+                              {stitchPollExhausted[m.id] && (
+                                <ShadButton
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  disableAnimations
+                                  onClick={() => startStitchFinalizePoll(m)}
+                                  className="h-auto px-0 py-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand hover:bg-transparent hover:text-brand-deep"
+                                >
+                                  Retry preview check
+                                </ShadButton>
+                              )}
+                            </div>
                           </div>
                         )}
 

@@ -12,8 +12,11 @@ import {
   completedStitchPreviewsForSession,
   mergeCompletedStitchPreviewMetadata,
   parseDirectorMetadata,
+  stitchSessionMatches,
   type DirectorMessageMetadata,
   type DirectorPreviewMeta,
+  type DirectorStitchSessionLookup,
+  type DirectorStitchSessionMeta,
 } from "./director-message-metadata";
 
 export interface DirectorStoredMessage {
@@ -275,15 +278,16 @@ async function loadRecentDirectorStitchRows(userId: string): Promise<
         eq(schema.directorConversationMessages.role, "director"),
       ),
     )
-    .orderBy(desc(schema.directorConversationMessages.createdAt))
+    .orderBy(
+      desc(schema.directorConversationMessages.createdAt),
+      desc(schema.directorConversationMessages.id),
+    )
     .limit(RECENT_STITCH_MESSAGE_LIMIT);
 }
 
-export async function loadCompletedDirectorStitchPreview(input: {
-  userId: string;
-  projectId: string;
-  screenId: string;
-}): Promise<DirectorPreviewMeta[] | null> {
+export async function loadCompletedDirectorStitchPreview(
+  input: { userId: string } & DirectorStitchSessionLookup,
+): Promise<DirectorPreviewMeta[] | null> {
   try {
     const rows = await loadRecentDirectorStitchRows(input.userId);
     for (const row of rows) {
@@ -304,12 +308,33 @@ export async function loadCompletedDirectorStitchPreview(input: {
   return null;
 }
 
-export async function persistDirectorStitchPreviewCompletion(input: {
-  userId: string;
-  projectId: string;
-  screenId: string;
-  previews: DirectorPreviewMeta[];
-}): Promise<boolean> {
+export async function loadPendingDirectorStitchSession(
+  input: { userId: string } & DirectorStitchSessionLookup,
+): Promise<DirectorStitchSessionMeta | null> {
+  try {
+    const rows = await loadRecentDirectorStitchRows(input.userId);
+    for (const row of rows) {
+      const meta = parseDirectorMetadata(row.metadata);
+      if (meta.stitchAssetsPending !== true) continue;
+      if (!meta.stitchSession) continue;
+      if (stitchSessionMatches(meta, input)) return meta.stitchSession;
+    }
+  } catch (e) {
+    if (isPostgresMissingColumn(e, "metadata") || isPostgresMissingRelation(e)) {
+      log.warn("director stitch pending session lookup degraded", {
+        userId: input.userId,
+        error: getErrorMessage(e),
+      });
+      return null;
+    }
+    throw e;
+  }
+  return null;
+}
+
+export async function persistDirectorStitchPreviewCompletion(
+  input: { userId: string; previews: DirectorPreviewMeta[] } & DirectorStitchSessionLookup,
+): Promise<boolean> {
   if (input.previews.length === 0) return false;
   try {
     const rows = await loadRecentDirectorStitchRows(input.userId);

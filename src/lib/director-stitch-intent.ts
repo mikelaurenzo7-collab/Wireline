@@ -22,6 +22,8 @@ export interface StitchSession {
   screenId: string;
   projectTitle?: string;
   deviceType?: StitchDeviceType;
+  renderId?: string;
+  operatorMessage?: string;
 }
 
 const STITCH_UI_MEDIA_SIGNAL =
@@ -55,6 +57,24 @@ export function resolveStitchDeviceType(message: string): StitchDeviceType {
   if (/\b(desktop|wide|monitor|1440)\b/.test(m)) return "DESKTOP";
   if (wantsWebsiteDeliverable(message) || /\b(homepage|landing)\b/i.test(m)) return "MOBILE";
   return "AGNOSTIC";
+}
+
+export function resolveEffectiveStitchDeviceType(
+  message: string,
+  session: StitchSession | null,
+  operation?: StitchMediaOperation,
+): StitchDeviceType {
+  const resolved = resolveStitchDeviceType(message);
+  if (resolved !== "AGNOSTIC") return resolved;
+  const op = operation ?? resolveStitchMediaOperation(message, session);
+  if (
+    (op === "edit" || op === "variants") &&
+    session?.deviceType &&
+    session.deviceType !== "AGNOSTIC"
+  ) {
+    return session.deviceType;
+  }
+  return resolved;
 }
 
 export function resolveStitchModelId(message: string): StitchModelId {
