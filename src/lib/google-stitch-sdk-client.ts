@@ -6,6 +6,8 @@
  */
 import {
   getGoogleStitchApiKey,
+  getGoogleApplicationCredentialsJson,
+  getGoogleCloudProjectId,
   getGoogleStitchMcpBaseUrl,
   getGoogleStitchTimeoutMs,
 } from "./google-stitch-config";
@@ -28,15 +30,48 @@ export interface GoogleStitchRuntime {
 
 export async function createGoogleStitchRuntime(): Promise<GoogleStitchRuntime> {
   const apiKey = getGoogleStitchApiKey();
-  if (!apiKey) {
-    throw new GoogleStitchError("GOOGLE_STITCH_API_KEY is not configured", "AUTH_FAILED");
+  const credsJson = getGoogleApplicationCredentialsJson();
+  const projectId = getGoogleCloudProjectId();
+
+  let accessToken: string | undefined;
+
+  if (credsJson && projectId) {
+    try {
+      const { GoogleAuth } = await import("google-auth-library");
+      const auth = new GoogleAuth({
+        credentials: JSON.parse(credsJson),
+        scopes: "https://www.googleapis.com/auth/cloud-platform",
+        projectId,
+      });
+      const authClient = await auth.getClient();
+      const tokenResponse = await authClient.getAccessToken();
+      if (tokenResponse?.token) {
+        accessToken = tokenResponse.token;
+      } else {
+        throw new Error("No access token returned");
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      throw new GoogleStitchError(
+        `Failed to generate OAuth2 token from Service Account: ${errorMessage}`,
+        "AUTH_FAILED"
+      );
+    }
+  } else if (!apiKey) {
+    throw new GoogleStitchError(
+      "Neither GOOGLE_STITCH_API_KEY nor GOOGLE_APPLICATION_CREDENTIALS_JSON are configured",
+      "AUTH_FAILED"
+    );
   }
 
   const { Stitch, StitchToolClient } = await import("@google/stitch-sdk");
+  
   const client = new StitchToolClient({
-    apiKey,
     baseUrl: getGoogleStitchMcpBaseUrl(),
     timeout: getGoogleStitchTimeoutMs(),
+    ...(accessToken && projectId
+      ? { accessToken, projectId }
+      : { apiKey: apiKey || undefined }),
   });
   const stitch = new Stitch(client);
 

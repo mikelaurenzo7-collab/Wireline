@@ -12,8 +12,18 @@ export function getGoogleStitchApiKey(): string | null {
   return key || null;
 }
 
+export function getGoogleCloudProjectId(): string | null {
+  return process.env.GOOGLE_CLOUD_PROJECT?.trim() || null;
+}
+
+export function getGoogleApplicationCredentialsJson(): string | null {
+  return process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON?.trim() || null;
+}
+
 export function isGoogleStitchConfigured(): boolean {
-  return Boolean(getGoogleStitchApiKey());
+  const hasApiKey = Boolean(getGoogleStitchApiKey());
+  const hasOAuth = Boolean(getGoogleApplicationCredentialsJson() && getGoogleCloudProjectId());
+  return hasApiKey || hasOAuth;
 }
 
 export function getGoogleStitchMcpBaseUrl(): string {
