@@ -167,6 +167,10 @@ function directorTurnToStreamDone(turn: DirectorTurnResult) {
   };
 }
 
+function emitDirectorActivityDone(sse: SseStreamHandle, id: string): void {
+  sse.write("activity", { id, status: "done" });
+}
+
 /** Emit `done` immediately, then persist in the background — avoids proxy drops during artifact DB work. */
 async function finalizeDirectorStreamTurn(
   sse: SseStreamHandle,
@@ -181,6 +185,7 @@ async function finalizeDirectorStreamTurn(
   if (!trimmed) return false;
 
   const quickPayload = { ...donePayload, reply: trimmed };
+  emitDirectorActivityDone(sse, "save");
   sse.write("done", quickPayload);
   sse.end();
 
@@ -255,6 +260,7 @@ async function emitStreamDoneFromPersisted(
     thinking: existing.reasoning ?? "",
     durationMs: 0,
   });
+  emitDirectorActivityDone(sse, "save");
   sse.write("done", jsonFromPersistedDirectorTurn(existing));
   sse.end();
   return true;
@@ -1085,8 +1091,11 @@ router.post(
           }),
         );
 
+        emitDirectorActivityDone(sse, "route");
         sse.write("meta", { model: "sonnet", deep: false, mode: "fleet" });
         sse.write("thinking_end", { thinking: "", durationMs: 0 });
+        emitDirectorActivityDone(sse, "compose");
+        emitDirectorActivityDone(sse, "save");
         sse.write("done", {
           reply: creative.reply,
           approvals: creative.approvals,
@@ -1119,6 +1128,8 @@ router.post(
           })
         : { kind: "none" as const };
 
+      emitDirectorActivityDone(sse, "route");
+
       if (stitchPath.kind === "stitch" || stitchPath.kind === "stitch-failed") {
         const stitchTurn = stitchPath.turn;
         sse.write("meta", {
@@ -1147,6 +1158,7 @@ router.post(
           stitchSession: stitchTurn.stitchSession,
           stitchAssetsPending: stitchTurn.stitchAssetsPending === true,
         };
+        emitDirectorActivityDone(sse, "compose");
         await finalizeDirectorStreamTurn(
           sse,
           req.user.id,
@@ -1211,6 +1223,8 @@ router.post(
           },
           { signal: streamAbort.signal },
         );
+
+        emitDirectorActivityDone(sse, "model");
 
         let normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
         let reply = normalized.reply || "";
@@ -1306,6 +1320,8 @@ router.post(
           ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
         };
 
+        emitDirectorActivityDone(sse, "compose");
+
         streamFinalized = await finalizeDirectorStreamTurn(
           sse,
           req.user.id,
@@ -1358,6 +1374,8 @@ router.post(
             thinking: turn.reasoning ?? "",
             durationMs: turn.thinkingDurationMs ?? 0,
           });
+          emitDirectorActivityDone(sse, "model");
+          emitDirectorActivityDone(sse, "compose");
           await finalizeDirectorStreamTurn(
             sse,
             req.user.id,

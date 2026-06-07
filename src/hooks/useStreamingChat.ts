@@ -16,6 +16,15 @@ import { refreshSessionIfNeeded } from "../lib/api";
 
 export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
 
+export type StreamingActivityStatus = "pending" | "active" | "done" | "warning";
+
+export interface StreamingActivity {
+  id: string;
+  status: StreamingActivityStatus;
+  label?: string;
+  detail?: string;
+}
+
 export interface StreamingState {
   /** Current phase of the streaming lifecycle. */
   phase: StreamPhase;
@@ -35,6 +44,8 @@ export interface StreamingState {
   model?: string;
   /** Human label from meta (Wireline tier or OpenRouter model). */
   modelDisplayLabel?: string;
+  /** Multi-step activity milestones emitted by the streaming endpoint. */
+  activities: StreamingActivity[];
 }
 
 const INITIAL_STATE: StreamingState = {
@@ -42,7 +53,50 @@ const INITIAL_STATE: StreamingState = {
   thinkingText: "",
   isDeep: false,
   streamEstablished: false,
+  activities: [],
 };
+
+function isStreamingActivityStatus(value: unknown): value is StreamingActivityStatus {
+  return value === "pending" || value === "active" || value === "done" || value === "warning";
+}
+
+export function applyStreamingActivityEvent(
+  activities: StreamingActivity[],
+  data: Record<string, unknown>,
+): StreamingActivity[] {
+  const id = typeof data.id === "string" ? data.id.trim() : "";
+  if (!id) return activities;
+
+  const status = isStreamingActivityStatus(data.status) ? data.status : "active";
+  const patch: StreamingActivity = {
+    id,
+    status,
+    label: typeof data.label === "string" ? data.label : undefined,
+    detail: typeof data.detail === "string" ? data.detail : undefined,
+  };
+
+  const index = activities.findIndex((activity) => activity.id === id);
+  if (index === -1) return [...activities, patch];
+
+  return activities.map((activity, i) =>
+    i === index
+      ? {
+          ...activity,
+          ...patch,
+          label: patch.label ?? activity.label,
+          detail: patch.detail ?? activity.detail,
+        }
+      : activity,
+  );
+}
+
+export function markActiveStreamingActivitiesDone(
+  activities: StreamingActivity[],
+): StreamingActivity[] {
+  return activities.map((activity) =>
+    activity.status === "active" ? { ...activity, status: "done" } : activity,
+  );
+}
 
 interface UseStreamingChatOptions {
   /** Called when the full response is complete. */
@@ -144,7 +198,13 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       completionRef.current = false;
       latestReplyRef.current = undefined;
       streamEstablishedRef.current = false;
-      setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
+      setState({
+        phase: "connecting",
+        thinkingText: "",
+        isDeep: false,
+        streamEstablished: false,
+        activities: [],
+      });
 
       await refreshSessionIfNeeded();
 
@@ -189,6 +249,15 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         const handleEvent = (event: string, data: Record<string, unknown>) => {
           bumpIdleTimeout();
           switch (event) {
+            case "activity":
+              streamEstablishedRef.current = true;
+              setState((s) => ({
+                ...s,
+                activities: applyStreamingActivityEvent(s.activities, data),
+                streamEstablished: true,
+              }));
+              break;
+
             case "meta":
               streamEstablishedRef.current = true;
               setState((s) => ({
@@ -253,6 +322,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
                 reply: data,
                 thinkingText: (data.reasoning as string) || s.thinkingText,
                 thinkingDurationMs: (data.thinkingDurationMs as number) || s.thinkingDurationMs,
+                activities: markActiveStreamingActivitiesDone(s.activities),
                 streamEstablished: true,
               }));
               finalizeComplete(data);
