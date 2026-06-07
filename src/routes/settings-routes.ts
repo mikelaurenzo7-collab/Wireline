@@ -70,11 +70,30 @@ router.post(
         delete update.founderUnlimitedAgents;
       }
 
-      const [data] = (await drizzle
+      update.updatedAt = new Date();
+
+      let [data] = (await drizzle
         .update(settings)
         .set(update)
         .where(eq(settings.userId, req.user.id))
         .returning()) as any[];
+
+      // First save for tenants without a settings row yet (e.g. owner bootstrap race).
+      if (!data) {
+        [data] = (await drizzle
+          .insert(settings)
+          .values({
+            id: req.user.id,
+            userId: req.user.id,
+            subscriptionStatus: isOwnerEmail(req.user.email) ? "active" : "trialing",
+            ...update,
+          })
+          .onConflictDoUpdate({
+            target: settings.userId,
+            set: update,
+          })
+          .returning()) as any[];
+      }
 
       const safeData = data ? { ...data } : {};
       delete (safeData as any).vapiPrivateKey;
