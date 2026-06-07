@@ -17,7 +17,7 @@ describe("DirectorWorkspace Stitch polling structure", () => {
   it("keeps long-running renders recoverable instead of clearing pending state", () => {
     expect(src).toContain("Array.from({ length: 48 }, () => 30_000)");
     expect(src).toContain("setStitchPollExhausted((prev) => ({ ...prev, [message.id]: true }))");
-    expect(src).toContain("Retry preview check");
+    expect(src).toContain("Check again for preview");
     expect(src).not.toContain("stitchAssetsPending: false } : m");
   });
 

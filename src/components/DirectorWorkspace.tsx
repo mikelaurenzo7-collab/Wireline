@@ -35,6 +35,7 @@ import {
   Download,
   Sparkles,
   LayoutTemplate,
+  RefreshCw,
 } from "lucide-react";
 import { authFetch, DIRECTOR_STITCH_REQUEST_TIMEOUT_MS, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -85,7 +86,7 @@ import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
-import DirectorStitchPreviewTeaser from "./director/DirectorStitchPreviewTeaser";
+import { DirectorStitchPreviewVariantGrid } from "./director/DirectorStitchPreviewTeaser";
 import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
 import { findLatestStitchPreview, isStitchPreview } from "../lib/director-stitch-preview";
 import {
@@ -259,6 +260,9 @@ export default function DirectorWorkspace({
   const [stitchRendering, setStitchRendering] = useState(false);
   const [stitchPrompt, setStitchPrompt] = useState("");
   const [stitchPollExhausted, setStitchPollExhausted] = useState<Record<string, true>>({});
+  const [stitchPendingElapsedMs, setStitchPendingElapsedMs] = useState<Record<string, number>>({});
+  const stitchPendingTimerRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+  const stitchPendingElapsedRef = useRef<Record<string, number>>({});
   const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
   const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
   const [loadDegraded, setLoadDegraded] = useState(false);
@@ -478,6 +482,44 @@ export default function DirectorWorkspace({
       pollSet.clear();
     };
   }, []);
+
+  useEffect(() => {
+    const pendingMessages = messages.filter(
+      (m) =>
+        m.stitchAssetsPending &&
+        !(m.previews && m.previews.length > 0) &&
+        m.stitchSession?.screenId,
+    );
+    const timerMap = stitchPendingTimerRef.current;
+    const activeIds = new Set(pendingMessages.map((m) => m.id));
+
+    for (const [id, timer] of timerMap) {
+      if (!activeIds.has(id)) {
+        clearInterval(timer);
+        timerMap.delete(id);
+        setStitchPendingElapsedMs((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }
+    }
+
+    for (const m of pendingMessages) {
+      if (!timerMap.has(m.id)) {
+        const priorMs = stitchPendingElapsedRef.current[m.id] ?? 0;
+        const start = Date.now() - priorMs;
+        const timer = setInterval(() => {
+          stitchPendingElapsedRef.current[m.id] = Date.now() - start;
+          setStitchPendingElapsedMs((prev) => ({
+            ...prev,
+            [m.id]: Date.now() - start,
+          }));
+        }, 1000);
+        timerMap.set(m.id, timer);
+      }
+    }
+  }, [messages]);
 
   const loadMessages = useCallback(async () => {
     if (authLoading) return;
@@ -1406,6 +1448,7 @@ export default function DirectorWorkspace({
           <div className="flex items-center gap-1.5">
             {latestStitchPreview &&
               stitchPreviewPageUrlIsValid(latestStitchPreview.preview) &&
+              !messages.some((m) => m.stitchAssetsPending) &&
               !isSending && (
                 <ShadButton
                   asChild
@@ -1419,7 +1462,9 @@ export default function DirectorWorkspace({
                     aria-label={WIRELINE_STITCH_UI.previewSideEntryLabel}
                   >
                     <LayoutTemplate className="w-3 h-3" />
-                    <span>{WIRELINE_STITCH_UI.previewSideEntryLabel}</span>
+                    <span className="hidden sm:inline">
+                      {WIRELINE_STITCH_UI.previewSideEntryLabel}
+                    </span>
                   </Link>
                 </ShadButton>
               )}
@@ -1945,19 +1990,37 @@ export default function DirectorWorkspace({
                       )}
 
                       {m.previews && m.previews.length > 0 && isStitchPreview(m.previews[0]) && (
-                        <DirectorStitchPreviewTeaser preview={m.previews[0]} />
+                        <DirectorStitchPreviewVariantGrid
+                          previews={m.previews.filter((p) => isStitchPreview(p))}
+                        />
                       )}
 
                       {m.stitchAssetsPending &&
                         !(m.previews && m.previews.length > 0) &&
                         m.stitchSession?.screenId && (
-                          <div className="w-full max-w-md flex items-center gap-2.5 rounded-md border border-brand/20 bg-brand/[0.05] px-3.5 py-3">
+                          <div
+                            role="status"
+                            aria-live="polite"
+                            className="w-full max-w-md flex items-center gap-2.5 rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 px-3.5 py-3 shadow-sm"
+                          >
                             <Loader2 className="w-4 h-4 text-brand animate-spin shrink-0" />
                             <div className="min-w-0 flex-1 space-y-1">
                               <p className="text-[11px] text-muted leading-relaxed">
                                 {stitchPollExhausted[m.id]
-                                  ? "Still rendering in Stitch — packaging can take longer than usual."
-                                  : "Finishing the render — this updates automatically when packaging completes."}
+                                  ? "Still packaging preview — this can take longer than usual."
+                                  : `Packaging preview — ${WIRELINE_STITCH_UI.loadingPhases[Math.min(Math.floor((stitchPendingElapsedMs[m.id] ?? 0) / 6000) % WIRELINE_STITCH_UI.loadingPhases.length, WIRELINE_STITCH_UI.loadingPhases.length - 1)]}`}
+                              </p>
+                              <p className="text-[10px] text-muted/60 font-mono tabular-nums">
+                                {(() => {
+                                  const elapsed = Math.round(
+                                    (stitchPendingElapsedMs[m.id] ?? 0) / 1000,
+                                  );
+                                  const minutes = Math.floor(elapsed / 60);
+                                  const seconds = elapsed % 60;
+                                  return minutes > 0
+                                    ? `${minutes}m ${seconds}s elapsed`
+                                    : `${seconds}s elapsed`;
+                                })()}
                               </p>
                               {stitchPollExhausted[m.id] && (
                                 <ShadButton
@@ -1965,10 +2028,18 @@ export default function DirectorWorkspace({
                                   variant="ghost"
                                   size="sm"
                                   disableAnimations
-                                  onClick={() => startStitchFinalizePoll(m)}
+                                  onClick={() => {
+                                    setStitchPollExhausted((prev) => {
+                                      const next = { ...prev };
+                                      delete next[m.id];
+                                      return next;
+                                    });
+                                    startStitchFinalizePoll(m);
+                                  }}
                                   className="h-auto px-0 py-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand hover:bg-transparent hover:text-brand-deep"
                                 >
-                                  Retry preview check
+                                  <RefreshCw className="w-3 h-3" />
+                                  Check again for preview
                                 </ShadButton>
                               )}
                             </div>

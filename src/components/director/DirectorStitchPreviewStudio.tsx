@@ -2,15 +2,16 @@
  * Full Wireline Design preview surface — device frame, live HTML, screenshot, export.
  * Used on /design/preview (not inlined in the main Director chat thread).
  */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Download, ExternalLink, LayoutTemplate, Monitor, Sparkles } from "lucide-react";
+import { Download, ExternalLink, LayoutTemplate, Loader2, Monitor, Sparkles } from "lucide-react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import { fetchDirectorArtifactSignedUrl } from "../../hooks/useDirectorArtifactInlineSrc";
 import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { useToast } from "../../contexts/ToastContext";
 
 export interface DirectorStitchPreviewStudioProps {
   preview: DirectorPreviewMeta;
@@ -61,10 +62,12 @@ function DeviceChrome({
       )}
     >
       <div className="wl-stitch-device-chrome">
-        <span className="wl-stitch-device-dot" />
-        <span className="wl-stitch-device-dot wl-stitch-device-dot--mid" />
-        <span className="wl-stitch-device-dot wl-stitch-device-dot--dim" />
-        <span className="wl-stitch-device-url">{WIRELINE_STITCH_UI.deviceChromeLabel}</span>
+        <span className="wl-stitch-device-dot" aria-hidden="true" />
+        <span className="wl-stitch-device-dot wl-stitch-device-dot--mid" aria-hidden="true" />
+        <span className="wl-stitch-device-dot wl-stitch-device-dot--dim" aria-hidden="true" />
+        <span className="wl-stitch-device-url" aria-hidden="true">
+          {WIRELINE_STITCH_UI.deviceChromeLabel}
+        </span>
       </div>
       <div
         className={cn("wl-stitch-device-screen", fullHeight && "wl-stitch-device-screen--studio")}
@@ -88,6 +91,29 @@ function resolveDefaultTab(
   return "export";
 }
 
+function LoadingProgress({ elapsedMs }: { elapsedMs: number }) {
+  const phases = WIRELINE_STITCH_UI.loadingPhases;
+  const phaseIndex = Math.min(Math.floor(elapsedMs / 6000) % phases.length, phases.length - 1);
+  const phase = phases[phaseIndex];
+  const elapsedSec = Math.round(elapsedMs / 1000);
+  const minutes = Math.floor(elapsedSec / 60);
+  const seconds = elapsedSec % 60;
+  const timeLabel = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+  return (
+    <div className="rounded-md border border-brand/15 p-8 text-center space-y-3">
+      <Loader2 className="w-6 h-6 text-brand/50 animate-spin mx-auto" />
+      <div>
+        <p className="text-[12px] text-ink font-medium">{phase}</p>
+        <p className="text-[11px] text-muted mt-1">{timeLabel} elapsed</p>
+      </div>
+      {elapsedMs > 15_000 && (
+        <p className="text-[10px] text-muted/70">{WIRELINE_STITCH_UI.loadingHint}</p>
+      )}
+    </div>
+  );
+}
+
 export default function DirectorStitchPreviewStudio({
   preview,
   onSuggestEdit,
@@ -103,21 +129,60 @@ export default function DirectorStitchPreviewStudio({
     resolveDefaultTab(hasRenderableHtml, hasRenderableImage, defaultTab),
   );
   const autoTabbedRef = useRef<string | null>(null);
+  const autoTabTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadStartRef = useRef<number>(Date.now());
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [exportBusy, setExportBusy] = useState<Record<string, true>>({});
+  const { error: toastError } = useToast();
+
+  useEffect(() => {
+    loadStartRef.current = Date.now();
+    if (!ready.isReady) {
+      const interval = setInterval(() => setElapsedMs(Date.now() - loadStartRef.current), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [ready.isReady]);
 
   useEffect(() => {
     if (autoTabbedRef.current === preview.conceptId) return;
-    if (hasRenderableHtml) {
+    if (!hasRenderableHtml || tab === "preview") return;
+    if (autoTabTimerRef.current) {
+      clearTimeout(autoTabTimerRef.current);
+    }
+    autoTabTimerRef.current = setTimeout(() => {
       autoTabbedRef.current = preview.conceptId;
       setTab(resolveDefaultTab(true, hasRenderableImage, defaultTab ?? "preview"));
-    }
-  }, [preview.conceptId, hasRenderableHtml, hasRenderableImage, defaultTab]);
+    }, 800);
+    return () => {
+      if (autoTabTimerRef.current) {
+        clearTimeout(autoTabTimerRef.current);
+      }
+    };
+  }, [preview.conceptId, hasRenderableHtml, hasRenderableImage, defaultTab, tab]);
 
-  const openArtifactDownload = async (artifactId: string | undefined, inline: boolean) => {
-    if (!artifactId) return;
-    const url = await fetchDirectorArtifactSignedUrl(artifactId, inline);
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
+  const openArtifactDownload = useCallback(
+    async (artifactId: string | undefined, inline: boolean) => {
+      if (!artifactId) return;
+      setExportBusy((prev) => ({ ...prev, [artifactId]: true }));
+      try {
+        const url = await fetchDirectorArtifactSignedUrl(artifactId, inline);
+        if (!url) {
+          toastError("Download failed", "Could not retrieve the signed download URL.");
+          return;
+        }
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch {
+        toastError("Download failed", "Could not retrieve the signed download URL.");
+      } finally {
+        setExportBusy((prev) => {
+          const next = { ...prev };
+          delete next[artifactId];
+          return next;
+        });
+      }
+    },
+    [toastError],
+  );
 
   const tabs = useMemo(() => {
     const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [];
@@ -135,7 +200,7 @@ export default function DirectorStitchPreviewStudio({
     return list;
   }, [hasRenderableHtml, hasRenderableImage]);
 
-  if (!ready.hasSources || !ready.isReady) {
+  if (!ready.hasSources || (!ready.isReady && !ready.isLoading)) {
     return (
       <div
         className={cn(
@@ -144,6 +209,14 @@ export default function DirectorStitchPreviewStudio({
         )}
       >
         <p className="text-[12px] text-muted">Loading preview assets…</p>
+      </div>
+    );
+  }
+
+  if (ready.isLoading) {
+    return (
+      <div className={cn("w-full wl-stitch-studio", className)}>
+        <LoadingProgress elapsedMs={elapsedMs} />
       </div>
     );
   }
@@ -167,7 +240,7 @@ export default function DirectorStitchPreviewStudio({
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1 mb-3 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10">
+      <div className="flex flex-nowrap gap-1 mb-3 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10 overflow-x-auto">
         {tabs.map((t) => {
           const Icon = t.icon;
           const selected = tab === t.id;
@@ -178,7 +251,7 @@ export default function DirectorStitchPreviewStudio({
               variant="ghost"
               onClick={() => setTab(t.id)}
               className={cn(
-                "h-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all",
+                "h-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all",
                 selected
                   ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
                   : "text-muted hover:text-ink hover:bg-paper/60",
@@ -223,7 +296,6 @@ export default function DirectorStitchPreviewStudio({
                 src={ready.htmlSrc}
                 className="wl-stitch-live-iframe wl-stitch-live-iframe--studio"
                 sandbox="allow-scripts allow-same-origin"
-                loading="lazy"
               />
             </DeviceChrome>
           )}
@@ -239,9 +311,14 @@ export default function DirectorStitchPreviewStudio({
                   <ShadButton
                     type="button"
                     onClick={() => void openArtifactDownload(ready.htmlArtifactId, false)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto"
+                    disabled={Boolean(exportBusy[ready.htmlArtifactId])}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto disabled:opacity-60"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    {exportBusy[ready.htmlArtifactId] ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
                     HTML prototype
                   </ShadButton>
                 )}
@@ -249,9 +326,14 @@ export default function DirectorStitchPreviewStudio({
                   <ShadButton
                     type="button"
                     onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto"
+                    disabled={Boolean(exportBusy[ready.imageArtifactId])}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto disabled:opacity-60"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    {exportBusy[ready.imageArtifactId] ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
                     PNG screenshot
                   </ShadButton>
                 )}
@@ -259,9 +341,14 @@ export default function DirectorStitchPreviewStudio({
                   <ShadButton
                     type="button"
                     onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20 h-auto"
+                    disabled={Boolean(exportBusy[ready.htmlArtifactId])}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    {exportBusy[ready.htmlArtifactId] ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    )}
                     Open live
                   </ShadButton>
                 )}
@@ -272,14 +359,15 @@ export default function DirectorStitchPreviewStudio({
       </AnimatePresence>
 
       {onSuggestEdit && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-1.5 max-h-[2.75rem] overflow-y-auto">
           {QUICK_EDITS.map((prompt) => (
             <ShadButton
               key={prompt}
               type="button"
               disabled={disabled}
               onClick={() => onSuggestEdit(prompt)}
-              className="px-2.5 py-1 rounded-full text-[10px] font-medium border border-brand/15 bg-brand/[0.04] text-brand-deep hover:bg-brand/10 hover:border-brand/25"
+              aria-label={`Suggest edit: ${prompt}`}
+              className="px-2.5 py-1 rounded-full text-[10px] font-medium border border-brand/15 bg-brand/[0.04] text-brand-deep hover:bg-brand/10 hover:border-brand/25 shrink-0 max-w-[280px] truncate"
             >
               {prompt}
             </ShadButton>
