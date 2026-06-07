@@ -84,6 +84,7 @@ export function useDirectorArtifactBlobSrc(
   const [attempted, setAttempted] = useState(false);
   const activeBlobRef = useRef<string | undefined>(undefined);
   const pendingRevokeRef = useRef<string | undefined>(undefined);
+  const lastRefreshKeyRef = useRef(refreshKey);
 
   useEffect(() => {
     const revokePending = () => {
@@ -108,7 +109,9 @@ export function useDirectorArtifactBlobSrc(
 
     const cacheKey = `${artifactId}:${inline ? 1 : 0}`;
     const cached = signedBlobCache.get(cacheKey);
-    const shouldDiscardSignedBlobCacheEntry = refreshKey !== 0;
+    const shouldDiscardSignedBlobCacheEntry = refreshKey !== lastRefreshKeyRef.current;
+    lastRefreshKeyRef.current = refreshKey;
+
     if (cached && cached.expiresAt > Date.now() && !shouldDiscardSignedBlobCacheEntry) {
       revokePending();
       if (activeBlobRef.current && activeBlobRef.current !== cached.src) {

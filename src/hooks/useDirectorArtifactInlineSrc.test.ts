@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   artifactIdFromDirectorSignedUrl,
@@ -37,5 +40,20 @@ describe("shouldDeferSignedBlobCacheEntryRevocation", () => {
     expect(
       shouldDeferSignedBlobCacheEntryRevocation("blob:cached-preview", "blob:active-preview"),
     ).toBe(false);
+  });
+});
+
+describe("useDirectorArtifactBlobSrc (structure)", () => {
+  it("uses a ref to track the previous refreshKey to avoid permanent cache invalidation", () => {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const fileContent = fs.readFileSync(
+      path.resolve(__dirname, "useDirectorArtifactInlineSrc.ts"),
+      "utf8",
+    );
+    expect(fileContent).toContain("const lastRefreshKeyRef = useRef(refreshKey);");
+    expect(fileContent).toContain(
+      "const shouldDiscardSignedBlobCacheEntry = refreshKey !== lastRefreshKeyRef.current;"
+    );
+    expect(fileContent).toContain("lastRefreshKeyRef.current = refreshKey;");
   });
 });
