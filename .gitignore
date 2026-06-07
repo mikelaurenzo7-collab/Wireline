@@ -7,6 +7,12 @@ coverage/
 .env*
 !.env.example
 
+# Local QA / E2E credential scratch files — never commit
+*.local
+.e2e-creds
+.qa-auth.sh
+.sc.local
+
 # IDE — committed .vscode is intentional (shared workspace settings)
 .gitconfig
 

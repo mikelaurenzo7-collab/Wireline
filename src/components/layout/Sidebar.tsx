@@ -486,6 +486,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
     <Link
       to={to}
       {...(dataTour ? { "data-tour": dataTour } : {})}
+      aria-label={expanded ? undefined : label}
       aria-current={active ? "page" : undefined}
       className={cn(
         "touch-press group relative h-8 flex items-center gap-2 px-2 rounded-md transition-all",
