@@ -1,9 +1,25 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   buildDirectorMetadataFromTurn,
+  completedStitchPreviewsForSession,
+  mergeCompletedStitchPreviewMetadata,
   packDirectorMetadata,
   parseDirectorMetadata,
+  type DirectorMessageMetadata,
+  type DirectorPreviewMeta,
 } from "./director-message-metadata";
+
+const session = { projectId: "project-1", screenId: "screen-1" };
+
+const preview: DirectorPreviewMeta = {
+  conceptId: "screen-1",
+  title: "Mobile screen",
+  rationale: "Wireline Design",
+  previewDataUrl: "",
+  kind: "stitch",
+  htmlArtifactId: "101",
+  deviceType: "MOBILE",
+};
 
 describe("director message metadata", () => {
   it("packs and parses structured reply fields", () => {
@@ -48,5 +64,39 @@ describe("director message metadata", () => {
     });
     expect(packed).toBeTruthy();
     expect(parseDirectorMetadata(packed).deliverableArtifact?.name).toContain(".md");
+  });
+
+  it("merges completed Stitch previews and clears pending state", () => {
+    const meta: DirectorMessageMetadata = {
+      stitchSession: { ...session, projectTitle: "Wireline", deviceType: "MOBILE" },
+      stitchAssetsPending: true,
+      modelLabel: "Wireline Design",
+    };
+
+    const merged = mergeCompletedStitchPreviewMetadata(meta, session, [preview]);
+
+    expect(merged?.previews).toEqual([preview]);
+    expect(merged?.stitchAssetsPending).toBeUndefined();
+    expect(merged?.stitchSession?.projectTitle).toBe("Wireline");
+    expect(merged?.stitchSession?.deviceType).toBe("MOBILE");
+    expect(merged?.modelLabel).toBe("Wireline Design");
+  });
+
+  it("finds persisted completed Stitch previews for a matching session", () => {
+    const meta: DirectorMessageMetadata = {
+      stitchSession: session,
+      previews: [preview, { ...preview, conceptId: "other-screen" }],
+    };
+
+    expect(completedStitchPreviewsForSession(meta, session)).toEqual([preview]);
+  });
+
+  it("does not merge previews into a mismatched Stitch session", () => {
+    const meta: DirectorMessageMetadata = {
+      stitchSession: { projectId: "project-2", screenId: "screen-1" },
+      stitchAssetsPending: true,
+    };
+
+    expect(mergeCompletedStitchPreviewMetadata(meta, session, [preview])).toBeNull();
   });
 });

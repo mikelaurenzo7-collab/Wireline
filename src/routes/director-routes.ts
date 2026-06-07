@@ -77,7 +77,9 @@ import {
   ensureDirectorSchema,
   insertDirectorMessage,
   listDirectorArtifactsSafe,
+  loadCompletedDirectorStitchPreview,
   loadDirectorMessages,
+  persistDirectorStitchPreviewCompletion,
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
@@ -283,6 +285,8 @@ function jsonFromPersistedDirectorTurn(
     researchSources: meta.researchSources,
     deliverableArtifact: meta.deliverableArtifact,
     artifacts: meta.deliverableArtifact ? [meta.deliverableArtifact] : undefined,
+    stitchSession: meta.stitchSession,
+    stitchAssetsPending: meta.stitchAssetsPending === true ? true : undefined,
   };
 }
 
@@ -741,7 +745,14 @@ router.post(
       let coachAgentId: string | undefined;
       let coachAgentName: string | undefined;
       let researchSources: { title?: string; uri?: string }[] | undefined;
-      let stitchSession: { projectId: string; screenId: string; projectTitle?: string } | undefined;
+      let stitchSession:
+        | {
+            projectId: string;
+            screenId: string;
+            projectTitle?: string;
+            deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
+          }
+        | undefined;
       let stitchAssetsPending = false;
 
       if (approval && featureFlags.toolExecution) {
@@ -1382,6 +1393,26 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { projectId, screenId, operatorMessage, deviceType } = req.body;
+      let existingPreview: Awaited<ReturnType<typeof loadCompletedDirectorStitchPreview>> = null;
+      try {
+        existingPreview = await loadCompletedDirectorStitchPreview({
+          userId: req.user.id,
+          projectId,
+          screenId,
+        });
+      } catch (lookupErr) {
+        log.warn("director stitch completed preview lookup failed", {
+          userId: req.user.id,
+          error: getErrorMessage(lookupErr),
+        });
+      }
+      if (existingPreview) {
+        return res.json({
+          ok: true,
+          previews: existingPreview,
+          artifacts: [],
+        });
+      }
       const result = await finalizeDirectorStitchScreen({
         userId: req.user.id,
         projectId,
@@ -1394,6 +1425,19 @@ router.post(
           ok: false,
           pending: true,
           message: "Preview assets are not ready yet",
+        });
+      }
+      try {
+        await persistDirectorStitchPreviewCompletion({
+          userId: req.user.id,
+          projectId,
+          screenId,
+          previews: result.previews,
+        });
+      } catch (persistErr) {
+        log.warn("director stitch preview persistence failed", {
+          userId: req.user.id,
+          error: getErrorMessage(persistErr),
         });
       }
       return res.json({

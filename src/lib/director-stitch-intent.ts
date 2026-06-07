@@ -21,6 +21,7 @@ export interface StitchSession {
   projectId: string;
   screenId: string;
   projectTitle?: string;
+  deviceType?: StitchDeviceType;
 }
 
 const STITCH_UI_MEDIA_SIGNAL =

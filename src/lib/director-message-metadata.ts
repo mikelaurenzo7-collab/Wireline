@@ -64,6 +64,7 @@ export interface DirectorStitchSessionMeta {
   projectId: string;
   screenId: string;
   projectTitle?: string;
+  deviceType?: DirectorPreviewMeta["deviceType"];
 }
 
 export interface DirectorMessageMetadata {
@@ -178,6 +179,46 @@ export function buildDirectorMetadataFromTurn(
     coachAgentName: (data.focusAgentName as string) || (data.coachAgentName as string) || undefined,
     mode: (data.mode as "fleet" | "coach") || undefined,
   };
+}
+
+export function stitchSessionMatches(
+  meta: DirectorMessageMetadata,
+  session: Pick<DirectorStitchSessionMeta, "projectId" | "screenId">,
+): boolean {
+  return (
+    meta.stitchSession?.projectId === session.projectId &&
+    meta.stitchSession?.screenId === session.screenId
+  );
+}
+
+export function completedStitchPreviewsForSession(
+  meta: DirectorMessageMetadata,
+  session: Pick<DirectorStitchSessionMeta, "projectId" | "screenId">,
+): DirectorPreviewMeta[] | null {
+  if (!stitchSessionMatches(meta, session)) return null;
+  const previews = (meta.previews ?? []).filter(
+    (preview) => preview.conceptId === session.screenId && preview.kind === "stitch",
+  );
+  return previews.length > 0 ? previews : null;
+}
+
+export function mergeCompletedStitchPreviewMetadata(
+  meta: DirectorMessageMetadata,
+  session: Pick<DirectorStitchSessionMeta, "projectId" | "screenId">,
+  previews: DirectorPreviewMeta[],
+): DirectorMessageMetadata | null {
+  if (!stitchSessionMatches(meta, session) || previews.length === 0) return null;
+  const next: DirectorMessageMetadata = {
+    ...meta,
+    previews,
+    stitchSession: {
+      ...(meta.stitchSession ?? {}),
+      projectId: session.projectId,
+      screenId: session.screenId,
+    },
+  };
+  delete next.stitchAssetsPending;
+  return next;
 }
 
 export function hydrateDirectorMessage<T extends { role: string; metadata?: unknown }>(
