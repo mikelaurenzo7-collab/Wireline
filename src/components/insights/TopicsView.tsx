@@ -96,7 +96,7 @@ export default function TopicsView() {
                         t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
                         t.trend === "new" && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
                         t.trend === "steady" &&
-                          "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                          "bg-black/[0.06] text-ink/50 border border-black/12",
                         t.trend === "declining" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                       )}

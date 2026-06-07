@@ -136,7 +136,7 @@ export function AgentReviewForm({
                     d.priority === "high" && "bg-brand-3/15 text-brand-3 border border-brand-3/30",
                     d.priority === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     d.priority === "low" &&
-                      "bg-zinc-500/15 text-zinc-400 border border-zinc-500/30",
+                      "bg-black/[0.06] text-ink/40 border border-black/12",
                   )}
                 >
                   {d.priority}

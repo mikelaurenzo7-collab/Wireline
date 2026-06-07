@@ -64,7 +64,7 @@ export function CoachForm({
                   coaching.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "positive" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "neutral" &&
-                    "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                    "bg-black/[0.06] text-ink/50 border border-black/12",
                   coaching.sentiment === "frustrated" &&
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                   coaching.sentiment === "angry" &&
@@ -90,7 +90,7 @@ export function CoachForm({
                   coaching.escalation_risk === "medium" &&
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                   coaching.escalation_risk === "low" &&
-                    "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                    "bg-black/[0.06] text-ink/50 border border-black/12",
                   coaching.escalation_risk === "none" && "wl-status-success border wl-text-success",
                 )}
               >

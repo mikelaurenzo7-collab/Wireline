@@ -68,9 +68,9 @@ export function QualifyForm({
                   q.qualification_label === "warm" &&
                     "bg-brand/15 border border-brand/40 text-brand",
                   q.qualification_label === "cool" &&
-                    "bg-zinc-500/15 border border-zinc-500/40 text-zinc-300",
+                    "bg-black/[0.06] border border-black/15 text-ink/50",
                   q.qualification_label === "cold" &&
-                    "bg-zinc-700/15 border border-zinc-700/40 text-zinc-400",
+                    "bg-black/8 border border-black/15 text-ink/40",
                   q.qualification_label === "disqualified" &&
                     "bg-rose-700/15 border border-rose-700/40 text-rose-500",
                 )}

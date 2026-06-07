@@ -51,7 +51,7 @@ export function ThreadSummaryForm({
                   s.sentiment === "positive" && "wl-status-success border wl-text-success",
                   s.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   s.sentiment === "neutral" &&
-                    "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                    "bg-black/[0.06] text-ink/50 border border-black/12",
                   s.sentiment === "frustrated" &&
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                   s.sentiment === "angry" &&
@@ -65,7 +65,7 @@ export function ThreadSummaryForm({
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] uppercase tracking-[0.3em]",
-                  s.urgency === "low" && "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                  s.urgency === "low" && "bg-black/[0.06] text-ink/50 border border-black/12",
                   s.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
                   s.urgency === "high" &&
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",

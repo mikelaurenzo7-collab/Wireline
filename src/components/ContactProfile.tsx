@@ -375,7 +375,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                     ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
                     : event.lead_score >= 50
                       ? "bg-brand/15 text-brand border border-brand/30"
-                      : "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                      : "bg-black/[0.06] text-ink/50 border border-black/12",
                 )}
               >
                 {event.lead_score}/100

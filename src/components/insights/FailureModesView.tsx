@@ -88,7 +88,7 @@ export default function FailureModesView() {
                     m.severity === "medium" &&
                       "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                     m.severity === "low" &&
-                      "bg-zinc-500/15 text-zinc-300 border border-zinc-500/30",
+                      "bg-black/[0.06] text-ink/50 border border-black/12",
                   )}
                 >
                   {m.severity}
