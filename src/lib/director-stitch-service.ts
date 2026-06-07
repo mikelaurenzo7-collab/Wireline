@@ -2,6 +2,7 @@
  * Director × Google Stitch — generate, edit, variants, and site builds for UI media.
  * Uses @google/stitch-sdk (official MCP client + domain API).
  */
+import { randomUUID } from "node:crypto";
 import type { Screen } from "@google/stitch-sdk";
 import { buildSignedDownloadUrl, buildSignedPreviewUrl } from "./director-artifact-signing";
 import { storeDirectorArtifact } from "./director-artifacts";
@@ -19,6 +20,7 @@ import {
 } from "./director-stitch-brief";
 import {
   buildStitchGenerationPrompt,
+  resolveEffectiveStitchDeviceType,
   resolveStitchDeviceType,
   resolveStitchMediaOperation,
   resolveStitchModelId,
@@ -493,6 +495,7 @@ interface PackageStitchScreenInput {
   screenId: string;
   projectId: string;
   deviceType: ReturnType<typeof resolveStitchDeviceType>;
+  renderId: string;
   assets: { html?: Buffer; image?: Buffer };
   title: string;
   artifactSuffix: string;
@@ -503,7 +506,7 @@ async function packageStitchScreenAssets(
 ): Promise<{ preview?: DirectorPreviewMeta; artifacts: Array<Record<string, unknown>> }> {
   const artifacts: Array<Record<string, unknown>> = [];
   const stamp = new Date().toISOString().slice(0, 10);
-  const { screenId, projectId, deviceType, assets, title, artifactSuffix } = input;
+  const { screenId, projectId, deviceType, renderId, assets, title, artifactSuffix } = input;
 
   let htmlDownloadUrl: string | undefined;
   let imageDownloadUrl: string | undefined;
@@ -524,6 +527,7 @@ async function packageStitchScreenAssets(
         stitchProjectId: projectId,
         stitchScreenId: screenId,
         deviceType,
+        stitchRenderId: renderId,
       },
     });
     htmlArtifactId = saved.id;
@@ -554,6 +558,7 @@ async function packageStitchScreenAssets(
         stitchProjectId: projectId,
         stitchScreenId: screenId,
         deviceType,
+        stitchRenderId: renderId,
       },
     });
     imageArtifactId = saved.id;
@@ -601,6 +606,7 @@ async function packageStitchScreenAssets(
       imageDownloadUrl,
       htmlArtifactId,
       imageArtifactId,
+      renderId,
     },
     artifacts,
   };
@@ -613,6 +619,7 @@ export async function finalizeDirectorStitchScreen(input: {
   screenId: string;
   operatorMessage: string;
   deviceType?: ReturnType<typeof resolveStitchDeviceType>;
+  renderId?: string;
   signal?: AbortSignal;
 }): Promise<{ previews: DirectorPreviewMeta[]; artifacts: Array<Record<string, unknown>> } | null> {
   if (!isGoogleStitchConfigured()) return null;
@@ -628,6 +635,7 @@ export async function finalizeDirectorStitchScreen(input: {
       screenId: input.screenId,
       projectId: input.projectId,
       deviceType,
+      renderId: input.renderId ?? `${input.projectId}:${input.screenId}`,
       assets,
       title: deviceType === "MOBILE" ? "Mobile screen" : "Screen",
       artifactSuffix: "",
@@ -652,8 +660,13 @@ export async function runDirectorStitchTurn(
   try {
     const priorSession = await loadLatestStitchSession(input.userId);
     const operation = resolveStitchMediaOperation(input.operatorMessage, priorSession);
-    const deviceType = resolveStitchDeviceType(input.operatorMessage);
+    const deviceType = resolveEffectiveStitchDeviceType(
+      input.operatorMessage,
+      priorSession,
+      operation,
+    );
     const modelId = resolveStitchModelId(input.operatorMessage);
+    const renderId = randomUUID();
     const prompt = buildStitchGenerationPrompt(input.operatorMessage, {
       businessName: input.businessName,
       designBriefMarkdown: input.designBriefMarkdown,
@@ -712,6 +725,7 @@ export async function runDirectorStitchTurn(
         screenId,
         projectId,
         deviceType,
+        renderId,
         assets,
         title,
         artifactSuffix: suffix,
@@ -729,6 +743,8 @@ export async function runDirectorStitchTurn(
       screenId: primary.screenId,
       projectTitle: project.projectTitle,
       deviceType,
+      renderId,
+      operatorMessage: input.operatorMessage.trim().slice(0, 4000),
     };
 
     const durationMs = Date.now() - t0;

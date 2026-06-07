@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildStitchGenerationPrompt,
+  resolveEffectiveStitchDeviceType,
   resolveStitchMediaOperation,
   resolveStitchModelId,
   WIRELINE_STITCH_DESIGN_BRIEF,
@@ -59,5 +60,13 @@ describe("director stitch intent", () => {
     expect(resolveStitchMediaOperation("Build the full multi-page site", session)).toBe(
       "build_site",
     );
+  });
+
+  it("preserves prior device type for edit and variant follow-ups", () => {
+    const session = { projectId: "123", screenId: "456", deviceType: "MOBILE" as const };
+
+    expect(resolveEffectiveStitchDeviceType("Make the hero darker", session)).toBe("MOBILE");
+    expect(resolveEffectiveStitchDeviceType("Show 3 color variants", session)).toBe("MOBILE");
+    expect(resolveEffectiveStitchDeviceType("Make a desktop version", session)).toBe("DESKTOP");
   });
 });

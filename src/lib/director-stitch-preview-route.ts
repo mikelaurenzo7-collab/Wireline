@@ -14,6 +14,7 @@ export function buildStitchPreviewPageUrl(preview: DirectorPreviewMeta): string 
   if (htmlArtifactId) params.set("html", htmlArtifactId);
   if (imageArtifactId) params.set("image", imageArtifactId);
   if (preview.deviceType) params.set("device", preview.deviceType);
+  if (preview.renderId) params.set("render", preview.renderId);
   if (preview.title?.trim()) params.set("title", preview.title.trim());
   return `${PREVIEW_PATH}?${params.toString()}`;
 }
@@ -45,6 +46,7 @@ export function parseStitchPreviewPageSearch(params: URLSearchParams): DirectorP
       : undefined;
 
   const title = params.get("title")?.trim() || "Wireline Design";
+  const renderId = params.get("render")?.trim() || undefined;
 
   return {
     conceptId,
@@ -55,5 +57,6 @@ export function parseStitchPreviewPageSearch(params: URLSearchParams): DirectorP
     htmlArtifactId,
     imageArtifactId,
     deviceType,
+    renderId,
   };
 }

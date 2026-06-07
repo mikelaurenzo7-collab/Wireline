@@ -78,6 +78,7 @@ import {
   insertDirectorMessage,
   listDirectorArtifactsSafe,
   loadCompletedDirectorStitchPreview,
+  loadPendingDirectorStitchSession,
   loadDirectorMessages,
   persistDirectorStitchPreviewCompletion,
 } from "../lib/director-store";
@@ -751,6 +752,8 @@ router.post(
             screenId: string;
             projectTitle?: string;
             deviceType?: "DESKTOP" | "MOBILE" | "TABLET" | "AGNOSTIC";
+            renderId?: string;
+            operatorMessage?: string;
           }
         | undefined;
       let stitchAssetsPending = false;
@@ -1392,13 +1395,15 @@ router.post(
   validateBody(directorStitchFinalizeSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { projectId, screenId, operatorMessage, deviceType } = req.body;
+      const { projectId, screenId, operatorMessage, deviceType, renderId } = req.body;
       let existingPreview: Awaited<ReturnType<typeof loadCompletedDirectorStitchPreview>> = null;
       try {
         existingPreview = await loadCompletedDirectorStitchPreview({
           userId: req.user.id,
           projectId,
           screenId,
+          renderId,
+          deviceType,
         });
       } catch (lookupErr) {
         log.warn("director stitch completed preview lookup failed", {
@@ -1413,12 +1418,31 @@ router.post(
           artifacts: [],
         });
       }
+      const pendingSession = await loadPendingDirectorStitchSession({
+        userId: req.user.id,
+        projectId,
+        screenId,
+        renderId,
+        deviceType,
+      });
+      if (!pendingSession) {
+        return res.status(404).json({
+          error: "Stitch render session not found",
+          code: "STITCH_RENDER_SESSION_NOT_FOUND",
+        });
+      }
+      const effectiveOperatorMessage =
+        operatorMessage?.trim() ||
+        pendingSession.operatorMessage?.trim() ||
+        "Finalize Stitch render";
+      const effectiveDeviceType = pendingSession.deviceType ?? deviceType;
       const result = await finalizeDirectorStitchScreen({
         userId: req.user.id,
         projectId,
         screenId,
-        operatorMessage,
-        deviceType,
+        operatorMessage: effectiveOperatorMessage,
+        deviceType: effectiveDeviceType,
+        renderId: pendingSession.renderId,
       });
       if (!result) {
         return res.status(202).json({
@@ -1432,6 +1456,8 @@ router.post(
           userId: req.user.id,
           projectId,
           screenId,
+          renderId: pendingSession.renderId,
+          deviceType: effectiveDeviceType,
           previews: result.previews,
         });
       } catch (persistErr) {

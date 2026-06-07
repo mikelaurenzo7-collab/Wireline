@@ -476,8 +476,9 @@ export const directorStitchOptionsSchema = z.object({
 export const directorStitchFinalizeSchema = z.object({
   projectId: z.string().min(1).max(64),
   screenId: z.string().min(1).max(128),
-  operatorMessage: z.string().min(1).max(4000),
+  operatorMessage: z.string().max(4000).optional(),
   deviceType: z.enum(["DESKTOP", "MOBILE", "TABLET", "AGNOSTIC"]).optional(),
+  renderId: z.string().min(1).max(128).optional(),
 });
 
 export const directorMessageSchema = z

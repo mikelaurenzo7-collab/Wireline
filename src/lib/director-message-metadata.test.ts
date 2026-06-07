@@ -5,6 +5,7 @@ import {
   mergeCompletedStitchPreviewMetadata,
   packDirectorMetadata,
   parseDirectorMetadata,
+  stitchSessionMatches,
   type DirectorMessageMetadata,
   type DirectorPreviewMeta,
 } from "./director-message-metadata";
@@ -98,5 +99,53 @@ describe("director message metadata", () => {
     };
 
     expect(mergeCompletedStitchPreviewMetadata(meta, session, [preview])).toBeNull();
+  });
+
+  it("requires render ids to match when a Stitch render is server-owned", () => {
+    const meta: DirectorMessageMetadata = {
+      stitchSession: { ...session, renderId: "render-a", deviceType: "MOBILE" },
+      stitchAssetsPending: true,
+      previews: [{ ...preview, renderId: "render-a" }],
+    };
+
+    expect(stitchSessionMatches(meta, { ...session, renderId: "render-a" })).toBe(true);
+    expect(stitchSessionMatches(meta, { ...session, renderId: "render-b" })).toBe(false);
+    expect(
+      stitchSessionMatches(meta, { ...session, renderId: "render-a", deviceType: "DESKTOP" }),
+    ).toBe(false);
+    expect(
+      completedStitchPreviewsForSession(meta, { ...session, renderId: "render-b" }),
+    ).toBeNull();
+  });
+
+  it("preserves unrelated previews when completing a Stitch render", () => {
+    const logoPreview: DirectorPreviewMeta = {
+      conceptId: "logo-1",
+      title: "Logo concept",
+      rationale: "Generated logo",
+      previewDataUrl: "data:image/svg+xml;base64,abc",
+      kind: "logo",
+    };
+    const otherStitchPreview: DirectorPreviewMeta = {
+      ...preview,
+      conceptId: "screen-2",
+      renderId: "render-other",
+    };
+    const completed = { ...preview, renderId: "render-a" };
+    const meta: DirectorMessageMetadata = {
+      stitchSession: { ...session, renderId: "render-a", deviceType: "MOBILE" },
+      stitchAssetsPending: true,
+      previews: [logoPreview, otherStitchPreview, { ...preview, renderId: "render-a" }],
+    };
+
+    const merged = mergeCompletedStitchPreviewMetadata(
+      meta,
+      { ...session, renderId: "render-a", deviceType: "MOBILE" },
+      [completed],
+    );
+
+    expect(merged?.previews).toEqual([logoPreview, otherStitchPreview, completed]);
+    expect(merged?.stitchSession?.renderId).toBe("render-a");
+    expect(merged?.stitchAssetsPending).toBeUndefined();
   });
 });

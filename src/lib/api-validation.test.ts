@@ -3,6 +3,7 @@ import {
   createCampaignSchema,
   directorMessageSchema,
   directorStreamMessageSchema,
+  directorStitchFinalizeSchema,
   resetPasswordSchema,
 } from "./api-validation";
 
@@ -53,6 +54,21 @@ describe("director message schemas", () => {
         modelId: "openai/gpt-4o",
       });
       expect(parsed.data.forceDeep).toBe(true);
+    }
+  });
+
+  it("allows Stitch finalize to resume from persisted session metadata", () => {
+    const parsed = directorStitchFinalizeSchema.safeParse({
+      projectId: "project-1",
+      screenId: "screen-1",
+      renderId: "render-1",
+      deviceType: "MOBILE",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.operatorMessage).toBeUndefined();
+      expect(parsed.data.renderId).toBe("render-1");
     }
   });
 });
