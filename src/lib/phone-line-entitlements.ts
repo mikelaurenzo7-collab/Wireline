@@ -1,6 +1,6 @@
 /**
  * Voice numbers: while subscription is active, the tenant may provision up to
- * one dedicated line per agent seat on their plan (tier `max_agents`).
+ * `included_phone_numbers` on their plan (aligned with agent seats).
  */
 
 import { drizzle } from "./server-context";
@@ -26,7 +26,7 @@ export async function getIncludedPhoneLineSlots(userId: string): Promise<number>
     .limit(1);
 
   const tier = planById(sub?.plan || undefined);
-  if (tier) return tier.max_agents;
+  if (tier) return tier.included_phone_numbers;
 
   if (!stripeAvailable()) return 999;
 

@@ -24,21 +24,78 @@ export function isSubstantiveDirectorReply(content: string): boolean {
   return trimmed.length >= SUBSTANTIVE_REPLY_MIN_CHARS;
 }
 
+export function directorPayloadHasProposals(data: Record<string, unknown>): boolean {
+  const changes = data.changes;
+  const toolToggles = data.toolToggles;
+  const actions = data.actions;
+  const integrationJobs = data.integrationJobs;
+  const clarifyingQuestions = data.clarifyingQuestions;
+  const previews = data.previews;
+  return (
+    (Array.isArray(changes) && changes.length > 0) ||
+    (Array.isArray(toolToggles) && toolToggles.length > 0) ||
+    (Array.isArray(actions) && actions.length > 0) ||
+    (Array.isArray(integrationJobs) && integrationJobs.length > 0) ||
+    (Array.isArray(clarifyingQuestions) && clarifyingQuestions.length > 0) ||
+    (Array.isArray(previews) && previews.length > 0)
+  );
+}
+
+/** Stream / poll recovery — coach Apply cards and short replies count even when under 160 chars. */
+export function isRecoverableDirectorPayload(data: Record<string, unknown> | undefined): boolean {
+  if (!data) return false;
+  if (directorPayloadHasProposals(data)) return true;
+  const reply = data.reply;
+  if (typeof reply !== "string") return false;
+  const trimmed = reply.trim();
+  if (!trimmed || isDirectorStubReply(trimmed)) return false;
+  return true;
+}
+
 export function isSubstantiveDirectorPayload(data: Record<string, unknown> | undefined): boolean {
   if (!data) return false;
+  if (directorPayloadHasProposals(data)) return true;
   const reply = data.reply;
   return typeof reply === "string" && isSubstantiveDirectorReply(reply);
 }
 
+type DirectorThreadMessage = {
+  role: string;
+  content: string;
+  modelLabel?: string;
+  previews?: unknown[];
+  clarifyingQuestions?: string[];
+  proposals?: {
+    changes?: unknown[];
+    toolToggles?: unknown[];
+    actions?: unknown[];
+    integrationJobs?: unknown[];
+  };
+};
+
+function messageHasRecoverableDirectorContent(m: DirectorThreadMessage): boolean {
+  if (m.role !== "director") return false;
+  if (isSubstantiveDirectorReply(m.content)) return true;
+  const trimmed = m.content.trim();
+  if (trimmed && !isDirectorStubReply(trimmed)) return true;
+  const p = m.proposals;
+  if (
+    p &&
+    ((p.changes?.length ?? 0) > 0 ||
+      (p.toolToggles?.length ?? 0) > 0 ||
+      (p.actions?.length ?? 0) > 0 ||
+      (p.integrationJobs?.length ?? 0) > 0)
+  ) {
+    return true;
+  }
+  if (Array.isArray(m.clarifyingQuestions) && m.clarifyingQuestions.length > 0) return true;
+  if (Array.isArray(m.previews) && m.previews.length > 0) return true;
+  return false;
+}
+
 /** Drop stub director rows that follow a substantive reply for the same operator turn. */
 export function operatorTurnHasDirectorReply(
-  messages: {
-    role: string;
-    content: string;
-    modelLabel?: string;
-    previews?: unknown[];
-    clarifyingQuestions?: string[];
-  }[],
+  messages: DirectorThreadMessage[],
   operatorContent: string,
   options?: { requireStitch?: boolean },
 ): boolean {
@@ -62,7 +119,7 @@ export function operatorTurnHasDirectorReply(
       continue;
     }
 
-    if (isSubstantiveDirectorReply(m.content)) return true;
+    if (messageHasRecoverableDirectorContent(m)) return true;
   }
   return false;
 }

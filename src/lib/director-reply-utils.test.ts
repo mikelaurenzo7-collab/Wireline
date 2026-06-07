@@ -3,6 +3,7 @@ import {
   DIRECTOR_STUB_REPLY,
   collapseDirectorThreadDuplicates,
   isDirectorStubReply,
+  isRecoverableDirectorPayload,
   isSubstantiveDirectorReply,
   operatorTurnHasDirectorReply,
 } from "./director-reply-utils";
@@ -29,6 +30,28 @@ describe("director-reply-utils", () => {
         ],
         "Design a landing page",
         { requireStitch: true },
+      ),
+    ).toBe(true);
+  });
+
+  it("treats short coach replies with Apply proposals as recoverable", () => {
+    expect(
+      isRecoverableDirectorPayload({
+        reply: "Approve these training updates for Mira.",
+        changes: [{ agentId: "a1", field: "directive", value: "test" }],
+      }),
+    ).toBe(true);
+    expect(
+      operatorTurnHasDirectorReply(
+        [
+          { role: "operator", content: "Train Mira" },
+          {
+            role: "director",
+            content: "Here are four updates — review and Apply.",
+            proposals: { changes: [{ agentId: "a1" }] },
+          },
+        ],
+        "Train Mira",
       ),
     ).toBe(true);
   });

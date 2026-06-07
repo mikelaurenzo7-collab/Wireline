@@ -97,6 +97,7 @@ async function executeStep(
     const res = await sendTenantMessage(cadence.userId, {
       to: lead.customerNumber,
       body,
+      agentId: cadence.agentId ?? lead.agentId ?? undefined,
     });
     return {
       ok: res.ok,

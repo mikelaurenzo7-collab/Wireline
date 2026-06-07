@@ -13,6 +13,7 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { refreshSessionIfNeeded } from "../lib/api";
+import { isRecoverableDirectorPayload } from "../lib/director-reply-utils";
 
 export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
 
@@ -199,6 +200,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       const finishWithPartialReply = (): boolean => {
         if (completionRef.current || !latestReplyRef.current) return false;
         const payload = latestReplyRef.current;
+        if (!isRecoverableDirectorPayload(payload)) return false;
         setState((s) => ({ ...s, phase: "done", reply: payload }));
         finalizeComplete(payload);
         return true;

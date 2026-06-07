@@ -9,6 +9,7 @@ import { PhoneNumberCreateRequestSchema } from "../../contracts/api-types";
 import { getErrorMessage } from "../lib/server-utils";
 import * as rateLimiters from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
+import { ensureTenantTelecomDefaults } from "../lib/agent-phone-lines";
 import {
   listVapiNumbers,
   provisionVapiNumber,
@@ -291,6 +292,11 @@ router.post(
         phoneNumber,
         vapiNumberId: match.id,
         agentId,
+      });
+
+      await ensureTenantTelecomDefaults(req.user.id, {
+        vapiPhoneNumberId: match.id,
+        phoneNumberE164: phoneNumber,
       });
 
       res.json({ success: true, phone_number: phoneNumber, agent_id: agentId });

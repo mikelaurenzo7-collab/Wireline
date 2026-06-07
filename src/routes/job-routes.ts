@@ -10,7 +10,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { getCallerRole } from "../middleware/require-role";
 import { claimJobById, completeJob, enqueue, failJob, getQueueStats } from "../lib/job-queue";
 import { handleJob } from "../lib/job-worker";
-import { isSsrfUrl } from "../lib/ssrf";
+import { isSsrfUrl } from "../lib/webhook-validators";
 import { apolloPlatformConfigured } from "../lib/apollo-service";
 import type { AuthenticatedRequest } from "../types/auth";
 

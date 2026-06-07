@@ -188,12 +188,23 @@ export async function placeOutboundCall(opts: {
 
   const settings = userSettings;
   const vapiSecret = process.env.VAPI_PRIVATE_KEY;
-  if (!vapiSecret || !settings?.vapiPhoneNumberId) {
+  if (!vapiSecret) {
     return {
       ok: false,
       status: 400,
       error:
         "Platform Error: Master telecom carrier not configured. Please ensure VAPI_PRIVATE_KEY is set in environment secrets.",
+    };
+  }
+
+  const { resolveAgentVapiPhoneNumberId } = await import("./agent-phone-lines");
+  const outboundPhoneNumberId = await resolveAgentVapiPhoneNumberId(userId, agentId);
+  if (!outboundPhoneNumberId) {
+    return {
+      ok: false,
+      status: 400,
+      error:
+        "No voice line is configured for this agent. Provision a dedicated number in Settings → Carrier or create a new agent to auto-provision one.",
     };
   }
 
@@ -424,7 +435,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
   const speechPipeline = resolveVapiSpeechPipeline();
 
   const vapiPayload = {
-    phoneNumberId: settings.vapiPhoneNumberId,
+    phoneNumberId: outboundPhoneNumberId,
     customer: { number: customerNumber },
     assistant: {
       name: agentConfig.name || "Wireline Outbound Agent",

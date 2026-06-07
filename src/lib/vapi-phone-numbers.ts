@@ -98,6 +98,49 @@ export async function listVapiNumbers(): Promise<VapiPhoneNumber[]> {
  *
  * Throws on Vapi-side rejection (out of inventory, cap exceeded, etc.).
  */
+/** Import a number already owned on Wireline's Twilio account into Vapi for voice. */
+export async function importTwilioNumberToVapi(opts: {
+  number: string;
+  name?: string;
+  /** When false, Wireline keeps Twilio SMS webhooks (TCPA opt-out on /api/twilio-webhook/sms). */
+  smsEnabled?: boolean;
+  assistantId?: string;
+}): Promise<VapiPhoneNumber> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
+  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
+  if (!accountSid || !authToken) {
+    throw new Error(
+      "TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are required to import numbers into Vapi.",
+    );
+  }
+
+  const payload: Record<string, unknown> = {
+    provider: "twilio",
+    number: opts.number,
+    twilioAccountSid: accountSid,
+    twilioAuthToken: authToken,
+    name: opts.name || "Wireline-managed",
+    smsEnabled: opts.smsEnabled === true,
+  };
+  if (opts.assistantId) {
+    payload.assistantId = opts.assistantId;
+  }
+
+  const created = await vapiFetch("/phone-number", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  return {
+    id: created.id,
+    number: created.number ?? opts.number,
+    provider: created.provider,
+    name: created.name ?? null,
+    assistantId: created.assistantId ?? null,
+    createdAt: created.createdAt,
+  };
+}
+
 export async function provisionVapiNumber(opts: {
   /** US area code (e.g. "415", "617"). Omit for any-area-code. */
   areaCode?: string;
@@ -105,6 +148,7 @@ export async function provisionVapiNumber(opts: {
   name?: string;
   /** Optional assistant to assign to the number at create-time. */
   assistantId?: string;
+  smsEnabled?: boolean;
 }): Promise<VapiPhoneNumber> {
   const payload: Record<string, any> = {
     provider: "vapi",
@@ -115,6 +159,9 @@ export async function provisionVapiNumber(opts: {
   }
   if (opts.assistantId) {
     payload.assistantId = opts.assistantId;
+  }
+  if (opts.smsEnabled === true) {
+    payload.smsEnabled = true;
   }
 
   const created = await vapiFetch("/phone-number", {

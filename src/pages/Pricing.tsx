@@ -60,7 +60,7 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=starter",
     features: [
       "3 AI voice agents",
-      "2 dedicated voice numbers INCLUDED — no Twilio bill",
+      "3 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
       "1,200 voice minutes / month (~40 min/day)",
       "Unlimited inbound email",
       "Outbound dialer (CSV upload, auto-dial)",
@@ -82,7 +82,7 @@ const TIERS: Tier[] = [
     highlight: true,
     features: [
       "10 AI voice agents",
-      "5 dedicated voice numbers INCLUDED — no Twilio bill",
+      "10 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
       "5,000 voice minutes / month (~165 min/day)",
       "Unlimited inbound email",
       "Outbound dialer + email campaigns",
@@ -107,7 +107,7 @@ const TIERS: Tier[] = [
     ctaHref: "/signup?plan=business",
     features: [
       "25 AI voice agents",
-      "10 dedicated voice numbers INCLUDED — no Twilio bill",
+      "25 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
       "12,000 voice minutes / month (~400 min/day)",
       "Unlimited inbound email",
       "SSO + audit log export",

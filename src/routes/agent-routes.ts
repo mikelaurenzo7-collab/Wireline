@@ -881,11 +881,10 @@ router.post(
       }
 
       // Phone number is INCLUDED in every monthly tier — auto-provision a
-      // Wireline number from our Twilio pool on the tenant's first agent
-      // creation so they never wire Twilio themselves. Subsequent agents
-      // on the same tier either reuse an unassigned number or refuse if
-      // the tier's number cap is hit (operator sees a clear upgrade
-      // prompt).
+      // dedicated line (Twilio buy → Vapi import, or Vapi-managed fallback)
+      // bound to this agent. Tenants never wire carriers themselves.
+      // At tier cap, only unassigned lines are recycled; assigned lines stay
+      // with their agent until released.
       //
       // Fire-and-forget: number provisioning takes ~1-2s end-to-end and
       // the agent-create response shouldn't block on Twilio. The agent

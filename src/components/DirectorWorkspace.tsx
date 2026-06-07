@@ -55,8 +55,7 @@ import { Input } from "./ui/shadcn/Input";
 import { Textarea } from "./ui/shadcn/Textarea";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import {
-  isSubstantiveDirectorPayload,
-  isSubstantiveDirectorReply,
+  isRecoverableDirectorPayload,
   operatorTurnHasDirectorReply,
 } from "../lib/director-reply-utils";
 import ProposalCard from "./chat/ProposalCard";
@@ -608,6 +607,31 @@ export default function DirectorWorkspace({
     }
   }, [authLoading, toastError, user]);
 
+  const recoverPersistedDirectorReply = useCallback(
+    async (trimmed: string, requireStitch: boolean): Promise<boolean> => {
+      const waits = [400, 900, 1600, 3000, 5000, 8000, 12_000, 18_000];
+      for (const waitMs of waits) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        const r = await authFetch("/api/director/messages");
+        if (!r.ok) continue;
+        const data = await r.json();
+        const msgs = Array.isArray(data.messages) ? data.messages : [];
+        if (
+          !operatorTurnHasDirectorReply(msgs, trimmed, {
+            requireStitch: requireStitch,
+          })
+        ) {
+          continue;
+        }
+        setMessages(msgs);
+        if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
+        return true;
+      }
+      return false;
+    },
+    [],
+  );
+
   // Streaming chat integration
   const {
     state: streamState,
@@ -648,7 +672,7 @@ export default function DirectorWorkspace({
       const pending = pendingSendRef.current;
       const operatorProbe = pending?.trimmed ?? lastStreamOperatorRef.current ?? "";
 
-      if (isSubstantiveDirectorPayload(partialReply)) {
+      if (isRecoverableDirectorPayload(partialReply)) {
         appendDirectorReply(partialReply!);
         setIsSending(false);
         streamReset();
@@ -658,40 +682,18 @@ export default function DirectorWorkspace({
         return;
       }
 
-      const directorReplyExists = (text: string) => {
-        const probe = text.trim();
-        if (!probe) return false;
-        const msgs = messagesRef.current;
-        const operatorIdx = msgs.findIndex(
-          (m) => m.role === "operator" && m.content.trim() === probe,
-        );
-        if (operatorIdx >= 0) {
-          return msgs
-            .slice(operatorIdx + 1)
-            .some((m) => m.role === "director" && isSubstantiveDirectorReply(m.content));
-        }
-        const last = msgs[msgs.length - 1];
-        return last?.role === "director" && isSubstantiveDirectorReply(last.content);
-      };
-
-      const recoverFromPersistedTurn = async (): Promise<boolean> => {
-        for (let waitMs of [400, 900, 1600]) {
-          await loadMessages();
-          if (directorReplyExists(operatorProbe)) return true;
-          await new Promise((resolve) => setTimeout(resolve, waitMs));
-        }
-        await loadMessages();
-        return directorReplyExists(operatorProbe);
+      const finishRecovered = () => {
+        setIsSending(false);
+        streamReset();
+        pendingSendRef.current = null;
+        lastStreamOperatorRef.current = null;
+        inputRef.current?.focus();
       };
 
       if (pending?.trimmed) {
         void (async () => {
-          if (await recoverFromPersistedTurn()) {
-            setIsSending(false);
-            streamReset();
-            pendingSendRef.current = null;
-            lastStreamOperatorRef.current = null;
-            inputRef.current?.focus();
+          if (operatorProbe && (await recoverPersistedDirectorReply(operatorProbe, false))) {
+            finishRecovered();
             return;
           }
           void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId, {
@@ -702,48 +704,15 @@ export default function DirectorWorkspace({
       }
 
       void (async () => {
-        if (await recoverFromPersistedTurn()) {
-          setIsSending(false);
-          streamReset();
-          pendingSendRef.current = null;
-          lastStreamOperatorRef.current = null;
-          inputRef.current?.focus();
+        if (operatorProbe && (await recoverPersistedDirectorReply(operatorProbe, false))) {
+          finishRecovered();
           return;
         }
         toastError("Stream interrupted", msg);
-        setIsSending(false);
-        streamReset();
-        pendingSendRef.current = null;
-        lastStreamOperatorRef.current = null;
-        inputRef.current?.focus();
+        finishRecovered();
       })();
     },
   });
-
-  const recoverPersistedDirectorReply = useCallback(
-    async (trimmed: string, requireStitch: boolean): Promise<boolean> => {
-      const waits = [400, 900, 1600, 3000, 5000, 8000, 12_000, 18_000];
-      for (const waitMs of waits) {
-        await new Promise((resolve) => setTimeout(resolve, waitMs));
-        const r = await authFetch("/api/director/messages");
-        if (!r.ok) continue;
-        const data = await r.json();
-        const msgs = Array.isArray(data.messages) ? data.messages : [];
-        if (
-          !operatorTurnHasDirectorReply(msgs, trimmed, {
-            requireStitch: requireStitch,
-          })
-        ) {
-          continue;
-        }
-        setMessages(msgs);
-        if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
-        return true;
-      }
-      return false;
-    },
-    [],
-  );
 
   const sendNonStreaming = useCallback(
     async (

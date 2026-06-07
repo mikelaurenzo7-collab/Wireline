@@ -164,7 +164,7 @@ export async function lookupTenantPhoneNumber(
 
 async function buildMessagePayload(
   userId: string,
-  params: { to: string; body: string; channel: TwilioMessageChannel },
+  params: { to: string; body: string; channel: TwilioMessageChannel; agentId?: string },
   options?: { ignoreMessagingToggle?: boolean; settings?: TwilioTenantSettings },
 ): Promise<{ payload?: Record<string, string>; result?: TwilioSendResult }> {
   const settings = options?.settings || (await getTenantSettings(userId));
@@ -231,8 +231,13 @@ async function buildMessagePayload(
     body: params.body,
   };
 
-  const sender =
-    params.channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
+  let sender = params.channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
+
+  if (params.channel === "sms" && params.agentId) {
+    const { resolveAgentSmsFromNumber } = await import("./agent-phone-lines");
+    const agentLine = await resolveAgentSmsFromNumber(userId, params.agentId);
+    if (agentLine) sender = agentLine;
+  }
 
   if (sender) {
     payload.from = formatMessageAddress(sender, params.channel);
@@ -268,7 +273,7 @@ async function buildMessagePayload(
 
 export async function sendTenantMessage(
   userId: string,
-  params: { to: string; body: string; channel?: TwilioMessageChannel },
+  params: { to: string; body: string; channel?: TwilioMessageChannel; agentId?: string },
 ): Promise<TwilioSendResult> {
   const channel = params.channel || "sms";
   const client = getTwilioClient();

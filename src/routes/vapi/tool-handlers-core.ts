@@ -258,6 +258,7 @@ export async function handleCoreToolCall(
         to: targetNumber,
         body: reviewed.body,
         channel: channel === "whatsapp" ? "whatsapp" : "sms",
+        agentId: agent?.id,
       });
       return {
         toolCallId,

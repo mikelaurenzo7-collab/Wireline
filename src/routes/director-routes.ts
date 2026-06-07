@@ -181,6 +181,9 @@ async function finalizeDirectorStreamTurn(
   if (!trimmed) return false;
 
   const quickPayload = { ...donePayload, reply: trimmed };
+  // Full payload on `reply` so clients that lose the terminal `done` chunk still
+  // have proposals / Apply cards in latestReplyRef for finishWithPartialReply.
+  sse.write("reply", quickPayload);
   sse.write("done", quickPayload);
   sse.end();
 
