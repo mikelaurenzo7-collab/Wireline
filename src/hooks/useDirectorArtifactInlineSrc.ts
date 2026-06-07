@@ -29,6 +29,7 @@ export interface DirectorArtifactInlineSrc {
   src: string | undefined;
   loading: boolean;
   error: boolean;
+  attempted: boolean;
 }
 
 /** Simple in-memory µ-cache for signed blob URLs scoped to the browser session. */
@@ -80,6 +81,7 @@ export function useDirectorArtifactBlobSrc(
   const [src, setSrc] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const activeBlobRef = useRef<string | undefined>(undefined);
   const pendingRevokeRef = useRef<string | undefined>(undefined);
 
@@ -98,6 +100,7 @@ export function useDirectorArtifactBlobSrc(
       setSrc(undefined);
       setLoading(false);
       setError(false);
+      setAttempted(false);
       return;
     }
 
@@ -115,6 +118,7 @@ export function useDirectorArtifactBlobSrc(
       setSrc(cached.src);
       setLoading(false);
       setError(false);
+      setAttempted(true);
       return;
     }
     if (cached) {
@@ -129,6 +133,7 @@ export function useDirectorArtifactBlobSrc(
     let cancelled = false;
     setLoading(true);
     setError(false);
+    setAttempted(false);
 
     void (async () => {
       try {
@@ -165,7 +170,10 @@ export function useDirectorArtifactBlobSrc(
       } catch {
         if (!cancelled) setError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setAttempted(true);
+          setLoading(false);
+        }
       }
     })();
 
@@ -188,5 +196,5 @@ export function useDirectorArtifactBlobSrc(
     };
   }, []);
 
-  return { src, loading, error };
+  return { src, loading, error, attempted };
 }

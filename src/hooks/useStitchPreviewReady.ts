@@ -1,6 +1,7 @@
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import {
   artifactIdFromDirectorSignedUrl,
+  type DirectorArtifactInlineSrc,
   useDirectorArtifactBlobSrc,
 } from "./useDirectorArtifactInlineSrc";
 
@@ -58,6 +59,79 @@ export interface StitchPreviewReadyState {
   htmlArtifactId: string | undefined;
 }
 
+interface StitchPreviewReadyResolutionInput {
+  preview: DirectorPreviewMeta;
+  imageBlob: DirectorArtifactInlineSrc;
+  htmlBlob: DirectorArtifactInlineSrc;
+  imageArtifactId: string | undefined;
+  htmlArtifactId: string | undefined;
+  embeddedImage: boolean;
+  hasSources: boolean;
+}
+
+export function resolveStitchPreviewReadyState({
+  preview,
+  imageBlob,
+  htmlBlob,
+  imageArtifactId,
+  htmlArtifactId,
+  embeddedImage,
+  hasSources,
+}: StitchPreviewReadyResolutionInput): Omit<
+  StitchPreviewReadyState,
+  "hasSources" | "imageArtifactId" | "htmlArtifactId"
+> {
+  const directImageSrc = embeddedImage
+    ? preview.previewDataUrl
+    : directRenderableUrl(preview.imageDownloadUrl) || directRenderableUrl(preview.previewDataUrl);
+  const directHtmlSrc = directRenderableUrl(preview.htmlDownloadUrl);
+
+  const imageArtifactPending =
+    Boolean(imageArtifactId) &&
+    !embeddedImage &&
+    !imageBlob.src &&
+    !imageBlob.error &&
+    (imageBlob.loading || !imageBlob.attempted);
+  const htmlArtifactPending =
+    Boolean(htmlArtifactId) &&
+    !htmlBlob.src &&
+    !htmlBlob.error &&
+    (htmlBlob.loading || !htmlBlob.attempted);
+
+  const imageSrc = imageBlob.src ?? (imageArtifactPending ? undefined : directImageSrc);
+  const htmlSrc = htmlBlob.src ?? (htmlArtifactPending ? undefined : directHtmlSrc);
+
+  const hasRenderableImage = Boolean(imageSrc);
+  const hasRenderableHtml = Boolean(htmlSrc);
+
+  const isReady = hasRenderableImage || hasRenderableHtml;
+  const isLoading = hasSources && !isReady && (imageArtifactPending || htmlArtifactPending);
+  const imagePathFailed =
+    !hasRenderableImage &&
+    (!imageArtifactId || imageBlob.error || (imageBlob.attempted && !imageBlob.src)) &&
+    !directImageSrc;
+  const htmlPathFailed =
+    !hasRenderableHtml &&
+    (!htmlArtifactId || htmlBlob.error || (htmlBlob.attempted && !htmlBlob.src)) &&
+    !directHtmlSrc;
+  const hasImagePath = Boolean(imageArtifactId || directImageSrc);
+  const hasHtmlPath = Boolean(htmlArtifactId || directHtmlSrc);
+  const failed =
+    hasSources &&
+    !isLoading &&
+    !isReady &&
+    (!hasImagePath || imagePathFailed) &&
+    (!hasHtmlPath || htmlPathFailed);
+
+  return {
+    isLoading,
+    isReady,
+    failed,
+    imageSrc,
+    htmlSrc,
+  };
+}
+
 /** Waits for signed artifact blobs before the in-chat device frame should appear. */
 export function useStitchPreviewReady(
   preview: DirectorPreviewMeta,
@@ -79,25 +153,15 @@ export function useStitchPreviewReady(
     refreshKey: options?.refreshKey,
   });
 
-  const directImageSrc = embeddedImage
-    ? preview.previewDataUrl
-    : !imageArtifactId
-      ? directRenderableUrl(preview.imageDownloadUrl) || directRenderableUrl(preview.previewDataUrl)
-      : undefined;
-  const directHtmlSrc = !htmlArtifactId ? directRenderableUrl(preview.htmlDownloadUrl) : undefined;
-
-  const imageSrc = imageBlob.src ?? directImageSrc;
-  const htmlSrc = htmlBlob.src ?? directHtmlSrc;
-
-  const hasRenderableImage = Boolean(imageSrc);
-  const hasRenderableHtml = Boolean(htmlSrc);
-
-  const isReady = hasRenderableImage || hasRenderableHtml;
-  const imagePending =
-    Boolean(imageArtifactId) && !embeddedImage && imageBlob.loading && !hasRenderableImage;
-  const htmlPending = Boolean(htmlArtifactId) && htmlBlob.loading && !hasRenderableHtml;
-  const isLoading = hasSources && !isReady && (imagePending || htmlPending);
-  const failed = hasSources && !isLoading && !isReady;
+  const { isLoading, isReady, failed, imageSrc, htmlSrc } = resolveStitchPreviewReadyState({
+    preview,
+    imageBlob,
+    htmlBlob,
+    imageArtifactId,
+    htmlArtifactId,
+    embeddedImage,
+    hasSources,
+  });
 
   return {
     hasSources,
