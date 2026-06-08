@@ -273,7 +273,18 @@ export default function CrmConnectionCard() {
         return;
       }
       const { url } = await r.json();
-      window.open(url, `${provider}_oauth`, "width=600,height=700,popup=yes");
+      const popup = window.open(url, `${provider}_oauth`, "width=600,height=700,popup=yes");
+      if (!popup) {
+        setConnecting(null);
+        return;
+      }
+      // OAuth popups often close without postMessage — re-enable Connect when dismissed.
+      const poll = window.setInterval(() => {
+        if (popup.closed) {
+          window.clearInterval(poll);
+          setConnecting(null);
+        }
+      }, 500);
     } catch {
       setConnecting(null);
     }
