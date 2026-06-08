@@ -1463,16 +1463,30 @@ html, body, .marketing-surface, .app-surface {
 .wl-composer-design-beta {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.35rem;
+  padding: 0.125rem 0.4rem;
   margin-left: 0.125rem;
   border-radius: 4px;
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--color-brand, #8b3fd6);
   background: color-mix(in srgb, var(--color-brand, #8b3fd6) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 28%, transparent);
+}
+.wl-rail-beta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--wl-cream, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 55%, transparent);
+  border: 1px solid color-mix(in srgb, white 22%, transparent);
 }
 .wl-composer-design-chip--active .wl-composer-design-beta {
   background: color-mix(in srgb, var(--color-brand, #8b3fd6) 22%, white);
@@ -4559,7 +4573,7 @@ html, body, .marketing-surface, .app-surface {
   );
 }
 
-/* Google Stitch in-chat preview */
+/* Wireline Design in-chat preview (legacy wl-stitch-* class prefix) */
 .wl-stitch-gallery {
   max-width: min(100%, 56rem);
 }
@@ -4617,7 +4631,30 @@ html, body, .marketing-surface, .app-surface {
 .wl-painter-preview-empty {
   border-radius: 0.875rem;
   border: 1px dashed color-mix(in srgb, var(--color-brand) 18%, transparent);
-  background: color-mix(in srgb, var(--paper) 88%, var(--color-brand) 4%);
+  background:
+    radial-gradient(
+      ellipse 80% 55% at 50% 0%,
+      color-mix(in srgb, var(--wl-accent, var(--color-brand)) 8%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--paper) 88%, var(--color-brand) 4%);
+}
+.wl-painter-pane-toggle {
+  border: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
+  background: color-mix(in srgb, var(--paper) 82%, var(--color-brand) 3%);
+}
+.wl-painter-preview-starter {
+  border-color: color-mix(in srgb, var(--color-brand) 16%, transparent);
+  background: color-mix(in srgb, var(--paper) 90%, white);
+}
+.wl-painter-preview-starter:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 6%, var(--paper));
+}
+.wl-painter-studio-mark {
+  box-shadow:
+    0 4px 14px color-mix(in srgb, var(--color-brand) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 25%, transparent);
 }
 .wl-stitch-device-chrome {
   display: flex;

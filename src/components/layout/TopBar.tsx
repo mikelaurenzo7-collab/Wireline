@@ -182,7 +182,12 @@ export default function TopBar({
             {item.label}
           </span>
         )}
-        {isDrawer && NAV_SHORTCUT_HINTS[item.path] && !badge && (
+        {item.betaLabel && withLabel && (
+          <span className="relative z-10 wl-rail-beta-badge shrink-0 text-[10px]">
+            {item.betaLabel}
+          </span>
+        )}
+        {isDrawer && NAV_SHORTCUT_HINTS[item.path] && !badge && !item.betaLabel && (
           <kbd className="relative z-10 ml-auto shrink-0 wl-micro-badge font-mono px-1.5 py-0.5 rounded border border-black/10 bg-black/[0.03] text-muted leading-none">
             {NAV_SHORTCUT_HINTS[item.path]}
           </kbd>

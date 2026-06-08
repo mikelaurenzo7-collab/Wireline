@@ -17,7 +17,8 @@ const PASSWORD = process.env.DOGFOOD_PASSWORD || "WirelineDemo!2026";
 function isStitchTurn(d) {
   const reply = typeof d.reply === "string" ? d.reply.toLowerCase() : "";
   return (
-    reply.includes("google stitch") ||
+    reply.includes("wireline design") ||
+    d.modelLabel === "Wireline Design" ||
     d.modelLabel === "Google Stitch" ||
     (Array.isArray(d.previews) && d.previews.length > 0) ||
     (Array.isArray(d.artifacts) &&

@@ -16,7 +16,7 @@
 |-------|--------|--------|----------|
 | prod-dogfood | | | |
 | dogfood-director | | | |
-| stitch-dogfood-prod | | | |
+| design-studio (/design) | | | |
 
 Link: `terminals/dogfood-prod/report.json`
 

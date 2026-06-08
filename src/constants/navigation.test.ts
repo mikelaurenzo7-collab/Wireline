@@ -48,6 +48,12 @@ describe("Top-bar navigation IA", () => {
     ]);
   });
 
+  it("Design nav item is beta-labelled in the workspace group", () => {
+    const design = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/design")!;
+    expect(design.betaLabel).toBe("Beta");
+    expect(PAGE_TITLES["/design"]).toBe("Wireline Design");
+  });
+
   it("Channels group has Phone, Email, SMS", () => {
     const ch = NAV_GROUPS.find((g) => g.label === "Channels")!;
     expect(ch.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);

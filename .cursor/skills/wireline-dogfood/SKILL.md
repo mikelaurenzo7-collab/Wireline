@@ -66,7 +66,7 @@ Copy and track:
 Wireline dogfood @ trywireline.com
 - [ ] Reset session (dogfood-reset.mjs)
 - [ ] Automated sweep (prod-dogfood + dogfood-director)
-- [ ] Stitch path (stitch-dogfood-prod) — if Director/design in scope
+- [ ] Design path (`/design` Painter + preview) — if Wireline Design in scope
 - [ ] Browser deep-dive (MCP or --headed Playwright)
 - [ ] Responsive pass (390 / 834 / 1440)
 - [ ] UX/UI audit (wireline-design checklist)
@@ -83,11 +83,7 @@ node scripts/prod-dogfood.mjs
 node scripts/dogfood-director.mjs
 ```
 
-Optional Stitch render (3–6 min):
-
-```bash
-node scripts/stitch-dogfood-prod.mjs
-```
+For Wireline Design, dogfood `/design` (Painter studio + live preview panel) in Phase 2.
 
 Artifacts land in `terminals/dogfood-prod/` (`report.json`, `screenshots/`).
 
@@ -107,16 +103,14 @@ Workflow:
 
 1. `browser_navigate` → `https://trywireline.com/signin`
 2. `browser_fill` email + password → `browser_click` Sign in
-3. `browser_navigate` → `/chat` — run Director fleet audit, then a Stitch design prompt
-4. After Stitch completes, confirm the **in-thread teaser** (“Design ready” → **Open preview**)
-   and the **thread-header side entry** (“Design preview”) — both link to `/design/preview`
-5. On the preview page, confirm the **Preview** tab shows live HTML (not the Stitch grid placeholder)
-6. `browser_take_screenshot` for failures → `terminals/dogfood-prod/stitch/screenshots/`
+3. `browser_navigate` → `/design` — run a Painter prompt (landing page or app screen)
+4. Confirm the **live preview panel** fills on desktop; on mobile use Chat/Preview tabs
+5. Optionally `/chat` with Design mode — confirm handoff to `/design` for design-shaped prompts
+6. `browser_take_screenshot` for failures → `terminals/dogfood-prod/design/screenshots/`
 
-Stitch is **not** inlined in chat anymore — never expect a full device frame in the thread.
+Design previews render in the **/design studio** or `/design/preview` — not Google Stitch.
 
-Use headed Playwright (`prod-dogfood.mjs`, `stitch-dogfood-prod.mjs`) when you need
-batch screenshots without the Cursor browser UI.
+Use headed Playwright (`prod-dogfood.mjs`) when you need batch screenshots without the Cursor browser UI.
 
 - Tab order, focus traps, keyboard send in Director
 - Hover-only actions on mobile widths
@@ -234,7 +228,7 @@ Write findings to `terminals/dogfood-prod/dogfood-report.md` using
 | `scripts/prod-dogfood.mjs` | Login, route sweep, chat roleplay, screenshots |
 | `scripts/dogfood-marketing.mjs` | Marketing-only sweep (public routes + viewports) |
 | `scripts/dogfood-director.mjs` | API-level Director capability probes |
-| `scripts/stitch-dogfood-prod.mjs` | End-to-end Google Stitch render in chat |
+| `/design` (Painter) | Wireline Design studio + live preview panel |
 | `scripts/clear-demo-director.mjs` | Director thread only |
 | `.claude/skills/run-wireline/authed-qa.mjs` | Local mocked console layout QA |
 

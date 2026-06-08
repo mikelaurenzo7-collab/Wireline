@@ -120,6 +120,8 @@ export interface DirectorComposerToolbarProps {
   onToggleForceDeep?: () => void;
   chatModelSelection?: DirectorChatModelSelection;
   onChatModelChange?: (next: DirectorChatModelSelection) => void;
+  designStudioEnabled?: boolean;
+  /** @deprecated Use designStudioEnabled */
   stitchMediaEnabled?: boolean;
   designMode?: boolean;
   onToggleDesignMode?: () => void;
@@ -142,7 +144,8 @@ export function DirectorComposerToolbar({
   onToggleForceDeep,
   chatModelSelection,
   onChatModelChange,
-  stitchMediaEnabled = false,
+  designStudioEnabled,
+  stitchMediaEnabled,
   designMode = false,
   onToggleDesignMode,
   useStitchAccountBranding = true,
@@ -151,15 +154,16 @@ export function DirectorComposerToolbar({
   designProfileConfigured = false,
 }: DirectorComposerToolbarProps) {
   const isPainterSurface = surface === "painter";
+  const designStudioOn = designStudioEnabled ?? stitchMediaEnabled ?? false;
   const showDeepToggle =
     !isPainterSurface &&
     !focusAgentId &&
     !designMode &&
     onToggleForceDeep &&
     chatModelSelection?.provider !== "openrouter";
-  const showDesignToggle = !isPainterSurface && stitchMediaEnabled && onToggleDesignMode;
+  const showDesignToggle = !isPainterSurface && designStudioOn && onToggleDesignMode;
   const showStitchBrandingToggle =
-    designMode && stitchMediaEnabled && onToggleStitchAccountBranding && stitchBrandingAvailable;
+    designMode && designStudioOn && onToggleStitchAccountBranding && stitchBrandingAvailable;
 
   return (
     <div className={WL_DIRECTOR_CLASSES.composerToolbarScroll}>
@@ -251,7 +255,7 @@ export function DirectorComposerToolbar({
             ) : null}
           </>
         ) : null}
-        {designMode && stitchMediaEnabled && (
+        {(isPainterSurface || designMode) && designStudioOn && (
           <ComposerToolChip
             id="designSetup"
             label={WIRELINE_STITCH_UI.designSystemSetupLabel}

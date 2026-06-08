@@ -9,28 +9,33 @@ import {
   DIRECTOR_EMPTY_HERO,
   DIRECTOR_STARTER_PROMPTS,
   DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
+  type DirectorStarterPrompt,
   WL_DIRECTOR_CLASSES,
 } from "../../lib/wireline-director-design";
 
 export interface DirectorStarterPromptsProps {
   onSelect: (label: string) => void;
+  prompts?: readonly DirectorStarterPrompt[];
+  starterEyebrow?: string;
   featuredCount?: number;
   className?: string;
 }
 
 export function DirectorStarterPrompts({
   onSelect,
+  prompts = DIRECTOR_STARTER_PROMPTS,
+  starterEyebrow = DIRECTOR_EMPTY_HERO.starterEyebrow,
   featuredCount = DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
   className,
 }: DirectorStarterPromptsProps) {
   const [expanded, setExpanded] = useState(false);
-  const featured = DIRECTOR_STARTER_PROMPTS.slice(0, featuredCount);
-  const rest = DIRECTOR_STARTER_PROMPTS.slice(featuredCount);
+  const featured = prompts.slice(0, featuredCount);
+  const rest = prompts.slice(featuredCount);
   const hasMore = rest.length > 0;
 
   return (
     <div className={cn("wl-director-empty-section w-full", className)}>
-      <p className="wl-label text-brand/60 mb-2.5">{DIRECTOR_EMPTY_HERO.starterEyebrow}</p>
+      <p className="wl-label text-brand/60 mb-2.5">{starterEyebrow}</p>
       <div className="stagger-children grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
         {featured.map((p) => (
           <StarterChip

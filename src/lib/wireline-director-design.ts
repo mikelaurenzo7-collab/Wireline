@@ -439,7 +439,7 @@ export const DIRECTOR_COMPOSER_CONTEXT = {
 } as const;
 
 /** User-facing UI generation — Wireline-branded (provider is an implementation detail). */
-export const WIRELINE_STITCH_UI = {
+export const WIRELINE_DESIGN_UI = {
   modelLabel: "Wireline Design",
   badgeLabel: "Wireline Design",
   designModeToggleLabel: "Design",
@@ -526,6 +526,9 @@ export const WIRELINE_STITCH_UI = {
   chatFallbackReasoning:
     "Wireline Design live render unavailable — drafting HTML prototype in chat",
 } as const;
+
+/** @deprecated Import WIRELINE_DESIGN_UI — Stitch was the retired Google integration name. */
+export const WIRELINE_STITCH_UI = WIRELINE_DESIGN_UI;
 
 export const WL_APP_CLASSES = {
   /** Desktop editorial subtitle under TopBar — operator context */

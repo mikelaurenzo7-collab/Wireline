@@ -10,21 +10,15 @@ import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-dire
 export interface DirectorStitchLiveSessionProps {
   operatorPrompt?: string;
   className?: string;
-  /** Studio = multi-pass LLM pipeline (~5 min). Pixel = Google Stitch render (slow). */
-  variant?: "studio" | "pixel";
 }
 
 export default function DirectorStitchLiveSession({
   operatorPrompt,
   className,
-  variant = "studio",
 }: DirectorStitchLiveSessionProps) {
-  const phases =
-    variant === "pixel" ? WIRELINE_STITCH_UI.loadingPhases : WIRELINE_STITCH_UI.studioLoadingPhases;
-  const loadingHint =
-    variant === "pixel" ? WIRELINE_STITCH_UI.loadingHint : WIRELINE_STITCH_UI.studioLoadingHint;
-  const phaseIntervalMs =
-    variant === "pixel" ? 18_000 : (WIRELINE_STITCH_UI.studioLoadingPhaseIntervalMs ?? 28_000);
+  const phases = WIRELINE_STITCH_UI.studioLoadingPhases;
+  const loadingHint = WIRELINE_STITCH_UI.studioLoadingHint;
+  const phaseIntervalMs = WIRELINE_STITCH_UI.studioLoadingPhaseIntervalMs ?? 28_000;
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
 

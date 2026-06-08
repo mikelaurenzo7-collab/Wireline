@@ -35,6 +35,8 @@ export type NavItem = {
   ownerOnly?: boolean;
   /** Page context / breadcrumb only — not rendered in the desktop rail */
   section?: string;
+  /** Optional rail/drawer badge (e.g. beta surfaces) */
+  betaLabel?: string;
 };
 
 function withSection(items: NavItem[], section: string): NavItem[] {
@@ -79,6 +81,7 @@ const WORKSPACE_NAV: NavItem[] = [
     icon: Paintbrush,
     dataTour: "design",
     matches: ["/design"],
+    betaLabel: "Beta",
   },
   {
     label: "Training",
@@ -177,7 +180,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/knowledge": "Knowledge",
   "/agents": "Agents",
   "/chat": "Chat",
-  "/design": "Design",
+  "/design": "Wireline Design",
   "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",

@@ -1,7 +1,54 @@
 /**
  * Painter — Wireline Design studio persona copy (lives on /design, not /chat).
  */
+import type { DirectorStarterPrompt } from "./wireline-director-design";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
+
+/** Empty-state + preview panel chips — design-studio prompts only */
+export const PAINTER_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
+  {
+    id: "landing",
+    label: "Mobile-first landing page for a local service business",
+    intent: "Marketing site with hero, proof, and CTA",
+  },
+  {
+    id: "onboarding",
+    label: "Three-step onboarding flow with progress and validation",
+    intent: "Product signup journey",
+  },
+  {
+    id: "dashboard",
+    label: "Ops dashboard with KPI cards and live activity feed",
+    intent: "B2B app screen",
+  },
+  {
+    id: "pricing",
+    label: "Pricing page with three tiers and feature comparison",
+    intent: "Conversion-focused layout",
+  },
+  {
+    id: "booking",
+    label: "Appointment booking flow with calendar and confirmation",
+    intent: "Scheduling UX",
+  },
+  {
+    id: "support",
+    label: "Help center with search, categories, and article layout",
+    intent: "Support portal",
+  },
+] as const;
+
+export const PAINTER_STARTER_PROMPTS_FEATURED_COUNT = 4;
+
+export const PAINTER_EMPTY_COPY = {
+  starterEyebrow: "Paint from a template",
+  previewStarterEyebrow: "Or try a prompt",
+} as const;
+
+export const PAINTER_LOADING_COPY = {
+  headline: "Opening design studio",
+  sub: "Thread history · brand profile · live preview",
+} as const;
 
 export const WIRELINE_PAINTER_UI = {
   navLabel: "Design",
@@ -16,8 +63,10 @@ export const WIRELINE_PAINTER_UI = {
   emptyBody:
     "Describe a landing page, onboarding flow, or app screen. Painter writes design.md, drafts HTML, and opens a live preview you can click through.",
   sendHint: "Enter to send · Shift+Enter for new line",
-  previewEmptyTitle: "Preview will appear here",
-  previewEmptyBody: "Send a prompt — your live HTML prototype fills this panel when Painter finishes.",
+  previewEmptyTitle: "Live preview",
+  previewEmptyBody:
+    "Your click-through HTML prototype renders here when Painter finishes a screen.",
+  clearThreadLabel: "Clear thread",
   mobileChatTab: "Chat",
   mobilePreviewTab: "Preview",
   modelLabel: "Painter",

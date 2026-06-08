@@ -350,7 +350,10 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
           >
             {item.label}
           </span>
-          {shortcut && !badge && (
+          {item.betaLabel && (
+            <span className="relative z-10 wl-rail-beta-badge shrink-0">{item.betaLabel}</span>
+          )}
+          {shortcut && !badge && !item.betaLabel && (
             <kbd
               className={cn(
                 "relative z-10 wl-micro-badge font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
@@ -388,6 +391,9 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
         <TooltipContent side="right" className="ml-1">
           <span className="flex items-center gap-2">
             {item.label}
+            {item.betaLabel && (
+              <span className="wl-rail-beta-badge text-[10px]">{item.betaLabel}</span>
+            )}
             {shortcut && <kbd className="wl-micro-badge font-mono text-white/40">{shortcut}</kbd>}
           </span>
         </TooltipContent>

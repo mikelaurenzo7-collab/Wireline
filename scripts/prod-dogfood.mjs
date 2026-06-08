@@ -183,7 +183,7 @@ async function chatProbe(page, probe) {
         gotReply = true;
         break;
       }
-      if (/Google Stitch/i.test(text) && /Screenshot|Live HTML/i.test(text)) {
+      if (/Wireline Design/i.test(text) && /preview|HTML/i.test(text)) {
         gotReply = true;
         break;
       }

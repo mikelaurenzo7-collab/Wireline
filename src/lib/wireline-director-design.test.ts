@@ -15,6 +15,7 @@ import {
   DIRECTOR_COMPOSER_HINTS,
   DIRECTOR_COMPOSER_ACCESSORY_HINTS,
   DIRECTOR_COMPOSER_CONTEXT,
+  WIRELINE_DESIGN_UI,
   WIRELINE_STITCH_UI,
   LIVE_FEED_LABELS,
   DIRECTOR_SESSION_COPY,
@@ -213,7 +214,8 @@ describe("Wireline Director design contract", () => {
   });
 
   it("stitch UI copy is Wireline-branded without vendor marketing", () => {
-    expect(WIRELINE_STITCH_UI.designModeToggleLabel).toBe("Design");
+    expect(WIRELINE_DESIGN_UI.designModeToggleLabel).toBe("Design");
+    expect(WIRELINE_STITCH_UI).toBe(WIRELINE_DESIGN_UI);
     expect(WIRELINE_STITCH_UI.designModePlaceholder.length).toBeGreaterThan(20);
     expect(WIRELINE_STITCH_UI.badgeLabel).toBe("Wireline Design");
     expect(WIRELINE_STITCH_UI.deviceChromeLabel).not.toMatch(/google/i);

@@ -862,7 +862,7 @@ router.post(
       } else if (
         operatorMessage &&
         threadKey === DIRECTOR_THREAD_KEY &&
-        featureFlags.stitchMedia &&
+        featureFlags.designStudio &&
         wantsStitchMediaRequest(operatorMessage) &&
         !isStitchDesignModeActive(stitchOptions) &&
         !hasPendingStitchClarifyInHistory(history)
@@ -873,7 +873,7 @@ router.post(
       } else {
         let stitchDesignFallback: DesignLlmFallback | undefined;
         const stitchPath =
-          operatorMessage && featureFlags.stitchMedia
+          operatorMessage && featureFlags.designStudio
             ? await resolveDesignDirectorPath({
                 userId: req.user.id,
                 operatorMessage,
@@ -1230,7 +1230,7 @@ router.post(
       };
 
       let stitchDesignFallback: DesignLlmFallback | undefined;
-      const stitchPath = featureFlags.stitchMedia
+      const stitchPath = featureFlags.designStudio
         ? await resolveDesignDirectorPath({
             userId: req.user.id,
             operatorMessage,

@@ -79,13 +79,13 @@ Also manually:
 | hero-not-creative | Hero+HTML → Stitch or fleet LLM |
 | opus-auto | General fleet summary |
 
-## G. Google Stitch (`stitch-dogfood-prod.mjs`)
+## G. Wireline Design (`/design` Painter studio)
 
-- [ ] Prompt sends; "Director is working" state
-- [ ] Reply mentions Google Stitch
-- [ ] Preview gallery: Screenshot / Live HTML / Export tabs
+- [ ] Prompt sends; Painter working state
+- [ ] Live preview panel fills (desktop) or Preview tab (mobile)
+- [ ] Preview tabs: Screenshot / Live HTML / Export
 - [ ] Device frame renders; no permanent spinner
-- [ ] Screenshots saved under `terminals/dogfood-prod/stitch/`
+- [ ] Screenshots saved under `terminals/dogfood-prod/design/`
 
 ## H. Channel & ops workflows
 

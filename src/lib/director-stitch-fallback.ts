@@ -1,4 +1,4 @@
-/** @deprecated Import from ./director-design-path — Stitch pixel render removed. */
+/** @deprecated Import from ./director-design-path — Google Stitch removed; Spectrum Desk only. */
 export {
   buildDesignChatGuidance,
   buildDesignLlmFallback,
