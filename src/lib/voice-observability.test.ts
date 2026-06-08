@@ -48,6 +48,8 @@ vi.mock("./webhook-helpers", () => ({
 describe("recordVoiceMetrics", () => {
   beforeEach(() => {
     mockCallLogs.length = 0;
+    mockWebhookHealth.length = 0;
+    selectPass = 0;
     vi.clearAllMocks();
   });
 
@@ -242,6 +244,8 @@ describe("alertOnVoiceDegradation", () => {
 describe("getLatencyTrends", () => {
   beforeEach(() => {
     mockCallLogs.length = 0;
+    mockWebhookHealth.length = 0;
+    selectPass = 0;
     vi.clearAllMocks();
   });
 
@@ -256,7 +260,7 @@ describe("getLatencyTrends", () => {
 
   it("returns empty array when no data", async () => {
     mockCallLogs.length = 0;
-    const trends = await getLatencyTrends({ userId: "user-1", days: 7 });
+    const trends = await getLatencyTrends({ userId: "user-1", days: 30 });
     expect(trends).toEqual([]);
   });
 
@@ -266,7 +270,7 @@ describe("getLatencyTrends", () => {
       makeTrendRow("2026-05-28T11:00:00Z", 600),
       makeTrendRow("2026-05-29T09:00:00Z", 800),
     );
-    const trends = await getLatencyTrends({ userId: "user-1", days: 7 });
+    const trends = await getLatencyTrends({ userId: "user-1", days: 30 });
     expect(trends.length).toBe(2);
     expect(trends[0].date).toBe("2026-05-28");
     expect(trends[0].avgTtftMs).toBe(500); // (400+600)/2
@@ -282,7 +286,7 @@ describe("getLatencyTrends", () => {
       makeTrendRow("2026-05-28T13:00:00Z", 400),
       makeTrendRow("2026-05-28T14:00:00Z", 500), // p95 should be 500
     );
-    const trends = await getLatencyTrends({ userId: "user-1", days: 7 });
+    const trends = await getLatencyTrends({ userId: "user-1", days: 30 });
     expect(trends[0].p95TtftMs).toBe(500);
   });
 
@@ -293,7 +297,7 @@ describe("getLatencyTrends", () => {
       makeTrendRow("2026-05-28T12:00:00Z", 400, false, true),
       makeTrendRow("2026-05-28T13:00:00Z", 400, false, false),
     );
-    const trends = await getLatencyTrends({ userId: "user-1", days: 7 });
+    const trends = await getLatencyTrends({ userId: "user-1", days: 30 });
     expect(trends[0].errorRate).toBe(50); // 2/4 errors = 50%
   });
 });

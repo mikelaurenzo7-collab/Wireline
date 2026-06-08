@@ -16,6 +16,13 @@ import { apolloPlatformConfigured } from "../lib/apollo-service";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DAILY_CRON_WINDOW_MINUTES = 15;
+
+function isWithinUtcWindow(now: Date, hour: number, startMinute: number): boolean {
+  if (now.getUTCHours() !== hour) return false;
+  const minute = now.getUTCMinutes();
+  return minute >= startMinute && minute < startMinute + DAILY_CRON_WINDOW_MINUTES;
+}
 
 /** Extended request type for sweep endpoint — carries auth mode. */
 interface SweepRequest extends AuthenticatedRequest {
@@ -120,7 +127,7 @@ router.post(
       }
       const ssrfErr = await assertUrlSafeForServerFetch(url);
       if (ssrfErr) {
-        return res.status(400).json({ error: ssrfErr });
+        return res.status(400).json({ code: "BAD_REQUEST", error: ssrfErr });
       }
       if (
         agentContext != null &&
@@ -319,11 +326,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     } = await import("../lib/job-queue");
 
     const now = new Date();
-    if (
-      now.getUTCHours() === 2 &&
-      now.getUTCMinutes() === 0 &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
+    if (isWithinUtcWindow(now, 2, 0) && (req._sweepMode === "cron" || !req._sweepMode)) {
       const tenants = await drizzle
         .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
         .from(schema.settings);
@@ -382,28 +385,33 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     // write time, but a separate cleanup catches anything inserted
     // before the validation landed (audit probe leftovers, dev
     // testing) and keeps the table tidy at scale.
-    if (
-      now.getUTCHours() === 3 &&
-      now.getUTCMinutes() === 15 &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
-      await enqueue(drizzle, {
-        userId: SYSTEM_USER_ID,
-        type: "sweep_orphan_supervisor_subs",
-        payload: {},
-      }).catch((e: unknown) =>
-        log.warn("sweep_orphan_supervisor_subs enqueue failed", {
-          error: getErrorMessage(e),
-        }),
-      );
+    if (isWithinUtcWindow(now, 3, 15) && (req._sweepMode === "cron" || !req._sweepMode)) {
+      const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
+      const recentOrphanSweep = await drizzle
+        .select({ id: schema.jobs.id })
+        .from(schema.jobs)
+        .where(
+          and(
+            eq(schema.jobs.type, "sweep_orphan_supervisor_subs"),
+            gte(schema.jobs.createdAt, since23h),
+          ),
+        )
+        .limit(1);
+      if (!recentOrphanSweep.length) {
+        await enqueue(drizzle, {
+          userId: SYSTEM_USER_ID,
+          type: "sweep_orphan_supervisor_subs",
+          payload: {},
+        }).catch((e: unknown) =>
+          log.warn("sweep_orphan_supervisor_subs enqueue failed", {
+            error: getErrorMessage(e),
+          }),
+        );
+      }
     }
 
     // Daily at 05:00 UTC: margin-at-risk founder alert
-    if (
-      now.getUTCHours() === 5 &&
-      now.getUTCMinutes() === 0 &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
+    if (isWithinUtcWindow(now, 5, 0) && (req._sweepMode === "cron" || !req._sweepMode)) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
       const recentMargin = await drizzle
         .select({ id: schema.jobs.id })
@@ -426,11 +434,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     // Daily at 04:00 UTC: demo-line canary — verifies all 8 showcase
     // phone lines are still wired correctly in Vapi (number exists,
     // assistant assigned and reachable). Fires owner alert on failure.
-    if (
-      now.getUTCHours() === 4 &&
-      now.getUTCMinutes() === 0 &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
+    if (isWithinUtcWindow(now, 4, 0) && (req._sweepMode === "cron" || !req._sweepMode)) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
       const recentCanary = await drizzle
         .select({ id: schema.jobs.id })

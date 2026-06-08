@@ -111,15 +111,18 @@ describe("generateToken", () => {
   });
 
   it("mints a token that verifies under the same secret", async () => {
-    const token = generateToken({ id: "user-42", email: "user@wireline.com" });
+    const token = generateToken({
+      id: "11111111-1111-4111-8111-111111111111",
+      email: "user@wireline.com",
+    });
     const payload = await verifyInternalJwt(token, SECRET);
-    expect(payload?.sub).toBe("user-42");
+    expect(payload?.sub).toBe("11111111-1111-4111-8111-111111111111");
     expect(payload?.email).toBe("user@wireline.com");
     expect(payload?.aud).toBe("authenticated");
   });
 
   it("sets an expiry roughly 2 hours out", () => {
-    const token = generateToken({ id: "u", email: "e@e.com" });
+    const token = generateToken({ id: "11111111-1111-4111-8111-111111111111", email: "e@e.com" });
     const body = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
     const lifetime = body.exp - body.iat;
     expect(lifetime).toBe(2 * 60 * 60);

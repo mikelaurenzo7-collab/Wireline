@@ -1,4 +1,4 @@
-import { Router, Response } from "express";
+import { Router, Request, Response } from "express";
 import { getCertifiedIntegrationsPublic } from "../lib/integrations-certification";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
@@ -11,7 +11,7 @@ const limiter = createIpRateLimiter({
   message: { error: "Too many requests.", code: "RATE_LIMITED" },
 });
 
-router.get("/api/integrations/certified", limiter, async (_req, res: Response) => {
+router.get("/api/integrations/certified", limiter, async (_req: Request, res: Response) => {
   const certified = await getCertifiedIntegrationsPublic();
   return res.json({
     ok: true,

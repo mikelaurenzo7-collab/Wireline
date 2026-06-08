@@ -162,10 +162,12 @@ async function ensurePendingCodeSchema(): Promise<void> {
         CREATE INDEX IF NOT EXISTS idx_oauth_pending_codes_expires_at
           ON wireline_oauth_pending_codes (expires_at)
       `);
-      // Lock the table down (see migration 0035): the `token` column holds a
-      // live Wireline JWT. Enable RLS so it can't be read via the Supabase Data
-      // API and strip direct grants. The OAuth callback runs as the postgres
-      // base role (table owner → bypasses RLS), so its own access is unaffected.
+      // Lock the table down (see migration 0035). The table now stores only
+      // short-lived bridge metadata (not live Wireline JWTs), but remains
+      // sensitive because rows bind browser state to pending sign-in. Enable
+      // RLS so it can't be read via the Supabase Data API and strip direct
+      // grants. The OAuth callback runs as the postgres base role (table owner
+      // → bypasses RLS), so its own access is unaffected.
       // Guarded for non-Supabase local DBs that lack the anon/authenticated roles.
       await drizzle.execute(sql`
         DO $$
@@ -191,7 +193,6 @@ async function ensurePendingCodeSchema(): Promise<void> {
 async function insertPendingCode(
   code: string,
   entry: {
-    token: string;
     user: { id: string; email: string; fullName: string | null };
     isOwner: boolean;
     bridgeState: string;
@@ -199,7 +200,8 @@ async function insertPendingCode(
 ): Promise<void> {
   await drizzle.insert(schema.oauthPendingCodes).values({
     code,
-    token: entry.token,
+    // Legacy NOT NULL column retained for old deployments; never store live JWTs here.
+    token: "pending",
     userId: entry.user.id,
     email: entry.user.email,
     fullName: entry.user.fullName,
@@ -212,7 +214,6 @@ async function insertPendingCode(
 async function storePendingCode(
   code: string,
   entry: {
-    token: string;
     user: { id: string; email: string; fullName: string | null };
     isOwner: boolean;
     bridgeState: string;
@@ -251,7 +252,6 @@ async function storePendingCode(
 }
 
 async function consumePendingCode(code: string): Promise<{
-  token: string;
   user: { id: string; email: string; fullName: string | null };
   isOwner: boolean;
   bridgeState: string | null;
@@ -280,7 +280,6 @@ async function consumePendingCode(code: string): Promise<{
     row.expires_at instanceof Date ? row.expires_at.getTime() : new Date(row.expires_at).getTime();
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
   return {
-    token: row.token,
     isOwner: row.is_owner,
     bridgeState: row.bridge_state,
     user: { id: row.user_id, email: row.email, fullName: row.full_name },
@@ -305,7 +304,7 @@ async function gcExpiredPendingCodes(): Promise<void> {
 async function bridgeRedirect(
   baseUrl: string,
   user: { id: string; email: string; fullName: string | null },
-  token: string,
+  _token: string,
   errorMessage?: string,
   req?: Request,
 ): Promise<string> {
@@ -319,7 +318,6 @@ async function bridgeRedirect(
   const code = randomBytes(32).toString("base64url");
   try {
     await storePendingCode(code, {
-      token,
       user,
       isOwner: isOwnerEmail(user.email),
       bridgeState,
@@ -396,8 +394,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
     }
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
-    const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(await bridgeRedirect(baseUrl, user, token, undefined, req));
+    return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Google sign-in failed.";
     log.error("auth oauth google: callback failed", { error: message });
@@ -488,8 +485,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
     }
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
-    const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(await bridgeRedirect(baseUrl, user, token, undefined, req));
+    return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Microsoft sign-in failed.";
     log.error("auth oauth microsoft: callback failed", { error: message });
@@ -586,8 +582,7 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
     }
     const user = await findOrCreateUserByEmail(email, name);
     scheduleFounderBootstrap(user.id, user.email);
-    const token = generateToken({ id: user.id, email: user.email });
-    return res.redirect(await bridgeRedirect(baseUrl, user, token, undefined, req));
+    return res.redirect(await bridgeRedirect(baseUrl, user, "", undefined, req));
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Yahoo sign-in failed.";
     log.error("auth oauth yahoo: callback failed", { error: message });
@@ -611,7 +606,8 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
     throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
   clearOAuthBridgeStateCookie(res);
-  setSessionCookie(res, entry.token);
+  const sessionToken = generateToken({ id: entry.user.id, email: entry.user.email });
+  setSessionCookie(res, sessionToken);
   return res.json({
     ...authSuccessBody({
       id: entry.user.id,

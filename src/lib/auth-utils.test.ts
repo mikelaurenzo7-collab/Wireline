@@ -21,31 +21,42 @@ function mintJwt(payload: Record<string, unknown>, secret = SECRET): string {
 
 const future = () => Math.floor(Date.now() / 1000) + 3600;
 const past = () => Math.floor(Date.now() / 1000) - 3600;
+const validSub = "11111111-1111-4111-8111-111111111111";
+const validClaims = () => ({
+  sub: validSub,
+  aud: "authenticated",
+  iss: "wireline-internal",
+  exp: future(),
+});
 
 describe("verifyInternalJwt", () => {
   it("returns the payload for a valid, unexpired token", async () => {
-    const token = mintJwt({ sub: "user-1", email: "a@b.com", exp: future() });
+    const token = mintJwt({ ...validClaims(), email: "a@b.com" });
     const payload = await verifyInternalJwt(token, SECRET);
-    expect(payload?.sub).toBe("user-1");
+    expect(payload?.sub).toBe(validSub);
     expect(payload?.email).toBe("a@b.com");
   });
 
   it("returns null when the signature was made with a different secret", async () => {
-    const token = mintJwt({ sub: "user-1", exp: future() }, "a-totally-different-secret-value-x");
+    const token = mintJwt(validClaims(), "a-totally-different-secret-value-x");
     expect(await verifyInternalJwt(token, SECRET)).toBeNull();
   });
 
   it("returns null when the payload is tampered after signing", async () => {
-    const token = mintJwt({ sub: "user-1", role: "authenticated", exp: future() });
+    const token = mintJwt({ ...validClaims(), role: "authenticated" });
     const [h, , s] = token.split(".");
     const forgedBody = Buffer.from(
-      JSON.stringify({ sub: "attacker", role: "owner", exp: future() }),
+      JSON.stringify({
+        ...validClaims(),
+        sub: "22222222-2222-4222-8222-222222222222",
+        role: "owner",
+      }),
     ).toString("base64url");
     expect(await verifyInternalJwt(`${h}.${forgedBody}.${s}`, SECRET)).toBeNull();
   });
 
   it("returns null for an expired token", async () => {
-    const token = mintJwt({ sub: "user-1", exp: past() });
+    const token = mintJwt({ ...validClaims(), exp: past() });
     expect(await verifyInternalJwt(token, SECRET)).toBeNull();
   });
 
@@ -63,24 +74,21 @@ describe("verifyInternalJwt", () => {
   });
 
   it("rejects a token with no exp claim (no infinite-lifetime tokens)", async () => {
-    const token = mintJwt({ sub: "user-1" });
+    const { exp: _exp, ...claimsWithoutExp } = validClaims();
+    const token = mintJwt(claimsWithoutExp);
     expect(await verifyInternalJwt(token, SECRET)).toBeNull();
   });
 
   it("rejects tokens whose header alg is not HS256", async () => {
     const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
-    const body = Buffer.from(JSON.stringify({ sub: "user-1", exp: future() })).toString(
-      "base64url",
-    );
+    const body = Buffer.from(JSON.stringify(validClaims())).toString("base64url");
     const sig = createHmac("sha256", SECRET).update(`${header}.${body}`).digest("base64url");
     expect(await verifyInternalJwt(`${header}.${body}.${sig}`, SECRET)).toBeNull();
   });
 
   it("rejects tokens whose header typ is not JWT", async () => {
     const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWE" })).toString("base64url");
-    const body = Buffer.from(JSON.stringify({ sub: "user-1", exp: future() })).toString(
-      "base64url",
-    );
+    const body = Buffer.from(JSON.stringify(validClaims())).toString("base64url");
     const sig = createHmac("sha256", SECRET).update(`${header}.${body}`).digest("base64url");
     expect(await verifyInternalJwt(`${header}.${body}.${sig}`, SECRET)).toBeNull();
   });
@@ -89,7 +97,22 @@ describe("verifyInternalJwt", () => {
     // Forge a token where exp is a string — the previous loose check
     // (`if (payload.exp && payload.exp < now)`) would have accepted it
     // because "abc" < now coerces to false.
-    const token = mintJwt({ sub: "user-1", exp: "not-a-number" });
+    const token = mintJwt({ ...validClaims(), exp: "not-a-number" });
+    expect(await verifyInternalJwt(token, SECRET)).toBeNull();
+  });
+
+  it("rejects tokens with the wrong issuer", async () => {
+    const token = mintJwt({ ...validClaims(), iss: "other-issuer" });
+    expect(await verifyInternalJwt(token, SECRET)).toBeNull();
+  });
+
+  it("rejects tokens with the wrong audience", async () => {
+    const token = mintJwt({ ...validClaims(), aud: "other-audience" });
+    expect(await verifyInternalJwt(token, SECRET)).toBeNull();
+  });
+
+  it("rejects tokens whose subject is not a UUID", async () => {
+    const token = mintJwt({ ...validClaims(), sub: "user-1" });
     expect(await verifyInternalJwt(token, SECRET)).toBeNull();
   });
 });

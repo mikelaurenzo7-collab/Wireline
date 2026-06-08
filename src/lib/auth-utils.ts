@@ -2,6 +2,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { log } from "./server-context";
 
+const WIRELINE_JWT_ISSUER = "wireline-internal";
+const WIRELINE_JWT_AUDIENCE = "authenticated";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 /**
  * Wireline internal JWT payload (HS256, signed with `INTERNAL_JWT_SECRET`).
  *
@@ -54,7 +58,12 @@ export async function verifyInternalJwt(token: string, secret: string): Promise<
     hmac.update(data);
     const expectedSignature = hmac.digest("base64url");
 
-    if (!timingSafeEqual(Buffer.from(signatureB64), Buffer.from(expectedSignature))) {
+    const providedSignature = Buffer.from(signatureB64);
+    const expectedSignatureBuffer = Buffer.from(expectedSignature);
+    if (
+      providedSignature.length !== expectedSignatureBuffer.length ||
+      !timingSafeEqual(providedSignature, expectedSignatureBuffer)
+    ) {
       return null;
     }
 
@@ -74,6 +83,19 @@ export async function verifyInternalJwt(token: string, secret: string): Promise<
     }
     if (payload.exp < now) {
       log.warn("JWT expired", { sub: payload.sub, exp: payload.exp, now });
+      return null;
+    }
+
+    if (payload.iss !== WIRELINE_JWT_ISSUER) {
+      log.warn("JWT rejected: invalid issuer", { iss: payload.iss, sub: payload.sub });
+      return null;
+    }
+    if (payload.aud !== WIRELINE_JWT_AUDIENCE) {
+      log.warn("JWT rejected: invalid audience", { aud: payload.aud, sub: payload.sub });
+      return null;
+    }
+    if (typeof payload.sub !== "string" || !UUID_RE.test(payload.sub)) {
+      log.warn("JWT rejected: invalid subject", { sub: payload.sub });
       return null;
     }
 

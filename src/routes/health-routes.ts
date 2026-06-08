@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
 import { evaluateLaunchReadiness } from "../lib/launch-readiness";
+import { validateEnv } from "../lib/env-validator";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getOperatorSloSnapshot } from "../lib/operator-slos";
@@ -85,6 +86,34 @@ router.get("/launch-readiness", healthRateLimiter, (_req: Request, res: Response
       level: c.level,
     })),
     timestamp: report.generated_at,
+  });
+});
+
+/**
+ * Hard readiness contract for deployment promotion / launch monitors.
+ * Unlike startup validation (which stays fail-open so route-level 503s remain
+ * user-readable), this endpoint is binary: core env, DB, and launch readiness
+ * must all pass before returning 200.
+ */
+router.get("/ready", healthRateLimiter, async (_req: Request, res: Response) => {
+  const env = validateEnv();
+  const db = await probeDatabase();
+  const launch = evaluateLaunchReadiness();
+  const ok = env.valid && db.ok && launch.campaign_ready;
+
+  res.status(ok ? 200 : 503).json({
+    ok,
+    env: {
+      ok: env.valid,
+      invalid: env.errors.length,
+      by_group: env.byGroup,
+    },
+    db: { ok: db.ok, latency_ms: db.latency_ms },
+    launch: {
+      ok: launch.campaign_ready,
+      overall_score: launch.overall_score,
+    },
+    timestamp: new Date().toISOString(),
   });
 });
 

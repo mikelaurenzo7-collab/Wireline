@@ -34,7 +34,11 @@ import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 
 const router = express.Router();
 
-const designExportLimiter = createRateLimiter({ windowMs: 60_000, max: 20 });
+const designExportLimiter = createRateLimiter({
+  bucket: "api:design-export",
+  windowMs: 60_000,
+  max: 20,
+});
 
 const PROVIDERS = new Set<DesignIntegrationProvider>(["figma", "canva", "github"]);
 
@@ -225,7 +229,7 @@ router.post(
         html: htmlStr,
       });
 
-      const files = [
+      const files: Array<{ path: string; content: Buffer }> = [
         { path: `src/components/${componentName}.tsx`, content: Buffer.from(tsx, "utf8") },
         { path: "design.md", content: Buffer.from(notes, "utf8") },
       ];

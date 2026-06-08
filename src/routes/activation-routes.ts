@@ -8,7 +8,11 @@ import { log } from "../lib/server-context";
 
 const router = Router();
 
-const activationRateLimit = createRateLimiter({ windowMs: 60_000, max: 120 });
+const activationRateLimit = createRateLimiter({
+  bucket: "api:activation",
+  windowMs: 60_000,
+  max: 120,
+});
 
 router.get(
   "/api/activation/status",

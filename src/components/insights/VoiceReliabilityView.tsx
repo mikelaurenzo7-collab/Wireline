@@ -1,4 +1,3 @@
- 
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -13,8 +12,6 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -244,28 +241,30 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             <p className="wl-insight-label text-brand/70 mb-4">TTFT trend</p>
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trends}>
+                <AreaChart data={trends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                   <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="ms" />
                   <Tooltip />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="avgTtftMs"
                     name="Avg TTFT"
                     stroke="var(--brand)"
                     strokeWidth={2}
-                    dot={false}
+                    fill="var(--brand)"
+                    fillOpacity={0.08}
                   />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="p95TtftMs"
                     name="p95 TTFT"
                     stroke="#b45309"
                     strokeWidth={2}
-                    dot={false}
+                    fill="#b45309"
+                    fillOpacity={0.06}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>

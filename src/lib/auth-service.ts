@@ -244,14 +244,17 @@ export const authService = {
       .limit(1);
     if (!row || row.usedAt || row.expiresAt < new Date()) return null;
 
-    await drizzle
-      .update(schema.users)
-      .set({ emailVerifiedAt: new Date(), updatedAt: new Date() })
-      .where(eq(schema.users.id, row.userId));
-    await drizzle
-      .update(schema.emailVerificationTokens)
-      .set({ usedAt: new Date() })
-      .where(eq(schema.emailVerificationTokens.id, row.id));
+    const now = new Date();
+    await drizzle.transaction(async (tx) => {
+      await tx
+        .update(schema.users)
+        .set({ emailVerifiedAt: now, updatedAt: now })
+        .where(eq(schema.users.id, row.userId));
+      await tx
+        .update(schema.emailVerificationTokens)
+        .set({ usedAt: now })
+        .where(eq(schema.emailVerificationTokens.id, row.id));
+    });
 
     const [user] = await drizzle
       .select({ id: schema.users.id, email: schema.users.email, fullName: schema.users.fullName })

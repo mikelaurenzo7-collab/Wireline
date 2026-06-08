@@ -24,6 +24,11 @@ const h = vi.hoisted(() => {
   };
 
   const schema = {
+    webhookHealth: {
+      createdAt: "webhookHealth.created_at",
+      userId: "webhookHealth.user_id",
+      outcome: "webhookHealth.outcome",
+    },
     callLogs: {
       id: "callLogs.id",
       vapiCallId: "callLogs.vapi_call_id",
@@ -40,6 +45,11 @@ const h = vi.hoisted(() => {
       sentiment: "callLogs.sentiment",
       outcomeTag: "callLogs.outcome_tag",
       demo: "callLogs.demo",
+      endedReason: "callLogs.ended_reason",
+      toolCallsTotal: "callLogs.tool_calls_total",
+      toolCallsFailed: "callLogs.tool_calls_failed",
+      escalationAttempted: "callLogs.escalation_attempted",
+      escalationSucceeded: "callLogs.escalation_succeeded",
     },
   };
 
@@ -48,6 +58,27 @@ const h = vi.hoisted(() => {
       from: vi.fn(() => ({
         where: vi.fn((cond: any) => {
           const resolveData = (): any[] => {
+            if (cond?.conds?.some((c: any) => c?.left === schema.callLogs.demo)) {
+              return state.calls.map((c) => ({
+                ...c,
+                createdAt: new Date(),
+                durationSeconds: 60,
+                sentiment: "neutral",
+                outcomeTag: null,
+                pipelineError: null,
+                endedReason: null,
+                toolCallsTotal: 0,
+                toolCallsFailed: 0,
+                escalationAttempted: false,
+                escalationSucceeded: false,
+              }));
+            }
+            if (
+              cond?.left === schema.webhookHealth.createdAt ||
+              cond?.conds?.some((c: any) => c?.left === schema.webhookHealth.createdAt)
+            ) {
+              return [];
+            }
             if (cond?.left === schema.callLogs.vapiCallId) {
               const found = state.calls.find((c) => c.vapiCallId === cond.right);
               return found ? [{ userId: found.userId }] : [];
@@ -103,6 +134,7 @@ const h = vi.hoisted(() => {
 vi.mock("../lib/server-context", () => ({
   drizzle: h.drizzle,
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  requirePermission: () => (_req: any, _res: any, next: any) => next(),
 }));
 vi.mock("../db/schema", () => h.schema);
 vi.mock("../middleware/auth", () => ({

@@ -3,6 +3,7 @@ import { authFetch } from "../../lib/api";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { MetricStatTile } from "../ui/MetricStatTile";
 import { EmptyState } from "../ui/EmptyState";
+import { BrainCircuit } from "lucide-react";
 import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 
 type AgentRow = { id: string; name: string };
@@ -48,7 +49,13 @@ export default function LearningMetricsView() {
     };
   }, []);
 
-  if (loading) return <ClientRouteLoading label="Loading learning metrics" />;
+  if (loading)
+    return (
+      <ClientRouteLoading
+        icon={<BrainCircuit className="h-5 w-5" />}
+        label="Loading learning metrics"
+      />
+    );
 
   const pendingTotal = digests.reduce((n, d) => n + d.lessonsPending, 0);
   const approvedTotal = digests.reduce((n, d) => n + d.lessonsApproved, 0);
@@ -59,7 +66,8 @@ export default function LearningMetricsView() {
         eyebrow="Learning loop"
         title="No agents yet"
         description="Deploy an agent to start capturing lessons from live calls."
-        actions={OPS_INSIGHTS_EMPTY.funnel.actions}
+        icon={BrainCircuit}
+        actions={[...OPS_INSIGHTS_EMPTY.funnel.actions]}
       />
     );
   }

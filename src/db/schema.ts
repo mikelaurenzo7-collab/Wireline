@@ -19,7 +19,7 @@ import {
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
-// Schema version: latest applied migration is `drizzle/migrations/0045_csat_and_voice_observability.sql`.
+// Schema version: latest applied migration is `drizzle/migrations/0052_design_integrations.sql`.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
 // 0. IDENTITY & ACCOUNTS
