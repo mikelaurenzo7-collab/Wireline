@@ -19,6 +19,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, lte, asc, inArray } from "drizzle-orm";
 import { placeOutboundCall } from "./vapi-client";
+import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { sendTenantMessage } from "./twilio-service";
 import { IntegrationService } from "./integrations";
 import { isDncBlocked } from "./compliance";
@@ -78,6 +79,11 @@ async function executeStep(
   if (step.type === "call") {
     if (!lead.customerNumber) return { ok: false, result: "no phone number on lead" };
     if (!agentId) return { ok: false, result: "no agent configured for call step" };
+    try {
+      await assertOutboundVoiceAllowed({ userId: cadence.userId, source: "cadence", units: 0 });
+    } catch (err: any) {
+      return { ok: false, result: `voice control rejected: ${err?.message || "blocked"}` };
+    }
     const res = await placeOutboundCall({
       userId: cadence.userId,
       agentId,

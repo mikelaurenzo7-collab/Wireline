@@ -15,6 +15,7 @@ declare global {
     interface Request {
       user?: User;
       role?: AccessRole;
+      tenantId?: string;
     }
   }
 }
@@ -34,6 +35,7 @@ export interface AuthenticatedRequest<
 > extends Request {
   user: User;
   role: AccessRole;
+  tenantId: string;
   body: ReqBody;
   params: P;
   query: ReqQuery;

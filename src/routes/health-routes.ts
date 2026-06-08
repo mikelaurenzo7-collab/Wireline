@@ -25,6 +25,22 @@ import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
 const router = express.Router();
 
+function monitorTokenOk(req: Request): boolean {
+  const expected = process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET;
+  if (!expected) return false;
+  const supplied =
+    req.get("x-monitor-token") || (req.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!supplied) return false;
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(expected);
+  return a.length === b.length && cryptoTimingSafeEqual(a, b);
+}
+
+function requireMonitorToken(req: Request, res: Response, next: NextFunction) {
+  if (monitorTokenOk(req)) return next();
+  return res.status(401).json({ ok: false, code: "MONITOR_TOKEN_REQUIRED" });
+}
+
 /** Distributed IP limiter (Upstash in prod) — replaces per-process Map. */
 const healthRateLimiter = createIpRateLimiter({
   bucket: "api:health",
@@ -75,19 +91,24 @@ router.get("/", healthRateLimiter, async (_req: Request, res: Response) => {
 });
 
 /** Public launch-readiness summary for uptime monitors and campaign gates. */
-router.get("/launch-readiness", healthRateLimiter, (_req: Request, res: Response) => {
-  const report = evaluateLaunchReadiness();
-  res.status(report.campaign_ready ? 200 : 503).json({
-    ok: report.campaign_ready,
-    overall_score: report.overall_score,
-    campaign_ready: report.campaign_ready,
-    capabilities: report.capabilities.map((c) => ({
-      id: c.id,
-      level: c.level,
-    })),
-    timestamp: report.generated_at,
-  });
-});
+router.get(
+  "/launch-readiness",
+  healthRateLimiter,
+  requireMonitorToken,
+  (_req: Request, res: Response) => {
+    const report = evaluateLaunchReadiness();
+    res.status(report.campaign_ready ? 200 : 503).json({
+      ok: report.campaign_ready,
+      overall_score: report.overall_score,
+      campaign_ready: report.campaign_ready,
+      capabilities: report.capabilities.map((c) => ({
+        id: c.id,
+        level: c.level,
+      })),
+      timestamp: report.generated_at,
+    });
+  },
+);
 
 /**
  * Hard readiness contract for deployment promotion / launch monitors.
@@ -95,27 +116,32 @@ router.get("/launch-readiness", healthRateLimiter, (_req: Request, res: Response
  * user-readable), this endpoint is binary: core env, DB, and launch readiness
  * must all pass before returning 200.
  */
-router.get("/ready", healthRateLimiter, async (_req: Request, res: Response) => {
-  const env = validateEnv();
-  const db = await probeDatabase();
-  const launch = evaluateLaunchReadiness();
-  const ok = env.valid && db.ok && launch.campaign_ready;
+router.get(
+  "/ready",
+  healthRateLimiter,
+  requireMonitorToken,
+  async (_req: Request, res: Response) => {
+    const env = validateEnv();
+    const db = await probeDatabase();
+    const launch = evaluateLaunchReadiness();
+    const ok = env.valid && db.ok && launch.campaign_ready;
 
-  res.status(ok ? 200 : 503).json({
-    ok,
-    env: {
-      ok: env.valid,
-      invalid: env.errors.length,
-      by_group: env.byGroup,
-    },
-    db: { ok: db.ok, latency_ms: db.latency_ms },
-    launch: {
-      ok: launch.campaign_ready,
-      overall_score: launch.overall_score,
-    },
-    timestamp: new Date().toISOString(),
-  });
-});
+    res.status(ok ? 200 : 503).json({
+      ok,
+      env: {
+        ok: env.valid,
+        invalid: env.errors.length,
+        by_group: env.byGroup,
+      },
+      db: { ok: db.ok, latency_ms: db.latency_ms },
+      launch: {
+        ok: launch.campaign_ready,
+        overall_score: launch.overall_score,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  },
+);
 
 /**
  * Authenticated detail probe — same data the old public probe returned,

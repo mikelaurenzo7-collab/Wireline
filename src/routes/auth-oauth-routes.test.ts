@@ -19,6 +19,7 @@ import {
   mountTestErrorHandler,
 } from "../../tests/helpers/express-test-app";
 import http from "http";
+import { createHmac } from "node:crypto";
 import type { AddressInfo } from "net";
 import { OAUTH_BRIDGE_STATE_COOKIE } from "../lib/oauth-bridge-cookie";
 
@@ -144,6 +145,7 @@ describe("OAuth /url endpoints", () => {
     delete process.env.YAHOO_CLIENT_ID;
     delete process.env.YAHOO_CLIENT_SECRET;
     delete process.env.APP_URL;
+    process.env.OAUTH_BRIDGE_SECRET = "test-oauth-bridge-secret";
   });
 
   beforeAll(() => {
@@ -301,9 +303,15 @@ describe("OAuth /url endpoints", () => {
         expect(location).not.toContain("Failed");
         // ensurePendingCodeSchema runs four DDL statements: CREATE TABLE,
         // ALTER ADD bridge_state, CREATE INDEX, and the RLS-lockdown DO block.
-        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(4);
+        expect(mocks.drizzle.execute).toHaveBeenCalledTimes(6);
         expect(pendingValues).toHaveBeenCalledTimes(2);
-        expect(pendingValues).toHaveBeenLastCalledWith(expect.objectContaining({ bridgeState }));
+        expect(pendingValues).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            bridgeStateHash: createHmac("sha256", process.env.OAUTH_BRIDGE_SECRET!)
+              .update(bridgeState)
+              .digest("hex"),
+          }),
+        );
         expect(mocks.log.warn).toHaveBeenCalledWith(
           "auth oauth: pending-code schema missing; repairing before retry",
           expect.objectContaining({ code: "42P01" }),
@@ -353,16 +361,20 @@ describe("OAuth /url endpoints", () => {
     const pendingCode = "one-time-code-abc";
 
     function mockConsumeRow(overrides?: { bridge_state?: string | null }) {
+      const state = overrides?.bridge_state ?? bridgeState;
       mocks.drizzle.execute.mockResolvedValue({
         rows: [
           {
-            code: pendingCode,
-            token: "session-jwt",
+            code_hash: createHmac("sha256", process.env.OAUTH_BRIDGE_SECRET!)
+              .update(pendingCode)
+              .digest("hex"),
             user_id: "af36620d-047e-4521-a726-8507d25444fd",
             email: "oauth-user@example.test",
             full_name: "OAuth User",
             is_owner: false,
-            bridge_state: overrides?.bridge_state ?? bridgeState,
+            bridge_state_hash: state
+              ? createHmac("sha256", process.env.OAUTH_BRIDGE_SECRET!).update(state).digest("hex")
+              : null,
             expires_at: new Date(Date.now() + 60_000),
           },
         ],

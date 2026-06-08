@@ -31,6 +31,7 @@ import { buildDirectorToolContext, dispatchAgentToolCall } from "./agent-tool-di
 import { buildDirectorToolArgs } from "./director-tool-args";
 
 import { placeOutboundCall } from "./vapi-client";
+import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 
 export interface DirectorExecutionResult {
   success: boolean;
@@ -122,6 +123,7 @@ export async function executeDirectorCommsAction(
     }
 
     try {
+      await assertOutboundVoiceAllowed({ userId, source: "director", units: 0 });
       const result = await placeOutboundCall({
         userId,
 

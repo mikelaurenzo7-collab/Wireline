@@ -285,7 +285,7 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
     if (authErr) return next(authErr);
     if (res.headersSent) return;
     try {
-      const role = await getCallerRole(drizzle, req.user.id);
+      const role = await getCallerRole(drizzle, req.tenantId || req.user.id, req.user.id);
       if (role !== "owner" && role !== "admin") {
         void auditLogger
           .logJobSweep("denied", {

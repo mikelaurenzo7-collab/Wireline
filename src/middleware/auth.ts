@@ -11,6 +11,7 @@ import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-
  */
 interface AuthedReq extends Request {
   user?: User;
+  tenantId?: string;
 }
 
 /**
@@ -23,13 +24,19 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
 
     // Idempotent check
     if (authedReq.user?.id) {
-      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
+      authedReq.tenantId =
+        authedReq.tenantId || req.get("x-wireline-tenant-id") || authedReq.user.id;
+      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.tenantId!, () => next());
     }
 
     const token = getSessionTokenFromRequest(req);
 
     if (!token) {
-      return res.status(401).json({ error: "No authorization token provided" });
+      return res.status(401).json({
+        error: "No authorization token provided",
+        code: "AUTH_REQUIRED",
+        requestId: res.locals?.requestId,
+      });
     }
 
     let secret: string;
@@ -42,6 +49,7 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
         return res.status(503).json({
           error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
           code: "AUTH_NOT_CONFIGURED",
+          requestId: res.locals?.requestId,
         });
       }
       throw e;
@@ -61,7 +69,11 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
         })
         .catch((err: unknown) => log.warn("audit log failed", { error: getErrorMessage(err) }));
 
-      return res.status(401).json({ error: "Invalid or expired session" });
+      return res.status(401).json({
+        error: "Invalid or expired session",
+        code: "AUTH_INVALID",
+        requestId: res.locals?.requestId,
+      });
     }
 
     // Map JWT payload to a compatible User object
@@ -83,11 +95,13 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     // *verified*). Real sign-in events are emitted by Wireline's auth
     // system; the audit log captures failed attempts above.
 
-    return tenantStore.run(authedReq.user!.id, () => next());
+    authedReq.tenantId = req.get("x-wireline-tenant-id") || authedReq.user!.id;
+    return tenantStore.run(authedReq.tenantId!, () => next());
   } catch (e) {
     log.error("Auth middleware failed", { error: getErrorMessage(e), path: req.path });
     return res.status(500).json({
       error: "Authentication check failed",
+      code: "AUTH_CHECK_FAILED",
       requestId: res.locals?.requestId,
     });
   }
@@ -105,13 +119,16 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     const authedReq = req as AuthedReq;
 
     if (authedReq.user?.id) {
-      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.user.id, () => next());
+      authedReq.tenantId =
+        authedReq.tenantId || req.get("x-wireline-tenant-id") || authedReq.user.id;
+      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.tenantId!, () => next());
     }
 
     if (isProductionRuntime() && typeof req.query.token === "string" && req.query.token) {
       return res.status(401).json({
         error: "Query token authentication is not supported. Use session cookies.",
         code: "SSE_QUERY_TOKEN_DEPRECATED",
+        requestId: res.locals?.requestId,
       });
     }
 
@@ -120,7 +137,11 @@ export async function authenticateEventStream(req: Request, res: Response, next:
       (typeof req.query.token === "string" ? req.query.token : undefined);
 
     if (!token) {
-      return res.status(401).json({ error: "No authorization token provided" });
+      return res.status(401).json({
+        error: "No authorization token provided",
+        code: "AUTH_REQUIRED",
+        requestId: res.locals?.requestId,
+      });
     }
 
     let secret: string;
@@ -133,6 +154,7 @@ export async function authenticateEventStream(req: Request, res: Response, next:
         return res.status(503).json({
           error: "Authentication is temporarily unavailable. Platform configuration is incomplete.",
           code: "AUTH_NOT_CONFIGURED",
+          requestId: res.locals?.requestId,
         });
       }
       throw e;
@@ -141,7 +163,11 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     const payload = await verifyInternalJwt(token, secret);
 
     if (!payload) {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      return res.status(401).json({
+        error: "Invalid or expired session",
+        code: "AUTH_INVALID",
+        requestId: res.locals?.requestId,
+      });
     }
 
     authedReq.user = {
@@ -154,11 +180,13 @@ export async function authenticateEventStream(req: Request, res: Response, next:
       created_at: new Date(payload.iat * 1000).toISOString(),
     } as User;
 
-    return tenantStore.run(authedReq.user!.id, () => next());
+    authedReq.tenantId = req.get("x-wireline-tenant-id") || authedReq.user!.id;
+    return tenantStore.run(authedReq.tenantId!, () => next());
   } catch (e) {
     log.error("SSE auth middleware failed", { error: getErrorMessage(e), path: req.path });
     return res.status(500).json({
       error: "Authentication check failed",
+      code: "AUTH_CHECK_FAILED",
       requestId: res.locals?.requestId,
     });
   }

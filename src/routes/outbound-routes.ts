@@ -1,22 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
-import { log, quotaTracker, drizzle } from "../lib/server-context";
+import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
+import { eq, and, sql, desc, isNotNull, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { parseFormData } from "../lib/form-validators";
 import { OutboundBulkSchema } from "../lib/form-validators";
-import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
-import { enforceTrialOutboundCap } from "../lib/trial-gate";
-import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { quotaRejectionHeaders } from "../lib/tenant-quotas";
 import { placeOutboundCall } from "../lib/vapi-client";
 import { SentryEvents } from "../lib/sentry-events";
-import { claudeRateLimiter, dialRateLimiter } from "../middleware/api-rate-limits";
+import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { validate } from "../middleware/input-validation";
 import { z } from "zod";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -141,11 +138,7 @@ router.post(
   // pick-a-plan modal; tenants over their monthly hard-cap see the
   // standard spend-limit message. Both are 402 but with distinct
   // code values for the frontend.
-  enforceLaunchHardGate,
-  enforceTrialOutboundCap,
-  enforce24hSpendCap,
-  enforceSpendCap,
-  dialRateLimiter,
+  outboundVoiceGuard("manual"),
   validate({ body: dialSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -178,23 +171,6 @@ router.post(
           error: tcpaDecision.disclosure_script || "Call blocked by TCPA consent rules.",
           tcpaBlocked: true,
           tcpa: tcpaDecision,
-        });
-      }
-
-      // Per-tenant voice-minute quota check.
-      const quotaDecision = await quotaTracker.checkAndIncrement(
-        req.user.id,
-        "voice_minutes_daily",
-        0,
-      );
-      if (!quotaDecision.allowed) {
-        Object.entries(quotaRejectionHeaders(quotaDecision)).forEach(([k, v]) =>
-          res.setHeader(k, v),
-        );
-        return res.status(429).json({
-          error: "Daily voice-minute quota exceeded.",
-          code: "QUOTA_VOICE",
-          quota: quotaDecision,
         });
       }
 
@@ -246,11 +222,7 @@ router.post(
   // NOTE: this endpoint is currently import-only: it stores lead rows and
   // does not place calls or enqueue dialing jobs. Keep UI/API copy aligned
   // until a separately controlled bulk-dial worker is introduced.
-  enforceLaunchHardGate,
-  enforceTrialOutboundCap,
-  enforce24hSpendCap,
-  enforceSpendCap,
-  dialRateLimiter,
+  outboundVoiceGuard("bulk_import"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const validation = parseFormData(OutboundBulkSchema, {
@@ -276,6 +248,24 @@ router.post(
 
       if (userSettings?.subscriptionStatus !== "active") {
         throw AppError.fromHttpStatus(403, "Access Denied: Inactive billing plan.");
+      }
+
+      const suppliedAgentIds = [
+        ...new Set((leads || []).map((lead: any) => lead.agent_id).filter(Boolean)),
+      ];
+      if (suppliedAgentIds.length > 0) {
+        const ownedAgents = await drizzle
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(
+            and(eq(schema.agents.userId, req.user.id), inArray(schema.agents.id, suppliedAgentIds)),
+          );
+        if (ownedAgents.length !== suppliedAgentIds.length) {
+          throw AppError.fromHttpStatus(
+            403,
+            "One or more supplied agents do not belong to this tenant.",
+          );
+        }
       }
 
       // Verify campaign_id (when supplied) belongs to the caller.
@@ -320,7 +310,7 @@ router.post(
           .where(eq(schema.agents.userId, req.user.id))
           .limit(1);
 
-        SentryEvents.outboundDialStarted({
+        SentryEvents.outboundLeadsImported({
           lead_count: insertedLeads.length,
           agent_id: agent?.id || "unknown",
         });
@@ -329,7 +319,7 @@ router.post(
       res.json({ success: true, inserted: insertedLeads.length });
     } catch (err: any) {
       log.error("POST /api/outbound/bulk failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Failed to queue leads");
+      throw AppError.fromHttpStatus(500, "Failed to import leads");
     }
   },
 );
