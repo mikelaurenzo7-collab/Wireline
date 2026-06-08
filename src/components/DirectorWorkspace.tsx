@@ -60,12 +60,21 @@ import { Input } from "./ui/shadcn/Input";
 import { Textarea } from "./ui/shadcn/Textarea";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import {
+  directorPayloadHasProposals,
   isRecoverableDirectorPayload,
   operatorTurnHasDirectorReply,
 } from "../lib/director-reply-utils";
 import ProposalCard from "./chat/ProposalCard";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
 import type { ProposedAction, ProposedChange, ProposedToolToggle } from "../lib/workspace-planner";
+import {
+  buildDirectorClearThreadConfirm,
+  countPendingDirectorProposals,
+  isPersistedDirectorMessageId,
+  mergeResolvedFromDirectorMessages,
+  parseDirectorProposalKey,
+  type DirectorProposalResolution,
+} from "../lib/director-proposal-state";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/director-fleet-plan";
 import DirectorLiveSession from "./director/DirectorLiveSession";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
@@ -102,6 +111,7 @@ import {
   DIRECTOR_COMPOSER_HINTS,
   DIRECTOR_COMPOSER_CONTEXT,
   LIVE_FEED_LABELS,
+  DIRECTOR_SESSION_COPY,
   WL_APP_CLASSES,
   WIRELINE_STITCH_UI,
   WL_DIRECTOR_CLASSES,
@@ -191,6 +201,7 @@ interface DirectorMessage {
     actions: (ProposedAction | DirectorProposedAction)[];
     integrationJobs: DirectorIntegrationJob[];
   };
+  resolved?: Record<string, DirectorProposalResolution>;
 }
 
 export interface DirectorWorkspaceProps {
@@ -267,6 +278,10 @@ export default function DirectorWorkspace({
   );
   const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [resolved, setResolved] = useState<Record<string, "done" | "dismissed">>({});
+  const pendingApprovalCount = useMemo(
+    () => countPendingDirectorProposals(visibleMessages, resolved),
+    [visibleMessages, resolved],
+  );
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [busyLabel, setBusyLabel] = useState<string | undefined>();
   const [callConsent, setCallConsent] = useState<Record<string, boolean>>({});
@@ -650,7 +665,9 @@ export default function DirectorWorkspace({
           }
           const data = await r.json();
           setLoadDegraded(data.degraded === true);
-          setMessages(Array.isArray(data.messages) ? data.messages : []);
+          const loadedMessages = Array.isArray(data.messages) ? data.messages : [];
+          setMessages(loadedMessages);
+          setResolved(mergeResolvedFromDirectorMessages(loadedMessages));
           setArtifacts(Array.isArray(data.artifacts) ? data.artifacts : []);
           if (Array.isArray(data.fleet)) {
             hydrateAgentsFromFleet(
@@ -709,6 +726,7 @@ export default function DirectorWorkspace({
           continue;
         }
         setMessages(msgs);
+        setResolved(mergeResolvedFromDirectorMessages(msgs));
         if (Array.isArray(data.artifacts)) setArtifacts(data.artifacts);
         return true;
       }
@@ -750,16 +768,6 @@ export default function DirectorWorkspace({
       const pending = pendingSendRef.current;
       const operatorProbe = pending?.trimmed ?? lastStreamOperatorRef.current ?? "";
 
-      if (isRecoverableDirectorPayload(partialReply)) {
-        appendDirectorReply(partialReply!);
-        setIsSending(false);
-        streamReset();
-        pendingSendRef.current = null;
-        lastStreamOperatorRef.current = null;
-        inputRef.current?.focus();
-        return;
-      }
-
       const finishRecovered = () => {
         setIsSending(false);
         streamReset();
@@ -768,24 +776,42 @@ export default function DirectorWorkspace({
         inputRef.current?.focus();
       };
 
-      if (pending?.trimmed) {
-        void (async () => {
-          if (operatorProbe && (await recoverPersistedDirectorReply(operatorProbe, false))) {
-            finishRecovered();
-            return;
-          }
-          void sendNonStreamingRef.current?.(pending.trimmed, pending.optimisticId, {
-            skipOperatorPersist: streamEstablished,
-          });
-        })();
-        return;
-      }
-
       void (async () => {
+        if (
+          partialReply &&
+          directorPayloadHasProposals(partialReply) &&
+          isRecoverableDirectorPayload(partialReply)
+        ) {
+          appendDirectorReply(partialReply);
+          finishRecovered();
+          return;
+        }
+
         if (operatorProbe && (await recoverPersistedDirectorReply(operatorProbe, false))) {
           finishRecovered();
           return;
         }
+
+        const fallbackTrimmed = pending?.trimmed ?? operatorProbe;
+        if (fallbackTrimmed) {
+          try {
+            await sendNonStreamingRef.current?.(fallbackTrimmed, pending?.optimisticId, {
+              skipOperatorPersist: streamEstablished,
+              recoverPersistedReply: streamEstablished,
+            });
+          } catch {
+            /* sendNonStreaming surfaces its own toast */
+          }
+          finishRecovered();
+          return;
+        }
+
+        if (streamEstablished) {
+          await loadMessages();
+          finishRecovered();
+          return;
+        }
+
         toastError("Stream interrupted", msg);
         finishRecovered();
       })();
@@ -1173,8 +1199,18 @@ export default function DirectorWorkspace({
     ],
   );
 
-  const markResolved = (key: string, state: "done" | "dismissed") =>
+  const markResolved = useCallback((key: string, state: DirectorProposalResolution) => {
     setResolved((prev) => ({ ...prev, [key]: state }));
+    const parsed = parseDirectorProposalKey(key);
+    if (!parsed || !isPersistedDirectorMessageId(parsed.messageId)) return;
+    void authFetch(`/api/director/messages/${encodeURIComponent(parsed.messageId)}/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: parsed.relativeKey, state }),
+    }).catch(() => {
+      /* best-effort — local UI state still reflects the action */
+    });
+  }, []);
 
   const resolveCoachAgentId = (message: DirectorMessage) => message.coachAgentId ?? null;
 
@@ -1203,14 +1239,14 @@ export default function DirectorWorkspace({
         );
         if (!r.ok) throw new Error("Apply failed");
         markResolved(key, "done");
-        toastSuccess("Updated", `${change.label} saved`);
+        toastSuccess("Updated", DIRECTOR_SESSION_COPY.applySaved(change.label));
       } catch {
         toastError("Couldn't apply change", "Try again in a moment");
       } finally {
         setBusyKey(null);
       }
     },
-    [toastSuccess, toastError],
+    [markResolved, toastSuccess, toastError],
   );
 
   const approveToggle = useCallback(
@@ -1239,7 +1275,7 @@ export default function DirectorWorkspace({
         setBusyKey(null);
       }
     },
-    [focusAgentId, toastSuccess, toastError],
+    [focusAgentId, markResolved, toastSuccess, toastError],
   );
 
   const approveAction = useCallback(
@@ -1276,7 +1312,7 @@ export default function DirectorWorkspace({
         setBusyKey(null);
       }
     },
-    [callConsent, toastSuccess, toastError],
+    [callConsent, markResolved, toastSuccess, toastError],
   );
 
   const approveIntegration = useCallback(
@@ -1313,14 +1349,12 @@ export default function DirectorWorkspace({
         setBusyKey(null);
       }
     },
-    [toastSuccess, toastError],
+    [markResolved, toastSuccess, toastError],
   );
 
   const clearThread = useCallback(async () => {
     if (isClearing) return;
-    if (
-      !confirm("Clear your Director conversation and generated artifacts? This cannot be undone.")
-    ) {
+    if (!confirm(buildDirectorClearThreadConfirm(pendingApprovalCount))) {
       return;
     }
     setIsClearing(true);
@@ -1337,13 +1371,13 @@ export default function DirectorWorkspace({
       setForceDeep(false);
       setDesignMode(false);
       setInput("");
-      toastSuccess("Thread cleared", "Conversation and artifacts removed");
+      toastSuccess(DIRECTOR_SESSION_COPY.clearSuccess, DIRECTOR_SESSION_COPY.clearSuccessDetail);
     } catch {
       toastError("Couldn't clear thread", "Please try again");
     } finally {
       setIsClearing(false);
     }
-  }, [isClearing, toastError, toastSuccess]);
+  }, [isClearing, pendingApprovalCount, toastError, toastSuccess]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1513,6 +1547,11 @@ export default function DirectorWorkspace({
                 <Trash2 className="w-3 h-3" />
               )}
               <span>Clear</span>
+              {pendingApprovalCount > 0 ? (
+                <span className="ml-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold normal-case tracking-normal text-amber-800 dark:text-amber-200">
+                  {pendingApprovalCount}
+                </span>
+              ) : null}
             </ShadButton>
           </div>
         </div>
@@ -1528,6 +1567,19 @@ export default function DirectorWorkspace({
             <p className="rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2 text-[11px] text-ink/80 dark:text-foreground/85">
               Some Director data could not be loaded. Your thread may be incomplete — refresh to
               retry.
+            </p>
+          )}
+          {!isLoading && visibleMessages.length > 0 && (
+            <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 text-[11px] leading-relaxed text-muted dark:bg-muted/10">
+              {DIRECTOR_SESSION_COPY.sessionHint}
+              {pendingApprovalCount > 0 ? (
+                <>
+                  {" "}
+                  <span className="font-medium text-amber-800 dark:text-amber-200">
+                    {DIRECTOR_SESSION_COPY.pendingApprovals(pendingApprovalCount)}.
+                  </span>
+                </>
+              ) : null}
             </p>
           )}
           {isLoading ? (

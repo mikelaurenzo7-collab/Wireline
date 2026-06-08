@@ -17,6 +17,7 @@ import {
   DIRECTOR_COMPOSER_CONTEXT,
   WIRELINE_STITCH_UI,
   LIVE_FEED_LABELS,
+  DIRECTOR_SESSION_COPY,
   LIVE_ORCHESTRA_COPY,
   DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
   AGENT_WORKSPACE_STARTER_PROMPTS,
@@ -185,6 +186,12 @@ describe("Wireline Director design contract", () => {
     expect(LIVE_FEED_LABELS.proposalHint).toMatch(/approve/i);
     expect(LIVE_FEED_LABELS.proposalCount(3)).toContain("3");
     expect(LIVE_FEED_LABELS.researchEyebrow).toMatch(/source/i);
+  });
+
+  it("session copy clarifies what clear thread keeps vs removes", () => {
+    expect(DIRECTOR_SESSION_COPY.sessionHint).toMatch(/Applied agent settings persist/i);
+    expect(DIRECTOR_SESSION_COPY.applySaved("Greeting")).toMatch(/safe to clear thread/i);
+    expect(DIRECTOR_SESSION_COPY.pendingApprovals(2)).toContain("2");
   });
 
   it("composer hints rotate through capability areas", () => {

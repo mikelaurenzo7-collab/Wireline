@@ -70,9 +70,25 @@ export function shouldQueueWebhook(webhookType: string): boolean {
  * Process a queued Vapi webhook job
  * This runs in the background worker
  */
-export async function processVapiWebhookJob(job: JobRow): Promise<void> {
+export function resolveVapiWebhookType(
+  stored: VapiWebhookJobPayload | Record<string, unknown>,
+): string {
+  if (typeof stored.webhookType === "string" && stored.webhookType.length > 0) {
+    return stored.webhookType;
+  }
+  const nested = stored.payload as VapiWebhookPayload | undefined;
+  return nested?.message?.type || "unknown";
+}
+
+export async function processVapiWebhookJob(job: JobRow): Promise<{
+  webhookType: string;
+  vapiCallId?: string;
+}> {
   const payload = job.payload as unknown as VapiWebhookJobPayload;
-  const { webhookType, payload: webhookPayload, agentId, userId } = payload;
+  const webhookType = resolveVapiWebhookType(payload);
+  const webhookPayload = payload.payload;
+  const agentId = payload.agentId;
+  const userId = payload.userId;
 
   log.info("Processing async Vapi webhook", {
     jobId: job.id,
@@ -106,10 +122,17 @@ export async function processVapiWebhookJob(job: JobRow): Promise<void> {
         log.warn("Unknown async webhook type", { webhookType, jobId: job.id });
     }
 
+    const vapiCallId =
+      webhookPayload?.call?.id ||
+      (webhookPayload?.message?.call as { id?: string } | undefined)?.id;
+
     log.info("Async Vapi webhook processed successfully", {
       jobId: job.id,
       webhookType,
+      vapiCallId,
     });
+
+    return { webhookType, vapiCallId };
   } catch (error) {
     log.error("Failed to process async Vapi webhook", {
       jobId: job.id,

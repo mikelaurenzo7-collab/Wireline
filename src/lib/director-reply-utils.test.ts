@@ -5,6 +5,7 @@ import {
   isDirectorStubReply,
   isRecoverableDirectorPayload,
   isSubstantiveDirectorReply,
+  isTerminalDirectorStreamPayload,
   operatorTurnHasDirectorReply,
 } from "./director-reply-utils";
 
@@ -31,6 +32,16 @@ describe("director-reply-utils", () => {
         "Design a landing page",
         { requireStitch: true },
       ),
+    ).toBe(true);
+  });
+
+  it("distinguishes terminal stream payloads from preview reply chunks", () => {
+    expect(isTerminalDirectorStreamPayload({ reply: "Still drafting…" })).toBe(false);
+    expect(
+      isTerminalDirectorStreamPayload({
+        reply: "Approve these updates.",
+        changes: [{ field: "first_message", value: "hi" }],
+      }),
     ).toBe(true);
   });
 

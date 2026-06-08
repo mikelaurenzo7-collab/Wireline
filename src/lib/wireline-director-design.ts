@@ -724,6 +724,16 @@ export const LIVE_FEED_LABELS = {
   researchEyebrow: "Grounded web sources",
 } as const;
 
+/** Director thread / session management copy */
+export const DIRECTOR_SESSION_COPY = {
+  applySaved: (label: string) => `${label} saved to agent — safe to clear thread`,
+  clearSuccess: "Thread cleared",
+  clearSuccessDetail: "Chat and artifacts removed. Applied agent settings were kept.",
+  pendingApprovals: (n: number) => (n === 1 ? "1 approval pending" : `${n} approvals pending`),
+  sessionHint:
+    "Applied agent settings persist on each agent. Unapproved cards and chat history are removed when you clear.",
+} as const;
+
 /** Copy for DirectorLiveOrchestra — fleet channel / runway / spotlight */
 export const LIVE_ORCHESTRA_COPY = {
   eyebrow: "Fleet channel",

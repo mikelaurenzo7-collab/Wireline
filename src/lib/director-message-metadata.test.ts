@@ -52,6 +52,15 @@ describe("director message metadata", () => {
     expect(packDirectorMetadata({})).toBeNull();
   });
 
+  it("packs proposal resolution state for reload", () => {
+    const packed = packDirectorMetadata({
+      proposals: { changes: [], toolToggles: [], actions: [], integrationJobs: [] },
+      resolved: { "change:0": "done" },
+    });
+    expect(packed).toBeTruthy();
+    expect(parseDirectorMetadata(packed).resolved?.["change:0"]).toBe("done");
+  });
+
   it("packs deliverable artifact download metadata", () => {
     const packed = packDirectorMetadata({
       deliverableArtifact: {

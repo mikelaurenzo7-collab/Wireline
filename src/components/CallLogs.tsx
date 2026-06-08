@@ -116,6 +116,17 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
     return `${mins}m ${secs}s`;
   };
 
+  const resolveCallOutcomeLabel = (call: CallLog): string | null => {
+    if (call.pipeline_error === "dialing" || call.summary === "Outbound call in progress…") {
+      return "dialing";
+    }
+    if (call.outcome_tag) return call.outcome_tag;
+    if (call.pipeline_error && call.pipeline_error !== "dialing") {
+      return call.pipeline_error.replace(/-/g, " ");
+    }
+    return null;
+  };
+
   const actions = (
     <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
       <div className="relative min-w-0 flex-1 sm:flex-none">
@@ -240,99 +251,103 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                   ]}
                 />
                 <ul className="divide-y divide-black/6">
-                  {filteredCalls.map((call) => (
-                    <li key={call.id}>
-                      <ShadButton
-                        type="button"
-                        variant="ghost"
-                        disableAnimations
-                        onClick={() => setSelectedCall(call)}
-                        aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
-                        className={cn(
-                          "group touch-press w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none",
-                          selectedCall?.id === call.id
-                            ? "bg-brand/8 hover:bg-brand/8"
-                            : "hover:bg-black/3",
-                        )}
-                      >
-                        {/* Active indicator bar */}
-                        {selectedCall?.id === call.id && (
-                          <div
-                            className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
-                            aria-hidden="true"
-                          />
-                        )}
-
-                        {/* Direction icon */}
-                        <div
+                  {filteredCalls.map((call) => {
+                    const outcomeLabel = resolveCallOutcomeLabel(call);
+                    return (
+                      <li key={call.id}>
+                        <ShadButton
+                          type="button"
+                          variant="ghost"
+                          disableAnimations
+                          onClick={() => setSelectedCall(call)}
+                          aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                           className={cn(
-                            "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
-                            call.direction === "inbound"
-                              ? "bg-brand/8 border-brand/25 text-brand"
-                              : "bg-brand-2/8 border-brand-2/25 text-brand-2",
-                            selectedCall?.id === call.id && "scale-105",
+                            "group touch-press w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none",
+                            selectedCall?.id === call.id
+                              ? "bg-brand/8 hover:bg-brand/8"
+                              : "hover:bg-black/3",
                           )}
                         >
-                          {call.direction === "inbound" ? (
-                            <PhoneIncoming className="w-4 h-4" />
-                          ) : (
-                            <PhoneOutgoing className="w-4 h-4" />
+                          {/* Active indicator bar */}
+                          {selectedCall?.id === call.id && (
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full bg-brand"
+                              aria-hidden="true"
+                            />
                           )}
-                        </div>
 
-                        {/* Content */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-display italic text-sm text-ink truncate">
-                              {call.customer_number || "Sim Test"}
-                            </span>
-                            {/* Lead score badge */}
-                            <span
-                              className={cn(
-                                "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
-                                (call.lead_score || 0) >= 80
-                                  ? "bg-brand/12 text-brand border-brand/20"
-                                  : (call.lead_score || 0) >= 50
-                                    ? "bg-brand/8 text-brand/80 border-brand/15"
-                                    : "bg-black/[0.06] text-ink/40 border-transparent",
-                              )}
-                            >
-                              {call.lead_score || 0}
-                            </span>
-                            {/* QA score badge */}
-                            {call.qa_score != null && (
+                          {/* Direction icon */}
+                          <div
+                            className={cn(
+                              "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
+                              call.direction === "inbound"
+                                ? "bg-brand/8 border-brand/25 text-brand"
+                                : "bg-brand-2/8 border-brand-2/25 text-brand-2",
+                              selectedCall?.id === call.id && "scale-105",
+                            )}
+                          >
+                            {call.direction === "inbound" ? (
+                              <PhoneIncoming className="w-4 h-4" />
+                            ) : (
+                              <PhoneOutgoing className="w-4 h-4" />
+                            )}
+                          </div>
+
+                          {/* Content */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="font-display italic text-sm text-ink truncate">
+                                {call.customer_number || "Sim Test"}
+                              </span>
+                              {/* Lead score badge */}
                               <span
                                 className={cn(
                                   "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
-                                  call.qa_score >= 75
-                                    ? "bg-brand/8 text-brand border-brand/20"
-                                    : call.qa_score >= 50
-                                      ? "bg-brand/5 text-brand/70 border-brand/15"
-                                      : "bg-destructive/8 text-destructive border-destructive/20",
+                                  (call.lead_score || 0) >= 80
+                                    ? "bg-brand/12 text-brand border-brand/20"
+                                    : (call.lead_score || 0) >= 50
+                                      ? "bg-brand/8 text-brand/80 border-brand/15"
+                                      : "bg-black/[0.06] text-ink/40 border-transparent",
                                 )}
                               >
-                                ★{call.qa_score}
+                                {call.lead_score || 0}
                               </span>
-                            )}
-                            <SentimentDot sentiment={call.sentiment} />
+                              {/* QA score badge */}
+                              {call.qa_score != null && (
+                                <span
+                                  className={cn(
+                                    "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono leading-tight border",
+                                    call.qa_score >= 75
+                                      ? "bg-brand/8 text-brand border-brand/20"
+                                      : call.qa_score >= 50
+                                        ? "bg-brand/5 text-brand/70 border-brand/15"
+                                        : "bg-destructive/8 text-destructive border-destructive/20",
+                                  )}
+                                >
+                                  ★{call.qa_score}
+                                </span>
+                              )}
+                              <SentimentDot sentiment={call.sentiment} />
+                              {outcomeLabel && <CallOutcomeBadge label={outcomeLabel} />}
+                            </div>
+                            <p className="text-[10px] text-ink/40 truncate leading-tight">
+                              {call.summary || "Decoding…"}
+                            </p>
                           </div>
-                          <p className="text-[10px] text-ink/40 truncate leading-tight">
-                            {call.summary || "Decoding…"}
-                          </p>
-                        </div>
 
-                        {/* Date/time */}
-                        <div className="text-right shrink-0">
-                          <div className="text-[9px] text-muted/80">
-                            {formatDate(call.created_at)}
+                          {/* Date/time */}
+                          <div className="text-right shrink-0">
+                            <div className="text-[9px] text-muted/80">
+                              {formatDate(call.created_at)}
+                            </div>
+                            <div className="text-[8px] text-ink/40 uppercase tracking-[0.2em]">
+                              {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
+                            </div>
                           </div>
-                          <div className="text-[8px] text-ink/40 uppercase tracking-[0.2em]">
-                            {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
-                          </div>
-                        </div>
-                      </ShadButton>
-                    </li>
-                  ))}
+                        </ShadButton>
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             )}
@@ -408,6 +423,28 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
   if (s === "negative")
     return <Frown className="w-3 h-3 text-destructive shrink-0" aria-label="Negative sentiment" />;
   return <Meh className="w-3 h-3 text-ink/40 shrink-0" aria-label="Neutral sentiment" />;
+}
+
+function CallOutcomeBadge({ label }: { label: string }) {
+  const normalized = label.toLowerCase();
+  const tone =
+    normalized === "dialing"
+      ? "bg-brand/8 text-brand border-brand/20"
+      : normalized === "booked" || normalized === "qualified"
+        ? "bg-brand/10 text-brand border-brand/25"
+        : normalized === "unreachable" || normalized.includes("silence")
+          ? "bg-destructive/8 text-destructive border-destructive/20"
+          : "bg-ink/5 text-ink/60 border-ink/10";
+  return (
+    <span
+      className={cn(
+        "shrink-0 px-1.5 py-0 rounded-full text-[8px] font-mono uppercase leading-tight border",
+        tone,
+      )}
+    >
+      {label}
+    </span>
+  );
 }
 
 function CallDetail({

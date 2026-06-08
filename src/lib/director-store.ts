@@ -11,6 +11,7 @@ import { listDirectorArtifacts, type DirectorStoredArtifact } from "./director-a
 import {
   completedStitchPreviewsForSession,
   mergeCompletedStitchPreviewMetadata,
+  packDirectorMetadata,
   parseDirectorMetadata,
   stitchSessionMatches,
   type DirectorMessageMetadata,
@@ -18,6 +19,7 @@ import {
   type DirectorStitchSessionLookup,
   type DirectorStitchSessionMeta,
 } from "./director-message-metadata";
+import type { DirectorProposalResolution } from "./director-proposal-state";
 
 export interface DirectorStoredMessage {
   id: bigint;
@@ -385,6 +387,59 @@ export async function listDirectorArtifactsSafe(
     });
     return { artifacts: [], degraded: true };
   }
+}
+
+/** Persist proposal card resolution on a Director message (survives reload). */
+export async function patchDirectorMessageResolved(
+  userId: string,
+  messageId: string,
+  relativeKey: string,
+  state: DirectorProposalResolution,
+): Promise<boolean> {
+  await ensureDirectorSchema();
+  let id: bigint;
+  try {
+    id = BigInt(messageId);
+  } catch {
+    return false;
+  }
+
+  const rows = await drizzle
+    .select({
+      id: schema.directorConversationMessages.id,
+      metadata: schema.directorConversationMessages.metadata,
+    })
+    .from(schema.directorConversationMessages)
+    .where(
+      and(
+        eq(schema.directorConversationMessages.id, id),
+        eq(schema.directorConversationMessages.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) return false;
+
+  const meta = parseDirectorMetadata(row.metadata);
+  const nextResolved: Record<string, DirectorProposalResolution> = {
+    ...(meta.resolved ?? {}),
+    [relativeKey]: state,
+  };
+  const nextMeta: DirectorMessageMetadata = { ...meta, resolved: nextResolved };
+  const packed = packDirectorMetadata(nextMeta);
+
+  await drizzle
+    .update(schema.directorConversationMessages)
+    .set({ metadata: packed })
+    .where(
+      and(
+        eq(schema.directorConversationMessages.id, id),
+        eq(schema.directorConversationMessages.userId, userId),
+      ),
+    );
+
+  return true;
 }
 
 /** Test helper — reset cached schema ensure flag. */

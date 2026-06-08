@@ -41,6 +41,7 @@ export interface CallLog {
   coaching_note: string | null;
   qa_score?: number | null;
   outcome_tag?: string | null;
+  pipeline_error?: string | null;
   campaign_source?: string | null;
   created_at: string;
 }

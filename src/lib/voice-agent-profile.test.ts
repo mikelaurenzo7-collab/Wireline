@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveElevenLabsSpeed,
+  resolveOutboundStartSpeakingPlan,
   resolveVapiSpeechPipeline,
   showcaseTranscriberModeForAgent,
+  VAPI_OUTBOUND_VOICE_SPEED_NUDGE,
   VAPI_TRANSCRIBER_FLUX_CONFIG,
   VAPI_TRANSCRIBER_CONFIG,
 } from "./voice-agent-profile";
@@ -32,5 +35,18 @@ describe("showcaseTranscriberModeForAgent", () => {
   it("returns flux-eot for all showcase agents", () => {
     expect(showcaseTranscriberModeForAgent("Liam")).toBe("flux-eot");
     expect(showcaseTranscriberModeForAgent("Sarah")).toBe("flux-eot");
+  });
+});
+
+describe("outbound speech tuning", () => {
+  it("nudges default speed down slightly on outbound", () => {
+    expect(resolveElevenLabsSpeed(null, { outbound: true })).toBe(VAPI_OUTBOUND_VOICE_SPEED_NUDGE);
+    expect(resolveElevenLabsSpeed(1.0, { outbound: true })).toBe(VAPI_OUTBOUND_VOICE_SPEED_NUDGE);
+    expect(resolveElevenLabsSpeed(0.85, { outbound: true })).toBe(0.85);
+  });
+
+  it("adds a short wait after the callee speaks on outbound", () => {
+    const plan = resolveOutboundStartSpeakingPlan(resolveVapiSpeechPipeline());
+    expect(plan.waitSeconds).toBe(0.45);
   });
 });

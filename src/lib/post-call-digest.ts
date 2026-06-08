@@ -37,7 +37,17 @@ export function classifyCallOutcome(input: {
   sentiment?: string | null;
   intentLabel?: string | null;
   durationSeconds?: number | null;
+  /** Vapi disconnect reason — e.g. silence-timed-out, customer-ended-call */
+  endedReason?: string | null;
 }): "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other" {
+  const ended = (input.endedReason || "").toLowerCase();
+  if (
+    ended.includes("silence-timed-out") ||
+    ended.includes("voicemail") ||
+    ended.includes("machine-detected")
+  ) {
+    return "unreachable";
+  }
   const s = `${input.summary || ""} ${input.intentLabel || ""}`.toLowerCase();
   if (/\b(unsubscribe|stop|do not call|remove me|dnc)\b/.test(s)) return "dnc";
   if (/\b(voicemail|no answer|busy|wrong number|disconnected)\b/.test(s)) return "unreachable";
@@ -84,6 +94,7 @@ interface CallContext {
   summary?: string | null;
   sentiment?: string | null;
   intentLabel?: string | null;
+  endedReason?: string | null;
 }
 
 /**
@@ -103,6 +114,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     sentiment: ctx.sentiment,
     intentLabel: ctx.intentLabel,
     durationSeconds: ctx.durationSeconds,
+    endedReason: ctx.endedReason,
   });
   const campaignSource = await resolveCampaignSource(ctx.userId, ctx.dialedNumber);
 

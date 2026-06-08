@@ -24,6 +24,7 @@ import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
+import { findCallLogByVapiCallId, isOutboundCallPlaceholder } from "./outbound-call-tracking";
 
 export interface CallReportPayload {
   message: {
@@ -49,7 +50,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     duration = Math.floor(
       (new Date(call.endedAt).getTime() - new Date(call.startedAt).getTime()) / 1000,
     );
+  } else if (typeof message.durationSeconds === "number" && message.durationSeconds > 0) {
+    duration = Math.floor(message.durationSeconds);
   }
+  const endedReason =
+    typeof message.endedReason === "string"
+      ? message.endedReason
+      : typeof call?.endedReason === "string"
+        ? call.endedReason
+        : null;
 
   // 1. Persist base call log. The unique constraint on vapi_call_id is the
   //    idempotency boundary for the whole handler — duplicate Vapi retries
@@ -80,13 +89,39 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         summary: analysis?.summary || "No summary provided.",
         transcript: message.transcript || "",
         recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
+        pipelineError: endedReason,
       })
       .returning({ id: schema.callLogs.id });
     insertedFresh = true;
     insertedCallLogId = inserted[0]?.id ?? null;
   } catch (logErr: any) {
     if (logErr?.code === "23505" || /duplicate key/i.test(logErr?.message || "")) {
-      log.info("Duplicate end-of-call-report ignored (idempotent retry)", { callId: call?.id });
+      const vapiCallId = call?.id;
+      if (vapiCallId) {
+        const existing = await findCallLogByVapiCallId(vapiCallId);
+        if (existing && isOutboundCallPlaceholder(existing)) {
+          await drizzle
+            .update(schema.callLogs)
+            .set({
+              durationSeconds: duration,
+              cost: String(call?.cost || 0.0),
+              summary: analysis?.summary || "No summary provided.",
+              transcript: message.transcript || "",
+              recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
+              pipelineError: endedReason,
+            })
+            .where(eq(schema.callLogs.vapiCallId, vapiCallId));
+          insertedFresh = true;
+          insertedCallLogId = existing.id;
+          log.info("Outbound placeholder call log finalized from end-of-call-report", {
+            callId: vapiCallId,
+          });
+        } else {
+          log.info("Duplicate end-of-call-report ignored (idempotent retry)", {
+            callId: vapiCallId,
+          });
+        }
+      }
     } else {
       log.error("Failed to insert call log", { callId: call?.id, error: getErrorMessage(logErr) });
     }
@@ -116,6 +151,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         summary: analysis?.summary || null,
         sentiment: null,
         intentLabel: null,
+        endedReason,
       }).catch((err: any) =>
         log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
       );

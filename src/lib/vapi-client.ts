@@ -25,7 +25,12 @@ import { normalizeOutboundNumber } from "./dialer-compliance";
 import { buildAgentRuntimeContext, type AgentRuntimeProfile } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
-import { resolveVapiSpeechPipeline } from "./voice-agent-profile";
+import {
+  resolveElevenLabsSpeed,
+  resolveOutboundStartSpeakingPlan,
+  resolveVapiSpeechPipeline,
+  VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
+} from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -497,10 +502,11 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
         customerName,
       ),
     backgroundSound: agentConfig.ambientNoise || "off",
+    firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
     responseDelaySeconds: 0,
     numWordsToInterruptAssistant: 2,
     backgroundDenoisingEnabled: false,
-    startSpeakingPlan: speechPipeline.startSpeakingPlan,
+    startSpeakingPlan: resolveOutboundStartSpeakingPlan(speechPipeline),
     transcriber: speechPipeline.transcriber,
     ...(outboundServerUrl && { serverUrl: outboundServerUrl }),
     serverMessages: ["tool-calls", "status-update", "conversation-update", "end-of-call-report"],
@@ -534,8 +540,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       //   speed:        https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
       //   fine-tuning:  https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
       const provider = agentConfig.voiceProviderOutbound || agentConfig.voiceProvider || "11labs";
-      const raw = (agentConfig as any)?.voiceSpeed;
-      const speed = raw == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(raw) || 1.0));
+      const speed = resolveElevenLabsSpeed((agentConfig as any)?.voiceSpeed, { outbound: true });
       const clamp01 = (v: unknown, fallback: number): number => {
         if (v == null) return fallback;
         const n = Number(v);
@@ -640,6 +645,15 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       return { ok: false, status: 502, error: formatVapiCallError(errBody) };
     }
     const vapiData = await vapiResponse.json();
+    if (vapiData?.id) {
+      const { recordOutboundCallPlaced } = await import("./outbound-call-tracking");
+      void recordOutboundCallPlaced({
+        userId,
+        agentId,
+        vapiCallId: vapiData.id,
+        customerNumber: dialNumber,
+      });
+    }
     return { ok: true, status: 200, callId: vapiData.id };
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);

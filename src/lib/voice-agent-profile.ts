@@ -78,6 +78,32 @@ export const VAPI_START_SPEAKING_PLAN_FLUX = {
   waitSeconds: 0.05,
 };
 
+/**
+ * Outbound: let the callee say "hello" before the opener plays.
+ * @see https://docs.vapi.ai/calls/voicemail-detection (firstMessageMode)
+ */
+export const VAPI_OUTBOUND_FIRST_MESSAGE_MODE = "assistant-waits-for-user" as const;
+
+/** Slight pace reduction when the operator left ElevenLabs speed at the 1.0 default. */
+export const VAPI_OUTBOUND_VOICE_SPEED_NUDGE = 0.94;
+
+/** Clamp ElevenLabs speed; outbound nudges untouched 1.0 → 0.94 for a calmer phone cadence. */
+export function resolveElevenLabsSpeed(raw: unknown, opts?: { outbound?: boolean }): number {
+  const parsed = raw == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(raw) || 1.0));
+  if (opts?.outbound && parsed === 1.0) return VAPI_OUTBOUND_VOICE_SPEED_NUDGE;
+  return parsed;
+}
+
+/** Brief beat after the callee speaks before the agent opens (pairs with waits-for-user). */
+export function resolveOutboundStartSpeakingPlan(
+  speechPipeline: ReturnType<typeof resolveVapiSpeechPipeline>,
+): typeof VAPI_START_SPEAKING_PLAN | typeof VAPI_START_SPEAKING_PLAN_FLUX {
+  return {
+    ...speechPipeline.startSpeakingPlan,
+    waitSeconds: 0.45,
+  };
+}
+
 /** Production default — Deepgram Flux EOT (English showcase + tenant voice). */
 export const VAPI_DEFAULT_TRANSCRIBER_MODE: VapiTranscriberMode = "flux-eot";
 

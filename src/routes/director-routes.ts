@@ -14,6 +14,7 @@ import {
   directorStreamMessageSchema,
   directorStitchFinalizeSchema,
   directorExecuteSchema,
+  directorProposalResolveSchema,
   pdfUploadSchema,
   directorChatModelPatchSchema,
 } from "../lib/api-validation";
@@ -82,6 +83,7 @@ import {
   loadCompletedDirectorStitchPreview,
   loadPendingDirectorStitchSession,
   loadDirectorMessages,
+  patchDirectorMessageResolved,
   persistDirectorStitchPreviewCompletion,
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
@@ -607,6 +609,7 @@ router.get(
             deliverableArtifact: meta.deliverableArtifact,
             stitchSession: meta.stitchSession,
             stitchAssetsPending: meta.stitchAssetsPending === true ? true : undefined,
+            resolved: meta.resolved,
           };
         }),
       });
@@ -1594,6 +1597,27 @@ router.post(
     } catch (e) {
       log.error("director file upload failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to process PDF" });
+    }
+  },
+);
+
+router.post(
+  "/api/director/messages/:id/resolve",
+  authenticateUser,
+  validateBody(directorProposalResolveSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const messageId = String(req.params.id || "").trim();
+      if (!/^\d+$/.test(messageId)) {
+        return res.status(400).json({ error: "Invalid message id" });
+      }
+      const { key, state } = req.body as { key: string; state: "done" | "dismissed" };
+      const ok = await patchDirectorMessageResolved(req.user.id, messageId, key, state);
+      if (!ok) return res.status(404).json({ error: "Message not found" });
+      res.json({ success: true, key, state });
+    } catch (e) {
+      log.error("director proposal resolve failed", { error: getErrorMessage(e) });
+      res.status(500).json({ error: "Failed to save proposal state" });
     }
   },
 );

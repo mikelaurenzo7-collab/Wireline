@@ -712,6 +712,16 @@ export async function handleJob(job: JobRow): Promise<void> {
     await persistJobResult(job.id, result as Record<string, unknown>);
   }
 
+  if (job.type === "vapi_webhook") {
+    const { processVapiWebhookJob } = await import("./vapi-webhook-queue");
+    const result = await processVapiWebhookJob(job);
+    await persistJobResult(job.id, {
+      webhookType: result.webhookType,
+      vapiCallId: result.vapiCallId ?? null,
+    });
+    return;
+  }
+
   if (job.type === "campaign_dial") {
     const p = job.payload as { userId: string };
     const { CampaignDialerService } = await import("../services/campaign-dialer");

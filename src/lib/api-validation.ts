@@ -526,6 +526,15 @@ export const directorExecuteSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+export const directorProposalResolveSchema = z.object({
+  key: z
+    .string()
+    .min(3)
+    .max(40)
+    .regex(/^(change|toggle|action|integration):\d+$/),
+  state: z.enum(["done", "dismissed"]),
+});
+
 export const pdfUploadSchema = z.object({
   pdfBase64: z
     .string()

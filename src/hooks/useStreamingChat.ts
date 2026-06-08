@@ -13,7 +13,10 @@
  */
 import { useCallback, useRef, useState } from "react";
 import { refreshSessionIfNeeded } from "../lib/api";
-import { isRecoverableDirectorPayload } from "../lib/director-reply-utils";
+import {
+  isRecoverableDirectorPayload,
+  isTerminalDirectorStreamPayload,
+} from "../lib/director-reply-utils";
 
 export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
 
@@ -143,11 +146,13 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
   const completionRef = useRef(false);
   const latestReplyRef = useRef<Record<string, unknown> | undefined>(undefined);
   const streamEstablishedRef = useRef(false);
+  const terminalReplyRef = useRef(false);
 
   const reset = useCallback(() => {
     completionRef.current = false;
     latestReplyRef.current = undefined;
     streamEstablishedRef.current = false;
+    terminalReplyRef.current = false;
     setState(INITIAL_STATE);
   }, []);
 
@@ -193,6 +198,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       completionRef.current = false;
       latestReplyRef.current = undefined;
       streamEstablishedRef.current = false;
+      terminalReplyRef.current = false;
       setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
 
       await refreshSessionIfNeeded();
@@ -200,6 +206,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       const finishWithPartialReply = (): boolean => {
         if (completionRef.current || !latestReplyRef.current) return false;
         const payload = latestReplyRef.current;
+        if (!terminalReplyRef.current && !isTerminalDirectorStreamPayload(payload)) return false;
         if (!isRecoverableDirectorPayload(payload)) return false;
         setState((s) => ({ ...s, phase: "done", reply: payload }));
         finalizeComplete(payload);
@@ -287,6 +294,9 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
             case "reply":
               streamEstablishedRef.current = true;
               latestReplyRef.current = data;
+              if (isTerminalDirectorStreamPayload(data)) {
+                terminalReplyRef.current = true;
+              }
               setState((s) => ({
                 ...s,
                 phase: "replying",
@@ -297,6 +307,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
 
             case "done":
               streamEstablishedRef.current = true;
+              terminalReplyRef.current = true;
               latestReplyRef.current = data;
               setState((s) => ({
                 ...s,
@@ -358,6 +369,10 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
             const msg = "Stream timed out before the Director finished";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
             finalizeError(msg);
+            return;
+          }
+          if (streamEstablishedRef.current) {
+            finalizeError("Stream disconnected before the Director finished");
           }
           return;
         }

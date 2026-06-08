@@ -136,7 +136,13 @@ export async function executeDirectorCommsAction(
 
       if (!result.ok) return { success: false, error: result.error || "Call failed" };
 
-      return { success: true, output: `Calling ${action.to} now.` };
+      const callId = result.callId ? ` (call ${result.callId})` : "";
+      return {
+        success: true,
+        output:
+          `Dial started to ${action.to}${callId}. ` +
+          "Vapi accepted the call — track outcome, recording, and transcript under Phone → Call History once the call ends.",
+      };
     } catch (e) {
       return { success: false, error: getErrorMessage(e) };
     }

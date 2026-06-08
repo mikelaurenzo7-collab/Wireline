@@ -126,6 +126,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
         qaScore: schema.callLogs.qaScore,
         qaBreakdown: schema.callLogs.qaBreakdown,
         outcomeTag: schema.callLogs.outcomeTag,
+        pipelineError: schema.callLogs.pipelineError,
         campaignSource: schema.callLogs.campaignSource,
         demo: schema.callLogs.demo,
         createdAt: schema.callLogs.createdAt,

@@ -23,7 +23,13 @@ import {
   type AgentRuntimeProfile,
 } from "./agent-runtime";
 import { buildCustomerIntelBlock } from "./customer-intel";
-import { getVoiceLatencyProfile, resolveVapiSpeechPipeline } from "./voice-agent-profile";
+import {
+  getVoiceLatencyProfile,
+  resolveElevenLabsSpeed,
+  resolveOutboundStartSpeakingPlan,
+  resolveVapiSpeechPipeline,
+  VAPI_OUTBOUND_FIRST_MESSAGE_MODE,
+} from "./voice-agent-profile";
 import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -521,9 +527,9 @@ Today is ${currentDateTime}.
   // including it would make Vapi reject the request.
   //
   // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
-  const rawVoiceSpeed = (agentConfigRow as any)?.voiceSpeed;
-  const parsedVoiceSpeed =
-    rawVoiceSpeed == null ? 1.0 : Math.min(1.2, Math.max(0.7, Number(rawVoiceSpeed) || 1.0));
+  const parsedVoiceSpeed = resolveElevenLabsSpeed((agentConfigRow as any)?.voiceSpeed, {
+    outbound: isOutbound,
+  });
 
   // ElevenLabs voice fine-tuning quality params. Operator-set per-agent
   // in FleetSettings → Voice fine-tuning. Mirrors the four knobs in EL's
@@ -596,6 +602,7 @@ Today is ${currentDateTime}.
   return {
     name: agentConfigRow?.name || "Wireline Agent",
     firstMessage: firstMessage,
+    ...(isOutbound ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE } : {}),
     serverUrlSecret: VAPI_WEBHOOK_SECRET,
     silenceTimeoutSeconds,
     // Brand voice — what the assistant says on graceful call end.
@@ -650,7 +657,9 @@ Today is ${currentDateTime}.
     // based on the audio + transcript context. Matches the showcase
     // assistant; the previous fixed-timeout behaviour was prone to
     // either interrupting (too short) or feeling sluggish (too long).
-    startSpeakingPlan: speechPipeline.startSpeakingPlan,
+    startSpeakingPlan: isOutbound
+      ? resolveOutboundStartSpeakingPlan(speechPipeline)
+      : speechPipeline.startSpeakingPlan,
     model: {
       provider: voiceLlmProvider,
       model: voiceLlmModel,

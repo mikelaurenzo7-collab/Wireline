@@ -44,12 +44,27 @@ export function directorPayloadHasProposals(data: Record<string, unknown>): bool
 /** Stream / poll recovery — coach Apply cards and short replies count even when under 160 chars. */
 export function isRecoverableDirectorPayload(data: Record<string, unknown> | undefined): boolean {
   if (!data) return false;
-  if (directorPayloadHasProposals(data)) return true;
+  if (isTerminalDirectorStreamPayload(data)) return true;
   const reply = data.reply;
   if (typeof reply !== "string") return false;
   const trimmed = reply.trim();
   if (!trimmed || isDirectorStubReply(trimmed)) return false;
   return true;
+}
+
+/**
+ * Terminal SSE payload — includes proposals, creative approvals, or Stitch previews.
+ * Text-only `reply` chunks from mid-stream previews are NOT terminal (wait for `done`).
+ */
+export function isTerminalDirectorStreamPayload(
+  data: Record<string, unknown> | undefined,
+): boolean {
+  if (!data) return false;
+  if (directorPayloadHasProposals(data)) return true;
+  if (data.deliverableArtifact && typeof data.deliverableArtifact === "object") return true;
+  if (Array.isArray(data.approvals) && data.approvals.length > 0) return true;
+  if (Array.isArray(data.previews) && data.previews.length > 0) return true;
+  return false;
 }
 
 export function isSubstantiveDirectorPayload(data: Record<string, unknown> | undefined): boolean {
@@ -118,10 +133,7 @@ export function operatorTurnHasDirectorReply(
       const packagingPending =
         typeof (m as { stitchAssetsPending?: boolean }).stitchAssetsPending === "boolean" &&
         (m as { stitchAssetsPending?: boolean }).stitchAssetsPending === true;
-      if (
-        isStitch &&
-        (isSubstantiveDirectorReply(m.content) || clarifying || packagingPending)
-      ) {
+      if (isStitch && (isSubstantiveDirectorReply(m.content) || clarifying || packagingPending)) {
         return true;
       }
       continue;
