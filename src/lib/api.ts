@@ -222,6 +222,68 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
   }
 }
 
+export const AUTH_SESSION_EXPIRED_EVENT = "wireline:auth-session-expired";
+
+export interface AuthSessionExpiredDetail {
+  status: number;
+  code?: string;
+  error: string;
+  source: string;
+}
+
+export function isAuthHttpStatus(status: number): boolean {
+  return status === 401 || status === 403;
+}
+
+export const AUTH_SESSION_EXPIRED_MESSAGE =
+  "Your session expired — sign in again to continue.";
+
+/** Parse JSON or plain-text API error bodies from fetch responses. */
+export function parseApiErrorFromText(text: string, status: number): ApiErrorBody {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as ApiErrorBody;
+      if (parsed && typeof parsed.error === "string") return parsed;
+    } catch {
+      /* fall through */
+    }
+  }
+  return { error: messageFromNonJsonBody(text, status) };
+}
+
+export function dispatchAuthSessionExpired(detail: AuthSessionExpiredDetail): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<AuthSessionExpiredDetail>(AUTH_SESSION_EXPIRED_EVENT, { detail }),
+  );
+}
+
+async function maybeDispatchAuthSessionExpired(
+  response: Response,
+  source: string,
+): Promise<void> {
+  if (!isAuthHttpStatus(response.status)) return;
+  if (typeof window === "undefined") return;
+  try {
+    const cloned = response.clone();
+    const text = await cloned.text();
+    const body = parseApiErrorFromText(text, response.status);
+    dispatchAuthSessionExpired({
+      status: response.status,
+      code: body.code,
+      error: body.error,
+      source,
+    });
+  } catch {
+    dispatchAuthSessionExpired({
+      status: response.status,
+      error: AUTH_SESSION_EXPIRED_MESSAGE,
+      source,
+    });
+  }
+}
+
 let refreshInFlight: Promise<boolean> | null = null;
 
 /** Rotate the httpOnly session cookie before long-lived streams. */
@@ -233,6 +295,9 @@ export async function refreshSessionIfNeeded(): Promise<boolean> {
         method: "POST",
         credentials: "include",
       });
+      if (!res.ok) {
+        void maybeDispatchAuthSessionExpired(res, "/api/auth/refresh");
+      }
       return res.ok;
     } catch {
       return false;
@@ -285,6 +350,7 @@ export async function authFetch(url: string, options: AuthFetchOptions = {}) {
     // caller's contract is "I get a Response back immediately." The
     // modal listener handles whatever the event carries.
     void maybeDispatchTrialGateEvent(response);
+    void maybeDispatchAuthSessionExpired(response, url);
     return response;
   } finally {
     clearTimeout(timer);

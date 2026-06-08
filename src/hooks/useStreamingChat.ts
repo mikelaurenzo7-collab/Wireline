@@ -12,7 +12,12 @@
  * manual SSE parsing since EventSource only supports GET).
  */
 import { useCallback, useRef, useState } from "react";
-import { refreshSessionIfNeeded } from "../lib/api";
+import {
+  AUTH_SESSION_EXPIRED_MESSAGE,
+  isAuthHttpStatus,
+  parseApiErrorFromText,
+  refreshSessionIfNeeded,
+} from "../lib/api";
 import {
   isRecoverableDirectorPayload,
   isTerminalDirectorStreamPayload,
@@ -239,7 +244,13 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       terminalReplyRef.current = false;
       setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
 
-      await refreshSessionIfNeeded();
+      const sessionFresh = await refreshSessionIfNeeded();
+      if (!sessionFresh) {
+        const msg = AUTH_SESSION_EXPIRED_MESSAGE;
+        setState({ ...INITIAL_STATE, phase: "error", error: msg });
+        finalizeError(msg);
+        return;
+      }
 
       const finishWithPartialReply = (): boolean => {
         if (completionRef.current || !latestReplyRef.current) return false;
@@ -264,7 +275,10 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
 
         if (!res.ok) {
           const errText = await res.text().catch(() => "Stream failed");
-          const msg = `Stream error: ${res.status} ${errText}`;
+          const parsed = parseApiErrorFromText(errText, res.status);
+          const msg = isAuthHttpStatus(res.status)
+            ? AUTH_SESSION_EXPIRED_MESSAGE
+            : `Stream error: ${res.status} ${parsed.error}`;
           setState({ ...INITIAL_STATE, phase: "error", error: msg });
           finalizeError(msg);
           return;

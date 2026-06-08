@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 
 export interface User {
@@ -98,6 +99,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const onSessionExpired = (_event: Event) => {
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      setSession(null);
+      setUser(null);
+    };
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
   const signIn = useCallback((newSession: Session) => {

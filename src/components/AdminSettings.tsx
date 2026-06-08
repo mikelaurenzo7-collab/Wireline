@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { authFetch } from "../lib/api";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
 import PageShell from "./PageShell";
@@ -382,7 +382,7 @@ export default function AdminSettings() {
                   label={OPS_ADMIN.loading}
                 />
               ) : (
-                <AnimatePresence mode="wait">
+                <>
                   {activeTab === "branding" && (
                     <motion.div
                       key="branding"
@@ -390,7 +390,6 @@ export default function AdminSettings() {
                       id="admin-panel-branding"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
                       className="h-full"
                     >
                       <BrandingPanel
@@ -409,7 +408,6 @@ export default function AdminSettings() {
                       id="admin-panel-carrier"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
                       className="h-full"
                     >
                       <CarrierPanel
@@ -436,7 +434,6 @@ export default function AdminSettings() {
                       id="admin-panel-subscription"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
                       className="h-full"
                     >
                       <SubscriptionPanel onDeleteAccount={deleteAccount} />
@@ -450,7 +447,6 @@ export default function AdminSettings() {
                       id="admin-panel-team"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
                       className="h-full"
                     >
                       <TeamPanel
@@ -468,7 +464,6 @@ export default function AdminSettings() {
                       id="admin-panel-flywheel"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
                       className="h-full"
                     >
                       <GrowthPanel
@@ -487,7 +482,6 @@ export default function AdminSettings() {
                       id="admin-panel-activity"
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
                       className="h-full"
                     >
                       <div className="space-y-5">
@@ -496,7 +490,7 @@ export default function AdminSettings() {
                       </div>
                     </motion.div>
                   )}
-                </AnimatePresence>
+                </>
               )}
             </div>
           </div>

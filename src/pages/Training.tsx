@@ -3,7 +3,7 @@
  */
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { GraduationCap, Bot, Mail } from "lucide-react";
 import AgentTraining from "../components/AgentTraining";
 import { useAgents } from "../contexts/AgentsContext";
@@ -201,24 +201,21 @@ export default function Training() {
           </header>
 
           <div className="flex-1 min-h-0 scroll-viewport">
-            <AnimatePresence mode="wait">
-              {selectedAgentId && (
-                <motion.div
-                  key={`${selectedAgentId}-${activeSubTab}`}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.18 }}
-                  className="h-full min-h-0"
-                >
-                  <AgentTraining
-                    embeddedAgentId={selectedAgentId}
-                    initialSubTab={activeSubTab}
-                    onSubTabChange={setSubTab}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {selectedAgentId && (
+              <motion.div
+                key={`${selectedAgentId}-${activeSubTab}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18 }}
+                className="h-full min-h-0"
+              >
+                <AgentTraining
+                  embeddedAgentId={selectedAgentId}
+                  initialSubTab={activeSubTab}
+                  onSubTabChange={setSubTab}
+                />
+              </motion.div>
+            )}
           </div>
         </main>
       </div>
