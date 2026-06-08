@@ -453,7 +453,7 @@ export const WIRELINE_STITCH_UI = {
   /** Design Studio (LLM pipeline) — shown when Stitch pixel render is off. */
   studioLoadingPhases: [
     "Spectrum Desk — Kimi researching your industry…",
-    "Generating hero photography…",
+    "Grok Imagine — hero photography…",
     "Hy3 — building your page…",
     "Kimi — visual critique…",
     "MiniMax — production finish…",
@@ -465,7 +465,7 @@ export const WIRELINE_STITCH_UI = {
   studioLoadingHint:
     "Full first preview usually finishes in about 4 minutes. Refine anything in chat after that.",
   designStudioReasoning:
-    "Spectrum Desk — Kimi research, Hy3 build, MiniMax finish, Opus sign-off",
+    "Spectrum Desk — Kimi research, Grok Imagine hero, Hy3 build, MiniMax finish, Opus sign-off",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",

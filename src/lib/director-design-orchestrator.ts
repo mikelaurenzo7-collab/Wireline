@@ -1,7 +1,7 @@
 /**
  * Wireline Design Studio — Spectrum Desk linear pipeline (no architect tournament).
  *
- * Brief → Imagine (Grok) → Hy3 build → Kimi critique → M3 finish → gate → Opus sign-off.
+ * Brief → Kimi research → Grok Imagine hero → Hy3 build → Kimi critique → M3 finish → gate → Opus sign-off.
  */
 import { CLAUDE_MODELS } from "./claude-models";
 import {
@@ -555,13 +555,13 @@ export async function runDirectorDesignStudio(
   const skipImagine =
     designStudioRemainingMs(deadline) < DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS;
   if (skipImagine) {
-    phases.push("Imagine skipped (time budget)");
+    phases.push("Grok Imagine skipped (time budget)");
     log.info("design studio skipping imagine — time budget", {
       remainingMs: designStudioRemainingMs(deadline),
     });
   } else {
     onProgress?.("Generating hero photography…");
-    phases.push("Imagine hero");
+    phases.push("Grok Imagine hero");
     try {
       imagineAssets = await generateDesignImagineAssets({
         operatorMessage: input.operatorMessage,

@@ -231,7 +231,7 @@ export function isSpectrumDesignTeam(
 }
 
 export const WIRELINE_DESIGN_STUDIO_REASONING =
-  "Spectrum Desk — Kimi research & critique, Hy3 HTML build, MiniMax M3 finish, Opus sign-off";
+  "Spectrum Desk — Kimi research, Grok Imagine hero, Hy3 build, Kimi critique, MiniMax M3 finish, Opus sign-off";
 
 export function designTeamThinkingSummary(phases: string[]): string {
   return phases.filter(Boolean).join(" · ");
