@@ -44,7 +44,20 @@ router.get(
         .where(eq(schema.phoneNumbers.userId, req.user.id))
         .orderBy(desc(schema.phoneNumbers.createdAt));
 
-      res.json({ numbers: data || [] });
+      // Drizzle returns camelCase JS keys (phoneNumber, vapiNumberId, …) but
+      // every client consumer (CarrierPanel, ActivationNudge, AdminSettings)
+      // reads snake_case. Normalize the contract here so rows don't render as
+      // "undefined". id stays a string (BigInt.toJSON) so PATCH/DELETE keep working.
+      const numbers = (data || []).map((n) => ({
+        id: String(n.id),
+        phone_number: n.phoneNumber,
+        vapi_number_id: n.vapiNumberId,
+        agent_id: n.agentId,
+        campaign_label: n.campaignLabel,
+        created_at: n.createdAt,
+      }));
+
+      res.json({ numbers });
     } catch (err: any) {
       log.error("GET /api/phone-numbers failed", { error: getErrorMessage(err) });
       res.json({ numbers: [] });
