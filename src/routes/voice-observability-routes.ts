@@ -9,11 +9,10 @@ import express, { Request, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { z } from "zod";
 import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { requirePermission } from "../middleware/require-role";
 import { insightsRateLimit } from "../middleware/api-rate-limits";
 import { validateQuery } from "../lib/api-validation";
 import {
