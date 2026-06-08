@@ -5299,10 +5299,16 @@ select:focus {
   color: var(--color-brand);
 }
 
-/* Priority badge variants */
-.badge-high   { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
-.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
-.badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label leading-none bg-black/5 border border-black/10 text-muted; }
+/* Priority badge variants — wl-label typography inlined (@apply cannot reference custom classes) */
+.badge-high {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.14em] leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600;
+}
+.badge-medium {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.14em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700;
+}
+.badge-low {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.14em] leading-none bg-black/5 border border-black/10 text-muted;
+}
 
 /* Sidebar nav item â€” active solid pill */
 .nav-active-bg {
