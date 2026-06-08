@@ -243,15 +243,22 @@ export function selectModelForTask(complexity: TaskComplexity): string {
  * highest-capability current-generation default.
  *
  * NOTE: New code should use selectModelForTask() for cost optimization.
- * This default is kept for backward compatibility.
  */
-export const CLAUDE_MODEL_DEFAULT: string = process.env.ANTHROPIC_MODEL || CLAUDE_MODELS.OPUS;
+export const CLAUDE_REASONING_MODEL_DEFAULT: string =
+  process.env.ANTHROPIC_MODEL || CLAUDE_MODELS.OPUS;
 
 /**
- * @deprecated Use CLAUDE_MODEL_DEFAULT or selectModelForTask(). Kept as an
- * exported alias so existing references continue to compile during the rollout.
+ * @deprecated Prefer {@link CLAUDE_REASONING_MODEL_DEFAULT} — this name
+ * sounds like the global default but only applies to the off-call reasoning
+ * layer (briefs, coaching, post-call analysis). Voice runtime uses Sonnet via
+ * {@link VAPI_TENANT_DEFAULT_MODEL}.
  */
-export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
+export const CLAUDE_MODEL_DEFAULT: string = CLAUDE_REASONING_MODEL_DEFAULT;
+
+/**
+ * @deprecated Use CLAUDE_REASONING_MODEL_DEFAULT or selectModelForTask().
+ */
+export const DEFAULT_MODEL = CLAUDE_REASONING_MODEL_DEFAULT;
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -287,7 +294,7 @@ export const DEFAULT_MODEL = CLAUDE_MODEL_DEFAULT;
  *
  *   Voice Runtime        : Claude Sonnet 4.6  (VAPI_TENANT_DEFAULT_MODEL)
  *   Voice Fallback       : Gemini 3.5 Flash   (VAPI_VOICE_FALLBACK_MODEL)
- *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_MODEL_DEFAULT)
+ *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_REASONING_MODEL_DEFAULT)
  *   Post-call / daily    : Claude Opus 4.7    (complexity: "complex")
  *   Reasoning (simple)   : Claude Haiku 4.5   (selectModelForTask("simple"))
  *   Grounded Search      : Gemini 2.5 Flash   (native googleSearchRetrieval)

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 
 import { log, auditLogger, drizzle } from "../lib/server-context";
@@ -47,7 +48,12 @@ router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, re
     res.json({ agents: mapObjectToSnake(agentsList) });
   } catch (error: any) {
     log.warn("Failed to fetch agents", { userId: req.user.id, error: getErrorMessage(error) });
-    res.status(503).json({ agents: [], degraded: true, error: "Failed to fetch agents" });
+    res.status(503).json({
+      code: "SERVICE_UNAVAILABLE",
+      agents: [],
+      degraded: true,
+      error: "Failed to fetch agents",
+    });
   }
 });
 
@@ -116,7 +122,7 @@ router.post(
     try {
       const { role } = req.body;
       const template = ROLE_PERSONALITY_TEMPLATES[role as keyof typeof ROLE_PERSONALITY_TEMPLATES];
-      if (!template) return res.status(400).json({ error: "Unknown role" });
+      if (!template) throw AppError.fromHttpStatus(400, "Unknown role");
 
       // SECURITY: verify the agent belongs to the caller before upserting.
       // We use the service-role client (bypasses RLS) so without this check
@@ -129,7 +135,7 @@ router.post(
         .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
         .limit(1);
 
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       await drizzle
         .insert(schema.personality)
@@ -141,8 +147,9 @@ router.post(
 
       res.json({ success: true, content: template });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to apply role template", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to apply role template" });
+      throw AppError.fromHttpStatus(500, "Failed to apply role template");
     }
   },
 );
@@ -181,7 +188,7 @@ router.get(
       ]);
 
       const agentData = agentRes[0];
-      if (!agentData) return res.status(404).json({ error: "Agent not found." });
+      if (!agentData) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       const exportData = {
         wireline_export_version: 1,
@@ -212,8 +219,9 @@ router.get(
       res.setHeader("Content-Type", "application/json");
       res.json(exportData);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Agent export failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Export failed" });
+      throw AppError.fromHttpStatus(500, "Export failed");
     }
   },
 );
@@ -230,7 +238,7 @@ router.post(
 
       // Validate structure
       if (!payload?.wireline_export_version || !payload?.agent) {
-        return res.status(400).json({ error: "Invalid export file format" });
+        throw AppError.fromHttpStatus(400, "Invalid export file format");
       }
 
       const [ownedAgent] = await drizzle
@@ -238,7 +246,7 @@ router.post(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
         .limit(1);
-      if (!ownedAgent) return res.status(404).json({ error: "Agent not found" });
+      if (!ownedAgent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const {
         personality,
@@ -306,8 +314,9 @@ router.post(
 
       res.json({ success: true, imported });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Agent import failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Import failed" });
+      throw AppError.fromHttpStatus(500, "Import failed");
     }
   },
 );
@@ -321,7 +330,7 @@ router.get(
       const userId = req.user.id;
 
       const ownedId = await findOwnedAgentId(agentId, userId);
-      if (!ownedId) return res.status(404).json({ error: "Agent not found." });
+      if (!ownedId) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       const [agentRow, personalityRow, directivesList, knowledgeList] = await Promise.all([
         drizzle
@@ -355,8 +364,9 @@ router.get(
         knowledge: knowledgeList || [],
       });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Config fetch error", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to load agent configuration" });
+      throw AppError.fromHttpStatus(500, "Failed to load agent configuration");
     }
   },
 );
@@ -372,14 +382,14 @@ router.post(
       const agentId = req.params.id;
       const userId = req.user.id;
 
-      if (!content) return res.status(400).json({ error: "Content is required" });
+      if (!content) throw AppError.fromHttpStatus(400, "Content is required");
 
       const [agent] = await drizzle
         .select({ id: schema.agents.id })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       if (type === "personality") {
         await drizzle
@@ -432,8 +442,9 @@ router.post(
 
       res.json({ success: true });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Manual config error", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update" });
+      throw AppError.fromHttpStatus(500, "Failed to update");
     }
   },
 );
@@ -446,7 +457,7 @@ router.delete(
       const { type, rowId, id: agentId } = req.params;
       const userId = req.user.id;
       if (!(await findOwnedAgentId(agentId, userId))) {
-        return res.status(404).json({ error: "Agent not found." });
+        throw AppError.fromHttpStatus(404, "Agent not found.");
       }
       if (type === "directive")
         await drizzle
@@ -470,8 +481,9 @@ router.delete(
           );
       res.json({ success: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Agent row delete failed", { type: req.params.type, error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to delete" });
+      throw AppError.fromHttpStatus(500, "Failed to delete");
     }
   },
 );
@@ -488,10 +500,10 @@ router.post(
     const { message, agentId: rawAgentId } = req.body;
     const agentId = typeof rawAgentId === "string" && rawAgentId.trim() ? rawAgentId.trim() : "";
     const userId = req.user.id;
-    if (!message?.trim()) return res.status(400).json({ error: "message is required" });
-    if (!agentId) return res.status(400).json({ error: "agentId is required" });
+    if (!message?.trim()) throw AppError.fromHttpStatus(400, "message is required");
+    if (!agentId) throw AppError.fromHttpStatus(400, "agentId is required");
     if (!(await findOwnedAgentId(agentId, userId))) {
-      return res.status(404).json({ error: "Agent not found." });
+      throw AppError.fromHttpStatus(404, "Agent not found.");
     }
 
     let parsed: {
@@ -569,6 +581,7 @@ router.post(
           cacheSystem: true,
         });
       } catch (err) {
+        if (err instanceof AppError) throw err;
         log.error("Claude extraction failed; falling back to Gemini", {
           error: getErrorMessage(err),
         });
@@ -624,6 +637,7 @@ Respond ONLY in strict, valid JSON format (no markdown):
           };
         }
       } catch (err) {
+        if (err instanceof AppError) throw err;
         log.error("OpenAI extraction fallback failed", { error: getErrorMessage(err) });
       }
     }
@@ -663,8 +677,9 @@ Respond ONLY in strict, valid JSON format (no markdown):
           });
       }
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("Training persistence failed", { error: getErrorMessage(err) });
-      return res.status(500).json({ error: "Failed to save training data" });
+      throw AppError.fromHttpStatus(500, "Failed to save training data");
     }
 
     // ── Format confirmation message ───────────────────────────────────
@@ -703,9 +718,9 @@ router.post(
     const agentId = typeof rawAgentId === "string" && rawAgentId.trim() ? rawAgentId.trim() : "";
     const userId = req.user.id;
 
-    if (!agentId) return res.status(400).json({ error: "agentId is required" });
+    if (!agentId) throw AppError.fromHttpStatus(400, "agentId is required");
     if (!(await findOwnedAgentId(agentId, userId))) {
-      return res.status(404).json({ error: "Agent not found." });
+      throw AppError.fromHttpStatus(404, "Agent not found.");
     }
 
     try {
@@ -747,8 +762,9 @@ router.post(
 
       res.json({ success: true });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Training save error", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to save intelligence patterns" });
+      throw AppError.fromHttpStatus(500, "Failed to save intelligence patterns");
     }
   },
 );
@@ -768,7 +784,11 @@ router.post(
       });
 
       if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+        return res.status(400).json({
+          code: "BAD_REQUEST",
+          error: "Validation failed",
+          errors: validation.errors,
+        });
       }
 
       // SECURITY ENFORCEMENT: Check Subscription Status for this specific user.
@@ -797,7 +817,7 @@ router.post(
       // Trialing tenants create their first agent via Fast Start — enforceTrialAgentCap
       // already gated email verification + trial caps before this handler runs.
       if (subscriptionStatus !== "active" && subscriptionStatus !== "trialing") {
-        return res.status(403).json({ error: "Access Denied: Please upgrade your billing plan." });
+        throw AppError.fromHttpStatus(403, "Access Denied: Please upgrade your billing plan.");
       }
 
       // Agent Limit Check — includes purchased extras.
@@ -879,7 +899,7 @@ router.post(
           agentId,
           error: error.message,
         });
-        return res.status(500).json({ error: "Failed to create agent" });
+        throw AppError.fromHttpStatus(500, "Failed to create agent");
       }
 
       const deferPhoneProvision =
@@ -930,8 +950,9 @@ router.post(
 
       res.json({ success: true, id: agentId, name: rest.name });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Agent creation failed", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to create agent" });
+      throw AppError.fromHttpStatus(500, "Failed to create agent");
     }
   },
 );
@@ -950,7 +971,11 @@ router.put(
       });
 
       if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+        return res.status(400).json({
+          code: "BAD_REQUEST",
+          error: "Validation failed",
+          errors: validation.errors,
+        });
       }
 
       const agentId = req.params.id;
@@ -961,7 +986,7 @@ router.put(
         .limit(1);
 
       if (!owned) {
-        return res.status(404).json({ error: "Agent not found." });
+        throw AppError.fromHttpStatus(404, "Agent not found.");
       }
 
       const update = mapObjectToCamel(req.body);
@@ -992,8 +1017,9 @@ router.put(
 
       res.json({ success: true });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to update agent", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update agent" });
+      throw AppError.fromHttpStatus(500, "Failed to update agent");
     }
   },
 );
@@ -1012,7 +1038,7 @@ router.delete(
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
         .limit(1);
 
-      if (!agent) return res.status(404).json({ error: "Agent not found." });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       // Null-out agent_id on tables that would otherwise block the delete.
       await Promise.allSettled([
@@ -1074,8 +1100,9 @@ router.delete(
 
       res.json({ success: true });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to delete agent", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to delete agent." });
+      throw AppError.fromHttpStatus(500, "Failed to delete agent.");
     }
   },
 );
@@ -1088,7 +1115,7 @@ router.post(
     try {
       const { id } = req.params;
       if (!(await findOwnedAgentId(id, req.user.id))) {
-        return res.status(404).json({ error: "Agent not found." });
+        throw AppError.fromHttpStatus(404, "Agent not found.");
       }
       const logs = await drizzle
         .select({
@@ -1136,6 +1163,7 @@ router.post(
             full_review: review,
           });
         } catch (err) {
+          if (err instanceof AppError) throw err;
           log.error("Claude optimize failed; falling back to OpenAI", {
             error: getErrorMessage(err),
           });
@@ -1164,7 +1192,7 @@ router.post(
           messages: [{ role: "user", content: prompt }],
         }),
       });
-      if (!response.ok) return res.status(502).json({ error: "Optimizer fallback failed." });
+      if (!response.ok) throw AppError.fromHttpStatus(502, "Optimizer fallback failed.");
       const data = (await response.json()) as {
         choices?: Array<{ message?: { content?: string } }>;
       };
@@ -1173,12 +1201,13 @@ router.post(
       try {
         parsed = JSON.parse(aiText || "{}");
       } catch {
-        return res.status(502).json({ error: "Optimizer returned malformed JSON." });
+        throw AppError.fromHttpStatus(502, "Optimizer returned malformed JSON.");
       }
       res.json(parsed);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Agent optimization protocol failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Optimization protocol failed" });
+      throw AppError.fromHttpStatus(500, "Optimization protocol failed");
     }
   },
 );
@@ -1190,7 +1219,7 @@ router.get(
     try {
       const agentId = req.params.id;
       if (!(await findOwnedAgentId(agentId, req.user.id))) {
-        return res.status(404).json({ error: "Agent not found." });
+        throw AppError.fromHttpStatus(404, "Agent not found.");
       }
       const logs = await drizzle
         .select({
@@ -1232,7 +1261,7 @@ router.get(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const focus: string = agent.kpiFocus || "general";
 
@@ -1310,7 +1339,7 @@ router.get(
       res.json(result);
     } catch (e: any) {
       log.error("Agent scorecard error", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to compute scorecard" });
+      throw AppError.fromHttpStatus(500, "Failed to compute scorecard");
     }
   },
 );
@@ -1322,7 +1351,7 @@ router.get(
     try {
       const agentId = req.params.id;
       if (!(await findOwnedAgentId(agentId, req.user.id))) {
-        return res.status(404).json({ error: "Agent not found" });
+        throw AppError.fromHttpStatus(404, "Agent not found");
       }
       const lessons = await drizzle
         .select()
@@ -1337,11 +1366,12 @@ router.get(
         .limit(200);
       res.json({ lessons });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Failed to fetch agent lessons", {
         agentId: req.params.id,
         error: getErrorMessage(e),
       });
-      res.status(500).json({ error: "Failed to fetch lessons" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch lessons");
     }
   },
 );
@@ -1356,17 +1386,17 @@ router.post(
       const agentId = req.params.id;
 
       if (lessonId === undefined || lessonId === null || lessonId === "") {
-        return res.status(400).json({ error: "lessonId is required" });
+        throw AppError.fromHttpStatus(400, "lessonId is required");
       }
       let lessonIdBig: bigint;
       try {
         lessonIdBig = BigInt(lessonId);
       } catch {
-        return res.status(400).json({ error: "lessonId is invalid" });
+        throw AppError.fromHttpStatus(400, "lessonId is invalid");
       }
 
       if (!(await findOwnedAgentId(agentId, req.user.id))) {
-        return res.status(404).json({ error: "Agent not found" });
+        throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       const [lesson] = await drizzle
@@ -1380,14 +1410,14 @@ router.post(
           ),
         )
         .limit(1);
-      if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+      if (!lesson) throw AppError.fromHttpStatus(404, "Lesson not found");
 
       const directiveContent = lesson.lesson.trim();
       if (directiveContent.length === 0) {
-        return res.status(400).json({ error: "Lesson has no content to promote" });
+        throw AppError.fromHttpStatus(400, "Lesson has no content to promote");
       }
       if (directiveContent.length > 1000) {
-        return res.status(400).json({ error: "Lesson content must be 1000 characters or less" });
+        throw AppError.fromHttpStatus(400, "Lesson content must be 1000 characters or less");
       }
 
       await drizzle.insert(schema.directives).values({
@@ -1415,8 +1445,9 @@ router.post(
 
       res.json({ success: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Agent lesson promotion failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Promotion failed" });
+      throw AppError.fromHttpStatus(500, "Promotion failed");
     }
   },
 );
@@ -1428,7 +1459,7 @@ router.delete(
     try {
       const agentId = req.params.id;
       if (!(await findOwnedAgentId(agentId, req.user.id))) {
-        return res.status(404).json({ error: "Agent not found" });
+        throw AppError.fromHttpStatus(404, "Agent not found");
       }
       await drizzle
         .delete(schema.agentLessons)
@@ -1441,11 +1472,12 @@ router.delete(
         );
       res.json({ success: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Agent lesson delete failed", {
         lessonId: req.params.lessonId,
         error: getErrorMessage(e),
       });
-      res.status(500).json({ error: "Delete failed" });
+      throw AppError.fromHttpStatus(500, "Delete failed");
     }
   },
 );
@@ -1473,19 +1505,19 @@ router.post(
           ),
         )
         .limit(1);
-      if (!lesson) return res.status(404).json({ error: "Lesson not found." });
+      if (!lesson) throw AppError.fromHttpStatus(404, "Lesson not found.");
       if (!lesson.agentId || !(await findOwnedAgentId(lesson.agentId, req.user.id))) {
-        return res.status(404).json({ error: "Agent not found." });
+        throw AppError.fromHttpStatus(404, "Agent not found.");
       }
 
       const content =
         customContent?.trim() || lesson.lesson.replace(/^\[KNOWLEDGE GAP\]\s*/, "").trim();
 
-      if (!content) return res.status(400).json({ error: "Content is empty." });
+      if (!content) throw AppError.fromHttpStatus(400, "Content is empty.");
       // Match the limit enforced by POST/PATCH /api/knowledge so promoted entries
       // can't exceed what a normal knowledge insert would allow.
       if (content.length > 2000) {
-        return res.status(400).json({ error: "Content must be 2000 characters or less." });
+        throw AppError.fromHttpStatus(400, "Content must be 2000 characters or less.");
       }
 
       await drizzle.insert(schema.knowledge).values({
@@ -1498,6 +1530,7 @@ router.post(
         .where(eq(schema.agentLessons.id, BigInt(lesson.id)));
       res.json({ success: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },

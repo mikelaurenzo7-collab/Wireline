@@ -30,10 +30,15 @@ import cors from "cors";
 import path from "path";
 import { randomUUID } from "node:crypto";
 import { db, IS_PROD, log } from "./src/lib/server-context";
+import { bindRequestIdReader } from "./src/lib/server-logger";
+import { getRequestId, runWithRequestContext } from "./src/lib/request-context";
+
+bindRequestIdReader(getRequestId);
 import { getErrorMessage } from "./src/lib/server-utils";
 import { reportError } from "./src/lib/error-reporter";
 import { DIRECTOR_REQUEST_TIMEOUT_MS } from "./src/lib/api";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
+import { normalizeApiErrorResponse } from "./src/middleware/normalize-api-error-response";
 import { validateStartupEnv } from "./src/lib/startup";
 import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
@@ -173,14 +178,16 @@ app.use(express.json({ limit: "1mb" }));
 
 app.use(assertSameOrigin);
 
-// Request correlation IDs
+// Request correlation IDs — ALS scope so log.* auto-includes requestId
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   const incoming = (req.headers["x-request-id"] as string | undefined)?.slice(0, 64);
   const requestId = incoming && /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID();
   res.locals.requestId = requestId;
   res.setHeader("X-Request-Id", requestId);
-  next();
+  runWithRequestContext(requestId, () => next());
 });
+
+app.use(normalizeApiErrorResponse);
 
 // Security headers for API + SSR paths. Static shell assets get parallel headers
 // from vercel.json; CSP here uses buildCSP() for dynamic connect-src in dev.

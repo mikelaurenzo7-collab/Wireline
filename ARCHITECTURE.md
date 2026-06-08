@@ -64,10 +64,10 @@ Concretely Opus drives:
 
 | File | Role |
 |------|------|
-| `src/lib/claude-models.ts` | Constants: `VAPI_TENANT_DEFAULT_MODEL`, `VAPI_SHOWCASE_MODEL`, `VAPI_PREMIUM_MODEL`, `CLAUDE_MODEL_DEFAULT`, `selectModelForTask()` |
+| `src/lib/claude-models.ts` | Constants: `VAPI_TENANT_DEFAULT_MODEL`, `VAPI_SHOWCASE_MODEL`, `VAPI_PREMIUM_MODEL`, `CLAUDE_REASONING_MODEL_DEFAULT`, `selectModelForTask()` |
 | `src/lib/vapi-assistant-factory.ts` | Reads `voice_llm_provider`/`voice_llm_model` from `wireline_settings`; resolves via `resolveVapiVoiceModelSelection()` |
 | `src/lib/vapi-client.ts` | Same resolution path, for outbound calls |
-| `src/lib/claude-recipes.ts` | `brief`, `coach`, `postCallAnalysis`, `dailyBrief` all use `CLAUDE_MODEL_DEFAULT` (Opus 4.7) |
+| `src/lib/claude-recipes.ts` | `brief`, `coach`, `postCallAnalysis`, `dailyBrief` all use `CLAUDE_REASONING_MODEL_DEFAULT` (Opus 4.7) |
 | `src/db/schema.ts` | `wireline_settings.voiceLlmProvider` / `voiceLlmModel` defaults — set to anthropic / claude-sonnet-4-6 so every new tenant lands on the right voice runtime out of the box |
 | `src/routes/health-routes.ts` | `/api/health/internal` reports configured tiering; `/api/health/models` live-probes each tier |
 

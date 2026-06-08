@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -48,6 +49,7 @@ router.get(
   (req: express.Request, res: express.Response) => {
     if (!shopifyOAuthConfigured()) {
       return res.status(500).json({
+        code: "INTERNAL_ERROR",
         error: "Missing SHOPIFY_CLIENT_ID or SHOPIFY_CLIENT_SECRET in environment variables.",
       });
     }
@@ -58,6 +60,7 @@ router.get(
     const shop = normalizeShopDomain(req.query.shop);
     if (!shop) {
       return res.status(400).json({
+        code: "BAD_REQUEST",
         error: "A valid Shopify store domain is required (e.g. your-store.myshopify.com).",
       });
     }
@@ -75,7 +78,10 @@ router.get(
       );
       res.json({ url: authUrl });
     } catch (e: any) {
-      res.status(400).json({ error: e?.message || "Invalid Shopify store domain." });
+      res.status(400).json({
+        code: "BAD_REQUEST",
+        error: e?.message || "Invalid Shopify store domain.",
+      });
     }
   },
 );
@@ -177,13 +183,13 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       await disconnectShopify(userId);
       res.json({ ok: true });
     } catch (e: any) {
       log.error("Shopify disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect Shopify" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Shopify");
     }
   },
 );

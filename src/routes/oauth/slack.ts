@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -35,6 +36,7 @@ router.get(
   (req: express.Request, res: express.Response) => {
     if (!slackOAuthConfigured()) {
       return res.status(500).json({
+        code: "INTERNAL_ERROR",
         error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
       });
     }
@@ -144,13 +146,13 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       await disconnectSlack(userId);
       res.json({ ok: true });
     } catch (err: any) {
       log.error("POST /api/oauth/slack/disconnect failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to disconnect Slack" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Slack");
     }
   },
 );
@@ -160,13 +162,13 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       const channels = await listSlackChannels(userId);
       res.json({ channels });
     } catch (err: any) {
       log.error("GET /api/oauth/slack/channels failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to list Slack channels" });
+      throw AppError.fromHttpStatus(500, "Failed to list Slack channels");
     }
   },
 );
@@ -176,15 +178,15 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     const { channel_id } = req.body;
-    if (!channel_id) return res.status(400).json({ error: "channel_id required" });
+    if (!channel_id) throw AppError.fromHttpStatus(400, "channel_id required");
     try {
       await setSlackDefaultChannel(userId, channel_id);
       res.json({ ok: true });
     } catch (err: any) {
       log.error("POST /api/oauth/slack/default-channel failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to set default channel" });
+      throw AppError.fromHttpStatus(500, "Failed to set default channel");
     }
   },
 );

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
-import express, { Request, Response, NextFunction } from "express";
+import express, { NextFunction, Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -18,8 +19,20 @@ import {
 } from "../lib/claude-brain";
 import { getClient as getAnthropicClient, isClaudeAvailable } from "../lib/claude-client";
 import type { AuthenticatedRequest } from "../types/auth";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
 const router = express.Router();
+
+/** Distributed IP limiter (Upstash in prod) — replaces per-process Map. */
+const healthRateLimiter = createIpRateLimiter({
+  bucket: "api:health",
+  windowMs: 60_000,
+  max: 30,
+  message: {
+    error: "Too many health-check requests.",
+    code: "RATE_LIMITED",
+  },
+});
 
 async function probeDatabase(
   timeoutMs = 1500,
@@ -38,43 +51,6 @@ async function probeDatabase(
   } catch (err: any) {
     return { ok: false, latency_ms: Date.now() - t0, error: getErrorMessage(err) };
   }
-}
-
-const healthRateLimit = new Map<string, number[]>();
-const HEALTH_RATE_WINDOW_MS = 60_000;
-const HEALTH_RATE_MAX = 30;
-// Purge stale IP entries every 10 minutes to prevent unbounded Map growth
-// in long-running (Docker) deployments. Skip when the Map is small to avoid
-// unnecessary iteration overhead.
-(
-  setInterval(
-    () => {
-      if (healthRateLimit.size < 100) return;
-      const now = Date.now();
-      for (const [key, hits] of healthRateLimit) {
-        if (hits.every((t) => now - t >= HEALTH_RATE_WINDOW_MS)) {
-          healthRateLimit.delete(key);
-        }
-      }
-    },
-    10 * 60 * 1000,
-  ) as any
-).unref?.();
-
-function healthRateLimiter(req: Request, res: Response, next: NextFunction) {
-  const xff = req.headers["x-forwarded-for"];
-  const key = (typeof xff === "string" ? xff.split(",")[0].trim() : null) || req.ip || "anon";
-  const now = Date.now();
-  const hits = (healthRateLimit.get(key) || []).filter(
-    (t: number) => now - t < HEALTH_RATE_WINDOW_MS,
-  );
-  if (hits.length >= HEALTH_RATE_MAX) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many health-check requests." });
-  }
-  hits.push(now);
-  healthRateLimit.set(key, hits);
-  next();
 }
 
 /**
@@ -337,6 +313,7 @@ router.get("/models", healthRateLimiter, authenticateUser, async (_req: Request,
   ]);
   const allOk = voice.ok && reasoning.ok && (voicePremium ? voicePremium.ok : true);
   res.status(allOk ? 200 : 503).json({
+    code: "ERROR",
     ok: allOk,
     total_latency_ms: Date.now() - t0,
     probes: {
@@ -390,7 +367,10 @@ router.get(
         subscribable_events: ["slo.jobs.critical", "slo.webhooks.degraded", "slo.enrichment.dead"],
       });
     } catch (err: any) {
-      res.status(500).json({ error: getErrorMessage(err) });
+      res.status(500).json({
+        code: "INTERNAL_ERROR",
+        error: getErrorMessage(err),
+      });
     }
   },
 );
@@ -433,7 +413,7 @@ router.get(
         return res.status(result.allHealthy ? 200 : 503).json(result);
       } catch (err: any) {
         log.error("Demo-line canary cron failed", { error: getErrorMessage(err) });
-        return res.status(500).json({ error: getErrorMessage(err) });
+        throw AppError.fromHttpStatus(500, String(getErrorMessage(err)));
       }
     }
 
@@ -449,7 +429,10 @@ router.get("/canary", healthRateLimiter, authenticateUser, async (_req: Request,
     const result = await runDemoLineCanary();
     res.status(result.allHealthy ? 200 : 503).json(result);
   } catch (err: any) {
-    res.status(500).json({ error: getErrorMessage(err) });
+    res.status(500).json({
+      code: "INTERNAL_ERROR",
+      error: getErrorMessage(err),
+    });
   }
 });
 

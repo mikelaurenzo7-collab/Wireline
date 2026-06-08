@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, quotaTracker, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, desc, isNotNull } from "drizzle-orm";
@@ -53,7 +54,7 @@ router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, 
     });
   } catch (error: any) {
     log.error("GET /api/outbound failed", { error: error.message });
-    res.status(500).json({ error: "Failed to fetch leads" });
+    throw AppError.fromHttpStatus(500, "Failed to fetch leads");
   }
 });
 
@@ -90,7 +91,7 @@ router.get(
       res.json({ callbacks: data || [] });
     } catch (e: any) {
       log.error("GET /api/callbacks failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load callbacks." });
+      throw AppError.fromHttpStatus(500, "Failed to load callbacks.");
     }
   },
 );
@@ -111,7 +112,7 @@ router.delete(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to delete lead", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to delete lead." });
+      throw AppError.fromHttpStatus(500, "Failed to delete lead.");
     }
   },
 );
@@ -152,6 +153,7 @@ router.post(
       if (await isDncBlocked(req.user.id, customerNumber)) {
         log.warn("Outbound dial blocked by DNC list", { customerNumber });
         return res.status(403).json({
+          code: "FORBIDDEN",
           error: "This number is on the Do Not Call list and cannot be dialed.",
           dncBlocked: true,
         });
@@ -170,6 +172,7 @@ router.post(
           abort_reason: tcpaDecision.abort_reason,
         });
         return res.status(403).json({
+          code: "FORBIDDEN",
           error: tcpaDecision.disclosure_script || "Call blocked by TCPA consent rules.",
           tcpaBlocked: true,
           tcpa: tcpaDecision,
@@ -200,7 +203,11 @@ router.post(
         customerNumber,
         context,
       });
-      if (!result.ok) return res.status(result.status).json({ error: result.error });
+      if (!result.ok)
+        return res.status(result.status).json({
+          code: "ERROR",
+          error: result.error,
+        });
 
       await drizzle.insert(schema.outboundLeads).values({
         userId: req.user.id,
@@ -222,7 +229,7 @@ router.post(
     } catch (error: any) {
       log.error("Outbound call failed", { error: getErrorMessage(error) });
       // Don't leak the raw error message; log full server-side, return safe message to client.
-      res.status(500).json({ error: "Failed to dispatch call." });
+      throw AppError.fromHttpStatus(500, "Failed to dispatch call.");
     }
   },
 );
@@ -245,7 +252,11 @@ router.post(
         has_express_written_consent: req.body.has_express_written_consent,
       });
       if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+        return res.status(400).json({
+          code: "BAD_REQUEST",
+          error: "Validation failed",
+          errors: validation.errors,
+        });
       }
       const { leads, campaign_id, has_express_written_consent } = validation.data!;
 
@@ -257,7 +268,7 @@ router.post(
         .limit(1);
 
       if (userSettings?.subscriptionStatus !== "active") {
-        return res.status(403).json({ error: "Access Denied: Inactive billing plan." });
+        throw AppError.fromHttpStatus(403, "Access Denied: Inactive billing plan.");
       }
 
       // Verify campaign_id (when supplied) belongs to the caller.
@@ -272,7 +283,7 @@ router.post(
             ),
           )
           .limit(1);
-        if (!ownedCampaign) return res.status(404).json({ error: "Campaign not found" });
+        if (!ownedCampaign) throw AppError.fromHttpStatus(404, "Campaign not found");
       }
 
       const leadsWithUser = (leads || []).map((lead: any) => ({
@@ -311,7 +322,7 @@ router.post(
       res.json({ success: true, inserted: insertedLeads.length });
     } catch (err: any) {
       log.error("POST /api/outbound/bulk failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to queue leads" });
+      throw AppError.fromHttpStatus(500, "Failed to queue leads");
     }
   },
 );

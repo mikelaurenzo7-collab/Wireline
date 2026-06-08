@@ -12,6 +12,7 @@
  */
 
 import { Router, Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { sql, gte } from "drizzle-orm";
@@ -31,7 +32,7 @@ router.get("/api/public/stats", async (req: Request, res: Response) => {
   const rl = await rateLimit(ip, { bucket: "public_stats", windowMs: 60_000, max: 30 });
   if (!rl.allowed) {
     res.setHeader("Retry-After", String(Math.ceil(rl.resetMs / 1000)));
-    return res.status(429).json({ error: "Rate limit exceeded." });
+    throw AppError.fromHttpStatus(429, "Rate limit exceeded.");
   }
   try {
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -80,14 +81,14 @@ import { WIRELINE_DEMO_AGENTS, WIRELINE_CONTACT_AGENTS } from "../data/contact-a
 router.get("/api/public/assistant/:agentName", async (req: Request, res: Response) => {
   try {
     const { agentName } = req.params;
-    
+
     // Find showcase agent by name
-    const agent = 
+    const agent =
       WIRELINE_DEMO_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase()) ||
       WIRELINE_CONTACT_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase());
 
     if (!agent) {
-      return res.status(404).json({ error: `Showcase agent '${agentName}' not found` });
+      throw AppError.fromHttpStatus(404, `Showcase agent '${agentName}' not found`);
     }
 
     const kind = WIRELINE_DEMO_AGENTS.some((a) => a.name === agent.name) ? "demo" : "cs";
@@ -97,7 +98,7 @@ router.get("/api/public/assistant/:agentName", async (req: Request, res: Respons
     res.json(payload);
   } catch (err: any) {
     log.warn("/api/public/assistant failed", { error: err?.message });
-    res.status(500).json({ error: "Failed to generate assistant payload" });
+    throw AppError.fromHttpStatus(500, "Failed to generate assistant payload");
   }
 });
 

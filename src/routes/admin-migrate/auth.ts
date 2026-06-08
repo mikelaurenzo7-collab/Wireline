@@ -1,5 +1,3 @@
- 
-
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
 import { isOwnerEmail } from "../../lib/auth-service";
@@ -36,7 +34,7 @@ function authorizeMigration(req: Request, res: Response): boolean {
   }
   const user = (req as AuthenticatedRequest).user;
   if (isOwnerEmail(user?.email)) return true;
-  res.status(403).json({ error: "Owner only." });
+  res.status(403).json({ error: "Owner only.", code: "FORBIDDEN" });
   return false;
 }
 

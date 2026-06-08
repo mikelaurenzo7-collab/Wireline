@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /**
  * Performance goals API — mounted at /api/goals.
  *
@@ -130,8 +131,9 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
       goals,
     });
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("GET /api/goals failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Failed to load goals" });
+    throw AppError.fromHttpStatus(500, "Failed to load goals");
   }
 });
 
@@ -145,11 +147,11 @@ router.post(
       const userId = req.user.id;
       const metric = req.body?.metric;
       if (!isGoalMetric(metric)) {
-        return res.status(400).json({ error: "Unknown or missing goal metric" });
+        throw AppError.fromHttpStatus(400, "Unknown or missing goal metric");
       }
       const target = normalizeTarget(req.body?.target);
       if (target === null) {
-        return res.status(400).json({ error: "Target must be a whole number of 1 or more" });
+        throw AppError.fromHttpStatus(400, "Target must be a whole number of 1 or more");
       }
       const label = normalizeLabel(req.body?.label);
 
@@ -166,8 +168,9 @@ router.post(
       const actuals = await loadMonthActuals(userId, now.getTime());
       res.json({ ok: true, goal: serializeGoal(row, actuals, now.getTime()) });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("POST /api/goals failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to save goal" });
+      throw AppError.fromHttpStatus(500, "Failed to save goal");
     }
   },
 );
@@ -177,18 +180,19 @@ router.delete("/:id", authenticateUser, async (req: AuthenticatedRequest, res: R
   try {
     const id = req.params.id;
     if (!UUID_RE.test(id)) {
-      return res.status(400).json({ error: "Invalid goal id" });
+      throw AppError.fromHttpStatus(400, "Invalid goal id");
     }
     const [row] = await drizzle
       .delete(schema.goals)
       .where(and(eq(schema.goals.id, id), eq(schema.goals.userId, req.user.id)))
       .returning({ id: schema.goals.id });
 
-    if (!row) return res.status(404).json({ error: "Goal not found" });
+    if (!row) throw AppError.fromHttpStatus(404, "Goal not found");
     res.json({ ok: true });
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("DELETE /api/goals/:id failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Failed to delete goal" });
+    throw AppError.fromHttpStatus(500, "Failed to delete goal");
   }
 });
 

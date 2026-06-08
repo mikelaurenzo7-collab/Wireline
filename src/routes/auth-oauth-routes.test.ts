@@ -14,6 +14,10 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import express from "express";
 import type { Express } from "express";
+import {
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 import http from "http";
 import type { AddressInfo } from "net";
 import { OAUTH_BRIDGE_STATE_COOKIE } from "../lib/oauth-bridge-cookie";
@@ -100,8 +104,10 @@ async function buildApp(): Promise<Express> {
   vi.resetModules();
   const mod = await import("./auth-oauth-routes");
   const app = express();
+  mountRouteTestRequestContext(app);
   app.use(express.json());
   app.use(mod.default);
+  mountTestErrorHandler(app);
   return app;
 }
 

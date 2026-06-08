@@ -6,6 +6,7 @@
  *   GET  /api/insights/latency     — Tenant latency trends (auth)
  */
 import express, { Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { z } from "zod";
 import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
 import { drizzle, log } from "../lib/server-context";
@@ -39,14 +40,14 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
   try {
     if (!vapiWebhookSecretOk(req)) {
       log.warn("Rejected /voice/metrics with bad or missing Vapi secret");
-      return res.status(401).json({ error: "Unauthorized" });
+      throw AppError.fromHttpStatus(401, "Unauthorized");
     }
 
     const parsed = MetricsBodySchema.safeParse(req.body);
     if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ error: "Invalid metrics payload", details: parsed.error.flatten() });
+      throw AppError.badRequest("Invalid metrics payload", {
+        details: parsed.error.flatten(),
+      });
     }
 
     // Resolve userId from vapiCallId (required for multi-tenant isolation)
@@ -57,16 +58,17 @@ router.post("/voice/metrics", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!row?.userId) {
-      return res.status(404).json({ error: "Call not found" });
+      throw AppError.fromHttpStatus(404, "Call not found");
     }
 
     await recordVoiceMetrics(row.userId, parsed.data);
     res.json({ recorded: true });
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("POST /voice/metrics failed", {
       error: err instanceof Error ? err.message : String(err),
     });
-    res.status(500).json({ error: "Failed to record metrics" });
+    throw AppError.fromHttpStatus(500, "Failed to record metrics");
   }
 });
 
@@ -94,11 +96,12 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
       checked_at: new Date().toISOString(),
     });
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("GET /health/voice-status failed", {
       error: err instanceof Error ? err.message : String(err),
     });
     // Fail open — don't break deploys because of observability glitches
-    res.status(200).json({ status: "unknown", error: "probe_failed" });
+    res.status(200).json({ status: "unknown", probe: "failed" });
   }
 });
 
@@ -117,11 +120,12 @@ router.get(
         generated_at: new Date().toISOString(),
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("GET /insights/latency failed", {
         userId: req.user.id,
         error: err instanceof Error ? err.message : String(err),
       });
-      res.status(500).json({ error: "Failed to load latency trends" });
+      throw AppError.fromHttpStatus(500, "Failed to load latency trends");
     }
   },
 );
@@ -155,11 +159,12 @@ router.get(
 
       res.json({ calls: rows });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("GET /insights/latency/recent failed", {
         userId: req.user.id,
         error: err instanceof Error ? err.message : String(err),
       });
-      res.status(500).json({ error: "Failed to load recent calls" });
+      throw AppError.fromHttpStatus(500, "Failed to load recent calls");
     }
   },
 );

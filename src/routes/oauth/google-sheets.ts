@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { google } from "googleapis";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
@@ -33,6 +34,7 @@ router.get(
   (req: express.Request, res: express.Response) => {
     if (!googleSheetsConfigured()) {
       return res.status(500).json({
+        code: "INTERNAL_ERROR",
         error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
       });
     }
@@ -146,14 +148,14 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
 
     try {
       await disconnectGoogleSheets(userId);
       res.json({ ok: true });
     } catch (e: any) {
       log.error("Google Sheets disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect Google Sheets" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Google Sheets");
     }
   },
 );

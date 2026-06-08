@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- admin migration routes normalize heterogeneous legacy rows during one-off backfills. */
 
 import { Router, Response } from "express";
+import { AppError } from "../../lib/api-error";
 import { drizzle, log } from "../../lib/server-context";
 import { sql } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../../types/auth";
@@ -124,7 +125,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("SMS migration failed", { error: e?.message, stack: e?.stack });
-      return res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -233,7 +234,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Auth/agent migration failed", { error: e?.message, stack: e?.stack });
-      return res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -347,7 +348,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Competitive batch migration failed", { error: e?.message, stack: e?.stack });
-      return res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -434,7 +435,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Audit3 migration failed", { error: e?.message, stack: e?.stack });
-      return res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -508,7 +509,7 @@ router.post(
       res.json({ ok: true, results });
     } catch (err: any) {
       log.error("migrate-user-fks failed", { error: err?.message, stack: err?.stack, results });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -529,7 +530,7 @@ router.post(
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-extra-agents failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -561,7 +562,7 @@ router.post(
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-cloned-voices failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -592,7 +593,7 @@ router.post(
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-agent-workspace failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -660,7 +661,7 @@ router.post(
       res.json({ ok: true });
     } catch (err: any) {
       log.error("migrate-director-workspace failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -699,7 +700,7 @@ router.post(
       res.json({ ok: true, message: "wireline_pronunciation_dictionaries ensured." });
     } catch (err: any) {
       log.error("migrate-pronunciation-dicts failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -733,7 +734,7 @@ router.post(
       res.json({ ok: true, message: "wireline_agents.voice_speed ensured (default 1.0)." });
     } catch (err: any) {
       log.error("migrate-voice-speed failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -770,7 +771,7 @@ router.post(
       });
     } catch (err: any) {
       log.error("migrate-secondary-voice failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -806,7 +807,7 @@ router.post(
       });
     } catch (err: any) {
       log.error("migrate-webhook-indexes failed", { error: err?.message, stack: err?.stack });
-      res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );

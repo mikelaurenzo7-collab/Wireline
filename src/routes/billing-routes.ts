@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- Stripe events and subscription payloads are vendor-defined JSON. */
 import express, { Request, Response } from "express";
 import { log, auditLogger, drizzle } from "../lib/server-context";
@@ -28,10 +29,10 @@ const router = express.Router();
 
 router.post("/stripe-webhook", async (req: Request, res: Response) => {
   if (!stripeAvailable() || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return res.status(503).json({ error: "Stripe webhook not configured." });
+    throw AppError.fromHttpStatus(503, "Stripe webhook not configured.");
   }
   const sig = req.headers["stripe-signature"] as string | undefined;
-  if (!sig) return res.status(400).json({ error: "Missing stripe-signature header." });
+  if (!sig) throw AppError.fromHttpStatus(400, "Missing stripe-signature header.");
 
   let event: Stripe.Event;
   try {
@@ -49,7 +50,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       sig_prefix: typeof sig === "string" ? sig.slice(0, 12) : null,
       ts: Date.now(),
     });
-    return res.status(400).json({ error: "Webhook signature verification failed." });
+    throw AppError.fromHttpStatus(400, "Webhook signature verification failed.");
   }
 
   const idempotencyKey = event.id;
@@ -151,6 +152,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
             }
           }
         } catch (err) {
+          if (err instanceof AppError) throw err;
           log.error("invoice.payment_failed handler error", { error: getErrorMessage(err) });
         }
         break;
@@ -196,7 +198,7 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         /* best-effort rollback */
       }
     }
-    res.status(500).json({ error: "Webhook handler failed" });
+    throw AppError.fromHttpStatus(500, "Webhook handler failed");
   }
 });
 
@@ -213,9 +215,9 @@ router.put(
       const hardCap = false;
       const enabled = req.body.enabled !== false;
       if (!Number.isFinite(limit) || limit < 0)
-        return res.status(400).json({ error: "monthly_limit_usd must be a non-negative number" });
+        throw AppError.fromHttpStatus(400, "monthly_limit_usd must be a non-negative number");
       if (!Number.isInteger(warn) || warn < 1 || warn > 99)
-        return res.status(400).json({ error: "warn_threshold_pct must be 1–99" });
+        throw AppError.fromHttpStatus(400, "warn_threshold_pct must be 1–99");
 
       const [data] = (await drizzle
         .insert(schema.spendBudgets)
@@ -243,7 +245,7 @@ router.put(
       res.json({ budget: data });
     } catch (e: any) {
       log.error("Failed to save budget", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to save budget" });
+      throw AppError.fromHttpStatus(500, "Failed to save budget");
     }
   },
 );
@@ -277,7 +279,7 @@ router.get("/spend/status", authenticateUser, async (req: AuthenticatedRequest, 
     });
   } catch (e: any) {
     log.error("Failed to load spend status", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to load spend status" });
+    throw AppError.fromHttpStatus(500, "Failed to load spend status");
   }
 });
 
@@ -292,8 +294,9 @@ router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest,
     const snapshot = await getWorkspaceUsageSnapshot(req.user!.id);
     res.json(snapshot);
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("/billing/usage failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Failed to load usage snapshot" });
+    throw AppError.fromHttpStatus(500, "Failed to load usage snapshot");
   }
 });
 
@@ -496,7 +499,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("Failed to load status", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load status" });
+      throw AppError.fromHttpStatus(500, "Failed to load status");
     }
   },
 );
@@ -523,7 +526,7 @@ router.get(
   requirePlatformAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!stripeAvailable()) {
-      return res.status(503).json({ error: "Stripe not configured." });
+      throw AppError.fromHttpStatus(503, "Stripe not configured.");
     }
     try {
       const rows = await drizzle
@@ -562,7 +565,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("Stripe customer audit failed", { error: getErrorMessage(e) });
-      return res.status(500).json({ error: "Audit failed" });
+      throw AppError.fromHttpStatus(500, "Audit failed");
     }
   },
 );
@@ -572,11 +575,11 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
+      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
       const planId = String(req.body?.plan_id || "").trim();
       const interval = req.body?.interval === "year" ? "year" : "month";
       const plan = planById(planId);
-      if (!plan) return res.status(400).json({ error: "Unknown plan_id." });
+      if (!plan) throw AppError.fromHttpStatus(400, "Unknown plan_id.");
       // Contact-sales tiers (price_usd_monthly === 0) must never go through
       // self-serve checkout — even if a stale STRIPE_*_PRICE_ID is configured
       // they'd subscribe at $0/mo against a real Stripe price.
@@ -590,6 +593,7 @@ router.post(
       const priceId = process.env[priceEnvKey];
       if (!priceId)
         return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
           error: `Price for plan '${plan.id}' (${interval}) not configured (${priceEnvKey}).`,
         });
 
@@ -674,6 +678,7 @@ router.post(
       const lineItems = subscriptionCheckoutLineItems(plan, interval);
       if (!lineItems.length) {
         return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
           error: `Price for plan '${plan.id}' (${interval}) not configured (${priceEnvKey}).`,
         });
       }
@@ -704,7 +709,7 @@ router.post(
         .catch(() => {});
     } catch (e: any) {
       log.error("Checkout creation failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Checkout failed" });
+      throw AppError.fromHttpStatus(500, "Checkout failed");
     }
   },
 );
@@ -714,7 +719,7 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!stripeAvailable()) return res.status(503).json({ error: "Stripe not configured." });
+      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
       const [sub] = await drizzle
         .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
         .from(schema.subscriptions)
@@ -803,7 +808,7 @@ router.post(
         });
       }
 
-      res.status(500).json({ error: "Portal failed" });
+      throw AppError.fromHttpStatus(500, "Portal failed");
     }
   },
 );
@@ -848,8 +853,9 @@ router.get(
         configured: !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv],
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("/billing/extra-agents GET failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to load extra-agent state" });
+      throw AppError.fromHttpStatus(500, "Failed to load extra-agent state");
     }
   },
 );
@@ -862,7 +868,7 @@ router.post(
       const raw = req.body?.count;
       const target = Number(raw);
       if (!Number.isInteger(target) || target < 0 || target > 100) {
-        return res.status(400).json({ error: "count must be an integer 0-100" });
+        throw AppError.fromHttpStatus(400, "count must be an integer 0-100");
       }
 
       // Look up the tenant's current settings + subscription.
@@ -876,12 +882,13 @@ router.post(
         .where(eq(schema.settings.userId, req.user!.id))
         .limit(1);
       const plan = planById(row?.plan_id || "personal");
-      if (!plan) return res.status(400).json({ error: "Plan not found" });
+      if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
 
       const priceIdEnv = plan.extraAgentPriceIdEnv;
       const priceId = priceIdEnv ? process.env[priceIdEnv] : undefined;
       if (!priceIdEnv || !priceId) {
         return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
           error: `Extra-agent billing not configured for the ${plan.name} tier. Owner needs to set ${priceIdEnv || "STRIPE_<TIER>_EXTRA_AGENT_PRICE_ID"} in environment variables and link it to a Stripe Price.`,
         });
       }
@@ -897,6 +904,7 @@ router.post(
         const subscriptionId = subRow?.stripe_subscription_id;
         if (target > 0 && !subscriptionId) {
           return res.status(400).json({
+            code: "BAD_REQUEST",
             error:
               "No active subscription found. Upgrade to a paid plan first to purchase extra agents.",
           });
@@ -920,11 +928,13 @@ router.post(
               });
             }
           } catch (e) {
+            if (e instanceof AppError) throw e;
             log.error("Stripe subscription item adjust failed", {
               error: getErrorMessage(e),
               userId: req.user!.id,
             });
             return res.status(502).json({
+              code: "BAD_GATEWAY",
               error: "Couldn't update Stripe subscription. Try again or contact support.",
             });
           }
@@ -953,8 +963,9 @@ router.post(
         agents_total: (plan.max_agents || 1) + target,
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("/billing/extra-agents POST failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to update extra agents" });
+      throw AppError.fromHttpStatus(500, "Failed to update extra agents");
     }
   },
 );

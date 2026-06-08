@@ -1,6 +1,10 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 
 const h = vi.hoisted(() => {
   type Table = { __name: string } & Record<string, string>;
@@ -130,8 +134,10 @@ vi.mock("drizzle-orm", () => ({
 async function buildApp() {
   const routerModule = await import("./campaign-routes");
   const app = express();
+  mountRouteTestRequestContext(app);
   app.use(express.json());
   app.use(routerModule.default);
+  mountTestErrorHandler(app);
   return app;
 }
 

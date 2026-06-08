@@ -14,6 +14,7 @@
  * need to reach us too.
  */
 import { Router, type Request, type Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log } from "../lib/server-context";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
@@ -53,6 +54,7 @@ async function sendSupportEmail(args: {
     }
     return { ok: true };
   } catch (err) {
+    if (err instanceof AppError) throw err;
     return { ok: false, error: getErrorMessage(err) };
   }
 }
@@ -79,16 +81,16 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     // Tight validation — the form already gates this; we double-check
     // server-side so direct POSTs can't bypass.
     if (typeof issueType !== "string" || !ISSUE_TYPES.has(issueType)) {
-      return res.status(400).json({ error: "Pick a valid issue type." });
+      throw AppError.fromHttpStatus(400, "Pick a valid issue type.");
     }
     if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ error: "Valid email required." });
+      throw AppError.fromHttpStatus(400, "Valid email required.");
     }
     if (typeof subject !== "string" || subject.length < 3 || subject.length > 200) {
-      return res.status(400).json({ error: "Subject must be 3-200 chars." });
+      throw AppError.fromHttpStatus(400, "Subject must be 3-200 chars.");
     }
     if (typeof body !== "string" || body.length < 10 || body.length > 5000) {
-      return res.status(400).json({ error: "Body must be 10-5000 chars." });
+      throw AppError.fromHttpStatus(400, "Body must be 10-5000 chars.");
     }
 
     const cleanSubject = subject.trim();
@@ -122,6 +124,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     log.info("Support ticket received", { issueType, email, sent });
     return res.json({ ok: true, sent });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     log.error("Support ticket route failed", { error: getErrorMessage(e) });
     return res
       .status(500)

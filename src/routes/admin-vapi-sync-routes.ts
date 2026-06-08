@@ -95,6 +95,7 @@ async function patchAssistantWithOpenAiFallback(
       body: JSON.stringify(assistantPayload),
     });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     if (assistantPayload?.model?.provider !== "google") throw error;
 
     const fallbackPayload = {
@@ -281,7 +282,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Vapi knowledge sync failed", { error: e?.message });
-      return res.status(500).json({ error: "Sync failed" });
+      throw AppError.fromHttpStatus(500, "Sync failed");
     }
   }),
 );

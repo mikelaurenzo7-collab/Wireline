@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { eq } from "drizzle-orm";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
@@ -32,6 +33,7 @@ router.get(
   (req: express.Request, res: express.Response) => {
     if (!hsOAuthConfigured()) {
       return res.status(500).json({
+        code: "INTERNAL_ERROR",
         error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
       });
     }
@@ -151,14 +153,14 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
 
     try {
       await disconnectHubSpot(userId);
       res.json({ ok: true });
     } catch (e: any) {
       log.error("HubSpot disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect HubSpot" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect HubSpot");
     }
   },
 );

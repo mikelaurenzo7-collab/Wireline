@@ -1,6 +1,11 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  apiErrorBody,
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 
 const h = vi.hoisted(() => {
   type Table = { __name: string } & Record<string, string>;
@@ -201,8 +206,10 @@ vi.mock("../data/voice-roster", () => ({ pickRotatedVoiceId: vi.fn(() => "voice-
 async function buildApp() {
   const agentModule = await import("./agent-routes");
   const app = express();
+  mountRouteTestRequestContext(app);
   app.use(express.json());
   app.use(agentModule.default);
+  mountTestErrorHandler(app);
   return app;
 }
 
@@ -288,9 +295,11 @@ describe("agent routes integration", () => {
 
     expect(response.status).toBe(503);
     expect(response.body).toEqual({
+      code: "SERVICE_UNAVAILABLE",
       agents: [],
       degraded: true,
       error: "Failed to fetch agents",
+      requestId: "test-request-id",
     });
     expect(h.log.warn).toHaveBeenCalledWith(
       "Failed to fetch agents",
@@ -331,7 +340,7 @@ describe("agent routes integration", () => {
     const response = await request(await buildApp()).get("/api/agent-config/missing-agent");
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Agent not found." });
+    expect(response.body).toEqual(apiErrorBody("Agent not found.", "NOT_FOUND"));
   });
 
   it("returns a 500 when loading agent configuration fails", async () => {
@@ -340,7 +349,9 @@ describe("agent routes integration", () => {
     const response = await request(await buildApp()).get("/api/agent-config/agent-1");
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: "Failed to load agent configuration" });
+    expect(response.body).toEqual(
+      apiErrorBody("Failed to load agent configuration", "INTERNAL_ERROR"),
+    );
     expect(h.log.error).toHaveBeenCalledWith(
       "Config fetch error",
       expect.objectContaining({ error: "config query failed" }),
@@ -353,7 +364,7 @@ describe("agent routes integration", () => {
       .send({ role: "made_up_role" });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: "Unknown role" });
+    expect(response.body).toEqual(apiErrorBody("Unknown role", "BAD_REQUEST"));
     expect(h.drizzle.select).not.toHaveBeenCalled();
   });
 
@@ -365,7 +376,7 @@ describe("agent routes integration", () => {
       .send({ role: "sales" });
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Agent not found" });
+    expect(response.body).toEqual(apiErrorBody("Agent not found", "NOT_FOUND"));
     expect(h.state.inserts).toEqual([]);
   });
 
@@ -404,7 +415,7 @@ describe("agent routes integration", () => {
       });
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Agent not found." });
+    expect(response.body).toEqual(apiErrorBody("Agent not found.", "NOT_FOUND"));
     expect(h.state.inserts).toEqual([]);
   });
 
@@ -417,7 +428,7 @@ describe("agent routes integration", () => {
       .send({ name: "Hijacked", role: "sales" });
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Agent not found." });
+    expect(response.body).toEqual(apiErrorBody("Agent not found.", "NOT_FOUND"));
     expect(h.state.updates).toEqual([]);
   });
 
@@ -444,7 +455,7 @@ describe("agent routes integration", () => {
     const response = await request(await buildApp()).delete("/api/agents/agent-1");
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Agent not found." });
+    expect(response.body).toEqual(apiErrorBody("Agent not found.", "NOT_FOUND"));
     expect(h.state.updates).toEqual([]);
     expect(h.state.deletes).toEqual([]);
   });
@@ -477,7 +488,7 @@ describe("agent routes integration", () => {
     const response = await request(await buildApp()).delete("/api/agents/agent-1");
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: "Failed to delete agent." });
+    expect(response.body).toEqual(apiErrorBody("Failed to delete agent.", "INTERNAL_ERROR"));
     expect(h.log.error).toHaveBeenCalledWith(
       "Failed to delete agent",
       expect.objectContaining({ error: "select failed" }),

@@ -3,6 +3,7 @@
 // Serves Wireline's OpenAPI 3.1 spec at GET /api/openapi.json.
 
 import express, { Request, Response, NextFunction } from "express";
+import { AppError } from "../lib/api-error";
 import { getOpenApiSpec } from "../lib/openapi-spec";
 
 const router = express.Router();
@@ -30,7 +31,7 @@ function specRateLimiter(req: Request, res: Response, next: NextFunction) {
   const hits = (specRateLimit.get(key) || []).filter((t: number) => now - t < SPEC_RATE_WINDOW_MS);
   if (hits.length >= SPEC_RATE_MAX) {
     res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many spec requests." });
+    throw AppError.fromHttpStatus(429, "Too many spec requests.");
   }
   hits.push(now);
   specRateLimit.set(key, hits);

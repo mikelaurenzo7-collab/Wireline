@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
  * OAuth-based SIGN-IN (distinct from the mailbox-connect OAuth in oauth/).
@@ -221,6 +222,7 @@ async function storePendingCode(
     await insertPendingCode(code, entry);
     pendingCodeSchemaReady = true;
   } catch (err) {
+    if (err instanceof AppError) throw err;
     if (shouldRepairPendingCodeSchema(err)) {
       log.warn("auth oauth: pending-code schema missing; repairing before retry", {
         error: getErrorText(err),
@@ -231,6 +233,7 @@ async function storePendingCode(
         await insertPendingCode(code, entry);
         return;
       } catch (repairErr) {
+        if (repairErr instanceof AppError) throw repairErr;
         log.error("auth oauth: pending-code schema repair failed", {
           initial_error: getErrorText(err),
           error: getErrorText(repairErr),
@@ -291,6 +294,7 @@ async function gcExpiredPendingCodes(): Promise<void> {
       .delete(schema.oauthPendingCodes)
       .where(lt(schema.oauthPendingCodes.expiresAt, new Date()));
   } catch (err) {
+    if (err instanceof AppError) throw err;
     // Non-fatal — surface only at warn level.
     log.warn("auth oauth: pending-code GC failed", {
       error: err instanceof Error ? err.message : String(err),
@@ -333,7 +337,7 @@ async function bridgeRedirect(
 router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      return res.status(503).json({ error: "Google sign-in is not configured." });
+      throw AppError.fromHttpStatus(503, "Google sign-in is not configured.");
     }
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
@@ -351,9 +355,10 @@ router.get("/api/auth/google/url", oauthRateLimiter, (req: Request, res: Respons
     });
     return res.json({ url: authUrl });
   } catch (err: unknown) {
+    if (err instanceof AppError) throw err;
     const message = err instanceof Error ? err.message : "Google sign-in failed to start.";
     log.error("auth oauth google: /url failed", { error: message });
-    return res.status(500).json({ error: `Google sign-in failed to start: ${message}` });
+    throw AppError.fromHttpStatus(500, `Google sign-in failed to start: ${message}`);
   }
 });
 
@@ -405,7 +410,7 @@ router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
 router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
-      return res.status(503).json({ error: "Microsoft sign-in is not configured." });
+      throw AppError.fromHttpStatus(503, "Microsoft sign-in is not configured.");
     }
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
@@ -422,9 +427,10 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
     const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
     return res.json({ url: authUrl });
   } catch (err: unknown) {
+    if (err instanceof AppError) throw err;
     const message = err instanceof Error ? err.message : "Microsoft sign-in failed to start.";
     log.error("auth oauth microsoft: /url failed", { error: message });
-    return res.status(500).json({ error: `Microsoft sign-in failed to start: ${message}` });
+    throw AppError.fromHttpStatus(500, `Microsoft sign-in failed to start: ${message}`);
   }
 });
 
@@ -504,7 +510,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
 router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response) => {
   try {
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
-      return res.status(503).json({ error: "Yahoo sign-in is not configured." });
+      throw AppError.fromHttpStatus(503, "Yahoo sign-in is not configured.");
     }
     beginOAuthSignIn(res);
     const baseUrl = oauthAppBaseUrl();
@@ -520,9 +526,10 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
     const authUrl = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
     return res.json({ url: authUrl });
   } catch (err: unknown) {
+    if (err instanceof AppError) throw err;
     const message = err instanceof Error ? err.message : "Yahoo sign-in failed to start.";
     log.error("auth oauth yahoo: /url failed", { error: message });
-    return res.status(500).json({ error: `Yahoo sign-in failed to start: ${message}` });
+    throw AppError.fromHttpStatus(500, `Yahoo sign-in failed to start: ${message}`);
   }
 });
 
@@ -593,15 +600,15 @@ router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
 router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, res: Response) => {
   const { code } = req.body;
   if (!code || typeof code !== "string") {
-    return res.status(400).json({ error: "Missing code" });
+    throw AppError.fromHttpStatus(400, "Missing code");
   }
   const entry = await consumePendingCode(code);
   if (!entry) {
-    return res.status(400).json({ error: "Invalid or expired code" });
+    throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
   const cookieState = readOAuthBridgeStateCookie(req);
   if (!cookieState || !entry.bridgeState || cookieState !== entry.bridgeState) {
-    return res.status(400).json({ error: "Invalid or expired code" });
+    throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
   clearOAuthBridgeStateCookie(res);
   setSessionCookie(res, entry.token);

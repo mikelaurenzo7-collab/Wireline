@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { eq } from "drizzle-orm";
 import { drizzle, log } from "../../lib/server-context";
 import * as schema from "../../db/schema";
@@ -27,7 +28,7 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
 
     try {
       // The Supabase-client `db.from(...)` path was a runtime crash — the
@@ -160,7 +161,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("CRM status check failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to check CRM status" });
+      throw AppError.fromHttpStatus(500, "Failed to check CRM status");
     }
   },
 );
@@ -174,13 +175,13 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       const health = await computeIntegrationHealth(userId);
       res.json(health);
     } catch (e: any) {
       log.error("integration-health failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to load integration health." });
+      throw AppError.fromHttpStatus(500, "Failed to load integration health.");
     }
   },
 );

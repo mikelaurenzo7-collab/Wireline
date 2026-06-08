@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, desc, asc } from "drizzle-orm";
@@ -31,7 +32,7 @@ router.get(
       res.json({ accounts: data || [] });
     } catch (e: any) {
       log.error("Calendar accounts fetch failed", { userId, error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to fetch calendar accounts." });
+      throw AppError.fromHttpStatus(500, "Failed to fetch calendar accounts.");
     }
   },
 );
@@ -59,7 +60,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Calendar sync failed", { userId, error: getErrorMessage(e) });
-      res.status(500).json({ error: "Calendar sync failed." });
+      throw AppError.fromHttpStatus(500, "Calendar sync failed.");
     }
   },
 );
@@ -92,7 +93,7 @@ router.get(
       res.json({ events: data || [] });
     } catch (e: any) {
       log.error("Calendar events fetch failed", { userId, error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to fetch calendar events." });
+      throw AppError.fromHttpStatus(500, "Failed to fetch calendar events.");
     }
   },
 );

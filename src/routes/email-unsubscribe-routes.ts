@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /**
  * Public email unsubscribe endpoints (CAN-SPAM + RFC 8058 one-click).
  *
@@ -34,10 +35,10 @@ async function unsubscribeRateLimit(req: Request, res: Response, next: NextFunct
     });
     if (!result.allowed) {
       res.setHeader("Retry-After", String(Math.ceil(result.resetMs / 1000)));
-      res.status(429).json({ error: "Too many requests" });
-      return;
+      throw AppError.fromHttpStatus(429, "Too many requests");
     }
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.warn("unsubscribe rate limiter error — fail open", { error: getErrorMessage(err) });
   }
   next();
@@ -47,13 +48,13 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
   try {
     const email = verifyUnsubscribeToken(String(req.query.token || ""));
     if (!email) {
-      res.status(400).json({ error: "Invalid or missing unsubscribe token" });
-      return;
+      throw AppError.fromHttpStatus(400, "Invalid or missing unsubscribe token");
     }
     await recordEmailSuppression(email, "one_click_unsubscribe");
     log.info("Email one-click unsubscribe recorded", { email });
     res.status(200).json({ ok: true, unsubscribed: true });
   } catch (err) {
+    if (err instanceof AppError) throw err;
     // Never make a mailbox provider hammer-retry a one-click POST.
     log.error("POST /api/email/unsubscribe failed", { error: getErrorMessage(err) });
     res.status(200).json({ ok: true });
@@ -73,6 +74,7 @@ router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, 
     await recordEmailSuppression(email, "link_unsubscribe");
     log.info("Email unsubscribe (link) recorded", { email });
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("GET /api/email/unsubscribe failed", { error: getErrorMessage(err) });
   }
   res

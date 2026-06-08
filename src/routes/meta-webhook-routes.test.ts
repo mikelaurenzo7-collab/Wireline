@@ -48,6 +48,10 @@ vi.mock("../lib/secret-vault", () => ({ decryptSecret: (s: string) => s }));
 import metaRouter from "./meta-webhook-routes";
 import { drizzle } from "../lib/server-context";
 import { installWebhookBodyParsers } from "../lib/body-parsers";
+import {
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 
 const selectSpy = vi.mocked(drizzle.select as unknown as ReturnType<typeof vi.fn>);
 
@@ -66,9 +70,11 @@ function app() {
   // installWebhookBodyParsers; this test mirrors that ordering so a
   // future regression of either piece breaks here loudly.
   const a = express();
+  mountRouteTestRequestContext(a);
   installWebhookBodyParsers(a);
   a.use(express.json());
   a.use(metaRouter);
+  mountTestErrorHandler(a);
   return a;
 }
 

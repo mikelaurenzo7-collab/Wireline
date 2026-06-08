@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -77,6 +78,7 @@ router.get(
       setCachedNavCounts(userId, counts);
       res.json(counts);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       const message = e instanceof Error ? e.message : String(e);
       log.warn("nav-counts failed", { error: message });
       res.status(503).json({
@@ -152,7 +154,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     });
   } catch (error: any) {
     log.error("Failed to fetch calls", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to fetch calls" });
+    throw AppError.fromHttpStatus(500, "Failed to fetch calls");
   }
 });
 
@@ -318,7 +320,7 @@ router.get(
         userId: req.user?.id,
         error: e instanceof Error ? e.message : String(e),
       });
-      res.status(500).json({ error: "Failed to fetch stats" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch stats");
     }
   },
 );
@@ -368,8 +370,9 @@ router.get(
       });
       res.json({ ...result, period: "30d" });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Benchmarks endpoint failed", { error });
-      res.status(500).json({ error: "Failed to fetch benchmarks" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch benchmarks");
     }
   },
 );
@@ -410,7 +413,7 @@ router.get(
       });
     } catch (error: any) {
       log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to fetch appointments" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch appointments");
     }
   },
 );
@@ -451,6 +454,7 @@ router.get(
 
       res.json({ dossiers: dossierMap });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Dossier fetch failed", { error: getErrorMessage(error) });
       res.json({ dossiers: {} });
     }
@@ -474,13 +478,13 @@ router.post(
       const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } =
         req.body;
       if (!customer_name?.trim() || !date?.trim() || !time?.trim()) {
-        return res.status(400).json({ error: "customer_name, date, and time are required" });
+        throw AppError.fromHttpStatus(400, "customer_name, date, and time are required");
       }
       if (typeof customer_name !== "string" || customer_name.length > 200) {
-        return res.status(400).json({ error: "customer_name must be 200 characters or less" });
+        throw AppError.fromHttpStatus(400, "customer_name must be 200 characters or less");
       }
       if (notes && (typeof notes !== "string" || notes.length > 2000)) {
-        return res.status(400).json({ error: "notes must be 2000 characters or less" });
+        throw AppError.fromHttpStatus(400, "notes must be 2000 characters or less");
       }
       if (agent_id) {
         const [agent] = await drizzle
@@ -488,7 +492,7 @@ router.post(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found" });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       const [data] = (await drizzle
@@ -511,7 +515,7 @@ router.post(
       res.json({ appointment: data });
     } catch (error: any) {
       log.error("Failed to create appointment", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to create appointment" });
+      throw AppError.fromHttpStatus(500, "Failed to create appointment");
     }
   },
 );
@@ -535,13 +539,13 @@ router.patch(
       const bodyUpdates: Record<string, any> = {};
       for (const k of allowed) if (req.body[k] !== undefined) bodyUpdates[k] = req.body[k];
       if (Object.keys(bodyUpdates).length === 0)
-        return res.status(400).json({ error: "No valid fields to update" });
+        throw AppError.fromHttpStatus(400, "No valid fields to update");
 
       if (typeof bodyUpdates.customer_name === "string" && bodyUpdates.customer_name.length > 200) {
-        return res.status(400).json({ error: "customer_name must be 200 characters or less" });
+        throw AppError.fromHttpStatus(400, "customer_name must be 200 characters or less");
       }
       if (typeof bodyUpdates.notes === "string" && bodyUpdates.notes.length > 2000) {
-        return res.status(400).json({ error: "notes must be 2000 characters or less" });
+        throw AppError.fromHttpStatus(400, "notes must be 2000 characters or less");
       }
       if (
         bodyUpdates.status !== undefined &&
@@ -563,7 +567,7 @@ router.patch(
             ),
           )
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found" });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       const updates: any = {};
@@ -591,7 +595,7 @@ router.patch(
       res.json({ appointment: data });
     } catch (error: any) {
       log.error("Failed to update appointment", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update appointment" });
+      throw AppError.fromHttpStatus(500, "Failed to update appointment");
     }
   },
 );
@@ -614,7 +618,7 @@ router.delete(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to delete appointment", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to delete appointment" });
+      throw AppError.fromHttpStatus(500, "Failed to delete appointment");
     }
   },
 );
@@ -693,7 +697,7 @@ router.get(
           .orderBy(desc(schema.appointments.date))
           .limit(DATA_EXPORT_MAX_ROWS);
       } else {
-        return res.status(404).json({ error: "Unknown export type." });
+        throw AppError.fromHttpStatus(404, "Unknown export type.");
       }
 
       const filename = `wireline-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -711,8 +715,9 @@ router.get(
 
       res.send(rowsToCsv(data, columns));
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Export failed", { error: e });
-      res.status(500).json({ error: "Export failed" });
+      throw AppError.fromHttpStatus(500, "Export failed");
     }
   },
 );

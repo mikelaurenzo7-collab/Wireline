@@ -25,6 +25,7 @@
  */
 
 import { Router, Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -85,7 +86,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   // X-Vapi-Secret or X-Vapi-Signature). Reject mismatches.
   if (!vapiWebhookSecretOk(req)) {
     log.warn("Rejected escalation with bad or missing Vapi webhook secret");
-    return res.status(401).json({ error: "Invalid signature" });
+    throw AppError.fromHttpStatus(401, "Invalid signature");
   }
 
   const b = (req.body || {}) as EscalationBody;

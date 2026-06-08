@@ -119,7 +119,10 @@ router.post(
       });
     } catch (err: any) {
       log.error("migrate-voice-llm-backfill failed", { error: err?.message });
-      res.status(500).json({ error: err?.message || "Migration failed" });
+      res.status(500).json({
+        code: "INTERNAL_ERROR",
+        error: err?.message || "Migration failed",
+      });
     }
   },
 );

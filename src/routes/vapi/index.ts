@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { and, eq } from "drizzle-orm";
 
 import * as claudeBrain from "../../lib/claude-brain";
@@ -52,7 +53,10 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         ts: Date.now(),
       });
     }
-    return res.status(auth.status).json({ error: auth.error });
+    return res.status(auth.status).json({
+      code: "ERROR",
+      error: auth.error,
+    });
   }
   if (!process.env.VAPI_WEBHOOK_SECRET && !_warnedAboutVapiSecret) {
     log.warn("VAPI_WEBHOOK_SECRET unset — accepting all webhook requests (dev only)");
@@ -139,7 +143,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         },
       });
     }
-    return res.status(403).json({ error: "Access Denied" });
+    throw AppError.fromHttpStatus(403, "Access Denied");
   }
 
   if (message && message.type === "assistant-request") {
@@ -304,6 +308,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
             } as Record<string, unknown>,
           });
         } catch (e) {
+          if (e instanceof AppError) throw e;
           log.warn("Failed to queue conversation-update", { error: getErrorMessage(e) });
         }
       }

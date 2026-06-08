@@ -4,6 +4,7 @@
  */
 
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import { eq, and, inArray, like } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -41,7 +42,7 @@ router.post(
 
     const userId = await resolveDemoUserId(targetEmail);
     if (!userId) {
-      return res.status(404).json({ error: `Demo user not found: ${targetEmail}` });
+      throw AppError.fromHttpStatus(404, `Demo user not found: ${targetEmail}`);
     }
 
     try {
@@ -60,7 +61,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Demo seed failed", { error: e?.message, userId, targetEmail });
-      return res.status(500).json({ error: e?.message || "Seed failed" });
+      throw AppError.fromHttpStatus(500, String(e?.message || "Seed failed"));
     }
   },
 );
@@ -75,6 +76,7 @@ router.post(
       const userId = await resolveFounderUserId(targetEmail);
       if (!userId) {
         return res.status(412).json({
+          code: "ERROR",
           error: targetEmail
             ? `No user found for ${targetEmail}`
             : "OWNER_EMAIL is not set or no matching user exists.",
@@ -86,7 +88,7 @@ router.post(
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Founder fleet seed failed";
       log.error("Founder fleet seed failed", { error: msg });
-      return res.status(500).json({ error: msg });
+      throw AppError.fromHttpStatus(500, String(msg));
     }
   },
 );
@@ -95,7 +97,7 @@ router.delete(
   "/api/admin/demo-data",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const userId = req.user.id;
     try {
       const counts = {
@@ -170,7 +172,7 @@ router.delete(
       return res.json({ ok: true, deleted: counts });
     } catch (e: any) {
       log.error("Demo data wipe failed", { userId, error: e?.message });
-      return res.status(500).json({ error: e?.message || "Wipe failed" });
+      throw AppError.fromHttpStatus(500, String(e?.message || "Wipe failed"));
     }
   },
 );

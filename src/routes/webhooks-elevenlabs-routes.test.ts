@@ -35,11 +35,16 @@ vi.mock("../lib/elevenlabs-client", () => ({
 
 import elevenlabsRouter from "./webhooks-elevenlabs-routes";
 import { installWebhookBodyParsers } from "../lib/body-parsers";
+import {
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 
 const SECRET = "elevenlabs-webhook-secret";
 
 function appWith() {
   const app = express();
+  mountRouteTestRequestContext(app);
   // Mirror the production middleware ordering: raw parsers for vendor
   // webhooks BEFORE the global JSON parser. Without this, supertest's
   // request body would be consumed by express.json() and the route's
@@ -47,6 +52,7 @@ function appWith() {
   installWebhookBodyParsers(app);
   app.use(express.json());
   app.use(elevenlabsRouter);
+  mountTestErrorHandler(app);
   return app;
 }
 

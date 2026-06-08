@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- audit metadata is stored as Postgres jsonb and varies by event type. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, gte, desc, and } from "drizzle-orm";
@@ -35,7 +36,7 @@ router.get(
       res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
     } catch (e: any) {
       log.error("Audit summary failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Audit summary failed" });
+      throw AppError.fromHttpStatus(500, "Audit summary failed");
     }
   },
 );
@@ -56,7 +57,7 @@ router.get(
       res.json({ logs: data || [] });
     } catch (err: any) {
       log.error("GET /api/audit failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Audit fetch failed" });
+      throw AppError.fromHttpStatus(500, "Audit fetch failed");
     }
   },
 );
@@ -95,7 +96,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("Failed to load budget", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load budget" });
+      throw AppError.fromHttpStatus(500, "Failed to load budget");
     }
   },
 );

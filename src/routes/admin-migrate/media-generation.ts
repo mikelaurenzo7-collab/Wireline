@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- admin migration routes normalize heterogeneous legacy rows during one-off backfills. */
 
 import { Router, Response } from "express";
+import { AppError } from "../../lib/api-error";
 import { log } from "../../lib/server-context";
 import type { AuthenticatedRequest } from "../../types/auth";
 import { authorizeMigration, optionalAuth } from "./auth";
@@ -36,24 +37,25 @@ router.post(
 
     if (typeof name !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(name)) {
       return res.status(400).json({
+        code: "BAD_REQUEST",
         error: "name must be 1-64 chars matching [a-zA-Z0-9_-]+",
       });
     }
     if (!Array.isArray(lines) || lines.length === 0) {
-      return res.status(400).json({ error: "lines must be a non-empty array" });
+      throw AppError.fromHttpStatus(400, "lines must be a non-empty array");
     }
     const safeLines: { voice_id: string; text: string }[] = [];
     for (const raw of lines) {
       if (!raw || typeof raw !== "object") {
-        return res.status(400).json({ error: "each line must be an object" });
+        throw AppError.fromHttpStatus(400, "each line must be an object");
       }
       const voice_id = (raw as any).voice_id;
       const text = (raw as any).text;
       if (typeof voice_id !== "string" || !voice_id) {
-        return res.status(400).json({ error: "line.voice_id required" });
+        throw AppError.fromHttpStatus(400, "line.voice_id required");
       }
       if (typeof text !== "string" || !text.trim()) {
-        return res.status(400).json({ error: "line.text required" });
+        throw AppError.fromHttpStatus(400, "line.text required");
       }
       safeLines.push({ voice_id, text });
     }
@@ -61,7 +63,7 @@ router.post(
     try {
       const { composeDialogue, elevenLabsConfigured } = await import("../../lib/elevenlabs-client");
       if (!elevenLabsConfigured()) {
-        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+        throw AppError.fromHttpStatus(500, "ELEVENLABS_API_KEY not set");
       }
 
       const audio = await composeDialogue({ inputs: safeLines });
@@ -86,7 +88,7 @@ router.post(
       return res.json({ ok: true, url, bytes: audio.byteLength });
     } catch (err: any) {
       log.error("generate-dialogue-sample failed", { error: err?.message });
-      return res.status(500).json({ error: err?.message || "Dialogue generation failed" });
+      throw AppError.fromHttpStatus(500, String(err?.message || "Dialogue generation failed"));
     }
   },
 );
@@ -145,7 +147,7 @@ router.post(
     try {
       const { composeMusic, elevenLabsConfigured } = await import("../../lib/elevenlabs-client");
       if (!elevenLabsConfigured()) {
-        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+        throw AppError.fromHttpStatus(500, "ELEVENLABS_API_KEY not set");
       }
 
       const audio = await composeMusic({ prompt, musicLengthMs: lengthMs });
@@ -167,7 +169,7 @@ router.post(
       return res.json({ ok: true, url, bytes: audio.byteLength, lengthMs });
     } catch (err: any) {
       log.error("generate-jingle failed", { error: err?.message });
-      return res.status(500).json({ error: err?.message || "Jingle generation failed" });
+      throw AppError.fromHttpStatus(500, String(err?.message || "Jingle generation failed"));
     }
   },
 );
@@ -236,7 +238,7 @@ router.post(
       const { generateSoundEffect, elevenLabsConfigured } =
         await import("../../lib/elevenlabs-client");
       if (!elevenLabsConfigured()) {
-        return res.status(500).json({ error: "ELEVENLABS_API_KEY not set" });
+        throw AppError.fromHttpStatus(500, "ELEVENLABS_API_KEY not set");
       }
 
       const path = await import("path");
@@ -315,7 +317,7 @@ router.post(
       });
     } catch (err: any) {
       log.error("generate-brand-sounds failed", { error: err?.message });
-      return res.status(500).json({ error: err?.message || "Brand sound generation failed" });
+      throw AppError.fromHttpStatus(500, String(err?.message || "Brand sound generation failed"));
     }
   },
 );

@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- inbound lead payloads are vendor-defined JSON envelopes. */
 import express, { Request, Response } from "express";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -110,6 +111,7 @@ async function checkIntakeRate(keyId: string): Promise<IntakeRateCheck> {
       error: `Rate limit exceeded for this intake key (${INTAKE_RATE_MAX}/min). Retry in ${retryAfter}s.`,
     };
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("Intake rate limiter failed", { keyId, error: getErrorMessage(err) });
     return {
       ok: false,
@@ -344,7 +346,7 @@ router.post("/lead", async (req: Request, res: Response) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
-    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+    if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
 
     const rate = await checkIntakeRate(key.id);
     if (isIntakeRateFailure(rate)) {
@@ -380,7 +382,7 @@ router.post("/lead", async (req: Request, res: Response) => {
     return res.status(status).json({ error: result.error, code: result.code });
   } catch (e: any) {
     log.error("Intake lead failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: "Intake failed" });
+    throw AppError.fromHttpStatus(500, "Intake failed");
   }
 });
 
@@ -391,7 +393,7 @@ router.post("/leads", async (req: Request, res: Response) => {
   try {
     const provided = req.headers["x-wireline-key"] as string | undefined;
     const key = await resolveIntakeKey(provided);
-    if (!key) return res.status(401).json({ error: "Invalid or missing X-Wireline-Key." });
+    if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
 
     const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
     if (!leads || leads.length === 0) {
@@ -460,7 +462,7 @@ router.post("/leads", async (req: Request, res: Response) => {
     });
   } catch (e: any) {
     log.error("Bulk intake failed", { error: e?.message || String(e) });
-    res.status(500).json({ error: "Bulk intake failed" });
+    throw AppError.fromHttpStatus(500, "Bulk intake failed");
   }
 });
 
@@ -485,7 +487,7 @@ router.get("/keys", authenticateUser, async (req: AuthenticatedRequest, res: Res
     res.json({ keys: data || [] });
   } catch (e: any) {
     log.error("Failed to load keys", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to load keys" });
+    throw AppError.fromHttpStatus(500, "Failed to load keys");
   }
 });
 
@@ -534,7 +536,7 @@ router.post(
       res.json({ key: data, plaintext });
     } catch (e: any) {
       log.error("Failed to create key", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to create key" });
+      throw AppError.fromHttpStatus(500, "Failed to create key");
     }
   },
 );
@@ -583,7 +585,7 @@ router.patch(
       res.json({ key: data });
     } catch (e: any) {
       log.error("Failed to update key", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to update key" });
+      throw AppError.fromHttpStatus(500, "Failed to update key");
     }
   },
 );
@@ -607,7 +609,7 @@ router.delete("/keys/:id", authenticateUser, async (req: AuthenticatedRequest, r
     res.json({ success: true });
   } catch (e: any) {
     log.error("Failed to delete key", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to delete key" });
+    throw AppError.fromHttpStatus(500, "Failed to delete key");
   }
 });
 

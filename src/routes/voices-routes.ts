@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * /api/voices — voice catalog + cloning surface.
@@ -81,6 +82,7 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       try {
         catalog = await elListVoices();
       } catch (e) {
+        if (e instanceof AppError) throw e;
         log.warn("ElevenLabs listVoices failed — returning empty catalog", {
           error: getErrorMessage(e),
         });
@@ -111,8 +113,9 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
 
     res.json({ voices: merged, configured: elevenLabsConfigured() });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     log.error("/api/voices GET failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to list voices" });
+    throw AppError.fromHttpStatus(500, "Failed to list voices");
   }
 });
 
@@ -130,25 +133,27 @@ router.get("/api/voices/:id/preview", async (req: Request, res: Response) => {
   try {
     const voiceId = req.params.id;
     if (!elevenLabsConfigured()) {
-      return res.status(503).json({ error: "Voice previews unavailable." });
+      throw AppError.fromHttpStatus(503, "Voice previews unavailable.");
     }
     try {
       const { getVoice } = await import("../lib/elevenlabs-client");
       const v = await getVoice(voiceId);
       const previewUrl = v.preview_url ?? null;
       if (!previewUrl) {
-        return res.status(404).json({ error: "No preview available for this voice." });
+        throw AppError.fromHttpStatus(404, "No preview available for this voice.");
       }
       // 302 redirect to the public preview URL — simpler than streaming
       // the MP3 through our server (saves bandwidth + cold-start cost).
       res.redirect(302, previewUrl);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.warn("voice preview lookup failed", { error: getErrorMessage(e), voiceId });
-      return res.status(404).json({ error: "Voice not found." });
+      throw AppError.fromHttpStatus(404, "Voice not found.");
     }
   } catch (e) {
+    if (e instanceof AppError) throw e;
     log.error("voice preview failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Preview failed" });
+    throw AppError.fromHttpStatus(500, "Preview failed");
   }
 });
 
@@ -161,24 +166,26 @@ router.post(
     try {
       if (!elevenLabsConfigured()) {
         return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
           error:
             "Voice cloning isn't configured. The owner needs to set ELEVENLABS_API_KEY in environment variables.",
         });
       }
       const { name, audioBase64, audioMimeType, consent_given } = req.body ?? {};
       if (typeof name !== "string" || name.trim().length < 2 || name.length > 80) {
-        return res.status(400).json({ error: "Voice name must be 2-80 characters." });
+        throw AppError.fromHttpStatus(400, "Voice name must be 2-80 characters.");
       }
       if (typeof audioBase64 !== "string" || audioBase64.length < 1000) {
-        return res.status(400).json({ error: "Audio sample required (≥30 sec recommended)." });
+        throw AppError.fromHttpStatus(400, "Audio sample required (≥30 sec recommended).");
       }
       // Hard size ceiling to avoid abuse — instant clones work great
       // on 30-90s samples (typical 1-5 MB) so 25MB is plenty of headroom.
       if (audioBase64.length > 35 * 1024 * 1024) {
-        return res.status(413).json({ error: "Audio sample too large (max ~25MB)." });
+        throw AppError.fromHttpStatus(413, "Audio sample too large (max ~25MB).");
       }
       if (consent_given !== true) {
         return res.status(400).json({
+          code: "BAD_REQUEST",
           error:
             "Consent required. Confirm you have permission to clone this voice before submitting.",
         });
@@ -205,6 +212,7 @@ router.post(
             out_size: cloneAudioBase64.length,
           });
         } catch (e) {
+          if (e instanceof AppError) throw e;
           log.warn("voice isolation failed — proceeding with raw audio", {
             error: getErrorMessage(e),
           });
@@ -239,8 +247,12 @@ router.post(
         },
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("voice clone failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: getErrorMessage(e) });
+      res.status(500).json({
+        code: "INTERNAL_ERROR",
+        error: getErrorMessage(e),
+      });
     }
   },
 );
@@ -264,12 +276,13 @@ router.delete(
           ),
         )
         .limit(1);
-      if (!own) return res.status(404).json({ error: "Voice not found in your library." });
+      if (!own) throw AppError.fromHttpStatus(404, "Voice not found in your library.");
 
       if (elevenLabsConfigured()) {
         try {
           await elDeleteVoice(voiceId);
         } catch (e) {
+          if (e instanceof AppError) throw e;
           log.warn("ElevenLabs delete failed — removing local row anyway", {
             voiceId,
             error: getErrorMessage(e),
@@ -287,8 +300,9 @@ router.delete(
 
       res.json({ ok: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("voice delete failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Delete failed" });
+      throw AppError.fromHttpStatus(500, "Delete failed");
     }
   },
 );

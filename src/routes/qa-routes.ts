@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, isNull, isNotNull, desc } from "drizzle-orm";
@@ -54,10 +55,10 @@ router.post(
         .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)))
         .limit(1);
 
-      if (!call) return res.status(404).json({ error: "Call not found." });
+      if (!call) throw AppError.fromHttpStatus(404, "Call not found.");
 
       if (!claudeBrain.isClaudeAvailable()) {
-        return res.status(503).json({ error: "Claude is not configured." });
+        throw AppError.fromHttpStatus(503, "Claude is not configured.");
       }
 
       const typedCall = call;
@@ -111,7 +112,7 @@ router.post(
       res.json({ success: true, score, breakdown });
     } catch (e: any) {
       log.error("QA scoring failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "QA scoring failed." });
+      throw AppError.fromHttpStatus(500, "QA scoring failed.");
     }
   },
 );
@@ -124,7 +125,7 @@ router.post(
   withAudit("qa"),
   async (req: AuthenticatedRequest, res: Response) => {
     if (!claudeBrain.isClaudeAvailable()) {
-      return res.status(503).json({ error: "Claude is not configured." });
+      throw AppError.fromHttpStatus(503, "Claude is not configured.");
     }
     try {
       const limit = Math.min(
@@ -221,7 +222,7 @@ router.post(
       res.json({ scored, skipped, failed, total: calls.length });
     } catch (e: any) {
       log.error("Batch QA scoring failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Batch QA scoring failed." });
+      throw AppError.fromHttpStatus(500, "Batch QA scoring failed.");
     }
   },
 );
@@ -324,7 +325,7 @@ router.get("/stats", authenticateUser, async (req: AuthenticatedRequest, res: Re
     res.json({ count: typedCalls.length, avgScore, distribution, dimensions, trend });
   } catch (e: any) {
     log.error("QA stats failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to fetch QA stats." });
+    throw AppError.fromHttpStatus(500, "Failed to fetch QA stats.");
   }
 });
 

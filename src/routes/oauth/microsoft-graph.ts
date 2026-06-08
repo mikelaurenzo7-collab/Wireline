@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -165,13 +166,13 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       await disconnectMicrosoftGraph(userId, "microsoft_teams");
       res.json({ ok: true });
     } catch (e: any) {
       log.error("Microsoft Teams disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect Microsoft Teams" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Microsoft Teams");
     }
   },
 );
@@ -181,13 +182,13 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       const channels = await listTeamsNotifyTargets(userId);
       res.json({ channels });
     } catch (err: any) {
       log.error("GET /api/oauth/microsoft_teams/channels failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to list Teams channels" });
+      throw AppError.fromHttpStatus(500, "Failed to list Teams channels");
     }
   },
 );
@@ -197,10 +198,10 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     const { team_id, channel_id, team_name, channel_name } = req.body || {};
     if (!team_id || !channel_id) {
-      return res.status(400).json({ error: "team_id and channel_id required" });
+      throw AppError.fromHttpStatus(400, "team_id and channel_id required");
     }
     try {
       await setTeamsNotifyTarget(userId, String(team_id), String(channel_id), {
@@ -212,7 +213,7 @@ router.post(
       log.error("POST /api/oauth/microsoft_teams/notify-target failed", {
         error: getErrorMessage(err),
       });
-      res.status(500).json({ error: "Failed to set Teams notify target" });
+      throw AppError.fromHttpStatus(500, "Failed to set Teams notify target");
     }
   },
 );
@@ -233,13 +234,13 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       await disconnectMicrosoftGraph(userId, "microsoft_excel");
       res.json({ ok: true });
     } catch (e: any) {
       log.error("Microsoft Excel disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect Microsoft Excel" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Microsoft Excel");
     }
   },
 );

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
@@ -19,7 +20,7 @@ router.post(
     const userId: string = req.user.id;
     const { agentId } = req.body;
     if (!agentId || typeof agentId !== "string") {
-      return res.status(400).json({ error: "agentId is required." });
+      throw AppError.fromHttpStatus(400, "agentId is required.");
     }
     try {
       const [agent] = await drizzle
@@ -28,7 +29,7 @@ router.post(
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
         .limit(1);
 
-      if (!agent) return res.status(404).json({ error: "Agent not found." });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       const result = await syncGoogleDriveToKnowledge(userId, agentId);
       void auditLogger.logDataModification("settings.knowledge_base_updated", {
@@ -39,7 +40,7 @@ router.post(
       res.json(result);
     } catch (e: any) {
       log.error("Google Drive ingest failed", { userId, agentId, error: getErrorMessage(e) });
-      res.status(500).json({ error: "Drive knowledge ingest failed." });
+      throw AppError.fromHttpStatus(500, "Drive knowledge ingest failed.");
     }
   },
 );

@@ -28,6 +28,7 @@ router.get(
   (req: express.Request, res: express.Response) => {
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.status(500).json({
+        code: "INTERNAL_ERROR",
         error: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.",
       });
     }

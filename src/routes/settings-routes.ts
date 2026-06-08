@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger } from "../lib/server-context";
 import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
@@ -43,6 +44,7 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
     const snakeSafe = mapObjectToSnake(safe);
     res.json({ ...snakeSafe, settings: snakeSafe });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     log.error("Failed to fetch settings", { error: getErrorMessage(error) });
     res.json({ settings: {} });
   }
@@ -99,8 +101,9 @@ router.post(
       delete (safeData as any).vapiPrivateKey;
       res.json({ settings: safeData });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to update settings", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update settings" });
+      throw AppError.fromHttpStatus(500, "Failed to update settings");
     }
   },
 );
@@ -129,8 +132,9 @@ router.get(
         preferences: data?.preferences ?? {},
       });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to fetch user preferences", { error });
-      res.status(500).json({ error: "Failed to fetch preferences" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch preferences");
     }
   },
 );
@@ -162,7 +166,7 @@ router.post(
       }
 
       if (Object.keys(update).length === 0) {
-        return res.status(400).json({ error: "No valid preference fields supplied." });
+        throw AppError.fromHttpStatus(400, "No valid preference fields supplied.");
       }
 
       const [data] = (await drizzle
@@ -189,8 +193,9 @@ router.post(
         },
       });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to update preferences", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update preferences" });
+      throw AppError.fromHttpStatus(500, "Failed to update preferences");
     }
   },
 );
@@ -233,8 +238,9 @@ router.get(
         completed: !!prefsRow?.onboardingCompleted,
       });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to fetch onboarding progress", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to fetch progress" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch progress");
     }
   },
 );
@@ -323,7 +329,7 @@ router.post(
       res.status(200).json(exportPackage);
     } catch (err: any) {
       log.error("account export failed", { uid, error: getErrorMessage(err) });
-      res.status(500).json({ error: "Export failed." });
+      throw AppError.fromHttpStatus(500, "Export failed.");
     }
   },
 );
@@ -359,7 +365,7 @@ router.post(
       });
       if (!result.ok) {
         log.error("Failed to enqueue purge_old_data job", { user_id: uid, error: result.error });
-        return res.status(500).json({ error: "Failed to schedule purge job" });
+        throw AppError.fromHttpStatus(500, "Failed to schedule purge job");
       }
       log.info("purge_old_data job enqueued on demand", {
         user_id: uid,
@@ -372,7 +378,7 @@ router.post(
         error: getErrorMessage(err),
         user_id: uid,
       });
-      res.status(500).json({ error: "Failed to schedule purge job" });
+      throw AppError.fromHttpStatus(500, "Failed to schedule purge job");
     }
   },
 );
@@ -393,6 +399,7 @@ router.delete(
     const CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
     if (req.body?.confirm !== CONFIRMATION_PHRASE) {
       return res.status(400).json({
+        code: "BAD_REQUEST",
         error: `Send { "confirm": "${CONFIRMATION_PHRASE}" } to confirm deletion.`,
         grace_days: ACCOUNT_DELETION_GRACE_DAYS,
         info: `Account deletion is reversible for ${ACCOUNT_DELETION_GRACE_DAYS} days via POST /api/account/cancel-deletion.`,
@@ -427,7 +434,7 @@ router.delete(
 
         if (!inserted) {
           log.error("account deletion: enqueue failed", { uid });
-          return res.status(500).json({ error: "Failed to schedule account deletion." });
+          throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
         }
         queueRow = inserted;
       }
@@ -453,7 +460,7 @@ router.delete(
       });
     } catch (err: any) {
       log.error("account deletion enqueue failed", { uid, error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to schedule account deletion." });
+      throw AppError.fromHttpStatus(500, "Failed to schedule account deletion.");
     }
   },
 );
@@ -475,11 +482,12 @@ router.post(
         .limit(1);
 
       if (!existing) {
-        return res.status(404).json({ error: "No pending deletion request found." });
+        throw AppError.fromHttpStatus(404, "No pending deletion request found.");
       }
 
       if (existing.scheduledPurgeAt && existing.scheduledPurgeAt.getTime() <= Date.now()) {
         return res.status(410).json({
+          code: "GONE",
           error: "Grace period has expired. Deletion can no longer be cancelled.",
           scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
         });
@@ -500,7 +508,7 @@ router.post(
       return res.json({ status: "cancelled" });
     } catch (err: any) {
       log.error("cancel-deletion failed", { uid, error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to cancel deletion." });
+      throw AppError.fromHttpStatus(500, "Failed to cancel deletion.");
     }
   },
 );

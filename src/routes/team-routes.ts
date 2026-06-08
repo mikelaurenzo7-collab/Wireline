@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
 import { log, drizzle } from "../lib/server-context";
@@ -22,7 +23,7 @@ router.get("/api/team", authenticateUser, async (req: AuthenticatedRequest, res:
     res.json({ members: members || [] });
   } catch (error: any) {
     log.error("Failed to fetch team members", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to fetch team members" });
+    throw AppError.fromHttpStatus(500, "Failed to fetch team members");
   }
 });
 
@@ -34,7 +35,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { email, role } = req.body;
-      if (!email) return res.status(400).json({ error: "Email is required" });
+      if (!email) throw AppError.fromHttpStatus(400, "Email is required");
 
       const [data] = (await drizzle
         .insert(schema.teamMembers)
@@ -75,13 +76,14 @@ router.post(
           });
         }
       } catch (mailErr) {
+        if (mailErr instanceof AppError) throw mailErr;
         log.error("Failed to send invitation email", { error: getErrorMessage(mailErr) });
       }
 
       res.json({ success: true, invitation: data });
     } catch (error: any) {
       log.error("Failed to invite team member", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to invite team member" });
+      throw AppError.fromHttpStatus(500, "Failed to invite team member");
     }
   },
 );
@@ -104,7 +106,7 @@ router.delete(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to remove team member", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to remove team member" });
+      throw AppError.fromHttpStatus(500, "Failed to remove team member");
     }
   },
 );

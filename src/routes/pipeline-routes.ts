@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * Sales pipeline endpoint — exposes outbound leads grouped by
@@ -27,7 +28,7 @@ function isStage(s: unknown): s is PipelineStage {
 }
 
 router.get("/api/pipeline", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+  if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
 
   const rows = await drizzle
     .select({
@@ -72,7 +73,7 @@ router.patch(
   "/api/pipeline/lead/:id",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const targetStage = req.body?.pipelineStage;
     if (!isStage(targetStage)) {
       return res
@@ -92,7 +93,7 @@ router.patch(
         id: schema.outboundLeads.id,
         pipelineStage: schema.outboundLeads.pipelineStage,
       });
-    if (!row) return res.status(404).json({ error: "Lead not found" });
+    if (!row) throw AppError.fromHttpStatus(404, "Lead not found");
     log.info("Pipeline stage updated", {
       userId: req.user.id,
       leadId: req.params.id,
@@ -111,7 +112,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+      if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
       const days = Math.min(180, Math.max(1, Number(req.query.days) || 30));
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       const rows = await drizzle
@@ -129,8 +130,9 @@ router.get(
         .limit(50);
       return res.json({ days, attribution: rows });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("campaign-attribution failed", { error: getErrorMessage(error) });
-      return res.status(500).json({ error: "Failed to load campaign attribution" });
+      throw AppError.fromHttpStatus(500, "Failed to load campaign attribution");
     }
   },
 );

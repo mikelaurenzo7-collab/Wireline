@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { AppError, asyncHandler, formatErrorResponse } from "./api-error";
+import { AppError, asyncHandler, formatErrorResponse, HTTP_STATUS_ERROR_CODES } from "./api-error";
 
 describe("AppError", () => {
   it("creates a bad request error", () => {
@@ -54,6 +54,12 @@ describe("AppError", () => {
     const err = AppError.serviceUnavailable("Database down");
     expect(err.status).toBe(503);
     expect(err.code).toBe("SERVICE_UNAVAILABLE");
+  });
+
+  it("fromHttpStatus maps status codes and normalizes 401", () => {
+    expect(AppError.fromHttpStatus(404, "Missing").code).toBe("NOT_FOUND");
+    expect(AppError.fromHttpStatus(401, "Unauthorized").code).toBe("UNAUTHORIZED");
+    expect(HTTP_STATUS_ERROR_CODES[429]).toBe("RATE_LIMITED");
   });
 
   it("preserves stack trace", () => {

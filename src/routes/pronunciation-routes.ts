@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
  * /api/pronunciation-dicts — operator-managed pronunciation dictionaries.
@@ -113,7 +114,7 @@ router.get(
         return res.json({ dictionaries: [], configured: elevenLabsConfigured() });
       }
       log.error("/api/pronunciation-dicts GET failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to list pronunciation dictionaries" });
+      throw AppError.fromHttpStatus(500, "Failed to list pronunciation dictionaries");
     }
   },
 );
@@ -126,10 +127,10 @@ router.post(
     try {
       const name = (req.body?.name || "").toString().trim();
       if (name.length < 1 || name.length > MAX_DICT_NAME_LEN) {
-        return res.status(400).json({ error: `Name required (1-${MAX_DICT_NAME_LEN} characters)` });
+        throw AppError.fromHttpStatus(400, `Name required (1-${MAX_DICT_NAME_LEN} characters)`);
       }
       const norm = normalizeEntries(req.body?.entries);
-      if ("error" in norm) return res.status(400).json({ error: norm.error });
+      if ("error" in norm) throw AppError.fromHttpStatus(400, String(norm.error));
 
       // Insert locally first so we have a stable row id even if the
       // EL sync fails — operator can retry the sync from the UI later.
@@ -167,6 +168,7 @@ router.post(
             })
             .where(eq(schema.pronunciationDictionaries.id, inserted.id));
         } catch (e) {
+          if (e instanceof AppError) throw e;
           log.warn("pronunciation dict EL sync failed on create", {
             error: getErrorMessage(e),
             dictId: inserted.id,
@@ -187,8 +189,9 @@ router.post(
         },
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("/api/pronunciation-dicts POST failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to create pronunciation dictionary" });
+      throw AppError.fromHttpStatus(500, "Failed to create pronunciation dictionary");
     }
   },
 );
@@ -213,7 +216,7 @@ router.patch(
           ),
         )
         .limit(1);
-      if (!existing) return res.status(404).json({ error: "Not found" });
+      if (!existing) throw AppError.fromHttpStatus(404, "Not found");
 
       const updates: Record<string, unknown> = { updatedAt: new Date() };
       let nextEntries: DictEntry[] | null = null;
@@ -221,13 +224,13 @@ router.patch(
       if (typeof req.body?.name === "string") {
         const trimmed = req.body.name.trim();
         if (trimmed.length < 1 || trimmed.length > MAX_DICT_NAME_LEN) {
-          return res.status(400).json({ error: `Name must be 1-${MAX_DICT_NAME_LEN} characters` });
+          throw AppError.fromHttpStatus(400, `Name must be 1-${MAX_DICT_NAME_LEN} characters`);
         }
         updates.name = trimmed;
       }
       if (req.body?.entries !== undefined) {
         const norm = normalizeEntries(req.body.entries);
-        if ("error" in norm) return res.status(400).json({ error: norm.error });
+        if ("error" in norm) throw AppError.fromHttpStatus(400, String(norm.error));
         updates.entries = norm.entries as unknown as any;
         nextEntries = norm.entries;
       }
@@ -244,6 +247,7 @@ router.patch(
           try {
             await deletePronunciationDictionary(existing.elevenlabsDictionaryId);
           } catch (e) {
+            if (e instanceof AppError) throw e;
             log.warn("pronunciation dict EL delete on patch failed", {
               error: getErrorMessage(e),
               dictId: id,
@@ -264,6 +268,7 @@ router.patch(
             updates.elevenlabsDictionaryId = result.id;
             updates.elevenlabsVersionId = result.version_id;
           } catch (e) {
+            if (e instanceof AppError) throw e;
             log.warn("pronunciation dict EL recreate on patch failed", {
               error: getErrorMessage(e),
               dictId: id,
@@ -292,8 +297,9 @@ router.patch(
       log.info("pronunciation dict updated", { userId: req.user.id, dictId: id });
       res.json({ dictionary: updated });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("/api/pronunciation-dicts PATCH failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to update pronunciation dictionary" });
+      throw AppError.fromHttpStatus(500, "Failed to update pronunciation dictionary");
     }
   },
 );
@@ -315,12 +321,13 @@ router.delete(
           ),
         )
         .limit(1);
-      if (!existing) return res.status(404).json({ error: "Not found" });
+      if (!existing) throw AppError.fromHttpStatus(404, "Not found");
 
       if (existing.elevenlabsDictionaryId && elevenLabsConfigured()) {
         try {
           await deletePronunciationDictionary(existing.elevenlabsDictionaryId);
         } catch (e) {
+          if (e instanceof AppError) throw e;
           log.warn("pronunciation dict EL delete failed — removing local row anyway", {
             error: getErrorMessage(e),
             dictId: id,
@@ -340,8 +347,9 @@ router.delete(
       log.info("pronunciation dict deleted", { userId: req.user.id, dictId: id });
       res.json({ ok: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("/api/pronunciation-dicts DELETE failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to delete pronunciation dictionary" });
+      throw AppError.fromHttpStatus(500, "Failed to delete pronunciation dictionary");
     }
   },
 );

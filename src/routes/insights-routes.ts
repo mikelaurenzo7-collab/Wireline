@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -103,6 +104,7 @@ router.get(
         ],
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -151,6 +153,7 @@ router.get(
       }
       res.json({ window_days: days, grid });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -290,6 +293,7 @@ router.get(
 
       res.json({ window_days: days, agents: rows });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -337,6 +341,7 @@ router.get(
       setCachedInsight(cacheKey, result);
       res.json({ ...result, cached: false });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -399,6 +404,7 @@ router.get(
       setCachedInsight(cacheKey, result);
       res.json({ ...result, cached: false });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },

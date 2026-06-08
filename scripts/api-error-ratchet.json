@@ -1,0 +1,4 @@
+{
+  "maxLegacyErrorResponses": 0,
+  "_comment": "Lowered by scripts/check-api-error-shape.mjs after migrate-route-errors.mjs"
+}

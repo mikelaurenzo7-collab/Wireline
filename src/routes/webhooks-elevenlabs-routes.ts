@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /**
  * POST /api/webhooks/elevenlabs — handles voice-cloning completion events.
  *
@@ -24,7 +25,7 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
   const secret = process.env.ELEVENLABS_WEBHOOK_SECRET;
   if (!secret) {
     log.warn("ElevenLabs webhook hit but ELEVENLABS_WEBHOOK_SECRET unset");
-    return res.status(503).json({ error: "Webhook not configured" });
+    throw AppError.fromHttpStatus(503, "Webhook not configured");
   }
 
   const sig = req.headers["xi-webhook-signature"] as string | undefined;
@@ -33,7 +34,7 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
       ip: req.ip,
       ts: Date.now(),
     });
-    return res.status(401).json({ error: "Missing signature" });
+    throw AppError.fromHttpStatus(401, "Missing signature");
   }
 
   // The raw request bytes — required for byte-identical HMAC. The
@@ -47,15 +48,16 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
     log.error("ElevenLabs webhook: raw body unavailable (body parser misordered?)", {
       bodyType: typeof rawBody,
     });
-    return res.status(500).json({ error: "Webhook misconfigured" });
+    throw AppError.fromHttpStatus(500, "Webhook misconfigured");
   }
 
   let expectedSig: string;
   try {
     expectedSig = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("ElevenLabs webhook: HMAC compute failed", { error: getErrorMessage(err) });
-    return res.status(500).json({ error: "Signature check failed" });
+    throw AppError.fromHttpStatus(500, "Signature check failed");
   }
 
   let valid = false;
@@ -73,7 +75,7 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
       sig_prefix: sig.slice(0, 8),
       ts: Date.now(),
     });
-    return res.status(401).json({ error: "Invalid signature" });
+    throw AppError.fromHttpStatus(401, "Invalid signature");
   }
 
   // Parse the (now signature-verified) JSON envelope.
@@ -84,7 +86,7 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
       voice_id?: string;
     };
   } catch {
-    return res.status(400).json({ error: "Invalid JSON body" });
+    throw AppError.fromHttpStatus(400, "Invalid JSON body");
   }
 
   try {
@@ -102,6 +104,7 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
           .set({ status: "completed", previewUrl: v.preview_url ?? null })
           .where(eq(schema.clonedVoices.voiceId, voiceId));
       } catch (e) {
+        if (e instanceof AppError) throw e;
         log.warn("Failed to fetch fresh voice metadata post-clone", {
           voiceId,
           error: getErrorMessage(e),
@@ -124,8 +127,9 @@ router.post("/api/webhooks/elevenlabs", async (req: Request, res: Response) => {
 
     return res.json({ ok: true });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     log.error("ElevenLabs webhook handler failed", { error: getErrorMessage(e) });
-    return res.status(500).json({ error: "Handler error" });
+    throw AppError.fromHttpStatus(500, "Handler error");
   }
 });
 

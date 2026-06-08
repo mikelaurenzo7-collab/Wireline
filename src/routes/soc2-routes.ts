@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { authenticateUser } from "../middleware/auth";
 import { soc2RateLimit } from "../middleware/api-rate-limits";
 import { log, requirePermission, drizzle } from "../lib/server-context";
@@ -31,7 +32,7 @@ router.get(
       res.json(review);
     } catch (e: any) {
       log.error("GET /api/soc2/access-review failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to run access review." });
+      throw AppError.fromHttpStatus(500, "Failed to run access review.");
     }
   },
 );
@@ -99,7 +100,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("GET /api/soc2/evidence-pack failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to build evidence pack." });
+      throw AppError.fromHttpStatus(500, "Failed to build evidence pack.");
     }
   },
 );

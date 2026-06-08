@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- admin migration routes normalize heterogeneous legacy rows during one-off backfills. */
 
 import { Router, Request, Response } from "express";
+import { AppError } from "../../lib/api-error";
 import { drizzle, log } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -49,6 +50,7 @@ router.post(
     const ownerEmail = process.env.OWNER_EMAIL;
     if (!ownerEmail) {
       return res.status(412).json({
+        code: "ERROR",
         error: "OWNER_EMAIL env var is not set. Cannot provision Wireline agents without an owner.",
       });
     }
@@ -69,11 +71,12 @@ router.post(
         error: e?.message,
         stack: e?.stack,
       });
-      return res.status(500).json({ error: "Owner lookup failed" });
+      throw AppError.fromHttpStatus(500, "Owner lookup failed");
     }
 
     if (!ownerUserId) {
       return res.status(412).json({
+        code: "ERROR",
         error: `No user with email ${ownerEmail} exists yet. Sign in once via the app, then re-run this endpoint.`,
       });
     }
@@ -152,6 +155,7 @@ router.post(
           error: e?.message,
         });
         return res.status(500).json({
+          code: "INTERNAL_ERROR",
           error: `Failed provisioning persona ${persona.id}`,
           provisioned,
         });
@@ -192,11 +196,19 @@ router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Res
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return res.status(503).json({ ok: false, error: "RESEND_API_KEY not set in environment." });
+    return res.status(503).json({
+      code: "SERVICE_UNAVAILABLE",
+      ok: false,
+      error: "RESEND_API_KEY not set in environment.",
+    });
   }
   const to = (req.body?.to as string) || process.env.OWNER_EMAIL || "";
   if (!to) {
-    return res.status(400).json({ ok: false, error: "No `to` address and no OWNER_EMAIL set." });
+    return res.status(400).json({
+      code: "BAD_REQUEST",
+      ok: false,
+      error: "No `to` address and no OWNER_EMAIL set.",
+    });
   }
   const { resolveResendFromAddress, getResendTransportDiagnostics } =
     await import("../../lib/resend-config");
@@ -229,7 +241,11 @@ router.post("/api/admin/test-email", optionalAuth, async (req: Request, res: Res
           : "See resend_body for the exact error.",
     });
   } catch (_e: any) {
-    return res.status(500).json({ ok: false, error: "Email send failed" });
+    return res.status(500).json({
+      code: "INTERNAL_ERROR",
+      ok: false,
+      error: "Email send failed",
+    });
   }
 });
 
@@ -313,7 +329,11 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
     });
   } catch (e: any) {
     log.error("founder-stats failed", { error: e?.message });
-    return res.status(500).json({ ok: false, error: "Stats query failed" });
+    return res.status(500).json({
+      code: "INTERNAL_ERROR",
+      ok: false,
+      error: "Stats query failed",
+    });
   }
 });
 
@@ -382,7 +402,11 @@ router.post("/api/admin/purge-demo-users", optionalAuth, async (req: Request, re
     });
   } catch (e: any) {
     log.error("purge-demo-users failed", { error: e?.message });
-    return res.status(500).json({ ok: false, error: "Purge failed" });
+    return res.status(500).json({
+      code: "INTERNAL_ERROR",
+      ok: false,
+      error: "Purge failed",
+    });
   }
 });
 
@@ -423,7 +447,7 @@ router.post(
       return res.json({ ok: true, message: "Performance goals table ensured." });
     } catch (e: any) {
       log.error("migrate-goals failed", { error: e?.message, stack: e?.stack });
-      return res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -472,7 +496,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("migrate-escalation-routing failed", { error: e?.message, stack: e?.stack });
-      return res.status(500).json({ error: "Migration failed" });
+      throw AppError.fromHttpStatus(500, "Migration failed");
     }
   },
 );
@@ -551,7 +575,11 @@ router.post(
       log.error("[backfill-voice-defaults] Failed backfilling voice defaults", {
         error: e?.message,
       });
-      return res.status(500).json({ ok: false, error: "Migration backfill failed" });
+      return res.status(500).json({
+        code: "INTERNAL_ERROR",
+        ok: false,
+        error: "Migration backfill failed",
+      });
     }
   },
 );

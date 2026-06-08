@@ -18,6 +18,7 @@
  */
 
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -38,12 +39,12 @@ router.post(
   "/api/supervisor/subscribe",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
 
     const callId = (req.body?.callId || "").toString().trim();
-    if (!callId) return res.status(400).json({ error: "callId is required" });
+    if (!callId) throw AppError.fromHttpStatus(400, "callId is required");
     if (!VALID_CALL_ID.test(callId)) {
-      return res.status(400).json({ error: "callId format invalid" });
+      throw AppError.fromHttpStatus(400, "callId format invalid");
     }
 
     // Mode validation: explicit allowlist. Omitted mode → default "listen"
@@ -71,7 +72,7 @@ router.post(
       .where(eq(schema.callLogs.vapiCallId, callId))
       .limit(1);
     if (!callRow || callRow.userId !== req.user.id) {
-      return res.status(404).json({ error: "Call not found" });
+      throw AppError.fromHttpStatus(404, "Call not found");
     }
 
     const [row] = (await drizzle
@@ -98,7 +99,7 @@ router.get(
   "/api/supervisor/subscriptions",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const rows = await drizzle
       .select()
       .from(schema.supervisorSubscriptions)
@@ -113,7 +114,7 @@ router.delete(
   "/api/supervisor/subscribe/:id",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     await drizzle
       .delete(schema.supervisorSubscriptions)
       .where(

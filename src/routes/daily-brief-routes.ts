@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response, type Request } from "express";
+import { AppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -48,7 +49,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("Failed to load settings", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load settings" });
+      throw AppError.fromHttpStatus(500, "Failed to load settings");
     }
   },
 );
@@ -61,13 +62,13 @@ router.put(
       const enabled = req.body?.enabled === true;
       const send_at = (req.body?.send_at || "13:00").toString();
       if (!/^\d{2}:\d{2}$/.test(send_at))
-        return res.status(400).json({ error: "send_at must be HH:MM (UTC)." });
+        throw AppError.fromHttpStatus(400, "send_at must be HH:MM (UTC).");
       const [hh, mm] = send_at.split(":").map(Number);
       if (hh < 0 || hh > 23 || mm < 0 || mm > 59)
-        return res.status(400).json({ error: "send_at must be a valid HH:MM." });
+        throw AppError.fromHttpStatus(400, "send_at must be a valid HH:MM.");
       const recipient = (req.body?.recipient || "").toString().trim() || null;
       if (recipient && !/^\S+@\S+\.\S+$/.test(recipient))
-        return res.status(400).json({ error: "recipient must be a valid email." });
+        throw AppError.fromHttpStatus(400, "recipient must be a valid email.");
 
       await drizzle
         .insert(schema.settings)
@@ -89,7 +90,7 @@ router.put(
       res.json({ success: true });
     } catch (e: any) {
       log.error("Failed to save settings", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to save settings" });
+      throw AppError.fromHttpStatus(500, "Failed to save settings");
     }
   },
 );
@@ -106,7 +107,7 @@ router.post(
       const err = e as { code?: string; message?: string };
       if (err?.code === "CLAUDE_OFFLINE")
         return res.status(503).json({ error: err.message, code: err.code });
-      res.status(500).json({ error: "Send failed" });
+      throw AppError.fromHttpStatus(500, "Send failed");
     }
   },
 );
@@ -121,7 +122,7 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
     token.length === expected.length &&
     cryptoTimingSafeEqual(Buffer.from(token, "utf8"), Buffer.from(expected, "utf8"));
   if (!ok) {
-    return res.status(401).json({ error: "Unauthorized" });
+    throw AppError.fromHttpStatus(401, "Unauthorized");
   }
 
   try {
@@ -161,7 +162,7 @@ router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => 
     res.json({ ok: true, enabled_users: rows.length, sent, skipped, failed, errors });
   } catch (e: unknown) {
     log.error("Daily brief schedule failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Schedule run failed" });
+    throw AppError.fromHttpStatus(500, "Schedule run failed");
   }
 });
 

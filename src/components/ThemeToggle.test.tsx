@@ -1,48 +1,18 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import ThemeToggle from "./ThemeToggle";
+import { describe, expect, it } from "vitest";
+import { buildThemeToggleLabel } from "./ThemeToggle";
 
-const toggleTheme = vi.fn();
-let theme: "system" | "light" | "dark" = "system";
-let resolvedTheme: "light" | "dark" = "light";
-
-vi.mock("../contexts/ThemeContext", () => ({
-  useTheme: () => ({
-    theme,
-    resolvedTheme,
-    toggleTheme,
-  }),
-}));
-
-describe("ThemeToggle", () => {
-  beforeEach(() => {
-    theme = "system";
-    resolvedTheme = "light";
-  });
-
+describe("buildThemeToggleLabel", () => {
   it("describes the next mode for system preference", () => {
-    render(<ThemeToggle />);
-    expect(screen.getByTestId("theme-toggle")).toHaveAttribute(
-      "aria-label",
+    expect(buildThemeToggleLabel("system", "light")).toBe(
       "Theme: system (light). Activate light mode.",
     );
   });
 
   it("describes the next mode for explicit light theme", () => {
-    theme = "light";
-    render(<ThemeToggle />);
-    expect(screen.getByTestId("theme-toggle")).toHaveAttribute(
-      "aria-label",
-      "Theme: light. Activate dark mode.",
-    );
+    expect(buildThemeToggleLabel("light", "light")).toBe("Theme: light. Activate dark mode.");
   });
 
   it("describes the next mode for explicit dark theme", () => {
-    theme = "dark";
-    render(<ThemeToggle />);
-    expect(screen.getByTestId("theme-toggle")).toHaveAttribute(
-      "aria-label",
-      "Theme: dark. Activate system preference.",
-    );
+    expect(buildThemeToggleLabel("dark", "dark")).toBe("Theme: dark. Activate system preference.");
   });
 });

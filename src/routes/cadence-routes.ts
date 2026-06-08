@@ -17,6 +17,7 @@
  */
 
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -59,7 +60,7 @@ function validateSteps(input: any): CadenceStep[] {
 }
 
 router.get("/api/cadences", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+  if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
   const rows = await drizzle
     .select()
     .from(schema.cadences)
@@ -73,7 +74,7 @@ router.post(
   authenticateUser,
   validateBody(createCadenceSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       const name = (req.body?.name || "").toString().trim();
       const steps = validateSteps(req.body?.steps);
@@ -90,7 +91,10 @@ router.post(
         .returning()) as any[];
       res.json({ cadence: row });
     } catch (e: any) {
-      res.status(400).json({ error: e?.message || "Invalid cadence" });
+      res.status(400).json({
+        code: "BAD_REQUEST",
+        error: e?.message || "Invalid cadence",
+      });
     }
   },
 );
@@ -100,7 +104,7 @@ router.patch(
   authenticateUser,
   validateBody(updateCadenceSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const patch: Record<string, any> = {};
     if (req.body?.name !== undefined) patch.name = req.body.name;
     if (req.body?.description !== undefined) patch.description = req.body.description;
@@ -110,7 +114,7 @@ router.patch(
       try {
         patch.steps = validateSteps(req.body.steps);
       } catch (e: any) {
-        return res.status(400).json({ error: e?.message || "Invalid steps" });
+        throw AppError.fromHttpStatus(400, String(e?.message || "Invalid steps"));
       }
     }
     const [row] = (await drizzle
@@ -118,7 +122,7 @@ router.patch(
       .set(patch)
       .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
       .returning()) as any[];
-    if (!row) return res.status(404).json({ error: "Cadence not found" });
+    if (!row) throw AppError.fromHttpStatus(404, "Cadence not found");
     res.json({ cadence: row });
   },
 );
@@ -127,7 +131,7 @@ router.delete(
   "/api/cadences/:id",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     await drizzle
       .delete(schema.cadences)
       .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)));
@@ -149,16 +153,16 @@ router.post(
   "/api/cadences/:id/enroll",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const leadId = req.body?.leadId;
-    if (!leadId) return res.status(400).json({ error: "leadId is required" });
+    if (!leadId) throw AppError.fromHttpStatus(400, "leadId is required");
 
     // Safe-parse the leadId — BigInt(undefined) or BigInt("not a number") throws.
     let leadIdBig: bigint;
     try {
       leadIdBig = BigInt(leadId);
     } catch {
-      return res.status(400).json({ error: "leadId must be a numeric id" });
+      throw AppError.fromHttpStatus(400, "leadId must be a numeric id");
     }
 
     const [cadence] = await drizzle
@@ -166,9 +170,9 @@ router.post(
       .from(schema.cadences)
       .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
       .limit(1);
-    if (!cadence) return res.status(404).json({ error: "Cadence not found" });
+    if (!cadence) throw AppError.fromHttpStatus(404, "Cadence not found");
     if (cadence.active === false) {
-      return res.status(400).json({ error: "Cadence is inactive — re-enable before enrolling." });
+      throw AppError.fromHttpStatus(400, "Cadence is inactive — re-enable before enrolling.");
     }
 
     // CRITICAL: verify the lead belongs to the requesting tenant. Without this,
@@ -183,7 +187,7 @@ router.post(
       .limit(1);
     if (!lead) {
       // Generic 404 so attackers can't enumerate other tenants' lead ids.
-      return res.status(404).json({ error: "Lead not found" });
+      throw AppError.fromHttpStatus(404, "Lead not found");
     }
 
     const steps = cadence.steps as CadenceStep[];
@@ -205,10 +209,10 @@ router.post(
       return res.json({ run });
     } catch (e: any) {
       if (e?.code === "23505" || /duplicate key/i.test(e?.message || "")) {
-        return res.status(409).json({ error: "Lead is already enrolled in this cadence." });
+        throw AppError.fromHttpStatus(409, "Lead is already enrolled in this cadence.");
       }
       log.error("Cadence enroll failed", { error: e?.message });
-      return res.status(500).json({ error: "Enroll failed" });
+      throw AppError.fromHttpStatus(500, "Enroll failed");
     }
   },
 );
@@ -217,7 +221,7 @@ router.post(
   "/api/cadences/runs/:id/pause",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const [row] = (await drizzle
       .update(schema.cadenceRuns)
       .set({ status: "paused", updatedAt: new Date() })
@@ -225,7 +229,7 @@ router.post(
         and(eq(schema.cadenceRuns.id, req.params.id), eq(schema.cadenceRuns.userId, req.user.id)),
       )
       .returning()) as any[];
-    if (!row) return res.status(404).json({ error: "Run not found" });
+    if (!row) throw AppError.fromHttpStatus(404, "Run not found");
     res.json({ run: row });
   },
 );
@@ -234,7 +238,7 @@ router.get(
   "/api/cadences/runs",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const rows = await drizzle
       .select()
       .from(schema.cadenceRuns)

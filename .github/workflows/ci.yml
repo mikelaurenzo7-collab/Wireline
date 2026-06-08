@@ -46,6 +46,9 @@ jobs:
       - name: Guard — AuthZ default-deny contract (every route protected or allowlisted)
         run: npm run authz:check
 
+      - name: Guard — API error shape ratchet (legacy res.json errors)
+        run: npm run api-error:check
+
       - name: Schema drift check (Drizzle vs migrations)
         run: npm run db:check
 

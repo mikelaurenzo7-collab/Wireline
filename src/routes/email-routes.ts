@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
@@ -44,7 +45,7 @@ router.get(
       res.json({ accounts: accounts || [] });
     } catch (err: any) {
       log.error("GET /api/emails/accounts failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to fetch accounts" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch accounts");
     }
   },
 );
@@ -63,7 +64,7 @@ router.patch(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found" });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       await drizzle
@@ -79,7 +80,7 @@ router.patch(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to update email account assignment", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update email account assignment" });
+      throw AppError.fromHttpStatus(500, "Failed to update email account assignment");
     }
   },
 );
@@ -134,7 +135,7 @@ router.post(
       });
     } catch (e: any) {
       log.error("Failed to sync email inbox", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to sync inbox" });
+      throw AppError.fromHttpStatus(500, "Failed to sync inbox");
     }
   },
 );
@@ -154,7 +155,7 @@ router.get(
       res.json({ threads: mapObjectToSnake(threads || []) });
     } catch (e: any) {
       log.error("Failed to load email threads", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load email threads" });
+      throw AppError.fromHttpStatus(500, "Failed to load email threads");
     }
   },
 );
@@ -195,7 +196,7 @@ router.get(
       res.json({ messages: mapObjectToSnake(messages || []) });
     } catch (e: any) {
       log.error("Failed to load email messages", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load email messages" });
+      throw AppError.fromHttpStatus(500, "Failed to load email messages");
     }
   },
 );
@@ -223,7 +224,7 @@ router.post(
       res.json({ success: true, count: ids.length });
     } catch (e: any) {
       log.error("Failed to update thread read state", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to update thread read state" });
+      throw AppError.fromHttpStatus(500, "Failed to update thread read state");
     }
   },
 );
@@ -273,8 +274,9 @@ router.post(
         providers: Array.from(new Set(messages.map((m) => m.provider))),
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("/api/emails/sync failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Inbox sync failed" });
+      throw AppError.fromHttpStatus(500, "Inbox sync failed");
     }
   },
 );
@@ -295,7 +297,7 @@ router.delete(
       res.json({ success: true });
     } catch (err: any) {
       log.error("DELETE /api/emails/accounts/:id failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to disconnect account" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect account");
     }
   },
 );

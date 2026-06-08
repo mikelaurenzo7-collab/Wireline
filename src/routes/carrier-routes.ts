@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, fetchWithTimeout, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -67,7 +68,7 @@ router.post(
       res.json({ success: true });
     } catch (err: any) {
       log.error("POST /api/phone-numbers failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to add phone number" });
+      throw AppError.fromHttpStatus(500, "Failed to add phone number");
     }
   },
 );
@@ -93,7 +94,12 @@ router.post(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
           .limit(1);
-        if (!agent) return res.status(404).json({ ok: false, error: "Agent not found." });
+        if (!agent)
+          return res.status(404).json({
+            code: "NOT_FOUND",
+            ok: false,
+            error: "Agent not found.",
+          });
       }
 
       const { provisionTenantNumber } = await import("../lib/phone-provisioning");
@@ -108,6 +114,7 @@ router.post(
           typeof result.error === "string" &&
           (/includes \d+ dedicated/i.test(result.error) || /upgrade to add/i.test(result.error));
         return res.status(quotaHit ? 403 : 503).json({
+          code: "ERROR",
           ok: false,
           error: result.error ?? "Could not provision a phone number.",
         });
@@ -143,7 +150,7 @@ router.patch(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found" });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       // Build patch object — accept agent_id and/or campaign_label so the
@@ -174,7 +181,7 @@ router.patch(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to update phone number", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update phone number" });
+      throw AppError.fromHttpStatus(500, "Failed to update phone number");
     }
   },
 );
@@ -197,7 +204,7 @@ router.delete(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to delete phone number", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to delete phone number." });
+      throw AppError.fromHttpStatus(500, "Failed to delete phone number.");
     }
   },
 );
@@ -246,7 +253,7 @@ router.get(
       res.json({ available });
     } catch (e: any) {
       log.error("Failed to list available pool numbers", { error: getErrorMessage(e) });
-      res.status(503).json({ error: "Number pool unavailable. Try again shortly." });
+      throw AppError.fromHttpStatus(503, "Number pool unavailable. Try again shortly.");
     }
   },
 );
@@ -264,7 +271,7 @@ router.post(
     try {
       const areaCode = String(req.body?.area_code || "").trim();
       if (!/^\d{3}$/.test(areaCode)) {
-        return res.status(400).json({ error: "area_code must be a 3-digit US code." });
+        throw AppError.fromHttpStatus(400, "area_code must be a 3-digit US code.");
       }
 
       const headroom = await vapiAccountHeadroom();
@@ -295,7 +302,7 @@ router.post(
         });
       }
       log.error("phone-numbers/search failed", { error: msg });
-      res.status(503).json({ error: "Could not search for a number. Try again shortly." });
+      throw AppError.fromHttpStatus(503, "Could not search for a number. Try again shortly.");
     }
   },
 );
@@ -314,7 +321,7 @@ router.post(
       const phoneNumber = String(req.body?.phone_number || "").trim();
       const agentId = req.body?.agent_id ? String(req.body.agent_id).trim() : null;
       if (!phoneNumber) {
-        return res.status(400).json({ error: "phone_number is required." });
+        throw AppError.fromHttpStatus(400, "phone_number is required.");
       }
 
       // Re-fetch pool to translate e164 → Vapi id AND verify it's actually
@@ -327,11 +334,11 @@ router.post(
       ]);
       const match = poolNumbers.find((n) => n.number === phoneNumber && n.provider === "vapi");
       if (!match) {
-        return res.status(404).json({ error: "That number isn't in the pool anymore." });
+        throw AppError.fromHttpStatus(404, "That number isn't in the pool anymore.");
       }
       const claimed = new Set(claimedRows.map((r) => r.vapiId).filter(Boolean));
       if (claimed.has(match.id)) {
-        return res.status(409).json({ error: "That number was just claimed. Pick another." });
+        throw AppError.fromHttpStatus(409, "That number was just claimed. Pick another.");
       }
 
       // If an agent was named, validate ownership before binding the
@@ -344,7 +351,7 @@ router.post(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found." });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
       }
 
       await drizzle.insert(schema.phoneNumbers).values({
@@ -365,10 +372,10 @@ router.post(
       // a clean conflict so the picker can re-fetch the pool.
       const msg = getErrorMessage(e);
       if (/duplicate key|unique constraint/i.test(msg)) {
-        return res.status(409).json({ error: "That number was just claimed. Pick another." });
+        throw AppError.fromHttpStatus(409, "That number was just claimed. Pick another.");
       }
       log.error("phone-numbers/claim failed", { error: msg });
-      res.status(503).json({ error: "Could not claim that number. Try again." });
+      throw AppError.fromHttpStatus(503, "Could not claim that number. Try again.");
     }
   },
 );

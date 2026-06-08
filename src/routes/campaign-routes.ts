@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 
 import { log, drizzle } from "../lib/server-context";
@@ -63,7 +64,7 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
     res.json({ campaigns: mapObjectToSnake(enriched) });
   } catch (error: any) {
     log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
-    res.status(500).json({ error: "Failed to fetch campaigns" });
+    throw AppError.fromHttpStatus(500, "Failed to fetch campaigns");
   }
 });
 
@@ -82,7 +83,7 @@ router.post(
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found" });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       const [data] = (await drizzle
@@ -102,7 +103,7 @@ router.post(
       res.json({ campaign: mapObjectToSnake(data) });
     } catch (error: any) {
       log.error("Failed to create campaign", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to create campaign" });
+      throw AppError.fromHttpStatus(500, "Failed to create campaign");
     }
   },
 );
@@ -122,7 +123,7 @@ router.patch(
             and(eq(schema.agents.id, req.body.agent_id), eq(schema.agents.userId, req.user.id)),
           )
           .limit(1);
-        if (!agent) return res.status(404).json({ error: "Agent not found" });
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
       }
 
       const updates: any = { updatedAt: new Date() };
@@ -149,7 +150,7 @@ router.patch(
       res.json({ campaign: mapObjectToSnake(data) });
     } catch (error: any) {
       log.error("Failed to update campaign", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to update campaign" });
+      throw AppError.fromHttpStatus(500, "Failed to update campaign");
     }
   },
 );
@@ -170,7 +171,7 @@ router.delete(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to delete campaign", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to delete campaign" });
+      throw AppError.fromHttpStatus(500, "Failed to delete campaign");
     }
   },
 );
@@ -217,7 +218,7 @@ router.get(
       });
     } catch (error: any) {
       log.error("Failed to fetch campaign leads", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to fetch campaign leads" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch campaign leads");
     }
   },
 );
@@ -246,7 +247,7 @@ router.get(
         )
         .limit(1);
 
-      if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+      if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found");
 
       const leads = await drizzle
         .select({ status: schema.outboundLeads.status, callId: schema.outboundLeads.callId })
@@ -290,7 +291,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("Campaign analytics failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to load analytics" });
+      throw AppError.fromHttpStatus(500, "Failed to load analytics");
     }
   },
 );
@@ -321,9 +322,9 @@ router.post(
         )
         .limit(1);
 
-      if (!campaign) return res.status(404).json({ error: "Campaign not found." });
+      if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found.");
       if (campaign.status === "running")
-        return res.status(409).json({ error: "Campaign is already running." });
+        throw AppError.fromHttpStatus(409, "Campaign is already running.");
 
       const queued = await drizzle
         .select({
@@ -344,7 +345,7 @@ router.post(
         );
 
       if (!queued || queued.length === 0) {
-        return res.status(400).json({ error: "No queued leads in this campaign." });
+        throw AppError.fromHttpStatus(400, "No queued leads in this campaign.");
       }
 
       await drizzle
@@ -378,7 +379,7 @@ router.post(
         );
     } catch (error: any) {
       log.error("Campaign launch failed", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to launch campaign." });
+      throw AppError.fromHttpStatus(500, "Failed to launch campaign.");
     }
   },
 );
@@ -404,7 +405,7 @@ router.post(
         )
         .limit(1);
 
-      if (!campaign) return res.status(404).json({ error: "Campaign not found." });
+      if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found.");
 
       const failed = await drizzle
         .select({ id: schema.outboundLeads.id })
@@ -418,7 +419,7 @@ router.post(
         );
 
       if (!failed || failed.length === 0) {
-        return res.status(400).json({ error: "No failed leads to retry." });
+        throw AppError.fromHttpStatus(400, "No failed leads to retry.");
       }
 
       const failedIds = failed.map((l) => l.id);
@@ -437,7 +438,7 @@ router.post(
       res.json({ success: true, reset: failed.length });
     } catch (error: any) {
       log.error("Retry failed leads error", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to retry leads." });
+      throw AppError.fromHttpStatus(500, "Failed to retry leads.");
     }
   },
 );
@@ -460,9 +461,9 @@ router.post(
         )
         .limit(1);
 
-      if (!campaign) return res.status(404).json({ error: "Campaign not found." });
+      if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found.");
       if (campaign.status !== "running") {
-        return res.status(409).json({ error: "Campaign is not currently running." });
+        throw AppError.fromHttpStatus(409, "Campaign is not currently running.");
       }
 
       await drizzle
@@ -478,7 +479,7 @@ router.post(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Campaign stop failed", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to stop campaign." });
+      throw AppError.fromHttpStatus(500, "Failed to stop campaign.");
     }
   },
 );

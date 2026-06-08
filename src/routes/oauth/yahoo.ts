@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { and, eq } from "drizzle-orm";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
@@ -38,7 +39,7 @@ router.get(
   authenticateUser,
   (req: express.Request, res: express.Response) => {
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
-      return res.status(503).json({ error: "Yahoo mailbox integration is finishing setup." });
+      throw AppError.fromHttpStatus(503, "Yahoo mailbox integration is finishing setup.");
     }
     const baseUrl =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||
@@ -172,7 +173,7 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       await drizzle
         .delete(schema.emailAccounts)
@@ -182,7 +183,7 @@ router.post(
       res.json({ ok: true });
     } catch (e: any) {
       log.error("Yahoo disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect Yahoo Mail" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Yahoo Mail");
     }
   },
 );

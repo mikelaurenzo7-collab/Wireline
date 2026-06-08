@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Request, Response } from "express";
+import { AppError } from "../lib/api-error";
 import {
   authService,
   AuthConfigurationError,
@@ -61,13 +62,14 @@ router.post(
 
       const result = await authService.signIn(email, password);
       if (!result) {
-        return res.status(401).json({ error: "Invalid email or password" });
+        throw AppError.fromHttpStatus(401, "Invalid email or password");
       }
 
       scheduleFounderBootstrap(result.user.id, result.user.email);
 
       return sendAuthSuccess(res, result.user, result.token);
     } catch (error) {
+      if (error instanceof AppError) throw error;
       if (error instanceof AuthConfigurationError) {
         log.error("Auth: Sign in unavailable — JWT secret missing", { error });
         return res.status(503).json({
@@ -76,7 +78,7 @@ router.post(
         });
       }
       log.error("Auth: Sign in endpoint failed", { error });
-      res.status(500).json({ error: "Internal server error" });
+      throw AppError.fromHttpStatus(500, "Internal server error");
     }
   },
 );
@@ -192,7 +194,7 @@ router.post(
         pgCode: pgCode ?? null,
         cause: error?.cause?.message ?? null,
       });
-      res.status(500).json({ error: "Internal server error" });
+      throw AppError.fromHttpStatus(500, "Internal server error");
     }
   },
 );
@@ -271,7 +273,7 @@ router.post(
         .from(schema.users)
         .where(eq(schema.users.id, req.user.id))
         .limit(1);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) throw AppError.fromHttpStatus(404, "User not found");
       if (user.emailVerifiedAt) {
         return res.json({ ok: true, sent: false, reason: "already_verified" });
       }
@@ -292,7 +294,7 @@ router.post(
       });
     } catch (err: any) {
       log.error("resend-verification failed", { error: err?.message ?? String(err) });
-      return res.status(500).json({ error: "Resend failed" });
+      throw AppError.fromHttpStatus(500, "Resend failed");
     }
   },
 );
@@ -351,6 +353,7 @@ router.post(
     const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
     if (!token) {
       return res.status(400).json({
+        code: "BAD_REQUEST",
         error: "Missing token. Send Authorization: Bearer <legacy-jwt>.",
       });
     }
@@ -358,7 +361,7 @@ router.post(
       const secret = requireInternalJwtSecret();
       const payload = await verifyInternalJwt(token, secret);
       if (!payload?.sub || !payload.email) {
-        return res.status(401).json({ error: "Invalid or expired session" });
+        throw AppError.fromHttpStatus(401, "Invalid or expired session");
       }
       const rotated = generateToken({ id: payload.sub, email: payload.email });
       setSessionCookie(res, rotated);
@@ -370,7 +373,7 @@ router.post(
         },
       });
     } catch {
-      return res.status(401).json({ error: "Invalid or expired session" });
+      throw AppError.fromHttpStatus(401, "Invalid or expired session");
     }
   },
 );
@@ -475,8 +478,9 @@ router.post(
           "If that email is registered, a reset link is on its way. Check your inbox in a minute.",
       });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Auth: forgot-password issue failed", { error });
-      return res.status(500).json({ error: "Internal server error" });
+      throw AppError.fromHttpStatus(500, "Internal server error");
     }
   },
 );
@@ -506,12 +510,13 @@ router.post(
 
       const result = await authService.completePasswordReset(token, password);
       if (!result) {
-        return res.status(400).json({ error: "Invalid or expired reset link" });
+        throw AppError.fromHttpStatus(400, "Invalid or expired reset link");
       }
       return sendAuthSuccess(res, result.user, result.token);
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.error("Auth: reset-password complete failed", { error });
-      return res.status(500).json({ error: "Internal server error" });
+      throw AppError.fromHttpStatus(500, "Internal server error");
     }
   },
 );
@@ -533,8 +538,14 @@ router.get(
         subscriptionEnsured: result.subscriptionEnsured ?? false,
       });
     } catch (error) {
+      if (error instanceof AppError) throw error;
       log.warn("Auth: bootstrap failed", { userId: req.user.id, error });
-      res.status(503).json({ ok: false, founderSeeded: false, error: "Bootstrap failed" });
+      res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        ok: false,
+        founderSeeded: false,
+        error: "Bootstrap failed",
+      });
     }
   },
 );

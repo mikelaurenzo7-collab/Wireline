@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { rateLimit, RateLimiterOptions, distributedLimiterStatus } from "../lib/rate-limit.js";
+import { AppError } from "../lib/api-error";
 import { log } from "../lib/server-context";
 
 // ──────────────────────────────────────────────────────────────────────
@@ -69,9 +70,7 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       // Extract user ID from authenticated session.
       const userId = (req as Request & { user?: { id?: string } }).user?.id;
       if (!userId) {
-        // Should never happen if authenticateUser ran first, but be defensive.
-        res.status(401).json({ error: "Authentication required" });
-        return;
+        throw AppError.unauthorized();
       }
 
       const result = await rateLimit(userId, opts);
@@ -79,12 +78,7 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
       if (!result.allowed) {
         const retryAfterSeconds = Math.ceil(result.resetMs / 1000);
         res.set("Retry-After", String(retryAfterSeconds));
-        res.status(429).json({
-          error: "Rate limit exceeded",
-          bucket: opts.bucket,
-          retryAfterSeconds,
-        });
-        return;
+        throw AppError.tooManyRequests("Rate limit exceeded");
       }
 
       // Include rate limit info in response headers.
@@ -94,9 +88,12 @@ function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
 
       next();
     } catch (err) {
-      // Fail-OPEN on unexpected error — better to serve traffic than to
-      // lock out everyone on rate limiter bugs.
-
+      if (err instanceof AppError) {
+        next(err);
+        return;
+      }
+      // Fail-OPEN on unexpected infrastructure errors — better to serve traffic
+      // than lock out everyone on rate limiter bugs.
       log.error("rate limiter error, fail-open", {
         bucket: opts.bucket,
         error: getErrorMessage(err),

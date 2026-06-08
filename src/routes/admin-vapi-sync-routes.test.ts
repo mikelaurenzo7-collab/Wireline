@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { formatErrorResponse } from "../lib/api-error";
+import { mountTestErrorHandler } from "../../tests/helpers/express-test-app";
 
 const h = vi.hoisted(() => ({
   user: { id: "user-1", email: "admin@example.com" },
@@ -35,10 +35,7 @@ import adminVapiSyncRoutes from "./admin-vapi-sync-routes";
 function createApp() {
   const app = express();
   app.use(adminVapiSyncRoutes);
-  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    const { status, body } = formatErrorResponse(err, "test-request-id");
-    res.status(status).json(body);
-  });
+  mountTestErrorHandler(app);
   return app;
 }
 

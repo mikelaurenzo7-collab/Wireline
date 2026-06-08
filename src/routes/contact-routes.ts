@@ -1,4 +1,5 @@
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -24,7 +25,7 @@ router.get(
     try {
       const number = decodeURIComponent(req.params.number);
       const norm = normalizePhoneTail(number);
-      if (!norm) return res.status(400).json({ error: "Invalid phone number." });
+      if (!norm) throw AppError.fromHttpStatus(400, "Invalid phone number.");
 
       // 1. Get lead dossier to find email address
       const [dossier] = await drizzle
@@ -136,6 +137,7 @@ router.get(
         }),
       );
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("Contact profile fetch failed", {
         error: e instanceof Error ? e.message : String(e),
       });

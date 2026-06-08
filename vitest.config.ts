@@ -9,6 +9,7 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}", "tests/integration/**/*.test.ts"],
     environment: "node",
     globals: false,
+    setupFiles: ["tests/helpers/vitest-setup.ts"],
     // Keep server bundling tools out of the way during unit runs.
     pool: "forks",
     coverage: {

@@ -19,6 +19,7 @@
  */
 
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import { sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -44,12 +45,13 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
     if (!ownerEmail) {
-      return res.status(503).json({ error: "OWNER_EMAIL not configured" });
+      throw AppError.fromHttpStatus(503, "OWNER_EMAIL not configured");
     }
 
     const e2eEmail = process.env.E2E_USER_EMAIL?.trim().toLowerCase();
     if (!e2eEmail) {
       return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
         error:
           "E2E_USER_EMAIL not configured — refusing to run a wide-scope purge without both preserve targets set.",
       });
@@ -120,7 +122,7 @@ router.post(
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       log.error("admin purge failed", { error: msg });
-      return res.status(500).json({ error: "Purge failed" });
+      throw AppError.fromHttpStatus(500, "Purge failed");
     }
   },
 );

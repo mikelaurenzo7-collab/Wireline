@@ -18,6 +18,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
+//
+// Schema version: latest applied migration is `drizzle/migrations/0045_csat_and_voice_observability.sql`.
+// After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
 // 0. IDENTITY & ACCOUNTS
 export const users = pgTable("wireline_users", {
@@ -679,7 +682,8 @@ export const callLogs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 
     // Voice observability — per-call telemetry for TTFT, STT/TTS health, pipeline latency.
-    // Populated by voice webhook handlers when Vapi (or future providers) emit metrics.
+    // Written by voice webhooks + recordVoiceMetrics(); queried by GET /api/insights/latency
+    // and GET /api/health/voice-status (see src/lib/voice-observability.ts).
     ttftMs: integer("ttft_ms"), // Time-to-first-token (target: <900ms, alert: >1.2s)
     ttfAudioMs: integer("ttf_audio_ms"), // Time-to-first-audio (full pipeline)
     sttError: boolean("stt_error").default(false), // Speech-to-text failed/timeout
@@ -696,7 +700,7 @@ export const callLogs = pgTable(
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_created_at ON wireline_call_logs USING btree (created_at)`,
     userOutcomeIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_outcome ON wireline_call_logs USING btree (user_id, outcome_tag) WHERE outcome_tag IS NOT NULL`,
     userCampaignIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_campaign ON wireline_call_logs USING btree (user_id, campaign_source) WHERE campaign_source IS NOT NULL`,
-    // Voice observability indexes for alerting queries
+    // Voice observability indexes — used by computeVoiceHealthWindow() + latency trends
     ttftIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_ttft ON wireline_call_logs USING btree (ttft_ms) WHERE ttft_ms IS NOT NULL`,
     demoCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_demo_created ON wireline_call_logs USING btree (demo, created_at) WHERE demo = true`,
     pipelineErrorIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_pipeline_error ON wireline_call_logs USING btree (pipeline_error) WHERE pipeline_error IS NOT NULL`,

@@ -1,6 +1,12 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  TEST_REQUEST_ID,
+  apiErrorBody,
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 
 const h = vi.hoisted(() => {
   const state = {
@@ -296,8 +302,10 @@ function deriveHash(password: string, salt: string) {
 
 function buildApp() {
   const app = express();
+  mountRouteTestRequestContext(app);
   app.use(express.json());
   app.use(authRouter);
+  mountTestErrorHandler(app);
   return app;
 }
 
@@ -360,7 +368,7 @@ describe("auth routes integration", () => {
     });
 
     expect(response.status).toBe(401);
-    expect(response.body).toEqual({ error: "Invalid email or password" });
+    expect(response.body).toEqual(apiErrorBody("Invalid email or password", "UNAUTHORIZED"));
   });
 
   it("returns 409 for signup when the email already exists", async () => {
@@ -374,6 +382,7 @@ describe("auth routes integration", () => {
     expect(response.body).toEqual({
       error: "An account with this email already exists. Try signing in instead.",
       code: "EMAIL_TAKEN",
+      requestId: TEST_REQUEST_ID,
     });
   });
 

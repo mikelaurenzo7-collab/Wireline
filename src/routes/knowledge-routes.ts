@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -68,7 +69,7 @@ router.get(
       });
     } catch (e: any) {
       log.error("Failed to load knowledge", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load knowledge" });
+      throw AppError.fromHttpStatus(500, "Failed to load knowledge");
     }
   },
 );
@@ -88,7 +89,7 @@ router.post(
         .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
         .limit(1);
 
-      if (!agent) return res.status(404).json({ error: "Agent not found." });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       const [data] = (await drizzle
         .insert(schema.knowledge)
@@ -102,7 +103,7 @@ router.post(
       res.json({ success: true, knowledge: data });
     } catch (e: any) {
       log.error("Failed to add knowledge", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to add knowledge" });
+      throw AppError.fromHttpStatus(500, "Failed to add knowledge");
     }
   },
 );
@@ -129,7 +130,7 @@ router.patch(
       res.json({ success: true, knowledge: data });
     } catch (e: any) {
       log.error("Failed to update knowledge", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to update knowledge" });
+      throw AppError.fromHttpStatus(500, "Failed to update knowledge");
     }
   },
 );
@@ -150,7 +151,7 @@ router.delete(
       res.json({ success: true });
     } catch (e: any) {
       log.error("Failed to delete knowledge", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to delete knowledge" });
+      throw AppError.fromHttpStatus(500, "Failed to delete knowledge");
     }
   },
 );

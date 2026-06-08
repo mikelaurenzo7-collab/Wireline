@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, auditLogger, requirePermission, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -43,7 +44,7 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
     res.json({ webhooks: webhooks || [], available_events: WEBHOOK_EVENTS });
   } catch (e: any) {
     log.error("Failed to load webhooks", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to load webhooks" });
+    throw AppError.fromHttpStatus(500, "Failed to load webhooks");
   }
 });
 
@@ -57,16 +58,16 @@ router.post(
     try {
       const { name, url, events, secret, active } = req.body;
       if (!name || !url || !Array.isArray(events) || events.length === 0) {
-        return res.status(400).json({ error: "name, url, and events[] required." });
+        throw AppError.fromHttpStatus(400, "name, url, and events[] required.");
       }
       const urlErr = await validateWebhookUrl(url);
-      if (urlErr) return res.status(400).json({ error: urlErr });
+      if (urlErr) throw AppError.fromHttpStatus(400, String(urlErr));
       const bad = events.filter((e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent));
-      if (bad.length) return res.status(400).json({ error: `Unknown events: ${bad.join(", ")}` });
+      if (bad.length) throw AppError.fromHttpStatus(400, `Unknown events: ${bad.join(", ")}`);
       let plaintextSecret: string | null = null;
       if (secret !== undefined && secret !== null && secret !== "") {
         if (String(secret).length < 16) {
-          return res.status(400).json({ error: "Webhook secret must be at least 16 characters." });
+          throw AppError.fromHttpStatus(400, "Webhook secret must be at least 16 characters.");
         }
         plaintextSecret = String(secret);
       }
@@ -106,7 +107,7 @@ router.post(
       res.json({ webhook: data });
     } catch (e: any) {
       log.error("Failed to create webhook", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to create webhook" });
+      throw AppError.fromHttpStatus(500, "Failed to create webhook");
     }
   },
 );
@@ -124,7 +125,7 @@ router.patch(
       if (req.body.url !== undefined) {
         patch.url = req.body.url;
         const urlErr = await validateWebhookUrl(patch.url as string);
-        if (urlErr) return res.status(400).json({ error: urlErr });
+        if (urlErr) throw AppError.fromHttpStatus(400, String(urlErr));
       }
       if (req.body.events !== undefined) {
         patch.events = req.body.events;
@@ -134,7 +135,7 @@ router.patch(
             (e: string) => !WEBHOOK_EVENTS.includes(e as WebhookEvent),
           )
         ) {
-          return res.status(400).json({ error: "Invalid events." });
+          throw AppError.fromHttpStatus(400, "Invalid events.");
         }
       }
       if (req.body.active !== undefined) patch.active = !!req.body.active;
@@ -170,7 +171,7 @@ router.patch(
         .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
         .returning()) as any[];
 
-      if (!data) return res.status(404).json({ error: "Webhook not found." });
+      if (!data) throw AppError.fromHttpStatus(404, "Webhook not found.");
 
       void auditLogger
         .logWebhook("updated", {
@@ -185,7 +186,7 @@ router.patch(
       res.json({ webhook: data });
     } catch (e: any) {
       log.error("Failed to update", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to update" });
+      throw AppError.fromHttpStatus(500, "Failed to update");
     }
   },
 );
@@ -210,7 +211,7 @@ router.delete(
       res.json({ success: true });
     } catch (e: any) {
       log.error("Failed to delete", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to delete" });
+      throw AppError.fromHttpStatus(500, "Failed to delete");
     }
   },
 );
@@ -227,7 +228,7 @@ router.post(
         .from(schema.webhooks)
         .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
         .limit(1);
-      if (!hook) return res.status(404).json({ error: "Webhook not found." });
+      if (!hook) throw AppError.fromHttpStatus(404, "Webhook not found.");
       await dispatchWebhook(req.user.id, "task.created", {
         test: true,
         message: "This is a test ping from Wireline.",
@@ -243,7 +244,7 @@ router.post(
       res.json({ success: true, message: "Test dispatched. Check the URL." });
     } catch (e: any) {
       log.error("Test failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Test failed" });
+      throw AppError.fromHttpStatus(500, "Test failed");
     }
   },
 );
@@ -260,7 +261,7 @@ router.get(
         .from(schema.webhooks)
         .where(and(eq(schema.webhooks.id, req.params.id), eq(schema.webhooks.userId, req.user.id)))
         .limit(1);
-      if (!hook) return res.status(404).json({ error: "Webhook not found." });
+      if (!hook) throw AppError.fromHttpStatus(404, "Webhook not found.");
 
       const deliveries = await drizzle
         .select({
@@ -283,7 +284,7 @@ router.get(
       res.json({ deliveries: deliveries || [] });
     } catch (e: any) {
       log.error("Failed to load deliveries", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load deliveries" });
+      throw AppError.fromHttpStatus(500, "Failed to load deliveries");
     }
   },
 );
@@ -294,14 +295,14 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
+      if (!Number.isFinite(id)) throw AppError.fromHttpStatus(400, "Invalid delivery id.");
       const [row] = await drizzle
         .select({ id: schema.webhookDeliveries.id, userId: schema.webhookDeliveries.userId })
         .from(schema.webhookDeliveries)
         .where(eq(schema.webhookDeliveries.id, BigInt(id)))
         .limit(1);
       if (!row || row.userId !== req.user.id)
-        return res.status(404).json({ error: "Delivery not found." });
+        throw AppError.fromHttpStatus(404, "Delivery not found.");
 
       await drizzle
         .update(schema.webhookDeliveries)
@@ -322,7 +323,7 @@ router.post(
       res.json({ success: true });
     } catch (e: any) {
       log.error("Retry failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Retry failed" });
+      throw AppError.fromHttpStatus(500, "Retry failed");
     }
   },
 );
@@ -333,7 +334,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid delivery id." });
+      if (!Number.isFinite(id)) throw AppError.fromHttpStatus(400, "Invalid delivery id.");
       await drizzle
         .delete(schema.webhookDeliveries)
         .where(
@@ -345,7 +346,7 @@ router.delete(
       res.json({ success: true });
     } catch (e: any) {
       log.error("Discard failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Discard failed" });
+      throw AppError.fromHttpStatus(500, "Discard failed");
     }
   },
 );

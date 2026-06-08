@@ -11,6 +11,19 @@
 
 import type { NextFunction, Request, Response } from "express";
 
+/** Default `code` values when legacy handlers omit them (see normalize-api-error-response). */
+export const HTTP_STATUS_ERROR_CODES: Record<number, string> = {
+  400: "BAD_REQUEST",
+  401: "UNAUTHORIZED",
+  403: "FORBIDDEN",
+  404: "NOT_FOUND",
+  409: "CONFLICT",
+  422: "VALIDATION_ERROR",
+  429: "RATE_LIMITED",
+  500: "INTERNAL_ERROR",
+  503: "SERVICE_UNAVAILABLE",
+};
+
 export class AppError extends Error {
   status: number;
   code: string;
@@ -57,6 +70,30 @@ export class AppError extends Error {
   static serviceUnavailable(message: string) {
     return new AppError(503, "SERVICE_UNAVAILABLE", message);
   }
+
+  /** Map HTTP status + message for legacy route migrations. */
+  static fromHttpStatus(
+    status: number,
+    message: string,
+    details?: Record<string, unknown>,
+  ): AppError {
+    const code = HTTP_STATUS_ERROR_CODES[status] ?? (status >= 500 ? "INTERNAL_ERROR" : "ERROR");
+    if (status === 401 && (message === "Unauthorized" || message === "Authentication required")) {
+      return AppError.unauthorized(message === "Authentication required" ? message : undefined);
+    }
+    return new AppError(status, code, message, details);
+  }
+}
+
+/** Re-throw AppError instances unchanged; use at the top of route catch blocks. */
+export function rethrowIfAppError(err: unknown): void {
+  if (err instanceof AppError) throw err;
+}
+
+/** Send a standardized error JSON body (prefer `throw` + global handler in async routes). */
+export function sendError(res: Response, err: AppError, requestId?: string): void {
+  const { status, body } = formatErrorResponse(err, requestId ?? (res.locals?.requestId as string));
+  res.status(status).json(body);
 }
 
 /** Standard error response shape for all API endpoints. */

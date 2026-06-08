@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
  * Agent Workspace — per-agent operator chat (legacy surface).
@@ -59,7 +60,7 @@ router.get(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const messages = await drizzle
         .select()
@@ -92,8 +93,9 @@ router.get(
         })),
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace messages fetch failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load workspace messages" });
+      throw AppError.fromHttpStatus(500, "Failed to load workspace messages");
     }
   },
 );
@@ -132,7 +134,7 @@ router.post(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const recentCalls = await drizzle
         .select({
@@ -196,6 +198,7 @@ router.post(
           reasoning = plan.reasoning;
           thinkingDurationMs = plan.thinkingDurationMs;
         } catch (e) {
+          if (e instanceof AppError) throw e;
           log.error("workspace planner failed", { error: getErrorMessage(e), agentId });
           reply =
             "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
@@ -212,8 +215,9 @@ router.post(
 
       res.json({ reply, changes, toolToggles, actions, reasoning, thinkingDurationMs });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace POST failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to send message" });
+      throw AppError.fromHttpStatus(500, "Failed to send message");
     }
   },
 );
@@ -230,7 +234,7 @@ router.post(
       const agentId = req.params.id;
       const operatorMessage = req.body.content.trim();
       if (!process.env.ANTHROPIC_API_KEY) {
-        return res.status(503).json({ error: "LLM not configured" });
+        throw AppError.fromHttpStatus(503, "LLM not configured");
       }
 
       const [agent] = await drizzle
@@ -244,7 +248,7 @@ router.post(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
       const sse = createSseStream(req, res);
@@ -337,15 +341,21 @@ router.post(
             log.error("workspace stream persist failed", { error: getErrorMessage(err), agentId }),
           );
       } catch (e) {
+        if (e instanceof AppError) throw e;
         log.error("workspace stream failed", { error: getErrorMessage(e), agentId });
         sse.write("error", { message: "Failed to generate response" });
         sse.end();
       }
     } catch (e) {
+      if (e instanceof AppError) throw e;
       const errMsg = getErrorMessage(e);
       log.error("workspace stream setup failed", { error: errMsg });
       if (!res.headersSent) {
-        res.status(500).json({ error: "Failed to start stream", detail: errMsg });
+        res.status(500).json({
+          code: "INTERNAL_ERROR",
+          error: "Failed to start stream",
+          detail: errMsg,
+        });
       }
     }
   },
@@ -370,10 +380,10 @@ router.post(
       try {
         const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
         if (!head.startsWith("%PDF")) {
-          return res.status(400).json({ error: "File does not look like a valid PDF." });
+          throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
         }
       } catch {
-        return res.status(400).json({ error: "Malformed base64 payload." });
+        throw AppError.fromHttpStatus(400, "Malformed base64 payload.");
       }
 
       const [agent] = await drizzle
@@ -381,7 +391,7 @@ router.post(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       // Extract knowledge entries via Claude. Defer the heavy import so
       // cold-start cost isn't paid on every workspace message.
@@ -430,8 +440,9 @@ router.post(
 
       res.json({ inserted, total: entries.length });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace file upload failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Couldn't process the file" });
+      throw AppError.fromHttpStatus(500, "Couldn't process the file");
     }
   },
 );
@@ -449,7 +460,7 @@ router.delete(
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       await drizzle
         .delete(schema.agentConversationMessages)
@@ -461,8 +472,9 @@ router.delete(
         );
       res.json({ cleared: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace clear failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to clear workspace" });
+      throw AppError.fromHttpStatus(500, "Failed to clear workspace");
     }
   },
 );
@@ -480,9 +492,9 @@ router.post(
       const field = String(req.body?.field || "") as WorkspaceFieldKey;
       const rawValue = req.body?.value;
       const spec = WORKSPACE_FIELDS[field];
-      if (!spec) return res.status(400).json({ error: "Unknown field" });
+      if (!spec) throw AppError.fromHttpStatus(400, "Unknown field");
       if (typeof rawValue !== "string" || !rawValue.trim()) {
-        return res.status(400).json({ error: "Value required" });
+        throw AppError.fromHttpStatus(400, "Value required");
       }
       let value: string | boolean = rawValue.trim().slice(0, spec.maxLen);
       if (spec.kind === "boolean") {
@@ -492,6 +504,7 @@ router.post(
         value = String(value).toLowerCase();
         if (!(WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(value as string)) {
           return res.status(400).json({
+            code: "BAD_REQUEST",
             error: `Vibe must be one of: ${WORKSPACE_VIBE_OPTIONS.join(", ")}`,
           });
         }
@@ -500,19 +513,19 @@ router.post(
         typeof value === "string" &&
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
       ) {
-        return res.status(400).json({ error: "That doesn't look like a valid email." });
+        throw AppError.fromHttpStatus(400, "That doesn't look like a valid email.");
       } else if (
         spec.kind === "phone" &&
         typeof value === "string" &&
         !/^[+\d][\d\s()-]{5,19}$/.test(value)
       ) {
-        return res.status(400).json({ error: "That doesn't look like a valid phone number." });
+        throw AppError.fromHttpStatus(400, "That doesn't look like a valid phone number.");
       } else if (spec.kind === "url" && typeof value === "string" && !/^https?:\/\//.test(value)) {
-        return res.status(400).json({ error: "That doesn't look like a valid URL." });
+        throw AppError.fromHttpStatus(400, "That doesn't look like a valid URL.");
       }
 
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       await drizzle
         .update(schema.agents)
@@ -522,8 +535,9 @@ router.post(
       log.info("workspace config change applied", { agentId, field });
       res.json({ success: true, field, label: spec.label, value });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace apply-change failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to apply change" });
+      throw AppError.fromHttpStatus(500, "Failed to apply change");
     }
   },
 );
@@ -539,12 +553,11 @@ router.post(
       const agentId = req.params.id;
       const tool = req.body?.tool;
       const enable = req.body?.enable;
-      if (!isAgentToolName(tool)) return res.status(400).json({ error: "Unknown tool" });
-      if (typeof enable !== "boolean")
-        return res.status(400).json({ error: "enable must be boolean" });
+      if (!isAgentToolName(tool)) throw AppError.fromHttpStatus(400, "Unknown tool");
+      if (typeof enable !== "boolean") throw AppError.fromHttpStatus(400, "enable must be boolean");
 
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
       const next = enable
@@ -559,8 +572,9 @@ router.post(
       log.info("workspace tool toggled", { agentId, tool, enable });
       res.json({ success: true, tool, enable, enabledTools: next });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace toggle-tool failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to toggle capability" });
+      throw AppError.fromHttpStatus(500, "Failed to toggle capability");
     }
   },
 );
@@ -583,13 +597,13 @@ router.post(
       const body = String(req.body?.body || "").trim();
 
       if (kind !== "send_email" && kind !== "send_text_message") {
-        return res.status(400).json({ error: "Unsupported action for this endpoint" });
+        throw AppError.fromHttpStatus(400, "Unsupported action for this endpoint");
       }
-      if (!to) return res.status(400).json({ error: "Recipient required" });
-      if (!body) return res.status(400).json({ error: "Message body required" });
+      if (!to) throw AppError.fromHttpStatus(400, "Recipient required");
+      if (!body) throw AppError.fromHttpStatus(400, "Message body required");
 
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const payload =
         kind === "send_email" ? { to, subject: subject || "Follow-up", body } : { to, body };
@@ -608,13 +622,14 @@ router.post(
       );
 
       if (!result.success) {
-        return res.status(400).json({ error: result.error || "Action failed" });
+        throw AppError.fromHttpStatus(400, String(result.error || "Action failed"));
       }
       log.info("workspace action executed", { agentId, kind });
       res.json({ success: true, kind });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace run-action failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to run action" });
+      throw AppError.fromHttpStatus(500, "Failed to run action");
     }
   },
 );
@@ -632,7 +647,7 @@ router.get(
     try {
       const agentId = req.params.id;
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
-      if (!agent) return res.status(404).json({ error: "Agent not found" });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -722,8 +737,9 @@ router.get(
         })),
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("workspace overview failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load overview" });
+      throw AppError.fromHttpStatus(500, "Failed to load overview");
     }
   },
 );

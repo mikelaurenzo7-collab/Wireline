@@ -11,6 +11,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CLAUDE_MODELS,
+  CLAUDE_MODEL_DEFAULT,
+  CLAUDE_REASONING_MODEL_DEFAULT,
   GEMINI_MODELS,
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
@@ -26,6 +28,13 @@ describe("Wireline LLM tiering — constants are stable", () => {
     expect(VAPI_TENANT_DEFAULT_PROVIDER).toBe("anthropic");
     expect(VAPI_TENANT_DEFAULT_MODEL).toBe(CLAUDE_MODELS.SONNET);
     expect(VAPI_TENANT_DEFAULT_MODEL).toBe("claude-sonnet-4-6");
+  });
+
+  it("reasoning default is Opus; voice default is Sonnet (distinct tiers)", () => {
+    expect(CLAUDE_REASONING_MODEL_DEFAULT).toBe(CLAUDE_MODELS.OPUS);
+    expect(CLAUDE_MODEL_DEFAULT).toBe(CLAUDE_REASONING_MODEL_DEFAULT);
+    expect(VAPI_TENANT_DEFAULT_MODEL).toBe(CLAUDE_MODELS.SONNET);
+    expect(CLAUDE_REASONING_MODEL_DEFAULT).not.toBe(VAPI_TENANT_DEFAULT_MODEL);
   });
 
   it("showcase + premium voice run the same Sonnet 4.6 as tenants", () => {

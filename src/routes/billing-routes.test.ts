@@ -1,6 +1,11 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  apiErrorBody,
+  mountRouteTestRequestContext,
+  mountTestErrorHandler,
+} from "../../tests/helpers/express-test-app";
 
 const h = vi.hoisted(() => {
   const state = {
@@ -390,9 +395,11 @@ async function buildApp() {
   const billingModule = await import("./billing-routes");
   const billingRouter = billingModule.default as any;
   const app = express();
+  mountRouteTestRequestContext(app);
   app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
   app.use(express.json());
   app.use("/api", billingRouter);
+  mountTestErrorHandler(app);
   return app;
 }
 
@@ -455,7 +462,7 @@ describe("billing routes integration", () => {
       .send(JSON.stringify({ ok: true }));
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: "Missing stripe-signature header." });
+    expect(response.body).toEqual(apiErrorBody("Missing stripe-signature header.", "BAD_REQUEST"));
     expect(h.stripe.webhooks.constructEvent).not.toHaveBeenCalled();
   });
 
@@ -467,7 +474,9 @@ describe("billing routes integration", () => {
       .send(JSON.stringify({ ok: true }));
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error: "Webhook signature verification failed." });
+    expect(response.body).toEqual(
+      apiErrorBody("Webhook signature verification failed.", "BAD_REQUEST"),
+    );
     expect(h.log.warn).toHaveBeenCalledWith(
       "Stripe webhook signature verification failed",
       expect.objectContaining({ sig_prefix: "bad-sig" }),
@@ -506,7 +515,7 @@ describe("billing routes integration", () => {
       .send({ plan_id: "starter" });
 
     expect(response.status).toBe(401);
-    expect(response.body).toEqual({ error: "No authorization token provided" });
+    expect(response.body).toEqual(apiErrorBody("No authorization token provided", "UNAUTHORIZED"));
     expect(h.stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 

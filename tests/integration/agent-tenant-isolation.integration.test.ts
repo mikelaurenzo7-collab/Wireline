@@ -6,6 +6,7 @@ import { inArray } from "drizzle-orm";
 import { generateToken } from "../../src/lib/auth-service";
 import { SESSION_COOKIE_NAME } from "../../src/lib/session-cookie";
 import * as schema from "../../src/db/schema";
+import { mountRouteTestRequestContext, mountTestErrorHandler } from "../helpers/express-test-app";
 
 const hasDb = Boolean(process.env.POSTGRES_URL);
 
@@ -49,8 +50,10 @@ describe.skipIf(!hasDb)("agent tenant isolation (live Postgres)", () => {
 
     const agentRouter = (await import("../../src/routes/agent-routes")).default;
     app = express();
+    mountRouteTestRequestContext(app);
     app.use(express.json());
     app.use(agentRouter);
+    mountTestErrorHandler(app);
   });
 
   afterAll(async () => {

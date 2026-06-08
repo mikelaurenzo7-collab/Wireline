@@ -2,6 +2,7 @@
  * Director routes — account-level strategist chat + creative artifact tooling.
  */
 import express, { type Response } from "express";
+import { AppError } from "../lib/api-error";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { listAgentSummariesForUser } from "../lib/agents-store";
@@ -122,6 +123,7 @@ async function loadFleetSafe(userId: string): Promise<DirectorFleetAgent[]> {
   try {
     return await loadFleet(userId);
   } catch (e) {
+    if (e instanceof AppError) throw e;
     log.warn("director fleet load failed", { error: getErrorMessage(e), userId });
     return [];
   }
@@ -211,6 +213,7 @@ async function finalizeDirectorStreamTurn(
         log.info("director stream persist skipped", { userId, insertResult });
       }
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("director stream persist failed", { error: getErrorMessage(err), userId });
     }
   })();
@@ -549,6 +552,7 @@ async function executeDirectorToolCall(
       telemetry: { tool: approval.name, success: false, latencyMs: Date.now() - t0, costUsd: 0 },
     };
   } catch (e) {
+    if (e instanceof AppError) throw e;
     return {
       reply: `Tool execution failed: ${getErrorMessage(e)}`,
       telemetry: { tool: approval.name, success: false, latencyMs: Date.now() - t0, costUsd: 0 },
@@ -614,6 +618,7 @@ router.get(
         }),
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director messages fetch failed", { error: getErrorMessage(e) });
       let fleet: DirectorFleetAgent[] = [];
       try {
@@ -658,8 +663,9 @@ router.get(
         catalog,
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director chat-models failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to load chat models" });
+      throw AppError.fromHttpStatus(500, "Failed to load chat models");
     }
   },
 );
@@ -671,7 +677,7 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     const parsed = parseDirectorChatModelSelection(req.body.selection);
     if (!parsed) {
-      return res.status(400).json({ error: "Invalid model selection" });
+      throw AppError.fromHttpStatus(400, "Invalid model selection");
     }
     const planId = await getEffectiveSubscriptionPlanId(req.user.id, req.user.email);
     const validated = await validateDirectorChatModelSelection(parsed, {
@@ -679,14 +685,18 @@ router.patch(
       email: req.user.email,
     });
     if (!validated.ok) {
-      return res.status(validated.status).json({ error: validated.error });
+      return res.status(validated.status).json({
+        code: "ERROR",
+        error: validated.error,
+      });
     }
     try {
       const saved = await saveDirectorChatModelPreference(req.user.id, validated.selection);
       res.json({ preference: saved });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director chat-model save failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to save model preference" });
+      throw AppError.fromHttpStatus(500, "Failed to save model preference");
     }
   },
 );
@@ -871,6 +881,7 @@ router.post(
               coachAgentName = turn.focusAgentName;
               researchSources = turn.researchSources;
             } catch (e) {
+              if (e instanceof AppError) throw e;
               log.error("director planner failed", { error: getErrorMessage(e) });
               reply =
                 "Sorry — I'm having trouble responding right now. Your message is saved; try again in a moment.";
@@ -918,6 +929,7 @@ router.post(
                   researchSources = retry.researchSources;
                 }
               } catch (retryErr) {
+                if (retryErr instanceof AppError) throw retryErr;
                 log.error("director deliverable retry failed", {
                   error: getErrorMessage(retryErr),
                 });
@@ -1018,8 +1030,9 @@ router.post(
         stitchAssetsPending,
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director POST failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to send message" });
+      throw AppError.fromHttpStatus(500, "Failed to send message");
     }
   },
 );
@@ -1045,11 +1058,15 @@ router.post(
         req.user.email,
       );
       if (!resolved.ok) {
-        return res.status(resolved.status).json({ error: resolved.error });
+        return res.status(resolved.status).json({
+          code: "ERROR",
+          error: resolved.error,
+        });
       }
       const modelSelection = resolved.selection;
       if (!directorLlmConfigured(modelSelection)) {
         return res.status(503).json({
+          code: "SERVICE_UNAVAILABLE",
           error:
             modelSelection.provider === "openrouter"
               ? "OpenRouter not configured"
@@ -1347,6 +1364,7 @@ router.post(
           featureFlags,
         );
       } catch (e) {
+        if (e instanceof AppError) throw e;
         if (streamAbort.signal.aborted) {
           log.info("director stream aborted by client", { userId: req.user.id });
           if (!streamFinalized) sse.end();
@@ -1403,6 +1421,7 @@ router.post(
             featureFlags,
           );
         } catch (fallbackErr) {
+          if (fallbackErr instanceof AppError) throw fallbackErr;
           log.error("director stream fallback failed", {
             error: getErrorMessage(fallbackErr),
           });
@@ -1414,10 +1433,15 @@ router.post(
         }
       }
     } catch (e) {
+      if (e instanceof AppError) throw e;
       const errMsg = getErrorMessage(e);
       log.error("director stream setup failed", { error: errMsg });
       if (!res.headersSent) {
-        res.status(500).json({ error: "Failed to start stream", detail: errMsg });
+        res.status(500).json({
+          code: "INTERNAL_ERROR",
+          error: "Failed to start stream",
+          detail: errMsg,
+        });
       }
     }
   },
@@ -1441,6 +1465,7 @@ router.post(
           deviceType,
         });
       } catch (lookupErr) {
+        if (lookupErr instanceof AppError) throw lookupErr;
         log.warn("director stitch completed preview lookup failed", {
           userId: req.user.id,
           error: getErrorMessage(lookupErr),
@@ -1496,6 +1521,7 @@ router.post(
           previews: result.previews,
         });
       } catch (persistErr) {
+        if (persistErr instanceof AppError) throw persistErr;
         log.warn("director stitch preview persistence failed", {
           userId: req.user.id,
           error: getErrorMessage(persistErr),
@@ -1507,8 +1533,9 @@ router.post(
         artifacts: result.artifacts,
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director stitch finalize failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to finalize Stitch preview" });
+      throw AppError.fromHttpStatus(500, "Failed to finalize Stitch preview");
     }
   },
 );
@@ -1525,16 +1552,17 @@ router.post(
         const result = await executeDirectorCommsAction(req.user.id, action, {
           hasExpressWrittenConsent: !!req.body.hasExpressWrittenConsent,
         });
-        if (!result.success) return res.status(400).json({ error: result.error || "Failed" });
+        if (!result.success) throw AppError.fromHttpStatus(400, String(result.error || "Failed"));
         return res.json(result);
       }
       const job = req.body.job as DirectorIntegrationJob;
       const result = await executeDirectorIntegrationJob(req.user.id, job);
-      if (!result.success) return res.status(400).json({ error: result.error || "Failed" });
+      if (!result.success) throw AppError.fromHttpStatus(400, String(result.error || "Failed"));
       return res.json(result);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director execute failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Execution failed" });
+      throw AppError.fromHttpStatus(500, "Execution failed");
     }
   },
 );
@@ -1551,10 +1579,10 @@ router.post(
       try {
         const head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
         if (!head.startsWith("%PDF")) {
-          return res.status(400).json({ error: "File does not look like a valid PDF." });
+          throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
         }
       } catch {
-        return res.status(400).json({ error: "Malformed base64 payload." });
+        throw AppError.fromHttpStatus(400, "Malformed base64 payload.");
       }
 
       const { knowledgeFromDocument } = await import("../lib/claude-brain");
@@ -1595,8 +1623,9 @@ router.post(
 
       res.json({ ok: true, inserted: snippets.length, reply });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director file upload failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to process PDF" });
+      throw AppError.fromHttpStatus(500, "Failed to process PDF");
     }
   },
 );
@@ -1609,15 +1638,16 @@ router.post(
     try {
       const messageId = String(req.params.id || "").trim();
       if (!/^\d+$/.test(messageId)) {
-        return res.status(400).json({ error: "Invalid message id" });
+        throw AppError.fromHttpStatus(400, "Invalid message id");
       }
       const { key, state } = req.body as { key: string; state: "done" | "dismissed" };
       const ok = await patchDirectorMessageResolved(req.user.id, messageId, key, state);
-      if (!ok) return res.status(404).json({ error: "Message not found" });
+      if (!ok) throw AppError.fromHttpStatus(404, "Message not found");
       res.json({ success: true, key, state });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director proposal resolve failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to save proposal state" });
+      throw AppError.fromHttpStatus(500, "Failed to save proposal state");
     }
   },
 );
@@ -1634,8 +1664,9 @@ router.delete(
       const artifactsCleared = await clearDirectorArtifacts(req.user.id);
       res.json({ cleared: true, artifactsCleared });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director clear failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to clear Director thread" });
+      throw AppError.fromHttpStatus(500, "Failed to clear Director thread");
     }
   },
 );
@@ -1648,10 +1679,10 @@ router.get(
     try {
       await ensureDirectorSchema();
       const artifactId = String(req.params.id || "").trim();
-      if (!artifactId) return res.status(400).json({ error: "Artifact id required" });
+      if (!artifactId) throw AppError.fromHttpStatus(400, "Artifact id required");
 
       const loaded = await loadDirectorArtifactData({ artifactId, userId: req.user.id });
-      if (!loaded) return res.status(404).json({ error: "Artifact not found" });
+      if (!loaded) throw AppError.fromHttpStatus(404, "Artifact not found");
 
       const inline = String(req.query.inline || "") === "1";
       const url = inline
@@ -1665,8 +1696,9 @@ router.get(
         inline,
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director artifact signed-url failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to mint artifact preview URL" });
+      throw AppError.fromHttpStatus(500, "Failed to mint artifact preview URL");
     }
   },
 );
@@ -1682,11 +1714,11 @@ router.get(
       const exp = String(req.query.exp || "");
       const sig = String(req.query.sig || "");
       if (!verifySignedDownloadToken(artifactId, req.user.id, exp, sig)) {
-        return res.status(403).json({ error: "Invalid or expired download signature" });
+        throw AppError.fromHttpStatus(403, "Invalid or expired download signature");
       }
 
       const loaded = await loadDirectorArtifactBase64({ artifactId, userId: req.user.id });
-      if (!loaded) return res.status(404).json({ error: "Artifact not found" });
+      if (!loaded) throw AppError.fromHttpStatus(404, "Artifact not found");
 
       const inline = String(req.query.inline || "") === "1";
       res.setHeader("Content-Type", loaded.artifact.mimeType);
@@ -1703,8 +1735,9 @@ router.get(
       }
       streamBase64ToResponse(loaded.base64Data, res);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("director artifact download failed", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to download artifact" });
+      throw AppError.fromHttpStatus(500, "Failed to download artifact");
     }
   },
 );

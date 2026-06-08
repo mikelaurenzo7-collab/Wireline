@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- LLM responses and dynamic call analyses include freeform JSON content. */
 import express, { Response } from "express";
+import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -95,6 +96,7 @@ router.post(
       });
       res.json({ brief: result });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -188,6 +190,7 @@ router.post(
       });
       res.json({ qualification: result });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -234,6 +237,7 @@ router.post(
       });
       res.json(result);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -254,6 +258,7 @@ router.post("/cold-email", authenticateUser, async (req: AuthenticatedRequest, r
     const result = await claudeBrain.coldEmail({ ...rest, agentRole });
     res.json({ email: result });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -265,7 +270,7 @@ router.post(
     try {
       const { description, samples, agentId, applyToAgent } = req.body;
       if (!Array.isArray(samples) || samples.length === 0) {
-        return res.status(400).json({ error: "Provide at least one sample message." });
+        throw AppError.fromHttpStatus(400, "Provide at least one sample message.");
       }
       const result = await claudeBrain.personaClone({
         description: description || "Unknown persona",
@@ -294,6 +299,7 @@ router.post(
       }
       res.json({ persona: result, applied: !!(applyToAgent && agentId) });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -313,7 +319,7 @@ router.post(
         )
         .limit(1);
 
-      if (!thread) return res.status(404).json({ error: "Thread not found." });
+      if (!thread) throw AppError.fromHttpStatus(404, "Thread not found.");
 
       const msgs = await drizzle
         .select({ role: schema.emailMessages.role, content: schema.emailMessages.content })
@@ -333,6 +339,7 @@ router.post(
       });
       res.json({ summary: result });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -343,6 +350,7 @@ router.post("/route-intent", authenticateUser, async (req: AuthenticatedRequest,
     const result = await claudeBrain.routeIntent({ text: req.body.text || "" });
     res.json(result);
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -356,7 +364,7 @@ router.post("/email-draft", authenticateUser, async (req: AuthenticatedRequest, 
       .where(and(eq(schema.emailThreads.id, threadId), eq(schema.emailThreads.userId, req.user.id)))
       .limit(1);
 
-    if (!thread) return res.status(404).json({ error: "Thread not found." });
+    if (!thread) throw AppError.fromHttpStatus(404, "Thread not found.");
 
     const targetAgentId = agentId || thread.agentId;
     let agentName = "Wireline Agent";
@@ -440,6 +448,7 @@ router.post("/email-draft", authenticateUser, async (req: AuthenticatedRequest, 
       diagnostics: { cacheRead: result.cacheRead, cacheCreate: result.cacheCreate },
     });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -450,7 +459,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { threadId, agentId } = req.body;
-      if (!threadId) return res.status(400).json({ error: "threadId required" });
+      if (!threadId) throw AppError.fromHttpStatus(400, "threadId required");
 
       const [thread] = await drizzle
         .select({ subject: schema.emailThreads.subject, agentId: schema.emailThreads.agentId })
@@ -460,7 +469,7 @@ router.post(
         )
         .limit(1);
 
-      if (!thread) return res.status(404).json({ error: "Thread not found." });
+      if (!thread) throw AppError.fromHttpStatus(404, "Thread not found.");
 
       const targetAgentId = agentId || thread.agentId;
       let agentName = "Wireline Agent";
@@ -526,6 +535,7 @@ router.post(
 
       res.json({ suggestions: result.suggestions });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -534,7 +544,7 @@ router.post(
 router.post("/agent-review", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { agentId, lookback } = req.body;
-    if (!agentId) return res.status(400).json({ error: "agentId required" });
+    if (!agentId) throw AppError.fromHttpStatus(400, "agentId required");
     const [agent] = await drizzle
       .select({
         name: schema.agents.name,
@@ -545,7 +555,7 @@ router.post("/agent-review", authenticateUser, async (req: AuthenticatedRequest,
       .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
       .limit(1);
 
-    if (!agent) return res.status(404).json({ error: "Agent not found." });
+    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
 
     const logs = await drizzle
       .select({
@@ -571,6 +581,7 @@ router.post("/agent-review", authenticateUser, async (req: AuthenticatedRequest,
     });
     res.json({ review: result, lookback: logs.length });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -581,8 +592,8 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { agentId, scenario } = req.body;
-      if (!agentId) return res.status(400).json({ error: "agentId required" });
-      if (!scenario?.trim()) return res.status(400).json({ error: "scenario required" });
+      if (!agentId) throw AppError.fromHttpStatus(400, "agentId required");
+      if (!scenario?.trim()) throw AppError.fromHttpStatus(400, "scenario required");
 
       const [agentRows, knowledgeRows, directiveRows, settingRows] = await Promise.all([
         drizzle
@@ -613,7 +624,7 @@ router.post(
       ]);
       const agent = agentRows[0];
       const settings = settingRows[0];
-      if (!agent) return res.status(404).json({ error: "Agent not found." });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       const playbook = await claudeBrain.buildCallPlaybook({
         agentName: agent.name,
@@ -626,6 +637,7 @@ router.post(
 
       res.json({ playbook });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -638,7 +650,11 @@ router.post(
     try {
       const validation = parseFormData(DirectiveSchema, { content: req.body.directive });
       if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+        return res.status(400).json({
+          code: "BAD_REQUEST",
+          error: "Validation failed",
+          errors: validation.errors,
+        });
       }
       if (!validation.data) throw new Error("Validation data missing");
 
@@ -650,7 +666,7 @@ router.post(
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
 
-      if (!agent) return res.status(404).json({ error: "Agent not found." });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
       const priorityMap: Record<string, number> = { critical: 10, high: 7, medium: 5, low: 3 };
       await drizzle.insert(schema.directives).values({
         agentId,
@@ -660,6 +676,7 @@ router.post(
       });
       res.json({ success: true });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -681,7 +698,7 @@ router.post(
         )
         .limit(1);
 
-      if (!call) return res.status(404).json({ error: "Call not found." });
+      if (!call) throw AppError.fromHttpStatus(404, "Call not found.");
 
       const [agent] = await drizzle
         .select({
@@ -713,6 +730,7 @@ router.post(
 
       res.json({ analysis: result });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -769,7 +787,7 @@ router.post("/coach", authenticateUser, async (req: AuthenticatedRequest, res: R
       }
     }
 
-    if (!transcript) return res.status(400).json({ error: "Provide a transcript or callId." });
+    if (!transcript) throw AppError.fromHttpStatus(400, "Provide a transcript or callId.");
 
     const result = await claudeBrain.coach({
       agentName,
@@ -780,6 +798,7 @@ router.post("/coach", authenticateUser, async (req: AuthenticatedRequest, res: R
     });
     res.json({ coaching: result });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -791,16 +810,16 @@ router.post(
     try {
       const { url, agentContext, maxEntries, maxPages } = req.body;
       if (!url || typeof url !== "string" || url.length > 2048) {
-        return res.status(400).json({ error: "url required (max 2048 chars)." });
+        throw AppError.fromHttpStatus(400, "url required (max 2048 chars).");
       }
       let parsedUrl: URL;
       try {
         parsedUrl = new URL(url);
       } catch {
-        return res.status(400).json({ error: "url is not a valid URL." });
+        throw AppError.fromHttpStatus(400, "url is not a valid URL.");
       }
       if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-        return res.status(400).json({ error: "url must use http:// or https://" });
+        throw AppError.fromHttpStatus(400, "url must use http:// or https://");
       }
       if (isSsrfUrl(url)) {
         return res
@@ -811,7 +830,7 @@ router.post(
         agentContext != null &&
         (typeof agentContext !== "string" || agentContext.length > 2000)
       ) {
-        return res.status(400).json({ error: "agentContext must be a string ≤ 2000 characters." });
+        throw AppError.fromHttpStatus(400, "agentContext must be a string ≤ 2000 characters.");
       }
       const safeMaxEntries = Math.max(1, Math.min(50, Number(maxEntries) || 12));
       const safeMaxPages = Math.max(1, Math.min(20, Number(maxPages) || 5));
@@ -824,6 +843,7 @@ router.post(
       });
       res.json(result);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -852,16 +872,16 @@ router.post(
         /* malformed base64 — falls through to the %PDF magic-number check below */
       }
       if (!head.startsWith("%PDF")) {
-        return res.status(400).json({ error: "File does not look like a valid PDF." });
+        throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
       }
       if (fileName != null && (typeof fileName !== "string" || fileName.length > 255)) {
-        return res.status(400).json({ error: "fileName must be a string ≤ 255 characters." });
+        throw AppError.fromHttpStatus(400, "fileName must be a string ≤ 255 characters.");
       }
       if (
         agentContext != null &&
         (typeof agentContext !== "string" || agentContext.length > 2000)
       ) {
-        return res.status(400).json({ error: "agentContext must be a string ≤ 2000 characters." });
+        throw AppError.fromHttpStatus(400, "agentContext must be a string ≤ 2000 characters.");
       }
       const safeMaxEntries = Math.max(1, Math.min(50, Number(maxEntries) || 12));
 
@@ -873,6 +893,7 @@ router.post(
       });
       res.json(result);
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -885,7 +906,7 @@ router.post(
     try {
       const { agentId, entries } = req.body;
       if (!agentId || !Array.isArray(entries)) {
-        return res.status(400).json({ error: "agentId and entries[] required." });
+        throw AppError.fromHttpStatus(400, "agentId and entries[] required.");
       }
       const [agent] = await drizzle
         .select({ id: schema.agents.id })
@@ -893,7 +914,7 @@ router.post(
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
         .limit(1);
 
-      if (!agent) return res.status(404).json({ error: "Agent not found." });
+      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found.");
 
       const rows = entries
         .filter((e: any) => typeof e?.fact === "string" && e.fact.trim())
@@ -902,7 +923,7 @@ router.post(
           userId: req.user.id,
           content: e.fact.trim(),
         }));
-      if (rows.length === 0) return res.status(400).json({ error: "No valid entries to insert." });
+      if (rows.length === 0) throw AppError.fromHttpStatus(400, "No valid entries to insert.");
       await drizzle.insert(schema.knowledge).values(rows);
       dispatchWebhook(req.user.id, "knowledge_updated", {
         action: "bulk_created",
@@ -911,6 +932,7 @@ router.post(
       }).catch(() => {});
       res.json({ inserted: rows.length });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -978,6 +1000,7 @@ router.post(
         truncated: rows.length === KNOWLEDGE_DEDUPE_MAX_FACTS,
       });
     } catch (e) {
+      if (e instanceof AppError) throw e;
       claudeErr(res, e);
     }
   },
@@ -992,7 +1015,7 @@ router.post("/enrich-lead", authenticateUser, async (req: AuthenticatedRequest, 
     }
     const customer_number = (req.body?.customer_number || req.body?.phone || "").toString().trim();
     if (!customer_number) {
-      return res.status(400).json({ error: "customer_number is required." });
+      throw AppError.fromHttpStatus(400, "customer_number is required.");
     }
     const enrichment = await claudeBrain.enrichLead({
       customer_number,
@@ -1003,6 +1026,7 @@ router.post("/enrich-lead", authenticateUser, async (req: AuthenticatedRequest, 
     });
     res.json({ enrichment });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -1010,7 +1034,7 @@ router.post("/enrich-lead", authenticateUser, async (req: AuthenticatedRequest, 
 router.post("/forge", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { goal, industry, companyName, websiteUrl, voicePreference } = req.body;
-    if (!goal) return res.status(400).json({ error: "goal required." });
+    if (!goal) throw AppError.fromHttpStatus(400, "goal required.");
     const result = await claudeBrain.forgeAgent({
       goal,
       industry,
@@ -1020,6 +1044,7 @@ router.post("/forge", authenticateUser, async (req: AuthenticatedRequest, res: R
     });
     res.json({ design: result });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -1027,8 +1052,7 @@ router.post("/forge", authenticateUser, async (req: AuthenticatedRequest, res: R
 router.post("/forge/create", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { design, websiteUrl } = req.body;
-    if (!design || !design.name)
-      return res.status(400).json({ error: "design with name required." });
+    if (!design || !design.name) throw AppError.fromHttpStatus(400, "design with name required.");
 
     const agentId = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -1075,6 +1099,7 @@ router.post("/forge/create", authenticateUser, async (req: AuthenticatedRequest,
 
     res.json({ success: true, agentId });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });
@@ -1094,10 +1119,10 @@ router.post("/coach-step", authenticateUser, async (req: AuthenticatedRequest, r
   try {
     const { name, instructions, transitionCondition, isEndNode } = req.body ?? {};
     if (typeof name !== "string" || typeof instructions !== "string") {
-      return res.status(400).json({ error: "name + instructions required" });
+      throw AppError.fromHttpStatus(400, "name + instructions required");
     }
     if (instructions.trim().length < 5) {
-      return res.status(400).json({ error: "instructions too short to critique" });
+      throw AppError.fromHttpStatus(400, "instructions too short to critique");
     }
 
     const stepLabel = name.trim() || "(unnamed stage)";
@@ -1133,6 +1158,7 @@ Critique this stage.`;
     });
     res.json({ critique: result.text });
   } catch (e) {
+    if (e instanceof AppError) throw e;
     claudeErr(res, e);
   }
 });

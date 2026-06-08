@@ -392,7 +392,12 @@ export default function DirectorWorkspace({
     | ((
         trimmed: string,
         optimisticId?: string,
-        opts?: { skipOperatorPersist?: boolean },
+        opts?: {
+          skipOperatorPersist?: boolean;
+          timeoutMs?: number;
+          recoverPersistedReply?: boolean;
+          requireStitchReply?: boolean;
+        },
       ) => Promise<void>)
     | null
   >(null);

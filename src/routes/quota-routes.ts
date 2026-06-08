@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 import { Router, Request, Response } from "express";
 import { drizzle, log, auditLogger, quotaTracker, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -36,8 +37,9 @@ router.get(
       });
       res.json({ plan, limits: profile, usage });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("GET /api/quotas failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to fetch quota info" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch quota info");
     }
   },
 );
@@ -65,7 +67,7 @@ router.put(
     try {
       const validation = validateOverride(req.body);
       if (!validation.ok) {
-        return res.status(400).json({ error: (validation as { ok: false; error: string }).error });
+        throw AppError.badRequest((validation as { ok: false; error: string }).error);
       }
       const { dimension, value, enabled } = validation.value;
 
@@ -99,8 +101,9 @@ router.put(
         .catch(() => {});
       res.json({ success: true, dimension, value, enabled });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("PUT /api/quotas/override failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to update quota override" });
+      throw AppError.fromHttpStatus(500, "Failed to update quota override");
     }
   },
 );

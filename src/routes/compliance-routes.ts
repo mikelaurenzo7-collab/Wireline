@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -62,7 +63,7 @@ router.get("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Resp
     res.json({ entries });
   } catch (e: any) {
     log.error("DNC list fetch failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to fetch DNC list." });
+    throw AppError.fromHttpStatus(500, "Failed to fetch DNC list.");
   }
 });
 
@@ -71,11 +72,15 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
   try {
     const { entries } = req.body as { entries: Array<DncEntry> };
     if (!entries || entries.length === 0) {
-      return res.status(400).json({ error: "entries array is required." });
+      throw AppError.fromHttpStatus(400, "entries array is required.");
     }
     const limitErr = dncImportLimitError(entries.length);
     if (limitErr) {
-      return res.status(400).json({ error: limitErr, max: DNC_IMPORT_MAX_ENTRIES });
+      return res.status(400).json({
+        code: "BAD_REQUEST",
+        error: limitErr,
+        max: DNC_IMPORT_MAX_ENTRIES,
+      });
     }
     const rows = entries
       .filter((e: DncEntry) => e.phone)
@@ -88,8 +93,7 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
       }))
       .filter((r: any) => r.phone.length > 0);
 
-    if (rows.length === 0)
-      return res.status(400).json({ error: "No valid phone numbers provided." });
+    if (rows.length === 0) throw AppError.fromHttpStatus(400, "No valid phone numbers provided.");
 
     const data = await drizzle
       .insert(schema.dncList)
@@ -124,7 +128,7 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
     res.json({ success: true, added });
   } catch (e: any) {
     log.error("DNC add failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to add to DNC list." });
+    throw AppError.fromHttpStatus(500, "Failed to add to DNC list.");
   }
 });
 
@@ -137,7 +141,7 @@ router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, re
       .returning({ id: schema.dncList.id });
 
     if (!removed.length) {
-      return res.status(404).json({ error: "DNC entry not found." });
+      throw AppError.fromHttpStatus(404, "DNC entry not found.");
     }
 
     void auditLogger
@@ -151,7 +155,7 @@ router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, re
     res.json({ success: true });
   } catch (e: any) {
     log.error("DNC delete failed", { error: getErrorMessage(e) });
-    res.status(500).json({ error: "Failed to remove DNC entry." });
+    throw AppError.fromHttpStatus(500, "Failed to remove DNC entry.");
   }
 });
 
@@ -171,7 +175,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const phone = String(req.query.phone || "").trim();
-      if (!phone) return res.status(400).json({ error: "phone query param required" });
+      if (!phone) throw AppError.fromHttpStatus(400, "phone query param required");
 
       const isMarketing = req.query.is_marketing !== "false";
 
@@ -212,7 +216,7 @@ router.get(
       log.error("GET /api/tcpa/consent-check failed", {
         error: err instanceof Error ? err.message : String(err),
       });
-      res.status(500).json({ error: "Consent check failed" });
+      throw AppError.fromHttpStatus(500, "Consent check failed");
     }
   },
 );

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 
 import { log, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -140,7 +141,7 @@ router.post(
       res.json({ success: true, count: specializedAgents.length });
     } catch (error: any) {
       log.error("Fleet seeding failed", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to seed fleet" });
+      throw AppError.fromHttpStatus(500, "Failed to seed fleet");
     }
   },
 );
@@ -276,7 +277,11 @@ router.post(
     try {
       const validation = parseFormData(FleetTaskCreateSchema, req.body);
       if (!validation.success) {
-        return res.status(400).json({ error: "Validation failed", errors: validation.errors });
+        return res.status(400).json({
+          code: "BAD_REQUEST",
+          error: "Validation failed",
+          errors: validation.errors,
+        });
       }
       const {
         description,
@@ -307,7 +312,7 @@ router.post(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to create fleet task", { error: error.message });
-      res.status(500).json({ error: "Failed to create fleet task" });
+      throw AppError.fromHttpStatus(500, "Failed to create fleet task");
     }
   },
 );
@@ -350,7 +355,7 @@ router.patch(
       res.json({ success: true });
     } catch (error: any) {
       log.error("Failed to update fleet task", { error: error.message });
-      res.status(500).json({ error: "Failed to update fleet task" });
+      throw AppError.fromHttpStatus(500, "Failed to update fleet task");
     }
   },
 );
@@ -370,11 +375,11 @@ router.post(
         .limit(1);
 
       if (!task) {
-        return res.status(404).json({ error: "Task not found" });
+        throw AppError.fromHttpStatus(404, "Task not found");
       }
 
       if (task.status === "completed") {
-        return res.status(400).json({ error: "Task is already completed" });
+        throw AppError.fromHttpStatus(400, "Task is already completed");
       }
 
       // Prefer the structured `payload` (written by the AI Action Engine);
@@ -405,11 +410,14 @@ router.post(
         touchNavCounts(userId);
         res.json({ success: true });
       } else {
-        res.status(500).json({ error: result.error || "Action execution failed" });
+        res.status(500).json({
+          code: "INTERNAL_ERROR",
+          error: result.error || "Action execution failed",
+        });
       }
     } catch (error: any) {
       log.error("Task approval failed", { error: getErrorMessage(error) });
-      res.status(500).json({ error: "Failed to approve task" });
+      throw AppError.fromHttpStatus(500, "Failed to approve task");
     }
   },
 );
@@ -479,7 +487,7 @@ router.get(
       res.json({ activity });
     } catch (e: any) {
       log.error("Activity feed error", { error: getErrorMessage(e) });
-      res.status(500).json({ error: "Failed to fetch activity" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch activity");
     }
   },
 );

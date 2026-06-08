@@ -19,15 +19,22 @@ interface Props {
   compact?: boolean;
 }
 
-export default function ThemeToggle({ className, variant = "inverse", compact = false }: Props) {
-  const { theme, toggleTheme, resolvedTheme } = useTheme();
-
-  const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
+export function buildThemeToggleLabel(
+  theme: "system" | "light" | "dark",
+  resolvedTheme: "light" | "dark",
+): string {
   const nextMode =
     theme === "system" ? "light mode" : theme === "light" ? "dark mode" : "system preference";
   const currentMode =
     theme === "system" ? `system (${resolvedTheme})` : theme === "light" ? "light" : "dark";
-  const label = `Theme: ${currentMode}. Activate ${nextMode}.`;
+  return `Theme: ${currentMode}. Activate ${nextMode}.`;
+}
+
+export default function ThemeToggle({ className, variant = "inverse", compact = false }: Props) {
+  const { theme, toggleTheme, resolvedTheme } = useTheme();
+
+  const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
+  const label = buildThemeToggleLabel(theme, resolvedTheme);
 
   return (
     <ShadButton

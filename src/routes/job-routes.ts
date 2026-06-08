@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { Router, Response, NextFunction } from "express";
+import { AppError } from "../lib/api-error";
 import { timingSafeEqual as cryptoTimingSafeEqual } from "node:crypto";
 import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -36,8 +37,9 @@ router.get(
       const stats = await getQueueStats(drizzle, req.user.id);
       res.json(stats);
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("GET /api/jobs/stats failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to fetch job stats" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch job stats");
     }
   },
 );
@@ -76,7 +78,7 @@ router.post(
         payload: { userId: req.user.id },
       });
       if (!result.ok) {
-        return res.status(500).json({ error: result.error || "Failed to enqueue job" });
+        throw AppError.fromHttpStatus(500, String(result.error || "Failed to enqueue job"));
       }
 
       res.json({
@@ -86,8 +88,9 @@ router.post(
         apolloReady: apolloPlatformConfigured(),
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("POST /api/jobs/prospect failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to enqueue prospecting job" });
+      throw AppError.fromHttpStatus(500, "Failed to enqueue prospecting job");
     }
   },
 );
@@ -104,16 +107,16 @@ router.post(
     try {
       const { url, agentContext, maxEntries, maxPages } = req.body ?? {};
       if (!url || typeof url !== "string" || url.length > 2048) {
-        return res.status(400).json({ error: "url required (max 2048 chars)." });
+        throw AppError.fromHttpStatus(400, "url required (max 2048 chars).");
       }
       let parsedUrl: URL;
       try {
         parsedUrl = new URL(url);
       } catch {
-        return res.status(400).json({ error: "url is not a valid URL." });
+        throw AppError.fromHttpStatus(400, "url is not a valid URL.");
       }
       if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-        return res.status(400).json({ error: "url must use http:// or https://" });
+        throw AppError.fromHttpStatus(400, "url must use http:// or https://");
       }
       if (isSsrfUrl(url)) {
         return res
@@ -124,7 +127,7 @@ router.post(
         agentContext != null &&
         (typeof agentContext !== "string" || agentContext.length > 2000)
       ) {
-        return res.status(400).json({ error: "agentContext must be a string ≤ 2000 characters." });
+        throw AppError.fromHttpStatus(400, "agentContext must be a string ≤ 2000 characters.");
       }
       const safeMaxEntries = Math.max(1, Math.min(50, Number(maxEntries) || 12));
       const safeMaxPages = Math.max(1, Math.min(20, Number(maxPages) || 5));
@@ -142,13 +145,14 @@ router.post(
         maxAttempts: 2,
       });
       if (!result.ok) {
-        return res.status(500).json({ error: result.error || "Failed to enqueue crawl job" });
+        throw AppError.fromHttpStatus(500, String(result.error || "Failed to enqueue crawl job"));
       }
 
       res.json({ ok: true, jobId: result.jobId ?? null, status: "pending" });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("POST /api/jobs/knowledge-crawl failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to enqueue knowledge crawl" });
+      throw AppError.fromHttpStatus(500, "Failed to enqueue knowledge crawl");
     }
   },
 );
@@ -161,7 +165,7 @@ router.get(
     try {
       const jobId = String(req.params.id || "");
       if (!JOB_ID_RE.test(jobId)) {
-        return res.status(400).json({ error: "Invalid job id" });
+        throw AppError.fromHttpStatus(400, "Invalid job id");
       }
       const [row] = await drizzle
         .select({
@@ -176,11 +180,12 @@ router.get(
         .from(schema.jobs)
         .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, req.user.id)))
         .limit(1);
-      if (!row) return res.status(404).json({ error: "Job not found" });
+      if (!row) throw AppError.fromHttpStatus(404, "Job not found");
       res.json({ job: row });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("GET /api/jobs/:id failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to fetch job" });
+      throw AppError.fromHttpStatus(500, "Failed to fetch job");
     }
   },
 );
@@ -194,14 +199,14 @@ router.post(
     try {
       const jobId = String(req.params.id || "");
       if (!JOB_ID_RE.test(jobId)) {
-        return res.status(400).json({ error: "Invalid job id" });
+        throw AppError.fromHttpStatus(400, "Invalid job id");
       }
       const [row] = await drizzle
         .select()
         .from(schema.jobs)
         .where(and(eq(schema.jobs.id, jobId), eq(schema.jobs.userId, req.user.id)))
         .limit(1);
-      if (!row) return res.status(404).json({ error: "Job not found" });
+      if (!row) throw AppError.fromHttpStatus(404, "Job not found");
       if (row.status === "done") {
         return res.json({ ok: true, status: row.status, result: row.result });
       }
@@ -221,6 +226,7 @@ router.post(
         await handleJob(claimed);
         await completeJob(drizzle, claimed.id);
       } catch (runErr) {
+        if (runErr instanceof AppError) throw runErr;
         await failJob(drizzle, claimed, getErrorMessage(runErr));
         const [failed] = await drizzle
           .select({ status: schema.jobs.status, error: schema.jobs.error })
@@ -228,6 +234,7 @@ router.post(
           .where(eq(schema.jobs.id, jobId))
           .limit(1);
         return res.status(500).json({
+          code: "INTERNAL_ERROR",
           ok: false,
           status: failed?.status ?? "failed",
           error: failed?.error ?? getErrorMessage(runErr),
@@ -245,8 +252,9 @@ router.post(
         .limit(1);
       res.json({ ok: true, status: done?.status, result: done?.result, error: done?.error });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("POST /api/jobs/:id/run failed", { error: getErrorMessage(err) });
-      res.status(500).json({ error: "Failed to run job" });
+      throw AppError.fromHttpStatus(500, "Failed to run job");
     }
   },
 );
@@ -287,6 +295,7 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
       req._sweepMode = "manual";
       next();
     } catch (e) {
+      if (e instanceof AppError) throw e;
       log.error("sweep auth failed", { error: getErrorMessage(e) });
       return res.status(403).json({ error: "Authorization check failed", code: "FORBIDDEN" });
     }
@@ -527,8 +536,9 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         .catch(() => {});
     }
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("/api/jobs/sweep failed", { error: getErrorMessage(err) });
-    res.status(500).json({ error: "Sweep failed" });
+    throw AppError.fromHttpStatus(500, "Sweep failed");
   }
 };
 

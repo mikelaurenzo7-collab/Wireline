@@ -8,6 +8,7 @@
  */
 
 import { Router, Response } from "express";
+import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -58,7 +59,7 @@ router.get(
         .from(schema.smsThreads)
         .where(and(eq(schema.smsThreads.id, threadId), eq(schema.smsThreads.userId, req.user.id)))
         .limit(1);
-      if (!thread) return res.status(404).json({ error: "Thread not found" });
+      if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
 
       const messages = await drizzle
         .select()
@@ -95,7 +96,7 @@ router.post(
         .from(schema.smsThreads)
         .where(and(eq(schema.smsThreads.id, threadId), eq(schema.smsThreads.userId, req.user.id)))
         .limit(1);
-      if (!thread) return res.status(404).json({ error: "Thread not found" });
+      if (!thread) throw AppError.fromHttpStatus(404, "Thread not found");
 
       const result = await sendTenantMessage(req.user.id, {
         to: thread.customerNumber!,
@@ -112,7 +113,7 @@ router.post(
       res.json({ ok: result.ok, reason: result.ok ? null : result.reason });
     } catch (e: any) {
       log.error("SMS reply failed", { error: e?.message });
-      res.status(500).json({ error: "Reply failed" });
+      throw AppError.fromHttpStatus(500, "Reply failed");
     }
   },
 );

@@ -33,6 +33,8 @@ export interface CallReportPayload {
     transcript?: string;
     recordingUrl?: string;
     stereoRecordingUrl?: string;
+    durationSeconds?: number;
+    endedReason?: string;
   };
   agent: {
     id: string;

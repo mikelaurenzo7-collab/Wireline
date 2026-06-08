@@ -1,3 +1,4 @@
+import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- vendor webhook payloads are JSON envelopes with provider-specific shapes. */
 import express, { Request, Response } from "express";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
@@ -91,6 +92,7 @@ function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): bo
     const expectedHex = createHmac("sha256", secret).update(rawBody).digest("hex");
     expected = `sha256=${expectedHex}`;
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("Meta signature: HMAC compute failed", { error: getErrorMessage(err) });
     return false;
   }
@@ -133,6 +135,7 @@ async function resolveTenantForPage(
     if (!row) return null;
     return { userId: row.userId, accessToken: decryptSecret(row.accessToken) };
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.warn("Meta tenant resolve failed", { pageId, error: getErrorMessage(err) });
     return null;
   }
@@ -159,6 +162,7 @@ async function fetchMetaLead(
     if (!r.ok) return null;
     return (await r.json()) as any;
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.warn("Meta Graph lead fetch failed", { leadgenId, error: getErrorMessage(err) });
     return null;
   }
@@ -356,6 +360,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
           continue;
         }
       } catch (err) {
+        if (err instanceof AppError) throw err;
         log.error("Meta webhook processing failed", {
           field,
           pageId,
@@ -419,7 +424,7 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) {
     log.warn("Meta deletion callback: META_APP_SECRET not set");
-    return res.status(503).json({ error: "deletion service unavailable" });
+    throw AppError.fromHttpStatus(503, "deletion service unavailable");
   }
 
   // Body is either application/x-www-form-urlencoded (signed_request=...)
@@ -441,13 +446,13 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
     }
   }
   if (!signedRequest) {
-    return res.status(400).json({ error: "missing signed_request" });
+    throw AppError.fromHttpStatus(400, "missing signed_request");
   }
 
   const payload = parseSignedRequest(signedRequest, appSecret);
   if (!payload || !payload.user_id) {
     log.warn("Meta deletion callback: invalid signed_request");
-    return res.status(400).json({ error: "invalid signed_request" });
+    throw AppError.fromHttpStatus(400, "invalid signed_request");
   }
 
   const facebookUserId = String(payload.user_id);
@@ -500,6 +505,7 @@ router.post("/api/webhooks/meta/deletion", async (req: Request, res: Response) =
       });
     }
   } catch (err) {
+    if (err instanceof AppError) throw err;
     log.error("Meta deletion callback DB write failed", {
       facebookUserId,
       error: getErrorMessage(err),

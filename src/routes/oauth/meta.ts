@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
+import { AppError } from "../../lib/api-error";
 import { drizzle, log, IS_PROD } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { encryptSecret } from "../../lib/secret-vault";
@@ -169,13 +170,13 @@ router.post(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
     try {
       await disconnectMeta(userId);
       res.json({ ok: true });
     } catch (e: any) {
       log.error("Meta disconnect failed", { error: e?.message });
-      res.status(500).json({ error: "Failed to disconnect Meta" });
+      throw AppError.fromHttpStatus(500, "Failed to disconnect Meta");
     }
   },
 );
