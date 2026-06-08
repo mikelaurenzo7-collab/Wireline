@@ -1673,6 +1673,7 @@ router.get(
       );
       if (inline && loaded.artifact.mimeType.startsWith("text/html")) {
         res.setHeader("X-Frame-Options", "SAMEORIGIN");
+        res.setHeader("Content-Security-Policy", "frame-ancestors 'self'");
       }
       res.send(loaded.data);
     } catch (e) {

@@ -3681,7 +3681,7 @@ html, body, .marketing-surface, .app-surface {
   width: 100%;
   min-height: min(56vh, 560px);
   border: 0;
-  background: white;
+  background: var(--paper, white);
 }
 .wl-stitch-device--studio {
   max-width: min(100%, 64rem);

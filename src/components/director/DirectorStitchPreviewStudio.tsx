@@ -320,7 +320,9 @@ export default function DirectorStitchPreviewStudio({
                 title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
                 src={ready.htmlSrc}
                 className="wl-stitch-live-iframe wl-stitch-live-iframe--studio"
-                sandbox="allow-scripts allow-same-origin"
+                sandbox="allow-scripts"
+                referrerPolicy="no-referrer"
+                allow="fullscreen"
               />
             </DeviceChrome>
           )}
