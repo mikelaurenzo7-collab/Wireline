@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, LayoutTemplate } from "lucide-react";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import DirectorStitchPreviewStudio from "../components/director/DirectorStitchPreviewStudio";
@@ -21,14 +21,13 @@ export default function DesignPreviewPage() {
         <header className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3 min-w-0">
             <ShadButton
-              asChild
+              type="button"
               variant="ghost"
+              onClick={() => navigate(-1)}
               className="h-auto px-2.5 py-1.5 text-[11px] font-semibold text-muted hover:text-ink"
             >
-              <Link to="/chat">
-                <ArrowLeft className="w-3.5 h-3.5" />
-                {WIRELINE_STITCH_UI.previewPageBackLabel}
-              </Link>
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {WIRELINE_STITCH_UI.previewPageBackLabel}
             </ShadButton>
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand flex items-center gap-1.5">
@@ -51,8 +50,12 @@ export default function DesignPreviewPage() {
               Run a new design in Director chat, then open preview from the design card or thread
               header.
             </p>
-            <ShadButton asChild className="mt-2 h-auto px-4 py-2 text-[12px] font-semibold">
-              <Link to="/chat">Go to chat</Link>
+            <ShadButton
+              type="button"
+              onClick={() => navigate("/chat")}
+              className="mt-2 h-auto px-4 py-2 text-[12px] font-semibold"
+            >
+              Go to chat
             </ShadButton>
           </div>
         ) : (

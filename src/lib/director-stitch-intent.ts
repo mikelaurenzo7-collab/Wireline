@@ -185,9 +185,18 @@ export const WIRELINE_STITCH_DESIGN_BRIEF =
 export const WIRELINE_STITCH_DARK_DESIGN_BRIEF =
   'Wireline "Aurora Dark" design system: paper #0D0D11, ink #E2E8F0, brand #7C3AED→#4C1D95 gradient CTAs, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), dark glassmorphism panels with 1px border-white/10 and backdrop-blur-md, purple aurora-glow on active states. Premium B2B SaaS dashboard — production-ready, dark mode, not generic AI-purple template.';
 
-/** Default delivery rules for client-owned Stitch renders (not Wireline product UI). */
+/** Default delivery rules for client-owned Stitch renders (not Wireline product UI).
+ *  ~300-word structured design system brief — typography, color, spacing, components,
+ *  accessibility, and tone so every render feels bespoke rather than template-like. */
 export const CLIENT_STITCH_DELIVERY_BRIEF =
-  "Design exclusively for the client's business, product, and audience named in the request. Use their industry, tone, and palette — never default to Wireline branding, Wireline Director, agent orchestration dashboards, or generic purple SaaS templates unless the operator explicitly asked for Wireline product UI.";
+  "Design exclusively for the client's business, product, and audience. Never use Wireline branding, purple SaaS templates, or generic agent-dashboard aesthetics unless explicitly requested.\n\n" +
+  "TYPOGRAPHY: Pair one distinctive display face (serif, slab, or condensed sans for headlines) with a highly readable geometric sans for UI text. Establish a clear scale: hero headlines 48–64px, section heads 28–36px, body 16–18px, microcopy 12–14px. Use weight contrast (display 700–800, body 400–500) rather than size alone to create hierarchy.\n\n" +
+  "COLOR HIERARCHY: Build a cohesive palette from the client's industry and tone. Use one confident primary accent for CTAs and key actions. Neutrals should be warm or cool (not pure gray) — deep ink (#1a1a1a or soft charcoal) on light surfaces, or warm cream/off-white backgrounds. Surfaces should have subtle depth through very light tints or 1px borders, never flat Bootstrap gray.\n\n" +
+  "SPACING & LAYOUT: Mobile-first with generous whitespace. Use a base 4–8px grid. Section padding should be 64–96px vertical on desktop, 40–64px on mobile. Let content breathe — crowded layouts feel cheap. Max content width ~1200px centered with auto margins.\n\n" +
+  "COMPONENT PATTERNS: CTAs must be pill-shaped or softly rounded (8–12px radius) with high-contrast text. Cards should have subtle radius, light shadow or 1px border, and consistent internal padding (24–32px). Forms: large touch targets (min 44px height), clear labels, visible focus rings.\n\n" +
+  "VISUAL TONE: Match the operator's described mood (warm, premium, playful, editorial, bold). Use purposeful imagery — realistic photography or custom abstract shapes, never generic stock-photo compositions. If no images are described, use bold typography and geometric accent shapes to create visual interest.\n\n" +
+  "ACCESSIBILITY: WCAG AA contrast on all text. Semantic HTML elements (header, nav, main, section, footer). ARIA labels on icons and buttons. Keyboard-navigable focus states.\n\n" +
+  "CONTENT: Write realistic, industry-specific copy. No lorem ipsum. Headlines should sell the benefit, not describe the feature.";
 
 const WIRELINE_PRODUCT_SIGNAL =
   /\b(wireline\s+(?:director|mission\s+control|console|dashboard|app\s+ui|product\s+ui|aurora)|design\s+(?:the\s+)?wireline|wireline\s+design\s+system|aurora\s+cream)\b/i;
@@ -254,5 +263,5 @@ export function buildStitchGenerationPrompt(
     briefForStitch = CLIENT_STITCH_DELIVERY_BRIEF;
   }
 
-  return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the client's industry and brand — not Wireline unless explicitly requested.`;
+  return `${prefix}${base}. Follow this design brief:\n\n${briefForStitch}\n\nDeliver production-ready semantic HTML with accessible labels, a single <style> block or inline CSS, mobile-first layout unless desktop/web is requested, and realistic placeholder content matching the client's industry and brand. Use CSS custom properties for colors so the palette is easy to tweak. Ensure the design feels bespoke — not template-like — with intentional negative space, thoughtful type pairing, and a clear visual hierarchy that guides the eye to the primary CTA.`;
 }

@@ -603,9 +603,9 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       const fallbackPayload = {
         ...vapiPayload,
         assistant: {
-          ...vapiPayload.assistant,
+          ...(vapiPayload.assistant as Record<string, unknown>),
           model: {
-            ...vapiPayload.assistant.model,
+            ...(vapiPayload.assistant.model as Record<string, unknown>),
             provider: VAPI_VOICE_FALLBACK_PROVIDER,
             model: VAPI_VOICE_FALLBACK_MODEL,
           },

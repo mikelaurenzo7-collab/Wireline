@@ -3,7 +3,7 @@
  * Used on /design/preview (not inlined in the main Director chat thread).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   Download,
   ExternalLink,
@@ -142,7 +142,9 @@ export default function DirectorStitchPreviewStudio({
   const loadStartRef = useRef<number>(Date.now());
   const [elapsedMs, setElapsedMs] = useState(0);
   const [exportBusy, setExportBusy] = useState<Record<string, true>>({});
+  const [iframeFailed, setIframeFailed] = useState(false);
   const { error: toastError } = useToast();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     loadStartRef.current = Date.now();
@@ -169,6 +171,15 @@ export default function DirectorStitchPreviewStudio({
       }
     };
   }, [preview.conceptId, hasRenderableHtml, hasRenderableImage, defaultTab, tab]);
+
+  useEffect(() => {
+    if (!ready.htmlSrc || !hasRenderableHtml) return;
+    setIframeFailed(false);
+    const timer = setTimeout(() => {
+      setIframeFailed(true);
+    }, 12_000);
+    return () => clearTimeout(timer);
+  }, [ready.htmlSrc, hasRenderableHtml]);
 
   const openArtifactDownload = useCallback(
     async (artifactId: string | undefined, inline: boolean) => {
@@ -292,10 +303,10 @@ export default function DirectorStitchPreviewStudio({
       <AnimatePresence mode="wait">
         <motion.div
           key={`${preview.conceptId}-${tab}`}
-          initial={{ opacity: 0, y: 6 }}
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -4 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
         >
           {tab === "screenshot" && hasRenderableImage && (
@@ -306,6 +317,7 @@ export default function DirectorStitchPreviewStudio({
                   alt={preview.title}
                   className="max-h-[min(70vh,640px)] w-full object-contain object-top"
                   loading="lazy"
+                  decoding="async"
                   onError={() => {
                     if (hasRenderableHtml) setTab("preview");
                   }}
@@ -316,12 +328,31 @@ export default function DirectorStitchPreviewStudio({
 
           {tab === "preview" && hasRenderableHtml && (
             <DeviceChrome device={preview.deviceType} fullHeight>
-              <iframe
-                title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
-                src={ready.htmlSrc}
-                className="wl-stitch-live-iframe wl-stitch-live-iframe--studio"
-                sandbox="allow-scripts allow-same-origin"
-              />
+              {iframeFailed && hasRenderableImage ? (
+                <div className="min-h-[min(70vh,640px)] flex flex-col items-center justify-center gap-2 p-6 text-center">
+                  <p className="text-[12px] text-muted">
+                    Live preview is taking longer than expected.
+                  </p>
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTab("screenshot")}
+                    className="h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+                  >
+                    View screenshot instead
+                  </ShadButton>
+                </div>
+              ) : (
+                <iframe
+                  title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
+                  src={ready.htmlSrc}
+                  className="wl-stitch-live-iframe wl-stitch-live-iframe--studio"
+                  sandbox="allow-scripts"
+                  referrerPolicy="no-referrer"
+                  allow="fullscreen"
+                />
+              )}
             </DeviceChrome>
           )}
 

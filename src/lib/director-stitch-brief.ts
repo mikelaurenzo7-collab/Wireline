@@ -277,9 +277,9 @@ function typographyFromBranding(useBranding: boolean, operatorRequest: string): 
     return "Plus Jakarta Sans for UI, Fraunces italic for display headlines, JetBrains Mono for labels.";
   }
   if (useBranding) {
-    return "Readable sans for UI with one distinctive display face matched to the client's industry and tone.";
+    return "Readable sans for UI with one distinctive display face matched to the client's industry and tone. Scale: hero 48–64px, section heads 28–36px, body 16–18px.";
   }
-  return "Choose readable sans for UI with one distinctive display face — avoid generic Inter-only stacks.";
+  return "Choose readable sans for UI with one distinctive display face — avoid generic Inter-only stacks. Scale: hero 48–64px, section heads 28–36px, body 16–18px.";
 }
 
 function colorSection(
@@ -295,9 +295,9 @@ function colorSection(
     return lines.join("\n");
   }
   if (brief.tone) {
-    return `- Infer palette from tone (${brief.tone}) and industry — cohesive surfaces and one confident accent.`;
+    return `- Infer palette from tone (${brief.tone}) and industry — cohesive surfaces, one confident accent, warm or cool neutrals (avoid pure gray and generic AI purple).`;
   }
-  return `- Infer a cohesive palette from the request — no Wireline purple, no generic AI-purple template.`;
+  return `- Infer a cohesive palette from the request — one confident accent, warm or cool neutrals, subtle surface depth. Never use generic AI-purple or flat Bootstrap gray.`;
 }
 
 export function buildStitchDesignMarkdown(input: {
@@ -350,7 +350,11 @@ export function buildStitchDesignMarkdown(input: {
     "## Visual system",
     `- Typography: ${typographyFromBranding(useAccountBranding, brief.operatorRequest)}`,
     `- Surfaces: ${surfacesLine}`,
-    `- Components: clear CTAs, realistic industry copy, mobile-first unless desktop requested`,
+    `- Spacing: generous whitespace, 4–8px base grid, 64–96px section padding desktop / 40–64px mobile, max-width ~1200px centered`,
+    `- Components: pill or softly rounded CTAs (8–12px radius) with high-contrast text; cards with subtle radius, light shadow or 1px border, 24–32px internal padding; forms with 44px+ touch targets and visible focus rings`,
+    `- Imagery: realistic photography or custom abstract shapes; if no images described, use bold typography and geometric accent shapes instead of generic stock layouts`,
+    `- Mood: ${brief.tone || "infer from industry and operator request — be bold and bespoke, never template-like"}`,
+    `- Responsive: mobile-first unless desktop/web is explicitly requested`,
     "",
     "## Screen scope",
     brief.pages ? `- Pages: ${brief.pages}` : "- Pages: infer from the operator request",

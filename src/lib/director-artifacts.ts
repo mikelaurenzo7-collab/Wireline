@@ -189,3 +189,65 @@ export async function loadDirectorArtifactData(input: {
     data: Buffer.from(row.base64Data, "base64"),
   };
 }
+
+export async function loadDirectorArtifactBase64(input: {
+  artifactId: string;
+  userId: string;
+}): Promise<{ artifact: DirectorStoredArtifact; base64Data: string } | null> {
+  const rows = await drizzle
+    .select({
+      id: schema.directorArtifacts.id,
+      userId: schema.directorArtifacts.userId,
+      threadKey: schema.directorArtifacts.threadKey,
+      toolName: schema.directorArtifacts.toolName,
+      artifactType: schema.directorArtifacts.artifactType,
+      name: schema.directorArtifacts.name,
+      createdAt: schema.directorArtifacts.createdAt,
+      metadata: schema.directorArtifacts.metadata,
+      mimeType: schema.directorArtifactObjects.mimeType,
+      sizeBytes: schema.directorArtifactObjects.sizeBytes,
+      base64Data: schema.directorArtifactObjects.base64Data,
+    })
+    .from(schema.directorArtifacts)
+    .innerJoin(
+      schema.directorArtifactObjects,
+      eq(schema.directorArtifacts.objectKey, schema.directorArtifactObjects.objectKey),
+    )
+    .where(
+      and(
+        eq(schema.directorArtifacts.id, BigInt(input.artifactId)),
+        eq(schema.directorArtifacts.userId, input.userId),
+      ),
+    )
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    artifact: {
+      id: String(row.id),
+      userId: row.userId,
+      threadKey: row.threadKey,
+      toolName: row.toolName,
+      artifactType: row.artifactType,
+      name: row.name,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+      createdAt: row.createdAt,
+      metadata: (row.metadata as Record<string, unknown>) ?? {},
+    },
+    base64Data: row.base64Data,
+  };
+}
+
+/** Decode base64 in aligned chunks and stream to an Express response.
+ *  Avoids holding the full decoded Buffer in memory (artifact payloads
+ *  can be 200 KB+ PNGs). */
+export function streamBase64ToResponse(base64: string, res: import("express").Response): void {
+  const CHUNK = 65536; // multiple of 4 so base64 alignment is preserved
+  for (let i = 0; i < base64.length; i += CHUNK) {
+    res.write(Buffer.from(base64.slice(i, i + CHUNK), "base64"));
+  }
+  res.end();
+}
