@@ -69,8 +69,10 @@ import {
   buildSignedPreviewUrl,
   clearDirectorArtifacts,
   listDirectorArtifacts,
+  loadDirectorArtifactBase64,
   loadDirectorArtifactData,
   storeDirectorArtifact,
+  streamBase64ToResponse,
   verifySignedDownloadToken,
 } from "../lib/director-artifacts";
 import {
@@ -889,7 +891,7 @@ router.post(
                   forceDeep: false,
                   shallowOnly: true,
                   modelSelection: { provider: "wireline", tier: "sonnet" },
-                  deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+                  deliverableGuidance: undefined,
                   designRenderFallback: false,
                 });
                 if (!isDirectorStubReply(retry.reply)) {
@@ -1258,7 +1260,7 @@ router.post(
             forceDeep: false,
             shallowOnly: true,
             modelSelection: { provider: "wireline", tier: "sonnet" },
-            deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
+            deliverableGuidance: undefined,
             designRenderFallback: false,
           });
           if (!isDirectorStubReply(retry.reply)) {
@@ -1659,7 +1661,7 @@ router.get(
         return res.status(403).json({ error: "Invalid or expired download signature" });
       }
 
-      const loaded = await loadDirectorArtifactData({ artifactId, userId: req.user.id });
+      const loaded = await loadDirectorArtifactBase64({ artifactId, userId: req.user.id });
       if (!loaded) return res.status(404).json({ error: "Artifact not found" });
 
       const inline = String(req.query.inline || "") === "1";
@@ -1675,7 +1677,7 @@ router.get(
         res.setHeader("X-Frame-Options", "SAMEORIGIN");
         res.setHeader("Content-Security-Policy", "frame-ancestors 'self'");
       }
-      res.send(loaded.data);
+      streamBase64ToResponse(loaded.base64Data, res);
     } catch (e) {
       log.error("director artifact download failed", { error: getErrorMessage(e) });
       res.status(500).json({ error: "Failed to download artifact" });
