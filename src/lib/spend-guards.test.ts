@@ -4,6 +4,7 @@ import {
   getBudgetSnapshot,
   evaluateSpend,
   enforceSpendCap,
+  isHardSpendCapExceeded,
   recordDailySpend,
   enforce24hSpendCap,
 } from "./spend-guards";
@@ -134,6 +135,35 @@ describe("Spend Guards & Budgets", () => {
 
       const snap3 = await getBudgetSnapshot(userId, true);
       expect(snap3.budget?.monthly_limit_usd).toBe(200); // Bypassed cache
+    });
+  });
+
+  describe("isHardSpendCapExceeded", () => {
+    it("returns false when hard cap is disabled or budget is off", async () => {
+      mockBudgetRows = [
+        {
+          monthlyLimitUsd: "100.00",
+          hardCap: false,
+          warnThresholdPct: 80,
+          enabled: true,
+        },
+      ];
+      mockMtdRow = [{ mtdCost: "150.00" }];
+      expect(await isHardSpendCapExceeded(userId)).toBe(false);
+    });
+
+    it("returns true when hard cap is on and MTD spend meets limit", async () => {
+      mockBudgetRows = [
+        {
+          monthlyLimitUsd: "100.00",
+          hardCap: true,
+          warnThresholdPct: 80,
+          enabled: true,
+        },
+      ];
+      mockMtdRow = [{ mtdCost: "100.00" }];
+      clearBudgetCache(userId);
+      expect(await isHardSpendCapExceeded(userId)).toBe(true);
     });
   });
 

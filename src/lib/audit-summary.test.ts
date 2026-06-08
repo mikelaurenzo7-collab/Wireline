@@ -52,6 +52,8 @@ describe("inputRateForModel", () => {
     expect(inputRateForModel("claude-sonnet-4-6")).toBe(3);
     expect(inputRateForModel("claude-opus-4-7")).toBe(5);
     expect(inputRateForModel("gemini-1.5-flash")).toBe(0.075);
+    expect(inputRateForModel("gemini-2.5-flash")).toBe(0.3);
+    expect(inputRateForModel("gemini-3.5-flash")).toBe(0.15);
     expect(inputRateForModel("gpt-4o")).toBe(5);
   });
 

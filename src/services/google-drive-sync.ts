@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { google } from "googleapis";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GEMINI_MODELS } from "../lib/claude-models";
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 import { drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -66,7 +67,7 @@ export async function syncGoogleDriveToKnowledge(userId: string, agentId: string
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const gemini = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const gemini = genAI.getGenerativeModel({ model: GEMINI_MODELS.FLASH_2_5 });
 
   // Fetch the 10 most recently modified Google Docs + plain text files
   const listResponse = await drive.files.list({

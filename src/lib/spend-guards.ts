@@ -183,6 +183,15 @@ export async function enforceSpendCap(_req: AuthedRequest, _res: Response, next:
   next();
 }
 
+/** True when a tenant has enabled hard_cap and month-to-date spend meets/exceeds limit. */
+export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
+  const snap = await getBudgetSnapshot(userId);
+  if (!snap.budget?.enabled || !snap.budget.hard_cap) return false;
+  const limit = snap.budget.monthly_limit_usd;
+  if (!(limit > 0)) return false;
+  return snap.mtdCost >= limit;
+}
+
 // ──────────────────────────────────────────────────────────────────────
 //  SYSTEM-WIDE 24-hour accumulator cap
 // ──────────────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clampRuntimePrompt,
+  clampRuntimePromptPreservingTail,
   MAX_RUNTIME_PROMPT_CHARS,
   MAX_RUNTIME_SNIPPET_CHARS,
   sanitizePhone,
@@ -91,6 +92,18 @@ describe("clampRuntimePrompt", () => {
   it("never increases prompt size on clamp", () => {
     const exact = "z".repeat(MAX_RUNTIME_PROMPT_CHARS);
     expect(clampRuntimePrompt(exact).length).toBe(MAX_RUNTIME_PROMPT_CHARS);
+  });
+});
+
+describe("clampRuntimePromptPreservingTail", () => {
+  it("preserves VOICE CONSISTENCY guardrails when trimming oversized prompts", () => {
+    const head = "x".repeat(MAX_RUNTIME_PROMPT_CHARS);
+    const tail = "\n\n## VOICE CONSISTENCY\n- Stay in one voice.";
+    const oversized = `${head}${tail}`;
+    const out = clampRuntimePromptPreservingTail(oversized);
+    expect(out).toContain("## VOICE CONSISTENCY");
+    expect(out).toContain("Stay in one voice.");
+    expect(out.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS + 1);
   });
 });
 

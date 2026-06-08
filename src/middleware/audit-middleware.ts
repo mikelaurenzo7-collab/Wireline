@@ -31,6 +31,17 @@ function estimateAuditRecordCost(r: {
       output_tokens: r.output_tokens,
     });
   }
+  if (r.provider === "google") {
+    return claudeBrain.estimateCost(
+      {
+        input_tokens: r.input_tokens,
+        output_tokens: r.output_tokens,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+      },
+      r.model,
+    );
+  }
   return claudeBrain.estimateCost(
     {
       input_tokens: r.input_tokens,

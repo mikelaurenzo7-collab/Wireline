@@ -8,7 +8,7 @@ import {
   MAX_RUNTIME_LESSONS,
   MAX_RUNTIME_DIRECTIVES,
   MAX_RUNTIME_KNOWLEDGE,
-  clampRuntimePrompt,
+  clampRuntimePromptPreservingTail,
   truncateRuntimeSnippet,
   ROLE_SPECIFIC_PROTOCOLS,
   buildCallerProfileBlock,
@@ -464,7 +464,7 @@ Today is ${currentDateTime}.
     kpi_focus: agentConfigRow?.kpiFocus,
     personality_vibe: (agentConfigRow as any)?.personalityVibe,
   };
-  const runtime = buildAgentRuntimeContext(clampRuntimePrompt(systemPrompt), runtimeProfile);
+  const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
   // First-message resolution order:
   //   1. Out-of-hours override (always wins — caller hears the OOH msg)
   //   2. Operator-set firstMessage on the agent row
@@ -666,7 +666,7 @@ Today is ${currentDateTime}.
       ...(voiceSelection.fallbackModels?.length
         ? { fallbackModels: voiceSelection.fallbackModels }
         : {}),
-      systemPrompt: clampRuntimePrompt(runtime.prompt),
+      systemPrompt: clampRuntimePromptPreservingTail(runtime.prompt),
       temperature: llmTemp,
     },
     voice: {

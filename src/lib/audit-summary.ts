@@ -1,3 +1,5 @@
+import { MODEL_PRICING } from "./claude-models";
+
 // ────────────────────────────────────────────────────────────────────────
 //  Audit summary math.
 //
@@ -96,26 +98,16 @@ const num = (n: unknown): number => {
   return Number.isFinite(v) ? v : 0;
 };
 
+/** Input $/MTok for audit dashboards — derived from MODEL_PRICING (single source of truth). */
 export function inputRateForModel(model: string | null | undefined): number {
   if (!model) return 15;
-  const exactRates: Record<string, number> = {
-    "claude-haiku-4-5": 1,
-    "claude-sonnet-4-6": 3,
-    "claude-opus-4-7": 5,
-    "claude-opus-4-6": 5,
-    "claude-3-5-sonnet-20241022": 3,
-    "gemini-1.5-flash": 0.075,
-    "gemini-1.5-pro": 1.25,
-    "gemini-3-flash-preview": 0.3,
-    "gemini-3.5-flash": 0.15,
-    "gemini-2.5-flash": 0.3,
-    "gpt-4o": 5,
-    "gpt-4-turbo": 10,
-  };
-  if (exactRates[model] !== undefined) return exactRates[model];
+  const pricing = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
+  if (pricing) return pricing.input;
   if (model.includes("haiku")) return 1;
   if (model.includes("sonnet")) return 3;
   if (model.includes("opus")) return 5;
+  if (model.includes("gemini") && model.includes("flash")) return 0.3;
+  if (model.includes("gpt-4o")) return 5;
   return 15;
 }
 

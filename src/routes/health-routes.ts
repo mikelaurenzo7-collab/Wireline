@@ -118,7 +118,7 @@ router.get(
         },
         grounded_search: {
           provider: "google",
-          model: "gemini-2.5-flash",
+          model: GEMINI_MODELS.FLASH_2_5,
           reason: "native googleSearchRetrieval tool with citations",
         },
       },

@@ -863,7 +863,7 @@ router.post(
       if (pdfBase64.length > 40 * 1024 * 1024) {
         return res
           .status(413)
-          .json({ error: "PDF exceeds 30MB limit. Split it into smaller documents." });
+          .json({ error: "PDF exceeds 40MB limit. Split it into smaller documents." });
       }
       let head = "";
       try {

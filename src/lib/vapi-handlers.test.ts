@@ -51,12 +51,32 @@ vi.mock("./webhook-helpers", () => ({
 vi.mock("../middleware/audit-middleware", () => ({
   persistClaudeAuditRecords: mocks.persistClaudeAuditRecords,
 }));
-vi.mock("./claude-brain", () => ({
-  isClaudeAvailable: () => false,
-  withAuditCapture: vi.fn(),
-  postCallAnalysis: vi.fn(),
+vi.mock("./spend-guards", () => ({
+  isHardSpendCapExceeded: vi.fn().mockResolvedValue(false),
 }));
-vi.mock("./gemini-brain", () => ({ postCallAnalysis: vi.fn() }));
+vi.mock("./claude-brain", () => ({
+  isClaudeAvailable: () => true,
+  withAuditCapture: vi.fn(async (fn: () => Promise<unknown>) => ({
+    result: await fn(),
+    records: [],
+  })),
+  postCallAnalysis: vi.fn().mockResolvedValue({
+    lead_score: 50,
+    intent_label: "medium",
+    sentiment: "neutral",
+    coaching_note: "ok",
+    lesson: "",
+  }),
+}));
+vi.mock("./gemini-brain", () => ({
+  postCallAnalysis: vi.fn().mockResolvedValue({
+    lead_score: 40,
+    intent_label: "low",
+    sentiment: "neutral",
+    coaching_note: "flash",
+    lesson: "",
+  }),
+}));
 vi.mock("./tcpa-consent", () => ({
   getConsentRuleForPhone: () => ({ rule: "default", state: "CA" }),
   buildConsentLedgerRow: vi.fn(() => ({})),

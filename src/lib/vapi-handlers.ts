@@ -21,6 +21,7 @@ import {
 } from "./tcpa-consent";
 import { reportError } from "./error-reporter";
 import { persistClaudeAuditRecords } from "../middleware/audit-middleware";
+import { isHardSpendCapExceeded } from "./spend-guards";
 import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-service";
 import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
@@ -170,8 +171,8 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
     call?.type === "outboundPhoneCall" ? ("outbound" as const) : ("inbound" as const);
   let enrichment: WirelineCallCompletedOutcome["enrichment"] = null;
 
-  // 2. AI Enrichment (Claude)
-  if (claudeBrain.isClaudeAvailable() && message.transcript) {
+  // 2. AI Enrichment (Claude Opus or Gemini Flash when hard-capped / Claude offline)
+  if (message.transcript) {
     try {
       const [agentDetail] = await drizzle
         .select({
@@ -183,8 +184,17 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         .where(eq(schema.agents.id, webhookAgentId))
         .limit(1);
 
-      const cap = await claudeBrain.withAuditCapture(() =>
-        claudeBrain.postCallAnalysis({
+      const hardCapped = await isHardSpendCapExceeded(userId);
+      const useGeminiFlash = hardCapped || !claudeBrain.isClaudeAvailable();
+
+      const cap = await claudeBrain.withAuditCapture(async () => {
+        if (useGeminiFlash) {
+          return geminiPostCallAnalysis({
+            transcript: message.transcript || "",
+            summary: analysis?.summary || "",
+          });
+        }
+        return claudeBrain.postCallAnalysis({
           agentName: agentDetail?.name || "Wireline Agent",
           archetype: agentDetail?.archetype || "Receptionist",
           role: agentDetail?.role || undefined,
@@ -192,8 +202,8 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           durationSeconds: duration,
           summary: analysis?.summary || "",
           transcript: message.transcript || "",
-        }),
-      );
+        });
+      });
       const result = cap.result;
 
       // QA score: agent-quality assessment (vs leadScore which is

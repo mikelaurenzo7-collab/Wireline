@@ -43,6 +43,39 @@ export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS)
   return `${text.slice(0, max)}\n\n[Context trimmed for voice latency — use tools for account-specific detail.]`;
 }
 
+/** Runtime guardrail sections appended by buildAgentRuntimeContext — never truncate these. */
+const RUNTIME_GUARDRAIL_MARKERS = [
+  "\n\n## VOICE CONSISTENCY",
+  "\n\n## COMPLIANCE",
+  "\n\n## ESCALATION",
+  "\n\n## DO NOT DISCUSS",
+] as const;
+
+const RUNTIME_TRIM_NOTICE =
+  "\n\n[Context trimmed for voice latency — use tools for account-specific detail.]";
+
+/**
+ * Clamp an assembled runtime prompt without dropping compliance / escalation /
+ * voice-consistency guardrails appended at the tail by buildAgentRuntimeContext.
+ */
+export function clampRuntimePromptPreservingTail(
+  text: string,
+  max = MAX_RUNTIME_PROMPT_CHARS,
+): string {
+  if (text.length <= max) return text;
+
+  for (const marker of RUNTIME_GUARDRAIL_MARKERS) {
+    const idx = text.lastIndexOf(marker);
+    if (idx <= 0) continue;
+    const tail = text.slice(idx);
+    const headBudget = max - tail.length - RUNTIME_TRIM_NOTICE.length;
+    if (headBudget < 500) continue;
+    return `${text.slice(0, headBudget)}${RUNTIME_TRIM_NOTICE}${tail}`;
+  }
+
+  return clampRuntimePrompt(text, max);
+}
+
 /**
  * Sticky lead statuses that the in-call `update_lead_status` tool must not
  * overwrite. Each represents a deliberate decision (DNC suppression,

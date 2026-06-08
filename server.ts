@@ -243,7 +243,9 @@ app.use("/api", performanceMonitoring(2000));
 // drain the Anthropic budget in minutes. Mounted before timeout so 429s are
 // returned cheaply without waiting on Anthropic.
 app.use("/api/claude", claudeRateLimiter);
-app.use("/api/claude", timeoutMiddleware(30_000));
+// Match claude-client.ts Anthropic SDK timeout (120s) so deep Opus recipes
+// are not killed at 30s while the upstream call keeps billing.
+app.use("/api/claude", timeoutMiddleware(120_000));
 // Auth + spend recording before handlers — every Claude call must hit audit
 // context and spend telemetry (blocking caps removed — overages bill via Stripe).
 app.use("/api/claude", authenticateUser);

@@ -82,18 +82,18 @@ export async function runStructured<T = any>(opts: StructuredOptions): Promise<T
  * blocks alongside the structured payload. Use this when you need to surface
  * reasoning to the UI.
  */
-export async function runStructuredWithThinking<T = any>(
+function isTransientStructuredError(err: unknown): boolean {
+  const e = err as { status?: number; message?: string };
+  if (e?.status === 529 || e?.status === 503 || e?.status === 502) return true;
+  const msg = (e?.message ?? "").toLowerCase();
+  return /overloaded|temporarily|fetch failed|econnreset|etimedout/.test(msg);
+}
+
+function buildStructuredMessageBody(
   opts: StructuredOptions,
-): Promise<StructuredResult<T>> {
-  const client = getClient();
-  // Select model based on complexity tier or explicit model override
-  const model =
-    opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
-
-  // Anthropic rejects adaptive thinking when tool_choice forces a specific tool.
-  // Use auto tool choice for deep-think paths (single registered tool still wins).
-  const useAdaptiveThinking = opts.deepThink === true;
-
+  model: string,
+  useAdaptiveThinking: boolean,
+): Anthropic.MessageCreateParams {
   const body: Anthropic.MessageCreateParams = {
     model,
     max_tokens: opts.maxTokens ?? 4096,
@@ -107,28 +107,22 @@ export async function runStructuredWithThinking<T = any>(
         ]
       : opts.system,
     tools: [opts.tool],
-    tool_choice: useAdaptiveThinking
-      ? { type: "auto" }
-      : { type: "tool", name: opts.tool.name },
+    tool_choice: useAdaptiveThinking ? { type: "auto" } : { type: "tool", name: opts.tool.name },
     messages: [{ role: "user", content: opts.user }],
   };
 
   if (useAdaptiveThinking) {
-    // Verified against @anthropic-ai/sdk@^0.92 typings:
-    //   - `ThinkingConfigAdaptive { type: 'adaptive' }` is a member of
-    //     `ThinkingConfigParam`.
-    //   - `OutputConfig.effort` accepts 'low'|'medium'|'high'|'xhigh'|'max'.
-    // See node_modules/@anthropic-ai/sdk/resources/messages/messages.d.ts.
     body.thinking = { type: "adaptive" };
     body.output_config = { effort: "high" };
   }
 
-  const t0 = Date.now();
-  const response = await client.messages.create(body);
-  const totalMs = Date.now() - t0;
-  recordUsage(model, response, totalMs);
+  return body;
+}
 
-  // Extract thinking blocks (present when adaptive thinking is enabled).
+function parseStructuredResponse<T>(
+  response: Anthropic.Message,
+  toolName: string,
+): { toolResult: T; thinking?: string } {
   const thinkingParts: string[] = [];
   let toolResult: T | undefined;
 
@@ -136,24 +130,67 @@ export async function runStructuredWithThinking<T = any>(
     if (block.type === "thinking" && "thinking" in block) {
       thinkingParts.push((block as any).thinking);
     }
-    if (block.type === "tool_use" && block.name === opts.tool.name) {
+    if (block.type === "tool_use" && block.name === toolName) {
       toolResult = block.input as T;
     }
   }
 
   if (toolResult === undefined) {
     throw new Error(
-      `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${response.stop_reason})`,
+      `Claude returned no ${toolName} tool_use block (stop_reason=${response.stop_reason})`,
     );
   }
 
   const thinking = thinkingParts.length > 0 ? thinkingParts.join("\n\n") : undefined;
+  return { toolResult, thinking };
+}
 
-  return {
-    result: toolResult,
-    thinking,
-    thinkingDurationMs: thinking ? totalMs : undefined,
-  };
+export async function runStructuredWithThinking<T = any>(
+  opts: StructuredOptions,
+): Promise<StructuredResult<T>> {
+  const client = getClient();
+  const model =
+    opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
+  const useAdaptiveThinking = opts.deepThink === true;
+
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const t0 = Date.now();
+      let response = (await client.messages.create(
+        buildStructuredMessageBody(opts, model, useAdaptiveThinking),
+      )) as Anthropic.Message;
+      let totalMs = Date.now() - t0;
+      recordUsage(model, response, totalMs);
+
+      let parsed: { toolResult: T; thinking?: string };
+      try {
+        parsed = parseStructuredResponse<T>(response, opts.tool.name);
+      } catch (parseErr) {
+        if (!useAdaptiveThinking) throw parseErr;
+        const retryT0 = Date.now();
+        response = (await client.messages.create(
+          buildStructuredMessageBody({ ...opts, deepThink: false }, model, false),
+        )) as Anthropic.Message;
+        totalMs = Date.now() - retryT0;
+        recordUsage(model, response, totalMs);
+        parsed = parseStructuredResponse<T>(response, opts.tool.name);
+      }
+
+      return {
+        result: parsed.toolResult,
+        thinking: parsed.thinking,
+        thinkingDurationMs: parsed.thinking ? totalMs : undefined,
+      };
+    } catch (err) {
+      lastErr = err;
+      if (!isTransientStructuredError(err) || attempt === 1) break;
+      const jitter = 250 + Math.random() * 250;
+      await new Promise((r) => setTimeout(r, jitter));
+    }
+  }
+
+  throw lastErr;
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -196,9 +233,7 @@ export async function runStructuredStream<T = any>(
         ]
       : opts.system,
     tools: [opts.tool],
-    tool_choice: useAdaptiveThinking
-      ? { type: "auto" }
-      : { type: "tool", name: opts.tool.name },
+    tool_choice: useAdaptiveThinking ? { type: "auto" } : { type: "tool", name: opts.tool.name },
     messages: [{ role: "user", content: opts.user }],
   };
 

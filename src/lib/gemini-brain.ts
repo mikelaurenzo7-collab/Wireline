@@ -1,12 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GEMINI_MODELS } from "./claude-models";
+import { recordGeminiUsage } from "./claude-audit";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+
+/** Grounded search + live sentiment — tier map uses Gemini 2.5 Flash (not voice fallback 3.5). */
+export const GEMINI_GROUNDED_MODEL = GEMINI_MODELS.FLASH_2_5;
 
 const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
-const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : null;
+const flashModel = genAI ? genAI.getGenerativeModel({ model: GEMINI_GROUNDED_MODEL }) : null;
+
+type GeminiGenerateResult = Awaited<
+  ReturnType<ReturnType<GoogleGenerativeAI["getGenerativeModel"]>["generateContent"]>
+>;
+
+async function generateWithAudit(
+  modelId: string,
+  run: () => Promise<GeminiGenerateResult>,
+): Promise<GeminiGenerateResult> {
+  const t0 = Date.now();
+  const result = await run();
+  recordGeminiUsage(modelId, result.response.usageMetadata, Date.now() - t0);
+  return result;
+}
 
 /**
  * Gemini grounded web search. The `googleSearchRetrieval` tool lets
@@ -14,9 +33,6 @@ const model = genAI ? genAI.getGenerativeModel({ model: "gemini-2.5-flash" }) : 
  * Used by the `gemini_ground` agent tool when an AI agent needs
  * fresh public info that isn't in its knowledge base — competitor
  * pricing, business hours, news, weather, regulations.
- *
- * Uses Gemini 2.5 Flash for live grounding/fallback so the fallback
- * family stays aligned with the voice runtime stack.
  */
 export async function groundedSearch(query: string): Promise<{
   answer: string;
@@ -33,10 +49,12 @@ export async function groundedSearch(query: string): Promise<{
 
   try {
     const groundedModel = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: GEMINI_GROUNDED_MODEL,
       tools: [{ googleSearchRetrieval: {} } as any],
     });
-    const result = await groundedModel.generateContent(query);
+    const result = await generateWithAudit(GEMINI_GROUNDED_MODEL, () =>
+      groundedModel.generateContent(query),
+    );
     const response = result.response;
     const text = response.text().trim();
     const meta =
@@ -55,8 +73,10 @@ export async function groundedSearch(query: string): Promise<{
       error: getErrorMessage(err),
     });
     try {
-      if (!model) throw new Error("flash model unavailable");
-      const fallback = await model.generateContent(query);
+      if (!flashModel) throw new Error("flash model unavailable");
+      const fallback = await generateWithAudit(GEMINI_GROUNDED_MODEL, () =>
+        flashModel.generateContent(query),
+      );
       return {
         answer: fallback.response.text().trim(),
         sources: [],
@@ -82,7 +102,7 @@ export async function analyzeLiveSentiment(transcript: string): Promise<{
   escalate: boolean;
   reason: string;
 }> {
-  if (!model) {
+  if (!flashModel) {
     return {
       sentiment: "neutral",
       urgency: 0,
@@ -100,7 +120,9 @@ export async function analyzeLiveSentiment(transcript: string): Promise<{
       ${transcript}
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await generateWithAudit(GEMINI_GROUNDED_MODEL, () =>
+      flashModel.generateContent(prompt),
+    );
     const text = result.response.text().trim();
     const jsonStr = text.replace(/```json|```/g, "").trim();
     return JSON.parse(jsonStr);
@@ -111,7 +133,7 @@ export async function analyzeLiveSentiment(transcript: string): Promise<{
 }
 
 /**
- * Full post-call enrichment via Gemini Flash.
+ * Full post-call enrichment via Gemini Flash (starter tier / hard-cap fallback).
  */
 export async function postCallAnalysis(params: { transcript: string; summary: string }): Promise<{
   lead_score: number;
@@ -122,7 +144,7 @@ export async function postCallAnalysis(params: { transcript: string; summary: st
   action_items?: any[];
   knowledge_gaps?: string[];
 }> {
-  if (!model) {
+  if (!flashModel) {
     return {
       lead_score: 0,
       intent_label: "unknown",
@@ -152,7 +174,9 @@ export async function postCallAnalysis(params: { transcript: string; summary: st
       Summary: ${params.summary}
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await generateWithAudit(GEMINI_GROUNDED_MODEL, () =>
+      flashModel.generateContent(prompt),
+    );
     const text = result.response.text().trim();
     const jsonStr = text.replace(/```json|```/g, "").trim();
     return JSON.parse(jsonStr);

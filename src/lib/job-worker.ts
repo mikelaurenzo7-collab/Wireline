@@ -149,10 +149,14 @@ export async function handleJob(job: JobRow): Promise<void> {
         userId: p.userId,
         callId: p.callId,
       });
-      result = await geminiBrain.postCallAnalysis({
-        transcript: p.transcript!,
-        summary: p.summary || "",
-      });
+      const capture = await claudeBrain.withAuditCapture(() =>
+        geminiBrain.postCallAnalysis({
+          transcript: p.transcript!,
+          summary: p.summary || "",
+        }),
+      );
+      result = capture.result;
+      records = capture.records;
     } else {
       if (!claudeBrain.isClaudeAvailable() || !p.transcript) return;
       const capture = await claudeBrain.withAuditCapture(() =>
@@ -195,17 +199,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         });
     }
 
-    if (useFlash) {
-      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-      await quotaTracker
-        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
-        .catch((e: unknown) => {
-          log.warn("quota token increment failed — usage may be under-counted", {
-            user_id: p.userId,
-            error: getErrorMessage(e),
-          });
-        });
-    } else if (records.length) {
+    if (records.length) {
       await persistClaudeAuditRecords({
         userId: p.userId,
         action: "jobs.post_call_enrichment",

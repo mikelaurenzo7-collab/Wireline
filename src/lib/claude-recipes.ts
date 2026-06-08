@@ -152,7 +152,6 @@ Generate ${input.count ?? 5} drills covering a range of difficulties.`;
     system,
     user,
     tool: TOOLS.objectionDrill,
-    cacheSystem: true,
     maxTokens: 4096,
     complexity: "medium",
   });
@@ -198,7 +197,6 @@ CTA: ${input.callToAction ?? "ask for a 15-minute intro call"}.`;
     system,
     user,
     tool: TOOLS.coldEmail,
-    cacheSystem: true,
     maxTokens: 2048,
     complexity: "medium",
   });

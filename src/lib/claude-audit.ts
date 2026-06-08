@@ -13,12 +13,18 @@ import { CLAUDE_MODELS, DEFAULT_MODEL, MODEL_PRICING } from "./claude-models";
 
 export interface ClaudeCallMeta {
   model: string;
-  provider: "anthropic" | "openrouter";
+  provider: "anthropic" | "openrouter" | "google";
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
   cache_create_tokens: number;
   latency_ms: number;
+}
+
+export interface GeminiUsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
 }
 
 export interface AuditContext {
@@ -129,10 +135,14 @@ export function estimateCostDetailed(
   };
 }
 
-export function recordUsage(model: string, response: { usage: any }, latencyMs: number) {
+function pushAuditRecord(record: ClaudeCallMeta): void {
   const ctx = auditCtx.getStore();
   if (!ctx) return;
-  ctx.records.push({
+  ctx.records.push(record);
+}
+
+export function recordUsage(model: string, response: { usage: any }, latencyMs: number) {
+  pushAuditRecord({
     model,
     provider: "anthropic",
     input_tokens: response.usage?.input_tokens ?? 0,
@@ -143,14 +153,31 @@ export function recordUsage(model: string, response: { usage: any }, latencyMs: 
   });
 }
 
+/** Records Gemini token usage into the active audit context (when present). */
+export function recordGeminiUsage(
+  model: string,
+  usage: GeminiUsageMetadata | undefined,
+  latencyMs: number,
+): ClaudeCallMeta {
+  const record: ClaudeCallMeta = {
+    model,
+    provider: "google",
+    input_tokens: usage?.promptTokenCount ?? 0,
+    output_tokens: usage?.candidatesTokenCount ?? 0,
+    cache_read_tokens: 0,
+    cache_create_tokens: 0,
+    latency_ms: latencyMs,
+  };
+  pushAuditRecord(record);
+  return record;
+}
+
 export function recordOpenRouterUsage(
   model: string,
   usage: { input_tokens: number; output_tokens: number },
   latencyMs: number,
 ) {
-  const ctx = auditCtx.getStore();
-  if (!ctx) return;
-  ctx.records.push({
+  pushAuditRecord({
     model,
     provider: "openrouter",
     input_tokens: usage.input_tokens,
