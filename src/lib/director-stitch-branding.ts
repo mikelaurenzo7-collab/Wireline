@@ -19,7 +19,7 @@ export interface StitchBriefOptions {
   useAccountBranding?: boolean;
   /**
    * When true with designMode, use Google Stitch pixel rendering instead of the
-   * Wireline Design Studio LLM pipeline (Grok build + dual critics + Opus review).
+   * Wireline Design Studio LLM pipeline (Opus research + Grok/Gemini passes + Opus review).
    */
   useStitchPixelRender?: boolean;
 }

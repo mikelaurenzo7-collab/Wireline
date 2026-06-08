@@ -4442,7 +4442,7 @@ html, body, .marketing-surface, .app-surface {
 
 /* Google Stitch in-chat preview */
 .wl-stitch-gallery {
-  max-width: min(100%, 42rem);
+  max-width: min(100%, 56rem);
 }
 .wl-stitch-device {
   width: 100%;
@@ -4451,7 +4451,10 @@ html, body, .marketing-surface, .app-surface {
   background: color-mix(in srgb, var(--color-ink) 6%, transparent);
 }
 .wl-stitch-device--mobile {
-  max-width: min(100%, 390px);
+  max-width: min(100%, 430px);
+}
+.wl-stitch-device--tablet {
+  max-width: min(100%, 520px);
 }
 .wl-stitch-device--desktop {
   max-width: 100%;
@@ -4499,6 +4502,18 @@ html, body, .marketing-surface, .app-surface {
 .wl-stitch-device-screen {
   background: var(--paper);
   position: relative;
+  overflow: hidden;
+}
+.wl-stitch-device--desktop .wl-stitch-device-screen {
+  aspect-ratio: 16 / 10;
+  min-height: min(58vh, 640px);
+}
+.wl-stitch-device--mobile .wl-stitch-device-screen,
+.wl-stitch-device--tablet .wl-stitch-device-screen {
+  aspect-ratio: 9 / 16;
+  max-height: min(72vh, 780px);
+  margin-inline: auto;
+  max-width: 100%;
 }
 .dark .wl-stitch-device-screen {
   background: rgba(8, 6, 14, 0.92);
@@ -4524,11 +4539,19 @@ html, body, .marketing-surface, .app-surface {
 .wl-stitch-live-iframe {
   display: block;
   width: 100%;
-  min-height: min(56vh, 560px);
+  height: 100%;
+  min-height: 100%;
   border: 0;
   background: var(--paper, white);
   contain: strict;
   content-visibility: auto;
+}
+.wl-stitch-device--desktop .wl-stitch-live-iframe {
+  min-height: min(58vh, 640px);
+}
+.wl-stitch-device--mobile .wl-stitch-live-iframe,
+.wl-stitch-device--tablet .wl-stitch-live-iframe {
+  min-height: min(68vh, 720px);
 }
 .wl-stitch-device--studio {
   max-width: min(100%, 64rem);

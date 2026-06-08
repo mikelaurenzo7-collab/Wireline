@@ -4,6 +4,13 @@ import { runDirectorDesignStudio } from "./director-design-orchestrator";
 vi.mock("./openrouter-structured", () => ({
   isOpenRouterConfigured: vi.fn().mockReturnValue(true),
   runOpenRouterCompletion: vi.fn(),
+  runOpenRouterImageGeneration: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("./director-design-imagine", () => ({
+  generateDesignImagineAssets: vi.fn().mockResolvedValue([]),
+  formatImagineAssetsForBuilder: vi.fn().mockReturnValue(""),
+  injectImagineAssetsIntoHtml: vi.fn((html: string) => html),
 }));
 
 vi.mock("./claude-structured", () => ({
@@ -12,7 +19,7 @@ vi.mock("./claude-structured", () => ({
 }));
 
 vi.mock("./gemini-brain", () => ({
-  runGeminiJsonCompletion: vi.fn(),
+  runGeminiTextCompletion: vi.fn(),
 }));
 
 vi.mock("./director-html-prototype", async (importOriginal) => {
@@ -36,15 +43,20 @@ vi.mock("./director-html-prototype", async (importOriginal) => {
 });
 
 import { runCompletion, runStructured } from "./claude-structured";
-import { runGeminiJsonCompletion } from "./gemini-brain";
+import { runGeminiTextCompletion } from "./gemini-brain";
 import { runOpenRouterCompletion } from "./openrouter-structured";
+import { DESIGN_KIT_BASE_CSS } from "./director-design-kit";
+
+const polishedHtml = `<!doctype html><html><head><style>${DESIGN_KIT_BASE_CSS}</style></head>
+<body class="wl-page"><header class="wl-hero"><h1 class="wl-headline">Acme</h1>
+<a class="wl-btn wl-btn--primary" href="#">Book</a><span class="wl-badge">Licensed</span></header></body></html>`;
 
 describe("runDirectorDesignStudio", () => {
   beforeEach(() => {
     vi.mocked(runOpenRouterCompletion).mockReset();
     vi.mocked(runCompletion).mockReset();
     vi.mocked(runStructured).mockReset();
-    vi.mocked(runGeminiJsonCompletion).mockReset();
+    vi.mocked(runGeminiTextCompletion).mockReset();
   });
 
   const baseInput = {
@@ -55,86 +67,54 @@ describe("runDirectorDesignStudio", () => {
     stitchOptions: { designMode: true as const },
   };
 
-  it("runs consultant, builder, critics, and packages preview", async () => {
+  it("runs research, multi-pass build, and packages preview", async () => {
+    vi.mocked(runCompletion).mockResolvedValueOnce({
+      text: "Research: trust badges, navy + cream, editorial hero.",
+      usage: {},
+    } as Awaited<ReturnType<typeof runCompletion>>);
+
     vi.mocked(runOpenRouterCompletion)
-      .mockResolvedValueOnce("Market: trust badges, avoid stock wrench clipart.")
-      .mockResolvedValueOnce("Mood: warm terracotta + deep navy editorial split hero.")
-      .mockResolvedValueOnce(
-        "<!doctype html><html><head><title>Acme</title></head><body><h1>Acme Plumbing</h1></body></html>",
-      );
+      .mockResolvedValueOnce(polishedHtml)
+      .mockResolvedValueOnce(polishedHtml);
+
+    vi.mocked(runGeminiTextCompletion)
+      .mockResolvedValueOnce(polishedHtml)
+      .mockResolvedValueOnce(polishedHtml);
 
     vi.mocked(runStructured)
       .mockResolvedValueOnce({
-        overall: 8,
-        hierarchy: 8,
-        mobile: 8,
-        accessibility: 8,
-        distinctiveness: 8,
-        industry_fit: 8,
-        issues: [],
+        decision: "revise",
+        overall: 7,
+        structure: 7,
+        components: 7,
+        visual_polish: 7,
+        mobile: 7,
+        accessibility: 7,
+        issues: ["Tighten CTA padding"],
+        revisionNotes: "Increase primary button size",
       })
       .mockResolvedValueOnce({
         decision: "approve",
+        overall: 9,
+        structure: 9,
+        components: 9,
+        visual_polish: 9,
+        mobile: 9,
+        accessibility: 9,
+        issues: [],
+      })
+      .mockResolvedValueOnce({
         operatorReply: "Your **Acme Plumbing** page is ready.",
         pageTitle: "Acme Plumbing",
       });
 
-    vi.mocked(runGeminiJsonCompletion).mockResolvedValueOnce({
-      overall: 8,
-      hierarchy: 8,
-      mobile: 8,
-      accessibility: 8,
-      distinctiveness: 8,
-      industry_fit: 8,
-      issues: [],
-    });
-
     const turn = await runDirectorDesignStudio(baseInput);
 
-    expect(runOpenRouterCompletion).toHaveBeenCalled();
+    expect(runCompletion).toHaveBeenCalled();
+    expect(runOpenRouterCompletion).toHaveBeenCalledTimes(2);
+    expect(runGeminiTextCompletion).toHaveBeenCalledTimes(2);
     expect(turn.previews).toHaveLength(1);
-    expect(turn.previews[0]?.htmlArtifactId).toBe("art-1");
     expect(turn.reply).toContain("Acme Plumbing");
-    expect(turn.thinkingSummary).toContain("Build");
-    expect(runCompletion).not.toHaveBeenCalled();
-  });
-
-  it("revises once when final reviewer requests changes", async () => {
-    vi.mocked(runOpenRouterCompletion)
-      .mockResolvedValueOnce("Market notes")
-      .mockResolvedValueOnce("Mood notes")
-      .mockResolvedValueOnce("<!doctype html><html><body><h1>v1</h1></body></html>")
-      .mockResolvedValueOnce("<!doctype html><html><body><h1>v2</h1></body></html>");
-
-    vi.mocked(runStructured)
-      .mockResolvedValueOnce({
-        overall: 6,
-        hierarchy: 6,
-        mobile: 6,
-        accessibility: 6,
-        distinctiveness: 6,
-        industry_fit: 6,
-        issues: ["CTA too small"],
-      })
-      .mockResolvedValueOnce({
-        decision: "revise",
-        revisionNotes: "Increase CTA size and contrast",
-        operatorReply: "Updated your page with a stronger call to action.",
-        pageTitle: "Plumbing landing",
-      });
-
-    vi.mocked(runGeminiJsonCompletion).mockResolvedValueOnce({
-      overall: 6,
-      hierarchy: 6,
-      mobile: 6,
-      accessibility: 6,
-      distinctiveness: 6,
-      industry_fit: 6,
-      issues: [],
-    });
-
-    const turn = await runDirectorDesignStudio(baseInput);
-    expect(runOpenRouterCompletion).toHaveBeenCalledTimes(4);
-    expect(turn.reply).toContain("call to action");
+    expect(turn.thinkingSummary).toContain("Pass 2");
   });
 });

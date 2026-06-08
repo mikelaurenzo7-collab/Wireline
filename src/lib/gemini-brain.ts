@@ -34,6 +34,26 @@ function parseGeminiJsonText<T>(text: string): T {
   return JSON.parse(candidate) as T;
 }
 
+/** Plain-text completion for Design Studio visual refinement. */
+export async function runGeminiTextCompletion(input: {
+  model: string;
+  system: string;
+  user: string;
+  signal?: AbortSignal;
+}): Promise<string> {
+  if (!genAI) throw new Error("GEMINI_API_KEY not configured");
+  const model = genAI.getGenerativeModel({
+    model: input.model,
+    systemInstruction: input.system,
+  });
+  const result = await generateWithAudit(input.model, () =>
+    model.generateContent({ contents: [{ role: "user", parts: [{ text: input.user }] }] }),
+  );
+  const text = result.response.text();
+  if (!text?.trim()) throw new Error("Gemini returned empty completion");
+  return text.trim();
+}
+
 /** JSON extraction for Design Studio critics — any Gemini text model. */
 export async function runGeminiJsonCompletion<T>(input: {
   model: string;

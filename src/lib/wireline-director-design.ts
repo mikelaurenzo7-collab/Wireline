@@ -452,15 +452,26 @@ export const WIRELINE_STITCH_UI = {
   ],
   /** Design Studio (LLM pipeline) — shown when Stitch pixel render is off. */
   studioLoadingPhases: [
-    "Gathering creative direction…",
-    "Building your page…",
-    "Reviewing layout and accessibility…",
-    "Final polish…",
+    "Researching your industry and audience…",
+    "Generating hero photography with Grok Imagine…",
+    "Pass 1 — building structure and layout…",
+    "Pass 1 — refining visual design…",
+    "Pass 1 — strict code review…",
+    "Pass 2 — elevating components and CTAs…",
+    "Pass 2 — refining visual design…",
+    "Pass 2 — strict code review…",
+    "Pass 3 — production polish…",
+    "Pass 3 — refining visual design…",
+    "Pass 3 — strict code review…",
+    "Stitch-quality polish…",
+    "Creative director approval…",
   ],
+  /** ~28s × 12 phases ≈ 5.5 min — matches server-side multi-pass pipeline. */
+  studioLoadingPhaseIntervalMs: 28_000,
   studioLoadingHint:
-    "Wireline Design Studio usually finishes in about a minute — your page will appear inline when it's ready.",
+    "Wireline Design Studio runs 2–3 refinement passes and usually takes about 5 minutes — stay on this tab.",
   designStudioReasoning:
-    "Wireline Design Studio — brief, build, dual critique, final review",
+    "Wireline Design Studio — Opus research, Grok build, Gemini refine, Opus review (2–3 passes)",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",

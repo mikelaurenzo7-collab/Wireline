@@ -21,6 +21,8 @@ export const CLAUDE_MODELS = {
   SONNET: "claude-sonnet-4-6",
   /** Deepest reasoning. Best for: complex analysis, creative writing, research */
   OPUS: "claude-opus-4-7",
+  /** Design Studio research, code review, and approval — pinned Opus generation. */
+  OPUS_4_6: "claude-opus-4-6",
 } as const;
 
 export const OPENAI_MODELS = {

@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { buildSignedDownloadUrl, buildSignedPreviewUrl } from "./director-artifact-signing";
 import { storeDirectorArtifact } from "./director-artifacts";
 import type { DirectorPreviewMeta } from "./director-message-metadata";
-import { resolveStitchDeviceType } from "./director-stitch-intent";
+import { resolveStitchDeviceType, type StitchDeviceType } from "./director-stitch-intent";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 
 const HTML_FENCE_RE = /```(?:html)?\s*\n([\s\S]*?)```/i;
@@ -24,10 +24,51 @@ export function normalizeDirectorHtmlDocument(html: string): string {
   return `<!doctype html>\n<html lang="en">\n<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Preview</title></head>\n<body>\n${trimmed}\n</body>\n</html>`;
 }
 
-export function inferPrototypeTitle(
-  operatorMessage: string,
-  pageTitle?: string,
-): string {
+/**
+ * Infer desktop preview frame from HTML layout signals.
+ * Do not infer MOBILE from kit defaults — `.wl-hero { max-width: 28rem }` ships in every page.
+ */
+export function inferDeviceTypeFromHtml(html: string): StitchDeviceType | null {
+  const sample = html.slice(0, 24_000).toLowerCase();
+  if (
+    /\bmax-width:\s*(?:11\d{2}|12\d{2})px\b/.test(sample) ||
+    /\bmin-width:\s*(?:64|72|80|96)rem\b/.test(sample) ||
+    /grid-template-columns:\s*repeat\(\s*(?:[3-9]|\d{2,})/.test(sample) ||
+    /\bwl-(?:dashboard|console|sidebar)\b/.test(sample) ||
+    (/\.wl-hero--photo[^}]*max-width:\s*none/.test(sample) &&
+      /\.wl-hero-content[^}]*max-width:\s*(?:4[8-9]|5\d|6\d|72)rem/.test(sample))
+  ) {
+    return "DESKTOP";
+  }
+  return null;
+}
+
+/** Pick the preview device frame for Design Studio HTML (message → brief → HTML → desktop default). */
+export function resolveDesignPreviewDeviceType(input: {
+  operatorMessage: string;
+  designBriefMarkdown?: string;
+  html?: string;
+  deviceType?: StitchDeviceType;
+}): StitchDeviceType {
+  if (input.deviceType && input.deviceType !== "AGNOSTIC") return input.deviceType;
+
+  const fromMessage = resolveStitchDeviceType(input.operatorMessage);
+  if (fromMessage !== "AGNOSTIC") return fromMessage;
+
+  if (input.designBriefMarkdown?.trim()) {
+    const fromBrief = resolveStitchDeviceType(input.designBriefMarkdown);
+    if (fromBrief !== "AGNOSTIC") return fromBrief;
+  }
+
+  if (input.html?.trim()) {
+    const fromHtml = inferDeviceTypeFromHtml(input.html);
+    if (fromHtml) return fromHtml;
+  }
+
+  return "DESKTOP";
+}
+
+export function inferPrototypeTitle(operatorMessage: string, pageTitle?: string): string {
   if (pageTitle?.trim()) return pageTitle.trim().slice(0, 120);
   const cleaned = operatorMessage.trim().replace(/\s+/g, " ");
   if (cleaned.length <= 72) return cleaned || "Your page";
@@ -78,10 +119,16 @@ export async function packageDirectorHtmlPrototypePreview(input: {
   operatorMessage: string;
   html: string;
   title?: string;
+  designBriefMarkdown?: string;
   deviceType?: DirectorPreviewMeta["deviceType"];
 }): Promise<{ preview: DirectorPreviewMeta; artifacts: Array<Record<string, unknown>> }> {
   const html = normalizeDirectorHtmlDocument(input.html);
-  const deviceType = input.deviceType ?? resolveStitchDeviceType(input.operatorMessage);
+  const deviceType = resolveDesignPreviewDeviceType({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    html,
+    deviceType: input.deviceType,
+  });
   const conceptId = `design-${randomUUID().slice(0, 8)}`;
   const renderId = randomUUID();
   const stamp = new Date().toISOString().slice(0, 10);

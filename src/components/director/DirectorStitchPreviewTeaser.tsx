@@ -156,7 +156,7 @@ export default function DirectorStitchPreviewTeaser({
       className={cn(
         "w-full rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm",
         preview.deviceType === "DESKTOP" || preview.deviceType === "AGNOSTIC"
-          ? "max-w-2xl"
+          ? "max-w-4xl"
           : "max-w-md",
       )}
     >

@@ -134,6 +134,13 @@ describe("director stitch intent", () => {
     );
   });
 
+  it("defaults landing pages to desktop web viewport unless mobile is explicit", () => {
+    expect(resolveStitchDeviceType("Design a landing page for Brightline")).toBe("DESKTOP");
+    expect(resolveStitchDeviceType("Design a mobile landing page with hero and CTA")).toBe(
+      "MOBILE",
+    );
+  });
+
   it("preserves prior device type for edit and variant follow-ups", () => {
     const session = { projectId: "123", screenId: "456", deviceType: "MOBILE" as const };
 

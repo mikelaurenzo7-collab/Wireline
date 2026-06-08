@@ -107,13 +107,13 @@ export function resolveStitchDeviceType(message: string): StitchDeviceType {
   if (/\b(mobile|phone|ios|android|smartphone)\b/.test(m)) return "MOBILE";
   if (/\b(tablet|ipad)\b/.test(m)) return "TABLET";
   if (
-    /\b(desktop|wide|monitor|1440|admin\s+dashboard|operator\s+dashboard|dashboard|console|mission\s+control)\b/.test(
-      m,
-    )
+    /\b(desktop|wide|monitor|1440|web\s+viewport|full[\s-]?width|desktop\s+web)\b/.test(m) ||
+    /\b(admin\s+dashboard|operator\s+dashboard|dashboard|console|mission\s+control)\b/.test(m)
   ) {
     return "DESKTOP";
   }
-  if (wantsWebsiteDeliverable(message) || /\b(homepage|landing)\b/i.test(m)) return "MOBILE";
+  // Website / landing pages render in a desktop web viewport unless mobile is explicit above.
+  if (wantsWebsiteDeliverable(message) || /\b(homepage|landing)\b/i.test(m)) return "DESKTOP";
   return "AGNOSTIC";
 }
 

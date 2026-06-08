@@ -223,8 +223,9 @@ describe("Wireline Director design contract", () => {
     expect(WIRELINE_STITCH_UI.packagingPendingReply).toMatch(/packaging/i);
     expect(WIRELINE_STITCH_UI.chatFallbackReasoning).toMatch(/chat/i);
     expect(WIRELINE_STITCH_UI.loadingPhases.join(" ")).not.toMatch(/google/i);
-    expect(WIRELINE_STITCH_UI.studioLoadingPhases.length).toBeGreaterThanOrEqual(3);
-    expect(WIRELINE_STITCH_UI.studioLoadingHint).toMatch(/about a minute/i);
+    expect(WIRELINE_STITCH_UI.studioLoadingPhases.length).toBeGreaterThanOrEqual(10);
+    expect(WIRELINE_STITCH_UI.studioLoadingHint).toMatch(/5 minutes/i);
+    expect(WIRELINE_STITCH_UI.studioLoadingPhaseIntervalMs).toBeGreaterThanOrEqual(20_000);
     expect(WIRELINE_STITCH_UI.designStudioReasoning).toMatch(/Design Studio/i);
     expect(WIRELINE_STITCH_UI.previewTeaserAction).toMatch(/preview/i);
     expect(WIRELINE_STITCH_UI.previewPageTitle).toBeTruthy();

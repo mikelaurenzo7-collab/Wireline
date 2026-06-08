@@ -1,5 +1,5 @@
 /**
- * Live panel while Director renders UI (1–3 min) via non-streaming POST.
+ * Live panel while Director renders UI via non-streaming POST.
  */
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
@@ -10,7 +10,7 @@ import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-dire
 export interface DirectorStitchLiveSessionProps {
   operatorPrompt?: string;
   className?: string;
-  /** Studio = LLM pipeline (fast). Pixel = Google Stitch render (slow). */
+  /** Studio = multi-pass LLM pipeline (~5 min). Pixel = Google Stitch render (slow). */
   variant?: "studio" | "pixel";
 }
 
@@ -23,7 +23,8 @@ export default function DirectorStitchLiveSession({
     variant === "pixel" ? WIRELINE_STITCH_UI.loadingPhases : WIRELINE_STITCH_UI.studioLoadingPhases;
   const loadingHint =
     variant === "pixel" ? WIRELINE_STITCH_UI.loadingHint : WIRELINE_STITCH_UI.studioLoadingHint;
-  const phaseIntervalMs = variant === "pixel" ? 18_000 : 8_000;
+  const phaseIntervalMs =
+    variant === "pixel" ? 18_000 : (WIRELINE_STITCH_UI.studioLoadingPhaseIntervalMs ?? 28_000);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
 

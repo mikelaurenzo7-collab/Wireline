@@ -84,6 +84,64 @@ export interface OpenRouterCompletionOptions {
   signal?: AbortSignal;
 }
 
+export interface OpenRouterImageGenerationOptions {
+  model: string;
+  prompt: string;
+  aspectRatio?: string;
+  imageSize?: "0.5K" | "1K" | "2K" | "4K";
+  signal?: AbortSignal;
+}
+
+/** Extract base64 data URLs from OpenRouter image-generation responses. */
+export function extractOpenRouterImageDataUrls(body: unknown): string[] {
+  const urls: string[] = [];
+  const choices = (body as { choices?: unknown[] })?.choices;
+  if (!Array.isArray(choices)) return urls;
+
+  for (const choice of choices) {
+    const message = (choice as { message?: Record<string, unknown> })?.message;
+    if (!message) continue;
+
+    const images = message.images;
+    if (Array.isArray(images)) {
+      for (const image of images) {
+        const url = extractImageUrlFromOpenRouterImage(image);
+        if (url) urls.push(url);
+      }
+    }
+
+    const content = message.content;
+    if (Array.isArray(content)) {
+      for (const part of content) {
+        if (!part || typeof part !== "object") continue;
+        const p = part as Record<string, unknown>;
+        if (p.type === "image_url" && p.image_url && typeof p.image_url === "object") {
+          const nested = (p.image_url as { url?: string }).url;
+          if (nested?.startsWith("data:image/")) urls.push(nested);
+        }
+      }
+    }
+  }
+
+  return urls;
+}
+
+function extractImageUrlFromOpenRouterImage(image: unknown): string | null {
+  if (!image || typeof image !== "object") return null;
+  const o = image as Record<string, unknown>;
+  const snake = o.image_url;
+  if (snake && typeof snake === "object") {
+    const url = (snake as { url?: string }).url;
+    if (url?.startsWith("data:image/")) return url;
+  }
+  const camel = o.imageUrl;
+  if (camel && typeof camel === "object") {
+    const url = (camel as { url?: string }).url;
+    if (url?.startsWith("data:image/")) return url;
+  }
+  return null;
+}
+
 /** Plain-text completion for Design Studio builder and creative consultants. */
 export async function runOpenRouterCompletion(opts: OpenRouterCompletionOptions): Promise<string> {
   const t0 = Date.now();
@@ -124,6 +182,54 @@ export async function runOpenRouterCompletion(opts: OpenRouterCompletionOptions)
   const text = body.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error("OpenRouter returned empty completion");
   return text;
+}
+
+/** Image-only models (e.g. x-ai/grok-imagine-image-quality) via modalities: ["image"]. */
+export async function runOpenRouterImageGeneration(
+  opts: OpenRouterImageGenerationOptions,
+): Promise<string[]> {
+  const t0 = Date.now();
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: openRouterHeaders(),
+    signal: opts.signal,
+    body: JSON.stringify({
+      model: opts.model,
+      max_tokens: 1024,
+      modalities: ["image"],
+      messages: [{ role: "user", content: opts.prompt }],
+      ...(opts.aspectRatio || opts.imageSize
+        ? {
+            image_config: {
+              ...(opts.aspectRatio ? { aspect_ratio: opts.aspectRatio } : {}),
+              ...(opts.imageSize ? { image_size: opts.imageSize } : {}),
+            },
+          }
+        : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`OpenRouter image error ${res.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const body = await res.json();
+  const latencyMs = Date.now() - t0;
+  const usage =
+    (body as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage ?? {};
+  recordOpenRouterUsage(
+    opts.model,
+    {
+      input_tokens: usage.prompt_tokens ?? 0,
+      output_tokens: usage.completion_tokens ?? 0,
+    },
+    latencyMs,
+  );
+
+  const urls = extractOpenRouterImageDataUrls(body);
+  if (!urls.length) throw new Error("OpenRouter returned no generated images");
+  return urls;
 }
 
 export async function runOpenRouterStructured<T = any>(
