@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Summit Home Services — Local, Licensed, 5-Star</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f7f3eb;--surface:#fff;--ink:#0f172a;--muted:#475569;--primary:#1e3a5f;--accent:#c47f3a;--border:rgba(15,23,42,.08);--disp:"Fraunces",Georgia,serif;--ui:"DM Sans",system-ui,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--ui);background:var(--bg);color:var(--ink);line-height:1.55}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+  a{color:inherit}
+  .btn{display:inline-block;background:var(--accent);color:#fff;font-weight:700;text-decoration:none;padding:15px 28px;border-radius:999px;min-height:48px;font-size:17px}
+  .btn:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+  header{position:sticky;top:0;background:rgba(247,243,235,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--border);z-index:10}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;max-width:1100px;margin:0 auto}
+  .brand{font-family:var(--disp);font-size:21px;color:var(--primary)}
+  .call-sm{background:var(--primary);color:#fff;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px}
+  .hero{padding:56px 0 48px;text-align:center}
+  .eyebrow{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+  .hero h1{font-family:var(--disp);font-size:46px;line-height:1.1;color:var(--primary);margin:12px 0 16px}
+  .hero p{color:var(--muted);font-size:18px;max-width:560px;margin:0 auto 28px}
+  .trust{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:0 0 8px}
+  .badge{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;color:var(--primary)}
+  section{padding:60px 0}
+  .sec-head{font-family:var(--disp);font-size:30px;color:var(--primary);text-align:center;margin-bottom:32px}
+  .cards{display:grid;gap:18px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .card h3{font-size:19px;color:var(--primary);margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+  .steps{counter-reset:s;display:grid;gap:20px}
+  .step{display:flex;gap:16px;align-items:flex-start}
+  .step::before{counter-increment:s;content:counter(s);background:var(--accent);color:#fff;font-weight:700;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 38px}
+  .quote{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;max-width:640px;margin:0 auto}
+  .quote p{font-family:var(--disp);font-size:21px;color:var(--ink);margin-bottom:12px}
+  .stars{color:var(--accent);font-size:18px}
+  .band{background:var(--primary);color:#fff;text-align:center;border-radius:16px;padding:48px 24px;margin:0 20px}
+  .band h2{font-family:var(--disp);font-size:30px;margin-bottom:10px}
+  .band p{opacity:.85;margin-bottom:24px}
+  footer{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
+  @media(min-width:760px){.hero h1{font-size:60px}.cards{grid-template-columns:repeat(3,1fr)}.steps{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <span class="brand">Summit Home Services</span>
+    <a class="call-sm" href="tel:+15551234567" aria-label="Call Summit Home Services now">Call (555) 123-4567</a>
+  </div>
+</header>
+<main>
+  <section class="hero wrap">
+    <p class="eyebrow">Licensed &amp; insured</p>
+    <h1>Fast, reliable home repairs — done right the first time</h1>
+    <p>Serving the greater metro area with same-day service from background-checked local pros. Free estimates, upfront pricing, no surprises.</p>
+    <a class="btn" href="tel:+15551234567">Call now</a>
+    <div class="trust" style="margin-top:28px">
+      <span class="badge">Licensed &amp; insured</span>
+      <span class="badge">Locally owned</span>
+      <span class="badge">5-star rated</span>
+      <span class="badge">Free estimates</span>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2 class="sec-head">What we handle</h2>
+    <div class="cards">
+      <article class="card"><h3>Emergency repairs</h3><p>Burst pipes, no heat, electrical faults — same-day response when you can't wait.</p></article>
+      <article class="card"><h3>Installs &amp; upgrades</h3><p>Water heaters, fixtures, panels and more, installed to code with a workmanship guarantee.</p></article>
+      <article class="card"><h3>Maintenance plans</h3><p>Seasonal tune-ups that catch small issues before they become expensive ones.</p></article>
+    </div>
+  </section>
+
+  <section class="wrap" style="background:rgba(196,127,58,.06);border-radius:16px">
+    <h2 class="sec-head">How it works</h2>
+    <div class="steps">
+      <div class="step"><div><h3 style="color:var(--primary)">Call or book</h3><p style="color:var(--muted);font-size:15px">Tell us what's going on and we'll schedule a visit fast.</p></div></div>
+      <div class="step"><div><h3 style="color:var(--primary)">Upfront quote</h3><p style="color:var(--muted);font-size:15px">A clear, flat-rate price before any work begins.</p></div></div>
+      <div class="step"><div><h3 style="color:var(--primary)">Job done right</h3><p style="color:var(--muted);font-size:15px">Clean, on-time work backed by our satisfaction guarantee.</p></div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="quote">
+      <div class="stars" aria-label="5 out of 5 stars">★★★★★</div>
+      <p>"They showed up within the hour and fixed it for exactly the quoted price. My new go-to."</p>
+      <span style="color:var(--muted);font-weight:600">— Dana R., verified customer</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="band">
+      <h2>Need it fixed today?</h2>
+      <p>Our team is standing by for same-day appointments.</p>
+      <a class="btn" href="tel:+15551234567">Call now</a>
+    </div>
+  </section>
+</main>
+<footer>
+  <p><strong>Summit Home Services</strong> · Serving the greater metro area</p>
+  <p>(555) 123-4567 · hello@summithome.example · Mon–Sat 7am–8pm</p>
+  <p style="margin-top:8px">Licensed #HS-00000 · Fully insured · © 2024</p>
+</footer>
+</body>
+</html>
