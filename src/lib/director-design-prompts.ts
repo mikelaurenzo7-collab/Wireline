@@ -324,22 +324,19 @@ export function buildGeminiVisualUserPrompt(input: {
   });
 }
 
-export const DESIGN_OPUS_FINISH_SYSTEM = `You are the creative director finishing a Wireline Design page.
+/** Opus critiques Grok draft and returns production HTML via completion (not tool — avoids truncation). */
+export const DESIGN_OPUS_IMPLEMENT_SYSTEM = `You are the creative director finishing a Wireline Design page.
 
-Grok Build produced a first draft. Critique it against your creative vision and design.md, then implement the production-ready HTML yourself in one pass.
+Grok Build produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
 
-Requirements for html:
-- Complete <!doctype html> with embedded Wireline Design Kit CSS in <style>
-- Fix wireframe stubs, text-link CTAs, missing sections, palette/typography drift
-- Preserve strong Grok structure when it already matches the brief — surgical fixes over full rewrites
-- wl-page, wl-hero, wl-headline, wl-btn--primary, wl-trust-row, wl-badge; embedded CSS only
-- No markdown fences
+Rules:
+- Output ONLY a complete HTML document — no markdown fences, no commentary
+- Embedded Wireline Design Kit CSS in <style>; fix wireframe stubs, text-link CTAs, missing sections
+- Preserve strong Grok structure when it matches the brief — surgical fixes over full rewrites
+- wl-page, wl-hero, wl-headline, wl-btn--primary, wl-trust-row, wl-badge; embedded CSS only`;
 
-Requirements for operatorReply:
-- Plain language (no HTML, no model names). Opening line + 3–5 bullets on what they see + 2 tweak ideas.
-
-Requirements for pageTitle:
-- Short preview title (under 60 chars).`;
+/** @deprecated HTML in structured tools truncates — use DESIGN_OPUS_IMPLEMENT_SYSTEM + runCompletion */
+export const DESIGN_OPUS_FINISH_SYSTEM = DESIGN_OPUS_IMPLEMENT_SYSTEM;
 
 /** @deprecated Grok round-trip removed — Opus implements fixes directly */
 export const DESIGN_OPUS_HTML_REVIEW_SYSTEM = DESIGN_OPUS_FINISH_SYSTEM;
@@ -382,7 +379,7 @@ export const DESIGN_OPUS_HTML_REVIEW_TOOL = DESIGN_OPUS_FINISH_TOOL;
 /** @deprecated Use DESIGN_OPUS_FINISH_TOOL */
 export const DESIGN_CODE_REVIEW_TOOL = DESIGN_OPUS_FINISH_TOOL;
 
-export function buildOpusFinishUserPrompt(input: {
+export function buildOpusImplementUserPrompt(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
   opusVisionNotes?: string;
@@ -390,7 +387,7 @@ export function buildOpusFinishUserPrompt(input: {
   pipelinePhases?: string[];
 }): string {
   return [
-    "Critique the Grok Build draft against your vision, then implement the finished page.",
+    "Critique the Grok Build draft against your vision, then output the finished HTML document.",
     buildDesignStageContext({
       operatorMessage: input.operatorMessage,
       designBriefMarkdown: input.designBriefMarkdown,
@@ -403,5 +400,23 @@ export function buildOpusFinishUserPrompt(input: {
   ].join("\n\n");
 }
 
-/** @deprecated Use buildOpusFinishUserPrompt */
-export const buildOpusHtmlReviewUserPrompt = buildOpusFinishUserPrompt;
+/** @deprecated Use buildOpusImplementUserPrompt */
+export const buildOpusFinishUserPrompt = buildOpusImplementUserPrompt;
+
+/** @deprecated Use buildOpusImplementUserPrompt — accepts legacy \`html\` key */
+export function buildOpusHtmlReviewUserPrompt(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  draftHtml?: string;
+  html?: string;
+  pipelinePhases?: string[];
+}): string {
+  return buildOpusImplementUserPrompt({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    opusVisionNotes: input.opusVisionNotes,
+    draftHtml: input.draftHtml ?? input.html ?? "",
+    pipelinePhases: input.pipelinePhases,
+  });
+}

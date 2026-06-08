@@ -460,6 +460,7 @@ export const WIRELINE_STITCH_UI = {
     "Opus — writing your design brief…",
     "Grok Build — drafting your page structure…",
     "Opus — critiquing and polishing your page…",
+    "Opus — writing your preview summary…",
     "Packaging your live preview…",
   ],
   /** ~30s × 10 phases ≈ 5 min ceiling — rotates while the full pass-1 pipeline runs. */

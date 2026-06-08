@@ -33,7 +33,7 @@ vi.mock("./director-html-prototype", async (importOriginal) => {
   };
 });
 
-import { runStructured } from "./claude-structured";
+import { runCompletion, runStructured } from "./claude-structured";
 import { runOpenRouterCompletion } from "./openrouter-structured";
 import { DESIGN_KIT_BASE_CSS } from "./director-design-kit";
 
@@ -45,12 +45,14 @@ const opusFinishedHtml = `<!doctype html><html><head><style>${DESIGN_KIT_BASE_CS
 <body class="wl-page"><header class="wl-hero wl-hero--photo"><h1 class="wl-headline">Summit Landscaping</h1>
 <p class="wl-subhead">Licensed crews across Denver.</p><div class="wl-cta-row">
 <a class="wl-btn wl-btn--primary" href="#">Get a quote</a></div></header>
-<section class="wl-section"><div class="wl-trust-row"><span class="wl-badge">Insured</span></div></section></body></html>`;
+<section class="wl-section"><div class="wl-trust-row"><span class="wl-badge">Insured</span></div></section>
+<!-- ${"padding ".repeat(200)} --></body></html>`;
 
 describe("runDirectorDesignStudio Spectrum Desk", () => {
   beforeEach(() => {
     vi.mocked(runOpenRouterCompletion).mockReset();
     vi.mocked(runStructured).mockReset();
+    vi.mocked(runCompletion).mockReset();
   });
 
   const baseInput = {
@@ -72,27 +74,32 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
         };
       }
       return {
-        html: opusFinishedHtml,
         operatorReply: "Your **Summit Landscaping** page is ready.",
         pageTitle: "Summit Landscaping",
       };
     });
 
+    vi.mocked(runCompletion).mockResolvedValue({
+      text: opusFinishedHtml,
+      cacheRead: 0,
+      cacheCreate: 0,
+    });
+
     vi.mocked(runOpenRouterCompletion).mockResolvedValue(grokDraftHtml);
   }
 
-  it("runs Opus vision, single Grok build, Opus finish, and packages preview", async () => {
+  it("runs Opus vision, Grok build, Opus implement via completion, sign-off, and packages preview", async () => {
     mockPipeline();
 
     const turn = await runDirectorDesignStudio(baseInput);
 
     expect(runStructured).toHaveBeenCalledTimes(2);
+    expect(runCompletion).toHaveBeenCalledTimes(1);
     expect(runOpenRouterCompletion).toHaveBeenCalledTimes(1);
     expect(turn.previews).toHaveLength(1);
     expect(turn.reply).toContain("Summit Landscaping");
     expect(turn.thinkingSummary).toMatch(/Opus vision/i);
     expect(turn.thinkingSummary).toMatch(/Grok build/i);
-    expect(turn.thinkingSummary).toMatch(/Opus finish/i);
     expect(turn.designBriefMarkdown).toMatch(/Opus creative vision/i);
   });
 
@@ -107,6 +114,19 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     expect(runOpenRouterCompletion).toHaveBeenCalledTimes(1);
     expect(systems.some((s) => /layout scout/i.test(s))).toBe(false);
     expect(users.some((u) => /critique/i.test(u))).toBe(false);
-    expect(users.some((u) => /localize/i.test(u))).toBe(false);
+  });
+
+  it("keeps Grok draft when Opus implement returns thin HTML", async () => {
+    mockPipeline();
+    vi.mocked(runCompletion).mockResolvedValue({
+      text: "<html><body>stub</body></html>",
+      cacheRead: 0,
+      cacheCreate: 0,
+    });
+
+    await runDirectorDesignStudio(baseInput);
+
+    const signoffUser = vi.mocked(runStructured).mock.calls.at(-1)?.[0].user ?? "";
+    expect(signoffUser).toContain("wl-headline");
   });
 });

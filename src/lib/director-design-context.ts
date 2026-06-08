@@ -2,7 +2,7 @@
  * Shared context blocks for Spectrum Desk — every stage sees prompt, brief, Opus vision, and prior work.
  */
 
-/** Max design.md chars passed to middle-tier models (Kimi / Hy3). */
+/** Max design.md chars passed to Grok Build and Opus implement prompts. */
 export const DESIGN_BRIEF_CONTEXT_CHARS = 12_000;
 
 /** Max design.md chars for Opus vision input (full starter brief). */

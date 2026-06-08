@@ -11,16 +11,16 @@ import { designStageAbortSignal, maxTokensForPass } from "./director-design-dead
 import { ensureDesignKitInHtml } from "./director-design-kit-inject";
 import {
   buildDesignBuilderUserPrompt,
-  buildOpusFinishUserPrompt,
+  buildOpusImplementUserPrompt,
   buildOpusSignoffUserPrompt,
   DESIGN_BUILDER_VISION_SYSTEM,
   DESIGN_FINAL_APPROVAL_TOOL,
-  DESIGN_OPUS_FINISH_SYSTEM,
-  DESIGN_OPUS_FINISH_TOOL,
+  DESIGN_OPUS_IMPLEMENT_SYSTEM,
   DESIGN_OPUS_SIGNOFF_SYSTEM,
   DESIGN_OPUS_VISION_SYSTEM,
   DESIGN_OPUS_VISION_TOOL,
 } from "./director-design-prompts";
+import { isPolishedDesignHtml } from "./director-design-quality";
 import {
   designStudioProgressLabel,
   designTeamThinkingSummary,
@@ -42,7 +42,7 @@ import type {
   DirectorDesignTurnResult,
   DesignProgressCallback,
 } from "./director-design-turn";
-import { runStructured } from "./claude-structured";
+import { runCompletion, runStructured } from "./claude-structured";
 import { isOpenRouterConfigured, runOpenRouterCompletion } from "./openrouter-structured";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -51,10 +51,6 @@ import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 interface DesignFinalApproval {
   operatorReply: string;
   pageTitle: string;
-}
-
-interface OpusFinishResult extends DesignFinalApproval {
-  html: string;
 }
 
 function stripHtmlFences(raw: string): string {
@@ -203,6 +199,40 @@ async function runOpusSignOff(input: {
   }
 }
 
+async function runOpusImplementHtml(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  draftHtml: string;
+  pipelinePhases: string[];
+  signal?: AbortSignal;
+}): Promise<string> {
+  const team = spectrumTeam();
+  if (!team?.reviewer) return input.draftHtml;
+
+  try {
+    const { text } = await runCompletion({
+      model: team.reviewer.wirelineModel,
+      system: DESIGN_OPUS_IMPLEMENT_SYSTEM,
+      user: buildOpusImplementUserPrompt(input),
+      maxTokens: 16_384,
+      signal: designStageAbortSignal("finisher", input.signal),
+    });
+    const html = stripHtmlFences(text);
+    if (!html.trim()) return input.draftHtml;
+    if (!isPolishedDesignHtml(Buffer.from(html, "utf8"))) {
+      log.warn("design studio opus implement returned thin HTML — keeping Grok draft");
+      return input.draftHtml;
+    }
+    return html;
+  } catch (e) {
+    log.warn("design studio opus implement failed — keeping Grok draft", {
+      error: getErrorMessage(e),
+    });
+    return input.draftHtml;
+  }
+}
+
 async function runOpusCritiqueAndFinish(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
@@ -210,48 +240,17 @@ async function runOpusCritiqueAndFinish(input: {
   draftHtml: string;
   pipelinePhases: string[];
   signal?: AbortSignal;
-}): Promise<OpusFinishResult> {
-  const team = spectrumTeam();
-  const fallbackTitle = input.operatorMessage.trim().slice(0, 72) || "Your page";
-
-  if (!team?.reviewer) {
-    return {
-      html: input.draftHtml,
-      operatorReply: "",
-      pageTitle: fallbackTitle,
-    };
-  }
-
-  try {
-    const finished = await runStructured<OpusFinishResult>({
-      model: team.reviewer.wirelineModel,
-      system: DESIGN_OPUS_FINISH_SYSTEM,
-      user: buildOpusFinishUserPrompt(input),
-      tool: DESIGN_OPUS_FINISH_TOOL,
-      maxTokens: 16_384,
-      signal: designStageAbortSignal("finisher", input.signal),
-    });
-
-    const html = stripHtmlFences(finished.html);
-    return {
-      html: html.trim() ? html : input.draftHtml,
-      operatorReply: finished.operatorReply?.trim() ?? "",
-      pageTitle: finished.pageTitle?.trim() || fallbackTitle,
-    };
-  } catch (e) {
-    log.warn("design studio opus finish failed — falling back to draft + sign-off", {
-      error: getErrorMessage(e),
-    });
-    const signoff = await runOpusSignOff({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      opusVisionNotes: input.opusVisionNotes,
-      html: input.draftHtml,
-      pipelinePhases: input.pipelinePhases,
-      signal: input.signal,
-    });
-    return { html: input.draftHtml, ...signoff };
-  }
+}): Promise<DesignFinalApproval & { html: string }> {
+  const html = await runOpusImplementHtml(input);
+  const signoff = await runOpusSignOff({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    opusVisionNotes: input.opusVisionNotes,
+    html,
+    pipelinePhases: input.pipelinePhases,
+    signal: input.signal,
+  });
+  return { html, ...signoff };
 }
 
 function buildFallbackOperatorReply(pageTitle: string): string {
@@ -306,6 +305,8 @@ export async function runDirectorDesignStudio(
     }),
   );
 
+  onProgress?.(nextStudioPhase());
+  phases.push("Opus implement");
   onProgress?.(designStudioProgressLabel(1, "finish"));
   phases.push("Opus finish");
   const finished = await runOpusCritiqueAndFinish({
