@@ -1,26 +1,33 @@
 /**
- * Wireline Design Studio — Opus research → Grok build → Gemini refine → Opus code review
- * (2–3 evolving passes) → Stitch-quality gate → Opus approval.
+ * Wireline Design Studio — Spectrum Desk linear pipeline (no architect tournament).
+ *
+ * Brief → Imagine → Qwen build/refine → Sonnet critic → MiniMax finish → gate → US localize.
+ * Optional single Hy3 challenger when pass-1 quality gate fails.
  */
 import { CLAUDE_MODELS } from "./claude-models";
-import {
-  buildDesignBuilderUserPrompt,
-  buildGeminiVisualUserPrompt,
-  DESIGN_BUILDER_SYSTEM,
-  DESIGN_CODE_REVIEWER_SYSTEM,
-  DESIGN_CODE_REVIEW_TOOL,
-  DESIGN_EMERGENCY_POLISH_SYSTEM,
-  DESIGN_FINAL_APPROVAL_TOOL,
-  DESIGN_FINAL_APPROVER_SYSTEM,
-  DESIGN_GEMINI_VISUAL_SYSTEM,
-  DESIGN_RESEARCH_SYSTEM,
-} from "./director-design-prompts";
 import {
   formatImagineAssetsForBuilder,
   generateDesignImagineAssets,
   injectImagineAssetsIntoHtml,
-  type DesignImagineAsset,
 } from "./director-design-imagine";
+import type { DesignImagineAsset } from "./director-design-imagine";
+import { formatJuryVerdictSummary, resolveArchitectJury } from "./director-design-jury";
+import {
+  buildDesignBuilderUserPrompt,
+  buildEngineerUserPrompt,
+  buildFinisherUserPrompt,
+  buildVisualCriticUserPrompt,
+  DESIGN_EMERGENCY_POLISH_SYSTEM,
+  DESIGN_FINAL_APPROVAL_TOOL,
+  DESIGN_FINAL_APPROVER_SYSTEM,
+  DESIGN_HTML_ENGINEER_SYSTEM,
+  DESIGN_LAYOUT_SCOUT_SYSTEM,
+  DESIGN_PRODUCTION_FINISHER_SYSTEM,
+  DESIGN_RESEARCH_SYSTEM,
+  DESIGN_UI_ARCHITECT_SYSTEM,
+  DESIGN_US_LOCALIZATION_SYSTEM,
+  DESIGN_VISUAL_CRITIC_SYSTEM,
+} from "./director-design-prompts";
 import {
   assessDesignStudioHtmlQuality,
   designQualityPasses,
@@ -29,9 +36,13 @@ import {
 import {
   designStudioProgressLabel,
   designTeamThinkingSummary,
+  type DesignArchitectSlot,
   type DesignPassNumber,
+  type DesignTeamOpenRouterRole,
+  isSpectrumDesignTeam,
   WIRELINE_DESIGN_STUDIO_REASONING,
   WIRELINE_DESIGN_TEAM,
+  WIRELINE_DESIGN_TEAM_SPECTRUM,
 } from "./director-design-team";
 import {
   extractDirectorHtmlPrototype,
@@ -41,25 +52,15 @@ import {
 import { buildStitchDesignBriefArtifact } from "./director-stitch-brief";
 import type { DirectorStitchTurnInput, DirectorStitchTurnResult } from "./director-stitch-service";
 import type { StitchProgressCallback } from "./director-stitch-service";
-import { runGeminiTextCompletion } from "./gemini-brain";
-import { runCompletion, runStructured } from "./claude-structured";
-import { isOpenRouterConfigured, runOpenRouterCompletion } from "./openrouter-structured";
+import { runCompletion } from "./claude-structured";
+import {
+  isOpenRouterConfigured,
+  runOpenRouterCompletion,
+  runOpenRouterStructured,
+} from "./openrouter-structured";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
-
-export interface DesignCodeReviewResult {
-  decision: "approve" | "revise";
-  overall: number;
-  structure: number;
-  components: number;
-  visual_polish: number;
-  mobile: number;
-  accessibility: number;
-  strengths?: string[];
-  issues: string[];
-  revisionNotes?: string;
-}
 
 interface DesignFinalApproval {
   operatorReply: string;
@@ -75,141 +76,291 @@ function stripHtmlFences(raw: string): string {
     .trim();
 }
 
-function codeReviewPasses(review: DesignCodeReviewResult, min: number): boolean {
-  return (
-    review.decision === "approve" &&
-    review.overall >= min &&
-    review.structure >= min &&
-    review.components >= min &&
-    review.visual_polish >= min &&
-    review.mobile >= min &&
-    review.accessibility >= min
-  );
-}
-
 function mergeRevisionNotes(...blocks: Array<string | undefined>): string {
   return blocks.filter(Boolean).join("\n\n").trim();
 }
 
-async function runDesignResearch(input: {
+function spectrumTeam() {
+  return isSpectrumDesignTeam(WIRELINE_DESIGN_TEAM) ? WIRELINE_DESIGN_TEAM_SPECTRUM : null;
+}
+
+async function runOpenRouterRole(
+  role: DesignTeamOpenRouterRole,
+  system: string,
+  user: string,
+  maxTokens: number,
+  signal?: AbortSignal,
+): Promise<string> {
+  if (!isOpenRouterConfigured()) {
+    throw new Error("OPENROUTER_API_KEY not configured");
+  }
+  try {
+    return await runOpenRouterCompletion({
+      model: role.openRouterModelId,
+      system,
+      user,
+      maxTokens,
+      signal,
+    });
+  } catch (e) {
+    if (role.fallbackOpenRouterModelId) {
+      log.warn("design studio openrouter fallback", {
+        from: role.openRouterModelId,
+        to: role.fallbackOpenRouterModelId,
+        error: getErrorMessage(e),
+      });
+      return runOpenRouterCompletion({
+        model: role.fallbackOpenRouterModelId,
+        system,
+        user,
+        maxTokens,
+        signal,
+      });
+    }
+    throw e;
+  }
+}
+
+async function runSpectrumResearch(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
   signal?: AbortSignal;
-}): Promise<string> {
-  const { text } = await runCompletion({
-    model: WIRELINE_DESIGN_TEAM.researcher.wirelineModel,
-    system: DESIGN_RESEARCH_SYSTEM,
-    user: [
-      `Operator request:\n${input.operatorMessage.trim()}`,
-      `## design.md\n${input.designBriefMarkdown.trim().slice(0, 6000)}`,
-    ].join("\n\n"),
-    maxTokens: 2048,
-    signal: input.signal,
-  });
-  return text.trim();
+}): Promise<{ researchNotes: string; layoutScoutNotes: string }> {
+  const team = spectrumTeam();
+  if (!team) {
+    const { text } = await runCompletion({
+      model: CLAUDE_MODELS.SONNET,
+      system: DESIGN_RESEARCH_SYSTEM,
+      user: [
+        `Operator request:\n${input.operatorMessage.trim()}`,
+        `## design.md\n${input.designBriefMarkdown.trim().slice(0, 6000)}`,
+      ].join("\n\n"),
+      maxTokens: 2048,
+    });
+    return { researchNotes: text.trim(), layoutScoutNotes: "" };
+  }
+
+  const researchUser = [
+    `Operator request:\n${input.operatorMessage.trim()}`,
+    `## design.md\n${input.designBriefMarkdown.trim().slice(0, 6000)}`,
+  ].join("\n\n");
+
+  const [researchSettled, scoutSettled] = await Promise.allSettled([
+    runOpenRouterRole(team.researcher, DESIGN_RESEARCH_SYSTEM, researchUser, 2048, input.signal),
+    runOpenRouterRole(
+      team.layoutScout,
+      DESIGN_LAYOUT_SCOUT_SYSTEM,
+      researchUser,
+      512,
+      input.signal,
+    ),
+  ]);
+
+  const researchNotes =
+    researchSettled.status === "fulfilled"
+      ? researchSettled.value.trim()
+      : "Focus on US local-business trust, phone-first CTA, distinctive hero.";
+
+  const layoutScoutNotes = scoutSettled.status === "fulfilled" ? scoutSettled.value.trim() : "";
+
+  return { researchNotes, layoutScoutNotes };
 }
 
-async function runDesignBuilder(input: {
+async function runPrimaryHtmlBuild(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
-  researchNotes?: string;
+  researchNotes: string;
+  layoutScoutNotes: string;
   imagineAssetsNotes?: string;
   revisionNotes?: string;
   priorHtml?: string;
   passNumber: DesignPassNumber;
   signal?: AbortSignal;
 }): Promise<string> {
-  const user = buildDesignBuilderUserPrompt(input);
+  const team = spectrumTeam();
+  if (!team) return input.priorHtml ?? "";
 
-  if (isOpenRouterConfigured()) {
-    try {
-      const raw = await runOpenRouterCompletion({
-        model: WIRELINE_DESIGN_TEAM.builder.openRouterModelId,
-        system: DESIGN_BUILDER_SYSTEM,
-        user,
-        maxTokens: 12_288,
-        signal: input.signal,
+  const hasPrior = Boolean(input.priorHtml?.trim());
+  const user = hasPrior
+    ? buildEngineerUserPrompt({
+        operatorMessage: input.operatorMessage,
+        designBriefMarkdown: input.designBriefMarkdown,
+        html: input.priorHtml!,
+        passNumber: input.passNumber,
+        researchNotes: input.researchNotes,
+        imagineAssetsNotes: input.imagineAssetsNotes,
+        winningArchitectLabel: "Spectrum primary",
+      })
+    : buildDesignBuilderUserPrompt({
+        operatorMessage: input.operatorMessage,
+        designBriefMarkdown: input.designBriefMarkdown,
+        researchNotes: input.researchNotes,
+        layoutScoutNotes: input.layoutScoutNotes,
+        imagineAssetsNotes: input.imagineAssetsNotes,
+        revisionNotes: input.revisionNotes,
+        passNumber: input.passNumber,
       });
-      return stripHtmlFences(raw);
-    } catch (e) {
-      log.warn("design studio builder fallback to Sonnet", {
-        error: getErrorMessage(e),
-      });
-    }
+
+  try {
+    const raw = await runOpenRouterRole(
+      team.htmlBuilder,
+      DESIGN_HTML_ENGINEER_SYSTEM,
+      user,
+      12_288,
+      input.signal,
+    );
+    return stripHtmlFences(raw);
+  } catch (e) {
+    log.warn("design studio primary build failed", { error: getErrorMessage(e) });
+    return input.priorHtml ?? "";
   }
-
-  const { text } = await runCompletion({
-    model: CLAUDE_MODELS.SONNET,
-    system: DESIGN_BUILDER_SYSTEM,
-    user,
-    maxTokens: 12_288,
-    signal: input.signal,
-  });
-  return stripHtmlFences(text);
 }
 
-async function runGeminiVisualRefine(input: {
+async function runChallengerDraft(input: {
+  architect: DesignArchitectSlot;
   operatorMessage: string;
   designBriefMarkdown: string;
-  html: string;
+  researchNotes: string;
+  layoutScoutNotes: string;
+  imagineAssetsNotes?: string;
+  revisionNotes?: string;
+  incumbentHtml: string;
   passNumber: DesignPassNumber;
+  signal?: AbortSignal;
+}): Promise<{ architectId: string; label: string; html: string } | null> {
+  try {
+    const user = buildDesignBuilderUserPrompt({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      researchNotes: input.researchNotes,
+      layoutScoutNotes: input.layoutScoutNotes,
+      imagineAssetsNotes: input.imagineAssetsNotes,
+      revisionNotes: input.revisionNotes,
+      priorHtml: input.incumbentHtml,
+      passNumber: input.passNumber,
+      architectLabel: input.architect.label,
+    });
+    const raw = await runOpenRouterCompletion({
+      model: input.architect.openRouterModelId,
+      system: DESIGN_UI_ARCHITECT_SYSTEM,
+      user,
+      maxTokens: 12_288,
+      signal: input.signal,
+    });
+    const html = stripHtmlFences(raw);
+    if (!html) return null;
+    return { architectId: input.architect.id, label: input.architect.label, html };
+  } catch (e) {
+    log.warn("design studio challenger draft failed", {
+      architect: input.architect.id,
+      error: getErrorMessage(e),
+    });
+    return null;
+  }
+}
+
+async function runOptionalChallenger(input: {
+  incumbentHtml: string;
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  researchNotes: string;
+  layoutScoutNotes: string;
+  imagineAssetsNotes?: string;
+  revisionNotes?: string;
+  signal?: AbortSignal;
+}): Promise<{ html: string; summary?: string }> {
+  const team = spectrumTeam();
+  if (!team?.enableOptionalChallenger) {
+    return { html: input.incumbentHtml };
+  }
+
+  const challenger = await runChallengerDraft({
+    architect: team.optionalChallenger,
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    researchNotes: input.researchNotes,
+    layoutScoutNotes: input.layoutScoutNotes,
+    imagineAssetsNotes: input.imagineAssetsNotes,
+    revisionNotes: input.revisionNotes,
+    incumbentHtml: input.incumbentHtml,
+    passNumber: 1,
+    signal: input.signal,
+  });
+
+  if (!challenger) return { html: input.incumbentHtml };
+
+  const verdict = await resolveArchitectJury({
+    entries: [
+      { architectId: "incumbent", label: "Qwen primary", html: input.incumbentHtml },
+      challenger,
+    ],
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    passNumber: 1,
+    glmCriticModelId: team.visualCritic.openRouterModelId,
+    signal: input.signal,
+  });
+
+  return {
+    html: verdict.winner.html,
+    summary: formatJuryVerdictSummary(verdict),
+  };
+}
+
+async function runVisualCritic(input: {
+  html: string;
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  passNumber: DesignPassNumber;
+  signal?: AbortSignal;
+}): Promise<string> {
+  const team = spectrumTeam();
+  if (!team) return "";
+
+  const user = buildVisualCriticUserPrompt(input);
+  try {
+    return (
+      await runOpenRouterRole(
+        team.visualCritic,
+        DESIGN_VISUAL_CRITIC_SYSTEM,
+        user,
+        1536,
+        input.signal,
+      )
+    ).trim();
+  } catch (e) {
+    log.warn("design studio visual critic skipped", { error: getErrorMessage(e) });
+    return "";
+  }
+}
+
+async function runProductionFinisher(input: {
+  html: string;
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  passNumber: DesignPassNumber;
+  criticNotes?: string;
   revisionNotes?: string;
   imagineAssetsNotes?: string;
   signal?: AbortSignal;
 }): Promise<string> {
-  const geminiModel = WIRELINE_DESIGN_TEAM.visualRefiner.geminiModel;
-  if (!geminiModel) return input.html;
+  const team = spectrumTeam();
+  if (!team) return input.html;
 
+  const user = buildFinisherUserPrompt(input);
   try {
-    const raw = await runGeminiTextCompletion({
-      model: geminiModel,
-      system: DESIGN_GEMINI_VISUAL_SYSTEM,
-      user: buildGeminiVisualUserPrompt(input),
-      signal: input.signal,
-    });
+    const raw = await runOpenRouterRole(
+      team.productionFinisher,
+      DESIGN_PRODUCTION_FINISHER_SYSTEM,
+      user,
+      12_288,
+      input.signal,
+    );
     return stripHtmlFences(raw);
   } catch (e) {
-    log.warn("design studio gemini visual refine skipped", { error: getErrorMessage(e) });
+    log.warn("design studio finisher skipped", { error: getErrorMessage(e) });
     return input.html;
   }
-}
-
-async function runCodeReview(input: {
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  html: string;
-  passNumber: DesignPassNumber;
-  signal?: AbortSignal;
-}): Promise<DesignCodeReviewResult> {
-  const quality = assessDesignStudioHtmlQuality(input.html);
-  const qualityBlock = formatDesignQualityRevisionNotes(quality);
-
-  const review = await runStructured<DesignCodeReviewResult>({
-    model: WIRELINE_DESIGN_TEAM.codeReviewer.wirelineModel,
-    system: DESIGN_CODE_REVIEWER_SYSTEM,
-    user: [
-      `Operator request:\n${input.operatorMessage}`,
-      `## Pass ${input.passNumber} of ${WIRELINE_DESIGN_TEAM.maxRefinementPasses}`,
-      `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
-      qualityBlock ? `## Automated Stitch-quality checks failed\n${qualityBlock}` : "",
-      `## HTML\n${input.html.slice(0, 20_000)}`,
-    ]
-      .filter(Boolean)
-      .join("\n\n"),
-    tool: DESIGN_CODE_REVIEW_TOOL,
-    maxTokens: 3072,
-    signal: input.signal,
-  });
-
-  if (!designQualityPasses(quality) && review.decision === "approve") {
-    return {
-      ...review,
-      decision: "revise",
-      revisionNotes: mergeRevisionNotes(review.revisionNotes, qualityBlock),
-    };
-  }
-
-  return review;
 }
 
 async function runEmergencyPolish(input: {
@@ -219,6 +370,7 @@ async function runEmergencyPolish(input: {
   qualityIssues: string;
   signal?: AbortSignal;
 }): Promise<string> {
+  const team = spectrumTeam();
   const user = [
     `Operator request:\n${input.operatorMessage}`,
     `## design.md\n${input.designBriefMarkdown.slice(0, 4000)}`,
@@ -226,18 +378,18 @@ async function runEmergencyPolish(input: {
     `## HTML\n${input.html.slice(0, 24_000)}`,
   ].join("\n\n");
 
-  if (isOpenRouterConfigured()) {
+  if (team && isOpenRouterConfigured()) {
     try {
-      const raw = await runOpenRouterCompletion({
-        model: WIRELINE_DESIGN_TEAM.builder.openRouterModelId,
-        system: DESIGN_EMERGENCY_POLISH_SYSTEM,
+      const raw = await runOpenRouterRole(
+        team.productionFinisher,
+        DESIGN_EMERGENCY_POLISH_SYSTEM,
         user,
-        maxTokens: 12_288,
-        signal: input.signal,
-      });
+        12_288,
+        input.signal,
+      );
       return stripHtmlFences(raw);
     } catch (e) {
-      log.warn("design studio emergency polish openrouter failed", { error: getErrorMessage(e) });
+      log.warn("design studio emergency polish failed", { error: getErrorMessage(e) });
     }
   }
 
@@ -246,41 +398,130 @@ async function runEmergencyPolish(input: {
     system: DESIGN_EMERGENCY_POLISH_SYSTEM,
     user,
     maxTokens: 12_288,
-    signal: input.signal,
   });
   return stripHtmlFences(text);
 }
 
-async function runFinalApproval(input: {
+async function runUsLocalization(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
   html: string;
   passCount: number;
   signal?: AbortSignal;
-}): Promise<DesignFinalApproval> {
-  return runStructured<DesignFinalApproval>({
-    model: WIRELINE_DESIGN_TEAM.finalApprover.wirelineModel,
-    system: DESIGN_FINAL_APPROVER_SYSTEM,
-    user: [
-      `Operator request:\n${input.operatorMessage}`,
-      `Completed ${input.passCount} refinement passes.`,
-      `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
-      `## HTML (excerpt)\n${input.html.slice(0, 12_000)}`,
-    ].join("\n\n"),
-    tool: DESIGN_FINAL_APPROVAL_TOOL,
-    maxTokens: 2048,
-    signal: input.signal,
-  });
+}): Promise<{ html: string; approval: DesignFinalApproval }> {
+  const team = spectrumTeam();
+  const fallbackTitle = input.operatorMessage.trim().slice(0, 72) || "Your page";
+
+  let html = input.html;
+  if (team && isOpenRouterConfigured()) {
+    try {
+      const localized = await runOpenRouterRole(
+        team.usLocalization,
+        DESIGN_US_LOCALIZATION_SYSTEM,
+        [
+          `Operator request:\n${input.operatorMessage}`,
+          `## HTML to localize for US audience\n${input.html.slice(0, 24_000)}`,
+        ].join("\n\n"),
+        12_288,
+        input.signal,
+      );
+      html = stripHtmlFences(localized);
+    } catch (e) {
+      log.warn("design studio US HTML localization skipped", { error: getErrorMessage(e) });
+    }
+  }
+
+  let approval: DesignFinalApproval = { operatorReply: "", pageTitle: fallbackTitle };
+  if (team && isOpenRouterConfigured()) {
+    try {
+      const { result } = await runOpenRouterStructured<DesignFinalApproval>({
+        model: team.usLocalization.openRouterModelId,
+        system: DESIGN_FINAL_APPROVER_SYSTEM,
+        user: [
+          `Operator request:\n${input.operatorMessage}`,
+          `Completed ${input.passCount} Spectrum Desk passes.`,
+          `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
+          `## HTML (excerpt)\n${html.slice(0, 12_000)}`,
+        ].join("\n\n"),
+        tool: DESIGN_FINAL_APPROVAL_TOOL,
+        maxTokens: 2048,
+        signal: input.signal,
+      });
+      approval = result;
+    } catch (e) {
+      log.warn("design studio final approval via OpenRouter failed", { error: getErrorMessage(e) });
+    }
+  }
+
+  return { html, approval };
 }
 
 function buildFallbackOperatorReply(pageTitle: string): string {
   return [
     `Your **${pageTitle}** is ready — open the live preview to see it on your phone or desktop.`,
     "",
+    "- Spectrum Desk built and polished your page for US trust copy",
     "- Hero, headline, and primary call-to-action are in place",
-    "- Typography and colors follow your brief",
-    "- You can ask me to tweak copy, palette, or add sections in chat",
+    "- Ask me to tweak colors, copy, or sections in chat",
   ].join("\n");
+}
+
+async function runSpectrumPass(input: {
+  passNumber: DesignPassNumber;
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  researchNotes: string;
+  layoutScoutNotes: string;
+  imagineAssetsNotes?: string;
+  revisionNotes?: string;
+  incumbentHtml?: string;
+  onProgress?: StitchProgressCallback;
+  phases: string[];
+  signal?: AbortSignal;
+}): Promise<{ html: string }> {
+  input.onProgress?.(designStudioProgressLabel(input.passNumber, "build"));
+  input.phases.push(`Pass ${input.passNumber} build`);
+
+  let html = await runPrimaryHtmlBuild({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    researchNotes: input.researchNotes,
+    layoutScoutNotes: input.layoutScoutNotes,
+    imagineAssetsNotes: input.imagineAssetsNotes,
+    revisionNotes: input.revisionNotes,
+    priorHtml: input.incumbentHtml,
+    passNumber: input.passNumber,
+    signal: input.signal,
+  });
+
+  if (!html.trim()) {
+    throw new Error("Spectrum build: primary HTML generation failed");
+  }
+
+  input.onProgress?.(designStudioProgressLabel(input.passNumber, "critic"));
+  input.phases.push(`Pass ${input.passNumber} critic`);
+  const criticNotes = await runVisualCritic({
+    html,
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    passNumber: input.passNumber,
+    signal: input.signal,
+  });
+
+  input.onProgress?.(designStudioProgressLabel(input.passNumber, "finisher"));
+  input.phases.push(`Pass ${input.passNumber} finisher`);
+  html = await runProductionFinisher({
+    html,
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    passNumber: input.passNumber,
+    criticNotes,
+    revisionNotes: input.revisionNotes,
+    imagineAssetsNotes: input.imagineAssetsNotes,
+    signal: input.signal,
+  });
+
+  return { html };
 }
 
 /** Run the full Design Studio pipeline and return a stitch-shaped Director turn. */
@@ -295,8 +536,8 @@ export async function runDirectorDesignStudio(
   const nextStudioPhase = () => studioPhases[phaseCursor++] ?? studioPhases.at(-1)!;
 
   onProgress?.(nextStudioPhase());
-  phases.push("Opus research");
-  const researchNotes = await runDesignResearch({
+  phases.push("DeepSeek research");
+  const { researchNotes, layoutScoutNotes } = await runSpectrumResearch({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,
     signal: input.signal,
@@ -307,8 +548,8 @@ export async function runDirectorDesignStudio(
     designBriefMarkdown: input.designBriefMarkdown,
   });
 
-  onProgress?.("Generating hero photography with Grok Imagine…");
-  phases.push("Grok Imagine");
+  onProgress?.("Generating hero photography…");
+  phases.push("Imagine hero");
   let imagineAssets: DesignImagineAsset[] = [];
   try {
     imagineAssets = await generateDesignImagineAssets({
@@ -326,6 +567,7 @@ export async function runDirectorDesignStudio(
   let html = "";
   let revisionNotes: string | undefined;
   let passCount = 0;
+  let challengerUsed = false;
 
   for (
     let pass = 1 as DesignPassNumber;
@@ -333,52 +575,73 @@ export async function runDirectorDesignStudio(
     pass = (pass + 1) as DesignPassNumber
   ) {
     passCount = pass;
+    const priorHtml = pass > 1 ? html : undefined;
 
-    onProgress?.(designStudioProgressLabel(pass, "build"));
-    phases.push(`Pass ${pass} build`);
-    html = await runDesignBuilder({
+    const passResult = await runSpectrumPass({
+      passNumber: pass,
       operatorMessage: input.operatorMessage,
       designBriefMarkdown: input.designBriefMarkdown,
       researchNotes,
+      layoutScoutNotes,
       imagineAssetsNotes: imagineAssetsNotes || undefined,
       revisionNotes,
-      priorHtml: pass > 1 ? html : undefined,
-      passNumber: pass,
+      incumbentHtml: priorHtml,
+      onProgress,
+      phases,
       signal: input.signal,
     });
+    html = passResult.html;
 
-    onProgress?.(designStudioProgressLabel(pass, "visual"));
-    phases.push(`Pass ${pass} visual`);
-    html = await runGeminiVisualRefine({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      html,
-      passNumber: pass,
-      revisionNotes,
-      imagineAssetsNotes: imagineAssetsNotes || undefined,
-      signal: input.signal,
-    });
+    onProgress?.(designStudioProgressLabel(pass, "gate"));
+    phases.push(`Pass ${pass} gate`);
+    let qualityReport = assessDesignStudioHtmlQuality(html);
+    let passesGate = designQualityPasses(qualityReport);
 
-    onProgress?.(designStudioProgressLabel(pass, "code"));
-    phases.push(`Pass ${pass} code review`);
-    const codeReview = await runCodeReview({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      html,
-      passNumber: pass,
-      signal: input.signal,
-    });
-
-    const passesBar =
-      codeReviewPasses(codeReview, WIRELINE_DESIGN_TEAM.passScore) &&
-      designQualityPasses(assessDesignStudioHtmlQuality(html));
+    if (pass === 1 && !passesGate && !challengerUsed && spectrumTeam()?.enableOptionalChallenger) {
+      onProgress?.(designStudioProgressLabel(1, "challenger"));
+      phases.push("Hy3 challenger");
+      const challenged = await runOptionalChallenger({
+        incumbentHtml: html,
+        operatorMessage: input.operatorMessage,
+        designBriefMarkdown: input.designBriefMarkdown,
+        researchNotes,
+        layoutScoutNotes,
+        imagineAssetsNotes: imagineAssetsNotes || undefined,
+        revisionNotes,
+        signal: input.signal,
+      });
+      challengerUsed = true;
+      if (challenged.summary) phases.push(challenged.summary);
+      if (challenged.html !== html) {
+        html = challenged.html;
+        const criticNotes = await runVisualCritic({
+          html,
+          operatorMessage: input.operatorMessage,
+          designBriefMarkdown: input.designBriefMarkdown,
+          passNumber: 1,
+          signal: input.signal,
+        });
+        html = await runProductionFinisher({
+          html,
+          operatorMessage: input.operatorMessage,
+          designBriefMarkdown: input.designBriefMarkdown,
+          passNumber: 1,
+          criticNotes,
+          revisionNotes,
+          imagineAssetsNotes: imagineAssetsNotes || undefined,
+          signal: input.signal,
+        });
+        qualityReport = assessDesignStudioHtmlQuality(html);
+        passesGate = designQualityPasses(qualityReport);
+      }
+    }
 
     revisionNotes = mergeRevisionNotes(
-      codeReview.revisionNotes,
-      codeReview.issues.map((issue) => `- ${issue}`).join("\n"),
+      revisionNotes,
+      formatDesignQualityRevisionNotes(qualityReport),
     );
 
-    if (passesBar && pass >= WIRELINE_DESIGN_TEAM.minRefinementPasses) {
+    if (passesGate && pass >= WIRELINE_DESIGN_TEAM.minRefinementPasses) {
       break;
     }
 
@@ -389,8 +652,8 @@ export async function runDirectorDesignStudio(
 
   const qualityReport = assessDesignStudioHtmlQuality(html);
   if (!designQualityPasses(qualityReport)) {
-    onProgress?.("Stitch-quality polish…");
-    phases.push("Stitch-quality gate");
+    onProgress?.(designStudioProgressLabel(3, "gate"));
+    phases.push("Emergency polish");
     html = await runEmergencyPolish({
       operatorMessage: input.operatorMessage,
       designBriefMarkdown: input.designBriefMarkdown,
@@ -400,24 +663,16 @@ export async function runDirectorDesignStudio(
     });
   }
 
-  onProgress?.(nextStudioPhase());
-  phases.push("Final approval");
-  let approval: DesignFinalApproval;
-  try {
-    approval = await runFinalApproval({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      html,
-      passCount,
-      signal: input.signal,
-    });
-  } catch (e) {
-    log.warn("design studio final approval fallback", { error: getErrorMessage(e) });
-    approval = {
-      operatorReply: "",
-      pageTitle: input.operatorMessage.trim().slice(0, 72) || "Your page",
-    };
-  }
+  onProgress?.(designStudioProgressLabel(3, "localize"));
+  phases.push("US localize");
+  const { html: localizedHtml, approval } = await runUsLocalization({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    html,
+    passCount,
+    signal: input.signal,
+  });
+  html = localizedHtml;
 
   if (imagineAssets.length > 0) {
     html = injectImagineAssetsIntoHtml(html, imagineAssets, previewDeviceType);
@@ -445,4 +700,18 @@ export async function runDirectorDesignStudio(
     thinkingSummary: designTeamThinkingSummary(phases) || WIRELINE_DESIGN_STUDIO_REASONING,
     durationMs: Date.now() - t0,
   };
+}
+
+/** @deprecated Classic code-review shape — kept for tests importing the type. */
+export interface DesignCodeReviewResult {
+  decision: "approve" | "revise";
+  overall: number;
+  structure: number;
+  components: number;
+  visual_polish: number;
+  mobile: number;
+  accessibility: number;
+  strengths?: string[];
+  issues: string[];
+  revisionNotes?: string;
 }

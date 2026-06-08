@@ -96,25 +96,37 @@ export async function generateDesignImagineAssets(input: {
 
   const assets: DesignImagineAsset[] = [];
 
-  try {
-    const heroUrls = await runOpenRouterImageGeneration({
-      model: cfg.openRouterModelId,
-      prompt: heroPrompt,
-      aspectRatio: mobile ? "9:16" : "16:9",
-      imageSize: "1K",
-      signal: input.signal,
-    });
-    const heroData = trimAssetDataUrl(heroUrls[0] ?? "");
-    if (heroData) {
-      assets.push({
-        role: "hero_background",
-        dataUrl: heroData,
-        cssVar: "--wl-hero-photo",
+  const heroModels = [cfg.openRouterModelId];
+  const altCfg =
+    "altImageReference" in WIRELINE_DESIGN_TEAM
+      ? WIRELINE_DESIGN_TEAM.altImageReference
+      : undefined;
+  if (altCfg?.enabled) {
+    heroModels.push(altCfg.openRouterModelId);
+  }
+
+  for (const modelId of heroModels) {
+    if (assets.some((a) => a.role === "hero_background")) break;
+    try {
+      const heroUrls = await runOpenRouterImageGeneration({
+        model: modelId,
         prompt: heroPrompt,
+        aspectRatio: mobile ? "9:16" : "16:9",
+        imageSize: "1K",
+        signal: input.signal,
       });
+      const heroData = trimAssetDataUrl(heroUrls[0] ?? "");
+      if (heroData) {
+        assets.push({
+          role: "hero_background",
+          dataUrl: heroData,
+          cssVar: "--wl-hero-photo",
+          prompt: heroPrompt,
+        });
+      }
+    } catch (e) {
+      log.warn("design studio hero image skipped", { model: modelId, error: getErrorMessage(e) });
     }
-  } catch (e) {
-    log.warn("design studio grok imagine hero skipped", { error: getErrorMessage(e) });
   }
 
   if (assets.length === 0) return assets;

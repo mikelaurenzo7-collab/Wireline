@@ -239,6 +239,7 @@ export async function runOpenRouterStructured<T = any>(
   const res = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: openRouterHeaders(),
+    signal: opts.signal,
     body: JSON.stringify({
       model: opts.model,
       max_tokens: opts.maxTokens ?? 4096,

@@ -44,7 +44,9 @@ function withSection(items: NavItem[], section: string): NavItem[] {
 // Sales (pipeline), Admin (settings).
 //
 // Live Ops is the default landing surface — live floor, actions, and analytics.
-// Chat (Director + per-agent threads) is where operators coach and configure.
+// Chat (Director + per-agent threads) is where operators coach, configure, and run
+// Design Studio (brief → multi-pass HTML preview → chat iteration). A dedicated
+// /design sidebar page is deferred — the loop is conversational, not project-file CRUD.
 // Training has been elevated to its own sidebar page
 // because the customization depth (knowledge, voices, pronunciation, simulator,
 // flow) warrants dedicated real-estate rather than a buried tab.

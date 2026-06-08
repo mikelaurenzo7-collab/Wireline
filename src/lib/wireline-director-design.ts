@@ -452,26 +452,24 @@ export const WIRELINE_STITCH_UI = {
   ],
   /** Design Studio (LLM pipeline) — shown when Stitch pixel render is off. */
   studioLoadingPhases: [
-    "Researching your industry and audience…",
-    "Generating hero photography with Grok Imagine…",
-    "Pass 1 — building structure and layout…",
-    "Pass 1 — refining visual design…",
-    "Pass 1 — strict code review…",
-    "Pass 2 — elevating components and CTAs…",
-    "Pass 2 — refining visual design…",
-    "Pass 2 — strict code review…",
-    "Pass 3 — production polish…",
-    "Pass 3 — refining visual design…",
-    "Pass 3 — strict code review…",
-    "Stitch-quality polish…",
-    "Creative director approval…",
+    "Spectrum Desk — researching your industry…",
+    "Generating hero photography…",
+    "Pass 1 — building HTML structure…",
+    "Pass 1 — visual critique…",
+    "Pass 1 — production finish…",
+    "Pass 2 — refining components…",
+    "Pass 2 — visual critique…",
+    "Pass 2 — production finish…",
+    "Pass 3 — convergence polish…",
+    "Quality gate…",
+    "US copy localization…",
   ],
-  /** ~28s × 12 phases ≈ 5.5 min — matches server-side multi-pass pipeline. */
-  studioLoadingPhaseIntervalMs: 28_000,
+  /** ~20s × 11 phases ≈ 3.5 min — Spectrum linear pipeline budget. */
+  studioLoadingPhaseIntervalMs: 20_000,
   studioLoadingHint:
-    "Wireline Design Studio runs 2–3 refinement passes and usually takes about 5 minutes — stay on this tab.",
+    "Spectrum Desk usually finishes in 2–3 minutes. Turn on Design, then refine in chat.",
   designStudioReasoning:
-    "Wireline Design Studio — Opus research, Grok build, Gemini refine, Opus review (2–3 passes)",
+    "Spectrum Desk — DeepSeek brief, Step layout, Qwen build, Sonnet critique, MiniMax finish",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",
