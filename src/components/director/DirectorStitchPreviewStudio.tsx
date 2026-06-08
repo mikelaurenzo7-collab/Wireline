@@ -113,7 +113,7 @@ function LoadingProgress({ elapsedMs }: { elapsedMs: number }) {
       <Loader2 className="w-6 h-6 text-brand/50 animate-spin mx-auto" />
       <div>
         <p className="text-[12px] text-ink font-medium">{phase}</p>
-        <p className="text-[11px] text-muted mt-1">{timeLabel} elapsed</p>
+        <p className="wl-micro-meta--muted mt-1">{timeLabel} elapsed</p>
       </div>
       {elapsedMs > 15_000 && (
         <p className="wl-micro-meta--muted">{WIRELINE_STITCH_UI.loadingHint}</p>
@@ -287,7 +287,7 @@ export default function DirectorStitchPreviewStudio({
               variant="ghost"
               onClick={() => setTab(t.id)}
               className={cn(
-                "h-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all",
+                "h-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md wl-micro-meta font-semibold transition-all",
                 selected
                   ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
                   : "text-muted hover:text-ink hover:bg-paper/60",
@@ -359,7 +359,7 @@ export default function DirectorStitchPreviewStudio({
           {tab === "export" && (
             <div className="p-4 sm:p-5 space-y-3">
               <p className="text-[12px] text-ink font-medium">{preview.title}</p>
-              <p className="text-[11px] text-muted leading-relaxed">
+              <p className="wl-micro-meta--muted leading-relaxed">
                 {WIRELINE_STITCH_UI.exportBlurb}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -368,7 +368,7 @@ export default function DirectorStitchPreviewStudio({
                     type="button"
                     onClick={() => void openArtifactDownload(ready.htmlArtifactId, false)}
                     disabled={Boolean(exportBusy[ready.htmlArtifactId])}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto disabled:opacity-60"
                   >
                     {exportBusy[ready.htmlArtifactId] ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -383,7 +383,7 @@ export default function DirectorStitchPreviewStudio({
                     type="button"
                     onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
                     disabled={Boolean(exportBusy[ready.imageArtifactId])}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto disabled:opacity-60"
                   >
                     {exportBusy[ready.imageArtifactId] ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -398,7 +398,7 @@ export default function DirectorStitchPreviewStudio({
                     type="button"
                     onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
                     disabled={Boolean(exportBusy[ready.htmlArtifactId])}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
                   >
                     {exportBusy[ready.htmlArtifactId] ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

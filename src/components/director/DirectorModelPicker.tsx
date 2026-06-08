@@ -66,7 +66,7 @@ function OpenRouterModelRow({
       disableAnimations
       className={cn(
         "w-full h-auto justify-start text-left rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-brand/60",
-        compact ? "px-2.5 py-1.5 text-[11px]" : "px-2.5 py-2 text-[12px]",
+        compact ? "px-2.5 py-1.5 wl-micro-meta" : "px-2.5 py-2 text-[12px]",
         active
           ? "bg-brand/20 text-foreground ring-1 ring-brand/40 font-medium"
           : "hover:bg-muted/70 text-foreground",
@@ -231,7 +231,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
         aria-label="Model selection"
       >
         <div className="p-3 border-b border-border/50">
-          <p className="text-[11px] font-medium text-foreground">
+          <p className="wl-micro-meta font-medium text-foreground">
             {DIRECTOR_MODEL_PICKER_COPY.label}
           </p>
           <p className="wl-micro-meta--muted-foreground mt-1 leading-snug">
@@ -316,7 +316,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
-                      className="h-8 pl-8 text-[11px] bg-muted/30 border-border/50 focus-visible:ring-2 focus-visible:ring-brand/60"
+                      className="h-8 pl-8 wl-micro-meta bg-muted/30 border-border/50 focus-visible:ring-2 focus-visible:ring-brand/60"
                       aria-label={DIRECTOR_MODEL_PICKER_COPY.searchPlaceholder}
                     />
                   </div>

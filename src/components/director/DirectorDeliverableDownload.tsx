@@ -22,7 +22,7 @@ export function DirectorDeliverableDownload({
       href={artifact.downloadUrl}
       download={artifact.name}
       className={cn(
-        "mt-3 inline-flex items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-3 py-2 text-[11px] font-semibold text-brand hover:bg-brand/10 transition-colors touch-press",
+        "mt-3 inline-flex items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-3 py-2 wl-micro-meta font-semibold text-brand hover:bg-brand/10 transition-colors touch-press",
         className,
       )}
     >

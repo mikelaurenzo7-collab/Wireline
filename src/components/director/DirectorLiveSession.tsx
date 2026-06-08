@@ -215,7 +215,7 @@ export default function DirectorLiveSession({
                   {phaseCopy.headline}
                 </motion.p>
               </AnimatePresence>
-              <p className="text-[11px] text-muted/75 mt-0.5">{phaseCopy.sub}</p>
+              <p className="wl-micro-meta--muted mt-0.5">{phaseCopy.sub}</p>
             </div>
           </div>
         )}

@@ -175,7 +175,7 @@ export function DirectorComposerAccessory({
                         <c.icon className="w-3 h-3 text-brand" aria-hidden />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-semibold text-foreground truncate">
+                        <p className="wl-micro-meta font-semibold text-foreground truncate">
                           {c.label}
                         </p>
                         <p className="wl-micro-meta--muted-foreground truncate">{c.desc}</p>
@@ -186,7 +186,7 @@ export function DirectorComposerAccessory({
                 <Link
                   to="/integrations"
                   onClick={onClose}
-                  className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-brand hover:text-brand/80"
+                  className="mt-2 inline-flex items-center gap-1.5 wl-micro-meta font-medium text-brand hover:text-brand/80"
                 >
                   <ArrowUpRight className="w-3 h-3" />
                   Manage integrations
@@ -211,7 +211,7 @@ export function DirectorComposerAccessory({
                   onClick={() => onSelectCoach(null)}
                   aria-pressed={!focusAgentId}
                   className={cn(
-                    "w-full justify-start gap-2 px-2.5 py-2.5 h-auto text-[11px] rounded-md touch-press",
+                    "w-full justify-start gap-2 px-2.5 py-2.5 h-auto wl-micro-meta rounded-md touch-press",
                     !focusAgentId && "bg-brand/8 text-brand font-medium border border-brand/15",
                   )}
                 >
@@ -234,7 +234,7 @@ export function DirectorComposerAccessory({
                       {a.name.slice(0, 1).toUpperCase()}
                     </span>
                     <span className="min-w-0 text-left">
-                      <span className="block text-[11px] font-semibold truncate">{a.name}</span>
+                      <span className="block wl-micro-meta font-semibold truncate">{a.name}</span>
                       <span className="block wl-micro-meta--muted-foreground truncate">
                         {a.role?.replace(/_/g, " ") || "Agent"}
                       </span>
@@ -262,7 +262,7 @@ export function DirectorComposerAccessory({
                     : "No abilities enabled"}
                 </p>
                 {enabledTools.length === 0 ? (
-                  <p className="px-1 py-1 text-[11px] text-muted-foreground">
+                  <p className="px-1 py-1 wl-micro-meta--muted">
                     Ask the Director to turn on capabilities.
                   </p>
                 ) : (
@@ -299,7 +299,7 @@ export function DirectorComposerAccessory({
                     <FileText className="w-4 h-4 text-brand" />
                   )}
                   <span className="text-left">
-                    <span className="block text-[11px] font-semibold text-foreground">
+                    <span className="block wl-micro-meta font-semibold text-foreground">
                       Document
                     </span>
                     <span className="block wl-micro-meta--muted-foreground">PDFs & files</span>
@@ -314,7 +314,7 @@ export function DirectorComposerAccessory({
                 >
                   <Brain className="w-4 h-4 text-brand" />
                   <span className="text-left">
-                    <span className="block text-[11px] font-semibold text-foreground">Context</span>
+                    <span className="block wl-micro-meta font-semibold text-foreground">Context</span>
                     <span className="block wl-micro-meta--muted-foreground">Global rule</span>
                   </span>
                 </ShadButton>
@@ -327,7 +327,7 @@ export function DirectorComposerAccessory({
                 >
                   <GraduationCap className="w-4 h-4 text-brand" />
                   <span className="text-left">
-                    <span className="block text-[11px] font-semibold text-foreground">
+                    <span className="block wl-micro-meta font-semibold text-foreground">
                       Instruction
                     </span>
                     <span className="block wl-micro-meta--muted-foreground">Playbook</span>

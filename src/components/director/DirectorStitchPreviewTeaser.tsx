@@ -99,13 +99,13 @@ function DeviceFrame({
           {!showCanvas && !effectiveFailed && (
             <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
               <Loader2 className="w-5 h-5 text-brand/50 animate-spin" />
-              <p className="text-[11px] text-muted">Loading the rendered preview…</p>
+              <p className="wl-micro-meta--muted">Loading the rendered preview…</p>
             </div>
           )}
           {!showCanvas && effectiveFailed && (
             <div className="min-h-[180px] flex flex-col items-center justify-center gap-2 p-6 text-center">
               <AlertCircle className="w-5 h-5 text-muted/60" />
-              <p className="text-[11px] text-muted">{WIRELINE_STITCH_UI.fallbackCopy}</p>
+              <p className="wl-micro-meta--muted">{WIRELINE_STITCH_UI.fallbackCopy}</p>
               <ShadButton
                 type="button"
                 variant="ghost"
@@ -175,7 +175,7 @@ export default function DirectorStitchPreviewTeaser({
             </span>
           </div>
           <p className="text-[12px] text-ink font-medium leading-snug">{preview.title}</p>
-          <p className="text-[11px] text-muted leading-relaxed">
+          <p className="wl-micro-meta--muted leading-relaxed">
             {WIRELINE_STITCH_UI.previewTeaserBody}
           </p>
         </div>
@@ -198,7 +198,7 @@ export default function DirectorStitchPreviewTeaser({
         >
           <ShadButton
             asChild
-            className="h-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-[11px] font-semibold bg-brand text-white hover:bg-brand-deep"
+            className="h-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold bg-brand text-white hover:bg-brand-deep"
           >
             <Link to={previewUrl}>
               {WIRELINE_STITCH_UI.previewTeaserAction}

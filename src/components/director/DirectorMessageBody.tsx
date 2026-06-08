@@ -61,7 +61,7 @@ function renderInline(text: string): React.ReactNode[] {
                 loading="lazy"
               />
             ) : (
-              <span className="text-[11px] text-muted-foreground italic">
+              <span className="wl-micro-meta--muted italic">
                 {imgMatch[1] || "Image unavailable"}
               </span>
             )}
@@ -138,7 +138,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
           <span className="sr-only sm:not-sr-only sm:ml-1">{copied ? "Copied" : "Copy"}</span>
         </ShadButton>
       </div>
-      <pre className="overflow-x-auto p-2 text-[11px] leading-normal font-mono text-ink/90 bg-black/[0.03] dark:bg-white/[0.03]">
+      <pre className="overflow-x-auto p-2 wl-micro-meta leading-normal font-mono text-ink/90 bg-black/[0.03] dark:bg-white/[0.03]">
         <code>{code.trimEnd()}</code>
       </pre>
     </div>
@@ -319,7 +319,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
       const cp = palette[cType] || palette.note;
       return (
         <div key={bi} className={cn("rounded-md border-l-[3px] px-3.5 py-2.5", cp.border, cp.bg)}>
-          <p className={cn("text-[11px] font-bold uppercase tracking-[0.12em] mb-1", cp.label)}>
+          <p className={cn("text-eyebrow font-bold tracking-[0.12em] mb-1", cp.label)}>
             {cTitle}
           </p>
           {cBody && <p className="text-[12px] text-ink/85 leading-normal">{renderInline(cBody)}</p>}

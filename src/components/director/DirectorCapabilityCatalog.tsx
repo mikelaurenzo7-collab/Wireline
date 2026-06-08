@@ -65,7 +65,7 @@ function CapabilityRow({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold text-ink leading-snug">{item.label}</p>
+        <p className="wl-micro-meta font-semibold text-ink leading-snug">{item.label}</p>
         {!compact && (
           <p
             className={cn(
@@ -134,7 +134,7 @@ export function DirectorCapabilityCatalog({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search skills…"
-            className="h-8 w-full py-1 pl-7 pr-2 text-[11px] bg-cream/60 border-border/80 placeholder:text-muted-foreground/60 focus-visible:ring-brand/40"
+            className="h-8 w-full py-1 pl-7 pr-2 wl-micro-meta bg-cream/60 border-border/80 placeholder:text-muted-foreground/60 focus-visible:ring-brand/40"
           />
         </div>
         {!filteredCatalog && (
@@ -213,7 +213,7 @@ export function DirectorCapabilityCatalog({
                 <Icon className="w-3.5 h-3.5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[11px] font-semibold text-ink leading-snug">
+                <span className="block wl-micro-meta font-semibold text-ink leading-snug">
                   {item.label}
                 </span>
                 <span

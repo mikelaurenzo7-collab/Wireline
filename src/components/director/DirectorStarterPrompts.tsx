@@ -90,7 +90,7 @@ function StarterChip({
       title={intent}
       onClick={onSelect}
       className={cn(
-        "touch-press group h-auto w-full justify-between items-start text-left text-[11px] text-ink/80 px-3 py-2.5 gap-2 whitespace-normal",
+        "touch-press group h-auto w-full justify-between items-start text-left wl-micro-meta text-ink/80 px-3 py-2.5 gap-2 whitespace-normal",
         WL_DIRECTOR_CLASSES.starterChip,
       )}
     >

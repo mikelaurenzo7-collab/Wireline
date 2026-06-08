@@ -1570,13 +1570,13 @@ export default function DirectorWorkspace({
           className="flex-1 min-h-0 scroll-viewport wl-scroll-edge wl-director-thread-scroll px-3 sm:px-4 py-5"
         >
           {loadDegraded && !isLoading && (
-            <p className="rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2 text-[11px] text-ink/80 dark:text-foreground/85">
+            <p className="rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2 wl-micro-meta text-ink/80 dark:text-foreground/85">
               Some Director data could not be loaded. Your thread may be incomplete — refresh to
               retry.
             </p>
           )}
           {!isLoading && visibleMessages.length > 0 && (
-            <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 text-[11px] leading-relaxed text-muted dark:bg-muted/10">
+            <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
               {DIRECTOR_SESSION_COPY.sessionHint}
               {pendingApprovalCount > 0 ? (
                 <>
@@ -1595,10 +1595,10 @@ export default function DirectorWorkspace({
                   <LoadingDots />
                 </div>
               </SignalOrbFrame>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/80">
+              <p className="text-eyebrow font-semibold tracking-[0.18em] text-ink/80">
                 {DIRECTOR_LOADING_COPY.headline}
               </p>
-              <p className="text-[11px] text-muted">{DIRECTOR_LOADING_COPY.sub}</p>
+              <p className="wl-micro-meta--muted">{DIRECTOR_LOADING_COPY.sub}</p>
             </div>
           ) : visibleMessages.length === 0 ? (
             <motion.div
@@ -1793,7 +1793,7 @@ export default function DirectorWorkspace({
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="mt-3 h-8 px-3 text-[11px] uppercase tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
+                                    className="mt-3 h-8 px-3 text-eyebrow tracking-[0.12em] border border-brand/25 text-brand hover:bg-brand/8"
                                     disabled={isSending}
                                     onClick={() => void send(prior.content, { isRetry: true })}
                                   >
@@ -2005,7 +2005,7 @@ export default function DirectorWorkspace({
                                 disableAnimations
                                 onClick={() => runSuggestion(s)}
                                 title={s.label}
-                                className="group !inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-left text-[11px] font-medium text-brand rounded-md border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 !whitespace-normal overflow-visible"
+                                className="group !inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-left wl-micro-meta font-medium text-brand rounded-md border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 hover:border-brand/40 !whitespace-normal overflow-visible"
                               >
                                 <Icon className="w-3 h-3 shrink-0" />
                                 <span className="min-w-0 flex-1 text-pretty leading-snug break-words">
@@ -2038,7 +2038,7 @@ export default function DirectorWorkspace({
                                   setInput(q.replace(/\?$/, "") + " — ");
                                   inputRef.current?.focus();
                                 }}
-                                className="!inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start text-[11px] text-left rounded-md border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 !whitespace-normal overflow-visible"
+                                className="!inline-flex h-auto min-h-8 w-full sm:w-auto max-w-full justify-start wl-micro-meta text-left rounded-md border-brand/20 bg-brand/[0.04] px-3 py-1.5 hover:bg-brand/10 !whitespace-normal overflow-visible"
                               >
                                 <span className="min-w-0 flex-1 text-pretty leading-snug break-words">
                                   {q}
@@ -2055,18 +2055,18 @@ export default function DirectorWorkspace({
                               key={a.callId}
                               className="rounded-[12px] border border-brand/20 bg-brand/[0.04] px-3 py-2"
                             >
-                              <p className="text-[11px] text-muted mb-2">{a.label}</p>
+                              <p className="wl-micro-meta--muted mb-2">{a.label}</p>
                               <div className="flex items-center gap-2">
                                 <ShadButton
                                   onClick={() => respondToApproval(a, true)}
-                                  className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold bg-brand text-white"
+                                  className="px-3 py-1.5 rounded-[10px] wl-micro-meta font-semibold bg-brand text-white"
                                   disabled={isSending}
                                 >
                                   Approve
                                 </ShadButton>
                                 <ShadButton
                                   onClick={() => respondToApproval(a, false)}
-                                  className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border border-brand/20 text-muted"
+                                  className="px-3 py-1.5 rounded-[10px] wl-micro-meta font-semibold border border-brand/20 text-muted"
                                   disabled={isSending}
                                 >
                                   Decline
@@ -2093,7 +2093,7 @@ export default function DirectorWorkspace({
                           >
                             <Loader2 className="w-4 h-4 text-brand animate-spin shrink-0" />
                             <div className="min-w-0 flex-1 space-y-1">
-                              <p className="text-[11px] text-muted leading-relaxed">
+                              <p className="wl-micro-meta--muted leading-relaxed">
                                 {stitchPollExhausted[m.id]
                                   ? "Still packaging preview — this can take longer than usual."
                                   : `Packaging preview — ${WIRELINE_STITCH_UI.loadingPhases[Math.min(Math.floor((stitchPendingElapsedMs[m.id] ?? 0) / 6000) % WIRELINE_STITCH_UI.loadingPhases.length, WIRELINE_STITCH_UI.loadingPhases.length - 1)]}`}
@@ -2174,7 +2174,7 @@ export default function DirectorWorkspace({
                                         <a
                                           href={p.previewDataUrl}
                                           download={`${p.title || "concept"}.png`}
-                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper/95 backdrop-blur-sm text-[11px] font-semibold text-ink shadow-xl hover:bg-paper transition-colors"
+                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper/95 backdrop-blur-sm wl-micro-meta font-semibold text-ink shadow-xl hover:bg-paper transition-colors"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           <Download className="w-3.5 h-3.5" />

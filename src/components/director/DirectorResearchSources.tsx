@@ -38,7 +38,7 @@ export function DirectorResearchSources({ sources }: { sources: ResearchSource[]
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-start gap-2 text-[11px] text-brand hover:text-brand/80 transition-colors"
+                  className="group flex items-start gap-2 wl-micro-meta text-brand hover:text-brand/80 transition-colors"
                 >
                   <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
                   <span className="underline-offset-2 group-hover:underline line-clamp-2">
@@ -46,7 +46,7 @@ export function DirectorResearchSources({ sources }: { sources: ResearchSource[]
                   </span>
                 </a>
               ) : (
-                <span className="text-[11px] text-muted-foreground line-clamp-2">
+                <span className="wl-micro-meta--muted line-clamp-2">
                   {s.title || s.uri || "Source"}
                 </span>
               )}
