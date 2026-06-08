@@ -10,6 +10,7 @@ import {
   FileText,
   Target,
   Search,
+  Share2,
   Sparkles,
   Users2,
   Table2,
@@ -90,6 +91,45 @@ export function CRMPreviewCard() {
         <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
           Deal value: <span className="text-white font-medium">$4,800</span> · Stage moved to{" "}
           <span style={{ color: "#FF7A59" }}>Qualified</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function XPreviewCard() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 350);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
+      <div
+        className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold"
+        style={{ background: "#000000", color: "#E7E9EA" }}
+      >
+        <span>@wireline</span>
+        <span style={{ color: "rgba(231,233,234,0.45)" }}>· just now</span>
+      </div>
+      <div className="p-3 space-y-2" style={{ background: "#000000", minHeight: 72 }}>
+        <div
+          className="transition-all duration-400"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(6px)",
+          }}
+        >
+          <div className="text-[11px] leading-relaxed" style={{ color: "#E7E9EA" }}>
+            Thanks for calling in — we&apos;ll follow up with your quote by end of day. 🎯
+          </div>
+          <div className="flex items-center gap-3 mt-2 text-[10px]" style={{ color: "#71767B" }}>
+            <span>♡ 12</span>
+            <span>↻ 3</span>
+            <span>💬 2</span>
+          </div>
         </div>
       </div>
     </div>
@@ -970,6 +1010,14 @@ export const INTEGRATION_META: readonly IntegrationMeta[] = [
     PreviewCard: SlackPreviewCard,
   },
   {
+    key: "x",
+    label: "X",
+    color: INTEGRATION_ORBIT_COLOR,
+    Icon: Share2,
+    tagline: "Post, reply, like, repost, DM, and triage @mentions from connected accounts",
+    PreviewCard: XPreviewCard,
+  },
+  {
     key: "twilio",
     label: "SMS",
     color: INTEGRATION_ORBIT_COLOR,
@@ -1071,6 +1119,10 @@ export const ACTIVITY_LOG: Partial<Record<ToolIntegration, Array<{ text: string;
     slack: [
       { text: '#hot-leads: "Qualified lead: Jennifer Park"', time: "3 calls ago" },
       { text: '#compliance: "DNC request flagged"', time: "Yesterday" },
+    ],
+    x: [
+      { text: "Posted follow-up tweet after qualified call", time: "3 calls ago" },
+      { text: "Replied to @mention on product question", time: "Yesterday" },
     ],
     twilio: [
       { text: "SMS confirmation sent to (555) 234-5678", time: "3 calls ago" },

@@ -44,11 +44,15 @@ router.get(
           createdAt: schema.crmConnections.createdAt,
           updatedAt: schema.crmConnections.updatedAt,
           metadata: schema.crmConnections.metadata,
+          active: schema.crmConnections.active,
         })
         .from(schema.crmConnections)
         .where(eq(schema.crmConnections.userId, userId));
 
       const findBy = (p: string) => (connections || []).find((c) => c.provider === p);
+      const isLive = (
+        row: (typeof connections)[number] | undefined,
+      ): row is (typeof connections)[number] => !!row && row.active !== false;
       const sfConn = findBy("salesforce");
       const hsConn = findBy("hubspot");
       const slackConn = findBy("slack");
@@ -63,7 +67,7 @@ router.get(
       const sheetsConn = findBy("google_sheets");
 
       res.json({
-        salesforce: sfConn
+        salesforce: isLive(sfConn)
           ? {
               connected: true,
               email: sfConn.connectedEmail,
@@ -71,7 +75,7 @@ router.get(
               connected_at: sfConn.createdAt,
             }
           : { connected: false, configured: sfOAuthConfigured() },
-        hubspot: hsConn
+        hubspot: isLive(hsConn)
           ? {
               connected: true,
               email: hsConn.connectedEmail,
@@ -79,7 +83,7 @@ router.get(
               connected_at: hsConn.createdAt,
             }
           : { connected: false, configured: hsOAuthConfigured() },
-        slack: slackConn
+        slack: isLive(slackConn)
           ? {
               connected: true,
               team: slackConn.connectedEmail,
@@ -90,7 +94,7 @@ router.get(
                 null,
             }
           : { connected: false, configured: slackOAuthConfigured() },
-        x: xConn
+        x: isLive(xConn)
           ? {
               connected: true,
               email: xConn.connectedEmail,
@@ -102,14 +106,14 @@ router.get(
                 null,
             }
           : { connected: false, configured: xOAuthConfigured() },
-        zoom: zoomConn
+        zoom: isLive(zoomConn)
           ? {
               connected: true,
               instance_url: zoomConn.instanceUrl,
               connected_at: zoomConn.createdAt,
             }
           : { connected: false, configured: zoomOAuthConfigured() },
-        apollo: apolloConn
+        apollo: isLive(apolloConn)
           ? {
               connected: true,
               email: apolloConn.connectedEmail,
@@ -123,14 +127,14 @@ router.get(
               platform_active: apolloPlatformConfigured(),
               oauth_connect_available: apolloOAuthConfigured(),
             },
-        meta: metaConn
+        meta: isLive(metaConn)
           ? {
               connected: true,
               email: metaConn.connectedEmail,
               connected_at: metaConn.createdAt,
             }
           : { connected: false, configured: metaOAuthConfigured() },
-        shopify: shopifyConn
+        shopify: isLive(shopifyConn)
           ? {
               connected: true,
               email: shopifyConn.connectedEmail,
@@ -138,14 +142,14 @@ router.get(
               connected_at: shopifyConn.createdAt,
             }
           : { connected: false, configured: shopifyOAuthConfigured() },
-        square: squareConn
+        square: isLive(squareConn)
           ? {
               connected: true,
               email: squareConn.connectedEmail,
               connected_at: squareConn.createdAt,
             }
           : { connected: false, configured: squareOAuthConfigured() },
-        microsoft_teams: teamsConn
+        microsoft_teams: isLive(teamsConn)
           ? {
               connected: true,
               email: teamsConn.connectedEmail,
@@ -158,14 +162,14 @@ router.get(
                 (teamsConn.metadata as { channel_name?: string } | null)?.channel_name ?? null,
             }
           : { connected: false, configured: microsoftGraphConfigured() },
-        microsoft_excel: excelConn
+        microsoft_excel: isLive(excelConn)
           ? {
               connected: true,
               email: excelConn.connectedEmail,
               connected_at: excelConn.createdAt,
             }
           : { connected: false, configured: microsoftGraphConfigured() },
-        google_sheets: sheetsConn
+        google_sheets: isLive(sheetsConn)
           ? {
               connected: true,
               email: sheetsConn.connectedEmail,

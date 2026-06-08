@@ -45,7 +45,10 @@ export async function loadTenantIntegrationConnections(
 ): Promise<TenantIntegrationConnections> {
   const [crmRows, calendarRows, emailRows] = await Promise.all([
     drizzle
-      .select({ provider: schema.crmConnections.provider })
+      .select({
+        provider: schema.crmConnections.provider,
+        active: schema.crmConnections.active,
+      })
       .from(schema.crmConnections)
       .where(eq(schema.crmConnections.userId, userId)),
     drizzle
@@ -58,7 +61,7 @@ export async function loadTenantIntegrationConnections(
       .where(eq(schema.emailAccounts.userId, userId)),
   ]);
 
-  const providers = new Set(crmRows.map((r) => r.provider));
+  const providers = new Set(crmRows.filter((r) => r.active !== false).map((r) => r.provider));
   const calendarProviders = new Set(
     calendarRows.map((r) => (r.provider || "google").toLowerCase()),
   );
