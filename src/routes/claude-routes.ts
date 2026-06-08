@@ -11,7 +11,7 @@ import { claudeErr } from "../lib/claude-response-helpers";
 import { parseFormData, DirectiveSchema } from "../lib/form-validators";
 import { DEFAULT_AGENT_ROLE } from "../lib/agent-constants";
 import { dispatchWebhook } from "../lib/webhook-helpers";
-import { isSsrfUrl } from "../lib/webhook-validators";
+import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
 import { validate } from "../middleware/input-validation";
 import { z } from "zod";
 
@@ -821,10 +821,9 @@ router.post(
       if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
         throw AppError.fromHttpStatus(400, "url must use http:// or https://");
       }
-      if (isSsrfUrl(url)) {
-        return res
-          .status(400)
-          .json({ error: "url targets a private or internal address and cannot be crawled." });
+      const ssrfErr = await assertUrlSafeForServerFetch(url);
+      if (ssrfErr) {
+        return res.status(400).json({ error: ssrfErr });
       }
       if (
         agentContext != null &&

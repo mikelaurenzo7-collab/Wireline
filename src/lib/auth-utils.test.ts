@@ -67,6 +67,24 @@ describe("verifyInternalJwt", () => {
     expect(await verifyInternalJwt(token, SECRET)).toBeNull();
   });
 
+  it("rejects tokens whose header alg is not HS256", async () => {
+    const header = Buffer.from(JSON.stringify({ alg: "none", typ: "JWT" })).toString("base64url");
+    const body = Buffer.from(JSON.stringify({ sub: "user-1", exp: future() })).toString(
+      "base64url",
+    );
+    const sig = createHmac("sha256", SECRET).update(`${header}.${body}`).digest("base64url");
+    expect(await verifyInternalJwt(`${header}.${body}.${sig}`, SECRET)).toBeNull();
+  });
+
+  it("rejects tokens whose header typ is not JWT", async () => {
+    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWE" })).toString("base64url");
+    const body = Buffer.from(JSON.stringify({ sub: "user-1", exp: future() })).toString(
+      "base64url",
+    );
+    const sig = createHmac("sha256", SECRET).update(`${header}.${body}`).digest("base64url");
+    expect(await verifyInternalJwt(`${header}.${body}.${sig}`, SECRET)).toBeNull();
+  });
+
   it("rejects a token whose exp is not a number", async () => {
     // Forge a token where exp is a string — the previous loose check
     // (`if (payload.exp && payload.exp < now)`) would have accepted it

@@ -156,9 +156,9 @@ async function fetchMetaLead(
   form_id?: string;
 } | null> {
   try {
-    const r = await fetch(
-      `${META_GRAPH}/${leadgenId}?access_token=${encodeURIComponent(accessToken)}`,
-    );
+    const r = await fetch(`${META_GRAPH}/${leadgenId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     if (!r.ok) return null;
     return (await r.json()) as any;
   } catch (err) {

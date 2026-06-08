@@ -3,6 +3,7 @@ import express from "express";
 import { google } from "googleapis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
 import { drizzle, fetchWithTimeout, IS_PROD } from "./server-context";
+import { isProductionRuntime } from "./session-cookie";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
@@ -32,7 +33,7 @@ function getAppOrigin(req: express.Request): string {
 
 function getOAuthStateSecret(): string {
   if (process.env.OAUTH_STATE_SECRET) return process.env.OAUTH_STATE_SECRET;
-  if (IS_PROD) throw new Error("OAUTH_STATE_SECRET is required in production");
+  if (isProductionRuntime()) throw new Error("OAUTH_STATE_SECRET is required in production");
   return "wireline-dev-oauth-state-secret-at-least-32-bytes";
 }
 

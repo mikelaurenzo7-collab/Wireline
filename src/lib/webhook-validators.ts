@@ -38,6 +38,25 @@ export function isPrivateIpv6(ip: string): boolean {
 // "10.example.com" or "192.168.example.com" aren't rejected before DNS resolution.
 const IPV4_LITERAL_RE = /^\d{1,3}(\.\d{1,3}){3}$/;
 
+/**
+ * Fail-closed SSRF guard for server-initiated fetches of user-supplied URLs.
+ * Combines sync literal/private-host checks with DNS resolution (blocks rebinding).
+ * Returns a user-facing error string, or null when safe to fetch.
+ */
+export async function assertUrlSafeForServerFetch(raw: string): Promise<string | null> {
+  if (isSsrfUrl(raw)) {
+    return "url targets a private or internal address and cannot be fetched.";
+  }
+  const resolution = await resolveWebhookDeliveryHostname(raw);
+  if (resolution.status === "private") {
+    return "url resolves to a private or internal address and cannot be fetched.";
+  }
+  if (resolution.status === "dns_error") {
+    return "could not resolve url hostname.";
+  }
+  return null;
+}
+
 /** Sync SSRF guard — pattern checks only, no DNS. */
 export function isSsrfUrl(raw: string): boolean {
   let parsed: URL;

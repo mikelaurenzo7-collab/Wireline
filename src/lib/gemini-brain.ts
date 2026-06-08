@@ -143,6 +143,7 @@ export async function postCallAnalysis(params: { transcript: string; summary: st
   coaching_note: string;
   action_items?: any[];
   knowledge_gaps?: string[];
+  compliance_flags?: string[];
 }> {
   if (!flashModel) {
     return {
@@ -166,9 +167,12 @@ export async function postCallAnalysis(params: { transcript: string; summary: st
         "sentiment": "positive" | "neutral" | "negative",
         "lesson": "one tactical improvement for the agent",
         "coaching_note": "one sentence for a human manager",
+        "compliance_flags": ["TCPA/recording consent/GDPR/refund-policy issues spotted, or empty array"],
         "action_items": [{"description": string, "priority": "high" | "medium" | "low"}],
         "knowledge_gaps": ["topics the agent couldn't answer"]
       }
+      
+      Flag compliance issues (recording consent, TCPA, GDPR, refund-policy mismatch) in compliance_flags.
       
       Transcript: ${params.transcript}
       Summary: ${params.summary}
@@ -179,7 +183,21 @@ export async function postCallAnalysis(params: { transcript: string; summary: st
     );
     const text = result.response.text().trim();
     const jsonStr = text.replace(/```json|```/g, "").trim();
-    return JSON.parse(jsonStr);
+    const parsed = JSON.parse(jsonStr) as {
+      lead_score: number;
+      intent_label: string;
+      sentiment: string;
+      lesson: string;
+      coaching_note: string;
+      compliance_flags?: string[];
+      action_items?: any[];
+      knowledge_gaps?: string[];
+    };
+    if (parsed.compliance_flags?.length) {
+      const flags = parsed.compliance_flags.join("; ");
+      parsed.coaching_note = `${parsed.coaching_note || ""} [Compliance: ${flags}]`.trim();
+    }
+    return parsed;
   } catch (err) {
     log.error("Gemini post-call analysis failed", { error: getErrorMessage(err) });
     return {

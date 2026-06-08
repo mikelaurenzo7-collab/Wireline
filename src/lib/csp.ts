@@ -67,10 +67,10 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
-    // Allow Google Fonts stylesheet. We pull `Instrument Serif`, `Geist`, and
-    // `JetBrains Mono` via `@import url('https://fonts.googleapis.com/...')`
-    // in `src/index.css`; without this entry the entire Google Fonts request
-    // is blocked at every page load.
+    // style-src includes 'unsafe-inline' because Tailwind utility classes and
+    // Google Fonts @import in src/index.css emit inline styles at runtime.
+    // Residual risk: inline-style XSS amplification if script-src is ever weakened.
+    // Migration path: hashed/nonce style-src once inline utilities are externalized.
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https:`,
     // fonts.gstatic.com serves the actual .woff2 files referenced by the

@@ -88,6 +88,13 @@ describe("buildCSP", () => {
     expect(csp.split(";").length).toBeGreaterThan(5);
     expect(csp).not.toContain("\n");
   });
+
+  it("production CSP uses per-request nonce when supplied (server.ts pattern)", () => {
+    const nonce = generateCspNonce();
+    const csp = buildCSP(false, nonce);
+    expect(csp).toContain(`'nonce-${nonce}'`);
+    expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
+  });
 });
 
 describe("generateCspNonce", () => {

@@ -17,8 +17,15 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { sql, gte } from "drizzle-orm";
 import { rateLimit } from "../lib/rate-limit";
+import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
 const router = Router();
+
+const publicAssistantRateLimiter = createIpRateLimiter({
+  bucket: "public_assistant",
+  windowMs: 60_000,
+  max: 30,
+});
 
 router.get("/api/public/stats", async (req: Request, res: Response) => {
   // 30/min per IP. The endpoint is public + uncached on first hit;
@@ -78,28 +85,32 @@ router.get("/api/public/stats", async (req: Request, res: Response) => {
 import { buildShowcaseAssistantPayload } from "../lib/showcase-assistant";
 import { WIRELINE_DEMO_AGENTS, WIRELINE_CONTACT_AGENTS } from "../data/contact-agents";
 
-router.get("/api/public/assistant/:agentName", async (req: Request, res: Response) => {
-  try {
-    const { agentName } = req.params;
+router.get(
+  "/api/public/assistant/:agentName",
+  publicAssistantRateLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const { agentName } = req.params;
 
-    // Find showcase agent by name
-    const agent =
-      WIRELINE_DEMO_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase()) ||
-      WIRELINE_CONTACT_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase());
+      // Find showcase agent by name
+      const agent =
+        WIRELINE_DEMO_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase()) ||
+        WIRELINE_CONTACT_AGENTS.find((a) => a.name.toLowerCase() === agentName.toLowerCase());
 
-    if (!agent) {
-      throw AppError.fromHttpStatus(404, `Showcase agent '${agentName}' not found`);
+      if (!agent) {
+        throw AppError.fromHttpStatus(404, `Showcase agent '${agentName}' not found`);
+      }
+
+      const kind = WIRELINE_DEMO_AGENTS.some((a) => a.name === agent.name) ? "demo" : "cs";
+      const payload = buildShowcaseAssistantPayload(agent, kind);
+
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.json(payload);
+    } catch (err: any) {
+      log.warn("/api/public/assistant failed", { error: err?.message });
+      throw AppError.fromHttpStatus(500, "Failed to generate assistant payload");
     }
-
-    const kind = WIRELINE_DEMO_AGENTS.some((a) => a.name === agent.name) ? "demo" : "cs";
-    const payload = buildShowcaseAssistantPayload(agent, kind);
-
-    res.setHeader("Cache-Control", "public, max-age=300");
-    res.json(payload);
-  } catch (err: any) {
-    log.warn("/api/public/assistant failed", { error: err?.message });
-    throw AppError.fromHttpStatus(500, "Failed to generate assistant payload");
-  }
-});
+  },
+);
 
 export default router;

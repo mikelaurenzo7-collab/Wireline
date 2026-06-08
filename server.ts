@@ -40,7 +40,7 @@ import { DIRECTOR_REQUEST_TIMEOUT_MS } from "./src/lib/api";
 import { AppError, formatErrorResponse } from "./src/lib/api-error";
 import { normalizeApiErrorResponse } from "./src/middleware/normalize-api-error-response";
 import { validateStartupEnv } from "./src/lib/startup";
-import { buildCSP, buildConnectSrcs } from "./src/lib/csp";
+import { buildCSP, buildConnectSrcs, generateCspNonce } from "./src/lib/csp";
 import { isRedisConfigured, startMemoryCleanup } from "./src/lib/rate-limit";
 import { installWebhookBodyParsers } from "./src/lib/body-parsers";
 import { claudeRateLimiter } from "./src/middleware/api-rate-limits";
@@ -198,7 +198,9 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)");
-  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, undefined, CSP_CONNECT_SRCS));
+  const cspNonce = IS_PROD ? generateCspNonce() : undefined;
+  res.locals.cspNonce = cspNonce;
+  res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, cspNonce, CSP_CONNECT_SRCS));
   if (IS_PROD) {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }

@@ -33,6 +33,21 @@ export async function verifyInternalJwt(token: string, secret: string): Promise<
     const [headerB64, payloadB64, signatureB64] = token.split(".");
     if (!headerB64 || !payloadB64 || !signatureB64) return null;
 
+    // 0. Lock algorithm + type before signature work (alg-confusion hardening).
+    let header: { alg?: string; typ?: string };
+    try {
+      header = JSON.parse(Buffer.from(headerB64, "base64url").toString("utf8")) as {
+        alg?: string;
+        typ?: string;
+      };
+    } catch {
+      return null;
+    }
+    if (header.alg !== "HS256" || header.typ !== "JWT") {
+      log.warn("JWT rejected: unsupported alg/typ", { alg: header.alg, typ: header.typ });
+      return null;
+    }
+
     // 1. Verify Signature
     const data = `${headerB64}.${payloadB64}`;
     const hmac = createHmac("sha256", secret);

@@ -11,7 +11,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { getCallerRole } from "../middleware/require-role";
 import { claimJobById, completeJob, enqueue, failJob, getQueueStats } from "../lib/job-queue";
 import { handleJob } from "../lib/job-worker";
-import { isSsrfUrl } from "../lib/webhook-validators";
+import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
 import { apolloPlatformConfigured } from "../lib/apollo-service";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -118,10 +118,9 @@ router.post(
       if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
         throw AppError.fromHttpStatus(400, "url must use http:// or https://");
       }
-      if (isSsrfUrl(url)) {
-        return res
-          .status(400)
-          .json({ error: "url targets a private or internal address and cannot be crawled." });
+      const ssrfErr = await assertUrlSafeForServerFetch(url);
+      if (ssrfErr) {
+        return res.status(400).json({ error: ssrfErr });
       }
       if (
         agentContext != null &&

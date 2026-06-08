@@ -3,6 +3,7 @@ import {
   isPrivateIp,
   isPrivateIpv6,
   isSsrfUrl,
+  assertUrlSafeForServerFetch,
   resolveWebhookDeliveryHostname,
   validateWebhookUrl,
 } from "./webhook-validators";
@@ -180,6 +181,30 @@ describe("webhook-validators — SSRF guard", () => {
       await expect(
         resolveWebhookDeliveryHostname("https://hooks.zapier.com/hooks/catch/1"),
       ).resolves.toEqual({ status: "public" });
+    });
+  });
+
+  describe("assertUrlSafeForServerFetch", () => {
+    beforeEach(() => {
+      vi.mocked(lookup).mockReset();
+    });
+
+    it("rejects literal private hosts synchronously", async () => {
+      await expect(assertUrlSafeForServerFetch("http://127.0.0.1/admin")).resolves.toMatch(
+        /private or internal/,
+      );
+    });
+
+    it("rejects hostnames that resolve to private IPs", async () => {
+      vi.mocked(lookup).mockResolvedValue([{ address: "169.254.169.254", family: 4 }]);
+      await expect(assertUrlSafeForServerFetch("https://metadata.attacker.com/")).resolves.toMatch(
+        /resolves to a private/,
+      );
+    });
+
+    it("returns null for public hostnames", async () => {
+      vi.mocked(lookup).mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+      await expect(assertUrlSafeForServerFetch("https://example.com/page")).resolves.toBeNull();
     });
   });
 

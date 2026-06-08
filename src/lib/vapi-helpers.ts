@@ -28,6 +28,7 @@ export const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
 export const MAX_RUNTIME_LESSONS = 5;
 export const MAX_RUNTIME_DIRECTIVES = 24;
 export const MAX_RUNTIME_KNOWLEDGE = 18;
+/** Vapi re-sends the full system prompt each turn — provider-side prompt caching is the largest cost lever (track with Vapi). */
 export const MAX_RUNTIME_PROMPT_CHARS = 18_000;
 export const MAX_RUNTIME_SNIPPET_CHARS = 360;
 export const MAX_CONTEXT_PREVIEW_LENGTH = 200;

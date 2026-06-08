@@ -548,7 +548,7 @@ After crawling, extract every concrete fact a customer-service agent would need:
   ];
 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
-  const model = selectModelForTask("medium");
+  const model = selectModelForTask("complex");
 
   let _t = Date.now();
   let response = await client.messages.create({
@@ -603,7 +603,7 @@ export async function knowledgeFromDocument(input: KnowledgeFromDocumentInput) {
   const client = getClient();
   const system = `You are a knowledge-base curator for an autonomous voice/email agent. Read the provided document and extract every concrete fact a customer-service agent would need: services, pricing, hours, contact info, return/refund policies, FAQ answers, business address, key personnel. Each entry must be atomic, self-contained, and useful in isolation (the agent will quote it verbatim). Skip marketing fluff. ${input.maxEntries ? `Limit to ~${input.maxEntries} entries.` : ""} Then call deliver_knowledge_entries with the result.`;
 
-  const model = selectModelForTask("medium");
+  const model = selectModelForTask("complex");
   const t0 = Date.now();
   const response = await client.messages.create({
     model,
@@ -1011,8 +1011,9 @@ export interface TopicClustersInput {
 }
 
 export async function clusterTopics(input: TopicClustersInput) {
-  const system = `You are a customer-conversation analyst. Cluster the provided call/email summaries into a SHORT list (5–8 max) of meaningful topics. Use plain English topic names that an SMB owner would understand. Estimate trend ('new' / 'growing' / 'steady' / 'declining') based on whether each topic appears more/less in the recent half vs the older half of the data.`;
-  const user = `Window: last ${input.windowDays ?? 14} days. ${input.summaries.length} samples.
+  const n = input.summaries.length;
+  const system = `You are a customer-conversation analyst. Cluster the provided call/email summaries into a SHORT list (5–8 max) of meaningful topics. Use plain English topic names that an SMB owner would understand. Summaries are listed oldest-first (1 = oldest, ${n} = newest). Estimate trend ('new' / 'growing' / 'steady' / 'declining') by comparing the recent half (higher indices) vs the older half (lower indices).`;
+  const user = `Window: last ${input.windowDays ?? 14} days. ${n} samples (oldest → newest).
 
 ${input.summaries.map((s, i) => `${i + 1}. [${s.intent_label || "?"}] ${s.summary}`).join("\n")}`;
 
@@ -1171,7 +1172,7 @@ Search the web, then call deliver_lead_enrichment.`;
   ];
 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
-  const model = selectModelForTask("medium");
+  const model = selectModelForTask("complex");
   const maxTokens = 4096;
 
   let _t = Date.now();
