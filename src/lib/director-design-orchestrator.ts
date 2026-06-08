@@ -216,7 +216,6 @@ async function runOpusImplementHtml(input: {
       system: DESIGN_OPUS_IMPLEMENT_SYSTEM,
       user: buildOpusImplementUserPrompt(input),
       maxTokens: 16_384,
-      signal: designStageAbortSignal("finisher", input.signal),
     });
     const html = stripHtmlFences(text);
     if (!html.trim()) return input.draftHtml;
