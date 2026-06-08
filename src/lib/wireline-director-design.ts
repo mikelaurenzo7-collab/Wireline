@@ -452,22 +452,19 @@ export const WIRELINE_STITCH_UI = {
   ],
   /** Design Studio (LLM pipeline) — shown when Stitch pixel render is off. */
   studioLoadingPhases: [
-    "Spectrum Desk — researching your industry…",
+    "Spectrum Desk — Kimi researching your industry…",
     "Generating hero photography…",
-    "Pass 1 — building HTML structure…",
-    "Pass 1 — visual critique…",
-    "Pass 1 — production finish…",
-    "Pass 2 — refining components…",
-    "Pass 2 — visual critique…",
-    "Pass 2 — production finish…",
-    "Pass 3 — convergence polish…",
+    "Hy3 — building your page…",
+    "Kimi — visual critique…",
+    "MiniMax — production finish…",
     "Quality gate…",
-    "US copy localization…",
+    "US copy polish…",
+    "Opus — packaging your page…",
   ],
-  /** ~20s × 11 phases ≈ 3.5 min — Spectrum linear pipeline budget. */
-  studioLoadingPhaseIntervalMs: 20_000,
+  /** ~30s × 8 phases ≈ 4 min — rotates while the full pass-1 pipeline runs. */
+  studioLoadingPhaseIntervalMs: 30_000,
   studioLoadingHint:
-    "Spectrum Desk usually finishes in 2–3 minutes. Turn on Design, then refine in chat.",
+    "Full first preview usually finishes in about 4 minutes. Refine anything in chat after that.",
   designStudioReasoning:
     "Spectrum Desk — Kimi research, Hy3 build, MiniMax finish, Opus sign-off",
   loadingHint:

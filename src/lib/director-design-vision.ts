@@ -16,6 +16,8 @@ export interface DesignVisionSpecInput {
   researchNotes?: string;
   layoutScoutNotes?: string;
   imagineAssetsNotes?: string;
+  /** Pass 1 fast lane — compact spec so Hy3 starts sooner. */
+  compact?: boolean;
 }
 
 function deviceLabel(device: ReturnType<typeof resolveDesignPreviewDeviceType>): string {
@@ -134,16 +136,27 @@ function padToTarget(text: string, target: number): string {
  * Synthesize the pass-1 vision document — no extra LLM call; assembled from brief + research.
  */
 export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
+  const compact = input.compact === true;
+  const targetChars = compact ? 2_800 : DESIGN_VISION_SPEC_TARGET_CHARS;
+  const minChars = compact ? 2_200 : DESIGN_VISION_SPEC_MIN_CHARS;
+  const briefCap = compact ? 2_400 : undefined;
+
   const device = resolveDesignPreviewDeviceType({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,
   });
 
+  const briefBody = briefCap
+    ? input.designBriefMarkdown.trim().slice(0, briefCap)
+    : input.designBriefMarkdown.trim();
+
   const parts = [
     "# Wireline Design Vision Spec",
     "",
     "## Studio mode",
-    "High-fidelity production landing page (not wireframe). Output one self-contained HTML file with embedded <style>.",
+    compact
+      ? "Pass 1 fast preview — ship complete hero + trust + one body section + footer with embedded kit CSS. User will refine in chat."
+      : "High-fidelity production landing page (not wireframe). Output one self-contained HTML file with embedded <style>.",
     "This spec is the single source of truth for pass 1 — implement every section below.",
     "",
     "## Viewport & canvas",
@@ -153,14 +166,18 @@ export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
     input.operatorMessage.trim(),
     "",
     "## design.md (project brief — honor every field)",
-    input.designBriefMarkdown.trim(),
+    briefBody,
   ];
 
   if (input.researchNotes?.trim()) {
-    parts.push("", "## Research synthesis (follow closely)", input.researchNotes.trim());
+    const researchCap = compact ? 600 : undefined;
+    const research = researchCap
+      ? input.researchNotes.trim().slice(0, researchCap)
+      : input.researchNotes.trim();
+    parts.push("", "## Research synthesis (follow closely)", research);
   }
 
-  if (input.layoutScoutNotes?.trim()) {
+  if (!compact && input.layoutScoutNotes?.trim()) {
     parts.push(
       "",
       "## Layout archetypes (pick one or hybridize — avoid generic grids)",
@@ -168,7 +185,7 @@ export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
     );
   }
 
-  if (input.imagineAssetsNotes?.trim()) {
+  if (!compact && input.imagineAssetsNotes?.trim()) {
     parts.push("", "## Hero photography assets", input.imagineAssetsNotes.trim());
   }
 
@@ -182,7 +199,14 @@ export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
     successCriteria(),
   );
 
-  return padToTarget(parts.join("\n"), DESIGN_VISION_SPEC_TARGET_CHARS);
+  let spec = parts.join("\n");
+  if (compact) {
+    while (spec.length < minChars) {
+      spec = `${spec}\n- Ship hero, trust row, services, footer with wl-* kit classes.`;
+    }
+    return spec.slice(0, targetChars + 200);
+  }
+  return padToTarget(spec, targetChars);
 }
 
 export function visionSpecCharCount(spec: string): number {

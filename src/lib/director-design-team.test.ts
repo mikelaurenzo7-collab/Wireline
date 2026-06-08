@@ -48,6 +48,11 @@ describe("WIRELINE_DESIGN_TEAM Spectrum Desk", () => {
     expect(WIRELINE_DESIGN_TEAM.maxRefinementPasses).toBe(2);
   });
 
+  it("runs a single full pass when the quality gate passes", () => {
+    expect(WIRELINE_DESIGN_TEAM.minRefinementPasses).toBe(1);
+    expect(WIRELINE_DESIGN_TEAM.maxRefinementPasses).toBe(2);
+  });
+
   it("documents Opus in studio reasoning", () => {
     expect(WIRELINE_DESIGN_STUDIO_REASONING).toMatch(/Opus/i);
   });

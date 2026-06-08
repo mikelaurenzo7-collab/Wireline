@@ -559,7 +559,7 @@ export async function runDirectorDesignStudio(
   const nextStudioPhase = () => studioPhases[phaseCursor++] ?? studioPhases.at(-1)!;
 
   onProgress?.(nextStudioPhase());
-  phases.push("DeepSeek research");
+  phases.push("Kimi research");
   const { researchNotes, layoutScoutNotes } = await runSpectrumResearch({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,

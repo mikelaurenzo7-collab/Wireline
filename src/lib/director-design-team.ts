@@ -223,7 +223,7 @@ export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
     label: "Grok Imagine Image Quality",
   },
   enableOptionalChallenger: false,
-  /** Exit as soon as quality gate passes — extra passes only when gate fails. */
+  /** Exit when quality gate passes; pass 2 only when pass 1 misses the bar. */
   minRefinementPasses: 1 as DesignPassNumber,
   maxRefinementPasses: 2 as DesignPassNumber,
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,

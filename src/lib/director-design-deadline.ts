@@ -18,10 +18,10 @@ export const DESIGN_STUDIO_SKIP_CHALLENGER_REMAINING_MS = 140_000;
 /** Skip pass 3 when gate already passed on pass 2 and time is tight. */
 export const DESIGN_STUDIO_SKIP_EXTRA_PASS_REMAINING_MS = 95_000;
 
-/** Skip hero image generation when less than this remains (build is higher priority). */
+/** Skip hero image generation only when the global budget is nearly exhausted. */
 export const DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS = 380_000;
 
-/** Per-stage ceilings — prevent one OpenRouter call from burning the full budget. */
+/** Per-stage ceilings — generous headroom; typical pass 1 finishes in ~4 min. */
 export const DESIGN_STAGE_TIMEOUT_MS = {
   research: 45_000,
   layoutScout: 30_000,
@@ -104,7 +104,10 @@ export function shouldStartRefinementPass(
   return true;
 }
 
-export function maxTokensForPass(pass: 1 | 2 | 3, stage: "build" | "critic" | "finisher"): number {
+export function maxTokensForPass(
+  pass: 1 | 2 | 3,
+  stage: "build" | "critic" | "finisher",
+): number {
   if (pass === 1) {
     if (stage === "build") return 14_336;
     if (stage === "critic") return 1_536;

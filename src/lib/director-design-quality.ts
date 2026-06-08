@@ -100,6 +100,12 @@ export function designQualityPasses(report: DesignStudioQualityReport): boolean 
   return report.polished && report.usesDesignKit && report.hasPrimaryButton && report.hasHeadline;
 }
 
+/** Lighter gate for pass-1 fast lane — ship a preview users can iterate on in chat. */
+export function designQualityPassesFastLane(report: DesignStudioQualityReport): boolean {
+  const kitOk = report.designKitClassHits >= 3;
+  return report.polished && kitOk && report.hasHeadline && report.hasStyleBlock;
+}
+
 export function formatDesignQualityRevisionNotes(report: DesignStudioQualityReport): string {
   return report.issues.map((issue) => `- ${issue}`).join("\n");
 }

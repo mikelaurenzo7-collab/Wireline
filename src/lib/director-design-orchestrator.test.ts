@@ -87,4 +87,34 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     expect(turn.reply).toContain("Summit Landscaping");
     expect(turn.thinkingSummary).toMatch(/build/i);
   });
+
+  it("pass 1 runs layout scout, critic, finisher, and HTML localize", async () => {
+    vi.mocked(runOpenRouterCompletion).mockImplementation(async ({ user, system }) => {
+      if (system?.includes("layout scout") || user.includes("Layout scout")) {
+        return "Archetype A: asymmetric hero";
+      }
+      if (user.includes("Research") || system?.includes("research")) {
+        return "Research: trust, navy + cream.";
+      }
+      if (user.includes("critique") || user.includes("Critique")) {
+        return "## Must fix\n- Increase CTA contrast";
+      }
+      if (user.includes("localize")) return polishedHtml;
+      return polishedHtml;
+    });
+
+    vi.mocked(runStructured).mockResolvedValue({
+      operatorReply: "Your **Summit Landscaping** page is ready.",
+      pageTitle: "Summit Landscaping",
+    });
+
+    await runDirectorDesignStudio(baseInput);
+
+    const users = vi.mocked(runOpenRouterCompletion).mock.calls.map((c) => c[0].user);
+    const systems = vi.mocked(runOpenRouterCompletion).mock.calls.map((c) => c[0].system ?? "");
+
+    expect(systems.some((s) => /layout scout/i.test(s))).toBe(true);
+    expect(users.some((u) => /critique/i.test(u))).toBe(true);
+    expect(users.some((u) => /localize/i.test(u))).toBe(true);
+  });
 });
