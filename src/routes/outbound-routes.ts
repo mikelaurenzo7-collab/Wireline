@@ -242,10 +242,15 @@ router.post(
   // Same gate stack as /api/outbound/dial. Trial gate FIRST so the
   // upgrade-required code path takes priority. Bulk is the single
   // highest-risk surface for runaway spend — a CSV with 1k rows
-  // triggers 1k Vapi calls without the trial gate.
+  // triggers 1k Vapi calls without the full launch/spend/rate gate.
+  // NOTE: this endpoint is currently import-only: it stores lead rows and
+  // does not place calls or enqueue dialing jobs. Keep UI/API copy aligned
+  // until a separately controlled bulk-dial worker is introduced.
+  enforceLaunchHardGate,
   enforceTrialOutboundCap,
   enforce24hSpendCap,
   enforceSpendCap,
+  dialRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const validation = parseFormData(OutboundBulkSchema, {

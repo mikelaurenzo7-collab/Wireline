@@ -928,6 +928,7 @@ export async function handleJob(job: JobRow): Promise<void> {
     await sendEmail({
       to: ownerEmail,
       subject: `[Wireline] ${count} tenant(s) at margin risk`,
+      text: `${count} tenant(s) are below the margin safety threshold this month.\n\n${lines}`,
       html: `<p>${count} tenant(s) are below the margin safety threshold this month.</p><pre>${lines}</pre>`,
     });
   }

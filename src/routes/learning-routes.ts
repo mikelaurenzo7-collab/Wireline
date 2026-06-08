@@ -8,7 +8,7 @@ import { getErrorMessage } from "../lib/server-utils";
 import { log } from "../lib/server-context";
 
 const router = Router();
-const limiter = createRateLimiter({ windowMs: 60_000, max: 120 });
+const limiter = createRateLimiter({ bucket: "api:agent-learning", windowMs: 60_000, max: 120 });
 
 const reviewSchema = z.object({
   lesson_id: z.string(),
@@ -22,7 +22,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const parsed = reviewSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ ok: false, error: "Invalid body" });
+      return res.status(400).json({ ok: false, code: "BAD_REQUEST", error: "Invalid body" });
     }
     try {
       const lessonId = BigInt(parsed.data.lesson_id);
@@ -33,7 +33,9 @@ router.post(
       return res.json({ ok });
     } catch (e: unknown) {
       log.error("lesson review failed", { error: getErrorMessage(e) });
-      return res.status(500).json({ ok: false, error: "Lesson review failed" });
+      return res
+        .status(500)
+        .json({ ok: false, code: "INTERNAL_ERROR", error: "Lesson review failed" });
     }
   },
 );
@@ -47,7 +49,7 @@ router.get(
       const digest = await getLearningDigest(req.user.id, req.params.id);
       return res.json({ ok: true, digest });
     } catch (e: unknown) {
-      return res.status(500).json({ ok: false, error: getErrorMessage(e) });
+      return res.status(500).json({ ok: false, code: "INTERNAL_ERROR", error: getErrorMessage(e) });
     }
   },
 );

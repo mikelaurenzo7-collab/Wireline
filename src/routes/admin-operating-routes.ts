@@ -29,13 +29,17 @@ router.get(
         ownerId = ownerRow[0]?.id;
       }
       if (!ownerId) {
-        return res.status(412).json({ ok: false, error: "Owner account not found" });
+        return res
+          .status(412)
+          .json({ ok: false, code: "PRECONDITION_FAILED", error: "Owner account not found" });
       }
       const payload = await getOperatingCockpitPayload(String(ownerId));
       return res.json(payload);
     } catch (e: unknown) {
       log.error("operating-cockpit failed", { error: getErrorMessage(e) });
-      return res.status(500).json({ ok: false, error: "Operating cockpit query failed" });
+      return res
+        .status(500)
+        .json({ ok: false, code: "INTERNAL_ERROR", error: "Operating cockpit query failed" });
     }
   },
 );
@@ -47,14 +51,18 @@ router.get(
     if (!authorizeMigration(req, res)) return;
     const userId = String(req.query.user_id || "");
     if (!userId) {
-      return res.status(400).json({ ok: false, error: "user_id query param required" });
+      return res
+        .status(400)
+        .json({ ok: false, code: "BAD_REQUEST", error: "user_id query param required" });
     }
     try {
       const economics = await getTenantEconomics(userId);
       return res.json({ ok: true, economics });
     } catch (e: unknown) {
       log.error("tenant-economics failed", { error: getErrorMessage(e) });
-      return res.status(500).json({ ok: false, error: "Tenant economics query failed" });
+      return res
+        .status(500)
+        .json({ ok: false, code: "INTERNAL_ERROR", error: "Tenant economics query failed" });
     }
   },
 );
@@ -77,7 +85,7 @@ router.get(
       const count = await countAtRiskTenants();
       return res.json({ ok: true, economics_at_risk_count: count });
     } catch (e: unknown) {
-      return res.status(500).json({ ok: false, error: getErrorMessage(e) });
+      return res.status(500).json({ ok: false, code: "INTERNAL_ERROR", error: getErrorMessage(e) });
     }
   },
 );
@@ -97,7 +105,7 @@ router.get(
       );
       return res.send(body);
     } catch (e: unknown) {
-      return res.status(500).json({ ok: false, error: getErrorMessage(e) });
+      return res.status(500).json({ ok: false, code: "INTERNAL_ERROR", error: getErrorMessage(e) });
     }
   },
 );

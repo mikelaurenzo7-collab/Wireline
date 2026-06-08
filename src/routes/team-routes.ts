@@ -1,7 +1,7 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 import { Router, Response } from "express";
-import { log, drizzle } from "../lib/server-context";
+import { log, drizzle, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -11,26 +11,45 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-// GET /api/team — list all members in the user's organization
-router.get("/api/team", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const members = await drizzle
-      .select()
-      .from(schema.teamMembers)
-      .where(eq(schema.teamMembers.tenantId, req.user.id))
-      .orderBy(desc(schema.teamMembers.createdAt));
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-    res.json({ members: members || [] });
-  } catch (error: any) {
-    log.error("Failed to fetch team members", { error: getErrorMessage(error) });
-    throw AppError.fromHttpStatus(500, "Failed to fetch team members");
-  }
-});
+function escapeAttribute(value: string): string {
+  return escapeHtml(value).replace(/`/g, "&#96;");
+}
+
+// GET /api/team — list all members in the user's organization
+router.get(
+  "/api/team",
+  authenticateUser,
+  requirePermission("team.manage"),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const members = await drizzle
+        .select()
+        .from(schema.teamMembers)
+        .where(eq(schema.teamMembers.tenantId, req.user.id))
+        .orderBy(desc(schema.teamMembers.createdAt));
+
+      res.json({ members: members || [] });
+    } catch (error: any) {
+      log.error("Failed to fetch team members", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(500, "Failed to fetch team members");
+    }
+  },
+);
 
 // POST /api/team/invite — invite a new member
 router.post(
   "/api/team/invite",
   authenticateUser,
+  requirePermission("team.manage"),
   validateBody(inviteTeamMemberSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -54,15 +73,17 @@ router.post(
         const service = new IntegrationService(req.user.id);
         const appUrl = process.env.APP_URL || "https://wireline.ai";
         const invitedBy = req.user.email || "A colleague";
+        const safeInvitedBy = escapeHtml(invitedBy);
+        const safeInviteUrl = escapeAttribute(`${appUrl}/signup?invite=${data.id}`);
 
         const sent = await service.sendEmail({
           to: email,
           subject: `Invitation to join ${invitedBy} on Wireline`,
           body: `
           <h1>You've been invited!</h1>
-          <p>${invitedBy} has invited you to join their team on Wireline Business OS.</p>
+          <p>${safeInvitedBy} has invited you to join their team on Wireline Business OS.</p>
           <p>Wireline is the autonomous operating system for modern enterprises.</p>
-          <p><a href="${appUrl}/signup?invite=${data.id}" style="padding: 10px 20px; background: #000; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>
+          <p><a href="${safeInviteUrl}" style="padding: 10px 20px; background: #000; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>
           <p>If you don't have an account, you'll be prompted to create one.</p>
         `,
         });
@@ -92,6 +113,7 @@ router.post(
 router.delete(
   "/api/team/:id",
   authenticateUser,
+  requirePermission("team.manage"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       await drizzle

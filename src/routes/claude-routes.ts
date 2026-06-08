@@ -823,7 +823,7 @@ router.post(
       }
       const ssrfErr = await assertUrlSafeForServerFetch(url);
       if (ssrfErr) {
-        return res.status(400).json({ error: ssrfErr });
+        return res.status(400).json({ code: "BAD_REQUEST", error: ssrfErr });
       }
       if (
         agentContext != null &&

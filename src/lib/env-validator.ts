@@ -217,6 +217,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: (v) => !v || v.length >= 16,
     formatHint: "Min 16 characters",
   },
+  {
+    name: "MIGRATION_TOKEN",
+    group: "security",
+    required: false,
+    description: "High-entropy token for admin migration/sync endpoints",
+    validate: (v) => !v || v.length >= 43,
+    formatHint: "Min 43 base64url characters (32 random bytes)",
+  },
 
   // OPERATIONAL - Required for full functionality
   {
