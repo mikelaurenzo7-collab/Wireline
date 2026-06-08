@@ -4,6 +4,7 @@
  * stack as live agent gemini_ground).
  */
 import { groundedSearch } from "./gemini-brain";
+import { wantsFleetAudit } from "./director-deep-analysis";
 import { loadDirectorFeatureFlags } from "./director-feature-flags";
 
 export interface DirectorResearchSource {
@@ -31,6 +32,7 @@ export function isDirectorWebResearchConfigured(): boolean {
 export function wantsDirectorWebResearch(message: string): boolean {
   const trimmed = message.trim();
   if (!trimmed || trimmed.length < 8) return false;
+  if (wantsFleetAudit(trimmed)) return false;
   if (ACTION_ONLY.test(trimmed) && !RESEARCH_SIGNAL.test(trimmed)) return false;
   return RESEARCH_SIGNAL.test(trimmed);
 }

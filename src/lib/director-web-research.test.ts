@@ -10,6 +10,7 @@ describe("director web research", () => {
     expect(wantsDirectorWebResearch("What are competitors charging for HVAC in Austin?")).toBe(
       true,
     );
+    expect(wantsDirectorWebResearch("Audit my fleet — what should I fix first?")).toBe(false);
     expect(wantsDirectorWebResearch("Text Jordan back")).toBe(false);
     expect(wantsDirectorWebResearch("Research the latest FDCPA updates for my agency")).toBe(true);
     expect(wantsDirectorWebResearch("Draft a business plan — include market sizing")).toBe(true);

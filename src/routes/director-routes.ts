@@ -1153,14 +1153,11 @@ router.post(
       sse.onClientDisconnect(() => streamAbort.abort());
 
       const threadKey = resolveRequestThreadKey(req);
-      const fleet = await loadFleetSafe(req.user.id);
-      const stats = await loadDirectorWeekStats(req.user.id);
-
-      const priorMessages = await loadDirectorMessages(
-        req.user.id,
-        CLAUDE_CONTEXT_WINDOW,
-        threadKey,
-      );
+      const [fleet, stats, priorMessages] = await Promise.all([
+        loadFleetSafe(req.user.id),
+        loadDirectorWeekStats(req.user.id),
+        loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW, threadKey),
+      ]);
 
       const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),

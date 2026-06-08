@@ -49,4 +49,11 @@ describe("director deliverables", () => {
     expect(guidance).toContain("Website / product design");
     expect(guidance).toContain("```html");
   });
+
+  it("skips universal block for routine fleet audit prompts", () => {
+    const guidance = buildDirectorDeliverableGuidance(
+      "Audit my fleet — what should I fix first?",
+    );
+    expect(guidance).toBe("");
+  });
 });

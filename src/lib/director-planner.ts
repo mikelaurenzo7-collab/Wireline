@@ -29,12 +29,19 @@ import {
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import {
+  buildFleetAuditGuidance,
   resolveDirectorMaxTokens,
+  wantsFleetAudit,
   wantsLongDeliverable,
   wantsOpusModel,
 } from "./director-deep-analysis";
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
-export { wantsDeepAnalysis, wantsLongDeliverable, wantsOpusModel } from "./director-deep-analysis";
+export {
+  wantsDeepAnalysis,
+  wantsFleetAudit,
+  wantsLongDeliverable,
+  wantsOpusModel,
+} from "./director-deep-analysis";
 import {
   appendResearchToUserPrompt,
   fetchDirectorResearchContext,
@@ -89,13 +96,17 @@ function buildSystemPrompt(
   deep: boolean,
   integrationPrompt?: string,
 ): string {
+  const fleetAudit = wantsFleetAudit(input.operatorMessage);
   return buildDirectorFleetSystemPrompt({
     fleet: input.fleet,
     stats: input.stats,
     business: input.business,
     deep,
     integrationPrompt,
-    deliverableGuidance: buildDirectorDeliverableGuidance(input.operatorMessage),
+    deliverableGuidance:
+      fleetAudit && !input.forceDeep
+        ? buildFleetAuditGuidance()
+        : buildDirectorDeliverableGuidance(input.operatorMessage),
   });
 }
 
@@ -135,17 +146,23 @@ export function normalizeDirectorPlan(
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
+  const fleetAudit = !input.shallowOnly && wantsFleetAudit(input.operatorMessage);
   const deepThink = !input.shallowOnly && input.forceDeep === true;
   const useOpus =
-    !input.shallowOnly && (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
+    !input.shallowOnly &&
+    (input.forceDeep === true || (!fleetAudit && wantsOpusModel(input.operatorMessage)));
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
   const model = useOpus ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
-  const connections = await loadTenantIntegrationConnections(input.userId);
+  const [connections, research] = await Promise.all([
+    loadTenantIntegrationConnections(input.userId),
+    fleetAudit
+      ? Promise.resolve(null)
+      : fetchDirectorResearchContext({
+          operatorMessage: input.operatorMessage,
+          history: input.history,
+        }),
+  ]);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
-  const research = await fetchDirectorResearchContext({
-    operatorMessage: input.operatorMessage,
-    history: input.history,
-  });
   const {
     result: raw,
     thinking,
@@ -156,7 +173,12 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     tool: DIRECTOR_TOOL,
     model,
     deepThink,
-    maxTokens: resolveDirectorMaxTokens({ opus: useOpus, longDeliverable }),
+    maxTokens: resolveDirectorMaxTokens({
+      opus: useOpus,
+      longDeliverable,
+      fleetAudit: fleetAudit && !input.forceDeep,
+    }),
+    cacheSystem: true,
   });
   const plan = normalizeDirectorPlan(
     raw,

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { wantsDeepAnalysis, wantsOpusModel } from "./director-deep-analysis";
+import {
+  resolveDirectorMaxTokens,
+  wantsDeepAnalysis,
+  wantsFleetAudit,
+  wantsOpusModel,
+} from "./director-deep-analysis";
 import { normalizeDirectorPlan, type DirectorFleetAgent } from "./director-planner";
 
 const FLEET: DirectorFleetAgent[] = [
@@ -37,6 +42,23 @@ describe("wantsDeepAnalysis — Opus escalation heuristic", () => {
   it("does not auto-Opus fleet audits without the Deep toggle", () => {
     expect(wantsDeepAnalysis("Audit my whole fleet please")).toBe(true);
     expect(wantsOpusModel("Audit my whole fleet please")).toBe(false);
+  });
+});
+
+describe("wantsFleetAudit — fast Sonnet path", () => {
+  it("detects starter fleet audit copy", () => {
+    expect(wantsFleetAudit("Audit my fleet — what should I fix first?")).toBe(true);
+    expect(wantsFleetAudit("Review my agents and tell me priorities")).toBe(true);
+  });
+
+  it("does not steal competitor research prompts", () => {
+    expect(wantsFleetAudit("Research competitors and pricing in my market")).toBe(false);
+  });
+
+  it("caps output tokens for routine fleet audits", () => {
+    expect(resolveDirectorMaxTokens({ opus: false, longDeliverable: false, fleetAudit: true })).toBe(
+      1600,
+    );
   });
 });
 

@@ -39,7 +39,13 @@ import {
 } from "./director-model-selection";
 import { labelForOpenRouterModel } from "./openrouter-models";
 import { runDirectorTurnLlm } from "./director-stream-runner";
-import { wantsLongDeliverable, wantsOpusModel } from "./director-deep-analysis";
+import {
+  buildFleetAuditGuidance,
+  resolveDirectorMaxTokens,
+  wantsFleetAudit,
+  wantsLongDeliverable,
+  wantsOpusModel,
+} from "./director-deep-analysis";
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -340,14 +346,19 @@ export interface DirectorStreamContext {
 export async function buildDirectorStreamContext(
   input: DirectorTurnInput,
 ): Promise<DirectorStreamContext> {
-  const business = input.business ?? (await loadBusinessContext(input.userId));
   const focusId = input.focusAgentId?.trim();
+  const fleetAudit =
+    !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
+  const businessPromise =
+    input.business !== undefined
+      ? Promise.resolve(input.business)
+      : loadBusinessContext(input.userId);
   const autoOpusEligible =
     !input.shallowOnly &&
     !focusId &&
-    (input.designRenderFallback === true ||
-      input.forceDeep === true ||
-      wantsOpusModel(input.operatorMessage));
+    (input.forceDeep === true ||
+      (!fleetAudit &&
+        (input.designRenderFallback === true || wantsOpusModel(input.operatorMessage))));
   const deepThinkEligible = !input.shallowOnly && !focusId && input.forceDeep === true;
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
   const skipAdaptiveThinking =
@@ -370,11 +381,21 @@ export async function buildDirectorStreamContext(
   });
 
   const effectiveDeepThink = skipAdaptiveThinking ? false : llm.deepThink;
+  const maxTokens =
+    fleetAudit && !input.forceDeep
+      ? resolveDirectorMaxTokens({ opus: false, longDeliverable: false, fleetAudit: true })
+      : llm.maxTokens;
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
     if (ctx) {
-      const connections = await loadTenantIntegrationConnections(input.userId);
+      const [connections, research] = await Promise.all([
+        loadTenantIntegrationConnections(input.userId),
+        fetchDirectorResearchContext({
+          operatorMessage: input.operatorMessage,
+          history: input.history,
+        }),
+      ]);
       const integrationPrompt = formatDirectorIntegrationPrompt(connections);
       const wsInput = {
         operatorMessage: input.operatorMessage,
@@ -384,10 +405,6 @@ export async function buildDirectorStreamContext(
         coachAsDirector: true as const,
         integrationPrompt,
       };
-      const research = await fetchDirectorResearchContext({
-        operatorMessage: input.operatorMessage,
-        history: input.history,
-      });
       const { system, user, tool } = buildWorkspaceStreamContext(wsInput);
       const coachLlm = resolveDirectorLlm({
         selection:
@@ -429,21 +446,29 @@ export async function buildDirectorStreamContext(
     }
   }
 
-  const connections = await loadTenantIntegrationConnections(input.userId);
+  const [business, connections, research] = await Promise.all([
+    businessPromise,
+    loadTenantIntegrationConnections(input.userId),
+    fleetAudit
+      ? Promise.resolve(null)
+      : fetchDirectorResearchContext({
+          operatorMessage: input.operatorMessage,
+          history: input.history,
+        }),
+  ]);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
-  const research = await fetchDirectorResearchContext({
-    operatorMessage: input.operatorMessage,
-    history: input.history,
-  });
 
   const system = buildDirectorFleetSystemPrompt({
     fleet: input.fleet,
     stats: input.stats,
     business,
-    deep,
+    deep: effectiveDeepThink,
     integrationPrompt,
     deliverableGuidance:
-      input.deliverableGuidance ?? buildDirectorDeliverableGuidance(input.operatorMessage),
+      input.deliverableGuidance ??
+      (fleetAudit && !input.forceDeep
+        ? buildFleetAuditGuidance()
+        : buildDirectorDeliverableGuidance(input.operatorMessage)),
   });
 
   const transcript = input.history
@@ -464,7 +489,7 @@ export async function buildDirectorStreamContext(
     tool,
     model: llm.model,
     deepThink: effectiveDeepThink,
-    maxTokens: llm.maxTokens,
+    maxTokens,
     llmProvider: llm.provider,
     modelLabel: llm.modelLabel,
     modelKind: llm.modelKind,

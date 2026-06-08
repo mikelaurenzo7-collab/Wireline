@@ -91,7 +91,12 @@ const CODE_BLOCK = `## Code mode (this turn)
 
 /** Extra system-prompt sections for the current operator message. */
 export function buildDirectorDeliverableGuidance(operatorMessage: string): string {
-  const parts = [UNIVERSAL_BLOCK];
+  const parts: string[] = [];
+  const needsUniversal =
+    wantsWebsiteDeliverable(operatorMessage) ||
+    wantsCodeDeliverable(operatorMessage) ||
+    wantsLongDeliverable(operatorMessage);
+  if (needsUniversal) parts.push(UNIVERSAL_BLOCK);
   if (wantsWebsiteDeliverable(operatorMessage)) parts.push(WEBSITE_BLOCK);
   if (wantsCodeDeliverable(operatorMessage)) parts.push(CODE_BLOCK);
   return parts.join("\n\n");

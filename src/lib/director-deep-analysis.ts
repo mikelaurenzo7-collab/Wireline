@@ -7,6 +7,27 @@ import { wantsCodeDeliverable, wantsWebsiteDeliverable } from "./director-delive
 
 export { wantsLongDeliverable } from "./director-deliverables";
 
+/**
+ * In-account fleet review using seeded fleet + stats — not external market research.
+ * Stays on Sonnet unless the operator toggles Deep (Opus + adaptive thinking).
+ */
+export function wantsFleetAudit(message: string): boolean {
+  const t = message.trim();
+  if (!t) return false;
+  if (wantsOpusModel(t)) return false;
+  return (
+    /\b(audit|review|health[\s-]?check)\b.*\b(fleet|agents?)\b/i.test(t) ||
+    /\b(fleet|agents?)\b.*\b(audit|review|fix first|what should i fix|priorit(?:y|ies)|health)\b/i.test(
+      t,
+    )
+  );
+}
+
+export function buildFleetAuditGuidance(): string {
+  return `## Fleet audit (this turn — speed priority)
+Keep the reply skimmable: one-line verdict, top 3 prioritized fixes, optional one-line callouts on standout agents. Target ~250–400 words. Ground every point in the fleet list and stats above — no generic filler. Do not run live web research or propose outbound comms unless clearly warranted.`;
+}
+
 /** Opus for heavy docs/research — without forcing slow adaptive thinking. */
 export function wantsOpusModel(message: string): boolean {
   if (wantsWebsiteDeliverable(message)) return false;
@@ -36,7 +57,12 @@ export function resolveDirectorMaxTokens(input: {
   opus: boolean;
   longDeliverable: boolean;
   openRouter?: boolean;
+  /** Routine fleet audit — cap output for sub-minute Sonnet turns. */
+  fleetAudit?: boolean;
 }): number {
+  if (input.fleetAudit && !input.opus) {
+    return 1600;
+  }
   if (input.openRouter) {
     return input.longDeliverable ? 8192 : 4096;
   }
