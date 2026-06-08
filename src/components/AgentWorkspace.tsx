@@ -376,6 +376,18 @@ export default function AgentWorkspace({
       label: "Connecting",
       status: phase === "connecting" ? "active" : "done",
     });
+    if (
+      phase === "preparing" ||
+      phase === "thinking" ||
+      phase === "replying" ||
+      phase === "done"
+    ) {
+      steps.push({
+        id: "prepare",
+        label: "Loading context",
+        status: phase === "preparing" ? "active" : "done",
+      });
+    }
     if (phase === "thinking" || phase === "replying" || phase === "done") {
       steps.push({
         id: "thinking",

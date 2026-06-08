@@ -51,7 +51,7 @@ let directorSchemaEnsured = false;
 async function probeMessagesSchema(): Promise<boolean> {
   try {
     await drizzle.execute(
-      sql`SELECT metadata, reasoning FROM wireline_director_conversation_messages LIMIT 0`,
+      sql`SELECT metadata, reasoning, thread_key FROM wireline_director_conversation_messages LIMIT 0`,
     );
     return true;
   } catch {
@@ -128,6 +128,14 @@ export async function ensureDirectorSchema(): Promise<void> {
         ALTER TABLE wireline_director_conversation_messages
           ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
       `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_director_conversation_messages
+          ADD COLUMN IF NOT EXISTS thread_key TEXT NOT NULL DEFAULT 'director';
+      `);
+      await drizzle.execute(sql`
+        CREATE INDEX IF NOT EXISTS idx_director_conv_user_thread
+          ON wireline_director_conversation_messages (user_id, thread_key, created_at DESC);
+      `);
     }
 
     if (!artifactsReady) {
@@ -202,8 +210,35 @@ export async function loadDirectorMessages(
       .limit(limit);
     return { messages, degraded: false };
   } catch (e) {
+    if (isPostgresMissingColumn(e, "thread_key")) {
+      log.warn("director messages: thread_key column missing, falling back without filter", {
+        userId,
+      });
+      try {
+        const rows = await drizzle
+          .select({
+            id: schema.directorConversationMessages.id,
+            userId: schema.directorConversationMessages.userId,
+            role: schema.directorConversationMessages.role,
+            content: schema.directorConversationMessages.content,
+            reasoning: schema.directorConversationMessages.reasoning,
+            metadata: schema.directorConversationMessages.metadata,
+            createdAt: schema.directorConversationMessages.createdAt,
+          })
+          .from(schema.directorConversationMessages)
+          .where(eq(schema.directorConversationMessages.userId, userId))
+          .orderBy(desc(schema.directorConversationMessages.createdAt))
+          .limit(limit);
+        return { messages: rows, degraded: true };
+      } catch (threadKeyFallbackError) {
+        log.warn("director messages thread_key fallback failed", {
+          userId,
+          error: getErrorMessage(threadKeyFallbackError),
+        });
+      }
+    }
     if (isPostgresMissingColumn(e)) {
-      log.warn("director messages: reasoning column missing, falling back", { userId });
+      log.warn("director messages: column missing, falling back", { userId });
       try {
         const rows = await drizzle
           .select({

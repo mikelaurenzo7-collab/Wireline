@@ -14,7 +14,7 @@
  *   - Normal turns run on Sonnet — high-frequency, latency-sensitive, cheap.
  *   - When the operator asks for genuinely heavy strategic work ("audit my
  *     whole fleet", "analyze everything and build a plan"), we escalate to
- *     Opus with adaptive thinking. Detected by `wantsDeepAnalysis()`.
+ *     Opus with adaptive thinking. Only when the operator toggles Deep analysis.
  */
 import { runStructuredWithThinking } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";
@@ -30,7 +30,6 @@ import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import {
   resolveDirectorMaxTokens,
-  wantsDeepAnalysis,
   wantsLongDeliverable,
   wantsOpusModel,
 } from "./director-deep-analysis";
@@ -132,12 +131,11 @@ export function normalizeDirectorPlan(
 
 /**
  * Plan one Director turn. Sonnet by default; escalates to Opus + adaptive
- * thinking when the operator asks for deep strategic analysis. Throws if the
+ * thinking when the operator toggles Deep analysis (`forceDeep`). Throws if the
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
-  const deepThink =
-    !input.shallowOnly && (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const deepThink = !input.shallowOnly && input.forceDeep === true;
   const useOpus =
     !input.shallowOnly && (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);

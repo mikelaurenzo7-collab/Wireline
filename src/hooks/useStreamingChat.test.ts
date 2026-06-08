@@ -14,12 +14,13 @@ describe("useStreamingChat module", () => {
     const phases: Array<import("./useStreamingChat").StreamPhase> = [
       "idle",
       "connecting",
+      "preparing",
       "thinking",
       "replying",
       "done",
       "error",
     ];
-    expect(phases).toHaveLength(6);
+    expect(phases).toHaveLength(7);
   });
 
   it("parseSseEvents retains event state across calls until a blank-line boundary", () => {

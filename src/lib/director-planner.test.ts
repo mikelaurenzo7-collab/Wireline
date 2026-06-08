@@ -34,9 +34,9 @@ describe("wantsDeepAnalysis — Opus escalation heuristic", () => {
     expect(wantsOpusModel("Write a TypeScript API route with Zod validation")).toBe(false);
   });
 
-  it("uses adaptive thinking only for explicit fleet audits", () => {
+  it("does not auto-Opus fleet audits without the Deep toggle", () => {
     expect(wantsDeepAnalysis("Audit my whole fleet please")).toBe(true);
-    expect(wantsOpusModel("Audit my whole fleet please")).toBe(true);
+    expect(wantsOpusModel("Audit my whole fleet please")).toBe(false);
   });
 });
 

@@ -129,7 +129,6 @@ import {
   WL_DIRECTOR_CLASSES,
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
-import { wantsDeepAnalysis } from "../lib/director-deep-analysis";
 import {
   DEFAULT_DIRECTOR_MODEL_SELECTION,
   type DirectorChatModelSelection,
@@ -716,7 +715,7 @@ export default function DirectorWorkspace({
             !focusAgentId &&
             !designModeEffective &&
             chatModelSelection.provider === "wireline" &&
-            (forceDeep || wantsDeepAnalysis(trimmed))
+            forceDeep
               ? { forceDeep: true }
               : {}),
             modelSelection: chatModelSelection,
@@ -777,6 +776,18 @@ export default function DirectorWorkspace({
       label: "Connecting to Director",
       status: phase === "connecting" ? "active" : "done",
     });
+    if (
+      phase === "preparing" ||
+      phase === "thinking" ||
+      phase === "replying" ||
+      phase === "done"
+    ) {
+      steps.push({
+        id: "prepare",
+        label: "Loading fleet context",
+        status: phase === "preparing" ? "active" : "done",
+      });
+    }
     if (phase === "thinking" || phase === "replying" || phase === "done") {
       steps.push({
         id: "thinking",
@@ -908,7 +919,6 @@ export default function DirectorWorkspace({
   const pickCapabilityExample = useCallback(
     (text: string) => {
       setInput(text);
-      if (!focusAgentId && wantsDeepAnalysis(text)) setForceDeep(true);
       setComposerAccessory(null);
       inputRef.current?.focus();
     },
@@ -993,7 +1003,7 @@ export default function DirectorWorkspace({
         !focusAgentId &&
         !designModeEffective &&
         chatModelSelection.provider === "wireline" &&
-        (forceDeep || wantsDeepAnalysis(trimmed))
+        forceDeep
           ? { forceDeep: true }
           : {}),
         modelSelection: chatModelSelection,
@@ -2352,7 +2362,11 @@ export default function DirectorWorkspace({
           {isSending && !designRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorLiveSession
-                phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
+                phase={
+                  streamState.phase === "idle" || streamState.phase === "error"
+                    ? "connecting"
+                    : streamState.phase
+                }
                 isDeep={streamState.isDeep}
                 model={streamState.model}
                 modelDisplayLabel={streamState.modelDisplayLabel}

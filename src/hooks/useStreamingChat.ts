@@ -18,7 +18,14 @@ import {
   isTerminalDirectorStreamPayload,
 } from "../lib/director-reply-utils";
 
-export type StreamPhase = "idle" | "connecting" | "thinking" | "replying" | "done" | "error";
+export type StreamPhase =
+  | "idle"
+  | "connecting"
+  | "preparing"
+  | "thinking"
+  | "replying"
+  | "done"
+  | "error";
 
 export interface StreamingState {
   /** Current phase of the streaming lifecycle. */
@@ -137,6 +144,10 @@ export function parseSseEvents(
  */
 /** Reset on every SSE chunk — Stitch / Opus turns can run 5+ minutes. */
 const STREAM_IDLE_MS = 540_000;
+/** Time to receive the HTTP response + first SSE bytes. */
+const STREAM_HANDSHAKE_MS = 60_000;
+/** After the stream opens, time allowed for server prep before thinking starts. */
+const STREAM_PREPARE_MS = 180_000;
 
 export function useStreamingChat(endpoint: string, options?: UseStreamingChatOptions) {
   const [state, setState] = useState<StreamingState>(INITIAL_STATE);
@@ -183,10 +194,32 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       const controller = new AbortController();
       abortRef.current = controller;
       let timedOut = false;
+      let handshakeTimedOut = false;
+      let prepareTimedOut = false;
       let timeoutId = window.setTimeout(() => {
         timedOut = true;
         controller.abort();
       }, STREAM_IDLE_MS);
+      let handshakeTimeoutId = window.setTimeout(() => {
+        if (!streamEstablishedRef.current) {
+          handshakeTimedOut = true;
+          controller.abort();
+        }
+      }, STREAM_HANDSHAKE_MS);
+      let prepareTimeoutId: number | undefined;
+      const clearPrepareTimeout = () => {
+        if (prepareTimeoutId !== undefined) {
+          window.clearTimeout(prepareTimeoutId);
+          prepareTimeoutId = undefined;
+        }
+      };
+      const armPrepareTimeout = () => {
+        clearPrepareTimeout();
+        prepareTimeoutId = window.setTimeout(() => {
+          prepareTimedOut = true;
+          controller.abort();
+        }, STREAM_PREPARE_MS);
+      };
       const bumpIdleTimeout = () => {
         window.clearTimeout(timeoutId);
         timeoutId = window.setTimeout(() => {
@@ -247,11 +280,19 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         const handleEvent = (event: string, data: Record<string, unknown>) => {
           bumpIdleTimeout();
           switch (event) {
-            case "meta":
+            case "meta": {
               streamEstablishedRef.current = true;
+              window.clearTimeout(handshakeTimeoutId);
+              const bootstrapOnly =
+                data.status === "connecting" && typeof data.model !== "string";
+              if (bootstrapOnly) {
+                armPrepareTimeout();
+              } else {
+                clearPrepareTimeout();
+              }
               setState((s) => ({
                 ...s,
-                phase: "connecting",
+                phase: bootstrapOnly ? "preparing" : "thinking",
                 isDeep: data.deep === true && data.model !== "custom",
                 model: (data.model as string) || undefined,
                 modelDisplayLabel:
@@ -259,9 +300,12 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
                 streamEstablished: true,
               }));
               break;
+            }
 
             case "thinking_start":
               streamEstablishedRef.current = true;
+              window.clearTimeout(handshakeTimeoutId);
+              clearPrepareTimeout();
               setState((s) => ({
                 ...s,
                 phase: "thinking",
@@ -272,6 +316,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
 
             case "thinking_chunk":
               streamEstablishedRef.current = true;
+              clearPrepareTimeout();
               setState((s) => ({
                 ...s,
                 phase: "thinking",
@@ -365,6 +410,18 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       } catch (e: unknown) {
         if ((e as Error)?.name === "AbortError") {
           if (finishWithPartialReply()) return;
+          if (handshakeTimedOut) {
+            const msg = "Director took too long to connect — try again or refresh";
+            setState({ ...INITIAL_STATE, phase: "error", error: msg });
+            finalizeError(msg);
+            return;
+          }
+          if (prepareTimedOut) {
+            const msg = "Director is still preparing your turn — try again in a moment";
+            setState({ ...INITIAL_STATE, phase: "error", error: msg });
+            finalizeError(msg);
+            return;
+          }
           if (timedOut) {
             const msg = "Stream timed out before the Director finished";
             setState({ ...INITIAL_STATE, phase: "error", error: msg });
@@ -382,6 +439,8 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         finalizeError(msg);
       } finally {
         window.clearTimeout(timeoutId);
+        window.clearTimeout(handshakeTimeoutId);
+        clearPrepareTimeout();
       }
     },
     [endpoint, finalizeComplete, finalizeError],

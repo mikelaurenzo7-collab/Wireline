@@ -39,7 +39,7 @@ import {
 } from "./director-model-selection";
 import { labelForOpenRouterModel } from "./openrouter-models";
 import { runDirectorTurnLlm } from "./director-stream-runner";
-import { wantsDeepAnalysis, wantsLongDeliverable, wantsOpusModel } from "./director-deep-analysis";
+import { wantsLongDeliverable, wantsOpusModel } from "./director-deep-analysis";
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -273,9 +273,7 @@ export async function planDirectorTurnResilient(
     selection.provider === "wireline" &&
     !input.focusAgentId?.trim() &&
     selection.tier === "auto" &&
-    (input.forceDeep === true ||
-      wantsOpusModel(input.operatorMessage) ||
-      wantsDeepAnalysis(input.operatorMessage));
+    (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
   const tryOpusFallback =
     selection.provider === "wireline" && selection.tier === "opus" && !input.shallowOnly;
   try {
@@ -350,16 +348,10 @@ export async function buildDirectorStreamContext(
     (input.designRenderFallback === true ||
       input.forceDeep === true ||
       wantsOpusModel(input.operatorMessage));
-  const deepThinkEligible =
-    !input.shallowOnly &&
-    !focusId &&
-    (input.forceDeep === true || wantsDeepAnalysis(input.operatorMessage));
+  const deepThinkEligible = !input.shallowOnly && !focusId && input.forceDeep === true;
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
   const skipAdaptiveThinking =
-    input.designRenderFallback === true ||
-    (longDeliverable &&
-      !wantsDeepAnalysis(input.operatorMessage) &&
-      input.forceDeep !== true);
+    input.designRenderFallback === true || (longDeliverable && input.forceDeep !== true);
 
   const modelSelection =
     input.designRenderFallback === true &&

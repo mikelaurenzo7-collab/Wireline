@@ -16,13 +16,15 @@ export function wantsOpusModel(message: string): boolean {
   ) {
     return false;
   }
-  if (wantsDeepAnalysis(message)) return true;
   return /\b(business\s+plan|competitive\s+analysis|competitors?|competitor\s+(?:research|analysis|landscape|scan)|market\s+research|go-to-market|gtm\s+plan|strateg(?:y|ize|ise)|strategic\s+plan|investor\s+(?:memo|deck)|pitch\s+deck|industry\s+(?:report|landscape)|swot|pricing in my market)\b/i.test(
     message,
   );
 }
 
-/** Opus + adaptive thinking — cross-fleet audits only (slow; user expects wait). */
+/**
+ * Detects copy that benefits from the Deep analysis toggle (Opus + adaptive thinking).
+ * Routing uses `forceDeep` only — this helper is for tests/docs, not auto-escalation.
+ */
 export function wantsDeepAnalysis(message: string): boolean {
   return /\b(audit|deep[\s-]?dive|analy[sz]e (everything|all|the (whole|entire))|review (everything|all|the (whole|entire))|full (review|analysis|audit)|optimi[sz]e (everything|all|the (whole|entire))|benchmark\s+(?:my|the|our)\s+fleet)\b/i.test(
     message,

@@ -73,12 +73,13 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   const expanded = userOverride !== null ? userOverride : autoExpanded;
   const effective = expanded || peek;
   useEffect(() => {
-    const committed = expanded ? RAIL_EXPANDED : RAIL_COLLAPSED;
+    // Match main padding to the *visible* rail width (expanded + hover-peek).
+    const committed = effective ? RAIL_EXPANDED : RAIL_COLLAPSED;
     document.documentElement.style.setProperty("--wireline-rail-w", `${committed}px`);
     return () => {
       document.documentElement.style.removeProperty("--wireline-rail-w");
     };
-  }, [expanded]);
+  }, [effective]);
 
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;

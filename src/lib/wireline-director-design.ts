@@ -586,12 +586,21 @@ export const WL_APP_CLASSES = {
   bannerCta: "app-micro-cta",
 } as const;
 
-export type DirectorStreamPhase = "connecting" | "thinking" | "replying" | "done";
+export type DirectorStreamPhase =
+  | "connecting"
+  | "preparing"
+  | "thinking"
+  | "replying"
+  | "done";
 
 export const DIRECTOR_PHASE_COPY: Record<DirectorStreamPhase, { headline: string; sub: string }> = {
   connecting: {
     headline: "Opening mission control",
     sub: "Secure channel to your fleet wingman",
+  },
+  preparing: {
+    headline: "Loading fleet context",
+    sub: "Thread history · integrations · operator intent",
   },
   thinking: {
     headline: "Working the problem",
