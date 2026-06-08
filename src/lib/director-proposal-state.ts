@@ -57,25 +57,41 @@ export function mergeResolvedFromDirectorMessages(
   return merged;
 }
 
+function countUnresolvedProposalsForMessage(
+  message: DirectorProposalMessage,
+  resolved: Record<string, DirectorProposalResolution>,
+): number {
+  if (message.role !== "director" || !message.proposals) return 0;
+  const groups: Array<[DirectorProposalKind, number]> = [
+    ["change", message.proposals.changes.length],
+    ["toggle", message.proposals.toolToggles.length],
+    ["action", message.proposals.actions.length],
+    ["integration", message.proposals.integrationJobs.length],
+  ];
+  let pending = 0;
+  for (const [kind, length] of groups) {
+    for (let index = 0; index < length; index++) {
+      const key = directorProposalKey(message.id, kind, index);
+      if (!resolved[key]) pending++;
+    }
+  }
+  return pending;
+}
+
+export function countPendingDirectorProposalsForMessage(
+  message: DirectorProposalMessage,
+  resolved: Record<string, DirectorProposalResolution>,
+): number {
+  return countUnresolvedProposalsForMessage(message, resolved);
+}
+
 export function countPendingDirectorProposals(
   messages: DirectorProposalMessage[],
   resolved: Record<string, DirectorProposalResolution>,
 ): number {
   let pending = 0;
   for (const message of messages) {
-    if (message.role !== "director" || !message.proposals) continue;
-    const groups: Array<[DirectorProposalKind, number]> = [
-      ["change", message.proposals.changes.length],
-      ["toggle", message.proposals.toolToggles.length],
-      ["action", message.proposals.actions.length],
-      ["integration", message.proposals.integrationJobs.length],
-    ];
-    for (const [kind, length] of groups) {
-      for (let index = 0; index < length; index++) {
-        const key = directorProposalKey(message.id, kind, index);
-        if (!resolved[key]) pending++;
-      }
-    }
+    pending += countUnresolvedProposalsForMessage(message, resolved);
   }
   return pending;
 }

@@ -70,6 +70,7 @@ import type { ProposedAction, ProposedChange, ProposedToolToggle } from "../lib/
 import {
   buildDirectorClearThreadConfirm,
   countPendingDirectorProposals,
+  countPendingDirectorProposalsForMessage,
   isPersistedDirectorMessageId,
   mergeResolvedFromDirectorMessages,
   parseDirectorProposalKey,
@@ -1810,9 +1811,10 @@ export default function DirectorWorkspace({
                             {(() => {
                               const workflowTotal =
                                 m.proposals.actions.length + m.proposals.integrationJobs.length;
-                              const coachTotal =
-                                m.proposals.changes.length + m.proposals.toolToggles.length;
-                              const pendingTotal = workflowTotal + coachTotal;
+                              const pendingTotal = countPendingDirectorProposalsForMessage(
+                                m,
+                                resolved,
+                              );
                               return pendingTotal > 0 ? (
                                 <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2 mb-1">
                                   <p className="text-[10px] uppercase tracking-[0.16em] text-brand font-semibold">

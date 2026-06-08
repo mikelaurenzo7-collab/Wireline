@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDirectorClearThreadConfirm,
   countPendingDirectorProposals,
+  countPendingDirectorProposalsForMessage,
   directorProposalKey,
   mergeResolvedFromDirectorMessages,
   parseDirectorProposalKey,
@@ -26,6 +27,27 @@ describe("director-proposal-state", () => {
       "10:change:0": "done",
       "11:action:1": "dismissed",
     });
+  });
+
+  it("counts unresolved proposal cards for one message", () => {
+    const message = {
+      id: "1",
+      role: "director",
+      proposals: {
+        changes: [{ field: "first_message", value: "hi", label: "Greeting", summary: "" }],
+        toolToggles: [],
+        actions: [{ kind: "send_email", label: "Email", agentId: "a1" }],
+        integrationJobs: [],
+      },
+    };
+    expect(countPendingDirectorProposalsForMessage(message, {})).toBe(2);
+    expect(countPendingDirectorProposalsForMessage(message, { "1:change:0": "done" })).toBe(1);
+    expect(
+      countPendingDirectorProposalsForMessage(message, {
+        "1:change:0": "done",
+        "1:action:0": "dismissed",
+      }),
+    ).toBe(0);
   });
 
   it("counts unresolved proposal cards", () => {
