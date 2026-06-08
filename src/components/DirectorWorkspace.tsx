@@ -42,6 +42,7 @@ import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson } fro
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
+import { AUTH_SESSION_EXPIRED_MESSAGE, isAuthHttpStatus } from "../lib/api";
 import { useBranding } from "../contexts/BrandingContext";
 import {
   hasConfiguredTenantBranding,
@@ -632,6 +633,11 @@ export default function DirectorWorkspace({
     onError: (msg, { streamEstablished, partialReply }) => {
       const pending = pendingSendRef.current;
       const operatorProbe = pending?.trimmed ?? lastStreamOperatorRef.current ?? "";
+      const authFailure =
+        msg === AUTH_SESSION_EXPIRED_MESSAGE ||
+        /session expired|sign in again/i.test(msg) ||
+        /\b401\b/.test(msg) ||
+        /\bAUTH_/i.test(msg);
 
       const finishRecovered = () => {
         setIsSending(false);
@@ -642,6 +648,13 @@ export default function DirectorWorkspace({
       };
 
       void (async () => {
+        if (authFailure) {
+          if (operatorProbe) setInput(operatorProbe);
+          toastError("Session expired", "Sign in again to keep using the Director.");
+          finishRecovered();
+          return;
+        }
+
         if (
           partialReply &&
           directorPayloadHasProposals(partialReply) &&
@@ -717,7 +730,14 @@ export default function DirectorWorkspace({
           }),
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
-        if (!parsed.ok) throw new Error(parsed.error);
+        if (!parsed.ok) {
+          if (isAuthHttpStatus(parsed.status)) {
+            setInput(trimmed);
+            toastError("Session expired", "Sign in again to keep using the Director.");
+            return;
+          }
+          throw new Error(parsed.error);
+        }
         appendDirectorReply(parsed.data);
       } catch {
         if (opts?.recoverPersistedReply) {
