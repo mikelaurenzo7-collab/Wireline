@@ -65,7 +65,7 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
           variant="outline"
           size="icon"
           aria-label="Help"
-          className="w-4 h-4 min-h-0 min-w-0 h-4 rounded-full text-[9px] text-muted border-white/20 hover:border-brand/40 hover:text-brand after:hidden"
+          className="w-4 h-4 min-h-0 min-w-0 h-4 rounded-full text-[10px] text-muted border-white/20 hover:border-brand/40 hover:text-brand after:hidden"
         >
           ?
         </ShadButton>

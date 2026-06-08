@@ -166,7 +166,7 @@ export default function DirectorStitchPreviewTeaser({
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-[0.14em] font-bold text-brand">
+            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] font-bold text-brand">
               <Sparkles className="w-3 h-3" />
               {WIRELINE_STITCH_UI.previewTeaserTitle}
             </span>

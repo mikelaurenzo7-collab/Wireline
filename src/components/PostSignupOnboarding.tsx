@@ -177,7 +177,7 @@ export default function PostSignupOnboarding() {
             >
               <Sparkles className="w-3.5 h-3.5" />
               {ONBOARDING_WELCOME.ctaPrimary}
-              <span className="text-[9px] opacity-80 normal-case tracking-normal">
+              <span className="text-[10px] opacity-80 normal-case tracking-normal">
                 ({ONBOARDING_WELCOME.timeHint})
               </span>
             </ShadButton>

@@ -56,9 +56,7 @@ export default function IntegrationCapabilityPanel({
       )}
 
       <div>
-        <p className="text-[9px] uppercase tracking-[0.32em] font-medium mb-2 wl-accent-text">
-          When callers ask
-        </p>
+        <p className="wl-label wl-accent-text mb-2">When callers ask</p>
         <div className={cn("grid gap-2", compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
           {tasks.map((task) => (
             <div
@@ -98,7 +96,7 @@ export default function IntegrationCapabilityPanel({
                     <span
                       key={toolName}
                       className={cn(
-                        "inline-flex px-1.5 py-0.5 rounded text-[8px] font-mono uppercase tracking-wide border",
+                        "inline-flex px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wide border",
                         on
                           ? "wl-accent-tag border-current/25 bg-current/8"
                           : "border-black/10 bg-black/4 text-ink/40",
@@ -134,11 +132,11 @@ export default function IntegrationCapabilityPanel({
               onClick={() => setToolsOpen((o) => !o)}
               className="flex-1 h-auto justify-between gap-2 px-0 py-0 hover:bg-transparent"
             >
-              <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.28em] text-muted/80">
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-muted/80">
                 <Wrench className="w-3 h-3" />
                 Fine-tune tools
               </span>
-              <span className="text-[9px] text-ink/40 tabular-nums">
+              <span className="text-[10px] text-ink/40 tabular-nums">
                 {integrationTools.filter((t) => enabledSet.has(t.name)).length}/
                 {integrationTools.length}
               </span>
@@ -157,7 +155,7 @@ export default function IntegrationCapabilityPanel({
                   size="sm"
                   disableAnimations
                   onClick={() => onToggleIntegrationGroup(integration, true)}
-                  className="px-2 py-0.5 h-auto rounded text-[8px] uppercase tracking-[0.2em]"
+                  className="px-2 py-0.5 h-auto rounded text-[10px] uppercase tracking-[0.2em]"
                 >
                   All on
                 </ShadButton>
@@ -167,7 +165,7 @@ export default function IntegrationCapabilityPanel({
                   size="sm"
                   disableAnimations
                   onClick={() => onToggleIntegrationGroup(integration, false)}
-                  className="px-2 py-0.5 h-auto rounded text-[8px] uppercase tracking-[0.2em]"
+                  className="px-2 py-0.5 h-auto rounded text-[10px] uppercase tracking-[0.2em]"
                 >
                   All off
                 </ShadButton>

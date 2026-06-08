@@ -5,6 +5,8 @@ import { describe, it, expect } from "vitest";
 import {
   countPatternInScope,
   DESIGN_AUDIT_BASELINE,
+  APP_MICRO_TEXT_8_PATTERN,
+  APP_MICRO_TEXT_9_PATTERN,
   OFF_BRAND_GRADIENT_PATTERN,
   OFF_BRAND_HEX_PATTERN,
 } from "../../../lib/wireline-design-audit";
@@ -56,6 +58,22 @@ describe("wireline design audit — authenticated app surfaces", () => {
       countPatternInScope(/\bglass(?!\w)/g, "app"),
       DESIGN_AUDIT_BASELINE.appGlassUtility,
       "app .glass",
+    );
+  });
+
+  it("has no text-[8px] micro labels in app code", () => {
+    assertMax(
+      countPatternInScope(APP_MICRO_TEXT_8_PATTERN, "app"),
+      DESIGN_AUDIT_BASELINE.appText8px,
+      "app text-[8px]",
+    );
+  });
+
+  it("has no text-[9px] micro labels in app code", () => {
+    assertMax(
+      countPatternInScope(APP_MICRO_TEXT_9_PATTERN, "app"),
+      DESIGN_AUDIT_BASELINE.appText9px,
+      "app text-[9px]",
     );
   });
 });

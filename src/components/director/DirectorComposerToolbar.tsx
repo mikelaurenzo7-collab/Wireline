@@ -202,7 +202,7 @@ export function DirectorComposerToolbar({
             onClick={() => onToggle("tools")}
             trailing={
               enabledToolsCount > 0 ? (
-                <span className="font-mono text-[9px] tabular-nums opacity-70">
+                <span className="font-mono text-[10px] tabular-nums opacity-70">
                   ({enabledToolsCount})
                 </span>
               ) : null

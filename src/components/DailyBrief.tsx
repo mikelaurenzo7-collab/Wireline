@@ -309,7 +309,7 @@ export default function DailyBrief() {
                   >
                     <span
                       className={cn(
-                        "shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] mt-0.5",
+                        "shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] mt-0.5",
                         a.urgency === "high" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                         a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
@@ -356,7 +356,7 @@ function Quick({
     <div className="rounded-md wl-panel border border-border p-4">
       <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-2">{label}</div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-display italic text-3xl text-ink">{value}</span>
+        <span className="font-semibold text-3xl text-ink tabular-nums">{value}</span>
         {showDelta && (
           <span
             className={cn(

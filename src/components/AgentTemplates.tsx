@@ -380,8 +380,8 @@ function TemplateCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Accent glow on hover */}
-      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-glow" />
+      {/* Accent glow on hover — desktop only */}
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-glow hidden md:block" />
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         {/* Header row */}
@@ -403,20 +403,21 @@ function TemplateCard({
                 {deployedCount === 1 ? "Deployed" : `Deployed ×${deployedCount}`}
               </span>
             )}
-            {/* Channel badge */}
+            {/* Channel badge — hide on narrow screens when deployed badge shows */}
             <span
               className={cn(
                 "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.22em] leading-none",
                 template.channel === "email"
                   ? "wl-status-success border wl-text-success"
                   : "bg-brand/10 border-brand/30 text-brand",
+                alreadyDeployed && "hidden sm:inline-flex",
               )}
             >
               {template.channel}
             </span>
-            {/* Extra badge */}
+            {/* Extra badge — desktop only to reduce chip noise on mobile */}
             {template.badge && (
-              <span className="px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 text-[10px] uppercase tracking-[0.18em] leading-none text-ink/70">
+              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 text-[10px] uppercase tracking-[0.18em] leading-none text-ink/70">
                 {template.badge}
               </span>
             )}
@@ -425,7 +426,9 @@ function TemplateCard({
 
         {/* Name */}
         <div>
-          <h3 className="font-display italic text-lg text-ink leading-tight">{template.name}</h3>
+          <h3 className="text-base font-semibold text-ink leading-tight tracking-[-0.01em]">
+            {template.name}
+          </h3>
           <p className="text-xs text-ink/70 leading-relaxed mt-1">{template.description}</p>
         </div>
 
@@ -479,7 +482,7 @@ function CustomAgentCard() {
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
-        <h3 className="font-display italic text-lg text-ink">Custom Agent</h3>
+        <h3 className="text-base font-semibold text-ink tracking-[-0.01em]">Custom Agent</h3>
         <p className="text-xs text-ink/70 leading-relaxed max-w-[200px]">
           Let Wireline Forge design a bespoke agent for your exact use case.
         </p>
@@ -661,7 +664,7 @@ export default function AgentTemplates() {
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
           <AnimatePresence mode="popLayout">
             {visible.map((template) => (
               <TemplateCard

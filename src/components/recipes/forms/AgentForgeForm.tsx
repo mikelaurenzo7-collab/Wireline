@@ -126,7 +126,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
             <ul className="space-y-2">
               {design.directives.map((d: any, i: number) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span className="shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+                  <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
                     P{d.priority}
                   </span>
                   <span className="text-ink/85">{d.content}</span>

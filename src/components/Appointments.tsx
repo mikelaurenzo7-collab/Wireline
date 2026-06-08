@@ -95,7 +95,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[9px] uppercase tracking-[0.3em]",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.3em]",
         m.color,
         m.bg,
         m.border,
@@ -194,7 +194,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
       >
         <header className="px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div>
-            <p className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5">Appointments</p>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-0.5">Appointments</p>
             <h2 className="font-display italic text-2xl text-ink">
               {isEdit ? "Edit Appointment" : "New Appointment"}
             </h2>
@@ -350,7 +350,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
         {Icon && <Icon className="w-2.5 h-2.5 text-brand" />}
         {label}
       </label>
@@ -451,7 +451,7 @@ function CalendarGrid({
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
-            className="py-2 text-center text-[9px] uppercase tracking-[0.3em] text-ink/40"
+            className="py-2 text-center text-[10px] uppercase tracking-[0.3em] text-ink/40"
           >
             {d}
           </div>
@@ -497,7 +497,7 @@ function CalendarGrid({
                             disableAnimations
                             onClick={() => onSelect(a)}
                             className={cn(
-                              "w-full h-auto justify-start px-1.5 py-0.5 rounded text-[9px] truncate touch-press",
+                              "w-full h-auto justify-start px-1.5 py-0.5 rounded text-[10px] truncate touch-press",
                               m.bg,
                               m.color,
                             )}
@@ -507,7 +507,7 @@ function CalendarGrid({
                         );
                       })}
                       {dayAppts.length > 3 && (
-                        <div className="text-[8px] text-ink/40 pl-1">
+                        <div className="text-[10px] text-ink/40 pl-1">
                           +{dayAppts.length - 3} more
                         </div>
                       )}
@@ -900,7 +900,7 @@ function AppointmentRow({
         </div>
 
         {/* Actions */}
-        <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="shrink-0 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
           <div className="relative">
             <ShadButton
               onClick={() => setShowStatusMenu((v) => !v)}

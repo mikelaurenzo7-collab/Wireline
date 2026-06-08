@@ -2233,7 +2233,8 @@ html, body, .marketing-surface, .app-surface {
 }
 
 /* ── UTILITY CAPTIONS / LABELS ──
- * Premium uppercase labels with positive tracking for small sizes */
+ * Premium uppercase labels with positive tracking for small sizes.
+ * App surfaces enforce a 10px floor — do not use text-[8px]/text-[9px] in TSX. */
 .wl-label {
   font-size: 10px;
   letter-spacing: 0.14em;
@@ -5193,7 +5194,7 @@ select:focus {
   background: rgba(107, 43, 153, 0.10);
   border: 1px solid rgba(107, 43, 153, 0.30);
   color: var(--color-brand-ink);
-  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[0.20em] leading-none;
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.20em] leading-none;
 }
 
 /* ── Ghost brand button — translucent purple with AAA text contrast ──── */
@@ -5219,9 +5220,9 @@ select:focus {
 }
 
 /* Priority badge variants */
-.badge-high   { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
-.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
-.badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
+.badge-high   { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.2em] leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
+.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
+.badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
 
 /* Sidebar nav item â€” active solid pill */
 .nav-active-bg {
@@ -5268,7 +5269,7 @@ select:focus {
 
 /* Table / list header */
 .table-header {
-  @apply text-[9px] uppercase tracking-[0.35em] text-muted font-medium;
+  @apply text-[10px] uppercase tracking-[0.35em] text-muted font-medium;
 }
 
 /* Scrollable panel content — overscroll containment */

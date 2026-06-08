@@ -332,7 +332,9 @@ export default function VoiceLibraryPanel() {
               </ShadButton>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-ink truncate">{v.name}</p>
-                <p className="text-[9px] uppercase tracking-[0.22em] text-muted/70">Cloned voice</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
+                  Cloned voice
+                </p>
               </div>
               <ShadButton
                 type="button"

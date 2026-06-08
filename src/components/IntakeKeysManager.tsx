@@ -369,7 +369,7 @@ export default function IntakeKeysManager() {
                   <div className="text-sm text-ink font-medium">{k.name}</div>
                   <span
                     className={cn(
-                      "text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full border",
+                      "text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full border",
                       k.active
                         ? WL_APP_CLASSES.statusActive
                         : "bg-muted/10 border-border text-muted",
@@ -378,12 +378,12 @@ export default function IntakeKeysManager() {
                     {k.active ? "Active" : "Paused"}
                   </span>
                   {agent && (
-                    <span className="text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2">
+                    <span className="text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2">
                       Agent · {agent.name}
                     </span>
                   )}
                   {k.auto_dial && k.default_agent_id && (
-                    <span className="text-[9px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-600 flex items-center gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-600 flex items-center gap-1">
                       <Zap className="w-2.5 h-2.5" /> Auto-dial
                     </span>
                   )}
@@ -478,7 +478,7 @@ export default function IntakeKeysManager() {
         )}
       >
         <div>
-          <div className="text-[9px] uppercase tracking-[0.3em] text-brand-2 mb-2">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-2 mb-2">
             Quick start · curl
           </div>
           <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\

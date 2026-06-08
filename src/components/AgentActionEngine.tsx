@@ -212,7 +212,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                           {tool.integration && (
                             <span
                               className={cn(
-                                "text-[8px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
+                                "text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
                                 isMissingIntegration
                                   ? "border-rose-500/30 text-rose-600 bg-rose-500/10"
                                   : "border-brand/20 text-brand bg-brand/10",

@@ -295,7 +295,7 @@ export default function Pipeline() {
                                     {lead.demo && (
                                       <Badge
                                         variant="outline"
-                                        className="text-[8px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-brand/10 border border-dashed border-brand/40 text-brand-deep leading-none shrink-0"
+                                        className="text-[10px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-brand/10 border border-dashed border-brand/40 text-brand-deep leading-none shrink-0"
                                         title="Seeded showcase record — not a real lead"
                                       >
                                         Demo
@@ -321,7 +321,7 @@ export default function Pipeline() {
                                   {lead.campaignSource && (
                                     <Badge
                                       variant="secondary"
-                                      className="text-[8px] tracking-[0.24em] uppercase text-brand mt-1.5 border-brand/20 bg-brand/10 hover:bg-brand/15"
+                                      className="text-[10px] tracking-[0.24em] uppercase text-brand mt-1.5 border-brand/20 bg-brand/10 hover:bg-brand/15"
                                     >
                                       {lead.campaignSource}
                                     </Badge>
@@ -341,7 +341,7 @@ export default function Pipeline() {
                                     </TooltipProvider>
                                   )}
                                   <div className="flex items-center justify-between mt-2">
-                                    <span className="text-[9px] text-ink/40">
+                                    <span className="text-[10px] text-ink/40">
                                       {lead.attempts ?? 0} attempt
                                       {(lead.attempts ?? 0) === 1 ? "" : "s"}
                                     </span>
@@ -353,7 +353,7 @@ export default function Pipeline() {
                                             key={s.id}
                                             onClick={() => moveLead(lead.id, s.id)}
                                             variant="outline"
-                                            className="text-[8px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
+                                            className="text-[10px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
                                             title={`Move to ${s.label}`}
                                             aria-label={`Move ${lead.customerName || "lead"} to ${s.label}`}
                                           >

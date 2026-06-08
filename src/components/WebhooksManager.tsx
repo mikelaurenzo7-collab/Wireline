@@ -400,7 +400,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               disableAnimations
               onClick={toggleActive}
               className={cn(
-                "h-auto px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border",
+                "h-auto px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] border",
                 hook.active ? WL_APP_CLASSES.statusActive : "bg-muted/15 text-muted border-border",
               )}
             >
@@ -409,7 +409,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             {hook.last_status !== null && (
               <span
                 className={cn(
-                  "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] border flex items-center gap-1",
+                  "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] border flex items-center gap-1",
                   hook.last_status >= 200 && hook.last_status < 300
                     ? WL_APP_CLASSES.statusOk
                     : "bg-destructive/10 text-destructive border-destructive/20",
@@ -429,7 +429,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             {hook.events.map((e) => (
               <span
                 key={e}
-                className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.2em] bg-brand/10 text-brand border border-brand/20 font-mono"
+                className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.2em] bg-brand/10 text-brand border border-brand/20 font-mono"
               >
                 {e}
               </span>
@@ -582,7 +582,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                     >
                       <span
                         className={cn(
-                          "px-1.5 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] border flex items-center gap-1",
+                          "px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.25em] border flex items-center gap-1",
                           pillClass,
                         )}
                       >
@@ -625,7 +625,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                             disableAnimations
                             onClick={() => retryDelivery(d.id)}
                             disabled={deliveryBusy === d.id}
-                            className="h-auto px-2 py-0.5 rounded text-[9px] uppercase tracking-[0.25em] bg-brand/15 border-brand/40 text-brand hover:bg-brand/25"
+                            className="h-auto px-2 py-0.5 rounded text-[10px] uppercase tracking-[0.25em] bg-brand/15 border-brand/40 text-brand hover:bg-brand/25"
                           >
                             {deliveryBusy === d.id ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />

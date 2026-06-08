@@ -177,13 +177,13 @@ export default function AgentMemoryPanel({
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {c.intent && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.14em] border border-brand/30 bg-brand/8 text-brand">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] border border-brand/30 bg-brand/8 text-brand">
                       {c.intent}
                     </span>
                   )}
                   {c.sentiment && (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.14em] border ${
+                      className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] border ${
                         SENTIMENT_TONE[c.sentiment.toLowerCase()] || SENTIMENT_TONE.neutral
                       }`}
                     >
@@ -191,7 +191,7 @@ export default function AgentMemoryPanel({
                     </span>
                   )}
                   {c.createdAt && (
-                    <span className="text-[9px] uppercase tracking-[0.18em] text-muted/60 ml-auto">
+                    <span className="text-[10px] uppercase tracking-[0.18em] text-muted/60 ml-auto">
                       {formatDate(c.createdAt)}
                     </span>
                   )}

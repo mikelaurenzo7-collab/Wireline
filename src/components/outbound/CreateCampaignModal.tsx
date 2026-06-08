@@ -80,7 +80,7 @@ export default function CreateCampaignModal({
     <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-md border border-white/10 dark:border-white/5 shadow-2xl p-0 wl-modal-surface rounded-md overflow-hidden">
         <DialogHeader className="px-5 py-4 border-b border-white/10 dark:border-white/5 flex flex-col space-y-0 text-left">
-          <DialogDescription className="text-[9px] uppercase tracking-[0.4em] text-brand mb-0.5 font-bold">
+          <DialogDescription className="text-[10px] uppercase tracking-[0.4em] text-brand mb-0.5 font-bold">
             Signal · Campaigns
           </DialogDescription>
           <DialogTitle className="font-display italic lowercase text-2xl text-ink dark:text-foreground leading-none">

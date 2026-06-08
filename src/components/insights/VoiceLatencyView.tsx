@@ -132,7 +132,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   <tile.icon
                     className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-brand-deep")}
                   />
-                  <p className="font-mono text-[9px] uppercase tracking-[0.28em] text-muted">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted">
                     {tile.label}
                   </p>
                 </div>

@@ -317,7 +317,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   }
                   aria-pressed={!closed}
                   className={cn(
-                    "h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.25em]",
+                    "h-7 px-2.5 rounded-full text-[10px] uppercase tracking-[0.25em]",
                     closed
                       ? "border-rose-500/30 text-rose-500 bg-rose-500/8 shadow-none"
                       : "border-brand/30 text-brand bg-brand/8",
@@ -399,7 +399,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
                   {active && (
-                    <span className="text-[8px] uppercase tracking-[0.3em] text-brand">Active</span>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
+                      Active
+                    </span>
                   )}
                 </div>
                 <p className="text-[10px] text-muted/80 leading-relaxed mt-1">{opt.hint}</p>
@@ -435,7 +437,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
                   {active && (
-                    <span className="text-[8px] uppercase tracking-[0.3em] text-brand">Active</span>
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
+                      Active
+                    </span>
                   )}
                 </div>
                 <p className="text-[10px] text-muted/80 leading-relaxed mt-1">{opt.hint}</p>
@@ -494,7 +498,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
                 Escalation phone (SMS)
               </span>
               <Input
@@ -512,7 +516,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               />
             </label>
             <label className="block">
-              <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
                 Escalation email
               </span>
               <Input
@@ -705,7 +709,7 @@ function PresetButton({ onClick, label }: { onClick: () => void; label: string }
       size="sm"
       disableAnimations
       onClick={onClick}
-      className="h-7 px-2.5 rounded-full text-[9px] uppercase tracking-[0.25em] text-muted/80"
+      className="h-7 px-2.5 rounded-full text-[10px] uppercase tracking-[0.25em] text-muted/80"
     >
       {label}
     </ShadButton>
@@ -723,7 +727,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[9px] uppercase tracking-[0.32em] text-ink/40">{label}</label>
+      <label className="text-[10px] uppercase tracking-[0.32em] text-ink/40">{label}</label>
       {children}
       {hint && <p className="text-[10px] text-ink/40 leading-snug">{hint}</p>}
     </div>
@@ -734,7 +738,7 @@ function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
   const tone = len > max * 0.9 ? "text-brand" : "text-ink/40";
   return (
-    <p className={cn("text-[9px] tabular-nums text-right", tone)}>
+    <p className={cn("text-[10px] tabular-nums text-right", tone)}>
       {len}/{max}
     </p>
   );

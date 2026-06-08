@@ -87,7 +87,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
           <Phone className="w-4 h-4" strokeWidth={2.3} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-ink/55 mb-1">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ink/55 mb-1">
             {label} · {agent.name}
           </p>
           <p className="font-display italic text-lg leading-tight text-ink line-clamp-2">

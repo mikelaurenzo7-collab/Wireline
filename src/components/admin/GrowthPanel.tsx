@@ -406,10 +406,10 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[9px] uppercase tracking-widest text-muted font-bold">
+                <span className="text-[10px] uppercase tracking-widest text-muted font-bold">
                   ICP tags
                 </span>
-                <span className="text-[9px] font-mono text-muted">SAVED</span>
+                <span className="text-[10px] font-mono text-muted">SAVED</span>
               </div>
               {[
                 { label: "Titles", value: (settings.target_titles || []).length },
@@ -437,7 +437,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
             </div>
 
             <div className="p-4 rounded-md bg-black/20 border border-white/5">
-              <p className="text-[9px] uppercase tracking-widest text-muted/70 mb-2">
+              <p className="text-[10px] uppercase tracking-widest text-muted/70 mb-2">
                 Strategy Advice
               </p>
               <p className="text-[10px] italic text-muted leading-relaxed">"{icp.advice}"</p>

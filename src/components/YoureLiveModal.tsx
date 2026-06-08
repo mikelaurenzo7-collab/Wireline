@@ -336,7 +336,7 @@ export default function YoureLiveModal({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.45, duration: 0.3 }}
-              className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-paper bg-emerald-500"
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-paper wl-status-success bg-[color-mix(in_srgb,var(--wl-signal)_85%,var(--paper))]"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-white" />
             </motion.span>

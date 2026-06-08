@@ -1554,7 +1554,7 @@ export default function DirectorWorkspace({
               )}
               <span>Clear</span>
               {pendingApprovalCount > 0 ? (
-                <span className="ml-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold normal-case tracking-normal text-amber-800 dark:text-amber-200">
+                <span className="ml-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-amber-800 dark:text-amber-200">
                   {pendingApprovalCount}
                 </span>
               ) : null}
@@ -1723,7 +1723,7 @@ export default function DirectorWorkspace({
                           <span className="shrink-0 flex w-6 h-6 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/15">
                             <Compass className="w-3 h-3" />
                           </span>
-                          <span className="text-[9px] text-muted uppercase tracking-[0.12em] font-medium">
+                          <span className="text-[10px] text-muted uppercase tracking-[0.12em] font-medium">
                             Director
                             {m.coachAgentName ? (
                               <span className="text-brand/70 normal-case tracking-normal">
@@ -2140,7 +2140,7 @@ export default function DirectorWorkspace({
                           <div className="flex items-center gap-2 mb-2">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
                               <Sparkles className="w-3 h-3 text-brand" />
-                              <span className="text-[9px] uppercase tracking-[0.12em] font-bold text-brand">
+                              <span className="text-[10px] uppercase tracking-[0.12em] font-bold text-brand">
                                 {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""}{" "}
                                 generated
                               </span>
@@ -2195,11 +2195,11 @@ export default function DirectorWorkspace({
                                       {/* Format badge */}
                                       <div className="absolute top-2.5 right-2.5 flex gap-1">
                                         {p.svg && (
-                                          <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
+                                          <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-mono text-white/90 uppercase font-bold">
                                             SVG
                                           </span>
                                         )}
-                                        <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[8px] font-mono text-white/90 uppercase font-bold">
+                                        <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-mono text-white/90 uppercase font-bold">
                                           PNG
                                         </span>
                                       </div>

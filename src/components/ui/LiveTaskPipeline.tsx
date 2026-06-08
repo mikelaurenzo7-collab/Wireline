@@ -81,7 +81,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
                 )}
               </div>
               {step.status === "active" && step.elapsedMs != null && step.elapsedMs > 800 && (
-                <span className="text-[9px] font-mono text-muted/45 tabular-nums shrink-0">
+                <span className="text-[10px] font-mono text-muted/45 tabular-nums shrink-0">
                   {(step.elapsedMs / 1000).toFixed(1)}s
                 </span>
               )}
@@ -130,7 +130,7 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
 
             {/* Elapsed time (only for active step) */}
             {step.status === "active" && step.elapsedMs != null && step.elapsedMs > 1000 && (
-              <span className="ml-auto text-[9px] font-mono text-muted/50 tabular-nums">
+              <span className="ml-auto text-[10px] font-mono text-muted/50 tabular-nums">
                 {(step.elapsedMs / 1000).toFixed(1)}s
               </span>
             )}

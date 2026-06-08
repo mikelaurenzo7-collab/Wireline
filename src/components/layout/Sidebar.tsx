@@ -353,7 +353,7 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
           {shortcut && !badge && (
             <kbd
               className={cn(
-                "relative z-10 text-[8px] font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
+                "relative z-10 text-[10px] font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
                 active
                   ? "border-white/25 text-white/70 bg-white/10 dark:border-white/15 dark:text-white/55 dark:bg-white/10"
                   : "border-white/20 text-white/50 bg-white/[0.05] group-hover:border-white/30 group-hover:text-white/70 dark:border-white/12 dark:text-white/40 dark:bg-white/4 dark:group-hover:border-white/20 dark:group-hover:text-white/60",
@@ -368,8 +368,8 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
         <span
           aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
           className={cn(
-            "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center font-semibold",
-            !expanded && "absolute top-1 right-1 min-w-[14px] h-3.5 px-1 text-[8px]",
+            "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-mono leading-none flex items-center justify-center font-semibold",
+            !expanded && "absolute top-1 right-1 min-w-[14px] h-3.5 px-1 text-[10px]",
             active
               ? "bg-white/25 text-white dark:bg-white/20 dark:text-white"
               : "bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30",

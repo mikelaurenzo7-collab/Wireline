@@ -237,7 +237,7 @@ export default function Compare() {
                         {c.label}
                       </div>
                       {c.note && (
-                        <div className="text-[9px] text-ink/50 mt-1 leading-tight">{c.note}</div>
+                        <div className="text-[10px] text-ink/50 mt-1 leading-tight">{c.note}</div>
                       )}
                     </th>
                   ))}
@@ -259,12 +259,12 @@ export default function Compare() {
                           {["HubSpot", "Salesforce", "Slack", "Zoom", "Apollo", "Meta"].map((b) => (
                             <span
                               key={b}
-                              className="px-1.5 py-0.5 bg-brand/[0.06] border border-brand/15 text-brand font-mono text-[9px] uppercase tracking-[0.2em]"
+                              className="px-1.5 py-0.5 bg-brand/[0.06] border border-brand/15 text-brand font-mono text-[10px] uppercase tracking-[0.2em]"
                             >
                               {b}
                             </span>
                           ))}
-                          <span className="px-1.5 py-0.5 bg-ink/[0.03] border border-ink/10 text-ink/55 font-mono text-[9px] uppercase tracking-[0.2em]">
+                          <span className="px-1.5 py-0.5 bg-ink/[0.03] border border-ink/10 text-ink/55 font-mono text-[10px] uppercase tracking-[0.2em]">
                             + 4 more
                           </span>
                         </div>

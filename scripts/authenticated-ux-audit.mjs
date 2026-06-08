@@ -134,8 +134,10 @@ async function shellChecks(page, ctx) {
   if (ctx.path !== "/chat" && panel === 0) issues.push("no wl-panel surfaces");
   const auroraRing = await page.locator(".aurora-ring").count();
   if (auroraRing > 0) issues.push("aurora-ring in app chrome");
-  const tiny = await page.locator('[class*="text-[8px]"]').count();
-  if (tiny > 12) issues.push(`${tiny} text-[8px] nodes — readability risk`);
+  const tiny =
+    (await page.locator('[class*="text-[8px]"]').count()) +
+    (await page.locator('[class*="text-[9px]"]').count());
+  if (tiny > 0) issues.push(`${tiny} sub-10px text nodes — readability risk`);
   return issues;
 }
 
@@ -159,7 +161,8 @@ async function auditRoute(page, route, viewport) {
     for (const issue of issues) {
       if (issue.includes("h1")) add("p1", id, issue, { screenshot: ssPath });
       else if (issue.includes("wl-panel")) add("p1", id, issue, { screenshot: ssPath });
-      else if (issue.includes("8px")) add("p2", id, issue, { screenshot: ssPath });
+      else if (issue.includes("sub-10px") || issue.includes("8px") || issue.includes("9px"))
+        add("p1", id, issue, { screenshot: ssPath });
       else add("p1", id, issue, { screenshot: ssPath });
     }
     if (issues.length === 0) ok(id, route.name);

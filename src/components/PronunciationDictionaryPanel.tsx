@@ -330,7 +330,7 @@ export default function PronunciationDictionaryPanel() {
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-ink truncate">{dict.name}</p>
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-muted/70">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
                     {dict.entries.length} {dict.entries.length === 1 ? "rule" : "rules"}
                     {dict.elevenlabsDictionaryId ? " · synced" : " · draft"}
                   </p>
@@ -410,7 +410,7 @@ interface EntryEditorProps {
 function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorProps) {
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 text-[9px] uppercase tracking-[0.22em] text-muted/70 px-1">
+      <div className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 text-[10px] uppercase tracking-[0.22em] text-muted/70 px-1">
         <span>Replace</span>
         <span>With</span>
         <span>Kind</span>

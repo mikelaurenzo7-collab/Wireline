@@ -124,14 +124,14 @@ export function OwnerBillingSimulator({
           </div>
           <div className="space-y-2 text-[11px] font-mono">
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">Core</span>
+              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">Core</span>
               <span className="text-ink">v2.0.4</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">State</span>
+              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">State</span>
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none",
+                  "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-none",
                   settings.subscription_status === "active"
                     ? "wl-status-success border wl-text-success"
                     : "bg-rose-500/10 border-rose-500/30 text-rose-500",
@@ -141,11 +141,11 @@ export function OwnerBillingSimulator({
               </span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">Agents</span>
+              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">Agents</span>
               <span className="text-ink tabular-nums">{agents.length} deployed</span>
             </div>
             <div className="flex items-center justify-between py-1">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[9px]">Quota</span>
+              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">Quota</span>
               <span className="text-brand tabular-nums">
                 {Math.max(0, settings.max_agents - agents.length)} free
               </span>

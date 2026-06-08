@@ -268,7 +268,7 @@ export default function AgentIntegrationCanvas({
 
                 {/* Label + connected dot */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="wl-canvas-node__label text-[8px] font-medium leading-none">
+                  <span className="wl-canvas-node__label text-[10px] font-medium leading-none">
                     {n.label}
                   </span>
                   <div className="wl-canvas-node__dot w-1 h-1 rounded-full transition-colors duration-300" />
@@ -307,7 +307,7 @@ export default function AgentIntegrationCanvas({
                     {meta.label}
                   </span>
                   {isEnabled && (
-                    <span className="wl-canvas-chip__count text-[8px] font-bold px-1 py-0.5 rounded-full leading-none">
+                    <span className="wl-canvas-chip__count text-[10px] font-bold px-1 py-0.5 rounded-full leading-none">
                       {enabledCount}
                     </span>
                   )}

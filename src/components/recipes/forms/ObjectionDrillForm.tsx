@@ -69,7 +69,7 @@ export function ObjectionDrillForm({
                 <h4 className="font-display italic text-xl">{s.title}</h4>
                 <span
                   className={cn(
-                    "px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
+                    "px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em]",
                     s.difficulty === "easy" && "wl-status-success border wl-text-success",
                     s.difficulty === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     s.difficulty === "hard" &&

@@ -303,7 +303,7 @@ export function KnowledgeFromUrlForm({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-ink/90">{e.fact}</div>
-                      <div className="text-[9px] uppercase tracking-[0.3em] text-muted mt-1">
+                      <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-1">
                         {e.category}
                       </div>
                     </div>

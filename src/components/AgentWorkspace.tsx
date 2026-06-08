@@ -749,7 +749,7 @@ export default function AgentWorkspace({
                 <tab.icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
                 {tab.id === "connectors" && enabledTools.length > 0 && (
-                  <span className="text-[9px] text-muted/70">{enabledTools.length}</span>
+                  <span className="text-[10px] text-muted/70">{enabledTools.length}</span>
                 )}
               </ShadButton>
             );
@@ -1098,7 +1098,7 @@ export default function AgentWorkspace({
                     <Plug className="w-3.5 h-3.5" />
                     <span>Tools</span>
                     {enabledTools.length > 0 && (
-                      <span className="text-[9px] text-ink/40">({enabledTools.length})</span>
+                      <span className="text-[10px] text-ink/40">({enabledTools.length})</span>
                     )}
                     <ChevronDown
                       className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
@@ -1167,7 +1167,7 @@ export default function AgentWorkspace({
                               <span className="block text-[11px] font-semibold text-foreground">
                                 Document
                               </span>
-                              <span className="block text-[9px] text-muted-foreground">
+                              <span className="block text-[10px] text-muted-foreground">
                                 PDFs & files
                               </span>
                             </div>
@@ -1188,7 +1188,7 @@ export default function AgentWorkspace({
                               <span className="block text-[11px] font-semibold text-foreground">
                                 Memory
                               </span>
-                              <span className="block text-[9px] text-muted">
+                              <span className="block text-[10px] text-muted">
                                 Add a fact or preference
                               </span>
                             </div>
@@ -1209,7 +1209,7 @@ export default function AgentWorkspace({
                               <span className="block text-[11px] font-medium text-ink dark:text-white">
                                 Instruction
                               </span>
-                              <span className="block text-[9px] text-muted">
+                              <span className="block text-[10px] text-muted">
                                 Add a skill to the prompt
                               </span>
                             </div>

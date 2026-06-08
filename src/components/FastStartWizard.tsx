@@ -438,7 +438,7 @@ export default function FastStartWizard({
                   <currentStep.icon className="w-6 h-6 text-brand" />
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.4em] text-brand">
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-brand">
                     Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
                   </p>
                   <h3 className="font-display italic text-2xl text-ink">{currentStep.title}</h3>

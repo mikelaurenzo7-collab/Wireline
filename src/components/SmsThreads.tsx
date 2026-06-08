@@ -327,7 +327,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
                             {m.body}
                           </p>
-                          <p className="text-[9px] uppercase tracking-[0.25em] text-ink/40 mt-1.5">
+                          <p className="text-[10px] uppercase tracking-[0.25em] text-ink/40 mt-1.5">
                             {m.direction === "out" ? "You" : "Caller"} ·{" "}
                             {formatDate(
                               m.created_at,

@@ -130,13 +130,12 @@ export function AgentReviewForm({
               >
                 <div
                   className={cn(
-                    "shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] mt-0.5",
+                    "shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] mt-0.5",
                     d.priority === "critical" &&
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     d.priority === "high" && "bg-brand-3/15 text-brand-3 border border-brand-3/30",
                     d.priority === "medium" && "bg-brand/15 text-brand border border-brand/30",
-                    d.priority === "low" &&
-                      "bg-black/[0.06] text-ink/40 border border-black/12",
+                    d.priority === "low" && "bg-black/[0.06] text-ink/40 border border-black/12",
                   )}
                 >
                   {d.priority}

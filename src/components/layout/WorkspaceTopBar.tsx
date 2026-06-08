@@ -99,7 +99,7 @@ export default function WorkspaceTopBar({
         <p
           className={cn(
             WL_APP_CLASSES.bodyCaption,
-            "px-3 pb-2 pt-0 sm:pt-0 border-t border-black/[0.05] sm:border-t-0 line-clamp-2 text-pretty",
+            "px-3 pb-2 pt-0 sm:pt-0 border-t border-black/[0.05] sm:border-t-0 min-w-0 line-clamp-1 sm:line-clamp-2 text-pretty",
             WL_APP_CLASSES.pageContextAccent,
           )}
         >

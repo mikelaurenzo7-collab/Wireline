@@ -122,7 +122,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             </span>
             <span className="text-ink/40"> / {included.toLocaleString()}</span>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
             {pct}% used
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
           <div className="text-[11px] leading-relaxed">
-            <span className="text-rose-400 font-semibold uppercase tracking-wider text-[9px] mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
+            <span className="text-rose-400 font-semibold uppercase tracking-wider text-[10px] mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
               Overage
             </span>
             <span className="text-rose-400 font-bold">

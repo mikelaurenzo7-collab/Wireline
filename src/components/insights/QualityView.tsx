@@ -164,13 +164,13 @@ export default function QualityView({ days }: { days: number }) {
       {/* Distribution + Radar */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel border border-black/8 p-5">
-          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
             <BarChart3 className="w-3 h-3" /> Score Distribution
           </h4>
           <div className="space-y-2.5">
             {distribution.map((bucket: any) => (
               <div key={bucket.label} className="flex items-center gap-3">
-                <span className="text-[9px] text-muted w-28 shrink-0">{bucket.label}</span>
+                <span className="text-[10px] text-muted w-28 shrink-0">{bucket.label}</span>
                 <div className="flex-1 h-2 rounded-full bg-black/10 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
@@ -180,7 +180,7 @@ export default function QualityView({ days }: { days: number }) {
                     data-qa-color={bucket.color || QA_BRAND}
                   />
                 </div>
-                <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
+                <span className="text-[10px] font-mono text-ink w-6 text-right shrink-0">
                   {bucket.count}
                 </span>
               </div>
@@ -189,7 +189,7 @@ export default function QualityView({ days }: { days: number }) {
         </div>
 
         <div className="rounded-md wl-panel border border-black/8 p-5">
-          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-2 flex items-center gap-1.5">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted mb-2 flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Dimension Averages (% of max)
           </h4>
           <div className="h-52">
@@ -217,7 +217,7 @@ export default function QualityView({ days }: { days: number }) {
       {/* 7-day trend */}
       {data.trend && data.trend.length > 1 && (
         <div className="rounded-md wl-panel border border-black/8 p-5">
-          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-3 h-3" /> QA Score Trend
           </h4>
           <div className="h-40">
@@ -270,7 +270,7 @@ export default function QualityView({ days }: { days: number }) {
       {/* Dimension detail table */}
       <div className="rounded-md wl-panel border border-black/8 overflow-hidden">
         <div className="px-5 py-3 border-b border-black/8">
-          <h4 className="font-mono text-[9px] uppercase tracking-[0.32em] text-muted flex items-center gap-1.5">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.32em] text-muted flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Rubric Dimensions
           </h4>
         </div>
@@ -308,7 +308,7 @@ export default function QualityView({ days }: { days: number }) {
               <div key={key} className="px-5 py-3.5 flex items-center gap-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] text-ink font-medium">{label}</p>
-                  <p className="text-[9px] text-muted/70 mt-0.5">{desc}</p>
+                  <p className="text-[10px] text-muted/70 mt-0.5">{desc}</p>
                 </div>
                 <div className="w-28 flex items-center gap-2 shrink-0">
                   <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
@@ -320,7 +320,7 @@ export default function QualityView({ days }: { days: number }) {
                       data-qa-color={qaColor(pct)}
                     />
                   </div>
-                  <span className="text-[9px] font-mono text-ink w-8 text-right">{avg}/20</span>
+                  <span className="text-[10px] font-mono text-ink w-8 text-right">{avg}/20</span>
                 </div>
               </div>
             );

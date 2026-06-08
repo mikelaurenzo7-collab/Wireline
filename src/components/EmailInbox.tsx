@@ -434,10 +434,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="text-[9px] uppercase tracking-[0.24em] text-ink/55 truncate">
+                              <span className="text-[10px] uppercase tracking-[0.24em] text-ink/55 truncate">
                                 {thread.customer_email}
                               </span>
-                              <span className="text-[8px] tabular-nums text-ink/55 shrink-0">
+                              <span className="text-[10px] tabular-nums text-ink/55 shrink-0">
                                 {formatDate(thread.last_message_at)}
                               </span>
                             </div>
@@ -450,7 +450,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               </p>
                               <span
                                 className={cn(
-                                  "shrink-0 px-1.5 py-0.5 rounded-full border text-[8px] font-mono",
+                                  "shrink-0 px-1.5 py-0.5 rounded-full border text-[10px] font-mono",
                                   scoreTone,
                                 )}
                               >
@@ -562,7 +562,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             >
                               <div
                                 className={cn(
-                                  "text-[9px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
+                                  "text-[10px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
                                   msg.role === "ai" ? "text-brand" : "text-ink/55",
                                 )}
                               >
@@ -581,7 +581,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 {msg.content}
                               </p>
                             </div>
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/55 mt-1.5 tabular-nums">
+                            <span className="text-[10px] uppercase tracking-[0.3em] text-ink/55 mt-1.5 tabular-nums">
                               {formatTime(msg.created_at)}
                             </span>
                           </motion.div>
@@ -596,7 +596,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Zap className="w-3 h-3 text-brand" />
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-ink/55">
+                            <span className="text-[10px] uppercase tracking-[0.3em] text-ink/55">
                               Quick replies
                             </span>
                           </div>
@@ -629,7 +629,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
                         <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/55">
                           <Terminal className="w-3 h-3" />
-                          <span className="text-[9px] uppercase tracking-[0.35em]">
+                          <span className="text-[10px] uppercase tracking-[0.35em]">
                             Compose reply
                           </span>
                         </div>

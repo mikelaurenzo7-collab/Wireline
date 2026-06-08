@@ -300,7 +300,7 @@ export default function Cadences() {
                       <span
                         key={i}
                         className={cn(
-                          "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                          "text-[10px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
                           stepBadgeClass(s.type),
                         )}
                       >
@@ -326,16 +326,16 @@ export default function Cadences() {
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="text-[13px] font-semibold text-ink">{c.name}</h4>
                   {c.active ? (
-                    <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
+                    <span className="text-[10px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       Active
                     </span>
                   ) : (
-                    <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-white/5 text-muted border border-white/15">
+                    <span className="text-[10px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-white/5 text-muted border border-white/15">
                       Paused
                     </span>
                   )}
                   {runsByCadence[c.id] > 0 && (
-                    <span className="text-[9px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
+                    <span className="text-[10px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       {runsByCadence[c.id]} active run{runsByCadence[c.id] === 1 ? "" : "s"}
                     </span>
                   )}
@@ -346,7 +346,7 @@ export default function Cadences() {
                     <span
                       key={i}
                       className={cn(
-                        "text-[9px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                        "text-[10px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
                         stepBadgeClass(s.type),
                       )}
                     >

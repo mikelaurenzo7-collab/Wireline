@@ -121,7 +121,7 @@ export function IntegrationPlaybookPanel({
         {/* Recent activity feed */}
         {ACTIVITY_LOG[activeKey] && (
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.28em] wl-label-muted">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] wl-label-muted">
               <Activity size={9} />
               Recent Activity
             </div>

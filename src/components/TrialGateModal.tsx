@@ -251,7 +251,7 @@ export default function TrialGateModal() {
                       )}
                     >
                       {isRecommended && (
-                        <div className="absolute -top-2 left-4 px-2 py-0.5 rounded-full bg-brand text-on-brand text-[9px] uppercase tracking-[0.2em] font-medium">
+                        <div className="absolute -top-2 left-4 px-2 py-0.5 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.2em] font-medium">
                           Recommended
                         </div>
                       )}

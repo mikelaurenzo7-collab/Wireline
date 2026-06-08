@@ -44,7 +44,7 @@ function AgentContactCard({
             <span
               className={cn(
                 "shrink-0 uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded",
-                landing ? "text-[10px]" : "text-[9px]",
+                landing ? "text-[10px]" : "text-[10px]",
                 isDemo ? "text-amber-800/80 bg-amber-500/10" : "text-brand bg-brand/10",
               )}
             >
@@ -114,7 +114,7 @@ function AgentContactCard({
           <div className="flex items-center gap-1.5 mb-1">
             <span
               className={cn(
-                "shrink-0 whitespace-nowrap text-[8px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
+                "shrink-0 whitespace-nowrap text-[10px] uppercase tracking-[0.16em] font-semibold px-1.5 py-0.5 rounded leading-none",
                 isDemo
                   ? "bg-white/8 text-muted/80 border border-white/10"
                   : "bg-brand/15 text-brand border border-brand/30",

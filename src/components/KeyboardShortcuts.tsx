@@ -147,7 +147,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {SHORTCUTS.map((section) => (
                     <div key={section.category}>
-                      <h3 className="text-[9px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-3 flex items-center gap-2">
+                      <h3 className="text-[10px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-3 flex items-center gap-2">
                         <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
                         {section.category}
                         <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />

@@ -36,7 +36,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
     <nav
       aria-label={label || "Section navigation"}
       className={cn(
-        "shrink-0 mb-0 md:mb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide",
+        "shrink-0 mb-0 md:mb-3 flex items-center gap-1 overflow-x-auto tab-strip-scroll max-sm:tab-strip-scroll--fade",
         className,
       )}
     >

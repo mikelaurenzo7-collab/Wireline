@@ -177,7 +177,7 @@ export function ErrCard({ error }: { error: string }) {
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[9px] uppercase tracking-[0.3em] text-muted">{label}</div>
+      <div className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</div>
       <div className="text-sm text-ink mt-0.5 truncate">{value}</div>
     </div>
   );

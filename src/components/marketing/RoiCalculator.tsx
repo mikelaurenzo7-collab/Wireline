@@ -180,7 +180,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
           <span className="hero-accent-line bg-brand" />
           <h2
             id="roi-heading"
-            className="text-[8px] uppercase tracking-[0.5em] text-brand font-semibold"
+            className="text-[10px] uppercase tracking-[0.5em] text-brand font-semibold"
           >
             <Calculator className="inline w-3 h-3 mr-1 -mt-0.5" strokeWidth={2} />
             Your numbers, our math

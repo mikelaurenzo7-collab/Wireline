@@ -158,7 +158,7 @@ export default function CampaignsTab({
                           </span>
                         </div>
                         {c.goal && <p className="text-caption truncate mb-1">{c.goal}</p>}
-                        <div className="flex items-center gap-3 text-[9px] text-ink/40">
+                        <div className="flex items-center gap-3 text-[10px] text-ink/40">
                           <span className="inline-flex items-center gap-1">
                             <Users className="w-2.5 h-2.5" />
                             {c.leads_count} leads
@@ -323,11 +323,11 @@ export default function CampaignsTab({
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                       </span>
-                      <span className="text-[9px] uppercase tracking-[0.3em] text-brand">
+                      <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
                         Live · Dialing in progress
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono text-muted tabular-nums">
+                    <span className="text-[10px] font-mono text-muted tabular-nums">
                       {selectedCampaign.dialed_count ?? 0} / {selectedCampaign.leads_count} dialed
                     </span>
                   </div>
@@ -361,7 +361,7 @@ export default function CampaignsTab({
                     {analyticsLoading ? (
                       <div className="flex items-center justify-center py-6 gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-brand" />
-                        <span className="text-[9px] uppercase tracking-[0.3em] text-muted">
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
                           Loading analytics
                         </span>
                       </div>
@@ -419,7 +419,7 @@ export default function CampaignsTab({
                             <div className="space-y-1.5">
                               {campaignAnalytics.outcomes.map((o: any) => (
                                 <div key={o.status} className="flex items-center gap-2.5">
-                                  <span className="text-[9px] text-muted w-28 shrink-0">
+                                  <span className="text-[10px] text-muted w-28 shrink-0">
                                     {o.status}
                                   </span>
                                   <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
@@ -433,7 +433,7 @@ export default function CampaignsTab({
                                       )}
                                     />
                                   </div>
-                                  <span className="text-[9px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
+                                  <span className="text-[10px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
                                     {o.count}
                                   </span>
                                   <span className="text-[10px] text-ink/40 w-7 text-right shrink-0 tabular-nums">
@@ -512,7 +512,7 @@ export default function CampaignsTab({
                       size="sm"
                       disableAnimations
                       onClick={() => retryFailedLeads(selectedCampaign.id)}
-                      className="shrink-0 rounded-full bg-destructive/20 border-destructive/40 text-destructive text-[9px] uppercase tracking-[0.25em] hover:bg-destructive/30 shadow-none"
+                      className="shrink-0 rounded-full bg-destructive/20 border-destructive/40 text-destructive text-[10px] uppercase tracking-[0.25em] hover:bg-destructive/30 shadow-none"
                     >
                       <Activity className="w-3 h-3" /> Retry Failed
                     </ShadButton>
@@ -553,7 +553,7 @@ export default function CampaignsTab({
                           {lead.phone_number || lead.customer_number}
                         </Link>
                       </div>
-                      <div className="text-[9px] text-ink/40 tabular-nums shrink-0">
+                      <div className="text-[10px] text-ink/40 tabular-nums shrink-0">
                         {formatDate(lead.created_at)}
                       </div>
                     </div>

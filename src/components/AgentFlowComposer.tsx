@@ -616,7 +616,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             Seeded flows for the 4 demo agent archetypes get them to a
             working draft in one click, then they customize. */}
           <div className="pt-3 border-t border-white/8 space-y-2">
-            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.32em] text-ink/40">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.32em] text-ink/40">
               <Sparkles className="w-3 h-3 text-brand" /> Start from a template
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -648,7 +648,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               variant="ghost"
               disableAnimations
               onClick={() => setShowSnippets((v) => !v)}
-              className="w-full h-auto justify-between gap-2 text-[9px] uppercase tracking-[0.32em] text-ink/40 hover:text-ink px-0"
+              className="w-full h-auto justify-between gap-2 text-[10px] uppercase tracking-[0.32em] text-ink/40 hover:text-ink px-0"
             >
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-brand" />
@@ -660,7 +660,9 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
                   <div key={cat} className="space-y-1">
-                    <div className="text-[8px] uppercase tracking-[0.4em] text-brand/70">{cat}</div>
+                    <div className="text-[10px] uppercase tracking-[0.4em] text-brand/70">
+                      {cat}
+                    </div>
                     {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
                       <ShadButton
                         key={snip.id}
@@ -677,7 +679,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     ))}
                   </div>
                 ))}
-                <p className="text-[9px] text-ink/40 leading-relaxed pt-2 border-t border-white/8">
+                <p className="text-[10px] text-ink/40 leading-relaxed pt-2 border-t border-white/8">
                   Adds the snippet to the currently selected stage's instructions. Edit after
                   pasting.
                 </p>
@@ -765,7 +767,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {step.name || "Unnamed Stage"}
                         </div>
                         {step.isEndNode && (
-                          <div className="text-[9px] uppercase tracking-[0.2em] text-rose-400 mt-0.5">
+                          <div className="text-[10px] uppercase tracking-[0.2em] text-rose-400 mt-0.5">
                             Terminal Node
                           </div>
                         )}
@@ -867,12 +869,12 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       We deliberately don't show "Saved ✓" here — the
                       Save button itself already does that. */}
                   {autosaving ? (
-                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-muted">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-muted">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Saving
                     </span>
                   ) : isDirty ? (
-                    <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] text-brand">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-brand">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                       Unsaved
                     </span>

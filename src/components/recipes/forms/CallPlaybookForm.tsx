@@ -104,7 +104,7 @@ export function CallPlaybookForm({
                   <div key={i} className="rounded-md bg-white/5 p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-ink/70 text-xs italic">"{o.objection}"</p>
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.25em] bg-amber-500/15 text-amber-500 border border-amber-500/30">
                         {TECHNIQUE_LABEL[o.technique] ?? o.technique}
                       </span>
                     </div>
@@ -120,7 +120,7 @@ export function CallPlaybookForm({
               <div className="space-y-3">
                 {playbook.closing_variants.map((c: any, i: number) => (
                   <div key={i} className="flex items-start gap-3">
-                    <span className="shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.25em] wl-status-success border wl-text-success">
+                    <span className="shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.25em] wl-status-success border wl-text-success">
                       {c.style?.replace(/_/g, " ")}
                     </span>
                     <p className="text-ink/90 text-sm italic">"{c.script}"</p>

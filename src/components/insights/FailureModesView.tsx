@@ -80,20 +80,19 @@ export default function FailureModesView() {
                 </h4>
                 <span
                   className={cn(
-                    "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
+                    "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em]",
                     m.severity === "critical" &&
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     m.severity === "high" &&
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     m.severity === "medium" &&
                       "bg-amber-500/15 text-amber-500 border border-amber-500/30",
-                    m.severity === "low" &&
-                      "bg-black/[0.06] text-ink/50 border border-black/12",
+                    m.severity === "low" && "bg-black/[0.06] text-ink/50 border border-black/12",
                   )}
                 >
                   {m.severity}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand-2/15 text-brand-2 border border-brand-2/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand-2/15 text-brand-2 border border-brand-2/30">
                   {m.fix_target}
                 </span>
               </div>

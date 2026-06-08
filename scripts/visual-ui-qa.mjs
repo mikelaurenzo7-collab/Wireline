@@ -81,6 +81,12 @@ async function loginViaApi(context) {
 async function visualMetrics(page) {
   return page.evaluate(() => {
     const tiny = document.querySelectorAll('[class*="text-[8px]"], [class*="text-[9px]"]').length;
+    const sub10px = [...document.querySelectorAll("p, span, label, button, a, th, td")]
+      .filter((el) => {
+        const fs = parseFloat(getComputedStyle(el).fontSize);
+        return fs > 0 && fs < 10;
+      })
+      .length;
     const root = document.documentElement;
     const overflowX = root.scrollWidth > root.clientWidth + 2;
     const bottomNav = document.querySelector('[data-testid="mobile-bottom-nav"]');
@@ -92,8 +98,7 @@ async function visualMetrics(page) {
       .filter((el) => {
         const s = getComputedStyle(el);
         const fs = parseFloat(s.fontSize);
-        if (fs < 11) return true;
-        return false;
+        return fs > 0 && fs < 10;
       })
       .length;
     const clipped = [...document.querySelectorAll("h1, h2, h3, .workspace-top-bar")]
@@ -104,6 +109,7 @@ async function visualMetrics(page) {
       .length;
     return {
       tinyTextNodes: tiny,
+      sub10pxTextNodes: sub10px,
       horizontalOverflow: overflowX,
       hasBottomNav: !!bottomNav,
       mainPaddingBottom: mainPad,

@@ -39,7 +39,7 @@ export function VoiceFieldSelect({
   const selectValue = allowInherit && !value ? "inherit" : resolveVoiceSelectValue(value, catalog);
   return (
     <div className="space-y-1.5">
-      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">{label}</label>
+      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">{label}</label>
       <Select
         value={selectValue}
         onValueChange={(val) => {

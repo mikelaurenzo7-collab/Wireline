@@ -338,8 +338,8 @@ export default function IntegrationLogos({ compact = false }: { compact?: boolea
         <p
           className={
             compact
-              ? "text-[8px] uppercase tracking-[0.4em] text-muted/70 mb-2 text-center"
-              : "text-[9px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
+              ? "text-[10px] uppercase tracking-[0.4em] text-muted/70 mb-2 text-center"
+              : "text-[10px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
           }
         >
           integrates with
@@ -355,8 +355,8 @@ export default function IntegrationLogos({ compact = false }: { compact?: boolea
         <p
           className={
             compact
-              ? "text-[8px] uppercase tracking-[0.4em] text-muted/70 mb-2 text-center"
-              : "text-[9px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
+              ? "text-[10px] uppercase tracking-[0.4em] text-muted/70 mb-2 text-center"
+              : "text-[10px] uppercase tracking-[0.5em] text-muted/70 mb-3 text-center"
           }
         >
           powered by

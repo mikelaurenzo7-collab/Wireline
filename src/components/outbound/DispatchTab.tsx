@@ -341,7 +341,7 @@ export default function DispatchTab({
                       <div className="rounded-md wl-panel border border-border p-3">
                         <div className="flex items-center gap-1.5 mb-2 text-brand">
                           <Terminal className="w-3 h-3" />
-                          <span className="text-[9px] uppercase tracking-[0.3em]">CSV format</span>
+                          <span className="text-[10px] uppercase tracking-[0.3em]">CSV format</span>
                         </div>
                         <ul className="text-[10px] text-muted/80 space-y-0.5">
                           <li className="flex items-center gap-1.5">
@@ -536,7 +536,7 @@ export default function DispatchTab({
                                 {lead.customer_name || "Unknown subject"}
                               </h3>
                               {lead.source === "inbound" && (
-                                <span className="px-1.5 py-0.5 rounded-full bg-brand-2/15 border border-brand-2/40 text-brand-2 text-[9px] uppercase tracking-[0.25em] leading-none">
+                                <span className="px-1.5 py-0.5 rounded-full bg-brand-2/15 border border-brand-2/40 text-brand-2 text-[10px] uppercase tracking-[0.25em] leading-none">
                                   Inbound
                                 </span>
                               )}
@@ -544,7 +544,7 @@ export default function DispatchTab({
                             <div className="flex flex-wrap items-center gap-2">
                               <span
                                 className={cn(
-                                  "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none inline-flex items-center gap-1",
+                                  "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-none inline-flex items-center gap-1",
                                   lead.status === "Completed"
                                     ? "bg-brand/10 border-brand/30 text-brand"
                                     : lead.status === "Queued"

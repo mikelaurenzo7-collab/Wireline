@@ -199,7 +199,7 @@ export function ActionFeed({
                         <div className="flex items-center gap-2 mt-1">
                           <span
                             className={clsx(
-                              "text-[8px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded-full border",
+                              "text-[10px] uppercase tracking-[0.2em] font-bold px-1.5 py-0.5 rounded-full border",
                               action.priority === "high"
                                 ? "bg-destructive/10 text-destructive border-destructive/20"
                                 : "bg-black/5 text-muted border-black/10",
@@ -207,7 +207,7 @@ export function ActionFeed({
                           >
                             {action.priority}
                           </span>
-                          <span className="text-[9px] text-ink/55 font-mono">
+                          <span className="text-[10px] text-ink/55 font-mono">
                             {new Date(action.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -360,7 +360,7 @@ export function ActionFeed({
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(action.payload || {}).map(([key, val]) => (
                                   <div key={key} className="flex flex-col gap-1">
-                                    <span className="text-[9px] uppercase tracking-wider text-ink/55">
+                                    <span className="text-[10px] uppercase tracking-wider text-ink/55">
                                       {key}
                                     </span>
                                     <span

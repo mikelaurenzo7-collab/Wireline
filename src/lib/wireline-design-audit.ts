@@ -94,11 +94,17 @@ export const OFF_BRAND_HEX_PATTERN =
 
 export const OFF_BRAND_GRADIENT_PATTERN = /\bfrom-(?:blue|cyan|sky|teal|emerald|amber|orange)-/g;
 
+/** Sub-10px Tailwind literals — app surfaces enforce a 10px floor. */
+export const APP_MICRO_TEXT_8_PATTERN = /text-\[8px\]/g;
+export const APP_MICRO_TEXT_9_PATTERN = /text-\[9px\]/g;
+
 export const DESIGN_AUDIT_BASELINE = {
   appAuroraRing: 0,
   appBrutalBtn: 0,
   appOffBrandHex: 0,
   appOffBrandGradient: 0,
   appGlassUtility: 0,
+  appText8px: 0,
+  appText9px: 0,
   marketingAuroraRingMax: 2, // Pricing tier spotlight + allowed marketing flourish
 } as const;

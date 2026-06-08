@@ -246,7 +246,7 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
-                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          "ml-0.5 px-1.5 py-px rounded-full text-[10px] font-mono leading-none",
                           active ? "app-tab-active-badge" : "bg-black/8 text-muted",
                         )}
                       >
@@ -266,7 +266,7 @@ export default function PageShell({
         <div className="md:hidden shrink-0 flex items-center gap-2 min-h-0">
           <div
             role="tablist"
-            className="tab-toggle-surface flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-0.5"
+            className="tab-toggle-surface flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto tab-strip-scroll max-sm:tab-strip-scroll--fade py-0.5"
           >
             {tabs.map((tab, i) => {
               const Icon = tab.icon;
@@ -307,7 +307,7 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
-                          "ml-0.5 px-1.5 py-px rounded-full text-[8px] font-mono leading-none",
+                          "ml-0.5 px-1.5 py-px rounded-full text-[10px] font-mono leading-none",
                           active ? "app-tab-active-badge" : "bg-black/8 text-muted",
                         )}
                       >
@@ -584,7 +584,7 @@ export function StatTile({
           {trend && (
             <span
               className={cn(
-                "shrink-0 text-[9px] font-mono font-medium",
+                "shrink-0 text-[10px] font-mono font-medium",
                 trendPositive ? "wl-text-success" : "text-rose-500",
               )}
             >

@@ -138,7 +138,7 @@ function GoalEditor({
       <p className="text-caption leading-relaxed">{metric.description}</p>
 
       <label className="block">
-        <span className="text-[9px] uppercase tracking-[0.22em] text-muted">
+        <span className="text-[10px] uppercase tracking-[0.22em] text-muted">
           Monthly target ({metric.unit})
         </span>
         <Input
@@ -157,7 +157,7 @@ function GoalEditor({
       </label>
 
       <label className="block">
-        <span className="text-[9px] uppercase tracking-[0.22em] text-muted">Label (optional)</span>
+        <span className="text-[10px] uppercase tracking-[0.22em] text-muted">Label (optional)</span>
         <Input
           type="text"
           value={label}
@@ -241,7 +241,7 @@ function GoalCard({
           )}
         </div>
         <span
-          className="shrink-0 px-2 py-1 rounded-full text-[9px] uppercase tracking-[0.12em] font-medium wl-status-chip"
+          className="shrink-0 px-2 py-1 rounded-full text-[10px] uppercase tracking-[0.12em] font-medium wl-status-chip"
           data-status-color={status.color}
         >
           {status.label}
@@ -250,19 +250,19 @@ function GoalCard({
 
       <div className="relative flex items-center gap-4">
         <Ring fraction={goal.fraction} accent={goal.accent}>
-          <span className="font-display italic text-2xl text-ink tabular-nums leading-none">
+          <span className="font-semibold text-2xl text-ink tabular-nums leading-none">
             {goal.percent}%
           </span>
-          <span className="text-[8px] uppercase tracking-[0.2em] text-muted mt-1">of target</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted mt-1">of target</span>
         </Ring>
         <div className="min-w-0 flex flex-col gap-1.5">
           <div className="flex items-baseline gap-1.5">
-            <span className="font-display italic text-3xl text-aurora tabular-nums">
+            <span className="font-semibold text-3xl text-aurora tabular-nums">
               {num(goal.actual)}
             </span>
             <span className="text-sm text-muted tabular-nums">/ {num(goal.target)}</span>
           </div>
-          <span className="text-[9px] uppercase tracking-[0.18em] text-muted">{goal.unit}</span>
+          <span className="text-[10px] uppercase tracking-[0.18em] text-muted">{goal.unit}</span>
           <div className="mt-1 text-[11px] text-ink/70 leading-relaxed">
             {goal.status === "achieved" ? (
               <span className="text-brand font-medium">Target reached — nice work.</span>
@@ -458,7 +458,7 @@ export default function GoalsView() {
     return (
       <div className="py-20 flex flex-col items-center gap-3">
         <Loader2 className="w-7 h-7 text-brand animate-spin" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">Loading goals</p>
+        <p className="text-[10px] uppercase tracking-[0.5em] text-muted/70">Loading goals</p>
       </div>
     );
   }

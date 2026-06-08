@@ -178,7 +178,7 @@ export function DirectorComposerAccessory({
                         <p className="text-[11px] font-semibold text-foreground truncate">
                           {c.label}
                         </p>
-                        <p className="text-[9px] text-muted-foreground truncate">{c.desc}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{c.desc}</p>
                       </div>
                     </Link>
                   ))}
@@ -235,7 +235,7 @@ export function DirectorComposerAccessory({
                     </span>
                     <span className="min-w-0 text-left">
                       <span className="block text-[11px] font-semibold truncate">{a.name}</span>
-                      <span className="block text-[9px] text-muted-foreground truncate">
+                      <span className="block text-[10px] text-muted-foreground truncate">
                         {a.role?.replace(/_/g, " ") || "Agent"}
                       </span>
                     </span>
@@ -302,7 +302,7 @@ export function DirectorComposerAccessory({
                     <span className="block text-[11px] font-semibold text-foreground">
                       Document
                     </span>
-                    <span className="block text-[9px] text-muted-foreground">PDFs & files</span>
+                    <span className="block text-[10px] text-muted-foreground">PDFs & files</span>
                   </span>
                 </ShadButton>
                 <ShadButton
@@ -315,7 +315,7 @@ export function DirectorComposerAccessory({
                   <Brain className="w-4 h-4 text-brand" />
                   <span className="text-left">
                     <span className="block text-[11px] font-semibold text-foreground">Context</span>
-                    <span className="block text-[9px] text-muted-foreground">Global rule</span>
+                    <span className="block text-[10px] text-muted-foreground">Global rule</span>
                   </span>
                 </ShadButton>
                 <ShadButton
@@ -330,7 +330,7 @@ export function DirectorComposerAccessory({
                     <span className="block text-[11px] font-semibold text-foreground">
                       Instruction
                     </span>
-                    <span className="block text-[9px] text-muted-foreground">Playbook</span>
+                    <span className="block text-[10px] text-muted-foreground">Playbook</span>
                   </span>
                 </ShadButton>
               </div>

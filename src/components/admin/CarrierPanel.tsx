@@ -112,11 +112,11 @@ export function CarrierPanel({
             <div className="rounded-md wl-panel border border-brand/30 p-3 space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-ink/80">
                   Voice network key
                 </p>
               </div>
-              <p className="text-[9px] uppercase tracking-[0.3em] text-brand">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-brand">
                 Managed by Wireline
               </p>
             </div>
@@ -135,13 +135,13 @@ export function CarrierPanel({
                     hasBrowserVoiceKey ? "bg-brand" : "bg-rose-500",
                   )}
                 />
-                <p className="text-[9px] uppercase tracking-[0.3em] text-ink/80">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-ink/80">
                   Browser voice key
                 </p>
               </div>
               <p
                 className={cn(
-                  "text-[9px] uppercase tracking-[0.3em]",
+                  "text-[10px] uppercase tracking-[0.3em]",
                   hasBrowserVoiceKey ? "text-brand" : "text-rose-500",
                 )}
               >
@@ -153,7 +153,7 @@ export function CarrierPanel({
           <div className="space-y-1.5">
             <label
               htmlFor="vapi-phone-number-id"
-              className="text-[9px] uppercase tracking-[0.3em] text-ink/40"
+              className="text-[10px] uppercase tracking-[0.3em] text-ink/40"
             >
               Default Wireline phone number ID
             </label>
@@ -172,7 +172,7 @@ export function CarrierPanel({
           <div className="space-y-1.5">
             <label
               htmlFor="vapi-inbound-agent-id"
-              className="text-[9px] uppercase tracking-[0.3em] text-ink/40"
+              className="text-[10px] uppercase tracking-[0.3em] text-ink/40"
             >
               Default inbound voice agent
             </label>
@@ -268,7 +268,7 @@ export function CarrierPanel({
                       >
                         <div className="flex items-baseline justify-between mb-0.5">
                           <span className="text-sm text-ink">{p.label}</span>
-                          <span className="text-[9px] uppercase tracking-[0.3em] text-muted">
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
                             {p.sub}
                           </span>
                         </div>
@@ -279,7 +279,7 @@ export function CarrierPanel({
                   <div className="space-y-1.5 pt-2">
                     <label
                       htmlFor="voice-llm-model"
-                      className="text-[9px] uppercase tracking-[0.3em] text-ink/40"
+                      className="text-[10px] uppercase tracking-[0.3em] text-ink/40"
                     >
                       Model Revision Override
                     </label>
@@ -341,7 +341,7 @@ export function CarrierPanel({
                     <div className="font-display italic text-lg text-ink leading-none tabular-nums truncate">
                       {pt.phone_number}
                     </div>
-                    <div className="text-[9px] uppercase tracking-[0.3em] text-ink/40 mt-1 font-mono">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-1 font-mono">
                       {pt.vapi_number_id?.substring(0, 16)}…
                     </div>
                   </div>
@@ -421,7 +421,7 @@ export function CarrierPanel({
                 onClick={handleSync}
                 disabled={isSyncing}
                 variant="outline"
-                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-ink/40 hover:text-brand transition-colors h-auto py-1 px-2 border-input"
+                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-ink/40 hover:text-brand transition-colors h-auto py-1 px-2 border-input"
               >
                 {isSyncing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -541,7 +541,7 @@ export function CarrierPanel({
           <div className="space-y-1.5">
             <label
               htmlFor="twilio-sms-from"
-              className="text-[9px] uppercase tracking-[0.3em] text-ink/40"
+              className="text-[10px] uppercase tracking-[0.3em] text-ink/40"
             >
               SMS sender number
             </label>
@@ -565,7 +565,7 @@ export function CarrierPanel({
           <div className="space-y-1.5">
             <label
               htmlFor="twilio-messaging-sid"
-              className="text-[9px] uppercase tracking-[0.3em] text-ink/40"
+              className="text-[10px] uppercase tracking-[0.3em] text-ink/40"
             >
               OR Messaging Service SID (recommended for scale)
             </label>
@@ -655,7 +655,7 @@ export function CarrierPanel({
               <div className="space-y-1.5">
                 <label
                   htmlFor="manager-alert-number"
-                  className="text-[9px] uppercase tracking-[0.3em] text-ink/40"
+                  className="text-[10px] uppercase tracking-[0.3em] text-ink/40"
                 >
                   Your phone number
                 </label>

@@ -192,7 +192,7 @@ export default function BrowserCallWidget({
               );
             })}
           </div>
-          <span className="text-[9px] font-mono tracking-wider text-muted uppercase">
+          <span className="text-[10px] font-mono tracking-wider text-muted uppercase">
             {speakerActive ? "Agent speaking" : "Listening"}
           </span>
         </div>
@@ -200,7 +200,7 @@ export default function BrowserCallWidget({
 
       {/* Soft Error Message Banner */}
       {error && (
-        <div className="flex items-center gap-2 text-rose-500 font-mono text-[9px] uppercase tracking-wider bg-rose-500/5 px-3 py-1 rounded-md border border-rose-500/10">
+        <div className="flex items-center gap-2 text-rose-500 font-mono text-[10px] uppercase tracking-wider bg-rose-500/5 px-3 py-1 rounded-md border border-rose-500/10">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{error}</span>
         </div>

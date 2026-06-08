@@ -96,12 +96,12 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
-                  <span className="text-ink/40 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-ink/40 ml-0.5 text-[10px]">{item.unit}</span>
                 </span>
-                <span className="text-ink/40 text-[9px]">vs</span>
+                <span className="text-ink/40 text-[10px]">vs</span>
                 <span className="font-mono text-[11px] text-ink/70">
                   {item.benchmark}
-                  <span className="text-ink/40 ml-0.5 text-[9px]">{item.unit}</span>
+                  <span className="text-ink/40 ml-0.5 text-[10px]">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function PerformanceBenchmarks() {
   if (error || !data) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-[9px] uppercase tracking-[0.5em] text-rose-500/60">
+        <p className="text-[10px] uppercase tracking-[0.5em] text-rose-500/60">
           {error || "No data"}
         </p>
       </div>
@@ -226,12 +226,12 @@ export default function PerformanceBenchmarks() {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
         <TrendingUp className="w-8 h-8 text-ink/40" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-ink/40">
+        <p className="text-[10px] uppercase tracking-[0.5em] text-ink/40">
           No call data in the last 30 days
         </p>
         <Link
           to="/outbound"
-          className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"
+          className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"
         >
           Start Outbound Campaign →
         </Link>

@@ -379,7 +379,7 @@ export default function AppShell() {
           <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-2 pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:px-3 md:pb-2.5 lg:px-3 lg:pb-3">
             <div
               className={cn(
-                "app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pb-[calc(3.75rem+env(safe-area-inset-bottom))] lg:pb-0 md:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas",
+                "app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pb-0 md:pb-3 lg:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas",
                 showPageContext ? "pt-0.5 md:pt-1" : "pt-1 md:pt-1.5",
               )}
             >

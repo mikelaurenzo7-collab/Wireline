@@ -322,9 +322,7 @@ export default function CrmConnectionCard() {
     <div className="space-y-4">
       <div className="rounded-md wl-panel border border-black/8 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[9px] uppercase tracking-[0.35em] text-brand font-semibold">
-            Connected stack
-          </p>
+          <p className="wl-label text-brand">Connected stack</p>
           <p className="text-caption mt-0.5">
             {connectedCount} of {PROVIDERS.length} integrations active — agents unlock tools per
             connection.
@@ -332,7 +330,7 @@ export default function CrmConnectionCard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>
-          <span className="text-[9px] uppercase tracking-[0.28em] text-ink/40">
+          <span className="text-[10px] uppercase tracking-[0.28em] text-ink/40">
             {PROVIDERS.length - connectedCount} available
           </span>
           <ShadButton
@@ -344,7 +342,7 @@ export default function CrmConnectionCard() {
               setLoading(true);
               void fetchStatus();
             }}
-            className="rounded-full text-[9px] uppercase tracking-[0.26em]"
+            className="rounded-full text-[10px] uppercase tracking-[0.26em]"
             aria-label="Refresh integration status"
           >
             <Loader2 className="w-3 h-3" />
@@ -357,10 +355,8 @@ export default function CrmConnectionCard() {
         const groupProviders = PROVIDERS.filter((p) => p.group === group);
         return (
           <div key={group} className="space-y-3">
-            <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">
-              {group} Integrations
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="wl-label text-brand/70">{group} Integrations</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
               <AnimatePresence mode="popLayout">
                 {groupProviders.map(({ key, label, logo, beta }) => {
                   const styles = CONNECTED_STYLES;
@@ -370,7 +366,7 @@ export default function CrmConnectionCard() {
                   const detail = s.email || s.team || "";
                   const betaPill = beta ? (
                     <span
-                      className="ml-1 text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
+                      className="ml-1 text-[10px] uppercase tracking-[0.22em] px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
                       title="OAuth is live; agent actions (auto-log calls, push deals) are in active development."
                     >
                       Beta
@@ -390,7 +386,7 @@ export default function CrmConnectionCard() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "rounded-md wl-panel border p-4 h-full flex flex-col",
+                        "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 h-full flex flex-col",
                         s.connected ? styles.card : "border-black/8",
                       )}
                     >
@@ -414,13 +410,13 @@ export default function CrmConnectionCard() {
                             {betaPill}
                           </div>
                           {s.connected ? (
-                            <div className="text-[9px] text-muted leading-snug mt-0.5 truncate">
+                            <div className="text-[10px] text-muted leading-snug mt-0.5 truncate">
                               {detail && <span>{detail} · </span>}
                               Connected{" "}
                               {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
                             </div>
                           ) : (
-                            <div className="text-[9px] text-muted leading-snug mt-0.5">
+                            <div className="text-[10px] text-muted leading-snug mt-0.5">
                               {apolloPlatformOnly
                                 ? "Platform Apollo API active — optional: connect your workspace below"
                                 : platformReady && oauthConnectAvailable
@@ -479,7 +475,7 @@ export default function CrmConnectionCard() {
                               Connect
                             </ShadButton>
                           ) : (
-                            <span className="text-[9px] text-muted px-2">Unavailable</span>
+                            <span className="text-[10px] text-muted px-2">Unavailable</span>
                           )}
                         </div>
                       </div>
@@ -488,7 +484,7 @@ export default function CrmConnectionCard() {
                           const toolInt = toolIntegrationForProvider(key);
                           if (!toolInt) return null;
                           return (
-                            <div className="mt-3 pt-3 border-t border-black/8">
+                            <div className="mt-3 pt-3 border-t border-black/8 hidden sm:block">
                               <IntegrationCapabilityPanel
                                 integration={toolInt}
                                 accentColor={PROVIDER_ACCENT[key] ?? BRAND.purple}
@@ -502,7 +498,7 @@ export default function CrmConnectionCard() {
 
                       {key === "shopify" && !s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
-                          <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          <div className="text-[10px] uppercase tracking-[0.25em] text-muted/90">
                             Your store domain
                           </div>
                           <Input
@@ -518,9 +514,9 @@ export default function CrmConnectionCard() {
                             className="w-full text-[10px] rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-ink/40 outline-none focus:border-brand/40"
                           />
                           {shopError ? (
-                            <p className="text-[9px] text-rose-500 leading-snug">{shopError}</p>
+                            <p className="text-[10px] text-rose-500 leading-snug">{shopError}</p>
                           ) : (
-                            <p className="text-[9px] text-ink/40 leading-snug">
+                            <p className="text-[10px] text-ink/40 leading-snug">
                               Enter your myshopify.com domain, then click Connect to authorize.
                             </p>
                           )}
@@ -528,7 +524,7 @@ export default function CrmConnectionCard() {
                       )}
                       {key === "slack" && s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                          <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          <div className="text-[10px] uppercase tracking-[0.25em] text-muted/90">
                             Default notify channel
                           </div>
                           {slackChannelsLoading ? (
@@ -565,7 +561,7 @@ export default function CrmConnectionCard() {
                               </SelectContent>
                             </Select>
                           )}
-                          <p className="text-[9px] text-ink/40 leading-snug">
+                          <p className="text-[10px] text-ink/40 leading-snug">
                             After OAuth we auto-pick #general when possible. Agents post bookings
                             and alerts here — change anytime.
                           </p>
@@ -573,7 +569,7 @@ export default function CrmConnectionCard() {
                       )}
                       {key === "microsoft_teams" && s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                          <div className="text-[9px] uppercase tracking-[0.25em] text-muted/90">
+                          <div className="text-[10px] uppercase tracking-[0.25em] text-muted/90">
                             Notify team & channel
                           </div>
                           {teamsTargetsLoading ? (
@@ -628,11 +624,11 @@ export default function CrmConnectionCard() {
                             </Select>
                           )}
                           {s.team_name && s.channel_name ? (
-                            <p className="text-[9px] text-ink/40 leading-snug">
+                            <p className="text-[10px] text-ink/40 leading-snug">
                               Current: {s.team_name} → {s.channel_name}
                             </p>
                           ) : (
-                            <p className="text-[9px] text-ink/40 leading-snug">
+                            <p className="text-[10px] text-ink/40 leading-snug">
                               Pick where call alerts post. Without a selection we use your first
                               team channel.
                             </p>

@@ -156,13 +156,13 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                           <div className="text-right hidden sm:block">
                             <p
                               className={cn(
-                                "text-[9px] uppercase tracking-widest font-black mb-0.5",
+                                "text-[10px] uppercase tracking-widest font-black mb-0.5",
                                 m.user_id ? "text-brand" : "text-rose-500",
                               )}
                             >
                               {m.user_id ? "Authenticated" : "Pending Invite"}
                             </p>
-                            <p className="text-[8px] text-muted uppercase">
+                            <p className="text-[10px] text-muted uppercase">
                               Joined {new Date(m.created_at).toLocaleDateString()}
                             </p>
                           </div>

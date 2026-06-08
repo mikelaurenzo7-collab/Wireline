@@ -444,12 +444,12 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   </Tooltip>
                 </TooltipProvider>
               )}
-              <div className="flex items-center gap-2 mt-1.5 text-[8px] uppercase tracking-[0.26em] text-muted/70">
+              <div className="flex items-center gap-2 mt-1.5 text-[10px] uppercase tracking-[0.26em] text-muted/70">
                 <span>{formatDate(c.created_at)}</span>
                 <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                 <Badge
                   variant="secondary"
-                  className="text-[8px] uppercase tracking-[0.26em] text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
+                  className="text-[10px] uppercase tracking-[0.26em] text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
                 >
                   {c.intent_label} intent
                 </Badge>
@@ -537,14 +537,14 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
                 {t.priority === "high" && (
                   <Badge
                     variant="destructive"
-                    className="text-[8px] font-bold uppercase tracking-widest animate-pulse leading-none py-0.5 px-1.5 rounded"
+                    className="text-[10px] font-bold uppercase tracking-widest animate-pulse leading-none py-0.5 px-1.5 rounded"
                   >
                     URGENT
                   </Badge>
                 )}
               </div>
               <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
-              <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
                 <span>{formatDateTime(t.created_at)}</span>
               </div>
             </div>
@@ -640,7 +640,7 @@ const KnowledgeGapRow: React.FC<{
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
-            <div className="text-[8px] uppercase tracking-[0.28em] text-brand mb-0.5">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-brand mb-0.5">
               Captured gap
             </div>
             {editing ? (
@@ -653,7 +653,7 @@ const KnowledgeGapRow: React.FC<{
             ) : (
               <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
             )}
-            <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5">
               Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
               {formatDate(gap.created_at)}
             </div>
@@ -692,7 +692,7 @@ const KnowledgeGapRow: React.FC<{
               size="sm"
               onClick={promote}
               disabled={busy || discarding}
-              className="h-7 rounded-md bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 text-[9px] uppercase tracking-[0.28em] font-normal transition-all flex items-center gap-1"
+              className="h-7 rounded-md bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 text-[10px] uppercase tracking-[0.28em] font-normal transition-all flex items-center gap-1"
             >
               {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               Promote
@@ -799,7 +799,7 @@ const OpenTaskRow: React.FC<{
                     : "outline"
               }
               className={cn(
-                "text-[8px] uppercase tracking-[0.28em] font-normal px-2 py-0.5 rounded leading-none",
+                "text-[10px] uppercase tracking-[0.28em] font-normal px-2 py-0.5 rounded leading-none",
                 task.priority === "high" &&
                   "bg-destructive/12 text-destructive border-destructive/30 hover:bg-destructive/18",
                 task.priority === "medium" &&
@@ -812,7 +812,7 @@ const OpenTaskRow: React.FC<{
             </Badge>
           </div>
           <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
-          <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+          <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
             <span>{task.target_channel || "manual"}</span>
             <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
             <span>{formatDateTime(task.created_at)}</span>
@@ -846,7 +846,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                 {c.customer_number || "Unknown caller"}
               </span>
               <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
-              <div className="text-[8px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
                 <span>{formatDateTime(c.created_at)}</span>
                 {c.lead_score !== null && c.lead_score !== undefined && (
                   <>

@@ -86,13 +86,13 @@ export default function TopicsView() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand/15 text-brand border border-brand/30">
                     {t.category}
                   </span>
                   {t.trend && (
                     <span
                       className={cn(
-                        "px-2 py-0.5 rounded-full text-[9px] uppercase tracking-[0.3em]",
+                        "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em]",
                         t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
                         t.trend === "new" && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
                         t.trend === "steady" &&

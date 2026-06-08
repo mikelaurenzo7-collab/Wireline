@@ -65,7 +65,7 @@ export default function CallbacksList({
           size="sm"
           onClick={onRefresh}
           className={cn(
-            "h-7 rounded-full text-[9px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 touch-press",
+            "h-7 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 touch-press",
             WL_OPS_CLASSES.filterChip,
           )}
         >
@@ -111,7 +111,7 @@ export default function CallbacksList({
                   </span>
                   <span
                     className={cn(
-                      "text-[9px] uppercase tracking-[0.3em] flex-shrink-0",
+                      "text-[10px] uppercase tracking-[0.3em] flex-shrink-0",
                       isPast ? "text-amber-600" : "text-brand",
                     )}
                   >
@@ -126,7 +126,7 @@ export default function CallbacksList({
                     {cb.last_contact_summary}
                   </p>
                 )}
-                <p className="text-[9px] text-ink/40 mt-1">
+                <p className="text-[10px] text-ink/40 mt-1">
                   {scheduledAt.toLocaleString("en-US", {
                     weekday: "short",
                     month: "short",

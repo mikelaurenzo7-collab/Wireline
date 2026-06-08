@@ -140,7 +140,7 @@ export default function SystemStatusBadge() {
           ))}
 
           <div className="pt-2 border-t border-white/8 flex items-center justify-between">
-            <span className="text-[9px] text-ink/65 uppercase tracking-wider">
+            <span className="text-[10px] text-ink/65 uppercase tracking-wider">
               {health.status === "ok" ? "Nominal" : "Degraded"}
             </span>
             <ShadButton
@@ -151,7 +151,7 @@ export default function SystemStatusBadge() {
               onClick={() => {
                 poll();
               }}
-              className="h-auto gap-1 px-0 py-0 text-[9px] uppercase tracking-wider text-brand/70 hover:text-brand"
+              className="h-auto gap-1 px-0 py-0 text-[10px] uppercase tracking-wider text-brand/70 hover:text-brand"
             >
               <Wifi className="w-2.5 h-2.5" /> Refresh
             </ShadButton>

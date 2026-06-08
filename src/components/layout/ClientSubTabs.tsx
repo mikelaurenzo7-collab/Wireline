@@ -79,7 +79,7 @@ export default function ClientSubTabs({
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
       className={cn(
-        "shrink-0 flex items-center gap-1 tab-strip-scroll",
+        "shrink-0 flex items-center gap-1 tab-strip-scroll max-sm:tab-strip-scroll--fade",
         density === "compact" ? "mb-0 justify-start" : "justify-center mb-2 md:mb-3",
         className,
       )}
@@ -107,7 +107,7 @@ export default function ClientSubTabs({
               className={cn(
                 "touch-press relative shrink-0 inline-flex h-auto items-center gap-1 transition-colors uppercase font-medium whitespace-nowrap rounded-none",
                 density === "compact"
-                  ? "min-h-7 px-2 py-0.5 text-[9px] sm:text-[10px] tracking-[0.08em]"
+                  ? "min-h-7 px-2 py-0.5 text-[10px] tracking-[0.08em]"
                   : "min-h-9 sm:min-h-10 gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-[11px] tracking-[0.1em]",
                 active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
               )}

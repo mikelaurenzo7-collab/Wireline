@@ -184,7 +184,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   )}
                 </div>
                 {claiming === n.phone_number && (
-                  <span className="text-[9px] uppercase tracking-[0.3em] text-brand">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
                     Claiming…
                   </span>
                 )}

@@ -255,7 +255,7 @@ export default function DeployAgentModal({
             <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-white/8">
                 <div className="space-y-1.5 min-w-0">
-                  <p className="text-[9px] uppercase tracking-[0.42em] text-ink/40">
+                  <p className="text-[10px] uppercase tracking-[0.42em] text-ink/40">
                     Deploy · {template.category}
                   </p>
                   <h2 className="font-display italic text-2xl text-ink leading-tight">
@@ -379,7 +379,7 @@ export default function DeployAgentModal({
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
-                                <span className="text-[9px] uppercase tracking-[0.32em] text-ink/40 shrink-0">
+                                <span className="text-[10px] uppercase tracking-[0.32em] text-ink/40 shrink-0">
                                   {v.provider}
                                 </span>
                               </ShadButton>

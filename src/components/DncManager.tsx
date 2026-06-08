@@ -306,7 +306,7 @@ export default function DncManager() {
                 className="relative rounded-md wl-panel border border-border p-4 overflow-hidden"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[9px] uppercase tracking-[0.32em] text-muted">{label}</p>
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-muted">{label}</p>
                   <Icon className="w-3.5 h-3.5 text-brand" />
                 </div>
                 <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
@@ -413,7 +413,7 @@ export default function DncManager() {
                         </span>
                         {confirmId === entry.id ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] text-rose-500">Remove?</span>
+                            <span className="text-[10px] text-rose-500">Remove?</span>
                             <ShadButton
                               type="button"
                               variant="destructive"
@@ -421,7 +421,7 @@ export default function DncManager() {
                               disableAnimations
                               onClick={() => handleDelete(entry.id)}
                               disabled={deletingId === entry.id}
-                              className="h-7 px-2.5 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 text-[9px] uppercase tracking-[0.22em] hover:bg-rose-500/30 shadow-none"
+                              className="h-7 px-2.5 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.22em] hover:bg-rose-500/30 shadow-none"
                             >
                               {deletingId === entry.id ? (
                                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -475,7 +475,7 @@ export default function DncManager() {
                 <DialogTitle className="font-display italic text-xl text-ink leading-none">
                   Add to DNC
                 </DialogTitle>
-                <DialogDescription className="text-[9px] uppercase tracking-[0.32em] text-muted mt-1">
+                <DialogDescription className="text-[10px] uppercase tracking-[0.32em] text-muted mt-1">
                   Do Not Call List
                 </DialogDescription>
               </div>
@@ -483,7 +483,7 @@ export default function DncManager() {
 
             <div className="space-y-4 py-4">
               <div>
-                <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.32em] text-muted mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -502,7 +502,7 @@ export default function DncManager() {
               </div>
 
               <div>
-                <label className="block text-[9px] uppercase tracking-[0.32em] text-muted mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.32em] text-muted mb-2">
                   Reason
                 </label>
                 <div className="relative">
