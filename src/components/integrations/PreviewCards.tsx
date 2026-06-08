@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { type ToolIntegration } from "../../lib/agent-capabilities";
 import { BRAND } from "../../constants/brand-colors";
+import "./preview-cards.css";
 
 /** Orbit / playbook chrome — brand purple; preview thumbnails keep vendor demo colors */
 const INTEGRATION_ORBIT_COLOR = BRAND.purple;
@@ -41,25 +42,17 @@ export function CRMPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#FF7A59" }}
-      >
+      <div className="wl-preview-crm-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Database size={10} /> Opportunity Created
       </div>
-      <div className="p-3 space-y-2.5" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2.5">
         <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white"
-            style={{ background: "#FF7A59" }}
-          >
+          <div className="wl-preview-crm-avatar w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white">
             AC
           </div>
           <div>
             <div className="text-xs text-white font-medium">Acme Corporation</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
-              John Smith · (555) 234-5678
-            </div>
+            <div className="text-[10px] wl-preview-muted">John Smith · (555) 234-5678</div>
           </div>
         </div>
 
@@ -68,29 +61,25 @@ export function CRMPreviewCard() {
           {stages.map((s, i) => (
             <div key={s} className="flex items-center gap-0.5 flex-1">
               <div
-                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap transition-all duration-500"
-                style={{
-                  background: i <= stage ? "#FF7A59" : "rgba(255,255,255,0.08)",
-                  color: i <= stage ? "#fff" : "rgba(255,255,255,0.3)",
-                  transform: i === stage ? "scale(1.08)" : "scale(1)",
-                  boxShadow: i === stage ? "0 0 8px rgba(255,122,89,0.65)" : "none",
-                }}
+                className="wl-preview-crm-stage text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap"
+                data-lit={i <= stage ? "true" : "false"}
+                data-current={i === stage ? "true" : "false"}
               >
                 {s}
               </div>
               {i < stages.length - 1 && (
                 <div
-                  className="h-px flex-1 transition-all duration-500"
-                  style={{ background: i < stage ? "#FF7A59" : "rgba(255,255,255,0.1)" }}
+                  className="wl-preview-crm-connector h-px flex-1"
+                  data-lit={i < stage ? "true" : "false"}
                 />
               )}
             </div>
           ))}
         </div>
 
-        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
+        <div className="text-[10px] wl-preview-muted">
           Deal value: <span className="text-white font-medium">$4,800</span> · Stage moved to{" "}
-          <span style={{ color: "#FF7A59" }}>Qualified</span>
+          <span className="wl-preview-crm-accent">Qualified</span>
         </div>
       </div>
     </div>
@@ -107,25 +96,16 @@ export function XPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold"
-        style={{ background: "#000000", color: "#E7E9EA" }}
-      >
+      <div className="wl-preview-x-header flex items-center gap-2 px-3 py-2 text-[10px] font-semibold">
         <span>@wireline</span>
-        <span style={{ color: "rgba(231,233,234,0.45)" }}>· just now</span>
+        <span className="wl-preview-x-muted">· just now</span>
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#000000", minHeight: 72 }}>
-        <div
-          className="transition-all duration-400"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(6px)",
-          }}
-        >
-          <div className="text-[11px] leading-relaxed" style={{ color: "#E7E9EA" }}>
+      <div className="wl-preview-x-body p-3 space-y-2">
+        <div className="wl-preview-fade-up" data-visible={visible ? "true" : "false"}>
+          <div className="text-[11px] leading-relaxed wl-preview-x-text">
             Thanks for calling in — we&apos;ll follow up with your quote by end of day. 🎯
           </div>
-          <div className="flex items-center gap-3 mt-2 text-[10px]" style={{ color: "#71767B" }}>
+          <div className="flex items-center gap-3 mt-2 text-[10px] wl-preview-x-meta">
             <span>♡ 12</span>
             <span>↻ 3</span>
             <span>💬 2</span>
@@ -146,50 +126,34 @@ export function SlackPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-2 px-3 py-2 text-[10px] font-semibold"
-        style={{ background: "#1A1D21", color: "#E8E8E8" }}
-      >
-        <span style={{ color: "#36C5F0" }}>#</span> hot-leads
+      <div className="wl-preview-slack-header flex items-center gap-2 px-3 py-2 text-[10px] font-semibold">
+        <span className="wl-preview-slack-hash">#</span> hot-leads
       </div>
-      <div className="p-3 space-y-1.5" style={{ background: "#222529", minHeight: 72 }}>
+      <div className="wl-preview-slack-body p-3 space-y-1.5">
         <div
-          className="flex items-start gap-2 transition-all duration-400"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(6px)",
-          }}
+          className="wl-preview-fade-up flex items-start gap-2"
+          data-visible={visible ? "true" : "false"}
         >
-          <div
-            className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-            style={{ background: INTEGRATION_ORBIT_COLOR }}
-          >
+          <div className="wl-preview-orbit-accent w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5">
             W
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold" style={{ color: "#E8E8E8" }}>
+              <span className="text-[11px] font-semibold wl-preview-slack-name">
                 Wireline Agent
               </span>
-              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                just now
-              </span>
+              <span className="text-[10px] wl-preview-muted-35">just now</span>
             </div>
-            <div className="text-[11px] leading-relaxed" style={{ color: "#C9C9C9" }}>
+            <div className="text-[11px] leading-relaxed wl-preview-slack-message">
               🔥 <strong>Qualified lead:</strong> Jennifer Park, ACME Corp
               <br />
-              <span style={{ color: "rgba(255,255,255,0.5)" }}>"Interested in the Pro plan"</span>
+              <span className="wl-preview-slack-quote">&quot;Interested in the Pro plan&quot;</span>
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               {["👀 1", "⚡ 2"].map((r) => (
                 <span
                   key={r}
-                  className="text-[10px] px-1.5 py-0.5 rounded border"
-                  style={{
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(255,255,255,0.05)",
-                    color: "rgba(255,255,255,0.6)",
-                  }}
+                  className="wl-preview-slack-reaction text-[10px] px-1.5 py-0.5 rounded"
                 >
                   {r}
                 </span>
@@ -216,25 +180,18 @@ export function SMSPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center justify-center py-2 text-[10px] font-medium"
-        style={{ background: "#1C1C1E", color: "rgba(255,255,255,0.5)" }}
-      >
+      <div className="wl-preview-sms-header flex items-center justify-center py-2 text-[10px] font-medium">
         Wireline · (630) 581-1834
       </div>
-      <div className="px-3 py-3 space-y-2" style={{ background: "#F2F2F7", minHeight: 90 }}>
+      <div className="wl-preview-sms-body px-3 py-3 space-y-2">
         {/* Typing indicator */}
         {phase === "typing" && (
           <div className="flex justify-end">
-            <div
-              className="flex gap-1 items-center px-3.5 py-2.5 rounded-md rounded-tr-sm"
-              style={{ background: "#007AFF" }}
-            >
+            <div className="wl-preview-sms-bubble-out flex gap-1 items-center px-3.5 py-2.5 rounded-md rounded-tr-sm">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-[#FFFFFF]"
-                  style={{ animation: `typing-dot-bounce 1.2s ease-in-out ${i * 0.18}s infinite` }}
+                  className="wl-preview-typing-dot w-1.5 h-1.5 rounded-full bg-[#FFFFFF]"
                 />
               ))}
             </div>
@@ -243,33 +200,22 @@ export function SMSPreviewCard() {
 
         {/* Bot message */}
         {(phase === "sent" || phase === "replied") && (
-          <div className="flex justify-end" style={{ animation: "appear-up 0.28s ease-out" }}>
-            <div
-              className="max-w-[80%] px-3 py-2 rounded-md rounded-tr-sm text-[11px] text-white leading-relaxed"
-              style={{ background: "#007AFF" }}
-            >
+          <div className="flex justify-end wl-preview-appear-up">
+            <div className="wl-preview-sms-bubble-out max-w-[80%] px-3 py-2 rounded-md rounded-tr-sm text-[11px] text-white leading-relaxed">
               Thanks for calling! Here's your booking confirmation: trywireline.com/b/4x9z
             </div>
           </div>
         )}
         {(phase === "sent" || phase === "replied") && (
-          <div
-            className="flex items-center justify-end gap-1"
-            style={{ animation: "appear-up 0.28s ease-out 0.1s both" }}
-          >
-            <span className="text-[10px]" style={{ color: "rgba(0,0,0,0.4)" }}>
-              Delivered
-            </span>
+          <div className="flex items-center justify-end gap-1 wl-preview-appear-up-delayed">
+            <span className="text-[10px] wl-preview-sms-delivered">Delivered</span>
           </div>
         )}
 
         {/* Customer reply */}
         {phase === "replied" && (
-          <div className="flex justify-start" style={{ animation: "appear-up 0.28s ease-out" }}>
-            <div
-              className="max-w-[75%] px-3 py-2 rounded-md rounded-tl-sm text-[11px] leading-relaxed"
-              style={{ background: "#E5E5EA", color: "#1C1C1E" }}
-            >
+          <div className="flex justify-start wl-preview-appear-up">
+            <div className="wl-preview-sms-bubble-in max-w-[75%] px-3 py-2 rounded-md rounded-tl-sm text-[11px] leading-relaxed">
               Got it, thanks! 👍
             </div>
           </div>
@@ -282,25 +228,17 @@ export function SMSPreviewCard() {
 export function ZoomPreviewCard() {
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#2D8CFF" }}
-      >
+      <div className="wl-preview-zoom-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Video size={10} /> Meeting Created
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2">
         <div className="text-xs text-white font-medium">Product Demo — Acme Corp</div>
-        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
-          Tomorrow, 2:00 PM CST · 45 min
+        <div className="text-[10px] wl-preview-muted">Tomorrow, 2:00 PM CST · 45 min</div>
+        <div className="wl-preview-zoom-link-box flex items-center gap-2 px-2.5 py-2 rounded-md text-[10px]">
+          <Video size={12} className="wl-preview-zoom-accent" />
+          <span className="wl-preview-zoom-accent">zoom.us/j/928473021</span>
         </div>
-        <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-md border text-[10px]"
-          style={{ border: "1px solid rgba(45,140,255,0.3)", background: "rgba(45,140,255,0.1)" }}
-        >
-          <Video size={12} style={{ color: "#2D8CFF" }} />
-          <span style={{ color: "#2D8CFF" }}>zoom.us/j/928473021</span>
-        </div>
-        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <div className="text-[10px] wl-preview-muted-40">
           Link sent to caller via SMS &amp; email
         </div>
       </div>
@@ -318,41 +256,30 @@ export function CalendarPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#34A853" }}
-      >
+      <div className="wl-preview-cal-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <CalendarCheck size={10} /> Appointment Booked
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2">
         <div className="flex items-center gap-2">
           <div
-            className="w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 transition-all duration-500"
-            style={{
-              background: confirmed ? "rgba(52,168,83,0.2)" : "rgba(52,168,83,0.1)",
-              border: `1px solid ${confirmed ? "rgba(52,168,83,0.5)" : "rgba(52,168,83,0.25)"}`,
-              boxShadow: confirmed ? "0 0 12px rgba(52,168,83,0.35)" : "none",
-            }}
+            className="wl-preview-cal-date-box w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0"
+            data-confirmed={confirmed ? "true" : "false"}
           >
-            <div className="text-[10px] font-semibold uppercase" style={{ color: "#34A853" }}>
-              JUN
-            </div>
+            <div className="text-[10px] font-semibold uppercase wl-preview-cal-month">JUN</div>
             <div className="text-lg font-bold leading-none text-white">17</div>
           </div>
           <div>
             <div className="text-xs text-white font-medium">Site Inspection</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
-              10:00 – 11:00 AM · Google Meet
-            </div>
+            <div className="text-[10px] wl-preview-muted">10:00 – 11:00 AM · Google Meet</div>
           </div>
         </div>
         <div
-          className="flex items-center gap-1.5 text-[10px] transition-all duration-500"
-          style={{ color: confirmed ? "rgba(52,168,83,0.9)" : "rgba(255,255,255,0.45)" }}
+          className="wl-preview-cal-status flex items-center gap-1.5 text-[10px]"
+          data-confirmed={confirmed ? "true" : "false"}
         >
           <div
-            className="w-4 h-4 rounded-full text-[7px] font-bold text-white flex items-center justify-center transition-all duration-500"
-            style={{ background: confirmed ? "#34A853" : "rgba(52,168,83,0.4)" }}
+            className="wl-preview-cal-check w-4 h-4 rounded-full text-[7px] font-bold text-white flex items-center justify-center"
+            data-confirmed={confirmed ? "true" : "false"}
           >
             ✓
           </div>
@@ -373,67 +300,40 @@ export function ShopifyPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold"
-        style={{ background: "#1A1A1A", color: "#96BF48" }}
-      >
+      <div className="wl-preview-shopify-header flex items-center justify-between px-3 py-2 text-[10px] font-semibold">
         <span className="flex items-center gap-1.5">
           <ShoppingBag size={10} /> Order #4821
         </span>
-        <span
-          className="px-1.5 py-0.5 rounded-full text-[10px]"
-          style={{ background: "rgba(150,191,72,0.15)", color: "#96BF48" }}
-        >
+        <span className="wl-preview-shopify-badge px-1.5 py-0.5 rounded-full text-[10px]">
           Fulfilled
         </span>
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2">
         <div className="flex items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-md shrink-0"
-            style={{ background: "rgba(150,191,72,0.1)", border: "1px solid rgba(150,191,72,0.2)" }}
-          />
+          <div className="wl-preview-shopify-thumb w-10 h-10 rounded-md shrink-0" />
           <div>
             <div className="text-xs text-white font-medium">Merino Wool Throw — Forest</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-              Qty 2 · $89.00 each
-            </div>
+            <div className="text-[10px] wl-preview-muted-45">Qty 2 · $89.00 each</div>
           </div>
         </div>
 
         {/* Fulfillment progress bar */}
         <div className="space-y-1">
-          <div
-            className="flex justify-between text-[10px]"
-            style={{ color: "rgba(255,255,255,0.4)" }}
-          >
+          <div className="flex justify-between text-[10px] wl-preview-muted-40">
             <span>Fulfillment</span>
-            <span style={{ color: "#96BF48" }}>100%</span>
+            <span className="wl-preview-shopify-accent">100%</span>
           </div>
-          <div
-            className="h-1 rounded-full overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.08)" }}
-          >
+          <div className="wl-preview-shopify-track h-1 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700 ease-out"
-              style={{
-                width: `${progress}%`,
-                background: "linear-gradient(90deg, #96BF48, #b5d96a)",
-                boxShadow: "0 0 6px rgba(150,191,72,0.5)",
-              }}
+              className="wl-preview-shopify-bar-fill h-full rounded-full"
+              data-complete={progress === 100 ? "true" : "false"}
             />
           </div>
         </div>
 
-        <div
-          className="flex items-center justify-between text-[10px] pt-1 border-t"
-          style={{ borderColor: "rgba(255,255,255,0.06)" }}
-        >
-          <span style={{ color: "rgba(255,255,255,0.45)" }}>
-            Tracking:{" "}
-            <span className="font-mono" style={{ color: "rgba(255,255,255,0.7)" }}>
-              1Z999AA10
-            </span>
+        <div className="wl-preview-shopify-footer flex items-center justify-between text-[10px] pt-1 border-t">
+          <span className="wl-preview-muted-45">
+            Tracking: <span className="font-mono wl-preview-muted-70">1Z999AA10</span>
           </span>
           <span className="font-medium text-white">$178.00</span>
         </div>
@@ -452,33 +352,23 @@ export function SquarePreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#3E4348" }}
-      >
+      <div className="wl-preview-square-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <CreditCard size={10} /> Invoice Sent
       </div>
-      <div className="p-3 space-y-2.5" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-white font-medium">Invoice #INV-0047</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-              Landscaping · Spring Package
-            </div>
+            <div className="text-[10px] wl-preview-muted-45">Landscaping · Spring Package</div>
           </div>
           <div className="text-right">
             <div className="text-sm font-bold text-white">$650.00</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-              Due May 28
-            </div>
+            <div className="text-[10px] wl-preview-muted-40">Due May 28</div>
           </div>
         </div>
         <div
-          className="flex items-center gap-2 px-2.5 py-2 rounded-md text-[10px] font-medium transition-all duration-500"
-          style={{
-            background: sent ? "#00A2E8" : "rgba(0,162,232,0.2)",
-            color: "#fff",
-          }}
+          className="wl-preview-square-action flex items-center gap-2 px-2.5 py-2 rounded-md text-[10px] font-medium"
+          data-sent={sent ? "true" : "false"}
         >
           {sent ? <CheckCircle2 size={11} /> : <CreditCard size={11} />}
           {sent ? "Sent to mike@example.com via Square" : "Preparing invoice…"}
@@ -500,28 +390,17 @@ export function DocuSignPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold"
-        style={{ background: "#FFC720", color: "#1a1a1a" }}
-      >
+      <div className="wl-preview-docusign-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold">
         <FileText size={10} /> Contract Dispatched
       </div>
-      <div className="p-3 space-y-2.5" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2.5">
         <div className="flex items-center gap-2">
-          <div
-            className="w-9 h-11 rounded flex items-center justify-center shrink-0"
-            style={{
-              background: "rgba(255,199,32,0.12)",
-              border: "1px solid rgba(255,199,32,0.25)",
-            }}
-          >
-            <FileText size={16} style={{ color: "#FFC720" }} />
+          <div className="wl-preview-docusign-doc-icon-box w-9 h-11 rounded flex items-center justify-center shrink-0">
+            <FileText size={16} className="wl-preview-docusign-icon" />
           </div>
           <div>
             <div className="text-xs text-white font-medium">Service Agreement 2025</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-              Sent to john@acmecorp.com
-            </div>
+            <div className="text-[10px] wl-preview-muted-45">Sent to john@acmecorp.com</div>
           </div>
         </div>
         <div className="space-y-1">
@@ -530,39 +409,24 @@ export function DocuSignPreviewCard() {
             return (
               <div
                 key={field}
-                className="flex items-center gap-2 px-2 py-1 rounded transition-all duration-600"
-                style={{
-                  background: isThisSigned ? "rgba(107,43,153,0.08)" : "rgba(255,199,32,0.06)",
-                  border: `1px solid ${isThisSigned ? "rgba(107,43,153,0.25)" : "rgba(255,199,32,0.15)"}`,
-                }}
+                className="wl-preview-docusign-field flex items-center gap-2 px-2 py-1 rounded"
+                data-signed={isThisSigned ? "true" : "false"}
               >
                 <div
-                  className="w-2 h-2 rounded-full shrink-0 transition-all duration-500"
-                  style={{
-                    background: isThisSigned
-                      ? INTEGRATION_ORBIT_COLOR
-                      : i === 0
-                        ? "#FFC720"
-                        : "rgba(255,199,32,0.3)",
-                  }}
+                  className="wl-preview-docusign-dot w-2 h-2 rounded-full shrink-0"
+                  data-signed={isThisSigned ? "true" : "false"}
+                  data-first={i === 0 ? "true" : "false"}
                 />
                 <span
-                  className="text-[10px] transition-colors duration-500"
-                  style={{
-                    color: isThisSigned ? "rgba(107,43,153,0.85)" : "rgba(255,255,255,0.55)",
-                  }}
+                  className="wl-preview-docusign-label text-[10px]"
+                  data-signed={isThisSigned ? "true" : "false"}
                 >
                   {field} field
                 </span>
                 {isThisSigned ? (
-                  <CheckCircle2
-                    size={9}
-                    style={{ color: INTEGRATION_ORBIT_COLOR, marginLeft: "auto" }}
-                  />
+                  <CheckCircle2 size={9} className="wl-preview-orbit-accent-text ml-auto" />
                 ) : i === 0 ? (
-                  <span className="ml-auto text-[10px]" style={{ color: "#FFC720" }}>
-                    Awaiting
-                  </span>
+                  <span className="wl-preview-docusign-awaiting ml-auto text-[10px]">Awaiting</span>
                 ) : null}
               </div>
             );
@@ -583,24 +447,15 @@ export function MetaPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#1877F2" }}
-      >
+      <div className="wl-preview-meta-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Target size={10} /> Lead Submitted to Meta CAPI
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <div
-            className="text-[10px] uppercase tracking-[0.25em]"
-            style={{ color: "rgba(255,255,255,0.45)" }}
-          >
+          <div className="text-[10px] uppercase tracking-[0.25em] wl-preview-meta-label">
             Conversion Event
           </div>
-          <div
-            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-            style={{ background: "rgba(24,119,242,0.2)", color: "#1877F2" }}
-          >
+          <div className="wl-preview-meta-badge text-[10px] px-2 py-0.5 rounded-full font-medium">
             Lead
           </div>
         </div>
@@ -612,20 +467,14 @@ export function MetaPreviewCard() {
             ["Campaign", "Spring Outreach"],
           ].map(([label, val]) => (
             <div key={label} className="flex items-center justify-between">
-              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {label}
-              </span>
+              <span className="text-[10px] wl-preview-muted-40">{label}</span>
               <span className="text-[10px] text-white">{val}</span>
             </div>
           ))}
         </div>
         <div
-          className="text-[10px] text-center py-1.5 rounded transition-all duration-500"
-          style={{
-            background: fired ? "rgba(24,119,242,0.2)" : "rgba(24,119,242,0.08)",
-            color: fired ? "#1877F2" : "rgba(24,119,242,0.6)",
-            boxShadow: fired ? "0 0 8px rgba(24,119,242,0.3)" : "none",
-          }}
+          className="wl-preview-meta-status text-[10px] text-center py-1.5 rounded"
+          data-fired={fired ? "true" : "false"}
         >
           {fired ? "✓ Server-side event fired · deduplication enabled" : "Sending event…"}
         </div>
@@ -656,42 +505,27 @@ export function ApolloPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#8B5CF6" }}
-      >
+      <div className="wl-preview-apollo-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Search size={10} /> Lead Enriched
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body p-3 space-y-2">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #8B5CF6, #6D28D9)" }}
-          >
+          <div className="wl-preview-apollo-avatar w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold text-white">
             JP
           </div>
           <div>
             <div className="text-xs text-white font-medium">Jennifer Park</div>
-            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.5)" }}>
-              VP of Operations · Acme Corp
-            </div>
+            <div className="text-[10px] wl-preview-muted">VP of Operations · Acme Corp</div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           {fields.map(([k, v], i) => (
             <div
               key={k}
-              className="px-2 py-1 rounded transition-all duration-300"
-              style={{
-                background: "rgba(139,92,246,0.08)",
-                border: "1px solid rgba(139,92,246,0.15)",
-                opacity: i < revealed ? 1 : 0,
-                transform: i < revealed ? "translateY(0)" : "translateY(4px)",
-              }}
+              className="wl-preview-apollo-field wl-preview-reveal-item px-2 py-1 rounded"
+              data-revealed={i < revealed ? "true" : "false"}
             >
-              <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {k}
-              </div>
+              <div className="text-[10px] wl-preview-muted-40">{k}</div>
               <div className="text-[10px] text-white font-medium truncate">{v}</div>
             </div>
           ))}
@@ -716,48 +550,30 @@ export function GeminiPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "linear-gradient(90deg, #4285F4, #9B72CB)" }}
-      >
+      <div className="wl-preview-gemini-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Sparkles size={10} /> Grounded Web Search
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
-        <div
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px]"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <Search size={10} style={{ color: "rgba(255,255,255,0.35)" }} />
-          <span style={{ color: "rgba(255,255,255,0.6)" }}>"Acme Corp pricing page 2025"</span>
+      <div className="wl-preview-body p-3 space-y-2">
+        <div className="wl-preview-gemini-search-box flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px]">
+          <Search size={10} className="wl-preview-gemini-search-icon" />
+          <span className="wl-preview-gemini-search-text">
+            &quot;Acme Corp pricing page 2025&quot;
+          </span>
         </div>
         <div className="space-y-2">
           {results.map(({ src, text }, i) => (
             <div
               key={src}
-              className="flex gap-2 px-2 py-1.5 rounded transition-all duration-400"
-              style={{
-                background: "rgba(66,133,244,0.06)",
-                opacity: showResults ? 1 : 0,
-                transform: showResults ? "translateY(0)" : "translateY(5px)",
-                transitionDelay: `${i * 150}ms`,
-              }}
+              className="wl-preview-gemini-result flex gap-2 px-2 py-1.5 rounded"
+              data-visible={showResults ? "true" : "false"}
+              data-stagger={String(i)}
             >
-              <div
-                className="w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center text-[7px] font-bold text-white"
-                style={{ background: "#4285F4" }}
-              >
+              <div className="wl-preview-gemini-result-icon w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center text-[7px] font-bold text-white">
                 G
               </div>
               <div>
-                <div className="text-[10px]" style={{ color: "#4285F4" }}>
-                  {src}
-                </div>
-                <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  {text}
-                </div>
+                <div className="text-[10px] wl-preview-gemini-result-src">{src}</div>
+                <div className="text-[10px] wl-preview-gemini-result-text">{text}</div>
               </div>
             </div>
           ))}
@@ -777,50 +593,30 @@ export function TeamsPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#6264A7" }}
-      >
+      <div className="wl-preview-teams-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Users2 size={10} /> Teams Alert Sent
       </div>
-      <div className="p-3 space-y-2" style={{ background: "#1C0F33", minHeight: 72 }}>
+      <div className="wl-preview-body wl-preview-teams-body p-3 space-y-2">
         <div className="flex items-center gap-1.5 mb-1">
-          <div
-            className="text-[10px] px-1.5 py-0.5 rounded"
-            style={{ background: "rgba(98,100,167,0.25)", color: "#9396D0" }}
-          >
+          <div className="wl-preview-teams-channel text-[10px] px-1.5 py-0.5 rounded">
             # sales-alerts
           </div>
         </div>
         <div
-          className="flex items-start gap-2 transition-all duration-400"
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0)" : "translateY(6px)",
-          }}
+          className="wl-preview-fade-up flex items-start gap-2"
+          data-visible={visible ? "true" : "false"}
         >
-          <div
-            className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-            style={{ background: INTEGRATION_ORBIT_COLOR }}
-          >
+          <div className="wl-preview-orbit-accent w-7 h-7 rounded shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5">
             W
           </div>
           <div>
             <div className="text-[10px] font-semibold text-white">
               Wireline Bot{" "}
-              <span className="text-[10px] font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>
-                just now
-              </span>
+              <span className="text-[10px] font-normal wl-preview-muted-35">just now</span>
             </div>
-            <div
-              className="mt-1 px-2.5 py-2 rounded text-[10px] leading-relaxed"
-              style={{
-                background: "rgba(98,100,167,0.15)",
-                border: "1px solid rgba(98,100,167,0.25)",
-              }}
-            >
+            <div className="wl-preview-teams-card mt-1 px-2.5 py-2 rounded text-[10px] leading-relaxed">
               <div className="font-semibold text-white mb-0.5">Compliance flag raised</div>
-              <div style={{ color: "rgba(255,255,255,0.6)" }}>
+              <div className="wl-preview-teams-card-body">
                 Agent Sarah escalated — caller requested DNC removal. Review required.
               </div>
             </div>
@@ -846,21 +642,17 @@ export function ExcelPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#217346" }}
-      >
+      <div className="wl-preview-excel-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Table2 size={10} /> Row Appended to Log
       </div>
-      <div className="overflow-x-auto" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body overflow-x-auto">
         <table className="w-full text-[10px] border-collapse">
           <thead>
-            <tr style={{ background: "rgba(33,115,70,0.25)" }}>
+            <tr className="wl-preview-excel-thead">
               {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
                 <th
                   key={h}
-                  className="px-2 py-1 text-left font-semibold whitespace-nowrap"
-                  style={{ color: "#8B6FA8", borderBottom: "1px solid rgba(33,115,70,0.3)" }}
+                  className="wl-preview-excel-th px-2 py-1 text-left font-semibold whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -871,22 +663,15 @@ export function ExcelPreviewCard() {
             {rows.map((row, i) => (
               <tr
                 key={i}
-                className="transition-all duration-700"
-                style={{
-                  background:
-                    i === 0 && highlightNew
-                      ? "rgba(33,115,70,0.25)"
-                      : i === 0
-                        ? "rgba(33,115,70,0.1)"
-                        : "transparent",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
-                }}
+                className="wl-preview-excel-row"
+                data-new-row={i === 0 ? "true" : "false"}
+                data-highlight={i === 0 && highlightNew ? "true" : "false"}
               >
                 {row.map((cell, j) => (
                   <td
                     key={j}
-                    className="px-2 py-1.5 whitespace-nowrap"
-                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)" }}
+                    className="wl-preview-excel-cell px-2 py-1.5 whitespace-nowrap"
+                    data-primary={i === 0 ? "true" : "false"}
                   >
                     {cell}
                   </td>
@@ -895,10 +680,7 @@ export function ExcelPreviewCard() {
             ))}
           </tbody>
         </table>
-        <div
-          className="px-3 py-1.5 text-[10px]"
-          style={{ color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
-        >
+        <div className="wl-preview-excel-footer px-3 py-1.5 text-[10px]">
           Wireline Call Log · OneDrive · Sheet1
         </div>
       </div>
@@ -921,21 +703,17 @@ export function SheetsPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div
-        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white"
-        style={{ background: "#0F9D58" }}
-      >
+      <div className="wl-preview-sheets-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
         <Table2 size={10} /> Row Appended to Sheet
       </div>
-      <div className="overflow-x-auto" style={{ background: "#1C0F33" }}>
+      <div className="wl-preview-body overflow-x-auto">
         <table className="w-full text-[10px] border-collapse">
           <thead>
-            <tr style={{ background: "rgba(15,157,88,0.25)" }}>
+            <tr className="wl-preview-sheets-thead">
               {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
                 <th
                   key={h}
-                  className="px-2 py-1 text-left font-semibold whitespace-nowrap"
-                  style={{ color: "#8B6FA8", borderBottom: "1px solid rgba(15,157,88,0.3)" }}
+                  className="wl-preview-sheets-th px-2 py-1 text-left font-semibold whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -946,22 +724,15 @@ export function SheetsPreviewCard() {
             {rows.map((row, i) => (
               <tr
                 key={i}
-                className="transition-all duration-700"
-                style={{
-                  background:
-                    i === 0 && highlightNew
-                      ? "rgba(15,157,88,0.25)"
-                      : i === 0
-                        ? "rgba(15,157,88,0.1)"
-                        : "transparent",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
-                }}
+                className="wl-preview-sheets-row"
+                data-new-row={i === 0 ? "true" : "false"}
+                data-highlight={i === 0 && highlightNew ? "true" : "false"}
               >
                 {row.map((cell, j) => (
                   <td
                     key={j}
-                    className="px-2 py-1.5 whitespace-nowrap"
-                    style={{ color: i === 0 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)" }}
+                    className="wl-preview-sheets-cell px-2 py-1.5 whitespace-nowrap"
+                    data-primary={i === 0 ? "true" : "false"}
                   >
                     {cell}
                   </td>
@@ -970,10 +741,7 @@ export function SheetsPreviewCard() {
             ))}
           </tbody>
         </table>
-        <div
-          className="px-3 py-1.5 text-[10px]"
-          style={{ color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
-        >
+        <div className="wl-preview-sheets-footer px-3 py-1.5 text-[10px]">
           Wireline Call Log · Google Drive · Call Log
         </div>
       </div>
