@@ -159,7 +159,7 @@ function HeadShell({ strokeWidth, uid }: { strokeWidth: number; uid: string }) {
 }
 
 function Antenna({
-  uid,
+  uid: _uid,
   strokeWidth,
   animated,
 }: {
@@ -185,9 +185,7 @@ function Antenna({
         fill={COLORS.emerald}
         stroke={COLORS.ink}
         strokeWidth={strokeWidth}
-        style={{
-          animation: animated ? `wl-antenna-${uid} 3.2s ease-in-out infinite` : undefined,
-        }}
+        className={animated ? "robot-antenna-pulse" : undefined}
       />
       <circle cx="32" cy="4" r="1.2" fill="white" fillOpacity="0.45" />
     </>
@@ -279,12 +277,8 @@ function PhoneBody({
               rx="0.4"
               fill={COLORS.purple}
               fillOpacity="0.55"
-              style={{
-                animation: animated
-                  ? `wl-wave-bar-${uid} 1.2s ease-in-out ${i * 0.15}s infinite`
-                  : undefined,
-                transformOrigin: `${3.5 + i * 2.2}px 11px`,
-              }}
+              data-index={i}
+              className={animated ? "robot-wave-bar" : undefined}
             />
           ))}
         <circle cx="5" cy="14.5" r="0.65" fill={COLORS.ink} fillOpacity="0.5" />
@@ -331,11 +325,8 @@ function SidePhonePose({
             strokeLinecap="round"
             fill="none"
             opacity={0.75 - i * 0.2}
-            style={{
-              animation: animated
-                ? `wl-call-wave-${uid} 2.6s ease-in-out ${i * 0.35}s infinite`
-                : undefined,
-            }}
+            data-index={i}
+            className={animated ? "robot-call-wave" : undefined}
           />
         ))}
       <PhoneBody
@@ -355,9 +346,7 @@ function SidePhonePose({
           r="9"
           fill={COLORS.emerald}
           fillOpacity="0.06"
-          style={{
-            animation: animated ? `wl-call-glow-${uid} 2.4s ease-in-out infinite` : undefined,
-          }}
+          className={animated ? "robot-call-glow" : undefined}
         />
       )}
     </>
@@ -419,11 +408,8 @@ function TextingPose({
             cy="6"
             r="1.15"
             fill={COLORS.purple}
-            style={{
-              animation: animated
-                ? `wl-text-dot-${uid} 1.35s ease-in-out ${i * 0.2}s infinite`
-                : undefined,
-            }}
+            data-index={i}
+            className={animated ? "robot-text-dot" : undefined}
           />
         ))}
       </g>
@@ -463,7 +449,7 @@ function TextingPose({
 }
 
 function TypingPose({
-  uid,
+  uid: _uid,
   strokeWidth,
   animated,
 }: {
@@ -522,9 +508,7 @@ function TypingPose({
         height="3"
         rx="0.3"
         fill={COLORS.cream}
-        style={{
-          animation: animated ? `wl-cursor-${uid} 1s step-end infinite` : undefined,
-        }}
+        className={animated ? "robot-typing-cursor" : undefined}
       />
       {keys.map(({ x, y, i }) => (
         <rect
@@ -538,11 +522,8 @@ function TypingPose({
           fillOpacity="0.88"
           stroke={COLORS.ink}
           strokeWidth={strokeWidth * 0.35}
-          style={{
-            animation: animated
-              ? `wl-key-${uid} 2.4s ease-in-out ${i * 0.28}s infinite`
-              : undefined,
-          }}
+          data-index={i}
+          className={animated ? "robot-key" : undefined}
         />
       ))}
     </g>
@@ -598,103 +579,60 @@ export function RobotHead({
     pose === "phone" || pose === "on-call" ? phoneLayoutForGutter(resolvedGutterSide, pose) : null;
   const layout = POSE_LAYOUT[pose];
 
-  const transforms = {
-    1: "rotate(-8deg)",
-    2: "rotate(6deg)",
-    3: "rotate(4deg)",
-    4: "rotate(-5deg)",
-    5: "rotate(-2deg)",
-    6: "rotate(2deg)",
-  }[variant];
-
   return (
-    <>
-      {animated && (
-        <style>{`
-          @keyframes wl-antenna-${uid} {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(0.86); opacity: 0.78; }
-          }
-          @keyframes wl-text-dot-${uid} {
-            0%, 70%, 100% { opacity: ${vivid ? 0.45 : 0.2}; transform: translateY(0); }
-            35% { opacity: 1; transform: translateY(-1px); }
-          }
-          @keyframes wl-key-${uid} {
-            0%, 100% { fill-opacity: ${vivid ? 0.72 : 0.55}; transform: translateY(0); }
-            12%, 24% { fill-opacity: 1; transform: translateY(0.5px); }
-          }
-          @keyframes wl-cursor-${uid} {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0; }
-          }
-          @keyframes wl-call-wave-${uid} {
-            0%, 100% { opacity: ${vivid ? 0.45 : 0.2}; }
-            50% { opacity: 0.95; }
-          }
-          @keyframes wl-call-glow-${uid} {
-            0%, 100% { opacity: ${vivid ? 0.08 : 0.04}; transform: scale(0.95); }
-            50% { opacity: ${vivid ? 0.2 : 0.12}; transform: scale(1.05); }
-          }
-          @keyframes wl-wave-bar-${uid} {
-            0%, 100% { transform: scaleY(0.55); opacity: ${vivid ? 0.65 : 0.45}; }
-            50% { transform: scaleY(1); opacity: 0.95; }
-          }
-        `}</style>
+    <svg
+      width={size}
+      height={size * layout.heightRatio}
+      viewBox={layout.viewBox}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={[
+        className,
+        `robot-head-tilt-${variant}`,
+        animated ? "robot-head--animated" : "",
+        vivid ? "robot-head--vivid" : "robot-head-shadow",
+        "overflow-visible",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-hidden={ariaHidden ?? true}
+    >
+      <defs>
+        <linearGradient id={`headGrad-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={COLORS.purple} stopOpacity={vivid ? 1 : 0.98} />
+          <stop offset="55%" stopColor={COLORS.purpleLight} stopOpacity={vivid ? 0.98 : 0.9} />
+          <stop offset="100%" stopColor={COLORS.purpleDeep} stopOpacity={vivid ? 0.96 : 0.88} />
+        </linearGradient>
+        <linearGradient id={`phoneGrad-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={COLORS.emeraldSoft} />
+          <stop offset="100%" stopColor="#059669" />
+        </linearGradient>
+      </defs>
+
+      <HeadShell strokeWidth={strokeWidth} uid={uid} />
+      <Eyes variant={variant} pose={pose} strokeWidth={strokeWidth} />
+      <Antenna uid={uid} strokeWidth={strokeWidth} animated={animated} />
+
+      {(pose === "phone" || pose === "on-call") && phoneLayout && (
+        <SidePhonePose
+          uid={uid}
+          strokeWidth={strokeWidth}
+          phoneOffset={phoneLayout.phoneOffset}
+          phoneY={phoneLayout.phoneY}
+          phoneSide={phoneLayout.phoneSide}
+          pose={pose}
+          animated={animated}
+        />
       )}
-      <svg
-        width={size}
-        height={size * layout.heightRatio}
-        viewBox={layout.viewBox}
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className={className}
-        aria-hidden={ariaHidden ?? true}
-        style={{
-          transform: transforms,
-          transition: animated ? "transform 0.45s cubic-bezier(0.23, 1, 0.32, 1)" : undefined,
-          overflow: "visible",
-          filter: vivid ? undefined : "drop-shadow(0 3px 10px rgba(107, 43, 153, 0.12))",
-        }}
-      >
-        <defs>
-          <linearGradient id={`headGrad-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={COLORS.purple} stopOpacity={vivid ? 1 : 0.98} />
-            <stop offset="55%" stopColor={COLORS.purpleLight} stopOpacity={vivid ? 0.98 : 0.9} />
-            <stop offset="100%" stopColor={COLORS.purpleDeep} stopOpacity={vivid ? 0.96 : 0.88} />
-          </linearGradient>
-          <linearGradient id={`phoneGrad-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={COLORS.emeraldSoft} />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
-        </defs>
 
-        <HeadShell strokeWidth={strokeWidth} uid={uid} />
-        <Eyes variant={variant} pose={pose} strokeWidth={strokeWidth} />
-        <Antenna uid={uid} strokeWidth={strokeWidth} animated={animated} />
+      {pose === "texting" && (
+        <TextingPose uid={uid} strokeWidth={strokeWidth} animated={animated} vivid={vivid} />
+      )}
 
-        {(pose === "phone" || pose === "on-call") && phoneLayout && (
-          <SidePhonePose
-            uid={uid}
-            strokeWidth={strokeWidth}
-            phoneOffset={phoneLayout.phoneOffset}
-            phoneY={phoneLayout.phoneY}
-            phoneSide={phoneLayout.phoneSide}
-            pose={pose}
-            animated={animated}
-          />
-        )}
+      {pose === "typing" && <TypingPose uid={uid} strokeWidth={strokeWidth} animated={animated} />}
 
-        {pose === "texting" && (
-          <TextingPose uid={uid} strokeWidth={strokeWidth} animated={animated} vivid={vivid} />
-        )}
-
-        {pose === "typing" && (
-          <TypingPose uid={uid} strokeWidth={strokeWidth} animated={animated} />
-        )}
-
-        <Mouth variant={variant} pose={pose} strokeWidth={strokeWidth} />
-      </svg>
-    </>
+      <Mouth variant={variant} pose={pose} strokeWidth={strokeWidth} />
+    </svg>
   );
 }
 

@@ -73,15 +73,12 @@ export function AuroraWave({
     const frequency = 1.5 + i * 0.3;
     const phase = (i * Math.PI) / layerCount;
     const yBase = 50 + i * 6;
-    const duration = 12 + i * 4;
     const opacity = baseOpacity * (1 - i * 0.12);
 
     return {
       id: i,
       path: wavePath(amplitude, frequency, phase, yBase),
-      duration,
       opacity,
-      delay: i * 1.5,
     };
   });
 
@@ -94,11 +91,8 @@ export function AuroraWave({
       <svg
         viewBox="0 0 200 110"
         preserveAspectRatio="none"
-        className="w-[200%] h-full aurora-wave-container"
+        className="aurora-wave-container w-[200%] h-full"
         xmlns="http://www.w3.org/2000/svg"
-        style={{
-          animation: `aurora-wave-pan-${uid} 20s linear infinite`,
-        }}
       >
         <defs>
           {waveLayers.map((layer) => (
@@ -123,29 +117,10 @@ export function AuroraWave({
             d={layer.path}
             fill={`url(#aurora-wave-grad-${uid}-${layer.id})`}
             className="aurora-wave-path"
-            style={{
-              animation: `aurora-wave-undulate-${uid} ${layer.duration}s ease-in-out ${layer.delay}s infinite alternate`,
-            }}
+            data-layer={layer.id}
           />
         ))}
       </svg>
-
-      <style>{`
-        @keyframes aurora-wave-pan-${uid} {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        @keyframes aurora-wave-undulate-${uid} {
-          0% { transform: translateY(0) scaleY(1); }
-          100% { transform: translateY(-3px) scaleY(1.08); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .aurora-wave-container,
-          .aurora-wave-path {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

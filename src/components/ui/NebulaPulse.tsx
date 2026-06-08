@@ -17,7 +17,7 @@
  *   <NebulaPulse className="absolute inset-0 -z-10" />
  *   <NebulaPulse intensity="vivid" nodes={4} />
  */
-import React, { useId, useMemo } from "react";
+import React, { useMemo } from "react";
 import { cn } from "../../lib/utils";
 
 type NebulaIntensity = "whisper" | "ambient" | "vivid";
@@ -65,8 +65,6 @@ interface PlasmaNode {
   cy: number;
   size: number;
   color: string;
-  duration: number;
-  delay: number;
 }
 
 function generateNodes(count: number, seed: number, opacity: number): PlasmaNode[] {
@@ -81,8 +79,6 @@ function generateNodes(count: number, seed: number, opacity: number): PlasmaNode
       cy: 20 + rng() * 60,
       size: 30 + rng() * 40,
       color,
-      duration: 12 + rng() * 18,
-      delay: rng() * 8,
     });
   }
 
@@ -99,7 +95,6 @@ export function NebulaPulse({
   className,
   seed = 7,
 }: NebulaPulseProps) {
-  const uid = useId().replace(/:/g, "");
   const nodeCount = Math.max(1, Math.min(5, nodes));
   const opacity = INTENSITY_OPACITY[intensity];
 
@@ -117,39 +112,20 @@ export function NebulaPulse({
       {plasmaNodes.map((node) => (
         <div
           key={node.id}
-          className="absolute nebula-plasma-node"
+          className={cn(
+            "absolute nebula-plasma-node",
+            `nebula-drift-${node.id}`,
+            `nebula-delay-${node.id % 5}`,
+          )}
           style={{
             left: `${node.cx}%`,
             top: `${node.cy}%`,
             width: `${node.size}%`,
             height: `${node.size}%`,
-            transform: "translate(-50%, -50%)",
             background: `radial-gradient(circle, ${node.color} 0%, transparent 70%)`,
-            filter: "blur(40px)",
-            animation: `nebula-drift-${uid}-${node.id} ${node.duration}s ease-in-out ${node.delay}s infinite alternate`,
           }}
         />
       ))}
-
-      <style>{`
-        ${plasmaNodes
-          .map(
-            (node) => `
-          @keyframes nebula-drift-${uid}-${node.id} {
-            0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-            33% { transform: translate(calc(-50% + ${node.id % 2 === 0 ? "" : "-"}8%), calc(-50% + ${node.id % 2 === 0 ? "-" : ""}6%)) scale(1.15) rotate(${60 + node.id * 30}deg); }
-            66% { transform: translate(calc(-50% - ${5 + node.id * 2}%), calc(-50% + ${4 + node.id}%)) scale(0.9) rotate(${120 + node.id * 20}deg); }
-            100% { transform: translate(-50%, -50%) scale(1.05) rotate(${180 + node.id * 15}deg); }
-          }
-        `,
-          )
-          .join("\n")}
-        @media (prefers-reduced-motion: reduce) {
-          .nebula-plasma-node {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

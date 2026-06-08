@@ -41,16 +41,13 @@ export default function RouteFallback() {
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
+            data-index={i}
             className="route-fallback-tile wl-panel rounded-md h-32 overflow-hidden relative p-4 flex flex-col justify-between"
-            style={{ animationDelay: `${i * 80}ms` }}
             aria-hidden="true"
           >
             {/* Travelling specular sweep, staggered per tile so the grid
                 develops front-to-back rather than pulsing in unison. */}
-            <div
-              className="absolute inset-0 skeleton-shimmer opacity-50"
-              style={{ animationDelay: `${i * 140}ms` }}
-            />
+            <div className="route-fallback-shimmer absolute inset-0 skeleton-shimmer opacity-50" />
             <div className="relative flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand/20 to-brand-deep/10" />
               <div className="space-y-1.5">

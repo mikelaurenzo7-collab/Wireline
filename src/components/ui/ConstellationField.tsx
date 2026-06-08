@@ -23,12 +23,6 @@ interface Particle {
   cx: number;
   cy: number;
   r: number;
-  /** Animation delay offset in seconds */
-  delay: number;
-  /** Drift amplitude (px) */
-  drift: number;
-  /** Drift duration (s) */
-  duration: number;
   /** Opacity 0–1 */
   opacity: number;
 }
@@ -68,9 +62,6 @@ function generateParticles(count: number, seed: number): Particle[] {
       cx: rng() * 100,
       cy: rng() * 100,
       r: 0.4 + rng() * 0.8,
-      delay: rng() * 6,
-      drift: 1.5 + rng() * 3,
-      duration: 8 + rng() * 12,
       opacity: 0.3 + rng() * 0.5,
     });
   }
@@ -100,6 +91,14 @@ function computeConnections(particles: Particle[], maxDist: number): Connection[
   }
 
   return connections;
+}
+
+function driftClass(id: number): string {
+  return `constellation-drift-${id % 8}`;
+}
+
+function delayClass(id: number): string {
+  return `constellation-delay-${id % 8}`;
 }
 
 /**
@@ -144,7 +143,6 @@ export function ConstellationField({
           </radialGradient>
         </defs>
 
-        {/* Connection filaments */}
         {connections.map(({ from, to, distance }) => {
           const opacity = Math.max(0, 1 - distance / connectionRadius) * 0.35;
           return (
@@ -162,48 +160,27 @@ export function ConstellationField({
           );
         })}
 
-        {/* Particle nodes */}
         {particles.map((p) => (
           <g key={p.id} className="constellation-node">
-            {/* Soft glow halo */}
             <circle
               cx={p.cx}
               cy={p.cy}
               r={p.r * 3}
               fill={`url(#constellation-node-${uid})`}
               opacity={p.opacity * 0.4}
-              style={{
-                animation: `constellation-drift-${uid} ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
-              }}
+              className={cn(driftClass(p.id), delayClass(p.id))}
             />
-            {/* Core particle */}
             <circle
               cx={p.cx}
               cy={p.cy}
               r={p.r}
               fill={PRIMARY_FALLBACK}
               opacity={p.opacity}
-              style={{
-                animation: `constellation-drift-${uid} ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
-              }}
+              className={cn(driftClass(p.id), delayClass(p.id))}
             />
           </g>
         ))}
       </svg>
-
-      {/* Inline keyframes — scoped to this instance */}
-      <style>{`
-        @keyframes constellation-drift-${uid} {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(${particles[0]?.drift ?? 2}px, ${-(particles[1]?.drift ?? 1.5)}px); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .constellation-node,
-          .constellation-filament {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
