@@ -11,10 +11,10 @@ import {
 
 const FIGMA_PROVIDER: DesignIntegrationProvider = "figma";
 
+/** Subset of scopes enabled on the Wireline Design Figma OAuth app (Draft → publish). */
 export const FIGMA_OAUTH_SCOPES = [
   "current_user:read",
   "file_content:read",
-  "file_variables:read",
   "file_metadata:read",
 ].join(",");
 
