@@ -201,7 +201,14 @@ describe("Wireline Director design contract", () => {
   });
 
   it("composer accessory hints cover every panel kind", () => {
-    const kinds = ["connectors", "capabilities", "coach", "tools", "attach"] as const;
+    const kinds = [
+      "connectors",
+      "capabilities",
+      "coach",
+      "tools",
+      "attach",
+      "designSetup",
+    ] as const;
     for (const kind of kinds) {
       expect(DIRECTOR_COMPOSER_ACCESSORY_HINTS[kind].length).toBeGreaterThan(8);
     }

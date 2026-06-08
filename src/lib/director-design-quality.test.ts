@@ -18,7 +18,7 @@ describe("director design quality", () => {
       "<!DOCTYPE html><html><head><style>body{font-family:sans-serif;color:#111;background:#f5f0e8}" +
         "a{color:inherit;text-decoration:none}main{padding:2rem}</style></head><body><main>" +
         "Ready for preview with enough bytes and real embedded styling for the client UI. ".repeat(
-          40,
+          80,
         ) +
         "</main></body></html>",
     );

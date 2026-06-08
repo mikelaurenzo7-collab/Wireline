@@ -392,9 +392,7 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
         <TooltipContent side="right" className="ml-1">
           <span className="flex items-center gap-2">
             {item.label}
-            {item.betaLabel && (
-              <span className="wl-rail-beta-badge text-[10px]">{item.betaLabel}</span>
-            )}
+            {item.betaLabel && <span className="wl-rail-beta-badge">{item.betaLabel}</span>}
             {shortcut && <kbd className="wl-micro-badge font-mono text-white/40">{shortcut}</kbd>}
           </span>
         </TooltipContent>

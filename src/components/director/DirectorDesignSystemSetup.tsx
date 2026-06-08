@@ -6,6 +6,7 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { authFetch } from "../../lib/api";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Input } from "../ui/shadcn/Input";
 import { WIRELINE_STITCH_UI, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 export interface DesignProfileAsset {
@@ -241,7 +242,7 @@ export function DirectorDesignSystemSetup({ onConfiguredChange }: DirectorDesign
             )}
             {WIRELINE_STITCH_UI.designSystemSetupUploadLabel}
           </ShadButton>
-          <input
+          <Input
             ref={fileInputRef}
             type="file"
             accept=".png,.jpg,.jpeg,.webp,.svg,.woff2,.css,text/css,image/*"
@@ -255,7 +256,9 @@ export function DirectorDesignSystemSetup({ onConfiguredChange }: DirectorDesign
             {profile.assets.map((asset) => (
               <li key={asset.id} className="wl-design-setup-asset-row">
                 <div className="min-w-0">
-                  <p className="wl-micro-meta font-semibold text-foreground truncate">{asset.name}</p>
+                  <p className="wl-micro-meta font-semibold text-foreground truncate">
+                    {asset.name}
+                  </p>
                   <p className="wl-micro-meta--muted-foreground capitalize">{asset.role}</p>
                 </div>
                 <ShadButton
@@ -291,7 +294,9 @@ export function DirectorDesignSystemSetup({ onConfiguredChange }: DirectorDesign
           onClick={() => void persistPatch()}
           className="touch-press"
         >
-          {saving ? WIRELINE_STITCH_UI.designSystemSetupSavingLabel : WIRELINE_STITCH_UI.designSystemSetupSaveLabel}
+          {saving
+            ? WIRELINE_STITCH_UI.designSystemSetupSavingLabel
+            : WIRELINE_STITCH_UI.designSystemSetupSaveLabel}
         </ShadButton>
       </div>
     </div>

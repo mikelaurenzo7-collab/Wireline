@@ -36,14 +36,9 @@ import {
   Sparkles,
   LayoutTemplate,
   Paintbrush,
-  RefreshCw,
   CheckCheck,
 } from "lucide-react";
-import {
-  authFetch,
-  DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS,
-  readApiJson,
-} from "../lib/api";
+import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -319,7 +314,7 @@ export default function DirectorWorkspace({
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [busyLabel, setBusyLabel] = useState<string | undefined>();
   const [isApprovingAll, setIsApprovingAll] = useState(false);
-  const [approveAllProgress, setApproveAllProgress] = useState<{
+  const [_approveAllProgress, setApproveAllProgress] = useState<{
     done: number;
     total: number;
   } | null>(null);
@@ -776,12 +771,7 @@ export default function DirectorWorkspace({
       label: "Connecting to Director",
       status: phase === "connecting" ? "active" : "done",
     });
-    if (
-      phase === "preparing" ||
-      phase === "thinking" ||
-      phase === "replying" ||
-      phase === "done"
-    ) {
+    if (phase === "preparing" || phase === "thinking" || phase === "replying" || phase === "done") {
       steps.push({
         id: "prepare",
         label: "Loading fleet context",
@@ -916,14 +906,11 @@ export default function DirectorWorkspace({
 
   const initialPromptSentRef = useRef(false);
 
-  const pickCapabilityExample = useCallback(
-    (text: string) => {
-      setInput(text);
-      setComposerAccessory(null);
-      inputRef.current?.focus();
-    },
-    [focusAgentId],
-  );
+  const pickCapabilityExample = useCallback((text: string) => {
+    setInput(text);
+    setComposerAccessory(null);
+    inputRef.current?.focus();
+  }, []);
 
   const toggleComposerAccessory = useCallback((kind: ComposerAccessoryKind) => {
     setComposerAccessory((prev) => (prev === kind ? null : kind));
@@ -1215,9 +1202,7 @@ export default function DirectorWorkspace({
   const approveAllConfig = useCallback(async () => {
     const { keys, skippedMissingCoach } = bulkConfigPlan;
     if (keys.length === 0 || isApprovingAll || busyKey) return;
-    if (
-      !confirm(buildDirectorApproveAllConfigConfirm(keys.length, skippedMissingCoach))
-    ) {
+    if (!confirm(buildDirectorApproveAllConfigConfirm(keys.length, skippedMissingCoach))) {
       return;
     }
     setIsApprovingAll(true);
@@ -1815,9 +1800,7 @@ export default function DirectorWorkspace({
                             )}
                           </span>
                           <span className="wl-micro-meta--muted uppercase tracking-[0.12em] font-medium">
-                            {isPainterSurface
-                              ? WIRELINE_PAINTER_UI.personaName
-                              : "Director"}
+                            {isPainterSurface ? WIRELINE_PAINTER_UI.personaName : "Director"}
                             {m.coachAgentName ? (
                               <span className="text-brand/70 normal-case tracking-normal">
                                 {" "}
