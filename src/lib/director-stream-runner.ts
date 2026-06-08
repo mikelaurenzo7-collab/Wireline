@@ -34,7 +34,6 @@ export async function runDirectorStreamLlm<T = Record<string, unknown>>(
       model: ctx.model,
       deepThink: ctx.deepThink,
       maxTokens: ctx.maxTokens,
-      cacheSystem: true,
       signal: options?.signal,
     },
     callbacks,
@@ -63,6 +62,5 @@ export async function runDirectorTurnLlm<T = Record<string, unknown>>(
     model: ctx.model,
     deepThink: ctx.deepThink,
     maxTokens: ctx.maxTokens,
-    cacheSystem: true,
   });
 }

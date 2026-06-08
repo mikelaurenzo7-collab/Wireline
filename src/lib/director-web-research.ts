@@ -25,6 +25,18 @@ const RESEARCH_SIGNAL =
 const ACTION_ONLY =
   /^(text|call|email|send|deploy|create|update|change|turn on|turn off|enable|disable|approve|schedule)\b/i;
 
+/** Cap Gemini grounded search so Director prep cannot block for minutes. */
+const DIRECTOR_RESEARCH_TIMEOUT_MS = 20_000;
+
+function withDirectorResearchTimeout<T>(promise: Promise<T>): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), DIRECTOR_RESEARCH_TIMEOUT_MS);
+    }),
+  ]);
+}
+
 export function isDirectorWebResearchConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY?.trim());
 }
@@ -91,10 +103,11 @@ export async function fetchDirectorResearchContext(input: {
   const query = buildDirectorResearchQuery(input.operatorMessage, input.history ?? []);
   let grounded;
   try {
-    grounded = await groundedSearch(query);
+    grounded = await withDirectorResearchTimeout(groundedSearch(query));
   } catch {
     return null;
   }
+  if (!grounded) return null;
   if (!grounded.answer?.trim() || grounded.groundingMode === "unavailable") return null;
 
   return {

@@ -72,6 +72,20 @@ jobs:
           fi
           npx vitest run tests/integration/agent-tenant-isolation.integration.test.ts
 
+      - name: Database health check (schema + RLS ratchet)
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+        run: |
+          if [ -z "${POSTGRES_URL}" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              echo "::error::POSTGRES_URL secret is required on main — db:health must not silently skip"
+              exit 1
+            fi
+            echo "Skipping db:health — POSTGRES_URL not configured for this ref"
+            exit 0
+          fi
+          npm run db:health
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()

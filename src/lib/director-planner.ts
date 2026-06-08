@@ -178,7 +178,6 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
       longDeliverable,
       fleetAudit: fleetAudit && !input.forceDeep,
     }),
-    cacheSystem: true,
   });
   const plan = normalizeDirectorPlan(
     raw,

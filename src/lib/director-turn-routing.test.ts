@@ -1,40 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { usesDirectorStructuredLlm } from "./director-turn";
+import { previewDirectorStreamRouting } from "./director-turn";
+import type { DirectorFleetAgent } from "./director-planner";
 
-describe("usesDirectorStructuredLlm", () => {
-  it("uses structured path for fleet and openrouter coach", () => {
-    expect(
-      usesDirectorStructuredLlm({
-        userId: "u1",
-        operatorMessage: "hi",
-        history: [],
-        fleet: [],
-        modelSelection: { provider: "wireline", tier: "auto" },
-      }),
-    ).toBe(true);
+const FLEET: DirectorFleetAgent[] = [
+  { id: "wireline-sales", name: "Casey", role: "wireline sales" },
+];
 
-    expect(
-      usesDirectorStructuredLlm({
-        userId: "u1",
-        operatorMessage: "hi",
-        history: [],
-        fleet: [],
-        focusAgentId: "agent-1",
-        modelSelection: { provider: "openrouter", modelId: "openai/gpt-4o" },
-      }),
-    ).toBe(true);
+describe("previewDirectorStreamRouting", () => {
+  it("routes coach turns to Sonnet without Deep", () => {
+    const preview = previewDirectorStreamRouting({
+      userId: "user-1",
+      operatorMessage: "Make Casey's greeting warmer",
+      history: [],
+      fleet: FLEET,
+      focusAgentId: "wireline-sales",
+      focusAgentName: "Casey",
+    });
+    expect(preview.mode).toBe("coach");
+    expect(preview.model).toBe("sonnet");
+    expect(preview.deep).toBe(false);
+    expect(preview.focusAgentName).toBe("Casey");
   });
 
-  it("uses workspace planner for coach wireline", () => {
-    expect(
-      usesDirectorStructuredLlm({
-        userId: "u1",
-        operatorMessage: "hi",
-        history: [],
-        fleet: [],
-        focusAgentId: "agent-1",
-        modelSelection: { provider: "wireline", tier: "sonnet" },
-      }),
-    ).toBe(false);
+  it("keeps fleet audits on Sonnet unless Deep is forced", () => {
+    const preview = previewDirectorStreamRouting({
+      userId: "user-1",
+      operatorMessage: "Audit my fleet — what should I fix first?",
+      history: [],
+      fleet: FLEET,
+    });
+    expect(preview.mode).toBe("fleet");
+    expect(preview.model).toBe("sonnet");
+    expect(preview.deep).toBe(false);
   });
 });

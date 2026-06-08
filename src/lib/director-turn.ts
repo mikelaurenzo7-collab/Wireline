@@ -37,6 +37,7 @@ import {
   resolveDirectorLlm,
   type DirectorChatModelSelection,
 } from "./director-model-selection";
+import { directorStreamMetaModel } from "./director-model-policy";
 import { labelForOpenRouterModel } from "./openrouter-models";
 import { runDirectorTurnLlm } from "./director-stream-runner";
 import {
@@ -52,6 +53,7 @@ import { getErrorMessage } from "./server-utils";
 import {
   appendResearchToUserPrompt,
   fetchDirectorResearchContext,
+  wantsDirectorWebResearch,
   type DirectorResearchSource,
 } from "./director-web-research";
 
@@ -342,6 +344,93 @@ export interface DirectorStreamContext {
   researchSources?: DirectorResearchSource[];
 }
 
+export interface DirectorStreamRoutingPreview {
+  mode: "fleet" | "coach";
+  model: "sonnet" | "opus" | "custom";
+  modelLabel: string;
+  modelProvider: "wireline" | "openrouter";
+  modelId?: string;
+  deep: boolean;
+  focusAgentId?: string;
+  focusAgentName?: string;
+}
+
+/**
+ * Lightweight model routing for SSE — emitted before slow prompt assembly so the
+ * UI can leave the "Loading fleet context" phase while DB + integrations load.
+ */
+export function previewDirectorStreamRouting(
+  input: DirectorTurnInput & { focusAgentName?: string },
+): DirectorStreamRoutingPreview {
+  const focusId = input.focusAgentId?.trim();
+  const fleetAudit =
+    !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
+  const longDeliverable = wantsLongDeliverable(input.operatorMessage);
+  const autoOpusEligible =
+    !input.shallowOnly &&
+    !focusId &&
+    (input.forceDeep === true ||
+      (!fleetAudit &&
+        (input.designRenderFallback === true || wantsOpusModel(input.operatorMessage))));
+  const deepThinkEligible = !input.shallowOnly && !focusId && input.forceDeep === true;
+  const skipAdaptiveThinking =
+    input.designRenderFallback === true || (longDeliverable && input.forceDeep !== true);
+
+  const modelSelection =
+    input.designRenderFallback === true &&
+    (input.modelSelection ?? DEFAULT_DIRECTOR_MODEL_SELECTION).provider === "wireline"
+      ? { provider: "wireline" as const, tier: "opus" as const }
+      : input.modelSelection;
+
+  if (focusId) {
+    const coachLlm = resolveDirectorLlm({
+      selection:
+        input.modelSelection?.provider === "openrouter"
+          ? input.modelSelection
+          : { provider: "wireline", tier: "sonnet" },
+      autoOpus: false,
+      deepThink: false,
+      claudeSonnet: CLAUDE_MODELS.SONNET,
+      claudeOpus: CLAUDE_MODELS.OPUS,
+      modelLabelForOpenRouter: labelForOpenRouterModel,
+    });
+    const streamMeta = directorStreamMetaModel({ modelKind: coachLlm.modelKind, deepThink: false });
+    return {
+      mode: "coach",
+      model: streamMeta.model,
+      modelLabel: coachLlm.modelLabel,
+      modelProvider: coachLlm.provider,
+      modelId: coachLlm.openRouterModelId,
+      deep: false,
+      focusAgentId: focusId,
+      focusAgentName: input.focusAgentName,
+    };
+  }
+
+  const llm = resolveDirectorLlm({
+    selection: modelSelection,
+    autoOpus: autoOpusEligible,
+    deepThink: deepThinkEligible,
+    longDeliverable,
+    claudeSonnet: CLAUDE_MODELS.SONNET,
+    claudeOpus: CLAUDE_MODELS.OPUS,
+    modelLabelForOpenRouter: labelForOpenRouterModel,
+  });
+  const effectiveDeepThink = skipAdaptiveThinking ? false : llm.deepThink;
+  const streamMeta = directorStreamMetaModel({
+    modelKind: llm.modelKind,
+    deepThink: effectiveDeepThink,
+  });
+  return {
+    mode: "fleet",
+    model: streamMeta.model,
+    modelLabel: llm.modelLabel,
+    modelProvider: llm.provider,
+    modelId: llm.openRouterModelId,
+    deep: streamMeta.deep,
+  };
+}
+
 /** Build prompts + normalizer for the Director SSE stream endpoint. */
 export async function buildDirectorStreamContext(
   input: DirectorTurnInput,
@@ -389,12 +478,15 @@ export async function buildDirectorStreamContext(
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
     if (ctx) {
+      const needsResearch = wantsDirectorWebResearch(input.operatorMessage);
       const [connections, research] = await Promise.all([
         loadTenantIntegrationConnections(input.userId),
-        fetchDirectorResearchContext({
-          operatorMessage: input.operatorMessage,
-          history: input.history,
-        }),
+        needsResearch
+          ? fetchDirectorResearchContext({
+              operatorMessage: input.operatorMessage,
+              history: input.history,
+            })
+          : Promise.resolve(null),
       ]);
       const integrationPrompt = formatDirectorIntegrationPrompt(connections);
       const wsInput = {
@@ -446,15 +538,16 @@ export async function buildDirectorStreamContext(
     }
   }
 
+  const needsResearch = !fleetAudit && wantsDirectorWebResearch(input.operatorMessage);
   const [business, connections, research] = await Promise.all([
     businessPromise,
     loadTenantIntegrationConnections(input.userId),
-    fleetAudit
-      ? Promise.resolve(null)
-      : fetchDirectorResearchContext({
+    needsResearch
+      ? fetchDirectorResearchContext({
           operatorMessage: input.operatorMessage,
           history: input.history,
-        }),
+        })
+      : Promise.resolve(null),
   ]);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
 

@@ -86,6 +86,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       "wireline_agents",
       "wireline_call_logs",
       "wireline_subscriptions",
+      "wireline_design_profiles",
     ];
 
     for (const table of requiredTables) {
@@ -109,7 +110,17 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       { table: "wireline_settings", column: "acquisition_source" },
       { table: "wireline_settings", column: "acquisition_medium" },
       { table: "wireline_settings", column: "acquisition_campaign" },
+      {
+        table: "wireline_director_conversation_messages",
+        column: "thread_key",
+      },
     ];
+
+    /** RLS on, zero policies — service-role-only tables (see DATABASE_SETUP.md). */
+    const serviceRoleLockdownTables = new Set([
+      "wireline_oauth_pending_codes",
+      "wireline_stripe_events",
+    ]);
 
     for (const { table, column } of requiredColumns) {
       const columnExists = await client.query(
@@ -258,6 +269,26 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     for (const row of rlsCheck.rows) {
       if (!row.rls_enabled) {
         result.warnings.push(`Row Level Security not enabled on ${row.tablename}`);
+      }
+    }
+
+    const rlsNoPolicy = await client.query(`
+      SELECT t.tablename
+      FROM pg_tables t
+      WHERE t.schemaname = 'public'
+        AND t.rowsecurity = true
+        AND NOT EXISTS (
+          SELECT 1 FROM pg_policies p
+          WHERE p.schemaname = t.schemaname AND p.tablename = t.tablename
+        )
+      ORDER BY t.tablename
+    `);
+    for (const row of rlsNoPolicy.rows as Array<{ tablename: string }>) {
+      if (!serviceRoleLockdownTables.has(row.tablename)) {
+        result.healthy = false;
+        result.issues.push(
+          `RLS enabled but no policies on ${row.tablename} (expected only oauth_pending_codes + stripe_events)`,
+        );
       }
     }
 
