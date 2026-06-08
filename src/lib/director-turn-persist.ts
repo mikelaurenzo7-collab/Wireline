@@ -1,7 +1,7 @@
 /**
  * Director turn persistence guards — idempotent inserts and thread cleanup.
  */
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { insertDirectorMessage } from "./director-store";
@@ -13,6 +13,11 @@ import {
   isDirectorStubReply,
   isSubstantiveDirectorReply,
 } from "./director-reply-utils";
+import {
+  DIRECTOR_THREAD_KEY,
+  type DirectorConversationThreadKey,
+  parseDirectorThreadKey,
+} from "./director-thread-keys";
 
 export {
   DIRECTOR_STUB_REPLY,
@@ -47,7 +52,11 @@ function findDirectorReplyForOperator(
   return null;
 }
 
-async function loadRecentDirectorRows(userId: string, limit = 16): Promise<DirectorRow[]> {
+async function loadRecentDirectorRows(
+  userId: string,
+  limit = 16,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
+): Promise<DirectorRow[]> {
   return drizzle
     .select({
       role: schema.directorConversationMessages.role,
@@ -57,7 +66,12 @@ async function loadRecentDirectorRows(userId: string, limit = 16): Promise<Direc
       createdAt: schema.directorConversationMessages.createdAt,
     })
     .from(schema.directorConversationMessages)
-    .where(eq(schema.directorConversationMessages.userId, userId))
+    .where(
+      and(
+        eq(schema.directorConversationMessages.userId, userId),
+        eq(schema.directorConversationMessages.threadKey, threadKey),
+      ),
+    )
     .orderBy(desc(schema.directorConversationMessages.createdAt))
     .limit(limit);
 }
@@ -65,8 +79,9 @@ async function loadRecentDirectorRows(userId: string, limit = 16): Promise<Direc
 export async function hasSubstantiveDirectorReplyForOperator(
   userId: string,
   operatorMessage: string,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<boolean> {
-  const rows = await loadRecentDirectorRows(userId);
+  const rows = await loadRecentDirectorRows(userId, 16, threadKey);
   const match = findDirectorReplyForOperator(rows, operatorMessage);
   return Boolean(match && isSubstantiveDirectorReply(match.content));
 }
@@ -74,12 +89,13 @@ export async function hasSubstantiveDirectorReplyForOperator(
 export async function loadExistingDirectorTurnResponse(
   userId: string,
   operatorMessage: string,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<{
   content: string;
   reasoning: string | null;
   metadata: DirectorMessageMetadata;
 } | null> {
-  const rows = await loadRecentDirectorRows(userId);
+  const rows = await loadRecentDirectorRows(userId, 16, threadKey);
   const match = findDirectorReplyForOperator(rows, operatorMessage);
   if (!match || !isSubstantiveDirectorReply(match.content)) return null;
   return {
@@ -95,13 +111,15 @@ export async function insertDirectorReplyIfAbsent(input: {
   userId: string;
   operatorMessage: string;
   reply: string;
+  threadKey?: DirectorConversationThreadKey;
   reasoning?: string | null;
   metadata?: DirectorMessageMetadata | Record<string, unknown> | null;
 }): Promise<InsertDirectorReplyResult> {
   const reply = input.reply.trim();
   if (!reply) return "skipped_stub";
+  const threadKey = parseDirectorThreadKey(input.threadKey);
 
-  if (await hasSubstantiveDirectorReplyForOperator(input.userId, input.operatorMessage)) {
+  if (await hasSubstantiveDirectorReplyForOperator(input.userId, input.operatorMessage, threadKey)) {
     return isDirectorStubReply(reply) ? "skipped_stub" : "skipped_duplicate";
   }
 
@@ -112,6 +130,7 @@ export async function insertDirectorReplyIfAbsent(input: {
   await insertDirectorMessage({
     userId: input.userId,
     role: "director",
+    threadKey,
     content: reply,
     reasoning: input.reasoning ?? null,
     metadata: input.metadata ?? null,

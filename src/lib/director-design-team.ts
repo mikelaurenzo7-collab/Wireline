@@ -1,9 +1,11 @@
 /**
- * Wireline Design Studio — Spectrum Desk: Opus + Grok Build pipeline.
+ * Wireline Design Studio — Spectrum Desk (split billing).
  *
- * Opus — tailored creative vision + design.md (step 1).
- * Grok Build 0.1 — sole HTML builder (OpenRouter).
- * Opus — operator sign-off + preview title (final step).
+ * Painter preparer (Anthropic SDK) — Opus 4.8 strict prep + finish:
+ *   creative vision, design.md enrichment, HTML critique/polish, operator sign-off.
+ *
+ * Build desk (OpenRouter only — Kimi + DeepSeek, no Anthropic-via-OR):
+ *   Kimi K2.6 primary HTML draft; DeepSeek V4 Pro fallback when Kimi fails.
  */
 import { CLAUDE_MODELS, GEMINI_MODELS } from "./claude-models";
 
@@ -150,10 +152,13 @@ export const WIRELINE_DESIGN_TEAM_PACIFIC = {
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,
 } as const;
 
-/** Latest Kimi on OpenRouter (K2.6 — no K2.7 slug yet). */
+/** Kimi K2.6 — primary HTML builder on OpenRouter. */
 export const SPECTRUM_KIMI_MODEL = "moonshotai/kimi-k2.6";
 
-/** Grok Build 0.1 — sole HTML builder on OpenRouter. */
+/** DeepSeek V4 Pro — HTML builder fallback on OpenRouter. */
+export const SPECTRUM_DEEPSEEK_MODEL = "deepseek/deepseek-v4-pro";
+
+/** @deprecated Prior Grok builder — reference only. */
 export const SPECTRUM_GROK_BUILD_MODEL = "x-ai/grok-build-0.1";
 
 /** @deprecated Prior builder — reference only. */
@@ -162,27 +167,30 @@ export const SPECTRUM_HY3_MODEL = "tencent/hy3-preview";
 /** @deprecated Prior finisher — reference only. */
 export const SPECTRUM_MINIMAX_M3_MODEL = "minimax/minimax-m3";
 
-/** Spectrum Desk — active Design Studio roster (Opus · Grok Build · Opus). */
+/** Painter preparer model — Anthropic direct (not OpenRouter). */
+export const SPECTRUM_PAINTER_OPUS_MODEL = CLAUDE_MODELS.OPUS;
+
+/** Spectrum Desk — Opus preparer (Anthropic) + Kimi/DeepSeek build desk (OpenRouter). */
 export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
   id: "spectrum" as const,
   htmlBuilder: {
     provider: "openrouter" as const,
-    openRouterModelId: SPECTRUM_GROK_BUILD_MODEL,
-    label: "Grok Build 0.1",
-    fallbackOpenRouterModelId: SPECTRUM_KIMI_MODEL,
-    fallbackLabel: "Kimi K2.6",
+    openRouterModelId: SPECTRUM_KIMI_MODEL,
+    label: "Kimi K2.6",
+    fallbackOpenRouterModelId: SPECTRUM_DEEPSEEK_MODEL,
+    fallbackLabel: "DeepSeek V4 Pro",
   },
-  /** Step 1 — creative vision and enriched design.md. */
+  /** Step 1 — creative vision and enriched design.md (Painter / Anthropic). */
   creativeDirector: {
     provider: "wireline" as const,
-    wirelineModel: CLAUDE_MODELS.OPUS,
-    label: "Claude Opus",
+    wirelineModel: SPECTRUM_PAINTER_OPUS_MODEL,
+    label: "Claude Opus 4.8",
   },
-  /** Final step — operator-facing sign-off copy and preview title. */
+  /** Final step — critique, polish, operator sign-off (Painter / Anthropic). */
   reviewer: {
     provider: "wireline" as const,
-    wirelineModel: CLAUDE_MODELS.OPUS,
-    label: "Claude Opus",
+    wirelineModel: SPECTRUM_PAINTER_OPUS_MODEL,
+    label: "Claude Opus 4.8",
   },
   imageReference: {
     enabled: false,
@@ -195,7 +203,7 @@ export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
     label: "Grok Imagine Image Quality",
   },
   enableOptionalChallenger: false,
-  /** Single Grok draft — Opus finishes in one critique-and-implement pass. */
+  /** Single Kimi draft — Opus finishes in one critique-and-implement pass. */
   minRefinementPasses: 1 as DesignPassNumber,
   maxRefinementPasses: 1 as DesignPassNumber,
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,
@@ -212,8 +220,18 @@ export function isSpectrumDesignTeam(
   return "id" in team && team.id === "spectrum";
 }
 
+export function assertWirelineDesignRole(
+  role: DesignTeamModelRef,
+  slot: string,
+): DesignTeamWirelineRole {
+  if (role.provider !== "wireline") {
+    throw new Error(`Design studio ${slot} must use Anthropic wireline, got ${role.provider}`);
+  }
+  return role;
+}
+
 export const WIRELINE_DESIGN_STUDIO_REASONING =
-  "Spectrum Desk — Opus vision, Grok Build draft, Opus finish";
+  "Spectrum Desk — Opus prep, Kimi draft, Opus finish";
 
 export function designTeamThinkingSummary(phases: string[]): string {
   return phases.filter(Boolean).join(" · ");
@@ -226,7 +244,7 @@ export function designStudioProgressLabel(
   stage: DesignStudioStage,
 ): string {
   const labels: Record<DesignStudioStage, string> = {
-    build: "Grok Build — drafting your page structure…",
+    build: "Kimi — drafting your page structure…",
     finish: "Opus — critiquing and polishing your page…",
     vision: "Opus — envisioning your tailored design…",
   };

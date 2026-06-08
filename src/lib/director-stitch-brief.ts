@@ -313,6 +313,7 @@ export function buildStitchDesignMarkdown(input: {
   branding: StitchTenantBranding;
   useAccountBranding: boolean;
   designSystem?: ClientDesignSystem;
+  designProfileSection?: string;
 }): string {
   const { brief, branding, useAccountBranding } = input;
   const clientDesignSystem =
@@ -353,6 +354,8 @@ export function buildStitchDesignMarkdown(input: {
     colorSection(branding, useAccountBranding, brief),
     `- Source: ${brandingSourceLine}`,
     "",
+    input.designProfileSection ? input.designProfileSection : "",
+    input.designProfileSection ? "" : "",
     "## Product context",
     `- Industry: ${brief.industry || "—"}`,
     `- Audience: ${brief.audience || "—"}`,

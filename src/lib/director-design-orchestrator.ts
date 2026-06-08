@@ -1,5 +1,5 @@
 /**
- * Wireline Design Studio — Opus vision → Grok Build draft → Opus finish → package.
+ * Wireline Design Studio — Opus prep (Anthropic) → Kimi/DeepSeek draft (OR) → Opus finish.
  */
 import {
   DESIGN_BRIEF_OPUS_INPUT_CHARS,
@@ -9,6 +9,7 @@ import {
 } from "./director-design-context";
 import { designStageAbortSignal, maxTokensForPass } from "./director-design-deadline";
 import { ensureDesignKitInHtml } from "./director-design-kit-inject";
+import { ensurePrototypeInteractivity } from "./director-design-prototype-interactive";
 import {
   buildDesignBuilderUserPrompt,
   buildOpusImplementUserPrompt,
@@ -25,6 +26,7 @@ import {
   designStudioProgressLabel,
   designTeamThinkingSummary,
   type DesignPassNumber,
+  assertWirelineDesignRole,
   type DesignTeamOpenRouterRole,
   isSpectrumDesignTeam,
   WIRELINE_DESIGN_STUDIO_REASONING,
@@ -115,9 +117,12 @@ async function runOpusCreativeVision(input: {
   };
   if (!team?.creativeDirector) return fallback;
 
+  const preparer = assertWirelineDesignRole(team.creativeDirector, "creativeDirector");
+
   try {
     return await runStructured<OpusDesignVisionResult>({
-      model: team.creativeDirector.wirelineModel,
+      model: preparer.wirelineModel,
+      deepThink: true,
       system: DESIGN_OPUS_VISION_SYSTEM,
       user: [
         `## Operator request\n${input.operatorMessage.trim()}`,
@@ -133,7 +138,7 @@ async function runOpusCreativeVision(input: {
   }
 }
 
-async function runGrokHtmlBuild(input: {
+async function runHtmlBuilderDraft(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
   opusVisionNotes?: string;
@@ -162,7 +167,7 @@ async function runGrokHtmlBuild(input: {
 
   const html = stripHtmlFences(raw);
   if (!html.trim()) {
-    throw new Error("Grok build: empty HTML response");
+    throw new Error("HTML builder: empty response");
   }
   return html;
 }
@@ -181,9 +186,11 @@ async function runOpusSignOff(input: {
 
   if (!team?.reviewer) return fallback;
 
+  const preparer = assertWirelineDesignRole(team.reviewer, "reviewer");
+
   try {
     return await runStructured<DesignFinalApproval>({
-      model: team.reviewer.wirelineModel,
+      model: preparer.wirelineModel,
       system: DESIGN_OPUS_SIGNOFF_SYSTEM,
       user: buildOpusSignoffUserPrompt({
         ...input,
@@ -210,9 +217,11 @@ async function runOpusImplementHtml(input: {
   const team = spectrumTeam();
   if (!team?.reviewer) return input.draftHtml;
 
+  const preparer = assertWirelineDesignRole(team.reviewer, "reviewer");
+
   try {
     const { text } = await runCompletion({
-      model: team.reviewer.wirelineModel,
+      model: preparer.wirelineModel,
       system: DESIGN_OPUS_IMPLEMENT_SYSTEM,
       user: buildOpusImplementUserPrompt(input),
       maxTokens: 16_384,
@@ -220,12 +229,12 @@ async function runOpusImplementHtml(input: {
     const html = stripHtmlFences(text);
     if (!html.trim()) return input.draftHtml;
     if (!isPolishedDesignHtml(Buffer.from(html, "utf8"))) {
-      log.warn("design studio opus implement returned thin HTML — keeping Grok draft");
+      log.warn("design studio opus implement returned thin HTML — keeping builder draft");
       return input.draftHtml;
     }
     return html;
   } catch (e) {
-    log.warn("design studio opus implement failed — keeping Grok draft", {
+    log.warn("design studio opus implement failed — keeping builder draft", {
       error: getErrorMessage(e),
     });
     return input.draftHtml;
@@ -256,7 +265,7 @@ function buildFallbackOperatorReply(pageTitle: string): string {
   return [
     `Your **${pageTitle}** is ready — open the live preview to see it on your phone or desktop.`,
     "",
-    "- Opus tailored the concept; Grok Build drafted the page; Opus polished it for production",
+    "- Opus tailored the concept; Kimi drafted the page; Opus polished it for production",
     "- Hero, headline, and primary call-to-action are in place",
     "- Ask me to tweak colors, copy, or sections in chat",
   ].join("\n");
@@ -294,9 +303,9 @@ export async function runDirectorDesignStudio(
   });
 
   onProgress?.(nextStudioPhase());
-  phases.push("Grok build");
+  phases.push("Kimi build");
   let html = ensureDesignKitInHtml(
-    await runGrokHtmlBuild({
+    await runHtmlBuilderDraft({
       operatorMessage: input.operatorMessage,
       designBriefMarkdown,
       opusVisionNotes,
@@ -316,7 +325,7 @@ export async function runDirectorDesignStudio(
     pipelinePhases: phases,
     signal: input.signal,
   });
-  html = ensureDesignKitInHtml(finished.html);
+  html = ensurePrototypeInteractivity(ensureDesignKitInHtml(finished.html));
 
   const pageTitle = finished.pageTitle?.trim() || "Your page";
   const operatorReply = finished.operatorReply?.trim() || buildFallbackOperatorReply(pageTitle);

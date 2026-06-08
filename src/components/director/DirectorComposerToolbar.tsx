@@ -18,6 +18,7 @@ import {
   Paperclip,
   Plug,
   Sparkles,
+  SwatchBook,
   Wrench,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -104,7 +105,10 @@ function ComposerToolChip({
   );
 }
 
+export type DirectorComposerSurface = "director" | "painter";
+
 export interface DirectorComposerToolbarProps {
+  surface?: DirectorComposerSurface;
   activeAccessory: ComposerAccessoryKind | null;
   onToggle: (kind: ComposerAccessoryKind) => void;
   focusAgentId: string | null;
@@ -122,9 +126,11 @@ export interface DirectorComposerToolbarProps {
   useStitchAccountBranding?: boolean;
   onToggleStitchAccountBranding?: () => void;
   stitchBrandingAvailable?: boolean;
+  designProfileConfigured?: boolean;
 }
 
 export function DirectorComposerToolbar({
+  surface = "director",
   activeAccessory,
   onToggle,
   focusAgentId,
@@ -142,13 +148,16 @@ export function DirectorComposerToolbar({
   useStitchAccountBranding = true,
   onToggleStitchAccountBranding,
   stitchBrandingAvailable = false,
+  designProfileConfigured = false,
 }: DirectorComposerToolbarProps) {
+  const isPainterSurface = surface === "painter";
   const showDeepToggle =
+    !isPainterSurface &&
     !focusAgentId &&
     !designMode &&
     onToggleForceDeep &&
     chatModelSelection?.provider !== "openrouter";
-  const showDesignToggle = stitchMediaEnabled && onToggleDesignMode;
+  const showDesignToggle = !isPainterSurface && stitchMediaEnabled && onToggleDesignMode;
   const showStitchBrandingToggle =
     designMode && stitchMediaEnabled && onToggleStitchAccountBranding && stitchBrandingAvailable;
 
@@ -159,84 +168,101 @@ export function DirectorComposerToolbar({
         aria-label={DIRECTOR_COMPOSER_CONTEXT.toolbarLabel}
         className={WL_DIRECTOR_CLASSES.composerToolbar}
       >
-        {chatModelSelection && onChatModelChange ? (
+        {!isPainterSurface && chatModelSelection && onChatModelChange ? (
           <DirectorModelPicker
             selection={chatModelSelection}
             onChange={onChatModelChange}
             disabled={isSending}
           />
         ) : null}
-        <ComposerToolChip
-          id="connectors"
-          label="Connectors"
-          shortLabel="Links"
-          icon={<Plug className="w-3.5 h-3.5 shrink-0" />}
-          active={activeAccessory === "connectors"}
-          onClick={() => onToggle("connectors")}
-        />
-        <ComposerToolChip
-          id="capabilities"
-          label="Capabilities"
-          shortLabel="Skills"
-          icon={<Sparkles className="w-3.5 h-3.5 shrink-0" />}
-          active={activeAccessory === "capabilities"}
-          onClick={() => onToggle("capabilities")}
-        />
-        <ComposerToolChip
-          id="coach"
-          label={focusedAgentName ?? "Coach"}
-          shortLabel="Coach"
-          icon={<Bot className="w-3.5 h-3.5 shrink-0" />}
-          active={activeAccessory === "coach"}
-          engaged={Boolean(focusAgentId)}
-          onClick={() => onToggle("coach")}
-          aria-label={focusedAgentName ? `Coach ${focusedAgentName}` : "Coach agent"}
-        />
-        {focusAgentId && (
-          <ComposerToolChip
-            id="tools"
-            label="Abilities"
-            shortLabel="Tools"
-            icon={<Wrench className="w-3.5 h-3.5 shrink-0" />}
-            active={activeAccessory === "tools"}
-            onClick={() => onToggle("tools")}
-            trailing={
-              enabledToolsCount > 0 ? (
-                <span className="font-mono wl-micro-badge tabular-nums opacity-70">
-                  ({enabledToolsCount})
+        {!isPainterSurface ? (
+          <>
+            <ComposerToolChip
+              id="connectors"
+              label="Connectors"
+              shortLabel="Links"
+              icon={<Plug className="w-3.5 h-3.5 shrink-0" />}
+              active={activeAccessory === "connectors"}
+              onClick={() => onToggle("connectors")}
+            />
+            <ComposerToolChip
+              id="capabilities"
+              label="Capabilities"
+              shortLabel="Skills"
+              icon={<Sparkles className="w-3.5 h-3.5 shrink-0" />}
+              active={activeAccessory === "capabilities"}
+              onClick={() => onToggle("capabilities")}
+            />
+            <ComposerToolChip
+              id="coach"
+              label={focusedAgentName ?? "Coach"}
+              shortLabel="Coach"
+              icon={<Bot className="w-3.5 h-3.5 shrink-0" />}
+              active={activeAccessory === "coach"}
+              engaged={Boolean(focusAgentId)}
+              onClick={() => onToggle("coach")}
+              aria-label={focusedAgentName ? `Coach ${focusedAgentName}` : "Coach agent"}
+            />
+            {focusAgentId ? (
+              <ComposerToolChip
+                id="tools"
+                label="Abilities"
+                shortLabel="Tools"
+                icon={<Wrench className="w-3.5 h-3.5 shrink-0" />}
+                active={activeAccessory === "tools"}
+                onClick={() => onToggle("tools")}
+                trailing={
+                  enabledToolsCount > 0 ? (
+                    <span className="font-mono wl-micro-badge tabular-nums opacity-70">
+                      ({enabledToolsCount})
+                    </span>
+                  ) : null
+                }
+              />
+            ) : null}
+            {showDesignToggle ? (
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
+                disabled={isSending}
+                onClick={onToggleDesignMode}
+                aria-pressed={designMode}
+                title={WIRELINE_STITCH_UI.designModeToggleHint}
+                className={cn(
+                  WL_DIRECTOR_CLASSES.composerDesignToolChip,
+                  "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200",
+                  designMode &&
+                    cn(
+                      WL_DIRECTOR_CLASSES.composerDesignToolChipActive,
+                      "shadow-md ring-1 ring-brand/35 bg-brand/12 scale-[1.03]",
+                    ),
+                  "h-auto touch-press rounded-full shadow-none",
+                )}
+              >
+                <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">{WIRELINE_STITCH_UI.designModeToggleLabel}</span>
+                <span className="sm:hidden">Design</span>
+                <span className="wl-composer-design-beta" aria-hidden>
+                  {WIRELINE_STITCH_UI.designModeBetaLabel}
                 </span>
-              ) : null
-            }
-          />
-        )}
-        {showDesignToggle && (
-          <ShadButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            disableAnimations
+              </ShadButton>
+            ) : null}
+          </>
+        ) : null}
+        {designMode && stitchMediaEnabled && (
+          <ComposerToolChip
+            id="designSetup"
+            label={WIRELINE_STITCH_UI.designSystemSetupLabel}
+            shortLabel={WIRELINE_STITCH_UI.designSystemSetupShortLabel}
+            icon={<SwatchBook className="w-3.5 h-3.5 shrink-0" />}
+            active={activeAccessory === "designSetup"}
+            engaged={designProfileConfigured}
             disabled={isSending}
-            onClick={onToggleDesignMode}
-            aria-pressed={designMode}
-            title={WIRELINE_STITCH_UI.designModeToggleHint}
-            className={cn(
-              WL_DIRECTOR_CLASSES.composerDesignToolChip,
-              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200",
-              designMode &&
-                cn(
-                  WL_DIRECTOR_CLASSES.composerDesignToolChipActive,
-                  "shadow-md ring-1 ring-brand/35 bg-brand/12 scale-[1.03]",
-                ),
-              "h-auto touch-press rounded-full shadow-none",
-            )}
-          >
-            <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">{WIRELINE_STITCH_UI.designModeToggleLabel}</span>
-            <span className="sm:hidden">Design</span>
-            <span className="wl-composer-design-beta" aria-hidden>
-              {WIRELINE_STITCH_UI.designModeBetaLabel}
-            </span>
-          </ShadButton>
+            onClick={() => onToggle("designSetup")}
+            aria-label={WIRELINE_STITCH_UI.designSystemSetupTitle}
+          />
         )}
         {showStitchBrandingToggle && (
           <ShadButton

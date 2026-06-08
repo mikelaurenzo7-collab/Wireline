@@ -412,7 +412,13 @@ export const DIRECTOR_USAGE_RING_COPY = {
   noPlan: "Subscribe to a plan to track voice and AI usage.",
 } as const;
 
-export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";
+export type ComposerAccessoryKind =
+  | "connectors"
+  | "capabilities"
+  | "coach"
+  | "tools"
+  | "attach"
+  | "designSetup";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
   connectors: "Connector lanes your fleet can orchestrate through Director",
@@ -420,6 +426,8 @@ export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, st
   coach: "Route this thread through one agent's memory and tools",
   tools: "Abilities currently armed for the coached agent",
   attach: "Documents, fleet context rules, or playbook instructions",
+  designSetup:
+    "Company blurb, style notes, and brand assets — merged into design.md before every render",
 };
 
 export const DIRECTOR_COMPOSER_CONTEXT = {
@@ -446,6 +454,26 @@ export const WIRELINE_STITCH_UI = {
   brandingToggleHint:
     "When on, Wireline Design pulls your Admin → Branding kit (name, color, logo) into design.md before rendering.",
   brandingToggleEmptyHint: "Set branding in Admin to enable account kit for design renders.",
+  designSystemSetupLabel: "Setup",
+  designSystemSetupShortLabel: "Setup",
+  designSystemSetupTitle: "Set up your design system",
+  designSystemSetupHint:
+    "Save company context and brand assets once — Wireline Design merges them into every design.md brief.",
+  designSystemSetupBlurbLabel: "Company name & blurb",
+  designSystemSetupBlurbPlaceholder:
+    "Mission Impastabowl — fast-casual Italian bowls in Austin. Warm, playful, neighborhood energy.",
+  designSystemSetupNotesLabel: "Any other notes?",
+  designSystemSetupNotesPlaceholder:
+    "Palette (#E85D04 terracotta), Fraunces headlines, no stock food photography…",
+  designSystemSetupAssetsLabel: "Logos, fonts & CSS",
+  designSystemSetupAssetsHint: "PNG, SVG, WOFF2, or CSS — up to 2 MB each",
+  designSystemSetupSaveLabel: "Save",
+  designSystemSetupSavingLabel: "Saving…",
+  designSystemSetupConfiguredLabel: "Design system configured",
+  designSystemSetupEmptyNudge:
+    "Tip: open Setup to save your company blurb and brand assets before your first render.",
+  designSystemSetupUploadLabel: "Upload asset",
+  designSystemSetupRemoveAssetLabel: "Remove asset",
   deviceChromeLabel: "Live preview",
   loadingPhases: [
     "Composing layout…",
@@ -458,7 +486,7 @@ export const WIRELINE_STITCH_UI = {
   studioLoadingPhases: [
     "Opus — envisioning your tailored design…",
     "Opus — writing your design brief…",
-    "Grok Build — drafting your page structure…",
+    "Kimi — drafting your page structure…",
     "Opus — critiquing and polishing your page…",
     "Opus — writing your preview summary…",
     "Packaging your live preview…",
@@ -467,7 +495,7 @@ export const WIRELINE_STITCH_UI = {
   studioLoadingPhaseIntervalMs: 30_000,
   studioLoadingHint:
     "Full first preview usually finishes in 2–3 minutes. Refine anything in chat after that.",
-  designStudioReasoning: "Spectrum Desk — Opus vision, Grok Build draft, Opus finish",
+  designStudioReasoning: "Spectrum Desk — Opus prep, Kimi draft, Opus finish",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",

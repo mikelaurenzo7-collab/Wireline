@@ -127,6 +127,24 @@ describe("director stitch brief", () => {
     expect(missingStitchBriefFields(brief, "generate", false).length).toBeGreaterThan(0);
   });
 
+  it("includes design system profile section when provided", () => {
+    const brief = parseStitchDesignBrief("Design for homeowners", [], branding);
+    const section = [
+      "## Design system profile (operator-provided)",
+      "- Company: Mission Impastabowl — fast-casual Italian bowls",
+      "- Style notes: Terracotta palette",
+    ].join("\n");
+    const md = buildStitchDesignMarkdown({
+      brief,
+      branding,
+      useAccountBranding: true,
+      designProfileSection: section,
+    });
+    expect(md).toContain("## Design system profile (operator-provided)");
+    expect(md).toContain("Mission Impastabowl");
+    expect(md).toContain("Terracotta palette");
+  });
+
   it("omits unsafe logo URLs from design.md", () => {
     const brief = parseStitchDesignBrief("Design for homeowners", [], branding);
     const md = buildStitchDesignMarkdown({

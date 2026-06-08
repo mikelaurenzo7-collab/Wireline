@@ -37,7 +37,7 @@ import { runCompletion, runStructured } from "./claude-structured";
 import { runOpenRouterCompletion } from "./openrouter-structured";
 import { DESIGN_KIT_BASE_CSS } from "./director-design-kit";
 
-const grokDraftHtml = `<!doctype html><html><head><style>${DESIGN_KIT_BASE_CSS}</style></head>
+const builderDraftHtml = `<!doctype html><html><head><style>${DESIGN_KIT_BASE_CSS}</style></head>
 <body class="wl-page"><header class="wl-hero"><h1 class="wl-headline">Summit Landscaping</h1>
 <p class="wl-subhead">Licensed crews across Denver.</p><a href="#">Get a quote</a></header></body></html>`;
 
@@ -85,10 +85,10 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
       cacheCreate: 0,
     });
 
-    vi.mocked(runOpenRouterCompletion).mockResolvedValue(grokDraftHtml);
+    vi.mocked(runOpenRouterCompletion).mockResolvedValue(builderDraftHtml);
   }
 
-  it("runs Opus vision, Grok build, Opus implement via completion, sign-off, and packages preview", async () => {
+  it("runs Opus vision, Kimi build, Opus implement via completion, sign-off, and packages preview", async () => {
     mockPipeline();
 
     const turn = await runDirectorDesignStudio(baseInput);
@@ -99,11 +99,11 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     expect(turn.previews).toHaveLength(1);
     expect(turn.reply).toContain("Summit Landscaping");
     expect(turn.thinkingSummary).toMatch(/Opus vision/i);
-    expect(turn.thinkingSummary).toMatch(/Grok build/i);
+    expect(turn.thinkingSummary).toMatch(/Kimi build/i);
     expect(turn.designBriefMarkdown).toMatch(/Opus creative vision/i);
   });
 
-  it("does not run research, critique loops, or second Grok passes", async () => {
+  it("does not run research, critique loops, or second builder passes", async () => {
     mockPipeline();
 
     await runDirectorDesignStudio(baseInput);
@@ -116,7 +116,7 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     expect(users.some((u) => /critique/i.test(u))).toBe(false);
   });
 
-  it("keeps Grok draft when Opus implement returns thin HTML", async () => {
+  it("keeps builder draft when Opus implement returns thin HTML", async () => {
     mockPipeline();
     vi.mocked(runCompletion).mockResolvedValue({
       text: "<html><body>stub</body></html>",

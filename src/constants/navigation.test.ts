@@ -14,6 +14,7 @@ describe("Top-bar navigation IA", () => {
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).toEqual([
       "/ops",
       "/chat",
+      "/design",
       "/training",
       "/insights",
       "/phone",
@@ -23,6 +24,7 @@ describe("Top-bar navigation IA", () => {
       "/agents",
     ]);
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
+      "Workspace",
       "Workspace",
       "Workspace",
       "Workspace",
@@ -37,7 +39,13 @@ describe("Top-bar navigation IA", () => {
 
   it("Workspace group: Live Ops first, then Chat, Training, Insights (Triage is an Ops tab)", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual(["/ops", "/chat", "/training", "/insights"]);
+    expect(ws.items.map((i) => i.path)).toEqual([
+      "/ops",
+      "/chat",
+      "/design",
+      "/training",
+      "/insights",
+    ]);
   });
 
   it("Channels group has Phone, Email, SMS", () => {

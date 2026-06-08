@@ -20,6 +20,11 @@ import {
   type DirectorStitchSessionMeta,
 } from "./director-message-metadata";
 import type { DirectorProposalResolution } from "./director-proposal-state";
+import {
+  DIRECTOR_THREAD_KEY,
+  type DirectorConversationThreadKey,
+  parseDirectorThreadKey,
+} from "./director-thread-keys";
 
 export interface DirectorStoredMessage {
   id: bigint;
@@ -171,6 +176,7 @@ export async function ensureDirectorSchema(): Promise<void> {
 export async function loadDirectorMessages(
   userId: string,
   limit: number,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<DirectorMessagesLoadResult> {
   await ensureDirectorSchema();
   try {
@@ -178,6 +184,7 @@ export async function loadDirectorMessages(
       .select({
         id: schema.directorConversationMessages.id,
         userId: schema.directorConversationMessages.userId,
+        threadKey: schema.directorConversationMessages.threadKey,
         role: schema.directorConversationMessages.role,
         content: schema.directorConversationMessages.content,
         reasoning: schema.directorConversationMessages.reasoning,
@@ -185,7 +192,12 @@ export async function loadDirectorMessages(
         createdAt: schema.directorConversationMessages.createdAt,
       })
       .from(schema.directorConversationMessages)
-      .where(eq(schema.directorConversationMessages.userId, userId))
+      .where(
+        and(
+          eq(schema.directorConversationMessages.userId, userId),
+          eq(schema.directorConversationMessages.threadKey, threadKey),
+        ),
+      )
       .orderBy(desc(schema.directorConversationMessages.createdAt))
       .limit(limit);
     return { messages, degraded: false };
@@ -233,14 +245,17 @@ export async function insertDirectorMessage(input: {
   userId: string;
   role: "operator" | "director";
   content: string;
+  threadKey?: DirectorConversationThreadKey;
   reasoning?: string | null;
   metadata?: DirectorMessageMetadata | Record<string, unknown> | null;
 }): Promise<void> {
   await ensureDirectorSchema();
   const metadataPayload =
     input.metadata && typeof input.metadata === "object" ? input.metadata : null;
+  const threadKey = parseDirectorThreadKey(input.threadKey);
   const values = {
     userId: input.userId,
+    threadKey,
     role: input.role,
     content: input.content,
     reasoning: input.reasoning ?? null,

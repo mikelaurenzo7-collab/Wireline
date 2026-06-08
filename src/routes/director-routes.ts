@@ -95,6 +95,18 @@ import {
   type DesignLlmFallback,
 } from "../lib/director-design-path";
 import {
+  DIRECTOR_THREAD_KEY,
+  PAINTER_THREAD_KEY,
+  parseDirectorThreadKey,
+  type DirectorConversationThreadKey,
+} from "../lib/director-thread-keys";
+import { WIRELINE_PAINTER_UI } from "../lib/wireline-painter-design";
+import {
+  hasPendingStitchClarifyInHistory,
+  isStitchDesignModeActive,
+  wantsStitchMediaRequest,
+} from "../lib/director-stitch-intent";
+import {
   collapseDirectorThreadDuplicates,
   insertDirectorReplyIfAbsent,
   isDirectorStubReply,
@@ -178,6 +190,7 @@ async function finalizeDirectorStreamTurn(
   donePayload: Record<string, unknown>,
   thinking: string | null | undefined,
   featureFlags: ReturnType<typeof loadDirectorFeatureFlags>,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<boolean> {
   const trimmed = reply.trim();
   if (!trimmed) return false;
@@ -201,6 +214,7 @@ async function finalizeDirectorStreamTurn(
         userId,
         operatorMessage,
         reply: trimmed,
+        threadKey,
         reasoning: thinking || null,
         metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(enriched)),
       });
@@ -259,8 +273,9 @@ async function emitStreamDoneFromPersisted(
   sse: SseStreamHandle,
   userId: string,
   operatorMessage: string,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<boolean> {
-  const existing = await loadExistingDirectorTurnResponse(userId, operatorMessage);
+  const existing = await loadExistingDirectorTurnResponse(userId, operatorMessage, threadKey);
   if (!existing || isDirectorStubReply(existing.content)) return false;
   sse.write("thinking_end", {
     thinking: existing.reasoning ?? "",
@@ -302,11 +317,20 @@ function jsonFromPersistedDirectorTurn(
   };
 }
 
+function resolveRequestThreadKey(req: AuthenticatedRequest): DirectorConversationThreadKey {
+  const fromBody = req.body?.threadKey;
+  const fromQuery = req.query?.thread;
+  if (typeof fromBody === "string") return parseDirectorThreadKey(fromBody);
+  if (typeof fromQuery === "string") return parseDirectorThreadKey(fromQuery);
+  return DIRECTOR_THREAD_KEY;
+}
+
 async function persistOperatorMessageIfNeeded(
   userId: string,
   operatorMessage: string,
   priorMessages: Awaited<ReturnType<typeof loadDirectorMessages>>,
   skipPersist: boolean,
+  threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ) {
   if (!operatorMessage) return;
   const last = priorMessages.messages[0];
@@ -317,6 +341,7 @@ async function persistOperatorMessageIfNeeded(
       userId,
       role: "operator",
       content: operatorMessage,
+      threadKey,
     });
   }
 }
@@ -583,9 +608,11 @@ router.get(
         req.user.id,
         200,
       );
+      const threadKey = resolveRequestThreadKey(req);
       const { messages, degraded: messagesDegraded } = await loadDirectorMessages(
         req.user.id,
         MAX_THREAD_LENGTH,
+        threadKey,
       );
       const degraded = messagesDegraded || artifactsDegraded;
 
@@ -725,15 +752,24 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const featureFlags = loadDirectorFeatureFlags();
+      const threadKey = resolveRequestThreadKey(req);
       const operatorMessage = String(req.body.content || "").trim();
       const focusAgentId = String(req.body.focusAgentId || "").trim() || undefined;
       const approval = req.body.approval as DirectorApprovalRequest | undefined;
+      const stitchOptions =
+        threadKey === PAINTER_THREAD_KEY
+          ? { ...(req.body?.stitchOptions ?? {}), designMode: true as const }
+          : req.body?.stitchOptions;
 
       const fleet = await loadFleetSafe(req.user.id);
 
       const stats = await loadDirectorWeekStats(req.user.id);
 
-      const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
+      const priorMessages = await loadDirectorMessages(
+        req.user.id,
+        CLAUDE_CONTEXT_WINDOW,
+        threadKey,
+      );
 
       const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),
@@ -746,11 +782,16 @@ router.post(
           operatorMessage,
           priorMessages,
           req.body?.skipOperatorPersist === true,
+          threadKey,
         );
       }
 
       if (operatorMessage && req.body?.skipOperatorPersist === true) {
-        const existing = await loadExistingDirectorTurnResponse(req.user.id, operatorMessage);
+        const existing = await loadExistingDirectorTurnResponse(
+          req.user.id,
+          operatorMessage,
+          threadKey,
+        );
         if (existing) {
           return res.json(jsonFromPersistedDirectorTurn(existing));
         }
@@ -811,12 +852,24 @@ router.post(
         operatorMessage &&
         featureFlags.toolExecution &&
         featureFlags.creativeTools &&
-        isCreativeIntent(operatorMessage)
+        isCreativeIntent(operatorMessage) &&
+        threadKey === DIRECTOR_THREAD_KEY
       ) {
         const creative = buildCreativeDirectorTurn(operatorMessage, history);
         reply = creative.reply;
         approvals = creative.approvals;
         clarifyingQuestions = creative.clarifyingQuestions;
+      } else if (
+        operatorMessage &&
+        threadKey === DIRECTOR_THREAD_KEY &&
+        featureFlags.stitchMedia &&
+        wantsStitchMediaRequest(operatorMessage) &&
+        !isStitchDesignModeActive(stitchOptions) &&
+        !hasPendingStitchClarifyInHistory(history)
+      ) {
+        reply = WIRELINE_PAINTER_UI.buildHandoffReply(operatorMessage);
+        modelLabel = "Director";
+        modelProvider = "wireline";
       } else {
         let stitchDesignFallback: DesignLlmFallback | undefined;
         const stitchPath =
@@ -825,7 +878,7 @@ router.post(
                 userId: req.user.id,
                 operatorMessage,
                 history,
-                stitchOptions: req.body?.stitchOptions,
+                stitchOptions,
               })
             : { kind: "none" as const };
 
@@ -835,7 +888,10 @@ router.post(
           previews = stitchTurn.previews;
           artifacts = stitchTurn.artifacts;
           clarifyingQuestions = stitchTurn.clarifyingQuestions ?? clarifyingQuestions;
-          modelLabel = WIRELINE_STITCH_UI.modelLabel;
+          modelLabel =
+            threadKey === PAINTER_THREAD_KEY
+              ? WIRELINE_PAINTER_UI.modelLabel
+              : WIRELINE_STITCH_UI.modelLabel;
           modelProvider = "wireline";
           thinkingDurationMs = stitchTurn.durationMs;
           reasoning = stitchTurn.thinkingSummary;
@@ -984,12 +1040,17 @@ router.post(
         userId: req.user.id,
         operatorMessage,
         reply,
+        threadKey,
         reasoning: reasoning || null,
         metadata: packDirectorMetadata(buildDirectorMetadataFromTurn(turnPayload)),
       });
 
       if (insertResult !== "inserted" && operatorMessage) {
-        const existing = await loadExistingDirectorTurnResponse(req.user.id, operatorMessage);
+        const existing = await loadExistingDirectorTurnResponse(
+          req.user.id,
+          operatorMessage,
+          threadKey,
+        );
         if (existing) {
           const persisted = jsonFromPersistedDirectorTurn(existing);
           const { artifacts: latest } = await listDirectorArtifactsSafe(req.user.id, 40);
@@ -1091,10 +1152,15 @@ router.post(
       const streamAbort = new AbortController();
       sse.onClientDisconnect(() => streamAbort.abort());
 
+      const threadKey = resolveRequestThreadKey(req);
       const fleet = await loadFleetSafe(req.user.id);
       const stats = await loadDirectorWeekStats(req.user.id);
 
-      const priorMessages = await loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW);
+      const priorMessages = await loadDirectorMessages(
+        req.user.id,
+        CLAUDE_CONTEXT_WINDOW,
+        threadKey,
+      );
 
       const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),
@@ -1106,6 +1172,7 @@ router.post(
         operatorMessage,
         priorMessages,
         req.body?.skipOperatorPersist === true,
+        threadKey,
       );
 
       const featureFlags = loadDirectorFeatureFlags();
@@ -1136,6 +1203,7 @@ router.post(
           userId: req.user.id,
           operatorMessage,
           reply: creative.reply,
+          threadKey,
           metadata,
         }).catch((err) =>
           log.error("director creative stream persist failed", {
@@ -1203,6 +1271,7 @@ router.post(
           donePayload,
           stitchTurn.thinkingSummary,
           featureFlags,
+          threadKey,
         );
         return;
       }
@@ -1379,6 +1448,7 @@ router.post(
           donePayload,
           thinking,
           featureFlags,
+          threadKey,
         );
       } catch (e) {
         if (e instanceof AppError) throw e;
@@ -1394,7 +1464,7 @@ router.post(
           });
           return;
         }
-        if (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage)) {
+        if (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage, threadKey)) {
           log.info("director stream recovered from persisted turn", { userId: req.user.id });
           return;
         }
@@ -1420,7 +1490,7 @@ router.post(
           });
           if (
             isDirectorStubReply(turn.reply) &&
-            (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage))
+            (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage, threadKey))
           ) {
             return;
           }
@@ -1436,13 +1506,14 @@ router.post(
             directorTurnToStreamDone(turn),
             turn.reasoning,
             featureFlags,
+            threadKey,
           );
         } catch (fallbackErr) {
           if (fallbackErr instanceof AppError) throw fallbackErr;
           log.error("director stream fallback failed", {
             error: getErrorMessage(fallbackErr),
           });
-          if (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage)) {
+          if (await emitStreamDoneFromPersisted(sse, req.user.id, operatorMessage, threadKey)) {
             return;
           }
           sse.write("error", { message: "Failed to generate response" });
@@ -1582,10 +1653,17 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       await ensureDirectorSchema();
+      const threadKey = resolveRequestThreadKey(req);
       await drizzle
         .delete(schema.directorConversationMessages)
-        .where(eq(schema.directorConversationMessages.userId, req.user.id));
-      const artifactsCleared = await clearDirectorArtifacts(req.user.id);
+        .where(
+          and(
+            eq(schema.directorConversationMessages.userId, req.user.id),
+            eq(schema.directorConversationMessages.threadKey, threadKey),
+          ),
+        );
+      const artifactsCleared =
+        threadKey === DIRECTOR_THREAD_KEY ? await clearDirectorArtifacts(req.user.id) : 0;
       res.json({ cleared: true, artifactsCleared });
     } catch (e) {
       if (e instanceof AppError) throw e;

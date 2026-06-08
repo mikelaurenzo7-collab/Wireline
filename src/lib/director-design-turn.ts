@@ -13,6 +13,7 @@ import {
   stitchClarifyingQuestions,
   type StitchBriefOptions,
 } from "./director-stitch-brief";
+import { buildDesignProfileBriefExtras } from "./design-profile";
 import { resolveStitchMediaOperation } from "./director-stitch-intent";
 
 export interface DirectorDesignTurnResult {
@@ -68,10 +69,15 @@ export async function prepareDirectorDesignTurn(
   const history = input.history ?? [];
   const operation = resolveStitchMediaOperation(input.operatorMessage, null);
   const brief = parseStitchDesignBrief(input.operatorMessage, history, branding);
+  const profileExtras =
+    input.stitchOptions?.designMode === true
+      ? await buildDesignProfileBriefExtras(input.userId)
+      : null;
   const designBriefMarkdown = buildStitchDesignMarkdown({
     brief,
     branding,
     useAccountBranding,
+    designProfileSection: profileExtras?.profileSectionMarkdown,
   });
   const missing = missingStitchBriefFields(brief, operation, false, {
     designMode: input.stitchOptions?.designMode === true,

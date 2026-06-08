@@ -15,6 +15,7 @@ import {
   resolveUseAccountBranding,
   type StitchBriefOptions,
 } from "./director-stitch-brief";
+import { buildDesignProfileBriefExtras } from "./design-profile";
 import { shouldRouteDirectorMessageToStitch } from "./director-stitch-intent";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -80,10 +81,15 @@ export async function prepareDesignBriefContext(input: {
   const useAccountBranding = resolveUseAccountBranding(input.stitchOptions, branding);
   const history = input.history ?? [];
   const brief = parseStitchDesignBrief(input.operatorMessage, history, branding);
+  const profileExtras =
+    input.stitchOptions?.designMode === true
+      ? await buildDesignProfileBriefExtras(input.userId)
+      : null;
   const designBriefMarkdown = buildStitchDesignMarkdown({
     brief,
     branding,
     useAccountBranding,
+    designProfileSection: profileExtras?.profileSectionMarkdown,
   });
 
   return {

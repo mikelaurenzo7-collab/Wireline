@@ -18,6 +18,7 @@ const REQUIRED_PAGE_ROUTES = [
   "/sms",
   "/agents",
   "/chat",
+  "/design",
   "/training",
   "/integrations",
   "/admin",

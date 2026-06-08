@@ -13,7 +13,7 @@ export const DESIGN_OPUS_VISION_SYSTEM = `You are the creative director for Wire
 Before any HTML is built, you envision the most immaculate, flawless, professional, and tailored
 landing-page concept for this specific operator and their business.
 
-Your output is the authoritative brief Grok Build will draft; you will critique and finish the HTML yourself afterward.
+Your output is the authoritative brief the Kimi/DeepSeek build desk will draft; you will critique and finish the HTML yourself afterward.
 
 Requirements for creativeVision:
 - Write as a creative director pitching a bespoke agency concept — not generic SaaS templates
@@ -65,7 +65,7 @@ Suggest 3 unconventional layout archetypes for this US local-business page — s
 No HTML. Max 150 words. Avoid three-column feature-card grids.`;
 
 /** Pass 1 — implement the full vision spec (Claude Design high-fidelity mode). */
-export const DESIGN_BUILDER_VISION_SYSTEM = `You are Grok Build — the sole HTML builder for Wireline Design Studio (pass 1 — high fidelity).
+export const DESIGN_BUILDER_VISION_SYSTEM = `You are the HTML build desk for Wireline Design Studio (Kimi / DeepSeek on OpenRouter — pass 1, high fidelity).
 You receive an exhaustive vision spec (~5000 characters). Implement it completely in one HTML file.
 
 Rules:
@@ -76,6 +76,8 @@ Rules:
 - Every section in the vision spec must appear in the page (hero, trust row, content, footer).
 - CTAs: wl-btn wl-btn--primary (min 48px height) — never bare text links for primary actions.
 - Match the layout archetype and visual system in the spec — distinctive, not template-like.
+- Prototype interactivity: include a working nav (anchor links to section ids OR data-nav-page + data-page
+  blocks for multi-screen flows). Operators must be able to click through the preview — not a static poster.
 
 No markdown fences. No commentary outside HTML.`;
 
@@ -114,7 +116,7 @@ Requirements:
 - No markdown fences`;
 
 export const DESIGN_OPUS_SIGNOFF_SYSTEM = `You are the final sign-off editor for Wireline Design Studio (Claude Opus).
-The Grok-built HTML page is complete. Write the operator-facing chat summary.
+The build-desk HTML page is complete. Write the operator-facing chat summary.
 
 operatorReply: plain language (no HTML, no model names). Opening line + 3–5 bullets on what they see + 2 tweak ideas.
 pageTitle: short preview title (under 60 chars).`;
@@ -122,7 +124,7 @@ pageTitle: short preview title (under 60 chars).`;
 /** @deprecated M3 removed — use DESIGN_OPUS_SIGNOFF_SYSTEM */
 export const DESIGN_M3_SIGNOFF_SYSTEM = DESIGN_OPUS_SIGNOFF_SYSTEM;
 
-export const DESIGN_EMERGENCY_POLISH_SYSTEM = `You are the emergency HTML finisher for Wireline Design Studio (Grok Build).
+export const DESIGN_EMERGENCY_POLISH_SYSTEM = `You are the emergency HTML finisher for Wireline Design Studio (build desk).
 The HTML failed quality gate checks. Output ONLY the fixed complete HTML document.
 
 Requirements:
@@ -294,7 +296,7 @@ export function buildOpusSignoffUserPrompt(input: {
   pipelinePhases: string[];
 }): string {
   return [
-    `Completed ${input.passCount} Grok Build pass(es).`,
+    `Completed ${input.passCount} build-desk pass(es).`,
     buildDesignStageContext({
       operatorMessage: input.operatorMessage,
       designBriefMarkdown: input.designBriefMarkdown,
@@ -324,15 +326,15 @@ export function buildGeminiVisualUserPrompt(input: {
   });
 }
 
-/** Opus critiques Grok draft and returns production HTML via completion (not tool — avoids truncation). */
+/** Opus critiques builder draft and returns production HTML via completion (not tool — avoids truncation). */
 export const DESIGN_OPUS_IMPLEMENT_SYSTEM = `You are the creative director finishing a Wireline Design page.
 
-Grok Build produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
+The Kimi/DeepSeek build desk produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
 
 Rules:
 - Output ONLY a complete HTML document — no markdown fences, no commentary
 - Embedded Wireline Design Kit CSS in <style>; fix wireframe stubs, text-link CTAs, missing sections
-- Preserve strong Grok structure when it matches the brief — surgical fixes over full rewrites
+- Preserve strong builder structure when it matches the brief — surgical fixes over full rewrites
 - wl-page, wl-hero, wl-headline, wl-btn--primary, wl-trust-row, wl-badge; embedded CSS only`;
 
 /** @deprecated HTML in structured tools truncates — use DESIGN_OPUS_IMPLEMENT_SYSTEM + runCompletion */
@@ -361,7 +363,7 @@ export const DESIGN_FINAL_APPROVAL_TOOL = {
 
 export const DESIGN_OPUS_FINISH_TOOL = {
   name: "wireline_design_opus_finish",
-  description: "Critique Grok draft, output polished HTML plus operator summary",
+  description: "Critique builder draft, output polished HTML plus operator summary",
   input_schema: {
     type: "object" as const,
     properties: {
@@ -387,7 +389,7 @@ export function buildOpusImplementUserPrompt(input: {
   pipelinePhases?: string[];
 }): string {
   return [
-    "Critique the Grok Build draft against your vision, then output the finished HTML document.",
+    "Critique the build-desk draft against your vision, then output the finished HTML document.",
     buildDesignStageContext({
       operatorMessage: input.operatorMessage,
       designBriefMarkdown: input.designBriefMarkdown,
@@ -396,7 +398,7 @@ export function buildOpusImplementUserPrompt(input: {
       briefCap: 6_000,
     }),
     DESIGN_KIT_PROMPT_BLOCK,
-    `## Grok Build draft\n${input.draftHtml.slice(0, 20_000)}`,
+    `## Build desk draft\n${input.draftHtml.slice(0, 20_000)}`,
   ].join("\n\n");
 }
 

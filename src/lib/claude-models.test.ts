@@ -30,7 +30,8 @@ describe("Wireline LLM tiering — constants are stable", () => {
     expect(VAPI_TENANT_DEFAULT_MODEL).toBe("claude-sonnet-4-6");
   });
 
-  it("reasoning default is Opus; voice default is Sonnet (distinct tiers)", () => {
+  it("reasoning default is Opus 4.8; voice default is Sonnet (distinct tiers)", () => {
+    expect(CLAUDE_MODELS.OPUS).toBe("claude-opus-4-8");
     expect(CLAUDE_REASONING_MODEL_DEFAULT).toBe(CLAUDE_MODELS.OPUS);
     expect(CLAUDE_MODEL_DEFAULT).toBe(CLAUDE_REASONING_MODEL_DEFAULT);
     expect(VAPI_TENANT_DEFAULT_MODEL).toBe(CLAUDE_MODELS.SONNET);

@@ -27,6 +27,8 @@ export interface DirectorStitchPreviewStudioProps {
   disabled?: boolean;
   /** First tab when the studio opens — screenshot matches Stitch web fidelity. */
   defaultTab?: "preview" | "screenshot" | "export";
+  /** Immersive fills the Painter preview pane — larger iframe, desktop width. */
+  layout?: "default" | "immersive";
   className?: string;
 }
 
@@ -55,18 +57,21 @@ function DeviceChrome({
   device,
   children,
   fullHeight,
+  immersive,
 }: {
   device?: DirectorPreviewMeta["deviceType"];
   children: React.ReactNode;
   fullHeight?: boolean;
+  immersive?: boolean;
 }) {
-  const mobile = device === "MOBILE" || device === "TABLET";
+  const mobile = !immersive && (device === "MOBILE" || device === "TABLET");
   return (
     <div
       className={cn(
         "wl-stitch-device mx-auto",
         mobile ? "wl-stitch-device--mobile" : "wl-stitch-device--desktop",
         fullHeight && "wl-stitch-device--studio",
+        immersive && "wl-stitch-device--immersive",
       )}
     >
       <div className="wl-stitch-device-chrome">
@@ -78,7 +83,11 @@ function DeviceChrome({
         </span>
       </div>
       <div
-        className={cn("wl-stitch-device-screen", fullHeight && "wl-stitch-device-screen--studio")}
+        className={cn(
+          "wl-stitch-device-screen",
+          fullHeight && "wl-stitch-device-screen--studio",
+          immersive && "wl-stitch-device-screen--immersive",
+        )}
       >
         {children}
       </div>
@@ -127,8 +136,10 @@ export default function DirectorStitchPreviewStudio({
   onSuggestEdit,
   disabled,
   defaultTab,
+  layout = "default",
   className,
 }: DirectorStitchPreviewStudioProps) {
+  const immersive = layout === "immersive";
   const [retryNonce, setRetryNonce] = useState(0);
   const ready = useStitchPreviewReady(preview, { refreshKey: retryNonce });
   const hasRenderableImage = Boolean(ready.imageSrc);
@@ -310,8 +321,13 @@ export default function DirectorStitchPreviewStudio({
           className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
         >
           {tab === "screenshot" && hasRenderableImage && (
-            <DeviceChrome device={preview.deviceType} fullHeight>
-              <div className="relative min-h-[min(70vh,640px)] flex items-center justify-center p-2">
+            <DeviceChrome device={preview.deviceType} fullHeight immersive={immersive}>
+              <div
+                className={cn(
+                  "relative flex items-center justify-center p-2",
+                  immersive ? "min-h-[min(78vh,920px)]" : "min-h-[min(70vh,640px)]",
+                )}
+              >
                 <img
                   src={ready.imageSrc}
                   alt={preview.title}
@@ -327,7 +343,7 @@ export default function DirectorStitchPreviewStudio({
           )}
 
           {tab === "preview" && hasRenderableHtml && (
-            <DeviceChrome device={preview.deviceType} fullHeight>
+            <DeviceChrome device={preview.deviceType} fullHeight immersive={immersive}>
               {iframeFailed && hasRenderableImage ? (
                 <div className="min-h-[min(70vh,640px)] flex flex-col items-center justify-center gap-2 p-6 text-center">
                   <p className="text-[12px] text-muted">
@@ -347,8 +363,11 @@ export default function DirectorStitchPreviewStudio({
                 <iframe
                   title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
                   src={ready.htmlSrc}
-                  className="wl-stitch-live-iframe wl-stitch-live-iframe--studio"
-                  sandbox="allow-scripts"
+                  className={cn(
+                    "wl-stitch-live-iframe wl-stitch-live-iframe--studio",
+                    immersive && "wl-stitch-live-iframe--immersive",
+                  )}
+                  sandbox="allow-scripts allow-same-origin"
                   referrerPolicy="no-referrer"
                   allow="fullscreen"
                 />

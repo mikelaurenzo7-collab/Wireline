@@ -35,6 +35,7 @@ import {
   Download,
   Sparkles,
   LayoutTemplate,
+  Paintbrush,
   RefreshCw,
   CheckCheck,
 } from "lucide-react";
@@ -95,6 +96,8 @@ import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/Direct
 import { DirectorStitchPreviewVariantGrid } from "./director/DirectorStitchPreviewTeaser";
 import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
 import { findLatestStitchPreview, isStitchPreview } from "../lib/director-stitch-preview";
+import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
+import { WIRELINE_PAINTER_UI } from "../lib/wireline-painter-design";
 import {
   buildStitchPreviewPageUrl,
   stitchPreviewPageUrlIsValid,
@@ -207,9 +210,15 @@ interface DirectorMessage {
   resolved?: Record<string, DirectorProposalResolution>;
 }
 
+export type DirectorWorkspaceSurface = "director" | "painter";
+
 export interface DirectorWorkspaceProps {
   focusAgentId?: string | null;
   onFocusAgentChange?: (agentId: string | null) => void;
+  /** director = /chat fleet wingman; painter = /design Wireline Design studio */
+  surface?: DirectorWorkspaceSurface;
+  initialPrompt?: string;
+  onActiveStitchPreview?: (preview: DirectorPreviewMeta | null) => void;
 }
 
 const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
@@ -257,7 +266,14 @@ function filterMessagesForCoachFocus(
 export default function DirectorWorkspace({
   focusAgentId = null,
   onFocusAgentChange,
+  surface = "director",
+  initialPrompt,
+  onActiveStitchPreview,
 }: DirectorWorkspaceProps) {
+  const isPainterSurface = surface === "painter";
+  const directorMessagesPath = isPainterSurface
+    ? "/api/director/messages?thread=painter"
+    : "/api/director/messages";
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const reduceMotion = useReducedMotion();
@@ -306,6 +322,7 @@ export default function DirectorWorkspace({
   const [designPrompt, setDesignPrompt] = useState("");
   const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
   const [designMode, setDesignMode] = useState(false);
+  const [designProfileConfigured, setDesignProfileConfigured] = useState(false);
   const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
   const stitchClarifyPending = useMemo(
     () =>
@@ -318,10 +335,26 @@ export default function DirectorWorkspace({
   );
 
   useEffect(() => {
-    if (stitchClarifyPending && !designMode) {
+    if (!isPainterSurface && stitchClarifyPending && !designMode) {
       setDesignMode(true);
     }
-  }, [stitchClarifyPending, designMode]);
+  }, [isPainterSurface, stitchClarifyPending, designMode]);
+
+  useEffect(() => {
+    if (!(isPainterSurface || designMode) || !featureFlags.stitchMedia) return;
+    let cancelled = false;
+    void authFetch("/api/design/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { profile?: { configured?: boolean } } | null) => {
+        if (!cancelled && data?.profile) {
+          setDesignProfileConfigured(Boolean(data.profile.configured));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [designMode, featureFlags.stitchMedia, isPainterSurface]);
 
   const stitchThreadHistory = useMemo(
     () =>
@@ -331,10 +364,18 @@ export default function DirectorWorkspace({
     [messages],
   );
 
+  const designModeEffective = isPainterSurface || designMode;
+
   const buildStitchComposerOptions = useCallback(
     (trimmed: string): StitchBriefOptions | undefined => {
       if (!featureFlags.stitchMedia) return undefined;
-      const stitchOptionsProbe: StitchBriefOptions | undefined = designMode
+      if (isPainterSurface) {
+        return {
+          designMode: true,
+          useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
+        };
+      }
+      const stitchOptionsProbe: StitchBriefOptions | undefined = designModeEffective
         ? { designMode: true }
         : undefined;
       const route = shouldRouteDirectorMessageToStitch(trimmed, {
@@ -343,12 +384,13 @@ export default function DirectorWorkspace({
       });
       if (!route) return undefined;
       return {
-        ...(designMode || stitchClarifyPending ? { designMode: true } : {}),
+        ...(designModeEffective || stitchClarifyPending ? { designMode: true } : {}),
         useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
       };
     },
     [
-      designMode,
+      isPainterSurface,
+      designModeEffective,
       featureFlags.stitchMedia,
       stitchBrandingAvailable,
       stitchClarifyPending,
@@ -359,12 +401,14 @@ export default function DirectorWorkspace({
 
   const shouldUseDesignComposer = useCallback(
     (trimmed: string) =>
-      featureFlags.stitchMedia &&
-      shouldRouteDirectorMessageToStitch(trimmed, {
-        stitchOptions: designMode ? { designMode: true } : undefined,
-        history: stitchThreadHistory,
-      }),
-    [designMode, featureFlags.stitchMedia, stitchThreadHistory],
+      isPainterSurface
+        ? featureFlags.stitchMedia && trimmed.length > 0
+        : featureFlags.stitchMedia &&
+          shouldRouteDirectorMessageToStitch(trimmed, {
+            stitchOptions: designModeEffective ? { designMode: true } : undefined,
+            history: stitchThreadHistory,
+          }),
+    [isPainterSurface, designModeEffective, featureFlags.stitchMedia, stitchThreadHistory],
   );
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
@@ -464,7 +508,7 @@ export default function DirectorWorkspace({
     try {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const r = await authFetch("/api/director/messages");
+          const r = await authFetch(directorMessagesPath);
           if (r.status === 401 || r.status === 403) return;
           if (!r.ok) {
             const parsed = await readApiJson(r);
@@ -514,14 +558,14 @@ export default function DirectorWorkspace({
     } finally {
       setIsLoading(false);
     }
-  }, [authLoading, toastError, user]);
+  }, [authLoading, directorMessagesPath, toastError, user]);
 
   const recoverPersistedDirectorReply = useCallback(
     async (trimmed: string, requireStitch: boolean): Promise<boolean> => {
       const waits = [400, 900, 1600, 3000, 5000, 8000, 12_000, 18_000];
       for (const waitMs of waits) {
         await new Promise((resolve) => setTimeout(resolve, waitMs));
-        const r = await authFetch("/api/director/messages");
+        const r = await authFetch(directorMessagesPath);
         if (!r.ok) continue;
         const data = await r.json();
         const msgs = Array.isArray(data.messages) ? data.messages : [];
@@ -539,7 +583,7 @@ export default function DirectorWorkspace({
       }
       return false;
     },
-    [],
+    [directorMessagesPath],
   );
 
   // Streaming chat integration
@@ -638,17 +682,19 @@ export default function DirectorWorkspace({
     ) => {
       try {
         const stitchOptions = buildStitchComposerOptions(trimmed);
-        const r = await authFetch("/api/director/messages", {
+        const r = await authFetch(directorMessagesPath, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           timeoutMs: opts?.timeoutMs,
           body: JSON.stringify({
             content: trimmed,
-            ...(focusAgentId ? { focusAgentId } : {}),
+            ...(isPainterSurface ? { threadKey: "painter" } : {}),
+            ...(focusAgentId && !isPainterSurface ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
             ...(stitchOptions ? { stitchOptions } : {}),
-            ...(!focusAgentId &&
-            !designMode &&
+            ...(!isPainterSurface &&
+            !focusAgentId &&
+            !designModeEffective &&
             chatModelSelection.provider === "wireline" &&
             (forceDeep || wantsDeepAnalysis(trimmed))
               ? { forceDeep: true }
@@ -691,7 +737,9 @@ export default function DirectorWorkspace({
       toastError,
       focusAgentId,
       forceDeep,
-      designMode,
+      designModeEffective,
+      directorMessagesPath,
+      isPainterSurface,
       chatModelSelection,
       buildStitchComposerOptions,
     ],
@@ -820,6 +868,7 @@ export default function DirectorWorkspace({
   }, [isSending, input, reduceMotion]);
 
   useEffect(() => {
+    if (isPainterSurface) return;
     const prompt = searchParams.get("prompt")?.trim();
     if (!prompt) return;
     setInput(prompt);
@@ -832,7 +881,9 @@ export default function DirectorWorkspace({
       },
       { replace: true },
     );
-  }, [searchParams, setSearchParams]);
+  }, [isPainterSurface, searchParams, setSearchParams]);
+
+  const initialPromptSentRef = useRef(false);
 
   const pickCapabilityExample = useCallback(
     (text: string) => {
@@ -916,8 +967,11 @@ export default function DirectorWorkspace({
         ...(opts?.approval ? { approval: opts.approval } : {}),
         ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
         ...(stitchOptions ? { stitchOptions } : {}),
-        ...(!focusAgentId &&
-        !designMode &&
+        ...(isPainterSurface ? { threadKey: "painter" } : {}),
+        ...(focusAgentId && !isPainterSurface ? { focusAgentId } : {}),
+        ...(!isPainterSurface &&
+        !focusAgentId &&
+        !designModeEffective &&
         chatModelSelection.provider === "wireline" &&
         (forceDeep || wantsDeepAnalysis(trimmed))
           ? { forceDeep: true }
@@ -954,7 +1008,7 @@ export default function DirectorWorkspace({
 
       // Fallback: non-streaming for approval responses
       try {
-        const r = await authFetch("/api/director/messages", {
+        const r = await authFetch(directorMessagesPath, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -999,10 +1053,25 @@ export default function DirectorWorkspace({
       forceDeep,
       chatModelSelection,
       buildStitchComposerOptions,
-      designMode,
+      designModeEffective,
+      directorMessagesPath,
+      isPainterSurface,
       shouldUseDesignComposer,
     ],
   );
+
+  useEffect(() => {
+    if (!onActiveStitchPreview) return;
+    const preview = findLatestStitchPreview(messages);
+    onActiveStitchPreview(preview?.preview ?? null);
+  }, [messages, onActiveStitchPreview]);
+
+  useEffect(() => {
+    if (!isPainterSurface || !initialPrompt?.trim() || initialPromptSentRef.current) return;
+    if (authLoading || isLoading || isSending) return;
+    initialPromptSentRef.current = true;
+    void send(initialPrompt.trim());
+  }, [authLoading, initialPrompt, isLoading, isPainterSurface, isSending, send]);
 
   const markResolved = useCallback((key: string, state: DirectorProposalResolution) => {
     setResolved((prev) => ({ ...prev, [key]: state }));
@@ -1253,7 +1322,7 @@ export default function DirectorWorkspace({
     }
     setIsClearing(true);
     try {
-      const r = await authFetch("/api/director/messages", { method: "DELETE" });
+      const r = await authFetch(directorMessagesPath, { method: "DELETE" });
       if (!r.ok) throw new Error("Clear failed");
       setMessages([]);
       setArtifacts([]);
@@ -1268,7 +1337,7 @@ export default function DirectorWorkspace({
     } finally {
       setIsClearing(false);
     }
-  }, [isClearing, pendingApprovalCount, toastError, toastSuccess]);
+  }, [directorMessagesPath, isClearing, pendingApprovalCount, toastError, toastSuccess]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1356,11 +1425,11 @@ export default function DirectorWorkspace({
 
   return (
     <div
-      data-testid="director-workspace"
+      data-testid={isPainterSurface ? "painter-workspace" : "director-workspace"}
       className={cn("flex flex-col h-full min-h-0", WL_APP_CLASSES.missionCanvas)}
     >
-      {/* Minimal header - just identity */}
-      {messages.length > 0 && (
+      {/* Minimal header - just identity (Design page supplies its own studio chrome) */}
+      {messages.length > 0 && !isPainterSurface && (
         <div
           className={cn(
             "shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-brand/6",
@@ -1483,7 +1552,7 @@ export default function DirectorWorkspace({
               retry.
             </p>
           )}
-          {!isLoading && visibleMessages.length > 0 && (
+          {!isLoading && visibleMessages.length > 0 && !isPainterSurface && (
             <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
               {DIRECTOR_SESSION_COPY.sessionHint}
               {pendingApprovalCount > 0 ? (
@@ -1526,7 +1595,11 @@ export default function DirectorWorkspace({
                 refined
               >
                 <span className="flex w-16 h-16 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_8px_28px_-10px_rgba(59,21,76,0.35)] ring-1 ring-white/15 relative overflow-hidden">
-                  <Compass className="w-8 h-8 relative z-10" strokeWidth={1.75} />
+                  {isPainterSurface ? (
+                    <Paintbrush className="w-8 h-8 relative z-10" strokeWidth={1.75} />
+                  ) : (
+                    <Compass className="w-8 h-8 relative z-10" strokeWidth={1.75} />
+                  )}
                   <span
                     aria-hidden
                     className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"
@@ -1534,67 +1607,92 @@ export default function DirectorWorkspace({
                 </span>
               </SignalOrbFrame>
 
-              <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
-                {DIRECTOR_EMPTY_HERO.eyebrow}
-              </p>
-              <h2
-                className={cn(
-                  WL_APP_CLASSES.proTitle,
-                  "text-[1.35rem] sm:text-[1.65rem] mb-2 max-w-md text-balance",
-                )}
-              >
-                {DIRECTOR_EMPTY_HERO.title}{" "}
-                <span className="text-brand">{DIRECTOR_EMPTY_HERO.titleAccent}</span>
-              </h2>
-
-              {agents.length > 0 ? (
-                <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                  {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
-                </p>
-              ) : (
-                <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                  {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
-                </p>
-              )}
-
-              <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
-                {DIRECTOR_EMPTY_HERO.capabilityEyebrow}
-              </p>
-              <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
-                {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
-                  <motion.span
-                    key={pill.id}
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.35 + i * 0.05, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                    className="wl-capability-pill"
+              {isPainterSurface ? (
+                <>
+                  <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
+                    {WIRELINE_PAINTER_UI.badgeLabel}
+                  </p>
+                  <h2
+                    className={cn(
+                      WL_APP_CLASSES.proTitle,
+                      "text-[1.35rem] sm:text-[1.65rem] mb-2 max-w-md text-balance",
+                    )}
                   >
-                    {pill.label}
-                  </motion.span>
-                ))}
-              </div>
+                    {WIRELINE_PAINTER_UI.emptyTitle}
+                  </h2>
+                  <p className="text-[13px] text-muted mb-6 leading-relaxed max-w-md">
+                    {WIRELINE_PAINTER_UI.emptyBody}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
+                    {DIRECTOR_EMPTY_HERO.eyebrow}
+                  </p>
+                  <h2
+                    className={cn(
+                      WL_APP_CLASSES.proTitle,
+                      "text-[1.35rem] sm:text-[1.65rem] mb-2 max-w-md text-balance",
+                    )}
+                  >
+                    {DIRECTOR_EMPTY_HERO.title}{" "}
+                    <span className="text-brand">{DIRECTOR_EMPTY_HERO.titleAccent}</span>
+                  </h2>
 
-              {agents.length === 0 ? (
-                <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
-              ) : null}
+                  {agents.length > 0 ? (
+                    <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                      {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
+                    </p>
+                  ) : (
+                    <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                      {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
+                    </p>
+                  )}
 
-              <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
+                  <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
+                    {DIRECTOR_EMPTY_HERO.capabilityEyebrow}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
+                    {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
+                      <motion.span
+                        key={pill.id}
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{
+                          delay: 0.35 + i * 0.05,
+                          duration: 0.35,
+                          ease: [0.16, 1, 0.3, 1],
+                        }}
+                        className="wl-capability-pill"
+                      >
+                        {pill.label}
+                      </motion.span>
+                    ))}
+                  </div>
 
-              <div className="wl-director-empty-section w-full mb-6">
-                <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
-                  {DIRECTOR_EMPTY_HERO.discoverEyebrow}
-                </p>
-                <DirectorCapabilityCatalog
-                  variant="empty"
-                  onPickExample={(text) => {
-                    pickCapabilityExample(text);
-                  }}
-                />
-              </div>
+                  {agents.length === 0 ? (
+                    <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
+                  ) : null}
 
-              {agents.length > 0 ? (
-                <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
-              ) : null}
+                  <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
+
+                  <div className="wl-director-empty-section w-full mb-6">
+                    <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
+                      {DIRECTOR_EMPTY_HERO.discoverEyebrow}
+                    </p>
+                    <DirectorCapabilityCatalog
+                      variant="empty"
+                      onPickExample={(text) => {
+                        pickCapabilityExample(text);
+                      }}
+                    />
+                  </div>
+
+                  {agents.length > 0 ? (
+                    <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
+                  ) : null}
+                </>
+              )}
             </motion.div>
           ) : (
             <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}>
@@ -1632,7 +1730,9 @@ export default function DirectorWorkspace({
                             <Compass className="w-3 h-3" />
                           </span>
                           <span className="wl-micro-meta--muted uppercase tracking-[0.12em] font-medium">
-                            Director
+                            {isPainterSurface
+                              ? WIRELINE_PAINTER_UI.personaName
+                              : "Director"}
                             {m.coachAgentName ? (
                               <span className="text-brand/70 normal-case tracking-normal">
                                 {" "}
@@ -1687,7 +1787,8 @@ export default function DirectorWorkspace({
 
                         {m.role === "director" ? (
                           <>
-                            {m.previews &&
+                            {!isPainterSurface &&
+                              m.previews &&
                               m.previews.length > 0 &&
                               isStitchPreview(m.previews[0]) && (
                                 <div className="mb-3 -mx-0.5">
@@ -2237,10 +2338,13 @@ export default function DirectorWorkspace({
             )}
 
             <DirectorComposerContextStrip
-              focusAgentName={focusedAgent?.name}
-              onClearCoach={focusAgentId ? clearCoachFocus : undefined}
-              designModeActive={designMode && featureFlags.stitchMedia}
-              onClearDesignMode={() => setDesignMode(false)}
+              focusAgentName={isPainterSurface ? undefined : focusedAgent?.name}
+              onClearCoach={!isPainterSurface && focusAgentId ? clearCoachFocus : undefined}
+              designModeActive={designModeEffective && featureFlags.stitchMedia}
+              onClearDesignMode={
+                !isPainterSurface && designMode ? () => setDesignMode(false) : undefined
+              }
+              designProfileConfigured={designProfileConfigured}
             />
 
             <Textarea
@@ -2255,12 +2359,16 @@ export default function DirectorWorkspace({
               title={DIRECTOR_COMPOSER_CONTEXT.sendHint}
               placeholder={
                 isSending
-                  ? "Director is working…"
-                  : designMode && featureFlags.stitchMedia
-                    ? WIRELINE_STITCH_UI.designModePlaceholder
-                    : focusedAgent
-                      ? `Coach ${focusedAgent.name} via Director…`
-                      : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
+                  ? isPainterSurface
+                    ? WIRELINE_PAINTER_UI.workingStatus
+                    : "Director is working…"
+                  : isPainterSurface
+                    ? WIRELINE_PAINTER_UI.composerPlaceholder
+                    : designModeEffective && featureFlags.stitchMedia
+                      ? WIRELINE_STITCH_UI.designModePlaceholder
+                      : focusedAgent
+                        ? `Coach ${focusedAgent.name} via Director…`
+                        : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
               }
               className={cn(
                 WL_DIRECTOR_CLASSES.composerInput,
@@ -2274,6 +2382,7 @@ export default function DirectorWorkspace({
             <DirectorComposerAccessory
               active={composerAccessory}
               onClose={() => setComposerAccessory(null)}
+              onDesignProfileConfiguredChange={setDesignProfileConfigured}
               agents={agents}
               focusAgentId={focusAgentId ?? null}
               focusedAgentName={focusedAgent?.name}
@@ -2304,9 +2413,10 @@ export default function DirectorWorkspace({
 
             <div className={cn("px-3 pb-3", WL_DIRECTOR_CLASSES.composerSendRow)}>
               <DirectorComposerToolbar
+                surface={surface}
                 activeAccessory={composerAccessory}
                 onToggle={toggleComposerAccessory}
-                focusAgentId={focusAgentId ?? null}
+                focusAgentId={isPainterSurface ? null : (focusAgentId ?? null)}
                 focusedAgentName={focusedAgent?.name}
                 enabledToolsCount={enabledTools.length}
                 isUploading={isUploading}
@@ -2316,17 +2426,22 @@ export default function DirectorWorkspace({
                 chatModelSelection={chatModelSelection}
                 onChatModelChange={setChatModelSelection}
                 stitchMediaEnabled={featureFlags.stitchMedia}
-                designMode={designMode}
-                onToggleDesignMode={() => {
-                  setDesignMode((on) => {
-                    const next = !on;
-                    if (next) setForceDeep(false);
-                    return next;
-                  });
-                }}
+                designMode={designModeEffective}
+                onToggleDesignMode={
+                  isPainterSurface
+                    ? undefined
+                    : () => {
+                        setDesignMode((on) => {
+                          const next = !on;
+                          if (next) setForceDeep(false);
+                          return next;
+                        });
+                      }
+                }
                 useStitchAccountBranding={useStitchAccountBranding}
                 onToggleStitchAccountBranding={() => setUseStitchAccountBranding((v) => !v)}
                 stitchBrandingAvailable={stitchBrandingAvailable}
+                designProfileConfigured={designProfileConfigured}
               />
 
               <Input

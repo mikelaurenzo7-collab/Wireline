@@ -483,6 +483,8 @@ export const directorStitchOptionsSchema = z.object({
   useAccountBranding: z.boolean().optional(),
 });
 
+export const directorThreadKeySchema = z.enum(["director", "painter"]);
+
 export const directorMessageSchema = z
   .object({
     content: z.string().max(4000).optional(),
@@ -491,6 +493,7 @@ export const directorMessageSchema = z
     forceDeep: z.boolean().optional(),
     modelSelection: directorChatModelSelectionSchema.optional(),
     stitchOptions: directorStitchOptionsSchema.optional(),
+    threadKey: directorThreadKeySchema.optional(),
     approval: z.record(z.string(), z.unknown()).optional(),
   })
   .refine((data) => Boolean(data.content?.trim()) || data.approval, {
@@ -504,6 +507,7 @@ export const directorStreamMessageSchema = z.object({
   forceDeep: z.boolean().optional(),
   modelSelection: directorChatModelSelectionSchema.optional(),
   stitchOptions: directorStitchOptionsSchema.optional(),
+  threadKey: directorThreadKeySchema.optional(),
 });
 
 export const directorExecuteSchema = z.discriminatedUnion("kind", [
@@ -533,6 +537,18 @@ export const pdfUploadSchema = z.object({
     .min(1)
     .max(40 * 1024 * 1024),
   fileName: z.string().max(255).optional(),
+});
+
+export const designProfilePatchSchema = z.object({
+  companyBlurb: z.string().max(8000).optional(),
+  styleNotes: z.string().max(8000).optional(),
+});
+
+export const designProfileAssetUploadSchema = z.object({
+  fileBase64: z.string().min(1).max(3 * 1024 * 1024),
+  fileName: z.string().min(1).max(255),
+  mimeType: z.string().max(128).optional(),
+  role: z.enum(["logo", "font", "css", "reference"]).optional(),
 });
 
 export const workspaceMessageSchema = z.object({

@@ -557,6 +557,8 @@ export const directorConversationMessages = pgTable(
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
+    /** director = fleet chat; painter = Wireline Design studio (/design). */
+    threadKey: text("thread_key").notNull().default("director"),
     // role is one of "operator" | "director" — DB-level CHECK constraint
     // lives in the migration (this Drizzle version doesn't expose .$type()).
     role: text("role").notNull(),
@@ -569,6 +571,7 @@ export const directorConversationMessages = pgTable(
   },
   () => ({
     userIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_conv_user ON wireline_director_conversation_messages USING btree (user_id, created_at DESC)`,
+    userThreadIdx: sql`CREATE INDEX IF NOT EXISTS idx_director_conv_user_thread_created ON wireline_director_conversation_messages USING btree (user_id, thread_key, created_at DESC)`,
   }),
 );
 
@@ -1568,6 +1571,17 @@ export type Goal = typeof goals.$inferSelect;
  * function instance than /api/auth/oauth/exchange and still find
  * the row. Rows live ~60s and are deleted on read.
  */
+/** Tenant design system profile — blurb, notes, and asset manifest for Wireline Design. */
+export const designProfiles = pgTable("wireline_design_profiles", {
+  userId: uuid("user_id").primaryKey().notNull(),
+  companyBlurb: text("company_blurb").notNull().default(""),
+  styleNotes: text("style_notes").notNull().default(""),
+  assetManifest: jsonb("asset_manifest").notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type DesignProfile = typeof designProfiles.$inferSelect;
+
 export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
   code: text("code").primaryKey(),
   token: text("token").notNull(),

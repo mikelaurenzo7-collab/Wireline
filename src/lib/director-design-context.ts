@@ -22,6 +22,7 @@ export interface DesignStageContextInput {
   pipelinePhases?: string[];
   revisionNotes?: string;
   criticNotes?: string;
+  designProfileAssetNotes?: string;
   briefCap?: number;
 }
 
@@ -75,6 +76,9 @@ export function buildDesignStageContext(input: DesignStageContextInput): string 
   }
   if (input.criticNotes?.trim()) {
     parts.push("", "## Visual critic notes", input.criticNotes.trim());
+  }
+  if (input.designProfileAssetNotes?.trim()) {
+    parts.push("", "## Design system profile assets", input.designProfileAssetNotes.trim());
   }
 
   return parts.join("\n");

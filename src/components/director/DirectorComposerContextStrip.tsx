@@ -15,6 +15,7 @@ export interface DirectorComposerContextStripProps {
   onClearCoach?: () => void;
   designModeActive?: boolean;
   onClearDesignMode?: () => void;
+  designProfileConfigured?: boolean;
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export function DirectorComposerContextStrip({
   onClearCoach,
   designModeActive,
   onClearDesignMode,
+  designProfileConfigured = false,
   className,
 }: DirectorComposerContextStripProps) {
   if (!focusAgentName && !designModeActive) return null;
@@ -38,33 +40,38 @@ export function DirectorComposerContextStrip({
       )}
     >
       {designModeActive && (
-        <div
-          className={cn(
-            WL_DIRECTOR_CLASSES.composerContextPill,
-            WL_DIRECTOR_CLASSES.composerDesignContextPill,
+        <>
+          <div
+            className={cn(
+              WL_DIRECTOR_CLASSES.composerContextPill,
+              WL_DIRECTOR_CLASSES.composerDesignContextPill,
+            )}
+          >
+            <LayoutTemplate className="w-3 h-3 shrink-0 ml-0.5" aria-hidden />
+            <span className="font-semibold">{WIRELINE_STITCH_UI.designModeContextLabel}</span>
+            <span className="wl-composer-design-beta" aria-hidden>
+              {WIRELINE_STITCH_UI.designModeBetaLabel}
+            </span>
+            {onClearDesignMode && (
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                disableAnimations
+                onClick={onClearDesignMode}
+                aria-label={WIRELINE_STITCH_UI.clearDesignModeLabel}
+                className={cn(
+                  "wl-composer-context-clear shrink-0 h-8 w-8 rounded-full text-brand/70 hover:text-brand hover:bg-brand/10 touch-press",
+                )}
+              >
+                <X className="w-3 h-3" />
+              </ShadButton>
+            )}
+          </div>
+          {!designProfileConfigured && (
+            <p className="wl-design-setup-nudge">{WIRELINE_STITCH_UI.designSystemSetupEmptyNudge}</p>
           )}
-        >
-          <LayoutTemplate className="w-3 h-3 shrink-0 ml-0.5" aria-hidden />
-          <span className="font-semibold">{WIRELINE_STITCH_UI.designModeContextLabel}</span>
-          <span className="wl-composer-design-beta" aria-hidden>
-            {WIRELINE_STITCH_UI.designModeBetaLabel}
-          </span>
-          {onClearDesignMode && (
-            <ShadButton
-              type="button"
-              variant="ghost"
-              size="icon"
-              disableAnimations
-              onClick={onClearDesignMode}
-              aria-label={WIRELINE_STITCH_UI.clearDesignModeLabel}
-              className={cn(
-                "wl-composer-context-clear shrink-0 h-8 w-8 rounded-full text-brand/70 hover:text-brand hover:bg-brand/10 touch-press",
-              )}
-            >
-              <X className="w-3 h-3" />
-            </ShadButton>
-          )}
-        </div>
+        </>
       )}
       {focusAgentName && (
         <div className={WL_DIRECTOR_CLASSES.composerContextPill}>

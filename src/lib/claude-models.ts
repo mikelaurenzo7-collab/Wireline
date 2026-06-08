@@ -5,7 +5,7 @@
  * Claude-powered paths in Wireline. Extracted from claude-brain.ts for
  * maintainability.
  *
- * Default model: claude-opus-4-7 (current most-capable; adaptive thinking only).
+ * Default model: claude-opus-4-8 (current most-capable; adaptive thinking only).
  *
  * MODEL TIERING (Performance Optimization):
  * - Haiku: Fast, cheap ($1/M tokens) for simple classification, extraction
@@ -20,7 +20,9 @@ export const CLAUDE_MODELS = {
   /** Balanced speed/quality. Best for: reasoning, analysis, structured output */
   SONNET: "claude-sonnet-4-6",
   /** Deepest reasoning. Best for: complex analysis, creative writing, research */
-  OPUS: "claude-opus-4-7",
+  OPUS: "claude-opus-4-8",
+  /** @deprecated Prior Opus generation — classic design roster reference only */
+  OPUS_4_7: "claude-opus-4-7",
   /** Design Studio research, code review, and approval — pinned Opus generation. */
   OPUS_4_6: "claude-opus-4-6",
 } as const;
@@ -205,6 +207,8 @@ export const MODEL_PRICING = {
   [CLAUDE_MODELS.HAIKU]: { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   [CLAUDE_MODELS.SONNET]: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   [CLAUDE_MODELS.OPUS]: { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+  "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+  "claude-opus-4-7": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-opus-4-6": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-3-5-sonnet-20241022": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   "gemini-1.5-flash": { input: 0.075, output: 0.3, cacheRead: 0, cacheWrite: 0 },
@@ -242,9 +246,8 @@ export function selectModelForTask(complexity: TaskComplexity): string {
  * can reference a single source of truth instead of hard-coding the string.
  *
  * Override with the ANTHROPIC_MODEL env var (e.g. for staging / A-B tests).
- * Verified against `@anthropic-ai/sdk@^0.92`: `"claude-opus-4-7"` is the first
- * entry in the published `Anthropic.Model` union, so this is the
- * highest-capability current-generation default.
+ * Verified against `@anthropic-ai/sdk@^0.92`: Opus 4.8 is a non-breaking upgrade
+ * from 4.7 (same adaptive-thinking + effort surface; no sampling params).
  *
  * NOTE: New code should use selectModelForTask() for cost optimization.
  */
@@ -274,7 +277,7 @@ export const DEFAULT_MODEL = CLAUDE_REASONING_MODEL_DEFAULT;
  *   • Voice Runtime    → Claude Sonnet 4.6  (smartest model in voice's
  *                                            latency class; TTFT 300–500 ms)
  *   • Voice Fallback   → Gemini 3.5 Flash   (speed-only backup for outages)
- *   • Reasoning Layer  → Claude Opus 4.7    (briefs, coaching, post-call,
+ *   • Reasoning Layer  → Claude Opus 4.8    (briefs, coaching, post-call,
  *                                            daily brief — async, depth pays off)
  *   • Simple Tasks     → Claude Haiku 4.5   (classification, extraction)
  *   • Grounded Search  → Gemini 2.5 Flash   (native googleSearchRetrieval)
@@ -298,8 +301,8 @@ export const DEFAULT_MODEL = CLAUDE_REASONING_MODEL_DEFAULT;
  *
  *   Voice Runtime        : Claude Sonnet 4.6  (VAPI_TENANT_DEFAULT_MODEL)
  *   Voice Fallback       : Gemini 3.5 Flash   (VAPI_VOICE_FALLBACK_MODEL)
- *   Reasoning (default)  : Claude Opus 4.7    (CLAUDE_REASONING_MODEL_DEFAULT)
- *   Post-call / daily    : Claude Opus 4.7    (complexity: "complex")
+ *   Reasoning (default)  : Claude Opus 4.8    (CLAUDE_REASONING_MODEL_DEFAULT)
+ *   Post-call / daily    : Claude Opus 4.8    (complexity: "complex")
  *   Reasoning (simple)   : Claude Haiku 4.5   (selectModelForTask("simple"))
  *   Grounded Search      : Gemini 2.5 Flash   (native googleSearchRetrieval)
  *
@@ -316,7 +319,7 @@ export const DEFAULT_MODEL = CLAUDE_REASONING_MODEL_DEFAULT;
  *
  *   Voice (Sonnet 4.6)    : $3 / $15 per 1M tokens   — fast + smart
  *   Voice Fallback (Flash) : $0.15 / $1.25 per 1M    — outage-only
- *   Reasoning (Opus 4.7)  : $15 / $75 per 1M tokens  — high-value, low-volume
+ *   Reasoning (Opus 4.8)  : $15 / $75 per 1M tokens  — high-value, low-volume
  *   Simple (Haiku 4.5)    : $1 / $5 per 1M tokens    — high-volume utility
  *
  * When a higher-tier model ships at Sonnet's latency profile, this comment
