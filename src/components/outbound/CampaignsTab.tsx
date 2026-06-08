@@ -148,7 +148,7 @@ export default function CampaignsTab({
                           </span>
                           <span
                             className={cn(
-                              "px-2 py-0.5 rounded-full border text-[8px] uppercase tracking-[0.3em] shrink-0",
+                              "px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.3em] shrink-0",
                               statusMeta.bg,
                               statusMeta.text,
                               statusMeta.border,
@@ -345,7 +345,7 @@ export default function CampaignsTab({
                       className="w-2.5 h-2.5 text-ink/40 animate-spin"
                       style={{ animationDuration: "3s" }}
                     />
-                    <span className="text-[8px] text-ink/40">Refreshing every 10s</span>
+                    <span className="text-[10px] text-ink/40">Refreshing every 10s</span>
                   </div>
                 </div>
               </div>
@@ -403,7 +403,7 @@ export default function CampaignsTab({
                             >
                               <div className="flex items-center gap-1.5 mb-1.5">
                                 <Icon className="w-3 h-3 shrink-0 text-brand" />
-                                <span className="text-[8px] uppercase tracking-[0.28em] text-muted">
+                                <span className="text-[10px] uppercase tracking-[0.28em] text-muted">
                                   {label}
                                 </span>
                               </div>
@@ -416,7 +416,7 @@ export default function CampaignsTab({
                         {/* Outcome breakdown */}
                         {(campaignAnalytics.outcomes ?? []).length > 0 && (
                           <div className="rounded-md wl-panel border border-border p-3">
-                            <h5 className="text-[8px] uppercase tracking-[0.3em] text-muted mb-2.5 flex items-center gap-1.5">
+                            <h5 className="text-[10px] uppercase tracking-[0.3em] text-muted mb-2.5 flex items-center gap-1.5">
                               <BarChart3 className="w-3 h-3" /> Lead Outcomes
                             </h5>
                             <div className="space-y-1.5">
@@ -439,7 +439,7 @@ export default function CampaignsTab({
                                   <span className="text-[9px] font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
                                     {o.count}
                                   </span>
-                                  <span className="text-[8px] text-ink/40 w-7 text-right shrink-0 tabular-nums">
+                                  <span className="text-[10px] text-ink/40 w-7 text-right shrink-0 tabular-nums">
                                     {o.pct}%
                                   </span>
                                 </div>
@@ -466,7 +466,7 @@ export default function CampaignsTab({
                 },
               ].map((s) => (
                 <div key={s.label} className="rounded-md wl-panel border border-border p-2.5">
-                  <div className="text-[8px] uppercase tracking-[0.3em] mb-1 text-brand">
+                  <div className="text-[10px] uppercase tracking-[0.3em] mb-1 text-brand">
                     {s.label}
                   </div>
                   <div className="font-display italic text-xl text-ink leading-none">{s.value}</div>
@@ -534,7 +534,7 @@ export default function CampaignsTab({
                           </span>
                           <span
                             className={cn(
-                              "px-1.5 py-0 rounded-full border text-[8px] uppercase tracking-[0.25em] leading-tight",
+                              "px-1.5 py-0 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-tight",
                               lead.status === "Completed"
                                 ? "bg-brand/10 border-brand/30 text-brand"
                                 : lead.status === "Queued"

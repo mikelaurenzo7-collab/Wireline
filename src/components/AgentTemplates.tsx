@@ -371,10 +371,10 @@ function TemplateCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      whileHover={{ y: -4, scale: 1.01 }}
+      whileHover={{ y: -2 }}
       className={cn(
         "relative rounded-md wl-panel transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
-        hovered ? "border-brand/25 shadow-xl shadow-brand/10" : "shadow-sm",
+        hovered ? "border-brand/20 shadow-md shadow-brand/8" : "shadow-sm",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -462,10 +462,10 @@ function TemplateCard({
         <ShadButton
           type="button"
           disableAnimations
-          variant="editorial"
+          variant="default"
           onClick={() => onDeploy(template)}
           disabled={deploying}
-          className="w-full !py-2 !text-[11px] !tracking-[0.3em] flex items-center justify-center gap-2"
+          className="w-full !py-2 !text-[11px] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
         >
           {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
           {alreadyDeployed ? "Deploy Another" : "Deploy Agent"}

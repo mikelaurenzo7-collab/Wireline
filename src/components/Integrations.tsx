@@ -265,32 +265,34 @@ export default function Integrations() {
                 autoHeight
                 flush
                 actions={
-                  <div className="flex items-center gap-2">
-                    <ShadButton
-                      onClick={handleConnectGmail}
-                      variant="outline"
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Gmail
-                    </ShadButton>
-                    <ShadButton
-                      onClick={handleConnectOutlook}
-                      variant="outline"
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Outlook
-                    </ShadButton>
-                    <ShadButton
-                      onClick={handleConnectYahoo}
-                      variant="outline"
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Yahoo
-                    </ShadButton>
-                  </div>
+                  accounts.length > 0 ? (
+                    <div className="hidden sm:flex items-center gap-2">
+                      <ShadButton
+                        onClick={handleConnectGmail}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Gmail
+                      </ShadButton>
+                      <ShadButton
+                        onClick={handleConnectOutlook}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Outlook
+                      </ShadButton>
+                      <ShadButton
+                        onClick={handleConnectYahoo}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Yahoo
+                      </ShadButton>
+                    </div>
+                  ) : undefined
                 }
               >
                 {accounts.length === 0 ? (
@@ -311,12 +313,10 @@ export default function Integrations() {
                       {
                         label: "Connect Outlook",
                         onClick: handleConnectOutlook,
-                        primary: true,
                       },
                       {
                         label: "Connect Yahoo",
                         onClick: handleConnectYahoo,
-                        primary: true,
                       },
                     ]}
                   >

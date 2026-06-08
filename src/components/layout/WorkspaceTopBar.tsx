@@ -35,7 +35,12 @@ export default function WorkspaceTopBar({
       )}
     >
       {/* Desktop: title · tabs · tools in one row. Mobile: title + tools, then full-width tabs (no overlap). */}
-      <div className={cn("px-3 lg:px-4 py-1", subtitle ? "min-h-[3.25rem]" : "min-h-[2.75rem]")}>
+      <div
+        className={cn(
+          "px-3 lg:px-4 py-1.5 sm:py-1",
+          subtitle ? "min-h-[3.5rem] sm:min-h-[3.25rem]" : "min-h-[3rem] sm:min-h-[2.75rem]",
+        )}
+      >
         <div className="flex items-center gap-2 lg:gap-2.5">
           <div
             className={cn(
@@ -86,7 +91,7 @@ export default function WorkspaceTopBar({
             <ThemeToggle variant="default" compact className="rounded-md h-8 w-8" />
           </div>
         </div>
-        <div className="lg:hidden mt-1 -mx-1 px-1 overflow-x-auto tab-strip-scroll">
+        <div className="lg:hidden mt-1.5 -mx-1 px-1 overflow-x-auto tab-strip-scroll tab-strip-scroll--fade">
           <AppChromeSubTabs density="compact" />
         </div>
       </div>

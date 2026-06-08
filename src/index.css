@@ -2385,6 +2385,22 @@ html, body, .marketing-surface, .app-surface {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
+  .tab-strip-scroll--fade {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 0.75rem,
+      #000 calc(100% - 1.25rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 0.75rem,
+      #000 calc(100% - 1.25rem),
+      transparent 100%
+    );
+  }
   .tab-strip-scroll::-webkit-scrollbar {
     display: none;
     width: 0;

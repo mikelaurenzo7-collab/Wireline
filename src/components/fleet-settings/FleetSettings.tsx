@@ -369,7 +369,7 @@ export default function FleetSettings() {
       <ClientRouteViewport>
         <ClientToolbar
           left={
-            <span className="app-toolbar-stat">
+            <span className="app-toolbar-stat wl-label text-muted/80 tracking-[0.28em]">
               {activeTab === "templates"
                 ? "Template gallery"
                 : OPS_CHANNEL_TOOLBAR.fleet.agentsStat(agents.length)}

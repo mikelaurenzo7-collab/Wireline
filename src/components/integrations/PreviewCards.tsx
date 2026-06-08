@@ -67,7 +67,7 @@ export function CRMPreviewCard() {
           {stages.map((s, i) => (
             <div key={s} className="flex items-center gap-0.5 flex-1">
               <div
-                className="text-[8px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap transition-all duration-500"
+                className="text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap transition-all duration-500"
                 style={{
                   background: i <= stage ? "#FF7A59" : "rgba(255,255,255,0.08)",
                   color: i <= stage ? "#fff" : "rgba(255,255,255,0.3)",
@@ -121,7 +121,7 @@ export function SlackPreviewCard() {
           }}
         >
           <div
-            className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
+            className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
             style={{ background: INTEGRATION_ORBIT_COLOR }}
           >
             W
@@ -131,7 +131,7 @@ export function SlackPreviewCard() {
               <span className="text-[11px] font-semibold" style={{ color: "#E8E8E8" }}>
                 Wireline Agent
               </span>
-              <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>
                 just now
               </span>
             </div>
@@ -144,7 +144,7 @@ export function SlackPreviewCard() {
               {["👀 1", "⚡ 2"].map((r) => (
                 <span
                   key={r}
-                  className="text-[9px] px-1.5 py-0.5 rounded border"
+                  className="text-[10px] px-1.5 py-0.5 rounded border"
                   style={{
                     border: "1px solid rgba(255,255,255,0.12)",
                     background: "rgba(255,255,255,0.05)",
@@ -217,7 +217,7 @@ export function SMSPreviewCard() {
             className="flex items-center justify-end gap-1"
             style={{ animation: "appear-up 0.28s ease-out 0.1s both" }}
           >
-            <span className="text-[9px]" style={{ color: "rgba(0,0,0,0.4)" }}>
+            <span className="text-[10px]" style={{ color: "rgba(0,0,0,0.4)" }}>
               Delivered
             </span>
           </div>
@@ -260,7 +260,7 @@ export function ZoomPreviewCard() {
           <Video size={12} style={{ color: "#2D8CFF" }} />
           <span style={{ color: "#2D8CFF" }}>zoom.us/j/928473021</span>
         </div>
-        <div className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
           Link sent to caller via SMS &amp; email
         </div>
       </div>
@@ -294,7 +294,7 @@ export function CalendarPreviewCard() {
               boxShadow: confirmed ? "0 0 12px rgba(52,168,83,0.35)" : "none",
             }}
           >
-            <div className="text-[8px] font-semibold uppercase" style={{ color: "#34A853" }}>
+            <div className="text-[10px] font-semibold uppercase" style={{ color: "#34A853" }}>
               JUN
             </div>
             <div className="text-lg font-bold leading-none text-white">17</div>
@@ -341,7 +341,7 @@ export function ShopifyPreviewCard() {
           <ShoppingBag size={10} /> Order #4821
         </span>
         <span
-          className="px-1.5 py-0.5 rounded-full text-[8px]"
+          className="px-1.5 py-0.5 rounded-full text-[10px]"
           style={{ background: "rgba(150,191,72,0.15)", color: "#96BF48" }}
         >
           Fulfilled
@@ -364,7 +364,7 @@ export function ShopifyPreviewCard() {
         {/* Fulfillment progress bar */}
         <div className="space-y-1">
           <div
-            className="flex justify-between text-[9px]"
+            className="flex justify-between text-[10px]"
             style={{ color: "rgba(255,255,255,0.4)" }}
           >
             <span>Fulfillment</span>
@@ -428,7 +428,7 @@ export function SquarePreviewCard() {
           </div>
           <div className="text-right">
             <div className="text-sm font-bold text-white">$650.00</div>
-            <div className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
               Due May 28
             </div>
           </div>
@@ -507,7 +507,7 @@ export function DocuSignPreviewCard() {
                   }}
                 />
                 <span
-                  className="text-[9px] transition-colors duration-500"
+                  className="text-[10px] transition-colors duration-500"
                   style={{
                     color: isThisSigned ? "rgba(107,43,153,0.85)" : "rgba(255,255,255,0.55)",
                   }}
@@ -520,7 +520,7 @@ export function DocuSignPreviewCard() {
                     style={{ color: INTEGRATION_ORBIT_COLOR, marginLeft: "auto" }}
                   />
                 ) : i === 0 ? (
-                  <span className="ml-auto text-[8px]" style={{ color: "#FFC720" }}>
+                  <span className="ml-auto text-[10px]" style={{ color: "#FFC720" }}>
                     Awaiting
                   </span>
                 ) : null}
@@ -552,13 +552,13 @@ export function MetaPreviewCard() {
       <div className="p-3 space-y-2" style={{ background: "#1C0F33" }}>
         <div className="flex items-center justify-between">
           <div
-            className="text-[9px] uppercase tracking-[0.25em]"
+            className="text-[10px] uppercase tracking-[0.25em]"
             style={{ color: "rgba(255,255,255,0.45)" }}
           >
             Conversion Event
           </div>
           <div
-            className="text-[8px] px-2 py-0.5 rounded-full font-medium"
+            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
             style={{ background: "rgba(24,119,242,0.2)", color: "#1877F2" }}
           >
             Lead
@@ -572,7 +572,7 @@ export function MetaPreviewCard() {
             ["Campaign", "Spring Outreach"],
           ].map(([label, val]) => (
             <div key={label} className="flex items-center justify-between">
-              <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
                 {label}
               </span>
               <span className="text-[10px] text-white">{val}</span>
@@ -580,7 +580,7 @@ export function MetaPreviewCard() {
           ))}
         </div>
         <div
-          className="text-[9px] text-center py-1.5 rounded transition-all duration-500"
+          className="text-[10px] text-center py-1.5 rounded transition-all duration-500"
           style={{
             background: fired ? "rgba(24,119,242,0.2)" : "rgba(24,119,242,0.08)",
             color: fired ? "#1877F2" : "rgba(24,119,242,0.6)",
@@ -649,10 +649,10 @@ export function ApolloPreviewCard() {
                 transform: i < revealed ? "translateY(0)" : "translateY(4px)",
               }}
             >
-              <div className="text-[8px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>
                 {k}
               </div>
-              <div className="text-[9px] text-white font-medium truncate">{v}</div>
+              <div className="text-[10px] text-white font-medium truncate">{v}</div>
             </div>
           ))}
         </div>
@@ -712,7 +712,7 @@ export function GeminiPreviewCard() {
                 G
               </div>
               <div>
-                <div className="text-[9px]" style={{ color: "#4285F4" }}>
+                <div className="text-[10px]" style={{ color: "#4285F4" }}>
                   {src}
                 </div>
                 <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>
@@ -746,7 +746,7 @@ export function TeamsPreviewCard() {
       <div className="p-3 space-y-2" style={{ background: "#1C0F33", minHeight: 72 }}>
         <div className="flex items-center gap-1.5 mb-1">
           <div
-            className="text-[9px] px-1.5 py-0.5 rounded"
+            className="text-[10px] px-1.5 py-0.5 rounded"
             style={{ background: "rgba(98,100,167,0.25)", color: "#9396D0" }}
           >
             # sales-alerts
@@ -760,7 +760,7 @@ export function TeamsPreviewCard() {
           }}
         >
           <div
-            className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[9px] font-bold text-white mt-0.5"
+            className="w-7 h-7 rounded shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
             style={{ background: INTEGRATION_ORBIT_COLOR }}
           >
             W
@@ -768,7 +768,7 @@ export function TeamsPreviewCard() {
           <div>
             <div className="text-[10px] font-semibold text-white">
               Wireline Bot{" "}
-              <span className="text-[8px] font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>
+              <span className="text-[10px] font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>
                 just now
               </span>
             </div>
@@ -813,7 +813,7 @@ export function ExcelPreviewCard() {
         <Table2 size={10} /> Row Appended to Log
       </div>
       <div className="overflow-x-auto" style={{ background: "#1C0F33" }}>
-        <table className="w-full text-[9px] border-collapse">
+        <table className="w-full text-[10px] border-collapse">
           <thead>
             <tr style={{ background: "rgba(33,115,70,0.25)" }}>
               {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
@@ -856,7 +856,7 @@ export function ExcelPreviewCard() {
           </tbody>
         </table>
         <div
-          className="px-3 py-1.5 text-[9px]"
+          className="px-3 py-1.5 text-[10px]"
           style={{ color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
         >
           Wireline Call Log · OneDrive · Sheet1
@@ -888,7 +888,7 @@ export function SheetsPreviewCard() {
         <Table2 size={10} /> Row Appended to Sheet
       </div>
       <div className="overflow-x-auto" style={{ background: "#1C0F33" }}>
-        <table className="w-full text-[9px] border-collapse">
+        <table className="w-full text-[10px] border-collapse">
           <thead>
             <tr style={{ background: "rgba(15,157,88,0.25)" }}>
               {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
@@ -931,7 +931,7 @@ export function SheetsPreviewCard() {
           </tbody>
         </table>
         <div
-          className="px-3 py-1.5 text-[9px]"
+          className="px-3 py-1.5 text-[10px]"
           style={{ color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.04)" }}
         >
           Wireline Call Log · Google Drive · Call Log

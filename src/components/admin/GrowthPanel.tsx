@@ -153,7 +153,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         Job Titles
                       </label>
                     </div>
-                    <span className="text-[8px] uppercase tracking-widest text-muted">
+                    <span className="text-[10px] uppercase tracking-widest text-muted">
                       Role Density
                     </span>
                   </div>
@@ -208,7 +208,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         Industries
                       </label>
                     </div>
-                    <span className="text-[8px] uppercase tracking-widest text-muted">
+                    <span className="text-[10px] uppercase tracking-widest text-muted">
                       Market Scope
                     </span>
                   </div>
@@ -264,7 +264,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         Geographic Target
                       </label>
                     </div>
-                    <span className="text-[8px] uppercase tracking-widest text-muted">
+                    <span className="text-[10px] uppercase tracking-widest text-muted">
                       Legal Nexus
                     </span>
                   </div>
@@ -319,7 +319,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         Company Size
                       </label>
                     </div>
-                    <span className="text-[8px] uppercase tracking-widest text-muted">
+                    <span className="text-[10px] uppercase tracking-widest text-muted">
                       Org Scale
                     </span>
                   </div>

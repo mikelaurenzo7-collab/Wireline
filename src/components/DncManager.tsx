@@ -392,11 +392,11 @@ export default function DncManager() {
                             {entry.phone_raw || entry.phone}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[8px] text-ink/40">
+                            <span className="text-[10px] text-ink/40">
                               {formatDate(entry.created_at)}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-white/15" />
-                            <span className="text-[8px] text-ink/40">
+                            <span className="text-[10px] text-ink/40">
                               {reasonLabel(entry.reason)}
                             </span>
                           </div>
@@ -405,7 +405,7 @@ export default function DncManager() {
                       <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <span
                           className={cn(
-                            "text-[8px] uppercase tracking-[0.22em] px-2 py-0.5 rounded-full border",
+                            "text-[10px] uppercase tracking-[0.22em] px-2 py-0.5 rounded-full border",
                             sourceColor(entry.source),
                           )}
                         >

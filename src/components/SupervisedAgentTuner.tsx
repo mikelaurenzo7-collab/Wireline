@@ -140,21 +140,21 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                   </div>
 
                   <div className="flex-1 min-w-0 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <span className="wl-label-muted tracking-[0.22em]">
                         Observation · {formatDate(lesson.created_at)}
                       </span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
                         <ShadButton
                           type="button"
-                          variant="editorial"
+                          variant="default"
                           size="sm"
                           disableAnimations
                           onClick={() => promoteToDirective(lesson)}
                           disabled={isPromoting === lesson.id}
                           title="Promote this observation into a hard directive on the agent"
                           aria-label={`Promote observation to directive: ${lesson.lesson.slice(0, 80)}`}
-                          className="h-8 px-3 rounded-md text-[10px] uppercase tracking-[0.18em] touch-press"
+                          className="h-8 px-3 rounded-md text-[10px] uppercase tracking-[0.18em] touch-press shadow-sm"
                         >
                           {isPromoting === lesson.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

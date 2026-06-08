@@ -1472,22 +1472,22 @@ export default function DirectorWorkspace({
       {messages.length > 0 && (
         <div
           className={cn(
-            "shrink-0 flex items-center justify-between px-6 py-3 border-b border-brand/6",
+            "shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-brand/6",
             WL_DIRECTOR_CLASSES.threadHeader,
           )}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <span className="wl-orbit" data-active={isSending}>
               <span className="shrink-0 flex w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/20 relative overflow-hidden">
                 <Compass className="w-4 h-4 relative z-10" />
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
               </span>
             </span>
-            <div>
-              <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em]">
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em] truncate">
                 Director
               </p>
-              <p className="wl-label text-muted leading-tight">
+              <p className="wl-label text-muted leading-tight truncate">
                 {isSending ? (
                   <span className="inline-flex items-center gap-1.5 text-brand/80">
                     <span className="relative flex h-1.5 w-1.5">
