@@ -19,6 +19,7 @@
 import React, { useId, useMemo } from "react";
 import { cn } from "../../lib/utils";
 import { BRAND } from "../../constants/brand-colors";
+import { asStyle } from "@/src/lib/css-style";
 
 type ThreadDirection = "left-to-right" | "right-to-left" | "top-to-bottom" | "bottom-to-top";
 type ThreadColor = "brand" | "emerald" | "rose" | "muted";
@@ -112,7 +113,7 @@ export function SignalThread({
   return (
     <div
       className={cn("pointer-events-none select-none w-full", className)}
-      style={{ height }}
+      style={asStyle({ height })}
       aria-hidden="true"
     >
       <svg

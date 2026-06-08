@@ -14,6 +14,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatPercent, safeFixed, formatInt } from "../lib/safe-number";
 import { BRAND } from "../constants/brand-colors";
+import { asStyle } from "@/src/lib/css-style";
 
 const SCORECARD_BRAND = BRAND.purple;
 
@@ -108,17 +109,17 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
       <div
         aria-hidden="true"
         className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${SCORECARD_BRAND}, transparent)` }}
+        style={asStyle({ background: `radial-gradient(circle, ${SCORECARD_BRAND}, transparent)` })}
       />
 
       <header className="relative flex items-start gap-3 mb-4">
         <div
           className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-white/10 shadow-lg shadow-brand/10"
-          style={{
+          style={asStyle({
             background:
               "linear-gradient(135deg, rgba(107, 43, 153 ,0.20), rgba(107, 43, 153 ,0.05))",
             color: SCORECARD_BRAND,
-          }}
+          })}
         >
           <Target className="w-4.5 h-4.5" />
         </div>

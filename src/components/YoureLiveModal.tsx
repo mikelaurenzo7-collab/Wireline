@@ -36,7 +36,6 @@ import {
 } from "./ui/shadcn/Dialog";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { CONSOLE_MAP, YOURE_LIVE_COPY } from "../lib/wireline-onboarding-copy";
-import { WIRELINE_DIRECTOR_BRAND } from "../lib/wireline-director-design";
 import { BRAND } from "../constants/brand-colors";
 import { cn } from "../lib/utils";
 
@@ -137,13 +136,14 @@ function ConfettiExplosion({ active }: { active: boolean }) {
               delay: piece.delay,
               ease: [0.25, 0.1, 0.25, 1],
             }}
-            className="absolute"
-            style={{
-              width: piece.size,
-              height: piece.size * 0.6,
-              backgroundColor: piece.color,
-              borderRadius: "2px",
-            }}
+            className="absolute wl-confetti-piece"
+            style={
+              {
+                "--confetti-w": `${piece.size}px`,
+                "--confetti-h": `${piece.size * 0.6}px`,
+                "--confetti-bg": piece.color,
+              } as React.CSSProperties
+            }
           />
         ))}
       </AnimatePresence>
@@ -340,8 +340,7 @@ export default function YoureLiveModal({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.45, duration: 0.3 }}
-              className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-paper"
-              style={{ backgroundColor: WIRELINE_DIRECTOR_BRAND.signal }}
+              className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center border-2 border-paper bg-emerald-500"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-white" />
             </motion.span>

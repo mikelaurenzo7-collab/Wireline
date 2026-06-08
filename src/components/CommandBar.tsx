@@ -339,13 +339,7 @@ export default function CommandBar() {
           >
             {/* Aurora ring border */}
             <div className="absolute inset-0 rounded-md p-px overflow-hidden pointer-events-none z-20">
-              <div
-                className="absolute inset-0 rounded-md"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(107, 43, 153 ,0.6), rgba(107, 43, 153 ,0.4) 50%, rgba(107, 43, 153 ,0.5))",
-                }}
-              />
+              <div className="absolute inset-0 rounded-md wl-command-glow-ring" />
             </div>
 
             {/* Search input */}

@@ -13,6 +13,7 @@ import { shouldShowAppPageContext } from "../../lib/wireline-app-chrome";
 import TrialBanner from "./TrialBanner";
 import EmailVerifyBanner from "./EmailVerifyBanner";
 import AppRoutes from "../../routes/AppRoutes";
+import { asStyle } from "@/src/lib/css-style";
 import {
   findNavItemForPath,
   NAV_GROUPS,
@@ -273,10 +274,10 @@ export default function AppShell() {
         <div className="relative w-36 h-36 md:w-44 md:h-44 mb-10 md:mb-12 animate-spin-slow">
           <div
             className="absolute inset-0 rounded-full"
-            style={{
+            style={asStyle({
               background: `conic-gradient(from 0deg, ${BRAND.purple}, ${BRAND.purpleDeep}, ${BRAND.purpleLight}, ${BRAND.purpleDeep}, ${BRAND.purple})`,
               filter: "blur(3px)",
-            }}
+            })}
           />
           <div className="absolute inset-2 rounded-full bg-paper" />
           <div className="absolute inset-4 rounded-full wl-panel flex items-center justify-center">

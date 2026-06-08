@@ -4,6 +4,7 @@ import { cn } from "../../lib/utils";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+import { asStyle } from "@/src/lib/css-style";
 
 const TONE_CLASSES: Record<string, string> = {
   brand: "border-brand/25 bg-brand/[0.04]",
@@ -102,7 +103,7 @@ export default function ProposalCard({
             className="h-full bg-brand rounded-full"
             animate={reduceMotion ? undefined : { x: ["-100%", "100%"] }}
             transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-            style={{ width: "40%" }}
+            style={asStyle({ width: "40%" })}
           />
         </motion.div>
       )}

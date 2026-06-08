@@ -20,7 +20,6 @@
 import React, { useId } from "react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "./shadcn/ShadButton";
-import { BRAND } from "../../constants/brand-colors";
 
 type VoidSize = "sm" | "md" | "lg";
 type VoidVariant = "primary" | "secondary";
@@ -72,56 +71,34 @@ export function VoidButton({
       disabled={disabled}
       {...props}
     >
-      {/* Event-horizon background */}
-      {variant === "primary" && (
-        <span
-          className="absolute inset-0 void-bg"
-          aria-hidden="true"
-          style={{
-            background: `radial-gradient(ellipse 120% 100% at 50% 110%, ${BRAND.purpleDeep} 0%, ${BRAND.purple} 45%, ${BRAND.purpleMid} 100%)`,
-            transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
-          }}
-        />
-      )}
+      {/* Event-horizon background — radial-gradient in index.css .void-bg */}
+      {variant === "primary" && <span className="absolute inset-0 void-bg" aria-hidden="true" />}
 
       {/* Gravitational warp ring — expands on hover */}
       <span
         className="absolute inset-0 opacity-0 group-hover:opacity-100 void-warp-ring"
         aria-hidden="true"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, transparent 30%, rgba(139, 63, 214, 0.3) 60%, transparent 70%)`,
-          transform: "scale(0.5)",
-          transition: "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease",
-        }}
       />
 
-      {/* Inner specular corona */}
+      {/* Inner specular corona — rgba(255,255,255,0.2) in index.css .void-corona */}
       <span
-        className="absolute inset-0 opacity-0 group-hover:opacity-100"
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 void-corona"
         aria-hidden="true"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.2) 0%, transparent 50%)",
-          transition: "opacity 0.4s ease",
-        }}
       />
 
       {/* Surface shimmer stripe */}
       <span
-        className={`absolute inset-0 void-shimmer-${uid}`}
+        className={cn("absolute inset-0 void-shimmer-stripe", `void-shimmer-${uid}`)}
         aria-hidden="true"
-        style={{
-          background:
-            "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%)",
-          transform: "translateX(-100%)",
-          animation: `void-shimmer-sweep-${uid} 3.5s ease-in-out 1s infinite`,
-        }}
       />
 
       {/* Button content */}
       <span className="relative z-[1] inline-flex items-center gap-inherit">{children}</span>
 
       <style>{`
+        .void-shimmer-${uid} {
+          animation: void-shimmer-sweep-${uid} 3.5s ease-in-out 1s infinite;
+        }
         .void-button:hover .void-bg {
           transform: scale(1.03);
           filter: brightness(1.12) saturate(1.2);

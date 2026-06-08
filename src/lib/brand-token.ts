@@ -1,7 +1,7 @@
 /**
  * Brand token resolver.
  *
- * Returns a CSS color string suitable for inline `style={{ background, color }}`
+ * Returns a CSS color string suitable for inline style attributes (background, color)
  * use cases where a CSS variable cannot be embedded directly (e.g. when the
  * value is concatenated with a hex alpha suffix like `${accent}18` or fed into
  * a `linear-gradient(...)` template).

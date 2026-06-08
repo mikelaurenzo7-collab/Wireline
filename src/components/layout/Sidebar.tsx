@@ -12,6 +12,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { asStyle } from "@/src/lib/css-style";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -100,13 +101,10 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         onMouseEnter={() => !expanded && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
         className={cn(
-          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] elev-3",
+          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] elev-3 wl-rail-shell",
           "border-r border-white/[0.08]",
         )}
-        style={{
-          width: railWidth,
-          background: `linear-gradient(180deg, ${BRAND.purpleDeep} 0%, #2D1040 55%, #1F0C30 100%)`,
-        }}
+        style={asStyle({ width: railWidth })}
       >
         {/* Logo */}
         <Link
@@ -118,11 +116,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             whileHover={{ rotate: 6, scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: "spring", stiffness: 360, damping: 26 }}
-            className="relative w-8 h-8 shrink-0 rounded-md flex items-center justify-center overflow-hidden elev-1"
-            style={{
-              background: BRAND.cream,
-              boxShadow: "0 4px 14px -4px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.22) inset",
-            }}
+            className="relative w-8 h-8 shrink-0 rounded-md flex items-center justify-center overflow-hidden elev-1 wl-chrome-logo-chip"
           >
             <WirelineMark
               className="w-4 h-4 relative z-10"
@@ -138,8 +132,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -6 }}
                 transition={{ duration: 0.18 }}
-                className="brand-wordmark text-[15px] leading-none truncate !filter-none"
-                style={{ color: BRAND.cream }}
+                className="brand-wordmark text-[15px] leading-none truncate !filter-none text-[color:var(--wl-cream)]"
               >
                 {branding.brand_name.toUpperCase()}
               </motion.span>
@@ -216,10 +209,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account & billing"
               title={user.email}
             >
-              <div
-                className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] shrink-0"
-                style={{ color: BRAND.purpleDeep, background: BRAND.cream }}
-              >
+              <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] shrink-0 wl-avatar-cream">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
               <div className="min-w-0 flex-1">
@@ -237,10 +227,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               aria-label="Account"
               title={user.email}
             >
-              <div
-                className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px]"
-                style={{ color: BRAND.purpleDeep, background: BRAND.cream }}
-              >
+              <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] wl-avatar-cream">
                 {user.email?.slice(0, 1).toUpperCase() ?? "?"}
               </div>
             </Link>
@@ -385,23 +372,11 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
           aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
           className={cn(
             "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[9px] font-mono leading-none flex items-center justify-center font-semibold",
+            !expanded && "absolute top-1 right-1 min-w-[14px] h-3.5 px-1 text-[8px]",
             active
               ? "bg-white/25 text-white dark:bg-white/20 dark:text-white"
               : "bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30",
           )}
-          style={
-            expanded
-              ? undefined
-              : {
-                  position: "absolute",
-                  top: 4,
-                  right: 4,
-                  minWidth: 14,
-                  height: 14,
-                  padding: "0 4px",
-                  fontSize: 8,
-                }
-          }
         >
           {badge > 99 ? "99+" : badge}
         </span>
@@ -448,11 +423,10 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
       <span className="relative inline-flex w-2.5 h-2.5 shrink-0 items-center justify-center">
         {live && <span className="absolute inset-0 rounded-full animate-ping bg-purple-400/55" />}
         <span
-          className="relative w-2 h-2 rounded-full"
-          style={{
-            background: live ? BRAND.purpleLight : "rgba(239,233,220,0.32)",
-            boxShadow: live ? "0 0 10px rgba(79,30,123,0.55)" : "0 0 0 1px rgba(239,233,220,0.18)",
-          }}
+          className={cn(
+            "relative w-2 h-2 rounded-full",
+            live ? "wl-live-pulse-dot--active" : "wl-live-pulse-dot",
+          )}
         />
       </span>
       {expanded && (
@@ -588,15 +562,13 @@ function TierInline() {
           aria-valuemax={cap}
           aria-label="Voice minutes usage"
           className="mt-0.5 h-[2px] rounded-full overflow-hidden bg-white/15 dark:bg-white/8"
+          style={asStyle({ "--wl-tier-pct": `${pct}%` }) as React.CSSProperties}
         >
           <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${pct}%`,
-              background: overage
-                ? `linear-gradient(90deg, ${BRAND.rose}, ${BRAND.purpleDeep})`
-                : `linear-gradient(90deg, ${BRAND.purpleLight}, ${BRAND.purple})`,
-            }}
+            className={cn(
+              "h-full rounded-full transition-all",
+              overage ? "wl-tier-progress-fill--overage" : "wl-tier-progress-fill",
+            )}
           />
         </div>
       )}

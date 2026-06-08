@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Rocket, X, ArrowRight } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { asStyle } from "@/src/lib/css-style";
 import {
   fetchFleetSetupProgress,
   fleetSetupCompletedCount,
@@ -100,7 +101,7 @@ export default function FleetSetupNudge({ className }: { className?: string }) {
           >
             <div
               className="h-full rounded-full bg-brand motion-safe:transition-[width] duration-500"
-              style={{ width: `${pct}%` }}
+              style={asStyle({ width: `${pct}%` })}
             />
           </div>
         </div>

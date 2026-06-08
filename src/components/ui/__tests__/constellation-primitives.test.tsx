@@ -19,6 +19,10 @@ function readComponent(name: string): string {
   return fs.readFileSync(path.resolve(__dirname, `../${name}.tsx`), "utf8");
 }
 
+function readIndexCss(): string {
+  return fs.readFileSync(path.resolve(__dirname, "../../../index.css"), "utf8");
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // CONSTELLATION ERA PRIMITIVES
 // ═══════════════════════════════════════════════════════════════════
@@ -48,8 +52,9 @@ describe("ConstellationField", () => {
     expect(src).toContain('aria-hidden="true"');
   });
 
-  it("includes reduced-motion media query", () => {
-    expect(src).toContain("prefers-reduced-motion");
+  it("includes reduced-motion media query in global CSS", () => {
+    expect(readIndexCss()).toContain("prefers-reduced-motion");
+    expect(src).toContain("constellation-drift-");
   });
 
   it("renders line elements for filaments", () => {
@@ -96,8 +101,9 @@ describe("PulseRing", () => {
     expect(src).toContain("w-24 h-24");
   });
 
-  it("uses pulse-ring-expand keyframe animation", () => {
-    expect(src).toContain("pulse-ring-expand");
+  it("uses pulse-ring-expand keyframe animation via CSS classes", () => {
+    expect(src).toContain("pulse-ring__ring");
+    expect(readIndexCss()).toContain("pulse-ring-expand");
   });
 
   it("reduces visual feedback when inactive", () => {
@@ -150,12 +156,14 @@ describe("AuroraWave", () => {
     expect(src).toContain('aria-hidden="true"');
   });
 
-  it("includes reduced-motion guard", () => {
-    expect(src).toContain("prefers-reduced-motion");
+  it("includes reduced-motion guard in global CSS", () => {
+    expect(readIndexCss()).toContain("prefers-reduced-motion");
+    expect(src).toContain("aurora-wave-path");
   });
 
-  it("uses translateX(-50%) for seamless loop panning", () => {
-    expect(src).toContain("translateX(-50%)");
+  it("uses translateX(-50%) for seamless loop panning via CSS", () => {
+    expect(src).toContain("aurora-wave-container");
+    expect(readIndexCss()).toContain("translateX(-50%)");
   });
 });
 
@@ -203,8 +211,10 @@ describe("StatusOrb", () => {
   });
 
   it("renders specular highlight for depth", () => {
-    expect(src).toContain("rgba(255, 255, 255, 0.45)");
-    expect(src).toContain("blur(0.5px)");
+    const css = readIndexCss();
+    expect(src).toContain("status-orb__specular");
+    expect(css).toContain("rgba(255, 255, 255, 0.45)");
+    expect(css).toContain("blur(0.5px)");
   });
 
   it("uses status-orb-breathe and status-orb-pulse keyframes", () => {
@@ -244,16 +254,18 @@ describe("NebulaPulse", () => {
     expect(src).toContain("nebula-plasma-node");
   });
 
-  it("applies blur filter for atmospheric softness", () => {
-    expect(src).toContain("blur(40px)");
+  it("applies blur filter for atmospheric softness via CSS", () => {
+    expect(src).toContain("nebula-plasma-node");
+    expect(readIndexCss()).toContain("blur(40px)");
   });
 
   it("is aria-hidden for accessibility", () => {
     expect(src).toContain('aria-hidden="true"');
   });
 
-  it("includes reduced-motion media query", () => {
-    expect(src).toContain("prefers-reduced-motion");
+  it("includes reduced-motion media query in global CSS", () => {
+    expect(readIndexCss()).toContain("prefers-reduced-motion");
+    expect(src).toContain("nebula-drift-");
   });
 
   it("uses Wireline brand palette (violet, magenta, indigo, rose)", () => {
@@ -263,9 +275,10 @@ describe("NebulaPulse", () => {
     expect(src).toContain("214, 63, 150"); // soft rose
   });
 
-  it("generates scoped keyframes per instance", () => {
+  it("uses shared nebula drift preset classes (not per-instance keyframes)", () => {
     expect(src).toContain("nebula-drift-");
-    expect(src).toContain("useId");
+    expect(src).toContain("nebula-delay-");
+    expect(readIndexCss()).toContain("@keyframes nebula-drift-");
   });
 });
 
@@ -419,13 +432,15 @@ describe("VoidButton", () => {
   });
 
   it("has gravitational warp ring that expands on hover", () => {
+    const css = readIndexCss();
     expect(src).toContain("void-warp-ring");
-    expect(src).toContain("scale(0.5)");
+    expect(css).toContain("scale(0.5)");
     expect(src).toContain("scale(2.2)");
   });
 
   it("uses spring-like overshoot easing for physics feel", () => {
-    expect(src).toContain("cubic-bezier(0.34, 1.56, 0.64, 1)");
+    const css = readIndexCss();
+    expect(css).toContain("cubic-bezier(0.34, 1.56, 0.64, 1)");
   });
 
   it("renders surface shimmer stripe animation", () => {

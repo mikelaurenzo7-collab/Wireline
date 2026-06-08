@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { getRouteAccentFromLocation } from "../../constants/navigation";
+import { asStyle } from "@/src/lib/css-style";
 
 /**
  * Soft route-tinted glow behind page content — ties each surface to the
@@ -12,33 +13,26 @@ export default function ClientRouteAmbience() {
   const key = `${pathname}${search}`;
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden -z-10" aria-hidden="true">
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden -z-10"
+      aria-hidden="true"
+      style={asStyle({ "--wl-route-from": from, "--wl-route-to": to }) as React.CSSProperties}
+    >
       <motion.div
         key={key}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute -top-[18%] -right-[12%] w-[min(72vw,520px)] h-[min(72vw,520px)] rounded-full blur-3xl"
-        style={{
-          background: `radial-gradient(circle at 30% 30%, ${from}28, transparent 68%)`,
-        }}
+        className="absolute -top-[18%] -right-[12%] w-[min(72vw,520px)] h-[min(72vw,520px)] rounded-full blur-3xl wl-route-ambience-a"
       />
       <motion.div
         key={`${key}-b`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.85, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute -bottom-[22%] -left-[8%] w-[min(58vw,420px)] h-[min(58vw,420px)] rounded-full blur-3xl"
-        style={{
-          background: `radial-gradient(circle at 60% 60%, ${to}22, transparent 70%)`,
-        }}
+        className="absolute -bottom-[22%] -left-[8%] w-[min(58vw,420px)] h-[min(58vw,420px)] rounded-full blur-3xl wl-route-ambience-b"
       />
-      <div
-        className="absolute inset-x-0 top-0 h-24 opacity-60"
-        style={{
-          background: `linear-gradient(180deg, color-mix(in srgb, ${from} 6%, transparent), transparent)`,
-        }}
-      />
+      <div className="absolute inset-x-0 top-0 h-24 opacity-60 wl-route-ambience-top" />
     </div>
   );
 }

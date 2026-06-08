@@ -488,11 +488,7 @@ function GenderTile({
         <motion.div
           layoutId="gender-active"
           aria-hidden="true"
-          className="absolute inset-0 rounded-md pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(107, 43, 153 ,0.16), rgba(107, 43, 153 ,0.10))",
-          }}
+          className="absolute inset-0 rounded-md pointer-events-none wl-deploy-gender-active"
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       )}

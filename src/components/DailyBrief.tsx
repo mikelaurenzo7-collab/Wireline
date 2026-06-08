@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
+import { asStyle } from "@/src/lib/css-style";
 import {
   Sparkles,
   Loader2,
@@ -206,7 +207,7 @@ export default function DailyBrief() {
               <div className="flex items-center gap-2 mt-0.5">
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` }}
+                  style={asStyle({ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` })}
                 />
                 <span className="text-[10px] uppercase tracking-[0.3em] text-ink/70">
                   {moodLabel}
@@ -316,8 +317,7 @@ export default function DailyBrief() {
                         a.urgency === "high" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                         a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
-                        a.urgency === "low" &&
-                          "bg-black/[0.06] text-ink/50 border border-black/12",
+                        a.urgency === "low" && "bg-black/[0.06] text-ink/50 border border-black/12",
                       )}
                     >
                       {a.urgency}

@@ -14,6 +14,7 @@ import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { BRAND } from "../constants/brand-colors";
+import { asStyle } from "@/src/lib/css-style";
 
 const PRINCIPLES = [
   {
@@ -77,10 +78,10 @@ export default function About() {
           >
             <div
               className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
-              style={{
+              style={asStyle({
                 background: BRAND.purple,
                 boxShadow: "0 8px 24px -8px rgba(107,43,153,0.4)",
-              }}
+              })}
               aria-hidden="true"
             >
               <WirelineMark className="w-8 h-8 sm:w-10 sm:h-10 text-white" strokeWidth={120} />

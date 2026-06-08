@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { asStyle } from "@/src/lib/css-style";
 import {
   ArrowRight,
   BookOpen,
@@ -107,10 +108,10 @@ export default function Developers() {
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand transition-all"
-            style={{
+            style={asStyle({
               background: BRAND.purple,
               boxShadow: "0 6px 20px -6px rgba(107, 43, 153, 0.55)",
-            }}
+            })}
           >
             Try in Swagger UI
             <ArrowRight className="w-4 h-4" />

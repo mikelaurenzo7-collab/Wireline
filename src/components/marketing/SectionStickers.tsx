@@ -2,6 +2,7 @@
  * SectionStickers — gutter-placed robot stickers with editorial motion.
  */
 import { RobotHead, type RobotPose } from "./RobotHead";
+import { asStyle } from "@/src/lib/css-style";
 import {
   stickerGutterInset,
   stickerGutterInsetNarrow,
@@ -137,27 +138,27 @@ export function SectionStickers({
             <div
               key={index}
               className={`wl-sticker-slot absolute${isCenter ? " -translate-y-1/2" : ""}${vivid ? " wl-sticker-vivid" : ""}`}
-              style={{
+              style={asStyle({
                 ...gutter,
                 ...(slot.top != null ? { top: slot.top } : {}),
                 ...(slot.bottom != null ? { bottom: slot.bottom, top: "auto" } : {}),
                 ["--sticker-opacity" as string]: slot.opacity,
-              }}
+              })}
             >
               {vivid && <span className="wl-sticker-halo" aria-hidden="true" />}
               <div
                 className="wl-sticker-enter relative"
-                style={{
+                style={asStyle({
                   ["--sticker-opacity" as string]: slot.opacity,
                   animationDelay: `${enterDelay}ms`,
-                }}
+                })}
               >
                 <div
                   className="wl-sticker-float"
-                  style={{
+                  style={asStyle({
                     ["--float-ms" as string]: `${floatMs}ms`,
                     animationDelay: `${floatDelay}ms`,
-                  }}
+                  })}
                 >
                   <RobotHead
                     variant={slot.variant}

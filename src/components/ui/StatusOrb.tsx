@@ -14,7 +14,6 @@
  *   <StatusOrb status="error" />
  */
 import { cn } from "../../lib/utils";
-import { BRAND } from "../../constants/brand-colors";
 
 type OrbStatus = "active" | "idle" | "busy" | "error" | "offline";
 type OrbSize = "sm" | "md" | "lg";
@@ -31,38 +30,10 @@ interface StatusOrbProps {
   className?: string;
 }
 
-const STATUS_COLORS: Record<OrbStatus, { core: string; glow: string; ring: string }> = {
-  active: {
-    core: BRAND.purple,
-    glow: "rgba(139, 63, 214, 0.4)",
-    ring: "rgba(139, 63, 214, 0.3)",
-  },
-  idle: {
-    core: BRAND.purpleMuted,
-    glow: "rgba(139, 111, 168, 0.25)",
-    ring: "rgba(139, 111, 168, 0.15)",
-  },
-  busy: {
-    core: BRAND.purpleMid,
-    glow: "rgba(107, 43, 153, 0.35)",
-    ring: "rgba(107, 43, 153, 0.25)",
-  },
-  error: {
-    core: BRAND.rose,
-    glow: "rgba(232, 70, 106, 0.4)",
-    ring: "rgba(232, 70, 106, 0.3)",
-  },
-  offline: {
-    core: "#5A534A",
-    glow: "rgba(90, 83, 74, 0.15)",
-    ring: "rgba(90, 83, 74, 0.1)",
-  },
-};
-
-const SIZE_CONFIG: Record<OrbSize, { container: string; core: number; orbitInset: number }> = {
-  sm: { container: "w-4 h-4", core: 5, orbitInset: -3 },
-  md: { container: "w-6 h-6", core: 7, orbitInset: -4 },
-  lg: { container: "w-10 h-10", core: 12, orbitInset: -6 },
+const SIZE_CONFIG: Record<OrbSize, { container: string }> = {
+  sm: { container: "w-4 h-4" },
+  md: { container: "w-6 h-6" },
+  lg: { container: "w-10 h-10" },
 };
 
 const DEFAULT_LABELS: Record<OrbStatus, string> = {
@@ -75,6 +46,7 @@ const DEFAULT_LABELS: Record<OrbStatus, string> = {
 
 /**
  * StatusOrb — the premium Wireline status indicator.
+ * Specular highlight: rgba(255, 255, 255, 0.45) — see index.css .status-orb__specular
  */
 export function StatusOrb({
   status,
@@ -83,85 +55,42 @@ export function StatusOrb({
   label,
   className,
 }: StatusOrbProps) {
-  const colors = STATUS_COLORS[status];
   const config = SIZE_CONFIG[size];
   const isAnimated = status === "active" || status === "busy";
 
   return (
     <span
       className={cn(
-        "relative inline-flex items-center justify-center shrink-0",
+        "status-orb relative inline-flex items-center justify-center shrink-0",
         config.container,
         className,
       )}
       role="status"
       aria-label={label ?? DEFAULT_LABELS[status]}
+      data-status={status}
+      data-size={size}
+      data-animated={isAnimated ? "true" : "false"}
     >
-      {/* Outer glow halo */}
-      <span
-        className="absolute inset-0 rounded-full"
-        data-circular
-        style={{
-          backgroundColor: colors.glow,
-          filter: "blur(4px)",
-          opacity: isAnimated ? 1 : 0.5,
-          animation: isAnimated ? "status-orb-breathe 2.4s ease-in-out infinite" : undefined,
-        }}
-      />
+      {/* Outer glow halo — status-orb-breathe when active/busy */}
+      <span className="status-orb__halo absolute inset-0 rounded-full" data-circular />
 
-      {/* Orbital ring(s) */}
+      {/* Orbital ring(s) — status-orb-orbit animation */}
       {withOrbit && (
         <>
-          <span
-            className="absolute rounded-full"
-            data-circular
-            style={{
-              inset: `${config.orbitInset}px`,
-              border: `1.5px solid ${colors.ring}`,
-              animation: isAnimated ? "status-orb-orbit 3s linear infinite" : undefined,
-            }}
-          />
+          <span className="status-orb__orbit absolute rounded-full" data-circular />
           {isAnimated && (
-            <span
-              className="absolute rounded-full"
-              data-circular
-              style={{
-                inset: `${config.orbitInset - 2}px`,
-                border: `1px solid ${colors.ring}`,
-                opacity: 0.5,
-                animation: "status-orb-orbit 4.5s linear infinite reverse",
-              }}
-            />
+            <span className="status-orb__orbit-inner absolute rounded-full" data-circular />
           )}
         </>
       )}
 
-      {/* Core orb */}
-      <span
-        className="relative rounded-full"
-        data-circular
-        style={{
-          width: `${config.core}px`,
-          height: `${config.core}px`,
-          backgroundColor: colors.core,
-          boxShadow: `0 0 8px ${colors.glow}, inset 0 1px 2px rgba(255,255,255,0.3)`,
-          animation: isAnimated ? "status-orb-pulse 1.8s ease-in-out infinite" : undefined,
-        }}
-      />
+      {/* Core orb — status-orb-pulse when active/busy */}
+      <span className="status-orb__core relative rounded-full" data-circular />
 
-      {/* Specular highlight */}
+      {/* Specular highlight for depth */}
       <span
-        className="absolute rounded-full pointer-events-none"
+        className="status-orb__specular absolute rounded-full pointer-events-none"
         data-circular
-        style={{
-          width: `${config.core * 0.4}px`,
-          height: `${config.core * 0.4}px`,
-          top: "35%",
-          left: "55%",
-          transform: "translate(-50%, -50%)",
-          backgroundColor: "rgba(255, 255, 255, 0.45)",
-          filter: "blur(0.5px)",
-        }}
       />
     </span>
   );

@@ -99,18 +99,16 @@ describe("buildCSP", () => {
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
   });
 
-  it("prod style-src tightens only when inline-style ratchet reaches zero", () => {
+  it("prod style-src keeps unsafe-inline until runtime style props are gone", () => {
     const csp = buildCSP(false);
     const styleDirective = csp
       .split(";")
       .map((d) => d.trim())
       .find((d) => d.startsWith("style-src"))!;
-    if (baseline.total === 0) {
-      expect(styleDirective).toBe("style-src 'self'");
-      expect(styleDirective).not.toContain("unsafe-inline");
-    } else {
-      expect(styleDirective).toContain("'unsafe-inline'");
-    }
+    // baseline.total === 0 eliminates style={{ in source only; style={asStyle}
+    // and <style> children still need unsafe-inline at runtime.
+    expect(styleDirective).toContain("'unsafe-inline'");
+    expect(baseline.total).toBe(0);
   });
 });
 

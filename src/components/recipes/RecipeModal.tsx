@@ -28,6 +28,7 @@ import { AgentReviewForm } from "./forms/AgentReviewForm";
 import { KnowledgeFromDocumentForm } from "./forms/KnowledgeFromDocumentForm";
 import { CallPlaybookForm } from "./forms/CallPlaybookForm";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { asStyle } from "@/src/lib/css-style";
 
 export function RecipeModal({
   recipe,
@@ -111,14 +112,14 @@ export function RecipeModal({
         <div className="relative rounded-md wl-panel-elevated overflow-hidden flex flex-col flex-1 min-h-0">
           <div
             className="absolute -top-32 -right-32 w-64 h-64 rounded-full max-w-[50vw] max-h-[50vw] sm:max-w-none sm:max-h-none opacity-25 blur-3xl pointer-events-none"
-            style={{ background: `radial-gradient(circle, ${meta.accent}, transparent)` }}
+            style={asStyle({ background: `radial-gradient(circle, ${meta.accent}, transparent)` })}
           />
 
           <div className="relative z-10 flex items-center justify-between px-7 py-5 border-b border-white/8">
             <div className="flex items-center gap-4">
               <div
                 className="w-11 h-11 rounded-md wl-panel border border-white/10 flex items-center justify-center"
-                style={{ color: meta.accent }}
+                style={asStyle({ color: meta.accent })}
               >
                 <meta.icon className="w-5 h-5" />
               </div>

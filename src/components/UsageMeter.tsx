@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
-import { BRAND } from "../constants/brand-colors";
 import { Progress } from "./ui/shadcn/Progress";
 
 interface UsageSnapshot {
@@ -74,21 +73,18 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   const pct = included > 0 ? Math.min(100, Math.round((used / included) * 100)) : 0;
   const isOver = snap.overage_minutes > 0;
   const isWarn = !isOver && pct >= 80;
-
-  const barAccent = isOver ? BRAND.rose : isWarn ? BRAND.purpleMuted : BRAND.purple;
+  const usageState = isOver ? "over" : isWarn ? "warn" : "ok";
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   if (compact) {
     return (
       <div
-        className="flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
+        className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
+        data-usage-state={usageState}
         title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
       >
-        <span
-          className="w-2 h-2 rounded-full animate-pulse"
-          style={{ background: barAccent, boxShadow: `0 0 8px ${barAccent}` }}
-        />
+        <span className="w-2 h-2 rounded-full animate-pulse wl-accent-dot" data-circular />
         <span className="text-ink/40 font-semibold tracking-wider">VOICE</span>
         <span className="text-ink font-bold tabular-nums">{used.toLocaleString()}</span>
         <span className="text-ink/40 font-light">/</span>
@@ -102,19 +98,13 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-md wl-panel-elevated card-interactive-premium p-5 space-y-4"
+      className="usage-meter rounded-md wl-panel-elevated card-interactive-premium p-5 space-y-4"
+      data-usage-state={usageState}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg"
-            style={{
-              background: `${barAccent}1a`,
-              border: `1px solid ${barAccent}33`,
-              boxShadow: `0 4px 10px -2px ${barAccent}22`,
-            }}
-          >
-            <Activity className="w-4.5 h-4.5" style={{ color: barAccent }} />
+          <div className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg wl-accent-icon-box">
+            <Activity className="w-4.5 h-4.5 wl-accent-text" />
           </div>
           <div>
             <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
@@ -142,26 +132,16 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
       <div className="relative">
         <Progress
           value={pct}
-          className="h-2.5 bg-white/5 shadow-inner"
+          className="h-2.5 bg-white/5 shadow-inner wl-accent-progress-glow"
           indicatorClassName={cn(
             "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
             isOver ? "bg-rose-500" : isWarn ? "bg-amber-500" : "bg-brand",
           )}
-          style={{
-            boxShadow: `0 0 14px ${barAccent}88`,
-          }}
         />
       </div>
 
       {isOver && (
-        <div
-          className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg"
-          style={{
-            background: "rgba(244,63,94,0.08)",
-            border: "1px solid rgba(244,63,94,0.25)",
-            boxShadow: "0 4px 12px rgba(244,63,94,0.05)",
-          }}
-        >
+        <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
           <div className="text-[11px] leading-relaxed">
             <span className="text-rose-400 font-semibold uppercase tracking-wider text-[9px] mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { ChevronDown, Phone, Zap, Wrench } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { AgentToolName, ToolIntegration } from "../lib/agent-capabilities";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
+import { asStyle } from "@/src/lib/css-style";
 import {
   getIntegrationPlaybook,
   getCatalogEntry,
@@ -48,21 +49,18 @@ export default function IntegrationCapabilityPanel({
   const href = connectHref ?? playbook.connectPath;
 
   return (
-    <div className={cn("space-y-3", compact && "space-y-2")}>
+    <div
+      className={cn("space-y-3", compact && "space-y-2")}
+      style={asStyle({ "--wl-accent": accentColor }) as CSSProperties}
+    >
       {!compact && (
-        <p
-          className="text-[11px] text-ink/90 leading-relaxed text-pretty border-l-2 pl-2.5"
-          style={{ borderColor: `${accentColor}55` }}
-        >
+        <p className="text-[11px] text-ink/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
           {playbook.headline}
         </p>
       )}
 
       <div>
-        <p
-          className="text-[9px] uppercase tracking-[0.32em] font-medium mb-2"
-          style={{ color: accentColor }}
-        >
+        <p className="text-[9px] uppercase tracking-[0.32em] font-medium mb-2 wl-accent-text">
           When callers ask
         </p>
         <div className={cn("grid gap-2", compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2")}>
@@ -75,11 +73,7 @@ export default function IntegrationCapabilityPanel({
               )}
             >
               <div className="flex items-start gap-2 mb-1.5">
-                <Phone
-                  className="w-3 h-3 shrink-0 mt-0.5"
-                  style={{ color: accentColor }}
-                  aria-hidden
-                />
+                <Phone className="w-3 h-3 shrink-0 mt-0.5 wl-accent-text" aria-hidden />
                 <p
                   className={cn(
                     "text-ink font-medium leading-snug text-pretty",
@@ -110,12 +104,9 @@ export default function IntegrationCapabilityPanel({
                       className={cn(
                         "inline-flex px-1.5 py-0.5 rounded text-[8px] font-mono uppercase tracking-wide border",
                         on
-                          ? "border-current/25 bg-current/8"
+                          ? "wl-accent-tag border-current/25 bg-current/8"
                           : "border-black/10 bg-black/4 text-ink/40",
                       )}
-                      style={
-                        on ? { color: accentColor, borderColor: `${accentColor}35` } : undefined
-                      }
                       title={entry?.description}
                     >
                       {entry?.label ?? toolName}
@@ -131,8 +122,7 @@ export default function IntegrationCapabilityPanel({
       {!connected && compact && (
         <a
           href={href}
-          className="inline-flex text-[10px] uppercase tracking-[0.28em] hover:underline underline-offset-2"
-          style={{ color: accentColor }}
+          className="inline-flex text-[10px] uppercase tracking-[0.28em] hover:underline underline-offset-2 wl-accent-text"
         >
           Connect in Integration Hub →
         </a>

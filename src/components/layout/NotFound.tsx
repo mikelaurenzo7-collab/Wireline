@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChevronRight, Home, Phone, MessageSquare, Compass, LayoutGrid } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
+import { asStyle } from "@/src/lib/css-style";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -25,11 +26,8 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"
       >
         <div
-          className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] sm:opacity-40 opacity-25 rounded-full blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(107, 43, 153 ,0.25), rgba(107, 43, 153 ,0.18) 50%, transparent 70%)",
-          }}
+          aria-hidden="true"
+          className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] sm:opacity-40 opacity-25 rounded-full blur-3xl wl-not-found-glow"
         />
       </div>
 
@@ -96,13 +94,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               href="tel:+16305811834"
               className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors shadow-[0_8px_24px_-12px_rgba(107,43,153,0.35)]"
             >
-              <div
-                className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
-                style={{
-                  background: BRAND.purple,
-                  boxShadow: "0 4px 12px -4px rgba(107, 43, 153 ,0.55)",
-                }}
-              >
+              <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 wl-brand-icon-solid">
                 <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
               </div>
               <div className="text-left flex-1 min-w-0">
@@ -186,14 +178,9 @@ function NotFoundCard({
     <Link
       to={to}
       className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
+      style={asStyle({ "--wl-accent": accent }) as React.CSSProperties}
     >
-      <div
-        className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-black/8"
-        style={{
-          background: `linear-gradient(135deg, ${accent}25, ${accent}10)`,
-          color: accent,
-        }}
-      >
+      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-black/8 wl-accent-icon-chip">
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </div>
       <div className="text-left flex-1 min-w-0">

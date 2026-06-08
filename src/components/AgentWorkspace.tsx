@@ -20,6 +20,7 @@
 import React, { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
+import { asStyle } from "@/src/lib/css-style";
 import {
   Send,
   Loader2,
@@ -219,7 +220,7 @@ function ProposalCard({
             className="h-full bg-brand rounded-full"
             animate={{ x: ["-100%", "100%"] }}
             transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-            style={{ width: "40%" }}
+            style={asStyle({ width: "40%" })}
           />
         </motion.div>
       )}

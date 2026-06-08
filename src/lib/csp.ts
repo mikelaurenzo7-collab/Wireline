@@ -67,11 +67,9 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
-    // style-src includes 'unsafe-inline' because React components still emit
-    // style={{ ... }} at runtime. Fonts are self-hosted via @fontsource in
-    // src/index.css — no fonts.googleapis.com / fonts.gstatic.com needed.
-    // Migration path: drop 'unsafe-inline' once inline styles are eliminated
-    // (see scripts/csp-inventory.mjs ratchet).
+    // style-src keeps 'unsafe-inline' until all runtime style={} props and
+    // component-local <style> blocks are migrated (inventory ratchet tracks
+    // style={{ in source only — see scripts/csp-inventory.mjs).
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: https:`,
     `font-src 'self' data:`,

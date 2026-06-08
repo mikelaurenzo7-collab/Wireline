@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { asStyle } from "@/src/lib/css-style";
 import {
   DollarSign,
   Brain,
@@ -120,7 +121,7 @@ function SpendBudgetCard() {
   return (
     <div
       className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")}
-      style={{ "--wl-accent": barColor } as React.CSSProperties}
+      style={asStyle({ "--wl-accent": barColor }) as React.CSSProperties}
     >
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
@@ -153,7 +154,7 @@ function SpendBudgetCard() {
           <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
             <div
               className="absolute inset-y-0 w-px bg-black/30"
-              style={{ left: `${warnPct}%` }}
+              style={asStyle({ left: `${warnPct}%` })}
               title={`Warn threshold ${warnPct}%`}
             />
             <motion.div

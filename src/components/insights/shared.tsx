@@ -12,6 +12,7 @@ import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucid
 import { authFetch, readApiJson } from "../../lib/api";
 import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../lib/wireline-director-design";
 import { BRAND } from "../../constants/brand-colors";
+import { asStyle } from "@/src/lib/css-style";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
 
@@ -29,23 +30,10 @@ export function Spinner() {
   return (
     <div className="py-16 flex flex-col items-center gap-4">
       <div className="relative w-12 h-12">
-        <div
-          className="absolute inset-0 rounded-full opacity-40"
-          style={{
-            background: `conic-gradient(from 0deg, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet}, ${WIRELINE_DIRECTOR_BRAND.violet})`,
-            filter: "blur(1px)",
-            animation: "spin 2s linear infinite",
-          }}
-        />
+        <div className="absolute inset-0 rounded-full opacity-40 wl-insight-spinner-ring" />
         <div className="absolute inset-1.5 rounded-full bg-paper" />
         <div className="absolute inset-3 rounded-full wl-panel flex items-center justify-center">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{
-              background: WIRELINE_DIRECTOR_BRAND.violet,
-              boxShadow: `0 0 10px ${WIRELINE_DIRECTOR_BRAND.violet}`,
-            }}
-          />
+          <div className="w-3 h-3 rounded-full wl-insight-spinner-core" data-circular />
         </div>
       </div>
       <p className={cn(WL_OPS_CLASSES.insightLabel, "animate-pulse")}>Computing…</p>
@@ -134,8 +122,8 @@ export function Stat({ label, value, accent }: { label: string; value: any; acce
     <div>
       <div className={WL_OPS_CLASSES.insightLabel}>{label}</div>
       <div
-        className={cn("font-display italic text-xl mt-1", accent ? undefined : "text-brand")}
-        style={accent ? { color: accent } : undefined}
+        className={cn("font-display italic text-xl mt-1", accent ? "wl-accent-text" : "text-brand")}
+        style={accent ? (`--wl-accent: ${accent}` as unknown as React.CSSProperties) : undefined}
       >
         {value}
       </div>
@@ -160,12 +148,12 @@ export function SpendStat({
     <div className={WL_APP_CLASSES.insightStatCard + " p-5"}>
       <div
         className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${accent}, transparent)` }}
+        style={asStyle({ background: `radial-gradient(circle, ${accent}, transparent)` })}
       />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-3">
           <p className={WL_OPS_CLASSES.insightLabel}>{label}</p>
-          <Icon className="w-4 h-4" style={{ color: accent }} />
+          <Icon className="w-4 h-4" style={asStyle({ color: accent })} />
         </div>
         <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
       </div>

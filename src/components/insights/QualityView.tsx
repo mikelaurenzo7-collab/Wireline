@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { BarChart3, TrendingUp, Loader2, Star, Play } from "lucide-react";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { asStyle } from "@/src/lib/css-style";
 import {
   AreaChart,
   Area,
@@ -155,10 +156,13 @@ export default function QualityView({ days }: { days: number }) {
           >
             <div
               className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
-              style={{ background: `radial-gradient(circle,${accent},transparent)` }}
+              style={asStyle({ background: `radial-gradient(circle,${accent},transparent)` })}
             />
             <p className="wl-insight-label mb-2">{label}</p>
-            <p className="font-display italic text-2xl leading-none" style={{ color: accent }}>
+            <p
+              className="font-display italic text-2xl leading-none"
+              style={asStyle({ color: accent })}
+            >
               {value}
             </p>
           </div>
@@ -181,7 +185,7 @@ export default function QualityView({ days }: { days: number }) {
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full rounded-full"
-                    style={{ background: bucket.color || QA_BRAND }}
+                    style={asStyle({ background: bucket.color || QA_BRAND })}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
@@ -321,7 +325,7 @@ export default function QualityView({ days }: { days: number }) {
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.8 }}
                       className="h-full rounded-full"
-                      style={{ background: qaColor(pct) }}
+                      style={asStyle({ background: qaColor(pct) })}
                     />
                   </div>
                   <span className="text-[9px] font-mono text-ink w-8 text-right">{avg}/20</span>

@@ -4,6 +4,7 @@ import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { resolveBrandAccent } from "../lib/brand-token";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { asStyle } from "@/src/lib/css-style";
 
 /* ──────────────────────────────────────────────────────────────────────────
    PageShell — viewport-fit page primitive.
@@ -485,36 +486,23 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative wl-panel border border-black/8 flex flex-col min-h-0 overflow-hidden",
+        "relative wl-panel border border-black/8 flex flex-col min-h-0 overflow-hidden wl-panel-editorial",
         autoHeight ? "h-auto" : "h-full",
         "panel-mobile-surface",
         className,
       )}
-      style={{
-        boxShadow:
-          "0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 1px rgba(107, 43, 153 ,0.03), 0 8px 32px -10px rgba(0,0,0,0.10), 0 3px 12px -4px rgba(107, 43, 153 ,0.06)",
-      }}
+      style={asStyle({ "--wl-accent": resolvedAccent }) as React.CSSProperties}
     >
       {/* Subtle ambient glow behind header */}
       {Icon && (
-        <div
-          className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-20 blur-3xl"
-          style={{ background: `radial-gradient(circle, ${resolvedAccent}, transparent)` }}
-        />
+        <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none opacity-20 blur-3xl wl-accent-halo" />
       )}
 
       {(title || actions || hint || Icon) && (
         <header className="relative shrink-0 px-3 py-2.5 max-md:px-4 max-md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
             {Icon && (
-              <div
-                className="w-8 h-8 flex items-center justify-center shrink-0 border border-black/8"
-                style={{
-                  background: `linear-gradient(135deg, ${resolvedAccent}18, ${resolvedAccent}06)`,
-                  color: resolvedAccent,
-                  boxShadow: `0 0 10px ${resolvedAccent}20`,
-                }}
-              >
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-black/8 wl-accent-icon-chip">
                 <Icon className="w-3.5 h-3.5" />
               </div>
             )}
@@ -529,13 +517,7 @@ export function Panel({
 
       {/* Header separator — edge-to-edge gradient */}
       {(title || actions || hint || Icon) && (
-        <div
-          className="shrink-0 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(0,0,0,0.07) 25%, rgba(0,0,0,0.09) 50%, rgba(0,0,0,0.07) 75%, transparent)",
-          }}
-        />
+        <div className="shrink-0 h-px wl-panel-divider-fade" />
       )}
 
       <div
@@ -575,31 +557,20 @@ export function StatTile({
   const resolvedAccent = resolveBrandAccent(accent);
   const trendPositive = trend && trend.value >= 0;
   return (
-    <div className="stat-tile-mobile relative wl-panel border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive">
+    <div
+      className="stat-tile-mobile relative wl-panel border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive"
+      style={asStyle({ "--wl-accent": resolvedAccent }) as React.CSSProperties}
+    >
       {/* Ambient glow */}
-      <div
-        className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${resolvedAccent}, transparent)` }}
-      />
+      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none wl-accent-halo" />
       {/* Bottom gradient line */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px opacity-60"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${resolvedAccent}55, transparent)`,
-        }}
-      />
+      <div className="absolute bottom-0 left-0 right-0 h-px opacity-60 wl-accent-bar-fade" />
 
       <div className="relative">
         <div className="flex items-start justify-between mb-2.5">
           <p className="text-eyebrow leading-none">{label}</p>
           {Icon && (
-            <div
-              className="w-7 h-7 flex items-center justify-center border border-black/8 shrink-0"
-              style={{
-                background: `linear-gradient(135deg, ${resolvedAccent}18, ${resolvedAccent}06)`,
-                color: resolvedAccent,
-              }}
-            >
+            <div className="w-7 h-7 flex items-center justify-center border border-black/8 shrink-0 wl-accent-icon-chip">
               <Icon className="w-3.5 h-3.5" />
             </div>
           )}

@@ -25,7 +25,6 @@ import {
   type NavItem,
 } from "../../constants/navigation";
 import { useBranding } from "../../contexts/BrandingContext";
-import { BRAND } from "../../constants/brand-colors";
 import { useTheme } from "../../contexts/ThemeContext";
 import { shouldShowTopBarThemeToggle } from "../../lib/wireline-app-chrome";
 import { WL_CHROME_CLASSES } from "../../lib/wireline-ops-design";
@@ -113,16 +112,20 @@ export default function TopBar({
     const withLabel = opts.withLabel ?? true;
     const variant = opts.variant ?? "topbar";
     const isDrawer = variant === "drawer";
-    const activeBg = isDrawer
-      ? "var(--color-brand)"
-      : theme === "light"
-        ? "rgba(139, 63, 214, 0.12)"
-        : "rgba(255, 255, 255, 0.12)";
-    const activeTextColor = isDrawer
-      ? "var(--color-paper)"
-      : theme === "light"
-        ? "var(--color-brand)"
-        : "#ffffff";
+    const activeTextClass = active
+      ? isDrawer
+        ? "wl-topnav-active-text--drawer"
+        : theme === "light"
+          ? "wl-topnav-active-text--light"
+          : "wl-topnav-active-text--dark"
+      : undefined;
+    const activeBgClass = active
+      ? isDrawer
+        ? "wl-topnav-active-bg--drawer"
+        : theme === "light"
+          ? "wl-topnav-active-bg--light"
+          : "wl-topnav-active-bg--dark"
+      : undefined;
     return (
       <Link
         key={item.label}
@@ -144,21 +147,14 @@ export default function TopBar({
             : active
               ? "shadow-md shadow-brand-deep/10"
               : "text-ink/60 hover:text-ink hover:bg-brand/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/8",
+          activeTextClass,
         )}
-        style={active ? { color: activeTextColor } : undefined}
       >
         {active && (
           <motion.div
             layoutId={isDrawer ? "drawernav-active" : "topnav-active"}
-            className="absolute inset-0 rounded-md"
+            className={cn("absolute inset-0 rounded-md", activeBgClass)}
             transition={{ type: "spring", stiffness: 420, damping: 36 }}
-            style={{
-              background: activeBg,
-              boxShadow: isDrawer
-                ? "0 6px 18px -6px color-mix(in srgb, var(--color-brand) 55%, transparent), 0 0 0 1px rgba(255,255,255,0.18) inset, 0 1px 0 rgba(255,255,255,0.28) inset"
-                : "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.2) inset",
-              willChange: "transform, background-color",
-            }}
           />
         )}
         <item.icon
@@ -166,13 +162,12 @@ export default function TopBar({
             "relative z-10 w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
             isDrawer
               ? active
-                ? ""
+                ? activeTextClass
                 : "text-ink/65 group-hover:text-ink"
               : active
-                ? ""
+                ? activeTextClass
                 : "chrome-muted group-hover:text-brand dark:group-hover:text-paper-warm",
           )}
-          style={active ? { color: activeTextColor } : undefined}
           strokeWidth={active ? 2.5 : 1.75}
         />
         {withLabel && (
@@ -181,8 +176,8 @@ export default function TopBar({
               "relative z-10 whitespace-nowrap transition-all duration-300 flex-1 min-w-0 truncate text-left",
               isDrawer ? "inline" : "hidden lg:inline",
               active ? "font-semibold" : "font-normal",
+              activeTextClass,
             )}
-            style={active ? { color: activeTextColor } : undefined}
           >
             {item.label}
           </span>
@@ -234,12 +229,7 @@ export default function TopBar({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
-              className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden shrink-0 elev-1"
-              style={{
-                background: BRAND.paper,
-                boxShadow:
-                  "0 4px 14px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.22) inset",
-              }}
+              className="relative w-7 h-7 rounded-md flex items-center justify-center overflow-hidden shrink-0 elev-1 wl-chrome-logo-chip--paper"
             >
               <WirelineMark className="w-4 h-4 text-brand relative z-10" strokeWidth={130} />
               <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent" />
@@ -346,8 +336,7 @@ export default function TopBar({
                 title={user?.email || "Account"}
               >
                 <div
-                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center font-medium text-[10px] shrink-0"
-                  style={{ background: BRAND.cream, color: BRAND.purpleDeep }}
+                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center font-medium text-[10px] shrink-0 wl-avatar-cream"
                   aria-hidden="true"
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}

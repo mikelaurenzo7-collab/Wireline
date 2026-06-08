@@ -19,6 +19,7 @@
  */
 import React, { useId } from "react";
 import { cn } from "../../lib/utils";
+import { asStyle } from "@/src/lib/css-style";
 
 type MorphMode = "reveal" | "breathe" | "glitch";
 
@@ -64,7 +65,7 @@ export function GlyphMorph({
         <span
           key={`${uid}-${i}`}
           className={cn("inline-block glyph-morph-char", mode === "glitch" && "glyph-morph-glitch")}
-          style={{
+          style={asStyle({
             animationName:
               mode === "reveal"
                 ? `glyph-reveal-${uid}`
@@ -77,7 +78,7 @@ export function GlyphMorph({
             animationTimingFunction:
               mode === "glitch" ? "steps(2, jump-none)" : "cubic-bezier(0.22, 1, 0.36, 1)",
             animationIterationCount: mode === "reveal" ? 1 : "infinite",
-          }}
+          })}
           aria-hidden="true"
         >
           {char === " " ? "\u00A0" : char}

@@ -5,6 +5,7 @@ import { Trophy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { AGENT_ROLES } from "../fleet/helpers";
 import { fetchInsight, Spinner, ErrCard, InsightEmpty, Stat } from "./shared";
+import { asStyle } from "@/src/lib/css-style";
 
 function RolePill({ role }: { role?: string }) {
   const meta =
@@ -102,7 +103,9 @@ export default function LeaderboardView({ days }: { days: number }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
             className={`relative rounded-md wl-panel border ${rs.ring} p-5 flex items-center gap-5 overflow-hidden`}
-            style={{ boxShadow: `0 0 40px -20px ${rs.glow}, 0 1px 0 rgba(255,255,255,0.80) inset` }}
+            style={asStyle({
+              boxShadow: `0 0 40px -20px ${rs.glow}, 0 1px 0 rgba(255,255,255,0.80) inset`,
+            })}
           >
             <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display italic text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
               {i + 1}

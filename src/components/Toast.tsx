@@ -7,6 +7,7 @@ import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/m
 import { cn } from "../lib/utils";
 import { BRAND } from "../constants/brand-colors";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { asStyle } from "@/src/lib/css-style";
 
 const META = {
   success: {
@@ -49,7 +50,7 @@ function ToastItem({ toast }: { toast: Toast }) {
       {/* Accent strip */}
       <div
         className="absolute left-0 inset-y-0 w-0.5 rounded-full"
-        style={{ background: m.color }}
+        style={asStyle({ background: m.color })}
       />
 
       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
@@ -59,7 +60,7 @@ function ToastItem({ toast }: { toast: Toast }) {
             m.bg,
           )}
         >
-          <Icon className="w-3.5 h-3.5" style={{ color: m.color }} strokeWidth={2} />
+          <Icon className="w-3.5 h-3.5" style={asStyle({ color: m.color })} strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
           <p className="text-[12px] font-semibold text-ink leading-snug truncate">{toast.title}</p>
@@ -103,10 +104,10 @@ export default function ToastStack() {
       aria-atomic="false"
       aria-label="Notifications"
       className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
-      style={{
+      style={asStyle({
         ["--toast-mobile-bottom" as string]: mobileBottom,
         paddingBottom: 0,
-      }}
+      })}
     >
       <AnimatePresence initial={false} mode="sync">
         {toasts.map((t) => (

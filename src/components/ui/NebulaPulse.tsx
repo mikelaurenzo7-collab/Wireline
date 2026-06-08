@@ -19,6 +19,7 @@
  */
 import React, { useMemo } from "react";
 import { cn } from "../../lib/utils";
+import { asStyle } from "@/src/lib/css-style";
 
 type NebulaIntensity = "whisper" | "ambient" | "vivid";
 
@@ -107,7 +108,7 @@ export function NebulaPulse({
     <div
       className={cn("pointer-events-none select-none overflow-hidden", className)}
       aria-hidden="true"
-      style={{ opacity: fieldOpacity }}
+      style={asStyle({ opacity: fieldOpacity })}
     >
       {plasmaNodes.map((node) => (
         <div
@@ -117,13 +118,13 @@ export function NebulaPulse({
             `nebula-drift-${node.id}`,
             `nebula-delay-${node.id % 5}`,
           )}
-          style={{
+          style={asStyle({
             left: `${node.cx}%`,
             top: `${node.cy}%`,
             width: `${node.size}%`,
             height: `${node.size}%`,
             background: `radial-gradient(circle, ${node.color} 0%, transparent 70%)`,
-          }}
+          })}
         />
       ))}
     </div>

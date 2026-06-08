@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Gauge, Activity, AlertTriangle } from "lucide-react";
+import { asStyle } from "@/src/lib/css-style";
 import {
   MAX_VAPI_PARALLEL_TOOL_CALLS,
   MAX_VAPI_TOOL_RESULT_CHARS,
@@ -163,7 +164,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                     <div
                       key={t.date}
                       className={cn("flex-1 rounded-t", isAlert ? "bg-amber-400" : "bg-brand/60")}
-                      style={{ height: `${height}%` }}
+                      style={asStyle({ height: `${height}%` })}
                       title={`${t.date}: avg ${t.avgTtftMs ?? "—"}ms, p95 ${t.p95TtftMs ?? "—"}ms`}
                     />
                   );

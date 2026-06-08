@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { asStyle } from "@/src/lib/css-style";
 
 interface AvailableNumber {
   phone_number: string;
@@ -167,11 +168,11 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
               >
                 <div
                   className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
-                  style={{
+                  style={asStyle({
                     background:
                       "linear-gradient(135deg, rgba(107, 43, 153 ,0.12), rgba(107, 43, 153 ,0.10))",
                     border: "1px solid rgba(107, 43, 153 ,0.20)",
-                  }}
+                  })}
                 >
                   {claiming === n.phone_number ? (
                     <Loader2 className="w-4 h-4 animate-spin text-brand" />

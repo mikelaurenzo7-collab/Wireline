@@ -10,6 +10,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
+import { asStyle } from "@/src/lib/css-style";
 
 export default function OAuthComplete() {
   const { signIn } = useAuth();
@@ -77,10 +78,10 @@ export default function OAuthComplete() {
       <div className="flex flex-1 items-center justify-center px-4 py-10">
         <div
           className="w-full max-w-md border border-black/8 bg-paper/92 p-7 sm:p-8 text-center space-y-5"
-          style={{
+          style={asStyle({
             boxShadow:
               "0 1px 0 rgba(255,255,255,0.9) inset, 0 22px 56px -30px rgba(26, 22, 20, 0.28)",
-          }}
+          })}
         >
           {error ? (
             <>

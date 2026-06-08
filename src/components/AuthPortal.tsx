@@ -441,8 +441,10 @@ export default function AuthPortal() {
                         <div className="relative flex p-1 bg-ink/[0.04] border border-ink/[0.06]">
                           <motion.div
                             layout
-                            className="absolute inset-y-1 w-[calc(50%-4px)] bg-brand/10 border border-brand/20"
-                            style={{ left: isSignUp ? "calc(50% + 2px)" : "4px" }}
+                            className={cn(
+                              "absolute inset-y-1 w-[calc(50%-4px)] bg-brand/10 border border-brand/20",
+                              isSignUp ? "left-[calc(50%+2px)]" : "left-1",
+                            )}
                             transition={{ type: "spring", stiffness: 400, damping: 34 }}
                           />
                           {[
@@ -550,18 +552,18 @@ export default function AuthPortal() {
                           </div>
                           {isSignUp && password.length > 0 && pwStrength && (
                             <>
-                              <div className="pw-strength-bar mt-1.5">
-                                <div
-                                  className="pw-strength-fill"
-                                  style={{
-                                    width: `${(pwStrength.score / 4) * 100}%`,
-                                    background: `linear-gradient(90deg, ${pwStrength.color}, ${pwStrength.score >= 3 ? BRAND.purple : pwStrength.color})`,
-                                  }}
-                                />
+                              <div
+                                className="pw-strength-bar mt-1.5"
+                                style={
+                                  {
+                                    "--pw-strength-pct": `${(pwStrength.score / 4) * 100}%`,
+                                    "--wl-accent": pwStrength.color,
+                                  } as React.CSSProperties
+                                }
+                              >
+                                <div className="pw-strength-fill pw-strength-fill--accent" />
                               </div>
-                              <p className="text-caption" style={{ color: pwStrength.color }}>
-                                {pwStrength.label}
-                              </p>
+                              <p className="text-caption wl-accent-text">{pwStrength.label}</p>
                             </>
                           )}
                           {isSignUp && (

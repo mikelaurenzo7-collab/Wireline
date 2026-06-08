@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { authFetch } from "../lib/api";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { asStyle } from "@/src/lib/css-style";
 
 interface BenchmarkItem {
   label: string;
@@ -118,7 +119,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
               {/* Benchmark marker */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 rounded-full bg-white/40"
-                style={{ left: `${benchmarkPct}%` }}
+                style={asStyle({ left: `${benchmarkPct}%` })}
               />
             </div>
           </div>

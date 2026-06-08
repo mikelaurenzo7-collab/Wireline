@@ -16,6 +16,7 @@
 import React, { useId } from "react";
 import { cn } from "../../lib/utils";
 import { BRAND_FALLBACK } from "../../lib/brand-token";
+import { asStyle } from "@/src/lib/css-style";
 
 const PRIMARY_FALLBACK = `var(--primary, ${BRAND_FALLBACK})`;
 
@@ -85,7 +86,7 @@ export function AuroraWave({
   return (
     <div
       className={cn("pointer-events-none select-none overflow-hidden", className)}
-      style={{ height }}
+      style={asStyle({ height })}
       aria-hidden="true"
     >
       <svg
