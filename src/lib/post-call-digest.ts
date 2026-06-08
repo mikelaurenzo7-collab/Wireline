@@ -53,7 +53,10 @@ export function classifyCallOutcome(input: {
   if (
     ended.includes("silence-timed-out") ||
     ended.includes("voicemail") ||
-    ended.includes("machine-detected")
+    ended.includes("machine-detected") ||
+    ended.includes("customer-busy") ||
+    ended.includes("no-answer") ||
+    ended.includes("customer-did-not-answer")
   ) {
     return "unreachable";
   }
@@ -107,6 +110,7 @@ interface CallContext {
   endedReason?: string | null;
   vapiCallType?: string | null;
   demo?: boolean;
+  vapiCallId?: string | null;
 }
 
 /**
@@ -150,6 +154,21 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       .where(eq(schema.callLogs.id, callLogIdBig));
   } catch (err: any) {
     log.warn("post-call digest: callLog update failed", { error: err?.message });
+  }
+
+  // 1a. Update outbound lead status on call end
+  if (ctx.direction === "outbound") {
+    try {
+      const { updateLeadStatusOnCallEnd } = await import("./outbound-call-tracking");
+      await updateLeadStatusOnCallEnd(
+        ctx.userId,
+        ctx.customerNumber || "",
+        outcomeTag,
+        ctx.vapiCallId,
+      );
+    } catch (err: any) {
+      log.warn("post-call digest: lead status update failed", { error: err?.message });
+    }
   }
 
   // 1b. Activation — first useful production call (idempotent per tenant).

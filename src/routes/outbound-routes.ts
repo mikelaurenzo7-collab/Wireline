@@ -195,6 +195,7 @@ router.post(
         context: context,
         callId: result.callId,
         status: "Dialing",
+        attempts: 1,
         metadata: { has_express_written_consent: !!hasExpressWrittenConsent },
       });
 

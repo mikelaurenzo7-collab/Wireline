@@ -814,6 +814,14 @@ export function buildShowcaseAssistantPayload(
       // 0.7–1.2; Vapi forwards this as voice.eleven_labs.speed.
       // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
       speed: tuning.speed ?? 0.95,
+      fallbackPlan: {
+        voices: [
+          {
+            provider: "vapi",
+            voiceId: "Elliot",
+          },
+        ],
+      },
     };
   }
 

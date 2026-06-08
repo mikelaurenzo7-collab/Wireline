@@ -717,6 +717,14 @@ Today is ${currentDateTime}.
             similarityBoost: parsedSimilarityBoost,
             style: parsedStyle,
             useSpeakerBoost: parsedSpeakerBoost,
+            fallbackPlan: {
+              voices: [
+                {
+                  provider: "vapi",
+                  voiceId: "Elliot",
+                },
+              ],
+            },
           }
         : {}),
       // Per-tenant pronunciation dictionaries — only valid when the

@@ -43,6 +43,16 @@ export const VAPI_START_SPEAKING_PLAN = {
   },
 };
 
+export const VAPI_TRANSCRIBER_FALLBACK_PLAN = {
+  transcribers: [
+    {
+      provider: "openai" as const,
+      model: "gpt-4o-mini-transcribe",
+      language: "en",
+    },
+  ],
+};
+
 /** Deepgram Nova-3 STT — pinned so Vapi cannot silently swap models. */
 export const VAPI_TRANSCRIBER_CONFIG = {
   provider: "deepgram" as const,
@@ -50,6 +60,7 @@ export const VAPI_TRANSCRIBER_CONFIG = {
   language: "en",
   smartFormat: true,
   endpointing: 40,
+  fallbackPlan: VAPI_TRANSCRIBER_FALLBACK_PLAN,
 };
 
 /** STT + turn-taking strategy. Flux integrates EOT; Nova uses LiveKit on top. */
@@ -71,6 +82,7 @@ export const VAPI_TRANSCRIBER_FLUX_CONFIG = {
   language: "en",
   eotThreshold: 0.64,
   eotTimeoutMs: 2800,
+  fallbackPlan: VAPI_TRANSCRIBER_FALLBACK_PLAN,
 };
 
 /** Flux path: minimal startSpeakingPlan — Flux owns turn boundaries. */

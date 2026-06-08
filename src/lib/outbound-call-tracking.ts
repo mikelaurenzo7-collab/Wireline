@@ -1,7 +1,9 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
+import { classifyCallOutcome } from "./post-call-digest";
+import { LEAD_STATUS } from "./outbound-status";
 
 /** Summary written when Vapi accepts an outbound dial — replaced by end-of-call report. */
 export const OUTBOUND_CALL_PLACEHOLDER_SUMMARY = "Outbound call in progress…";
@@ -65,4 +67,112 @@ export async function findCallLogByVapiCallId(vapiCallId: string) {
     .where(eq(schema.callLogs.vapiCallId, vapiCallId))
     .limit(1);
   return row ?? null;
+}
+
+export async function updateLeadStatusOnCallEnd(
+  userId: string,
+  customerNumber: string,
+  outcomeTag: string,
+  vapiCallId?: string | null,
+): Promise<void> {
+  try {
+    let lead: any = null;
+
+    // First try by vapiCallId
+    if (vapiCallId) {
+      const [row] = await drizzle
+        .select()
+        .from(schema.outboundLeads)
+        .where(
+          and(
+            eq(schema.outboundLeads.userId, userId),
+            eq(schema.outboundLeads.callId, vapiCallId),
+          ),
+        )
+        .limit(1);
+      lead = row;
+    }
+
+    // Fallback to customerNumber + active dialing status
+    if (!lead && customerNumber) {
+      const [row] = await drizzle
+        .select()
+        .from(schema.outboundLeads)
+        .where(
+          and(
+            eq(schema.outboundLeads.userId, userId),
+            eq(schema.outboundLeads.customerNumber, customerNumber),
+            inArray(schema.outboundLeads.status, ["Dialing", "Connected"]),
+          ),
+        )
+        .limit(1);
+      lead = row;
+    }
+
+    if (!lead) {
+      log.info("No active outbound lead found for status update on call end", {
+        userId,
+        customerNumber,
+        vapiCallId,
+      });
+      return;
+    }
+
+    let maxAttempts = 3;
+    if (lead.campaignId) {
+      const [camp] = await drizzle
+        .select({ maxAttempts: schema.outboundCampaigns.maxAttempts })
+        .from(schema.outboundCampaigns)
+        .where(eq(schema.outboundCampaigns.id, lead.campaignId))
+        .limit(1);
+      if (camp?.maxAttempts !== null && camp?.maxAttempts !== undefined) {
+        maxAttempts = camp.maxAttempts;
+      }
+    }
+
+    let currentAttempts = lead.attempts ?? 0;
+    if (currentAttempts === 0) {
+      currentAttempts = 1;
+    }
+
+    let newStatus: string = LEAD_STATUS.FAILED;
+
+    if (outcomeTag === "booked" || outcomeTag === "qualified") {
+      newStatus = LEAD_STATUS.COMPLETED;
+    } else if (outcomeTag === "dnc") {
+      newStatus = LEAD_STATUS.BLOCKED_DNC;
+    } else if (outcomeTag === "unreachable") {
+      if (currentAttempts < maxAttempts) {
+        newStatus = LEAD_STATUS.RETRYING;
+      } else {
+        newStatus = LEAD_STATUS.MAX_ATTEMPTS;
+      }
+    } else if (outcomeTag === "followup") {
+      newStatus = LEAD_STATUS.CALLBACK_SCHEDULED;
+    } else {
+      newStatus = LEAD_STATUS.COMPLETED;
+    }
+
+    await drizzle
+      .update(schema.outboundLeads)
+      .set({
+        status: newStatus,
+        attempts: currentAttempts,
+      })
+      .where(eq(schema.outboundLeads.id, lead.id));
+
+    log.info("Updated lead status on call end", {
+      leadId: lead.id.toString(),
+      outcomeTag,
+      newStatus,
+      attempts: currentAttempts,
+    });
+  } catch (err: any) {
+    log.error("Failed to update lead status on call end", {
+      error: getErrorMessage(err),
+      userId,
+      customerNumber,
+      vapiCallId,
+    });
+  }
 }

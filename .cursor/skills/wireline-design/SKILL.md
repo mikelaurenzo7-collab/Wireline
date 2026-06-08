@@ -120,6 +120,7 @@ Explicit: **“Use wireline-design on [screen/feature].”**
 
 | Skill | When |
 |-------|------|
+| **wireline-beast** | Production ship gate — journeys, moat probes, scorecard ≥85, browser-only QA |
 | elite-product-designer | Process, specs, critique format |
 | shadcn | Adding/changing UI primitives |
 | react-best-practices | After multi-file TSX edits |

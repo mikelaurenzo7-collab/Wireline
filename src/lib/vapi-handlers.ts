@@ -169,6 +169,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         endedReason,
         vapiCallType: call?.type || null,
         demo: false,
+        vapiCallId: vapiCallId,
       }).catch((err: any) =>
         log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
       );

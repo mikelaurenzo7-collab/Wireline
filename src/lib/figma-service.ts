@@ -11,7 +11,19 @@ import {
 
 const FIGMA_PROVIDER: DesignIntegrationProvider = "figma";
 
-/** Subset of scopes enabled on the Wireline Design Figma OAuth app (Draft → publish). */
+/**
+ * OAuth scopes requested at connect time — must be a subset of scopes enabled on the
+ * Wireline Design app in Figma Developers (OAuth scopes tab).
+ *
+ * API usage:
+ * - current_user:read → GET /v1/me (connected account label)
+ * - file_content:read → GET /v1/files/:key (brand import from file)
+ * - file_metadata:read → file name/metadata on the same read path
+ *
+ * Enabled on the app but unused by Wireline v1: file_comments:*, file_versions:read,
+ * library_* , file_dev_resources:*, project_metadata:read, webhooks:*.
+ * Not enabled (Enterprise/org): file_variables:*, library_analytics:read, file_code_connect:write.
+ */
 export const FIGMA_OAUTH_SCOPES = [
   "current_user:read",
   "file_content:read",
@@ -195,27 +207,6 @@ export async function fetchFigmaBrandTokens(
       if (comp.name) components.push(comp.name);
     }
   }
-
-  let variableColors: string[] = [];
-  try {
-    const varRes = await fetchWithTimeout(
-      `https://api.figma.com/v1/files/${encodeURIComponent(fileKey)}/variables/local`,
-      { headers: { Authorization: `Bearer ${token}` } },
-      30_000,
-    );
-    if (varRes.ok) {
-      const varData = (await varRes.json()) as {
-        meta?: { variables?: Record<string, { name?: string; resolvedType?: string }> };
-      };
-      variableColors = Object.values(varData.meta?.variables ?? {})
-        .filter((v) => v.resolvedType === "COLOR" && v.name)
-        .map((v) => v.name!);
-    }
-  } catch {
-    // Variables endpoint may be unavailable on some plans — non-fatal.
-  }
-
-  for (const c of variableColors) colors.add(c);
 
   return {
     colors: [...colors].slice(0, 48),
