@@ -237,6 +237,24 @@ pre-minted session JWT and `authenticated` could read every pending row via the 
 API — a cross-account-takeover vector that never touched our nonce-protected
 `/exchange` endpoint. RLS + grant revocation closed it.
 
+`wireline_stripe_events` uses the same **fail-closed** posture (migration
+`0030_supabase_audit_hardening.sql`): RLS enabled, **no tenant policies**, writes
+only via the service-role webhook path. Idempotency keys must not be readable through
+PostgREST.
+
+#### Expected Supabase advisor INFO (`rls_enabled_no_policy`)
+
+After running `get_advisors(type="security")`, these two tables will always report
+**INFO** — not a gap to fix:
+
+| Table | Why RLS + zero policies is correct |
+|-------|-------------------------------------|
+| `wireline_oauth_pending_codes` | Pre-session OAuth bridge; `REVOKE ALL` from `anon`/`authenticated` |
+| `wireline_stripe_events` | Stripe webhook idempotency store; service-role inserts only |
+
+Every other `public` table must have at least one policy (typically `tenant_isolation`
+`FOR ALL`). Unexpected tables in this lint are release blockers.
+
 ### Running the security & performance advisors
 
 After **any** DDL change, re-run the Supabase advisors and treat `ERROR`-level
@@ -477,20 +495,22 @@ ALTER TABLE wireline_call_logs FORCE ROW LEVEL SECURITY;
 ## Verification Commands
 
 ```bash
-# Full health check
+# Full health check (needs POSTGRES_URL — runs in CI on main, not required on dev laptops without Node)
 npm run db:health
 
 # Check specific table
 npx drizzle-kit studio
-
-# Verify connection
-node -e "
-const { createClient } = require('@vercel/postgres');
-const client = createClient({ connectionString: process.env.POSTGRES_URL });
-client.connect().then(() => console.log('✅ Connected')).catch(e => console.error('❌', e));
-"
 ```
+
+**CI / Vercel:** `.github/workflows/ci.yml` runs `npm run db:health` on `main` when
+`POSTGRES_URL` is configured (same secret as tenant-isolation integration tests).
+You do not need a local Node install to ratchet schema health — merge to `main` and
+let CI fail if prod drifts.
+
+**Agent / MCP sessions:** use `get_advisors(security)` + `execute_sql` against
+`pg_policies` when iterating DDL without local `npm run db:health`.
 
 ---
 
-**Status**: Database is production-ready with optimizations in place. Run `npm run db:health` for current status.
+**Status**: Database is production-ready with optimizations in place. CI `db:health` on
+`main` is the release ratchet; Supabase MCP advisors supplement pre-merge DDL review.

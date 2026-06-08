@@ -12,8 +12,8 @@ ALTER TABLE wireline_design_profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON wireline_design_profiles;
 CREATE POLICY tenant_isolation ON wireline_design_profiles
   FOR ALL
-  USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid)
-  WITH CHECK (user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid);
+  USING (user_id = (SELECT NULLIF(current_setting('app.current_user_id', true), '')::uuid))
+  WITH CHECK (user_id = (SELECT NULLIF(current_setting('app.current_user_id', true), '')::uuid));
 
 DROP TRIGGER IF EXISTS trg_wireline_design_profiles_set_updated_at ON wireline_design_profiles;
 CREATE TRIGGER trg_wireline_design_profiles_set_updated_at

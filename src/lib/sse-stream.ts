@@ -36,6 +36,9 @@ export interface SseStreamHandle {
  */
 export function createSseStream(req: Request, res: Response): SseStreamHandle {
   setSseHeaders(res);
+  if (!res.headersSent) {
+    res.flushHeaders?.();
+  }
 
   let clientDisconnected = false;
   let ended = false;

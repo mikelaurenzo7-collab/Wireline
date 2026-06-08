@@ -151,8 +151,8 @@ export function parseSseEvents(
 const STREAM_IDLE_MS = 540_000;
 /** Time to receive the HTTP response + first SSE bytes. */
 const STREAM_HANDSHAKE_MS = 60_000;
-/** After the stream opens, time allowed for server prep before thinking starts. */
-const STREAM_PREPARE_MS = 180_000;
+/** After bootstrap meta, time allowed for server prep before routing meta / thinking. */
+const STREAM_PREPARE_MS = 90_000;
 
 export function useStreamingChat(endpoint: string, options?: UseStreamingChatOptions) {
   const [state, setState] = useState<StreamingState>(INITIAL_STATE);

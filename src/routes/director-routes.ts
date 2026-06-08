@@ -31,6 +31,7 @@ import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/dire
 import {
   planDirectorTurnResilient,
   buildDirectorStreamContext,
+  previewDirectorStreamRouting,
   type DirectorTurnResult,
 } from "../lib/director-turn";
 import { withAudit } from "../middleware/audit-middleware";
@@ -1120,9 +1121,17 @@ router.post(
   withAudit("director"),
   validateBody(directorStreamMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
+    let sse: ReturnType<typeof createSseStream> | undefined;
     try {
       const operatorMessage = req.body.content.trim();
       const focusAgentId = String(req.body.focusAgentId || "").trim() || undefined;
+
+      sse = createSseStream(req, res);
+      writeSseBootstrap(sse);
+
+      const streamAbort = new AbortController();
+      sse.onClientDisconnect(() => streamAbort.abort());
+
       const resolved = await resolveDirectorModelSelection(
         req.user.id,
         req.body ?? {},
@@ -1130,27 +1139,21 @@ router.post(
         req.user.email,
       );
       if (!resolved.ok) {
-        return res.status(resolved.status).json({
-          code: "ERROR",
-          error: resolved.error,
-        });
+        sse.write("error", { message: resolved.error });
+        sse.end();
+        return;
       }
       const modelSelection = resolved.selection;
       if (!directorLlmConfigured(modelSelection)) {
-        return res.status(503).json({
-          code: "SERVICE_UNAVAILABLE",
-          error:
+        sse.write("error", {
+          message:
             modelSelection.provider === "openrouter"
               ? "OpenRouter not configured"
               : "LLM not configured",
         });
+        sse.end();
+        return;
       }
-
-      const sse = createSseStream(req, res);
-      writeSseBootstrap(sse);
-
-      const streamAbort = new AbortController();
-      sse.onClientDisconnect(() => streamAbort.abort());
 
       const threadKey = resolveRequestThreadKey(req);
       const [fleet, stats, priorMessages] = await Promise.all([
@@ -1158,6 +1161,30 @@ router.post(
         loadDirectorWeekStats(req.user.id),
         loadDirectorMessages(req.user.id, CLAUDE_CONTEXT_WINDOW, threadKey),
       ]);
+
+      const focusAgentName = focusAgentId
+        ? fleet.find((a) => a.id === focusAgentId)?.name
+        : undefined;
+      const routingPreview = previewDirectorStreamRouting({
+        userId: req.user.id,
+        operatorMessage,
+        history: [],
+        fleet,
+        focusAgentId,
+        focusAgentName,
+        forceDeep: req.body?.forceDeep === true,
+        modelSelection,
+      });
+      sse.write("meta", {
+        model: routingPreview.model,
+        modelLabel: routingPreview.modelLabel,
+        modelProvider: routingPreview.modelProvider,
+        modelId: routingPreview.modelId,
+        deep: routingPreview.deep,
+        mode: routingPreview.mode,
+        focusAgentId: routingPreview.focusAgentId,
+        focusAgentName: routingPreview.focusAgentName,
+      });
 
       const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),
@@ -1227,19 +1254,20 @@ router.post(
       };
 
       let stitchDesignFallback: DesignLlmFallback | undefined;
-      const stitchPath = featureFlags.designStudio
-        ? await resolveDesignDirectorPath({
-            userId: req.user.id,
-            operatorMessage,
-            history,
-            stitchOptions: req.body?.stitchOptions,
-            onProgress: (text) => {
-              sendStitchMeta();
-              sse.write("thinking_chunk", { text });
-            },
-            signal: streamAbort.signal,
-          })
-        : { kind: "none" as const };
+      const stitchPath =
+        featureFlags.designStudio && !focusAgentId
+          ? await resolveDesignDirectorPath({
+              userId: req.user.id,
+              operatorMessage,
+              history,
+              stitchOptions: req.body?.stitchOptions,
+              onProgress: (text) => {
+                sendStitchMeta();
+                sse.write("thinking_chunk", { text });
+              },
+              signal: streamAbort.signal,
+            })
+          : { kind: "none" as const };
 
       if (stitchPath.kind === "design") {
         const stitchTurn = stitchPath.turn;
@@ -1521,6 +1549,11 @@ router.post(
       if (e instanceof AppError) throw e;
       const errMsg = getErrorMessage(e);
       log.error("director stream setup failed", { error: errMsg });
+      if (sse && !sse.clientDisconnected) {
+        sse.write("error", { message: "Failed to start stream" });
+        sse.end();
+        return;
+      }
       if (!res.headersSent) {
         res.status(500).json({
           code: "INTERNAL_ERROR",
