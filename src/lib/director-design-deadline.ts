@@ -3,10 +3,10 @@
  */
 import { DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS } from "./api";
 
-/** Buffer under the HTTP timeout so localize + packaging always run. */
+/** Buffer under the HTTP timeout so sign-off + packaging always run. */
 export const DESIGN_STUDIO_DEADLINE_BUFFER_MS = 25_000;
 
-/** Reserved for emergency polish + US localize + final approval + artifact packaging. */
+/** Reserved for emergency polish + Opus sign-off + artifact packaging. */
 export const DESIGN_STUDIO_RESERVE_TAIL_MS = 85_000;
 
 /** Minimum remaining time to start another full pass (build + critic + finisher). */
@@ -32,7 +32,7 @@ export const DESIGN_STAGE_TIMEOUT_MS = {
   finisher: 100_000,
   challenger: 100_000,
   emergencyPolish: 75_000,
-  localize: 60_000,
+  approve: 60_000,
 } as const;
 
 export type DesignStageTimeoutKey = keyof typeof DESIGN_STAGE_TIMEOUT_MS;

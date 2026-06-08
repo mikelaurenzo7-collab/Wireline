@@ -1,7 +1,7 @@
 /**
  * Wireline Design Studio — Spectrum Desk: three-model linear pipeline.
  *
- * Kimi K2.6 (latest) — research, layout, critique, US copy.
+ * Kimi K2.6 (latest) — research, layout, critique.
  * Tencent Hy3 — high-fidelity HTML build.
  * MiniMax M3 — production finish.
  */
@@ -134,11 +134,6 @@ export const WIRELINE_DESIGN_TEAM_PACIFIC = {
     openRouterModelId: "minimax/minimax-m2.5",
     label: "MiniMax M2.5",
   },
-  usLocalization: {
-    provider: "openrouter" as const,
-    openRouterModelId: "deepseek/deepseek-v4-flash",
-    label: "DeepSeek V4 Flash",
-  },
   imageReference: {
     enabled: true,
     openRouterModelId: "x-ai/grok-imagine-image-quality",
@@ -201,11 +196,6 @@ export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
     fallbackOpenRouterModelId: "minimax/minimax-m2.5",
     fallbackLabel: "MiniMax M2.5",
   },
-  usLocalization: {
-    provider: "openrouter" as const,
-    openRouterModelId: SPECTRUM_KIMI_MODEL,
-    label: "Kimi K2.6",
-  },
   /** Off the live wire — operator-facing sign-off copy and preview title. */
   finalApprover: {
     provider: "wireline" as const,
@@ -254,7 +244,7 @@ export type DesignStudioStage =
   | "critic"
   | "finisher"
   | "gate"
-  | "localize";
+  | "approve";
 
 export function designStudioProgressLabel(
   pass: DesignPassNumber,
@@ -267,7 +257,7 @@ export function designStudioProgressLabel(
     critic: `Pass ${pass} — visual design critique…`,
     finisher: `Pass ${pass} — production finish…`,
     gate: "Quality gate — production checks…",
-    localize: "US copy polish and Opus sign-off…",
+    approve: "Opus sign-off…",
   };
   return labels[stage];
 }

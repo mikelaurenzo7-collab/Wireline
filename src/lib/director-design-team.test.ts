@@ -21,7 +21,6 @@ describe("WIRELINE_DESIGN_TEAM Spectrum Desk", () => {
     expect(WIRELINE_DESIGN_TEAM_SPECTRUM.productionFinisher.openRouterModelId).toBe(
       SPECTRUM_MINIMAX_M3_MODEL,
     );
-    expect(WIRELINE_DESIGN_TEAM_SPECTRUM.usLocalization.openRouterModelId).toBe(SPECTRUM_KIMI_MODEL);
   });
 
   it("uses Claude Opus for final operator sign-off", () => {

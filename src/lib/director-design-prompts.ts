@@ -81,16 +81,6 @@ Requirements:
 - Embedded styles only; ≥2 KB; agency-grade mobile hero
 - No markdown fences`;
 
-export const DESIGN_US_LOCALIZATION_SYSTEM = `You are the US localization editor for Wireline Spectrum Desk.
-Polish operator-facing copy in the HTML for American local-business idioms.
-
-Output ONLY the complete HTML document with:
-- Natural US English headlines and CTAs (call now, free estimate, licensed & insured)
-- Proper phone formatting placeholders if needed
-- Trust microcopy that reads local, not translated
-
-Preserve structure and kit classes. No markdown fences.`;
-
 export const DESIGN_BUILDER_SYSTEM = DESIGN_UI_ARCHITECT_SYSTEM;
 
 export function buildDesignBuilderUserPrompt(input: {

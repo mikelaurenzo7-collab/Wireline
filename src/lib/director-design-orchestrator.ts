@@ -1,7 +1,7 @@
 /**
  * Wireline Design Studio — Spectrum Desk linear pipeline (no architect tournament).
  *
- * Brief → Imagine (Grok) → Hy3 build → Kimi critique → M3 finish → gate → Kimi localize → Opus sign-off.
+ * Brief → Imagine (Grok) → Hy3 build → Kimi critique → M3 finish → gate → Opus sign-off.
  */
 import { CLAUDE_MODELS } from "./claude-models";
 import {
@@ -35,7 +35,6 @@ import {
   DESIGN_LAYOUT_SCOUT_SYSTEM,
   DESIGN_PRODUCTION_FINISHER_SYSTEM,
   DESIGN_RESEARCH_SYSTEM,
-  DESIGN_US_LOCALIZATION_SYSTEM,
   DESIGN_VISUAL_CRITIC_SYSTEM,
 } from "./director-design-prompts";
 import {
@@ -423,34 +422,15 @@ async function runEmergencyPolish(input: {
   return stripHtmlFences(text);
 }
 
-async function runUsLocalization(input: {
+async function runFinalApproval(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
   html: string;
   passCount: number;
   signal?: AbortSignal;
-}): Promise<{ html: string; approval: DesignFinalApproval }> {
+}): Promise<DesignFinalApproval> {
   const team = spectrumTeam();
   const fallbackTitle = input.operatorMessage.trim().slice(0, 72) || "Your page";
-
-  let html = input.html;
-  if (team && isOpenRouterConfigured()) {
-    try {
-      const localized = await runOpenRouterRole(
-        team.usLocalization,
-        DESIGN_US_LOCALIZATION_SYSTEM,
-        [
-          `Operator request:\n${input.operatorMessage}`,
-          `## HTML to localize for US audience\n${input.html.slice(0, 24_000)}`,
-        ].join("\n\n"),
-        12_288,
-        designStageAbortSignal("localize", input.signal),
-      );
-      html = stripHtmlFences(localized);
-    } catch (e) {
-      log.warn("design studio US HTML localization skipped", { error: getErrorMessage(e) });
-    }
-  }
 
   let approval: DesignFinalApproval = { operatorReply: "", pageTitle: fallbackTitle };
   const approverModel =
@@ -465,24 +445,24 @@ async function runUsLocalization(input: {
         `Operator request:\n${input.operatorMessage}`,
         `Completed ${input.passCount} Spectrum Desk passes.`,
         `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
-        `## HTML (excerpt)\n${html.slice(0, 12_000)}`,
+        `## HTML (excerpt)\n${input.html.slice(0, 12_000)}`,
       ].join("\n\n"),
       tool: DESIGN_FINAL_APPROVAL_TOOL,
       maxTokens: 2048,
-      signal: designStageAbortSignal("localize", input.signal),
+      signal: designStageAbortSignal("approve", input.signal),
     });
   } catch (e) {
     log.warn("design studio final approval via Opus failed", { error: getErrorMessage(e) });
   }
 
-  return { html, approval };
+  return approval;
 }
 
 function buildFallbackOperatorReply(pageTitle: string): string {
   return [
     `Your **${pageTitle}** is ready — open the live preview to see it on your phone or desktop.`,
     "",
-    "- Spectrum Desk built and polished your page for US trust copy",
+    "- Spectrum Desk built and polished your page",
     "- Hero, headline, and primary call-to-action are in place",
     "- Ask me to tweak colors, copy, or sections in chat",
   ].join("\n");
@@ -711,16 +691,15 @@ export async function runDirectorDesignStudio(
     });
   }
 
-  onProgress?.(designStudioProgressLabel(3, "localize"));
-  phases.push("US localize");
-  const { html: localizedHtml, approval } = await runUsLocalization({
+  onProgress?.(designStudioProgressLabel(3, "approve"));
+  phases.push("Opus sign-off");
+  const approval = await runFinalApproval({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,
     html,
     passCount,
     signal: input.signal,
   });
-  html = localizedHtml;
 
   if (imagineAssets.length > 0) {
     html = injectImagineAssetsIntoHtml(html, imagineAssets, previewDeviceType);

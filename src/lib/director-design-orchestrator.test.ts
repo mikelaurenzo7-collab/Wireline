@@ -71,7 +71,6 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
       if (user.includes("critique") || user.includes("Critique")) {
         return "## Must fix\n- Increase CTA contrast";
       }
-      if (user.includes("localize")) return polishedHtml;
       return polishedHtml;
     });
 
@@ -88,7 +87,7 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     expect(turn.thinkingSummary).toMatch(/build/i);
   });
 
-  it("pass 1 runs layout scout, critic, finisher, and HTML localize", async () => {
+  it("pass 1 runs layout scout, critic, and finisher without a localize pass", async () => {
     vi.mocked(runOpenRouterCompletion).mockImplementation(async ({ user, system }) => {
       if (system?.includes("layout scout") || user.includes("Layout scout")) {
         return "Archetype A: asymmetric hero";
@@ -99,7 +98,6 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
       if (user.includes("critique") || user.includes("Critique")) {
         return "## Must fix\n- Increase CTA contrast";
       }
-      if (user.includes("localize")) return polishedHtml;
       return polishedHtml;
     });
 
@@ -115,6 +113,7 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
 
     expect(systems.some((s) => /layout scout/i.test(s))).toBe(true);
     expect(users.some((u) => /critique/i.test(u))).toBe(true);
-    expect(users.some((u) => /localize/i.test(u))).toBe(true);
+    expect(users.some((u) => /localize/i.test(u))).toBe(false);
+    expect(runStructured).toHaveBeenCalled();
   });
 });

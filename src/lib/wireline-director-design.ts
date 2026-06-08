@@ -458,10 +458,9 @@ export const WIRELINE_STITCH_UI = {
     "Kimi — visual critique…",
     "MiniMax — production finish…",
     "Quality gate…",
-    "US copy polish…",
     "Opus — packaging your page…",
   ],
-  /** ~30s × 8 phases ≈ 4 min — rotates while the full pass-1 pipeline runs. */
+  /** ~30s × 7 phases ≈ 3.5 min — rotates while the full pass-1 pipeline runs. */
   studioLoadingPhaseIntervalMs: 30_000,
   studioLoadingHint:
     "Full first preview usually finishes in about 4 minutes. Refine anything in chat after that.",
