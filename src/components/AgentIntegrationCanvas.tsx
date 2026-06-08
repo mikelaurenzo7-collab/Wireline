@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, type CSSProperties } from "react";
 import { AnimatePresence } from "motion/react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -24,6 +24,18 @@ interface Props {
   onToggleIntegrationGroup: (integration: string, enable: boolean) => void;
   onToggleTool: (tool: AgentToolName) => void;
   onResetToDefaults: () => void;
+}
+
+function integrationAccentStyle(accent: string): CSSProperties {
+  return { "--wl-integration-accent": accent } as CSSProperties;
+}
+
+function nodePositionStyle(cx: number, cy: number, accent: string): CSSProperties {
+  return {
+    "--node-x": `${cx}%`,
+    "--node-y": `${cy}%`,
+    "--wl-integration-accent": accent,
+  } as CSSProperties;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -104,10 +116,7 @@ export default function AgentIntegrationCanvas({
 
       {/* ── Neural web constellation (sm+) ── */}
       <div className="hidden sm:block select-none">
-        <div
-          className="relative mx-auto"
-          style={{ width: "100%", maxWidth: 420, aspectRatio: "1" }}
-        >
+        <div className="relative mx-auto wl-canvas-stage">
           {/* SVG layer — lines + data packets */}
           <svg
             className="absolute inset-0 w-full h-full"
@@ -158,14 +167,8 @@ export default function AgentIntegrationCanvas({
                   strokeWidth={isActive ? 1.0 : enabled ? 0.55 : 0.2}
                   fill="none"
                   strokeDasharray={isActive ? "2.5 2" : enabled ? "1.5 2.5" : undefined}
-                  style={
-                    isActive
-                      ? {
-                          animation: "integration-flow 1.1s linear infinite",
-                          filter: `drop-shadow(0 0 1.5px ${n.color}99)`,
-                        }
-                      : undefined
-                  }
+                  className={isActive ? "wl-canvas-line--active" : undefined}
+                  style={isActive ? integrationAccentStyle(n.color) : undefined}
                 />
               );
             })}
@@ -214,55 +217,25 @@ export default function AgentIntegrationCanvas({
           </svg>
 
           {/* Center agent node — triple pulse rings */}
-          <div
-            className="absolute z-10"
-            style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
-          >
+          <div className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="relative flex items-center justify-center">
               {/* Outermost ring */}
               <div
-                className="absolute rounded-full"
-                style={{
-                  width: 76,
-                  height: 76,
-                  background: "rgba(79,30,123,0.1)",
-                  animation: "agent-pulse 3.8s ease-in-out 0.75s infinite",
-                }}
+                className="absolute rounded-full wl-canvas-agent-ring--outer"
                 aria-hidden="true"
               />
               {/* Middle ring */}
               <div
-                className="absolute rounded-full"
-                style={{
-                  width: 58,
-                  height: 58,
-                  background: "rgba(79,30,123,0.18)",
-                  animation: "agent-pulse 3.3s ease-in-out 0.38s infinite",
-                }}
+                className="absolute rounded-full wl-canvas-agent-ring--middle"
                 aria-hidden="true"
               />
               {/* Inner ring */}
               <div
-                className="absolute rounded-full"
-                style={{
-                  width: 44,
-                  height: 44,
-                  background: "rgba(79,30,123,0.26)",
-                  animation: "agent-pulse 2.9s ease-in-out infinite",
-                }}
+                className="absolute rounded-full wl-canvas-agent-ring--inner"
                 aria-hidden="true"
               />
               {/* Core shell */}
-              <div
-                className="relative w-11 h-11 rounded-full flex items-center justify-center z-10"
-                style={{
-                  background:
-                    "radial-gradient(circle at 35% 35%, rgba(79,30,123,0.96), rgba(18,0,32,0.98))",
-                  border: "1.5px solid rgba(239,233,220,0.28)",
-                  boxShadow:
-                    "0 0 20px rgba(79,30,123,0.65), 0 0 42px rgba(79,30,123,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
-                }}
-              >
+              <div className="relative w-11 h-11 rounded-full flex items-center justify-center z-10 wl-canvas-agent-core">
                 <WirelineMark className="w-5 h-5 text-paper" strokeWidth={90} />
               </div>
             </div>
@@ -273,6 +246,7 @@ export default function AgentIntegrationCanvas({
             const enabledCount = getEnabledCount(n.key);
             const connected = resolveConnected(n.key, integrationStatus);
             const isActive = activeKey === n.key;
+            const isEnabled = enabledCount > 0;
             return (
               <ShadButton
                 key={n.key}
@@ -282,60 +256,21 @@ export default function AgentIntegrationCanvas({
                 onClick={() => setActiveKey(isActive ? null : n.key)}
                 aria-pressed={isActive}
                 aria-label={`${n.label} integration — ${enabledCount} tools enabled`}
-                className="absolute flex flex-col items-center gap-1 h-auto p-0 hover:bg-transparent transition-transform duration-150"
-                style={{
-                  left: `${n.cx}%`,
-                  top: `${n.cy}%`,
-                  transform: `translate(-50%, -50%) scale(${isActive ? 1.15 : 1})`,
-                  zIndex: isActive ? 20 : 10,
-                }}
+                data-active={isActive}
+                data-enabled={isEnabled}
+                data-connected={connected}
+                className="wl-canvas-node absolute flex flex-col items-center gap-1 h-auto p-0 hover:bg-transparent transition-transform duration-150"
+                style={nodePositionStyle(n.cx, n.cy, n.color)}
               >
                 {/* Icon box with count badge */}
                 <div className="relative">
-                  <div
-                    className="w-9 h-9 rounded-md flex items-center justify-center transition-all duration-150"
-                    style={{
-                      background: isActive
-                        ? `${n.color}28`
-                        : enabledCount > 0
-                          ? `${n.color}14`
-                          : "rgba(0,0,0,0.38)",
-                      border: `1.5px solid ${
-                        isActive
-                          ? n.color
-                          : enabledCount > 0
-                            ? `${n.color}60`
-                            : "rgba(255,255,255,0.1)"
-                      }`,
-                      boxShadow: isActive
-                        ? `0 0 14px ${n.color}50, inset 0 0 8px ${n.color}18`
-                        : connected && enabledCount > 0
-                          ? `0 0 8px ${n.color}30`
-                          : undefined,
-                    }}
-                  >
-                    <n.Icon
-                      style={{
-                        width: 16,
-                        height: 16,
-                        color: isActive
-                          ? n.color
-                          : enabledCount > 0
-                            ? n.color
-                            : "rgba(255,255,255,0.28)",
-                      }}
-                    />
+                  <div className="wl-canvas-node__icon-box w-9 h-9 rounded-md flex items-center justify-center transition-all duration-150">
+                    <n.Icon className="wl-canvas-node__icon" />
                   </div>
 
                   {/* Tool count badge */}
-                  {enabledCount > 0 && (
-                    <div
-                      className="absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[7px] font-bold text-white px-0.5 leading-none"
-                      style={{
-                        background: n.color,
-                        boxShadow: `0 0 5px ${n.color}70`,
-                      }}
-                    >
+                  {isEnabled && (
+                    <div className="wl-canvas-node__badge absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[7px] font-bold text-white px-0.5 leading-none">
                       {enabledCount}
                     </div>
                   )}
@@ -343,22 +278,10 @@ export default function AgentIntegrationCanvas({
 
                 {/* Label + connected dot */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span
-                    className="text-[8px] font-medium leading-none"
-                    style={{
-                      color: isActive
-                        ? n.color
-                        : enabledCount > 0
-                          ? "rgba(239,233,220,0.85)"
-                          : "rgba(239,233,220,0.32)",
-                    }}
-                  >
+                  <span className="wl-canvas-node__label text-[8px] font-medium leading-none">
                     {n.label}
                   </span>
-                  <div
-                    className="w-1 h-1 rounded-full transition-colors duration-300"
-                    style={{ background: connected ? "var(--brand)" : "rgba(255,255,255,0.2)" }}
-                  />
+                  <div className="wl-canvas-node__dot w-1 h-1 rounded-full transition-colors duration-300" />
                 </div>
               </ShadButton>
             );
@@ -368,20 +291,13 @@ export default function AgentIntegrationCanvas({
 
       {/* ── Mobile chip strip ── */}
       <div className="sm:hidden -mx-3 px-3">
-        <div
-          className="overflow-x-auto pb-1"
-          style={{
-            maskImage:
-              "linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent 0, black 12px, black calc(100% - 12px), transparent 100%)",
-          }}
-        >
+        <div className="overflow-x-auto pb-1 wl-canvas-chip-scroll">
           <div className="flex gap-2 w-max px-3">
             {INTEGRATION_META.map((meta) => {
               const enabledCount = getEnabledCount(meta.key);
               const connected = resolveConnected(meta.key, integrationStatus);
               const isActive = activeKey === meta.key;
+              const isEnabled = enabledCount > 0;
               return (
                 <ShadButton
                   key={meta.key}
@@ -390,46 +306,22 @@ export default function AgentIntegrationCanvas({
                   disableAnimations
                   onClick={() => setActiveKey(isActive ? null : meta.key)}
                   aria-pressed={isActive}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border h-auto shrink-0"
-                  style={{
-                    borderColor: isActive
-                      ? meta.color
-                      : enabledCount > 0
-                        ? `${meta.color}50`
-                        : "rgba(255,255,255,0.1)",
-                    background: isActive
-                      ? `${meta.color}1c`
-                      : enabledCount > 0
-                        ? `${meta.color}0a`
-                        : "transparent",
-                    boxShadow: isActive ? `0 0 8px ${meta.color}35` : undefined,
-                  }}
+                  data-active={isActive}
+                  data-enabled={isEnabled}
+                  data-connected={connected}
+                  className="wl-canvas-chip flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border h-auto shrink-0"
+                  style={integrationAccentStyle(meta.color)}
                 >
-                  <meta.Icon
-                    style={{
-                      width: 12,
-                      height: 12,
-                      color: isActive ? meta.color : "rgba(255,255,255,0.5)",
-                    }}
-                  />
-                  <span
-                    className="text-[10px] font-medium"
-                    style={{ color: isActive ? meta.color : "rgba(255,255,255,0.7)" }}
-                  >
+                  <meta.Icon className="wl-canvas-chip__icon" />
+                  <span className="wl-canvas-chip__label text-[10px] font-medium">
                     {meta.label}
                   </span>
-                  {enabledCount > 0 && (
-                    <span
-                      className="text-[8px] font-bold px-1 py-0.5 rounded-full leading-none"
-                      style={{ background: `${meta.color}25`, color: meta.color }}
-                    >
+                  {isEnabled && (
+                    <span className="wl-canvas-chip__count text-[8px] font-bold px-1 py-0.5 rounded-full leading-none">
                       {enabledCount}
                     </span>
                   )}
-                  <div
-                    className="w-1 h-1 rounded-full"
-                    style={{ background: connected ? "var(--brand)" : "rgba(255,255,255,0.2)" }}
-                  />
+                  <div className="wl-canvas-chip__dot w-1 h-1 rounded-full" />
                 </ShadButton>
               );
             })}

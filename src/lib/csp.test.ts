@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import baseline from "../../scripts/csp-inventory-baseline.json";
 import { buildConnectSrcs, buildCSP, generateCspNonce } from "./csp";
 
 describe("buildConnectSrcs", () => {
@@ -96,6 +97,20 @@ describe("buildCSP", () => {
     const csp = buildCSP(false, nonce);
     expect(csp).toContain(`'nonce-${nonce}'`);
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
+  });
+
+  it("prod style-src tightens only when inline-style ratchet reaches zero", () => {
+    const csp = buildCSP(false);
+    const styleDirective = csp
+      .split(";")
+      .map((d) => d.trim())
+      .find((d) => d.startsWith("style-src"))!;
+    if (baseline.total === 0) {
+      expect(styleDirective).toBe("style-src 'self'");
+      expect(styleDirective).not.toContain("unsafe-inline");
+    } else {
+      expect(styleDirective).toContain("'unsafe-inline'");
+    }
   });
 });
 
