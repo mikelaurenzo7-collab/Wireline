@@ -566,6 +566,103 @@ export const VAPI_TOOL_DEFS = {
       required: ["message"],
     },
   },
+  post_x_tweet: {
+    name: "post_x_tweet",
+    description:
+      "Publish a tweet to the operator's connected X account. Use only when explicitly asked to post on X/Twitter or share a public brand update.",
+    parameters: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description: "Tweet body (max 280 characters).",
+        },
+      },
+      required: ["text"],
+    },
+  },
+  reply_to_x_tweet: {
+    name: "reply_to_x_tweet",
+    description:
+      "Reply publicly to a tweet on X. Use when asked to respond to a comment, mention, or thread.",
+    parameters: {
+      type: "object",
+      properties: {
+        tweet_id: { type: "string", description: "The tweet ID to reply to." },
+        text: { type: "string", description: "Reply text (max 280 characters)." },
+      },
+      required: ["tweet_id", "text"],
+    },
+  },
+  like_x_tweet: {
+    name: "like_x_tweet",
+    description: "Like a tweet on X by tweet ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        tweet_id: { type: "string", description: "The tweet ID to like." },
+      },
+      required: ["tweet_id"],
+    },
+  },
+  repost_x_tweet: {
+    name: "repost_x_tweet",
+    description: "Repost (retweet) a tweet on X by tweet ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        tweet_id: { type: "string", description: "The tweet ID to repost." },
+      },
+      required: ["tweet_id"],
+    },
+  },
+  send_x_dm: {
+    name: "send_x_dm",
+    description:
+      "Send a direct message on X. Recipient can be a numeric user ID or @username. Only when explicitly requested.",
+    parameters: {
+      type: "object",
+      properties: {
+        recipient: {
+          type: "string",
+          description: "X user ID or @username for the DM recipient.",
+        },
+        text: { type: "string", description: "DM message body." },
+      },
+      required: ["recipient", "text"],
+    },
+  },
+  list_x_mentions: {
+    name: "list_x_mentions",
+    description:
+      "List recent @mentions for the connected X account — useful before replying to comments.",
+    parameters: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "number",
+          description: "How many mentions to return (1–25, default 10).",
+        },
+      },
+    },
+  },
+  list_x_ad_campaigns: {
+    name: "list_x_ad_campaigns",
+    description:
+      "List X Ads campaigns for the Wireline ads account. Requires platform Ads API credentials.",
+    parameters: { type: "object", properties: {} },
+  },
+  get_x_ad_campaign_stats: {
+    name: "get_x_ad_campaign_stats",
+    description: "Get impressions, clicks, and spend for a specific X Ads campaign ID.",
+    parameters: {
+      type: "object",
+      properties: {
+        campaign_id: { type: "string", description: "X Ads campaign ID." },
+      },
+      required: ["campaign_id"],
+    },
+  },
   generate_zoom_link: {
     name: "generate_zoom_link",
     description:

@@ -68,6 +68,39 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       },
     ],
   },
+  x: {
+    integration: "x",
+    label: "X",
+    headline: "Engage on X — post, reply, like, repost, DM, and read ad performance.",
+    orbitHint: "Post, reply, like, DM, ads",
+    connectPath: "/integrations",
+    tasks: [
+      {
+        id: "x-post",
+        callerMoment: "Operator or Director requests a public brand post",
+        agentAction: "Publishes a tweet to the connected X account (max 280 characters).",
+        tools: ["post_x_tweet"],
+      },
+      {
+        id: "x-reply",
+        callerMoment: "Someone commented or @mentioned the brand",
+        agentAction: "Lists recent mentions, then replies or likes from the connected account.",
+        tools: ["list_x_mentions", "reply_to_x_tweet", "like_x_tweet", "repost_x_tweet"],
+      },
+      {
+        id: "x-dm",
+        callerMoment: "Operator wants to DM a prospect or partner on X",
+        agentAction: "Sends a direct message by @username or user ID.",
+        tools: ["send_x_dm"],
+      },
+      {
+        id: "x-ads",
+        callerMoment: "Operator asks how paid campaigns are performing",
+        agentAction: "Lists X Ads campaigns and pulls impressions/clicks/spend for a campaign ID.",
+        tools: ["list_x_ad_campaigns", "get_x_ad_campaign_stats"],
+      },
+    ],
+  },
   twilio: {
     integration: "twilio",
     label: "Messaging",
@@ -334,6 +367,7 @@ const PROVIDER_TOOL_INTEGRATION: Partial<
     | "salesforce"
     | "hubspot"
     | "slack"
+    | "x"
     | "zoom"
     | "apollo"
     | "meta"
@@ -348,6 +382,7 @@ const PROVIDER_TOOL_INTEGRATION: Partial<
   salesforce: "crm",
   hubspot: "crm",
   slack: "slack",
+  x: "x",
   zoom: "zoom",
   apollo: "apollo",
   meta: "meta",
@@ -368,6 +403,7 @@ export const PROVIDER_ACCENT: Record<string, string> = {
   salesforce: "#00A1E0",
   hubspot: "#FF7A59",
   slack: "#4A154B",
+  x: "#000000",
   zoom: "#2D8CFF",
   apollo: "#8B5CF6",
   meta: "#1877F2",

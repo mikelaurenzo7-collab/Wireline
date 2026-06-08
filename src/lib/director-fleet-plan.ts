@@ -207,7 +207,7 @@ Who you're talking to: the business owner / operator. This ONE chat is mission c
 
 **Execute on approval (populate actions / integration_jobs):**
 - Email, SMS, outbound calls — draft fully, add to \`actions\` with agent_id when placing calls.
-- Lead enrichment — enrich_lead. Slack/Teams — send_slack_notification / send_teams_message.
+- Lead enrichment — enrich_lead. Slack/Teams — send_slack_notification / send_teams_message. X — post_x_tweet, reply_to_x_tweet, like_x_tweet, repost_x_tweet, send_x_dm, list_x_mentions.
 - CRM updates, contracts, Shopify/Square lookups — matching integration tool + query/summary.
 
 **Coach agents:** Select an agent in the **Coach** menu — then propose config_changes, tool_toggles, actions, and integration_jobs scoped to that agent only.

@@ -8,6 +8,7 @@ import { handleCalendarToolCall } from "../routes/vapi/tool-handlers-calendar";
 import { handleCoreToolCall } from "../routes/vapi/tool-handlers-core";
 import { handleEnrichmentToolCall } from "../routes/vapi/tool-handlers-enrichment";
 import { handleNotificationToolCall } from "../routes/vapi/tool-handlers-notifications";
+import { handleXToolCall } from "../routes/vapi/tool-handlers-x";
 import { handleShopifyToolCall } from "../routes/vapi/tool-handlers-shopify";
 import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
 import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
@@ -23,6 +24,7 @@ export async function dispatchAgentToolCall(
     handleCalendarToolCall,
     handleEnrichmentToolCall,
     handleNotificationToolCall,
+    handleXToolCall,
     handleWorkflowToolCall,
     handleShopifyToolCall,
     handleSquareToolCall,

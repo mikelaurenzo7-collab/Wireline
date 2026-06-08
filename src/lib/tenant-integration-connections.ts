@@ -6,6 +6,8 @@ import {
   loadPlatformIntegrationFlags,
   type PlatformIntegrationFlags,
 } from "./platform-integration-flags";
+import { X_ENGAGEMENT_TOOL_NAMES } from "./x-service";
+import { xAdsConfigured } from "./x-ads-service";
 
 const CRM_TOOL_NAMES = new Set<AgentToolName>([
   "crm_search_contacts",
@@ -17,6 +19,7 @@ export interface TenantIntegrationConnections {
   shopify: boolean;
   square: boolean;
   slack: boolean;
+  x: boolean;
   microsoft_teams: boolean;
   microsoft_excel: boolean;
   salesforce: boolean;
@@ -34,6 +37,7 @@ export interface TenantIntegrationConnections {
 
 const SHOPIFY_SET = new Set<string>(SHOPIFY_TOOL_NAMES);
 const SQUARE_SET = new Set<string>(SQUARE_TOOL_NAMES);
+const X_ENGAGEMENT_SET = new Set<string>(X_ENGAGEMENT_TOOL_NAMES);
 
 /** Active CRM OAuth rows for a tenant — used to gate voice tool schemas. */
 export async function loadTenantIntegrationConnections(
@@ -64,6 +68,7 @@ export async function loadTenantIntegrationConnections(
     shopify: providers.has("shopify"),
     square: providers.has("square"),
     slack: providers.has("slack"),
+    x: providers.has("x"),
     microsoft_teams: providers.has("microsoft_teams"),
     microsoft_excel: providers.has("microsoft_excel"),
     salesforce: providers.has("salesforce"),
@@ -85,6 +90,10 @@ export function filterToolsByTenantConnections(
     if (SHOPIFY_SET.has(name)) return conn.shopify;
     if (SQUARE_SET.has(name)) return conn.square;
     if (name === "send_slack_notification") return conn.slack;
+    if (X_ENGAGEMENT_SET.has(name)) return conn.x;
+    if (name === "list_x_ad_campaigns" || name === "get_x_ad_campaign_stats") {
+      return xAdsConfigured();
+    }
     if (name === "send_teams_message") return conn.microsoft_teams;
     if (name === "log_to_excel") return conn.microsoft_excel;
     if (name === "generate_zoom_link") return conn.zoom;

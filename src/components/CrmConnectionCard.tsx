@@ -36,6 +36,7 @@ interface IntegrationState {
   salesforce: IntegrationStatus;
   hubspot: IntegrationStatus;
   slack: IntegrationStatus;
+  x: IntegrationStatus;
   zoom: IntegrationStatus;
   apollo: IntegrationStatus;
   meta: IntegrationStatus;
@@ -86,6 +87,13 @@ const PROVIDERS: {
     color: "purple",
     logo: "SL",
     group: "Team",
+  },
+  {
+    key: "x",
+    label: "X",
+    color: "neutral",
+    logo: "X",
+    group: "Social",
   },
   {
     key: "zoom",

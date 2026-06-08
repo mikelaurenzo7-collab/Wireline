@@ -23,6 +23,8 @@ import * as claudeBrain from "./claude-brain";
 import { apolloPlatformConfigured } from "./apollo-service";
 import { microsoftGraphConfigured } from "./microsoft-graph-service";
 import { slackOAuthConfigured } from "./slack-service";
+import { xOAuthConfigured } from "./x-service";
+import { xAdsConfigured } from "./x-ads-service";
 
 export type IntegrationStatus = "configured" | "missing" | "fallback";
 
@@ -251,6 +253,18 @@ export const INTEGRATIONS: readonly IntegrationDescriptor[] = [
     fallback:
       "Set SLACK_CLIENT_ID/SECRET once on Vercel. Tenants only click Connect in Admin → Integrations (OAuth).",
     docsUrl: "https://api.slack.com/apps",
+  },
+  {
+    id: "x",
+    label: "X (Twitter)",
+    description:
+      "OAuth-connected X account — agents can post tweets and promote your brand on the timeline.",
+    group: "actions",
+    required: false,
+    envVars: ["X_CLIENT_ID", "X_CLIENT_SECRET"],
+    fallback:
+      "Set X_CLIENT_ID/SECRET on Vercel. Operators connect their X account in Admin → Integrations. For Ads API campaign stats, also set X_ADS_* platform credentials.",
+    docsUrl: "https://developer.x.com/en/docs/authentication/oauth-2-0/authorization-code",
   },
   {
     id: "zoom",
@@ -484,6 +498,7 @@ export function getHealthCapabilities() {
     microsoft_teams: microsoftGraphConfigured(),
     microsoft_excel: microsoftGraphConfigured(),
     slack: slackOAuthConfigured(),
+    x: xOAuthConfigured() || xAdsConfigured(),
     zoom: envIsPresent("ZOOM_CLIENT_ID") && envIsPresent("ZOOM_CLIENT_SECRET"),
     meta: envIsPresent("META_APP_ID") && envIsPresent("META_APP_SECRET"),
     elevenlabs: envIsPresent("ELEVENLABS_API_KEY"),

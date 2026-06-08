@@ -8,6 +8,7 @@ import { authenticateUser } from "../../middleware/auth";
 import { sfOAuthConfigured } from "../../lib/salesforce-service";
 import { hsOAuthConfigured } from "../../lib/hubspot-service";
 import { slackOAuthConfigured } from "../../lib/slack-service";
+import { xOAuthConfigured } from "../../lib/x-service";
 import { zoomOAuthConfigured } from "../../lib/zoom-service";
 import { apolloOAuthConfigured, apolloPlatformConfigured } from "../../lib/apollo-service";
 import { metaOAuthConfigured } from "../../lib/meta-service";
@@ -51,6 +52,7 @@ router.get(
       const sfConn = findBy("salesforce");
       const hsConn = findBy("hubspot");
       const slackConn = findBy("slack");
+      const xConn = findBy("x");
       const zoomConn = findBy("zoom");
       const apolloConn = findBy("apollo");
       const metaConn = findBy("meta");
@@ -88,6 +90,18 @@ router.get(
                 null,
             }
           : { connected: false, configured: slackOAuthConfigured() },
+        x: xConn
+          ? {
+              connected: true,
+              email: xConn.connectedEmail,
+              instance_url: xConn.instanceUrl,
+              connected_at: xConn.createdAt,
+              username:
+                (xConn.metadata as { username?: string } | null)?.username ??
+                xConn.connectedEmail?.replace(/^@/, "") ??
+                null,
+            }
+          : { connected: false, configured: xOAuthConfigured() },
         zoom: zoomConn
           ? {
               connected: true,

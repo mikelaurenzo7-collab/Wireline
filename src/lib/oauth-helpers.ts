@@ -167,13 +167,17 @@ export async function sendEmailViaMicrosoft(opts: {
 export interface VerifiedOAuthState {
   ok: boolean;
   userId?: string;
+  /** PKCE code_verifier for providers that require it (e.g. X/Twitter OAuth 2.0). */
+  pkceVerifier?: string;
 }
 
-export function generateOAuthState(opts?: { userId?: string }): string {
+export function generateOAuthState(opts?: { userId?: string; pkceVerifier?: string }): string {
   const nonce = randomUUID().replace(/-/g, "");
   const ts = Date.now().toString(36);
-  const uidPart = opts?.userId ? Buffer.from(opts.userId, "utf8").toString("base64url") : "";
-  const payload = uidPart ? `${nonce}.${ts}.${uidPart}` : `${nonce}.${ts}`;
+  const parts = [nonce, ts];
+  if (opts?.userId) parts.push(Buffer.from(opts.userId, "utf8").toString("base64url"));
+  if (opts?.pkceVerifier) parts.push(Buffer.from(opts.pkceVerifier, "utf8").toString("base64url"));
+  const payload = parts.join(".");
   const sig = createHmac("sha256", getOAuthStateSecret()).update(payload).digest("base64url");
   return `${payload}.${sig}`;
 }
@@ -201,6 +205,7 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
     if (Date.now() - ts > 20 * 60 * 1000) return { ok: false };
 
     let userId: string | undefined;
+    let pkceVerifier: string | undefined;
     if (parts.length >= 3 && parts[2]) {
       try {
         userId = Buffer.from(parts[2], "base64url").toString("utf8");
@@ -208,8 +213,15 @@ export function verifyOAuthState(state: string | undefined): VerifiedOAuthState 
         return { ok: false };
       }
     }
+    if (parts.length >= 4 && parts[3]) {
+      try {
+        pkceVerifier = Buffer.from(parts[3], "base64url").toString("utf8");
+      } catch {
+        return { ok: false };
+      }
+    }
 
-    return { ok: true, userId };
+    return { ok: true, userId, pkceVerifier };
   } catch {
     return { ok: false };
   }

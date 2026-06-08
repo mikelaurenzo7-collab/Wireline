@@ -23,6 +23,15 @@ export const INTEGRATION_STYLES: Record<
   calendar: { name: "Cal.com", color: "#111827", icon: <Calendar className="w-4 h-4" /> },
   crm: { name: "HubSpot", color: "#FF7A59", icon: <Users className="w-4 h-4" /> },
   slack: { name: "Slack", color: "#4A154B", icon: <MessagesSquare className="w-4 h-4" /> },
+  x: {
+    name: "X",
+    color: "#000000",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    ),
+  },
   zoom: { name: "Zoom", color: "#2D8CFF", icon: <Video className="w-4 h-4" /> },
   docusign: { name: "DocuSign", color: "#005CB9", icon: <FileSignature className="w-4 h-4" /> },
   apollo: { name: "Apollo", color: "#000000", icon: <Database className="w-4 h-4" /> },

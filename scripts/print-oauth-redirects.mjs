@@ -26,6 +26,7 @@ const paths = {
   Salesforce: "/api/oauth/salesforce/callback",
   HubSpot: "/api/oauth/hubspot/callback",
   Slack: "/api/oauth/slack/callback",
+  X: "/api/oauth/x/callback",
   Zoom: "/api/oauth/zoom/callback",
 };
 
@@ -69,7 +70,14 @@ console.log(`
    Env: SLACK_CLIENT_ID, SLACK_CLIENT_SECRET
    (Bot scopes: chat:write, channels:read, groups:read, team:read — see src/lib/slack-service.ts)
 
-7) Zoom — App Marketplace → your OAuth app → Redirect URL for OAuth
+7) X (Twitter) — Developer Portal → your app → User authentication settings
+   https://developer.x.com/
+   Callback / Redirect URI:
+   ${origin}${paths.X}
+   Env: X_CLIENT_ID, X_CLIENT_SECRET
+   (OAuth 2.0 scopes: tweet.read tweet.write users.read offline.access — see src/lib/x-service.ts)
+
+8) Zoom — App Marketplace → your OAuth app → Redirect URL for OAuth
    https://marketplace.zoom.us/
    ${origin}${paths.Zoom}
    Env: ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET

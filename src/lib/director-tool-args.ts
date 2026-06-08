@@ -25,6 +25,22 @@ export function buildDirectorToolArgs(
       return { phone_number: text };
     case "send_slack_notification":
       return { message: text, urgency: "normal" };
+    case "post_x_tweet":
+      return { text };
+    case "reply_to_x_tweet":
+      return {
+        text,
+        tweet_id: text.match(/\d{10,25}/)?.[0],
+      };
+    case "like_x_tweet":
+    case "repost_x_tweet":
+      return { tweet_id: text.match(/\d{10,25}/)?.[0] || text };
+    case "send_x_dm":
+      return { recipient: text, text: job.summary || text };
+    case "list_x_mentions":
+      return { limit: 10 };
+    case "get_x_ad_campaign_stats":
+      return { campaign_id: text.match(/\d+/)?.[0] || text };
     case "send_teams_message":
       return { message: text };
     case "crm_log_call":

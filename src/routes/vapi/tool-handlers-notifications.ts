@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { sendTeamsMessage, logToExcel } from "../../lib/microsoft-graph-service";
 import { postAgentNotification as slackPostAgentNotification } from "../../lib/slack-service";
-
 import type { ToolCallContext, ToolCallResult } from "./types";
 
 export async function handleNotificationToolCall(

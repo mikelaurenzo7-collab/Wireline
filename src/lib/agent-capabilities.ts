@@ -16,6 +16,14 @@ export const AGENT_TOOL_NAME_VALUES = [
   "schedule_callback",
   "capture_customer_profile",
   "send_slack_notification",
+  "post_x_tweet",
+  "reply_to_x_tweet",
+  "like_x_tweet",
+  "repost_x_tweet",
+  "send_x_dm",
+  "list_x_mentions",
+  "list_x_ad_campaigns",
+  "get_x_ad_campaign_stats",
   "generate_zoom_link",
   "crm_search_contacts",
   "crm_log_call",
@@ -52,6 +60,7 @@ export type ToolIntegration =
   | "calendar"
   | "crm"
   | "slack"
+  | "x"
   | "zoom"
   | "docusign"
   | "apollo"
@@ -204,6 +213,62 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
       "Posts a message to the configured Slack channel when something important happens.",
     group: "team",
     integration: "slack",
+  },
+  {
+    name: "post_x_tweet",
+    label: "Post on X",
+    description: "Publishes a tweet to the operator's connected X account (max 280 characters).",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "reply_to_x_tweet",
+    label: "Reply on X",
+    description: "Posts a public reply to a specific tweet ID from the connected X account.",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "like_x_tweet",
+    label: "Like on X",
+    description: "Likes a tweet by ID using the connected X account.",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "repost_x_tweet",
+    label: "Repost on X",
+    description: "Reposts (retweets) a tweet by ID from the connected X account.",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "send_x_dm",
+    label: "Send X DM",
+    description: "Sends a direct message on X to a user ID or @username.",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "list_x_mentions",
+    label: "List X mentions",
+    description: "Fetches recent @mentions for the connected X account to triage replies.",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "list_x_ad_campaigns",
+    label: "List X ad campaigns",
+    description: "Lists active X Ads campaigns (platform Ads API credentials required).",
+    group: "messaging",
+    integration: "x",
+  },
+  {
+    name: "get_x_ad_campaign_stats",
+    label: "X ad campaign stats",
+    description: "Returns impressions, clicks, and spend for an X Ads campaign ID.",
+    group: "messaging",
+    integration: "x",
   },
   // Meetings
   {
