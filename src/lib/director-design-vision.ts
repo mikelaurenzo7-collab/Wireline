@@ -13,11 +13,9 @@ export const DESIGN_VISION_SPEC_MIN_CHARS = 4_200;
 export interface DesignVisionSpecInput {
   operatorMessage: string;
   designBriefMarkdown: string;
+  opusVisionNotes?: string;
   researchNotes?: string;
   layoutScoutNotes?: string;
-  imagineAssetsNotes?: string;
-  /** Pass 1 fast lane — compact spec so Hy3 starts sooner. */
-  compact?: boolean;
 }
 
 function deviceLabel(device: ReturnType<typeof resolveDesignPreviewDeviceType>): string {
@@ -37,7 +35,7 @@ function sectionBlueprint(device: string): string {
   return [
     "### 1. Hero (above the fold)",
     `- Viewport: ${device}`,
-    "- Structure: wl-hero wl-hero--photo (or bold typographic hero if no photo), wl-hero-scrim, wl-hero-content",
+    "- Structure: wl-hero with bold typographic or gradient hero (wl-hero-scrim optional), wl-hero-content",
     "- Eyebrow: industry-specific credibility (licensed, local, years in business)",
     "- Headline (wl-headline): benefit-led, 6–12 words, specific to the business — not generic",
     "- Subhead (wl-subhead): who you serve + geography or urgency in one sentence",
@@ -136,27 +134,16 @@ function padToTarget(text: string, target: number): string {
  * Synthesize the pass-1 vision document — no extra LLM call; assembled from brief + research.
  */
 export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
-  const compact = input.compact === true;
-  const targetChars = compact ? 2_800 : DESIGN_VISION_SPEC_TARGET_CHARS;
-  const minChars = compact ? 2_200 : DESIGN_VISION_SPEC_MIN_CHARS;
-  const briefCap = compact ? 2_400 : undefined;
-
   const device = resolveDesignPreviewDeviceType({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,
   });
 
-  const briefBody = briefCap
-    ? input.designBriefMarkdown.trim().slice(0, briefCap)
-    : input.designBriefMarkdown.trim();
-
   const parts = [
     "# Wireline Design Vision Spec",
     "",
     "## Studio mode",
-    compact
-      ? "Pass 1 fast preview — ship complete hero + trust + one body section + footer with embedded kit CSS. User will refine in chat."
-      : "High-fidelity production landing page (not wireframe). Output one self-contained HTML file with embedded <style>.",
+    "High-fidelity production landing page (not wireframe). Output one self-contained HTML file with embedded <style>.",
     "This spec is the single source of truth for pass 1 — implement every section below.",
     "",
     "## Viewport & canvas",
@@ -166,27 +153,23 @@ export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
     input.operatorMessage.trim(),
     "",
     "## design.md (project brief — honor every field)",
-    briefBody,
+    input.designBriefMarkdown.trim(),
   ];
 
-  if (input.researchNotes?.trim()) {
-    const researchCap = compact ? 600 : undefined;
-    const research = researchCap
-      ? input.researchNotes.trim().slice(0, researchCap)
-      : input.researchNotes.trim();
-    parts.push("", "## Research synthesis (follow closely)", research);
+  if (input.opusVisionNotes?.trim()) {
+    parts.push("", "## Opus creative vision (authoritative)", input.opusVisionNotes.trim());
   }
 
-  if (!compact && input.layoutScoutNotes?.trim()) {
+  if (input.researchNotes?.trim()) {
+    parts.push("", "## Research synthesis (follow closely)", input.researchNotes.trim());
+  }
+
+  if (input.layoutScoutNotes?.trim()) {
     parts.push(
       "",
       "## Layout archetypes (pick one or hybridize — avoid generic grids)",
       input.layoutScoutNotes.trim(),
     );
-  }
-
-  if (!compact && input.imagineAssetsNotes?.trim()) {
-    parts.push("", "## Hero photography assets", input.imagineAssetsNotes.trim());
   }
 
   parts.push(
@@ -199,14 +182,7 @@ export function buildDesignVisionSpec(input: DesignVisionSpecInput): string {
     successCriteria(),
   );
 
-  let spec = parts.join("\n");
-  if (compact) {
-    while (spec.length < minChars) {
-      spec = `${spec}\n- Ship hero, trust row, services, footer with wl-* kit classes.`;
-    }
-    return spec.slice(0, targetChars + 200);
-  }
-  return padToTarget(spec, targetChars);
+  return padToTarget(parts.join("\n"), DESIGN_VISION_SPEC_TARGET_CHARS);
 }
 
 export function visionSpecCharCount(spec: string): number {

@@ -205,11 +205,10 @@ ${DESIGN_KIT_CLASS_VOCABULARY.map((c) => `- \`${c}\``).join("\n")}
 ${DESIGN_KIT_BASE_CSS}
 \`\`\`
 
-When Grok Imagine assets are provided, use the photo hero skeleton:
+Hero skeleton (typographic or gradient — embedded CSS only):
 \`\`\`html
 <body class="wl-page">
-  <header class="wl-hero wl-hero--photo">
-    <div class="wl-hero-bg" aria-hidden="true"></div>
+  <header class="wl-hero">
     <div class="wl-hero-scrim" aria-hidden="true"></div>
     <div class="wl-hero-content">
       <p class="wl-eyebrow">…</p>

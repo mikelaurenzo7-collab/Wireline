@@ -4,12 +4,52 @@
  * Pass 1: Claude Design–style high-fidelity vision spec (~5k chars) → full HTML draft.
  * Pass 2+: Short delta prompts — fix list + incumbent HTML only.
  */
+import { buildDesignStageContext, sliceDesignBrief } from "./director-design-context";
 import { DESIGN_KIT_PROMPT_BLOCK } from "./director-design-kit";
 import { buildDesignVisionSpec } from "./director-design-vision";
 import { DESIGN_PASS_FOCUS, type DesignPassNumber } from "./director-design-team";
 
+export const DESIGN_OPUS_VISION_SYSTEM = `You are the creative director for Wireline Design Studio.
+Before any HTML is built, you envision the most immaculate, flawless, professional, and tailored
+landing-page concept for this specific operator and their business.
+
+Your output is the authoritative brief Grok Build will draft; you will critique and finish the HTML yourself afterward.
+
+Requirements for creativeVision:
+- Write as a creative director pitching a bespoke agency concept — not generic SaaS templates
+- Name the business, audience, geography, and conversion goal explicitly
+- Specify palette (hex), typography pairing (Google Fonts), layout archetype, hero structure, section order
+- Call out trust signals, CTA hierarchy, and copy tone (American English)
+- Describe what makes this design unmistakably for THIS business — not a category cliché
+- 600–1200 words of dense, actionable art direction
+
+Requirements for designBriefExtension:
+- Markdown sections that extend design.md: Section map, Copy bank (headlines/CTAs), Accessibility notes, Design tokens
+- Every section from hero through footer with concrete content direction
+- No HTML`;
+
+export const DESIGN_OPUS_VISION_TOOL = {
+  name: "wireline_design_opus_vision",
+  description: "Tailored creative vision and extended design.md for the build pipeline",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      creativeVision: {
+        type: "string",
+        description: "Immaculate tailored creative vision for this operator",
+      },
+      designBriefExtension: {
+        type: "string",
+        description: "Markdown sections to append to design.md (section map, copy bank, tokens)",
+      },
+    },
+    required: ["creativeVision", "designBriefExtension"],
+  },
+};
+
 export const DESIGN_RESEARCH_SYSTEM = `You are the lead design researcher for Wireline Spectrum Desk.
-Study the operator request and design.md. Output structured creative direction only — no HTML.
+You receive the operator request, Opus creative vision, and design.md. Extend — do not contradict Opus.
+Output structured creative direction only — no HTML.
 
 Cover in bullet points:
 1. US audience + conversion goal (phone calls, bookings, quotes)
@@ -25,7 +65,7 @@ Suggest 3 unconventional layout archetypes for this US local-business page — s
 No HTML. Max 150 words. Avoid three-column feature-card grids.`;
 
 /** Pass 1 — implement the full vision spec (Claude Design high-fidelity mode). */
-export const DESIGN_BUILDER_VISION_SYSTEM = `You are the lead UI builder on Wireline Spectrum Desk (pass 1 — high fidelity).
+export const DESIGN_BUILDER_VISION_SYSTEM = `You are Grok Build — the sole HTML builder for Wireline Design Studio (pass 1 — high fidelity).
 You receive an exhaustive vision spec (~5000 characters). Implement it completely in one HTML file.
 
 Rules:
@@ -63,16 +103,26 @@ Format:
 
 Be harsh on text-link CTAs, flat wireframes, missing trust row, weak hero hierarchy.`;
 
-export const DESIGN_PRODUCTION_FINISHER_SYSTEM = `You are the production finisher on Wireline Spectrum Desk.
-Apply critic notes and pass focus. Output ONLY the complete polished HTML document.
+export const DESIGN_PRODUCTION_FINISHER_SYSTEM = `You are the production finisher on Wireline Spectrum Desk (MiniMax M3).
+Apply critic notes, Opus vision, and pass focus. Output ONLY the complete polished HTML document.
 
 Requirements:
 - Full Wireline Design Kit in <style>
-- wl-hero--photo pattern when photography assets are provided
+- Polished typographic or gradient hero — embedded CSS only, no external image dependencies
 - Agency-grade mobile hero, ≥2 KB document, embedded CSS only
+- Match Opus palette, typography, and section map exactly
 - No markdown fences`;
 
-export const DESIGN_EMERGENCY_POLISH_SYSTEM = `You are the emergency finisher for Wireline Spectrum Desk.
+export const DESIGN_OPUS_SIGNOFF_SYSTEM = `You are the final sign-off editor for Wireline Design Studio (Claude Opus).
+The Grok-built HTML page is complete. Write the operator-facing chat summary.
+
+operatorReply: plain language (no HTML, no model names). Opening line + 3–5 bullets on what they see + 2 tweak ideas.
+pageTitle: short preview title (under 60 chars).`;
+
+/** @deprecated M3 removed — use DESIGN_OPUS_SIGNOFF_SYSTEM */
+export const DESIGN_M3_SIGNOFF_SYSTEM = DESIGN_OPUS_SIGNOFF_SYSTEM;
+
+export const DESIGN_EMERGENCY_POLISH_SYSTEM = `You are the emergency HTML finisher for Wireline Design Studio (Grok Build).
 The HTML failed quality gate checks. Output ONLY the fixed complete HTML document.
 
 Requirements:
@@ -83,24 +133,37 @@ Requirements:
 
 export const DESIGN_BUILDER_SYSTEM = DESIGN_UI_ARCHITECT_SYSTEM;
 
+export function buildDesignResearchUserPrompt(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+}): string {
+  return buildDesignStageContext({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    opusVisionNotes: input.opusVisionNotes,
+  });
+}
+
 export function buildDesignBuilderUserPrompt(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
+  opusVisionNotes?: string;
   researchNotes?: string;
   revisionNotes?: string;
   priorHtml?: string;
   passNumber: DesignPassNumber;
-  imagineAssetsNotes?: string;
   layoutScoutNotes?: string;
   architectLabel?: string;
+  pipelinePhases?: string[];
 }): string {
   if (input.passNumber === 1 && !input.priorHtml?.trim()) {
     const vision = buildDesignVisionSpec({
       operatorMessage: input.operatorMessage,
       designBriefMarkdown: input.designBriefMarkdown,
+      opusVisionNotes: input.opusVisionNotes,
       researchNotes: input.researchNotes,
       layoutScoutNotes: input.layoutScoutNotes,
-      imagineAssetsNotes: input.imagineAssetsNotes,
     });
     return [
       vision,
@@ -130,13 +193,16 @@ export function buildDesignRefinementUserPrompt(input: {
   revisionNotes?: string;
   architectLabel?: string;
 }): string {
-  const briefExcerpt = input.designBriefMarkdown.trim().slice(0, input.passNumber === 2 ? 1_200 : 600);
+  const briefExcerpt = sliceDesignBrief(
+    input.designBriefMarkdown,
+    input.passNumber === 2 ? 8_000 : 4_000,
+  );
   const htmlSlice = input.html.trim().slice(0, input.passNumber === 2 ? 22_000 : 18_000);
   const parts = [
     `Pass ${input.passNumber} refinement — apply focus only, keep what works.`,
     `## Focus\n${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    `## Operator intent\n${input.operatorMessage.trim().slice(0, 280)}`,
-    `## design.md (excerpt)\n${briefExcerpt}`,
+    `## Operator intent\n${input.operatorMessage.trim()}`,
+    `## design.md\n${briefExcerpt}`,
   ];
   if (input.revisionNotes?.trim()) {
     parts.push(`## Must fix\n${input.revisionNotes.trim().slice(0, 2_000)}`);
@@ -154,7 +220,6 @@ export function buildEngineerUserPrompt(input: {
   html: string;
   passNumber: DesignPassNumber;
   researchNotes?: string;
-  imagineAssetsNotes?: string;
   winningArchitectLabel?: string;
   revisionNotes?: string;
 }): string {
@@ -171,15 +236,21 @@ export function buildEngineerUserPrompt(input: {
 export function buildVisualCriticUserPrompt(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  researchNotes?: string;
   html: string;
   passNumber: DesignPassNumber;
 }): string {
-  const briefCap = input.passNumber === 1 ? 2_000 : 800;
   const htmlCap = input.passNumber === 1 ? 20_000 : 14_000;
   return [
     `Pass ${input.passNumber} critique — ${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    `Intent: ${input.operatorMessage.trim().slice(0, 200)}`,
-    `## design.md\n${input.designBriefMarkdown.trim().slice(0, briefCap)}`,
+    buildDesignStageContext({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      opusVisionNotes: input.opusVisionNotes,
+      researchNotes: input.researchNotes,
+      briefCap: input.passNumber === 1 ? 8_000 : 4_000,
+    }),
     `## HTML\n${input.html.trim().slice(0, htmlCap)}`,
   ].join("\n\n");
 }
@@ -187,31 +258,56 @@ export function buildVisualCriticUserPrompt(input: {
 export function buildFinisherUserPrompt(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  researchNotes?: string;
   html: string;
   passNumber: DesignPassNumber;
   criticNotes?: string;
   revisionNotes?: string;
-  imagineAssetsNotes?: string;
+  pipelinePhases?: string[];
 }): string {
-  const briefCap = input.passNumber === 1 ? 1_500 : 500;
   const parts = [
     `Pass ${input.passNumber} finish — ${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    `## design.md\n${input.designBriefMarkdown.trim().slice(0, briefCap)}`,
+    buildDesignStageContext({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      opusVisionNotes: input.opusVisionNotes,
+      researchNotes: input.researchNotes,
+      pipelinePhases: input.pipelinePhases,
+      revisionNotes: input.revisionNotes,
+      criticNotes: input.criticNotes,
+      briefCap: input.passNumber === 1 ? 8_000 : 4_000,
+    }),
+    DESIGN_KIT_PROMPT_BLOCK,
   ];
-  if (input.criticNotes?.trim()) {
-    parts.push(`## Visual critic notes\n${input.criticNotes.trim()}`);
-  }
-  if (input.revisionNotes?.trim()) {
-    parts.push(`## Quality gate fixes\n${input.revisionNotes.trim()}`);
-  }
-  if (input.imagineAssetsNotes?.trim()) {
-    parts.push(input.imagineAssetsNotes.trim());
-  }
-  parts.push(DESIGN_KIT_PROMPT_BLOCK);
   const htmlCap = input.passNumber === 1 ? 24_000 : 16_000;
   parts.push(`## HTML to finish\n${input.html.trim().slice(0, htmlCap)}`);
   return parts.join("\n\n");
 }
+
+export function buildOpusSignoffUserPrompt(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  html: string;
+  passCount: number;
+  pipelinePhases: string[];
+}): string {
+  return [
+    `Completed ${input.passCount} Grok Build pass(es).`,
+    buildDesignStageContext({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      opusVisionNotes: input.opusVisionNotes,
+      pipelinePhases: input.pipelinePhases,
+      briefCap: 6_000,
+    }),
+    `## Final HTML (excerpt)\n${input.html.slice(0, 14_000)}`,
+  ].join("\n\n");
+}
+
+/** @deprecated Use buildOpusSignoffUserPrompt */
+export const buildM3SignoffUserPrompt = buildOpusSignoffUserPrompt;
 
 export const DESIGN_GEMINI_VISUAL_SYSTEM = DESIGN_PRODUCTION_FINISHER_SYSTEM;
 
@@ -221,7 +317,6 @@ export function buildGeminiVisualUserPrompt(input: {
   html: string;
   passNumber: DesignPassNumber;
   revisionNotes?: string;
-  imagineAssetsNotes?: string;
 }): string {
   return buildFinisherUserPrompt({
     ...input,
@@ -229,15 +324,30 @@ export function buildGeminiVisualUserPrompt(input: {
   });
 }
 
-export const DESIGN_CODE_REVIEWER_SYSTEM = `Strict front-end reviewer — unused in Spectrum Desk (deterministic gate instead).`;
+export const DESIGN_OPUS_FINISH_SYSTEM = `You are the creative director finishing a Wireline Design page.
 
-export const DESIGN_FINAL_APPROVER_SYSTEM = `You sign off Wireline Spectrum Desk work for a US business owner.
+Grok Build produced a first draft. Critique it against your creative vision and design.md, then implement the production-ready HTML yourself in one pass.
 
-Write operatorReply: plain language (no HTML, no model names).
-Structure: one opening line, 3–5 bullets on what they're seeing, 2–3 chat tweak ideas.
-Say "your page" — never prototype or API.
+Requirements for html:
+- Complete <!doctype html> with embedded Wireline Design Kit CSS in <style>
+- Fix wireframe stubs, text-link CTAs, missing sections, palette/typography drift
+- Preserve strong Grok structure when it already matches the brief — surgical fixes over full rewrites
+- wl-page, wl-hero, wl-headline, wl-btn--primary, wl-trust-row, wl-badge; embedded CSS only
+- No markdown fences
 
-Set pageTitle: short preview title (under 60 chars).`;
+Requirements for operatorReply:
+- Plain language (no HTML, no model names). Opening line + 3–5 bullets on what they see + 2 tweak ideas.
+
+Requirements for pageTitle:
+- Short preview title (under 60 chars).`;
+
+/** @deprecated Grok round-trip removed — Opus implements fixes directly */
+export const DESIGN_OPUS_HTML_REVIEW_SYSTEM = DESIGN_OPUS_FINISH_SYSTEM;
+
+/** @deprecated alias */
+export const DESIGN_CODE_REVIEWER_SYSTEM = DESIGN_OPUS_FINISH_SYSTEM;
+
+export const DESIGN_FINAL_APPROVER_SYSTEM = DESIGN_OPUS_SIGNOFF_SYSTEM;
 
 export const DESIGN_FINAL_APPROVAL_TOOL = {
   name: "wireline_design_final_approval",
@@ -252,32 +362,46 @@ export const DESIGN_FINAL_APPROVAL_TOOL = {
   },
 };
 
-export const DESIGN_CODE_REVIEW_TOOL = {
-  name: "wireline_design_code_review",
-  description: "Legacy Opus code review tool",
+export const DESIGN_OPUS_FINISH_TOOL = {
+  name: "wireline_design_opus_finish",
+  description: "Critique Grok draft, output polished HTML plus operator summary",
   input_schema: {
     type: "object" as const,
     properties: {
-      decision: { type: "string", enum: ["approve", "revise"] },
-      overall: { type: "number" },
-      structure: { type: "number" },
-      components: { type: "number" },
-      visual_polish: { type: "number" },
-      mobile: { type: "number" },
-      accessibility: { type: "number" },
-      strengths: { type: "array", items: { type: "string" }, maxItems: 4 },
-      issues: { type: "array", items: { type: "string" }, maxItems: 8 },
-      revisionNotes: { type: "string" },
+      html: { type: "string", description: "Complete polished HTML document" },
+      operatorReply: { type: "string", description: "Operator-facing chat summary" },
+      pageTitle: { type: "string", description: "Short preview card title" },
     },
-    required: [
-      "decision",
-      "overall",
-      "structure",
-      "components",
-      "visual_polish",
-      "mobile",
-      "accessibility",
-      "issues",
-    ],
+    required: ["html", "operatorReply", "pageTitle"],
   },
 };
+
+/** @deprecated Use DESIGN_OPUS_FINISH_TOOL */
+export const DESIGN_OPUS_HTML_REVIEW_TOOL = DESIGN_OPUS_FINISH_TOOL;
+
+/** @deprecated Use DESIGN_OPUS_FINISH_TOOL */
+export const DESIGN_CODE_REVIEW_TOOL = DESIGN_OPUS_FINISH_TOOL;
+
+export function buildOpusFinishUserPrompt(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  draftHtml: string;
+  pipelinePhases?: string[];
+}): string {
+  return [
+    "Critique the Grok Build draft against your vision, then implement the finished page.",
+    buildDesignStageContext({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      opusVisionNotes: input.opusVisionNotes,
+      pipelinePhases: input.pipelinePhases,
+      briefCap: 6_000,
+    }),
+    DESIGN_KIT_PROMPT_BLOCK,
+    `## Grok Build draft\n${input.draftHtml.slice(0, 20_000)}`,
+  ].join("\n\n");
+}
+
+/** @deprecated Use buildOpusFinishUserPrompt */
+export const buildOpusHtmlReviewUserPrompt = buildOpusFinishUserPrompt;

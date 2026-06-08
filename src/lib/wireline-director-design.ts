@@ -44,6 +44,9 @@ export const WL_DIRECTOR_CLASSES = {
   composerToolChip: "wl-composer-tool-chip",
   composerToolChipActive: "wl-composer-tool-chip--active",
   composerToolChipEngaged: "wl-composer-tool-chip--engaged",
+  composerDesignToolChip: "wl-composer-design-chip",
+  composerDesignToolChipActive: "wl-composer-design-chip--active",
+  composerDesignContextPill: "wl-composer-design-context-pill",
   composerContextStrip: "wl-composer-context-strip",
   composerContextPill: "wl-composer-context-pill",
   composerSendRow: "wl-composer-send-row",
@@ -432,6 +435,7 @@ export const WIRELINE_STITCH_UI = {
   modelLabel: "Wireline Design",
   badgeLabel: "Wireline Design",
   designModeToggleLabel: "Design",
+  designModeBetaLabel: "BETA",
   designModeToggleHint:
     "Wireline Design mode — every message builds UI screens until you turn this off. Fleet chat stays separate when Design is off.",
   designModePlaceholder:
@@ -452,20 +456,17 @@ export const WIRELINE_STITCH_UI = {
   ],
   /** Design Studio (LLM pipeline) — shown when Stitch pixel render is off. */
   studioLoadingPhases: [
-    "Spectrum Desk — Kimi researching your industry…",
-    "Grok Imagine — hero photography…",
-    "Hy3 — building your page…",
-    "Kimi — visual critique…",
-    "MiniMax — production finish…",
-    "Quality gate…",
-    "Opus — packaging your page…",
+    "Opus — envisioning your tailored design…",
+    "Opus — writing your design brief…",
+    "Grok Build — drafting your page structure…",
+    "Opus — critiquing and polishing your page…",
+    "Packaging your live preview…",
   ],
-  /** ~30s × 7 phases ≈ 3.5 min — rotates while the full pass-1 pipeline runs. */
+  /** ~30s × 10 phases ≈ 5 min ceiling — rotates while the full pass-1 pipeline runs. */
   studioLoadingPhaseIntervalMs: 30_000,
   studioLoadingHint:
-    "Full first preview usually finishes in about 4 minutes. Refine anything in chat after that.",
-  designStudioReasoning:
-    "Spectrum Desk — Kimi research, Grok Imagine hero, Hy3 build, MiniMax finish, Opus sign-off",
+    "Full first preview usually finishes in 2–3 minutes. Refine anything in chat after that.",
+  designStudioReasoning: "Spectrum Desk — Opus vision, Grok Build draft, Opus finish",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",

@@ -2,9 +2,10 @@
  * Design Studio output quality — polished-HTML heuristics for LLM-generated pages.
  */
 import { DESIGN_KIT_CLASS_VOCABULARY } from "./director-design-kit";
+import { DESIGN_KIT_MARKER } from "./director-design-kit-inject";
 
 /** Minimum bytes for a production-quality landing page (not a wireframe stub). */
-export const DESIGN_HTML_MIN_BYTES = 2_048;
+export const DESIGN_HTML_MIN_BYTES = 4_096;
 
 /**
  * Reject early wireframe HTML (bare links, no CSS).
@@ -37,6 +38,7 @@ export interface DesignStudioQualityReport {
   designKitClassHits: number;
   hasPrimaryButton: boolean;
   hasHeadline: boolean;
+  hasKitMarker: boolean;
   issues: string[];
 }
 
@@ -63,13 +65,16 @@ export function assessDesignStudioHtmlQuality(html: string): DesignStudioQuality
     issues.push("Missing <style> block — external-only CSS breaks inline preview.");
   }
 
+  const hasKitMarker = text.includes(DESIGN_KIT_MARKER);
   const designKitClassHits = DESIGN_KIT_CLASS_VOCABULARY.filter((cls) =>
     new RegExp(`class=["'][^"']*\\b${cls}\\b`, "i").test(text),
   ).length;
-  const usesDesignKit = designKitClassHits >= 4;
-  if (!usesDesignKit) {
+  const usesDesignKit = hasKitMarker && designKitClassHits >= 5;
+  if (!hasKitMarker) {
+    issues.push("Missing Wireline Design Kit CSS marker — embed full kit in <style>.");
+  } else if (designKitClassHits < 5) {
     issues.push(
-      `Use Wireline kit classes (found ${designKitClassHits}/${DESIGN_KIT_CLASS_VOCABULARY.length} required patterns) — wl-btn, wl-headline, wl-badge, etc.`,
+      `Use Wireline kit classes (found ${designKitClassHits}/${DESIGN_KIT_CLASS_VOCABULARY.length} patterns) — wl-btn, wl-headline, wl-badge, etc.`,
     );
   }
 
@@ -92,12 +97,19 @@ export function assessDesignStudioHtmlQuality(html: string): DesignStudioQuality
     designKitClassHits,
     hasPrimaryButton,
     hasHeadline,
+    hasKitMarker,
     issues,
   };
 }
 
 export function designQualityPasses(report: DesignStudioQualityReport): boolean {
-  return report.polished && report.usesDesignKit && report.hasPrimaryButton && report.hasHeadline;
+  return (
+    report.polished &&
+    report.hasStyleBlock &&
+    report.usesDesignKit &&
+    report.hasPrimaryButton &&
+    report.hasHeadline
+  );
 }
 
 /** Lighter gate for pass-1 fast lane — ship a preview users can iterate on in chat. */

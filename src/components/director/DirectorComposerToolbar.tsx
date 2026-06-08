@@ -220,12 +220,12 @@ export function DirectorComposerToolbar({
             aria-pressed={designMode}
             title={WIRELINE_STITCH_UI.designModeToggleHint}
             className={cn(
-              WL_DIRECTOR_CLASSES.composerToolChip,
-              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+              WL_DIRECTOR_CLASSES.composerDesignToolChip,
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200",
               designMode &&
                 cn(
-                  WL_DIRECTOR_CLASSES.composerToolChipActive,
-                  "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+                  WL_DIRECTOR_CLASSES.composerDesignToolChipActive,
+                  "shadow-md ring-1 ring-brand/35 bg-brand/12 scale-[1.03]",
                 ),
               "h-auto touch-press rounded-full shadow-none",
             )}
@@ -233,6 +233,9 @@ export function DirectorComposerToolbar({
             <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden sm:inline">{WIRELINE_STITCH_UI.designModeToggleLabel}</span>
             <span className="sm:hidden">Design</span>
+            <span className="wl-composer-design-beta" aria-hidden>
+              {WIRELINE_STITCH_UI.designModeBetaLabel}
+            </span>
           </ShadButton>
         )}
         {showStitchBrandingToggle && (

@@ -38,9 +38,17 @@ export function DirectorComposerContextStrip({
       )}
     >
       {designModeActive && (
-        <div className={WL_DIRECTOR_CLASSES.composerContextPill}>
+        <div
+          className={cn(
+            WL_DIRECTOR_CLASSES.composerContextPill,
+            WL_DIRECTOR_CLASSES.composerDesignContextPill,
+          )}
+        >
           <LayoutTemplate className="w-3 h-3 shrink-0 ml-0.5" aria-hidden />
           <span className="font-semibold">{WIRELINE_STITCH_UI.designModeContextLabel}</span>
+          <span className="wl-composer-design-beta" aria-hidden>
+            {WIRELINE_STITCH_UI.designModeBetaLabel}
+          </span>
           {onClearDesignMode && (
             <ShadButton
               type="button"

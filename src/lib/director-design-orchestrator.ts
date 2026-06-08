@@ -1,51 +1,29 @@
 /**
- * Wireline Design Studio — Spectrum Desk linear pipeline (no architect tournament).
- *
- * Brief → Kimi research → Grok Imagine hero → Hy3 build → Kimi critique → M3 finish → gate → Opus sign-off.
+ * Wireline Design Studio — Opus vision → Grok Build draft → Opus finish → package.
  */
-import { CLAUDE_MODELS } from "./claude-models";
 import {
-  formatImagineAssetsForBuilder,
-  generateDesignImagineAssets,
-  injectImagineAssetsIntoHtml,
-} from "./director-design-imagine";
-import type { DesignImagineAsset } from "./director-design-imagine";
-import { formatJuryVerdictSummary, resolveArchitectJury } from "./director-design-jury";
-import { extractIndustryPackNotesFromBrief } from "./client-design-brief-helpers";
-import {
-  createDesignStudioDeadline,
-  designStageAbortSignal,
-  designStudioRemainingMs,
-  DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS,
-  maxTokensForPass,
-  shouldSkipOptionalChallenger,
-  shouldStartRefinementPass,
-  type DesignStudioDeadline,
-} from "./director-design-deadline";
+  DESIGN_BRIEF_OPUS_INPUT_CHARS,
+  enrichDesignBriefWithOpusVision,
+  sliceDesignBrief,
+  type OpusDesignVisionResult,
+} from "./director-design-context";
+import { designStageAbortSignal, maxTokensForPass } from "./director-design-deadline";
+import { ensureDesignKitInHtml } from "./director-design-kit-inject";
 import {
   buildDesignBuilderUserPrompt,
-  buildEngineerUserPrompt,
-  buildFinisherUserPrompt,
-  buildVisualCriticUserPrompt,
-  DESIGN_BUILDER_REFINEMENT_SYSTEM,
+  buildOpusFinishUserPrompt,
+  buildOpusSignoffUserPrompt,
   DESIGN_BUILDER_VISION_SYSTEM,
-  DESIGN_EMERGENCY_POLISH_SYSTEM,
   DESIGN_FINAL_APPROVAL_TOOL,
-  DESIGN_FINAL_APPROVER_SYSTEM,
-  DESIGN_LAYOUT_SCOUT_SYSTEM,
-  DESIGN_PRODUCTION_FINISHER_SYSTEM,
-  DESIGN_RESEARCH_SYSTEM,
-  DESIGN_VISUAL_CRITIC_SYSTEM,
+  DESIGN_OPUS_FINISH_SYSTEM,
+  DESIGN_OPUS_FINISH_TOOL,
+  DESIGN_OPUS_SIGNOFF_SYSTEM,
+  DESIGN_OPUS_VISION_SYSTEM,
+  DESIGN_OPUS_VISION_TOOL,
 } from "./director-design-prompts";
-import {
-  assessDesignStudioHtmlQuality,
-  designQualityPasses,
-  formatDesignQualityRevisionNotes,
-} from "./director-design-quality";
 import {
   designStudioProgressLabel,
   designTeamThinkingSummary,
-  type DesignArchitectSlot,
   type DesignPassNumber,
   type DesignTeamOpenRouterRole,
   isSpectrumDesignTeam,
@@ -64,11 +42,8 @@ import type {
   DirectorDesignTurnResult,
   DesignProgressCallback,
 } from "./director-design-turn";
-import { runCompletion, runStructured } from "./claude-structured";
-import {
-  isOpenRouterConfigured,
-  runOpenRouterCompletion,
-} from "./openrouter-structured";
+import { runStructured } from "./claude-structured";
+import { isOpenRouterConfigured, runOpenRouterCompletion } from "./openrouter-structured";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
@@ -78,6 +53,10 @@ interface DesignFinalApproval {
   pageTitle: string;
 }
 
+interface OpusFinishResult extends DesignFinalApproval {
+  html: string;
+}
+
 function stripHtmlFences(raw: string): string {
   const extracted = extractDirectorHtmlPrototype(raw);
   if (extracted) return extracted;
@@ -85,10 +64,6 @@ function stripHtmlFences(raw: string): string {
     .replace(/^```(?:html)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
-}
-
-function mergeRevisionNotes(...blocks: Array<string | undefined>): string {
-  return blocks.filter(Boolean).join("\n\n").trim();
 }
 
 function spectrumTeam() {
@@ -132,398 +107,161 @@ async function runOpenRouterRole(
   }
 }
 
-async function runSpectrumResearch(input: {
+async function runOpusCreativeVision(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
   signal?: AbortSignal;
-}): Promise<{ researchNotes: string; layoutScoutNotes: string }> {
+}): Promise<OpusDesignVisionResult> {
+  const team = spectrumTeam();
+  const fallback: OpusDesignVisionResult = {
+    creativeVision: `Tailored landing concept for: ${input.operatorMessage.trim()}`,
+    designBriefExtension: "",
+  };
+  if (!team?.creativeDirector) return fallback;
+
+  try {
+    return await runStructured<OpusDesignVisionResult>({
+      model: team.creativeDirector.wirelineModel,
+      system: DESIGN_OPUS_VISION_SYSTEM,
+      user: [
+        `## Operator request\n${input.operatorMessage.trim()}`,
+        `## Starter design.md\n${sliceDesignBrief(input.designBriefMarkdown, DESIGN_BRIEF_OPUS_INPUT_CHARS)}`,
+      ].join("\n\n"),
+      tool: DESIGN_OPUS_VISION_TOOL,
+      maxTokens: 4096,
+      signal: designStageAbortSignal("opusVision", input.signal),
+    });
+  } catch (e) {
+    log.warn("design studio opus vision failed", { error: getErrorMessage(e) });
+    return fallback;
+  }
+}
+
+async function runGrokHtmlBuild(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  signal?: AbortSignal;
+}): Promise<string> {
   const team = spectrumTeam();
   if (!team) {
-    const { text } = await runCompletion({
-      model: CLAUDE_MODELS.SONNET,
-      system: DESIGN_RESEARCH_SYSTEM,
-      user: [
-        `Operator request:\n${input.operatorMessage.trim()}`,
-        `## design.md\n${input.designBriefMarkdown.trim().slice(0, 6000)}`,
-      ].join("\n\n"),
-      maxTokens: 2048,
-    });
-    return { researchNotes: text.trim(), layoutScoutNotes: "" };
+    throw new Error("Spectrum team required for HTML build");
   }
 
-  const packNotes = extractIndustryPackNotesFromBrief(input.designBriefMarkdown);
-  const researchUser = [
-    `Operator request:\n${input.operatorMessage.trim()}`,
-    packNotes ? `## Industry pack\n${packNotes}` : "",
-    `## design.md\n${input.designBriefMarkdown.trim().slice(0, 6000)}`,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  const researchSignal = designStageAbortSignal("research", input.signal);
-  const scoutSignal = designStageAbortSignal("layoutScout", input.signal);
-
-  const [researchSettled, scoutSettled] = await Promise.allSettled([
-    runOpenRouterRole(team.researcher, DESIGN_RESEARCH_SYSTEM, researchUser, 2048, researchSignal),
-    runOpenRouterRole(
-      team.layoutScout,
-      DESIGN_LAYOUT_SCOUT_SYSTEM,
-      researchUser,
-      512,
-      scoutSignal,
-    ),
-  ]);
-
-  const researchNotes =
-    researchSettled.status === "fulfilled"
-      ? researchSettled.value.trim()
-      : "Focus on US local-business trust, phone-first CTA, distinctive hero.";
-
-  const layoutScoutNotes = scoutSettled.status === "fulfilled" ? scoutSettled.value.trim() : "";
-
-  return { researchNotes, layoutScoutNotes };
-}
-
-async function runPrimaryHtmlBuild(input: {
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  researchNotes: string;
-  layoutScoutNotes: string;
-  imagineAssetsNotes?: string;
-  revisionNotes?: string;
-  priorHtml?: string;
-  passNumber: DesignPassNumber;
-  signal?: AbortSignal;
-}): Promise<string> {
-  const team = spectrumTeam();
-  if (!team) return input.priorHtml ?? "";
-
-  const hasPrior = Boolean(input.priorHtml?.trim());
-  const isVisionPass = input.passNumber === 1 && !hasPrior;
-  const user = hasPrior
-    ? buildEngineerUserPrompt({
-        operatorMessage: input.operatorMessage,
-        designBriefMarkdown: input.designBriefMarkdown,
-        html: input.priorHtml!,
-        passNumber: input.passNumber,
-        revisionNotes: input.revisionNotes,
-        winningArchitectLabel: "Spectrum primary",
-      })
-    : buildDesignBuilderUserPrompt({
-        operatorMessage: input.operatorMessage,
-        designBriefMarkdown: input.designBriefMarkdown,
-        researchNotes: input.researchNotes,
-        layoutScoutNotes: input.layoutScoutNotes,
-        imagineAssetsNotes: input.imagineAssetsNotes,
-        revisionNotes: input.revisionNotes,
-        passNumber: input.passNumber,
-      });
-
-  const system = isVisionPass ? DESIGN_BUILDER_VISION_SYSTEM : DESIGN_BUILDER_REFINEMENT_SYSTEM;
-
-  try {
-    const raw = await runOpenRouterRole(
-      team.htmlBuilder,
-      system,
-      user,
-      maxTokensForPass(input.passNumber, "build"),
-      designStageAbortSignal("build", input.signal),
-    );
-    return stripHtmlFences(raw);
-  } catch (e) {
-    log.warn("design studio primary build failed", { error: getErrorMessage(e) });
-    return input.priorHtml ?? "";
-  }
-}
-
-async function runChallengerDraft(input: {
-  architect: DesignArchitectSlot;
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  researchNotes: string;
-  layoutScoutNotes: string;
-  imagineAssetsNotes?: string;
-  revisionNotes?: string;
-  incumbentHtml: string;
-  passNumber: DesignPassNumber;
-  signal?: AbortSignal;
-}): Promise<{ architectId: string; label: string; html: string } | null> {
-  try {
-    const user = buildDesignBuilderUserPrompt({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      researchNotes: input.researchNotes,
-      layoutScoutNotes: input.layoutScoutNotes,
-      imagineAssetsNotes: input.imagineAssetsNotes,
-      revisionNotes: input.revisionNotes,
-      priorHtml: input.incumbentHtml,
-      passNumber: input.passNumber,
-      architectLabel: input.architect.label,
-    });
-    const raw = await runOpenRouterCompletion({
-      model: input.architect.openRouterModelId,
-      system: DESIGN_BUILDER_REFINEMENT_SYSTEM,
-      user,
-      maxTokens: maxTokensForPass(input.passNumber, "build"),
-      signal: input.signal,
-    });
-    const html = stripHtmlFences(raw);
-    if (!html) return null;
-    return { architectId: input.architect.id, label: input.architect.label, html };
-  } catch (e) {
-    log.warn("design studio challenger draft failed", {
-      architect: input.architect.id,
-      error: getErrorMessage(e),
-    });
-    return null;
-  }
-}
-
-async function runOptionalChallenger(input: {
-  incumbentHtml: string;
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  researchNotes: string;
-  layoutScoutNotes: string;
-  imagineAssetsNotes?: string;
-  revisionNotes?: string;
-  signal?: AbortSignal;
-}): Promise<{ html: string; summary?: string }> {
-  const team = spectrumTeam();
-  if (!team?.enableOptionalChallenger) {
-    return { html: input.incumbentHtml };
-  }
-
-  const challenger = await runChallengerDraft({
-    architect: team.optionalChallenger,
+  const passNumber = 1 as DesignPassNumber;
+  const user = buildDesignBuilderUserPrompt({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,
-    researchNotes: input.researchNotes,
-    layoutScoutNotes: input.layoutScoutNotes,
-    imagineAssetsNotes: input.imagineAssetsNotes,
-    revisionNotes: input.revisionNotes,
-    incumbentHtml: input.incumbentHtml,
-    passNumber: 1,
-    signal: input.signal,
+    opusVisionNotes: input.opusVisionNotes,
+    passNumber,
   });
 
-  if (!challenger) return { html: input.incumbentHtml };
-
-  const verdict = await resolveArchitectJury({
-    entries: [
-      { architectId: "incumbent", label: "Qwen primary", html: input.incumbentHtml },
-      challenger,
-    ],
-    operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
-    passNumber: 1,
-    glmCriticModelId: team.visualCritic.openRouterModelId,
-    signal: input.signal,
-  });
-
-  return {
-    html: verdict.winner.html,
-    summary: formatJuryVerdictSummary(verdict),
-  };
-}
-
-async function runVisualCritic(input: {
-  html: string;
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  passNumber: DesignPassNumber;
-  signal?: AbortSignal;
-}): Promise<string> {
-  const team = spectrumTeam();
-  if (!team) return "";
-
-  const user = buildVisualCriticUserPrompt(input);
-  try {
-    return (
-      await runOpenRouterRole(
-        team.visualCritic,
-        DESIGN_VISUAL_CRITIC_SYSTEM,
-        user,
-        maxTokensForPass(input.passNumber, "critic"),
-        designStageAbortSignal("critic", input.signal),
-      )
-    ).trim();
-  } catch (e) {
-    log.warn("design studio visual critic skipped", { error: getErrorMessage(e) });
-    return "";
-  }
-}
-
-async function runProductionFinisher(input: {
-  html: string;
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  passNumber: DesignPassNumber;
-  criticNotes?: string;
-  revisionNotes?: string;
-  imagineAssetsNotes?: string;
-  signal?: AbortSignal;
-}): Promise<string> {
-  const team = spectrumTeam();
-  if (!team) return input.html;
-
-  const user = buildFinisherUserPrompt(input);
-  try {
-    const raw = await runOpenRouterRole(
-      team.productionFinisher,
-      DESIGN_PRODUCTION_FINISHER_SYSTEM,
-      user,
-      maxTokensForPass(input.passNumber, "finisher"),
-      designStageAbortSignal("finisher", input.signal),
-    );
-    return stripHtmlFences(raw);
-  } catch (e) {
-    log.warn("design studio finisher skipped", { error: getErrorMessage(e) });
-    return input.html;
-  }
-}
-
-async function runEmergencyPolish(input: {
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  html: string;
-  qualityIssues: string;
-  signal?: AbortSignal;
-}): Promise<string> {
-  const team = spectrumTeam();
-  const user = [
-    `Operator request:\n${input.operatorMessage}`,
-    `## design.md\n${input.designBriefMarkdown.slice(0, 4000)}`,
-    `## Quality failures to fix\n${input.qualityIssues}`,
-    `## HTML\n${input.html.slice(0, 24_000)}`,
-  ].join("\n\n");
-
-  if (team && isOpenRouterConfigured()) {
-    try {
-      const raw = await runOpenRouterRole(
-        team.productionFinisher,
-        DESIGN_EMERGENCY_POLISH_SYSTEM,
-        user,
-        12_288,
-        designStageAbortSignal("emergencyPolish", input.signal),
-      );
-      return stripHtmlFences(raw);
-    } catch (e) {
-      log.warn("design studio emergency polish failed", { error: getErrorMessage(e) });
-    }
-  }
-
-  const { text } = await runCompletion({
-    model: CLAUDE_MODELS.SONNET,
-    system: DESIGN_EMERGENCY_POLISH_SYSTEM,
+  const raw = await runOpenRouterRole(
+    team.htmlBuilder,
+    DESIGN_BUILDER_VISION_SYSTEM,
     user,
-    maxTokens: 12_288,
-  });
-  return stripHtmlFences(text);
+    maxTokensForPass(passNumber, "build"),
+    designStageAbortSignal("build", input.signal),
+  );
+
+  const html = stripHtmlFences(raw);
+  if (!html.trim()) {
+    throw new Error("Grok build: empty HTML response");
+  }
+  return html;
 }
 
-async function runFinalApproval(input: {
+async function runOpusSignOff(input: {
   operatorMessage: string;
   designBriefMarkdown: string;
+  opusVisionNotes?: string;
   html: string;
-  passCount: number;
+  pipelinePhases: string[];
   signal?: AbortSignal;
 }): Promise<DesignFinalApproval> {
   const team = spectrumTeam();
   const fallbackTitle = input.operatorMessage.trim().slice(0, 72) || "Your page";
+  const fallback: DesignFinalApproval = { operatorReply: "", pageTitle: fallbackTitle };
 
-  let approval: DesignFinalApproval = { operatorReply: "", pageTitle: fallbackTitle };
-  const approverModel =
-    team?.finalApprover.provider === "wireline"
-      ? team.finalApprover.wirelineModel
-      : CLAUDE_MODELS.OPUS;
+  if (!team?.reviewer) return fallback;
+
   try {
-    approval = await runStructured<DesignFinalApproval>({
-      model: approverModel,
-      system: DESIGN_FINAL_APPROVER_SYSTEM,
-      user: [
-        `Operator request:\n${input.operatorMessage}`,
-        `Completed ${input.passCount} Spectrum Desk passes.`,
-        `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
-        `## HTML (excerpt)\n${input.html.slice(0, 12_000)}`,
-      ].join("\n\n"),
+    return await runStructured<DesignFinalApproval>({
+      model: team.reviewer.wirelineModel,
+      system: DESIGN_OPUS_SIGNOFF_SYSTEM,
+      user: buildOpusSignoffUserPrompt({
+        ...input,
+        passCount: 1,
+      }),
       tool: DESIGN_FINAL_APPROVAL_TOOL,
       maxTokens: 2048,
-      signal: designStageAbortSignal("approve", input.signal),
+      signal: designStageAbortSignal("signoff", input.signal),
     });
   } catch (e) {
-    log.warn("design studio final approval via Opus failed", { error: getErrorMessage(e) });
+    log.warn("design studio opus sign-off failed", { error: getErrorMessage(e) });
+    return fallback;
+  }
+}
+
+async function runOpusCritiqueAndFinish(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  opusVisionNotes?: string;
+  draftHtml: string;
+  pipelinePhases: string[];
+  signal?: AbortSignal;
+}): Promise<OpusFinishResult> {
+  const team = spectrumTeam();
+  const fallbackTitle = input.operatorMessage.trim().slice(0, 72) || "Your page";
+
+  if (!team?.reviewer) {
+    return {
+      html: input.draftHtml,
+      operatorReply: "",
+      pageTitle: fallbackTitle,
+    };
   }
 
-  return approval;
+  try {
+    const finished = await runStructured<OpusFinishResult>({
+      model: team.reviewer.wirelineModel,
+      system: DESIGN_OPUS_FINISH_SYSTEM,
+      user: buildOpusFinishUserPrompt(input),
+      tool: DESIGN_OPUS_FINISH_TOOL,
+      maxTokens: 16_384,
+      signal: designStageAbortSignal("finisher", input.signal),
+    });
+
+    const html = stripHtmlFences(finished.html);
+    return {
+      html: html.trim() ? html : input.draftHtml,
+      operatorReply: finished.operatorReply?.trim() ?? "",
+      pageTitle: finished.pageTitle?.trim() || fallbackTitle,
+    };
+  } catch (e) {
+    log.warn("design studio opus finish failed — falling back to draft + sign-off", {
+      error: getErrorMessage(e),
+    });
+    const signoff = await runOpusSignOff({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      opusVisionNotes: input.opusVisionNotes,
+      html: input.draftHtml,
+      pipelinePhases: input.pipelinePhases,
+      signal: input.signal,
+    });
+    return { html: input.draftHtml, ...signoff };
+  }
 }
 
 function buildFallbackOperatorReply(pageTitle: string): string {
   return [
     `Your **${pageTitle}** is ready — open the live preview to see it on your phone or desktop.`,
     "",
-    "- Spectrum Desk built and polished your page",
+    "- Opus tailored the concept; Grok Build drafted the page; Opus polished it for production",
     "- Hero, headline, and primary call-to-action are in place",
     "- Ask me to tweak colors, copy, or sections in chat",
   ].join("\n");
-}
-
-async function runSpectrumPass(input: {
-  passNumber: DesignPassNumber;
-  operatorMessage: string;
-  designBriefMarkdown: string;
-  researchNotes: string;
-  layoutScoutNotes: string;
-  imagineAssetsNotes?: string;
-  revisionNotes?: string;
-  incumbentHtml?: string;
-  onProgress?: DesignProgressCallback;
-  phases: string[];
-  signal?: AbortSignal;
-}): Promise<{ html: string }> {
-  input.onProgress?.(designStudioProgressLabel(input.passNumber, "build"));
-  input.phases.push(`Pass ${input.passNumber} build`);
-
-  let html = await runPrimaryHtmlBuild({
-    operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
-    researchNotes: input.researchNotes,
-    layoutScoutNotes: input.layoutScoutNotes,
-    imagineAssetsNotes: input.imagineAssetsNotes,
-    revisionNotes: input.revisionNotes,
-    priorHtml: input.incumbentHtml,
-    passNumber: input.passNumber,
-    signal: input.signal,
-  });
-
-  if (!html.trim()) {
-    throw new Error("Spectrum build: primary HTML generation failed");
-  }
-
-  input.onProgress?.(designStudioProgressLabel(input.passNumber, "critic"));
-  input.phases.push(`Pass ${input.passNumber} critic`);
-  const criticNotes = await runVisualCritic({
-    html,
-    operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
-    passNumber: input.passNumber,
-    signal: input.signal,
-  });
-
-  input.onProgress?.(designStudioProgressLabel(input.passNumber, "finisher"));
-  input.phases.push(`Pass ${input.passNumber} finisher`);
-  html = await runProductionFinisher({
-    html,
-    operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
-    passNumber: input.passNumber,
-    criticNotes,
-    revisionNotes: input.revisionNotes,
-    imagineAssetsNotes: input.imagineAssetsNotes,
-    signal: input.signal,
-  });
-
-  return { html };
 }
 
 /** Run the full Design Studio pipeline and return a Director turn. */
@@ -531,199 +269,74 @@ export async function runDirectorDesignStudio(
   input: DirectorDesignStudioInput,
 ): Promise<DirectorDesignTurnResult> {
   const t0 = Date.now();
-  const deadline = createDesignStudioDeadline(t0);
   const phases: string[] = [];
   const onProgress: DesignProgressCallback | undefined = input.onProgress;
   const studioPhases = WIRELINE_STITCH_UI.studioLoadingPhases;
   let phaseCursor = 0;
   const nextStudioPhase = () => studioPhases[phaseCursor++] ?? studioPhases.at(-1)!;
 
-  onProgress?.(nextStudioPhase());
-  phases.push("Kimi research");
-  const { researchNotes, layoutScoutNotes } = await runSpectrumResearch({
+  onProgress?.(designStudioProgressLabel(1, "vision"));
+  phases.push("Opus vision");
+  const opusVision = await runOpusCreativeVision({
     operatorMessage: input.operatorMessage,
     designBriefMarkdown: input.designBriefMarkdown,
     signal: input.signal,
   });
+  const { designBriefMarkdown, opusVisionNotes } = enrichDesignBriefWithOpusVision(
+    input.designBriefMarkdown,
+    opusVision,
+  );
+
+  onProgress?.(nextStudioPhase());
+  phases.push("Opus brief");
 
   const previewDeviceType = resolveDesignPreviewDeviceType({
     operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
+    designBriefMarkdown,
   });
 
-  let imagineAssets: DesignImagineAsset[] = [];
-  const skipImagine =
-    designStudioRemainingMs(deadline) < DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS;
-  if (skipImagine) {
-    phases.push("Grok Imagine skipped (time budget)");
-    log.info("design studio skipping imagine — time budget", {
-      remainingMs: designStudioRemainingMs(deadline),
-    });
-  } else {
-    onProgress?.("Generating hero photography…");
-    phases.push("Grok Imagine hero");
-    try {
-      imagineAssets = await generateDesignImagineAssets({
-        operatorMessage: input.operatorMessage,
-        designBriefMarkdown: input.designBriefMarkdown,
-        researchNotes,
-        deviceType: previewDeviceType,
-        signal: input.signal,
-      });
-    } catch (e) {
-      log.warn("design studio imagine pipeline skipped", { error: getErrorMessage(e) });
-    }
-  }
-  const imagineAssetsNotes = formatImagineAssetsForBuilder(imagineAssets);
-
-  let html = "";
-  let revisionNotes: string | undefined;
-  let passCount = 0;
-  let challengerUsed = false;
-
-  for (
-    let pass = 1 as DesignPassNumber;
-    pass <= WIRELINE_DESIGN_TEAM.maxRefinementPasses;
-    pass = (pass + 1) as DesignPassNumber
-  ) {
-    if (pass > 1 && !shouldStartRefinementPass(deadline, pass)) {
-      log.info("design studio skipping pass — time budget", {
-        pass,
-        remainingMs: designStudioRemainingMs(deadline),
-      });
-      phases.push(`Pass ${pass} skipped (time budget)`);
-      break;
-    }
-
-    passCount = pass;
-    const priorHtml = pass > 1 ? html : undefined;
-
-    const passResult = await runSpectrumPass({
-      passNumber: pass,
+  onProgress?.(nextStudioPhase());
+  phases.push("Grok build");
+  let html = ensureDesignKitInHtml(
+    await runGrokHtmlBuild({
       operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      researchNotes,
-      layoutScoutNotes,
-      imagineAssetsNotes: imagineAssetsNotes || undefined,
-      revisionNotes,
-      incumbentHtml: priorHtml,
-      onProgress,
-      phases,
+      designBriefMarkdown,
+      opusVisionNotes,
       signal: input.signal,
-    });
-    html = passResult.html;
+    }),
+  );
 
-    onProgress?.(designStudioProgressLabel(pass, "gate"));
-    phases.push(`Pass ${pass} gate`);
-    let qualityReport = assessDesignStudioHtmlQuality(html);
-    let passesGate = designQualityPasses(qualityReport);
-
-    const runChallenger =
-      pass === 1 &&
-      !passesGate &&
-      !challengerUsed &&
-      spectrumTeam()?.enableOptionalChallenger &&
-      !shouldSkipOptionalChallenger(deadline);
-
-    if (runChallenger) {
-      onProgress?.(designStudioProgressLabel(1, "challenger"));
-      phases.push("Hy3 challenger");
-      const challenged = await runOptionalChallenger({
-        incumbentHtml: html,
-        operatorMessage: input.operatorMessage,
-        designBriefMarkdown: input.designBriefMarkdown,
-        researchNotes,
-        layoutScoutNotes,
-        imagineAssetsNotes: imagineAssetsNotes || undefined,
-        revisionNotes,
-        signal: input.signal,
-      });
-      challengerUsed = true;
-      if (challenged.summary) phases.push(challenged.summary);
-      if (challenged.html !== html) {
-        html = challenged.html;
-        const criticNotes = await runVisualCritic({
-          html,
-          operatorMessage: input.operatorMessage,
-          designBriefMarkdown: input.designBriefMarkdown,
-          passNumber: 1,
-          signal: input.signal,
-        });
-        html = await runProductionFinisher({
-          html,
-          operatorMessage: input.operatorMessage,
-          designBriefMarkdown: input.designBriefMarkdown,
-          passNumber: 1,
-          criticNotes,
-          revisionNotes,
-          imagineAssetsNotes: imagineAssetsNotes || undefined,
-          signal: input.signal,
-        });
-        qualityReport = assessDesignStudioHtmlQuality(html);
-        passesGate = designQualityPasses(qualityReport);
-      }
-    }
-
-    revisionNotes = mergeRevisionNotes(
-      revisionNotes,
-      formatDesignQualityRevisionNotes(qualityReport),
-    );
-
-    if (passesGate && pass >= WIRELINE_DESIGN_TEAM.minRefinementPasses) {
-      break;
-    }
-
-    if (pass >= WIRELINE_DESIGN_TEAM.maxRefinementPasses) {
-      break;
-    }
-  }
-
-  const qualityReport = assessDesignStudioHtmlQuality(html);
-  if (!designQualityPasses(qualityReport)) {
-    onProgress?.(designStudioProgressLabel(3, "gate"));
-    phases.push("Emergency polish");
-    html = await runEmergencyPolish({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      html,
-      qualityIssues: formatDesignQualityRevisionNotes(qualityReport),
-      signal: input.signal,
-    });
-  }
-
-  onProgress?.(designStudioProgressLabel(3, "approve"));
-  phases.push("Opus sign-off");
-  const approval = await runFinalApproval({
+  onProgress?.(designStudioProgressLabel(1, "finish"));
+  phases.push("Opus finish");
+  const finished = await runOpusCritiqueAndFinish({
     operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
-    html,
-    passCount,
+    designBriefMarkdown,
+    opusVisionNotes,
+    draftHtml: html,
+    pipelinePhases: phases,
     signal: input.signal,
   });
+  html = ensureDesignKitInHtml(finished.html);
 
-  if (imagineAssets.length > 0) {
-    html = injectImagineAssetsIntoHtml(html, imagineAssets, previewDeviceType);
-  }
-
-  const pageTitle = approval.pageTitle?.trim() || "Your page";
-  const operatorReply = approval.operatorReply?.trim() || buildFallbackOperatorReply(pageTitle);
+  const pageTitle = finished.pageTitle?.trim() || "Your page";
+  const operatorReply = finished.operatorReply?.trim() || buildFallbackOperatorReply(pageTitle);
 
   const packaged = await packageDirectorHtmlPrototypePreview({
     userId: input.userId,
     operatorMessage: input.operatorMessage,
-    designBriefMarkdown: input.designBriefMarkdown,
+    designBriefMarkdown,
     html,
     title: pageTitle,
     deviceType: previewDeviceType,
   });
 
-  const briefArtifact = buildStitchDesignBriefArtifact(input.designBriefMarkdown);
+  const briefArtifact = buildStitchDesignBriefArtifact(designBriefMarkdown);
 
   return {
     reply: operatorReply,
     previews: [packaged.preview],
     artifacts: [briefArtifact, ...packaged.artifacts],
-    designBriefMarkdown: input.designBriefMarkdown,
+    designBriefMarkdown,
     thinkingSummary: designTeamThinkingSummary(phases) || WIRELINE_DESIGN_STUDIO_REASONING,
     durationMs: Date.now() - t0,
   };
@@ -738,7 +351,7 @@ export interface DesignCodeReviewResult {
   visual_polish: number;
   mobile: number;
   accessibility: number;
-  strengths?: string[];
+  strengths: string[];
   issues: string[];
   revisionNotes?: string;
 }

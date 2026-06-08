@@ -7,10 +7,10 @@ import { DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS } from "./api";
 export const DESIGN_STUDIO_DEADLINE_BUFFER_MS = 25_000;
 
 /** Reserved for emergency polish + Opus sign-off + artifact packaging. */
-export const DESIGN_STUDIO_RESERVE_TAIL_MS = 85_000;
+export const DESIGN_STUDIO_RESERVE_TAIL_MS = 60_000;
 
-/** Minimum remaining time to start another full pass (build + critic + finisher). */
-export const DESIGN_STUDIO_RESERVE_PASS_MS = 70_000;
+/** Minimum remaining time to start another Grok Build pass. */
+export const DESIGN_STUDIO_RESERVE_PASS_MS = 120_000;
 
 /** Skip optional Hy3 challenger when less than this remains. */
 export const DESIGN_STUDIO_SKIP_CHALLENGER_REMAINING_MS = 140_000;
@@ -18,21 +18,18 @@ export const DESIGN_STUDIO_SKIP_CHALLENGER_REMAINING_MS = 140_000;
 /** Skip pass 3 when gate already passed on pass 2 and time is tight. */
 export const DESIGN_STUDIO_SKIP_EXTRA_PASS_REMAINING_MS = 95_000;
 
-/** Skip hero image generation only when the global budget is nearly exhausted. */
-export const DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS = 380_000;
-
 /** Per-stage ceilings — generous headroom; typical pass 1 finishes in ~4 min. */
 export const DESIGN_STAGE_TIMEOUT_MS = {
+  opusVision: 120_000,
   research: 45_000,
   layoutScout: 30_000,
-  imagineHero: 55_000,
-  imagineTexture: 35_000,
   build: 130_000,
   critic: 50_000,
+  review: 90_000,
   finisher: 100_000,
   challenger: 100_000,
   emergencyPolish: 75_000,
-  approve: 60_000,
+  signoff: 60_000,
 } as const;
 
 export type DesignStageTimeoutKey = keyof typeof DESIGN_STAGE_TIMEOUT_MS;
