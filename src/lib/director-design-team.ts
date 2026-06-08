@@ -1,8 +1,9 @@
 /**
- * Wireline Design Studio — Spectrum Desk: OpenRouter-ranked linear pipeline.
+ * Wireline Design Studio — Spectrum Desk: three-model linear pipeline.
  *
- * Research → layout scout → imagine → Qwen build → Sonnet critic → MiniMax finish.
- * Optional single Hy3 challenger if pass-1 quality gate fails. No architect tournament.
+ * Kimi K2.6 (latest) — research, layout, critique, US copy.
+ * Tencent Hy3 — high-fidelity HTML build.
+ * MiniMax M3 — production finish.
  */
 import { CLAUDE_MODELS, GEMINI_MODELS } from "./claude-models";
 
@@ -154,68 +155,77 @@ export const WIRELINE_DESIGN_TEAM_PACIFIC = {
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,
 } as const;
 
-/** Spectrum Desk — active Design Studio roster (OpenRouter usage-aligned). */
+/** Latest Kimi on OpenRouter (K2.6 — no K2.7 slug yet). */
+export const SPECTRUM_KIMI_MODEL = "moonshotai/kimi-k2.6";
+
+/** Tencent Hy3 — primary HTML builder. */
+export const SPECTRUM_HY3_MODEL = "tencent/hy3-preview";
+
+/** MiniMax M3 — production finisher. */
+export const SPECTRUM_MINIMAX_M3_MODEL = "minimax/minimax-m3";
+
+/** Spectrum Desk — active Design Studio roster (Kimi · Hy3 · M3). */
 export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
   id: "spectrum" as const,
   researcher: {
     provider: "openrouter" as const,
-    openRouterModelId: "deepseek/deepseek-v4-pro",
-    label: "DeepSeek V4 Pro",
-    fallbackOpenRouterModelId: "deepseek/deepseek-v4-flash",
-    fallbackLabel: "DeepSeek V4 Flash",
+    openRouterModelId: SPECTRUM_KIMI_MODEL,
+    label: "Kimi K2.6",
   },
   layoutScout: {
     provider: "openrouter" as const,
-    openRouterModelId: "stepfun/step-3.7-flash",
-    label: "Step 3.7 Flash",
+    openRouterModelId: SPECTRUM_KIMI_MODEL,
+    label: "Kimi K2.6",
   },
   htmlBuilder: {
     provider: "openrouter" as const,
-    openRouterModelId: "qwen/qwen3-coder-plus",
-    label: "Qwen3 Coder Plus",
-    fallbackOpenRouterModelId: "qwen/qwen3-coder",
-    fallbackLabel: "Qwen3 Coder",
+    openRouterModelId: SPECTRUM_HY3_MODEL,
+    label: "Tencent Hy3",
+    fallbackOpenRouterModelId: SPECTRUM_KIMI_MODEL,
+    fallbackLabel: "Kimi K2.6",
   },
-  /** One-shot Hy3 draft when pass-1 quality gate fails (not a tournament). */
   optionalChallenger: {
     id: "hy3",
-    openRouterModelId: "tencent/hy3-preview",
+    openRouterModelId: SPECTRUM_HY3_MODEL,
     label: "Tencent Hy3",
   } as const satisfies DesignArchitectSlot,
   visualCritic: {
     provider: "openrouter" as const,
-    openRouterModelId: "anthropic/claude-sonnet-4.6",
-    label: "Claude Sonnet 4.6",
-    fallbackOpenRouterModelId: "z-ai/glm-5v-turbo",
-    fallbackLabel: "GLM 5V Turbo",
+    openRouterModelId: SPECTRUM_KIMI_MODEL,
+    label: "Kimi K2.6",
   },
   productionFinisher: {
     provider: "openrouter" as const,
-    openRouterModelId: "minimax/minimax-m3",
+    openRouterModelId: SPECTRUM_MINIMAX_M3_MODEL,
     label: "MiniMax M3",
     fallbackOpenRouterModelId: "minimax/minimax-m2.5",
     fallbackLabel: "MiniMax M2.5",
   },
   usLocalization: {
     provider: "openrouter" as const,
-    openRouterModelId: "deepseek/deepseek-v4-flash",
-    label: "DeepSeek V4 Flash",
-    fallbackOpenRouterModelId: "anthropic/claude-haiku-4.5",
-    fallbackLabel: "Claude Haiku 4.5",
+    openRouterModelId: SPECTRUM_KIMI_MODEL,
+    label: "Kimi K2.6",
+  },
+  /** Off the live wire — operator-facing sign-off copy and preview title. */
+  finalApprover: {
+    provider: "wireline" as const,
+    wirelineModel: CLAUDE_MODELS.OPUS,
+    label: "Claude Opus",
   },
   imageReference: {
-    enabled: true,
-    openRouterModelId: "google/gemini-2.5-flash-image",
-    label: "Gemini 2.5 Flash Image",
-  },
-  altImageReference: {
     enabled: true,
     openRouterModelId: "x-ai/grok-imagine-image-quality",
     label: "Grok Imagine Image Quality",
   },
-  enableOptionalChallenger: true,
-  minRefinementPasses: 2 as DesignPassNumber,
-  maxRefinementPasses: 3 as DesignPassNumber,
+  altImageReference: {
+    enabled: false,
+    openRouterModelId: "x-ai/grok-imagine-image-quality",
+    label: "Grok Imagine Image Quality",
+  },
+  enableOptionalChallenger: false,
+  /** Exit as soon as quality gate passes — extra passes only when gate fails. */
+  minRefinementPasses: 1 as DesignPassNumber,
+  maxRefinementPasses: 2 as DesignPassNumber,
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,
 } as const;
 
@@ -231,7 +241,7 @@ export function isSpectrumDesignTeam(
 }
 
 export const WIRELINE_DESIGN_STUDIO_REASONING =
-  "Spectrum Desk — vision spec, DeepSeek research, Step layout, Qwen high-fidelity build, Sonnet critique, MiniMax finish";
+  "Spectrum Desk — Kimi research & critique, Hy3 HTML build, MiniMax M3 finish, Opus sign-off";
 
 export function designTeamThinkingSummary(phases: string[]): string {
   return phases.filter(Boolean).join(" · ");
@@ -252,12 +262,12 @@ export function designStudioProgressLabel(
 ): string {
   const labels: Record<DesignStudioStage, string> = {
     build: `Pass ${pass} — building HTML structure…`,
-    challenger: "Optional Hy3 layout challenger…",
+    challenger: "Hy3 layout refinement…",
     engineer: `Pass ${pass} — engineering components…`,
     critic: `Pass ${pass} — visual design critique…`,
     finisher: `Pass ${pass} — production finish…`,
     gate: "Quality gate — production checks…",
-    localize: "US copy and trust localization…",
+    localize: "US copy polish and Opus sign-off…",
   };
   return labels[stage];
 }

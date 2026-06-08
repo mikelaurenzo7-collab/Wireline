@@ -469,7 +469,7 @@ export const WIRELINE_STITCH_UI = {
   studioLoadingHint:
     "Spectrum Desk usually finishes in 2–3 minutes. Turn on Design, then refine in chat.",
   designStudioReasoning:
-    "Spectrum Desk — DeepSeek brief, Step layout, Qwen build, Sonnet critique, MiniMax finish",
+    "Spectrum Desk — Kimi research, Hy3 build, MiniMax finish, Opus sign-off",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",

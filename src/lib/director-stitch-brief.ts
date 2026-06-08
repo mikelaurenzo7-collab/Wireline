@@ -15,6 +15,14 @@ import {
 } from "./director-stitch-intent";
 import type { StitchMediaOperation } from "./director-stitch-intent";
 import {
+  buildClientDesignSystem,
+  formatAccessibilityMarkdown,
+  formatCopyBankMarkdown,
+  formatDesignTokensMarkdown,
+  formatSectionMapMarkdown,
+  type ClientDesignSystem,
+} from "./client-design-system";
+import {
   hasConfiguredTenantBranding,
   resolveUseAccountBranding,
   type StitchBriefOptions,
@@ -304,14 +312,18 @@ export function buildStitchDesignMarkdown(input: {
   brief: StitchDesignBrief;
   branding: StitchTenantBranding;
   useAccountBranding: boolean;
+  designSystem?: ClientDesignSystem;
 }): string {
   const { brief, branding, useAccountBranding } = input;
+  const clientDesignSystem =
+    input.designSystem ??
+    buildClientDesignSystem({ brief, branding, useAccountBranding });
   const title = brief.businessName || brief.industry || "Design project";
   const brandLine = useAccountBranding
     ? branding.brandName || branding.businessName || title
     : title;
 
-  const designSystem = useAccountBranding
+  const brandingSourceLine = useAccountBranding
     ? "Client account brand kit (Admin → Branding) merged with the operator request."
     : "Prompt-derived visual system from the operator request (no saved account branding).";
 
@@ -339,7 +351,7 @@ export function buildStitchDesignMarkdown(input: {
     "## Brand",
     `- Name: ${brandLine}`,
     colorSection(branding, useAccountBranding, brief),
-    `- Source: ${designSystem}`,
+    `- Source: ${brandingSourceLine}`,
     "",
     "## Product context",
     `- Industry: ${brief.industry || "—"}`,
@@ -355,6 +367,21 @@ export function buildStitchDesignMarkdown(input: {
     `- Imagery: realistic photography or custom abstract shapes; if no images described, use bold typography and geometric accent shapes instead of generic stock layouts`,
     `- Mood: ${brief.tone || "infer from industry and operator request — be bold and bespoke, never template-like"}`,
     `- Responsive: mobile-first unless desktop/web is explicitly requested`,
+    "",
+    "## Design tokens",
+    formatDesignTokensMarkdown(clientDesignSystem),
+    "",
+    "## Section map",
+    formatSectionMapMarkdown(clientDesignSystem.sections),
+    "",
+    "## Copy bank",
+    formatCopyBankMarkdown(clientDesignSystem.copyBank),
+    clientDesignSystem.copyGuardrails
+      ? `- Guardrails: ${clientDesignSystem.copyGuardrails}`
+      : "",
+    "",
+    "## Accessibility",
+    formatAccessibilityMarkdown(clientDesignSystem.accessibility),
     "",
     "## Screen scope",
     brief.pages ? `- Pages: ${brief.pages}` : "- Pages: infer from the operator request",
@@ -390,12 +417,22 @@ export function buildStitchClarifyReply(
   ].join("\n");
 }
 
-export function buildStitchDesignBriefArtifact(markdown: string): Record<string, unknown> {
+export function buildStitchDesignBriefArtifact(
+  markdown: string,
+  meta?: { projectId?: string },
+): Record<string, unknown> {
   return {
-    toolName: "google_stitch",
-    artifactType: "stitch-design-brief",
+    toolName: "wireline_design_studio",
+    artifactType: "design-brief",
+    legacyArtifactType: "stitch-design-brief",
     name: "design.md",
     mimeType: "text/markdown",
     content: markdown,
+    ...(meta?.projectId ? { projectId: meta.projectId } : {}),
   };
+}
+
+/** Normalize brief artifact type from persisted or legacy metadata. */
+export function isDesignBriefArtifactType(artifactType: string): boolean {
+  return artifactType === "design-brief" || artifactType === "stitch-design-brief";
 }

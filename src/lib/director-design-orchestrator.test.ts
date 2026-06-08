@@ -4,7 +4,6 @@ import { runDirectorDesignStudio } from "./director-design-orchestrator";
 vi.mock("./openrouter-structured", () => ({
   isOpenRouterConfigured: vi.fn().mockReturnValue(true),
   runOpenRouterCompletion: vi.fn(),
-  runOpenRouterStructured: vi.fn(),
   runOpenRouterImageGeneration: vi.fn().mockResolvedValue([]),
 }));
 
@@ -39,7 +38,8 @@ vi.mock("./director-html-prototype", async (importOriginal) => {
   };
 });
 
-import { runOpenRouterCompletion, runOpenRouterStructured } from "./openrouter-structured";
+import { runStructured } from "./claude-structured";
+import { runOpenRouterCompletion } from "./openrouter-structured";
 import { DESIGN_KIT_BASE_CSS } from "./director-design-kit";
 
 const polishedHtml = `<!doctype html><html><head><style>${DESIGN_KIT_BASE_CSS}</style></head>
@@ -51,7 +51,7 @@ const polishedHtml = `<!doctype html><html><head><style>${DESIGN_KIT_BASE_CSS}</
 describe("runDirectorDesignStudio Spectrum Desk", () => {
   beforeEach(() => {
     vi.mocked(runOpenRouterCompletion).mockReset();
-    vi.mocked(runOpenRouterStructured).mockReset();
+    vi.mocked(runStructured).mockReset();
   });
 
   const baseInput = {
@@ -75,11 +75,9 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
       return polishedHtml;
     });
 
-    vi.mocked(runOpenRouterStructured).mockResolvedValue({
-      result: {
-        operatorReply: "Your **Summit Landscaping** page is ready.",
-        pageTitle: "Summit Landscaping",
-      },
+    vi.mocked(runStructured).mockResolvedValue({
+      operatorReply: "Your **Summit Landscaping** page is ready.",
+      pageTitle: "Summit Landscaping",
     });
 
     const turn = await runDirectorDesignStudio(baseInput);

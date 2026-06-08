@@ -1,8 +1,7 @@
 /**
  * Wireline Design Studio — Spectrum Desk linear pipeline (no architect tournament).
  *
- * Brief → Imagine → Qwen build/refine → Sonnet critic → MiniMax finish → gate → US localize.
- * Optional single Hy3 challenger when pass-1 quality gate fails.
+ * Brief → Imagine (Grok) → Hy3 build → Kimi critique → M3 finish → gate → Kimi localize → Opus sign-off.
  */
 import { CLAUDE_MODELS } from "./claude-models";
 import {
@@ -12,9 +11,12 @@ import {
 } from "./director-design-imagine";
 import type { DesignImagineAsset } from "./director-design-imagine";
 import { formatJuryVerdictSummary, resolveArchitectJury } from "./director-design-jury";
+import { extractIndustryPackNotesFromBrief } from "./client-design-brief-helpers";
 import {
   createDesignStudioDeadline,
+  designStageAbortSignal,
   designStudioRemainingMs,
+  DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS,
   maxTokensForPass,
   shouldSkipOptionalChallenger,
   shouldStartRefinementPass,
@@ -63,11 +65,10 @@ import type {
   DirectorDesignTurnResult,
   DesignProgressCallback,
 } from "./director-design-turn";
-import { runCompletion } from "./claude-structured";
+import { runCompletion, runStructured } from "./claude-structured";
 import {
   isOpenRouterConfigured,
   runOpenRouterCompletion,
-  runOpenRouterStructured,
 } from "./openrouter-structured";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
@@ -151,19 +152,26 @@ async function runSpectrumResearch(input: {
     return { researchNotes: text.trim(), layoutScoutNotes: "" };
   }
 
+  const packNotes = extractIndustryPackNotesFromBrief(input.designBriefMarkdown);
   const researchUser = [
     `Operator request:\n${input.operatorMessage.trim()}`,
+    packNotes ? `## Industry pack\n${packNotes}` : "",
     `## design.md\n${input.designBriefMarkdown.trim().slice(0, 6000)}`,
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const researchSignal = designStageAbortSignal("research", input.signal);
+  const scoutSignal = designStageAbortSignal("layoutScout", input.signal);
 
   const [researchSettled, scoutSettled] = await Promise.allSettled([
-    runOpenRouterRole(team.researcher, DESIGN_RESEARCH_SYSTEM, researchUser, 2048, input.signal),
+    runOpenRouterRole(team.researcher, DESIGN_RESEARCH_SYSTEM, researchUser, 2048, researchSignal),
     runOpenRouterRole(
       team.layoutScout,
       DESIGN_LAYOUT_SCOUT_SYSTEM,
       researchUser,
       512,
-      input.signal,
+      scoutSignal,
     ),
   ]);
 
@@ -220,7 +228,7 @@ async function runPrimaryHtmlBuild(input: {
       system,
       user,
       maxTokensForPass(input.passNumber, "build"),
-      input.signal,
+      designStageAbortSignal("build", input.signal),
     );
     return stripHtmlFences(raw);
   } catch (e) {
@@ -338,7 +346,7 @@ async function runVisualCritic(input: {
         DESIGN_VISUAL_CRITIC_SYSTEM,
         user,
         maxTokensForPass(input.passNumber, "critic"),
-        input.signal,
+        designStageAbortSignal("critic", input.signal),
       )
     ).trim();
   } catch (e) {
@@ -367,7 +375,7 @@ async function runProductionFinisher(input: {
       DESIGN_PRODUCTION_FINISHER_SYSTEM,
       user,
       maxTokensForPass(input.passNumber, "finisher"),
-      input.signal,
+      designStageAbortSignal("finisher", input.signal),
     );
     return stripHtmlFences(raw);
   } catch (e) {
@@ -398,7 +406,7 @@ async function runEmergencyPolish(input: {
         DESIGN_EMERGENCY_POLISH_SYSTEM,
         user,
         12_288,
-        input.signal,
+        designStageAbortSignal("emergencyPolish", input.signal),
       );
       return stripHtmlFences(raw);
     } catch (e) {
@@ -436,7 +444,7 @@ async function runUsLocalization(input: {
           `## HTML to localize for US audience\n${input.html.slice(0, 24_000)}`,
         ].join("\n\n"),
         12_288,
-        input.signal,
+        designStageAbortSignal("localize", input.signal),
       );
       html = stripHtmlFences(localized);
     } catch (e) {
@@ -445,25 +453,26 @@ async function runUsLocalization(input: {
   }
 
   let approval: DesignFinalApproval = { operatorReply: "", pageTitle: fallbackTitle };
-  if (team && isOpenRouterConfigured()) {
-    try {
-      const { result } = await runOpenRouterStructured<DesignFinalApproval>({
-        model: team.usLocalization.openRouterModelId,
-        system: DESIGN_FINAL_APPROVER_SYSTEM,
-        user: [
-          `Operator request:\n${input.operatorMessage}`,
-          `Completed ${input.passCount} Spectrum Desk passes.`,
-          `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
-          `## HTML (excerpt)\n${html.slice(0, 12_000)}`,
-        ].join("\n\n"),
-        tool: DESIGN_FINAL_APPROVAL_TOOL,
-        maxTokens: 2048,
-        signal: input.signal,
-      });
-      approval = result;
-    } catch (e) {
-      log.warn("design studio final approval via OpenRouter failed", { error: getErrorMessage(e) });
-    }
+  const approverModel =
+    team?.finalApprover.provider === "wireline"
+      ? team.finalApprover.wirelineModel
+      : CLAUDE_MODELS.OPUS;
+  try {
+    approval = await runStructured<DesignFinalApproval>({
+      model: approverModel,
+      system: DESIGN_FINAL_APPROVER_SYSTEM,
+      user: [
+        `Operator request:\n${input.operatorMessage}`,
+        `Completed ${input.passCount} Spectrum Desk passes.`,
+        `## design.md (excerpt)\n${input.designBriefMarkdown.slice(0, 3000)}`,
+        `## HTML (excerpt)\n${html.slice(0, 12_000)}`,
+      ].join("\n\n"),
+      tool: DESIGN_FINAL_APPROVAL_TOOL,
+      maxTokens: 2048,
+      signal: designStageAbortSignal("localize", input.signal),
+    });
+  } catch (e) {
+    log.warn("design studio final approval via Opus failed", { error: getErrorMessage(e) });
   }
 
   return { html, approval };
@@ -562,19 +571,28 @@ export async function runDirectorDesignStudio(
     designBriefMarkdown: input.designBriefMarkdown,
   });
 
-  onProgress?.("Generating hero photography…");
-  phases.push("Imagine hero");
   let imagineAssets: DesignImagineAsset[] = [];
-  try {
-    imagineAssets = await generateDesignImagineAssets({
-      operatorMessage: input.operatorMessage,
-      designBriefMarkdown: input.designBriefMarkdown,
-      researchNotes,
-      deviceType: previewDeviceType,
-      signal: input.signal,
+  const skipImagine =
+    designStudioRemainingMs(deadline) < DESIGN_STUDIO_SKIP_IMAGINE_REMAINING_MS;
+  if (skipImagine) {
+    phases.push("Imagine skipped (time budget)");
+    log.info("design studio skipping imagine — time budget", {
+      remainingMs: designStudioRemainingMs(deadline),
     });
-  } catch (e) {
-    log.warn("design studio imagine pipeline skipped", { error: getErrorMessage(e) });
+  } else {
+    onProgress?.("Generating hero photography…");
+    phases.push("Imagine hero");
+    try {
+      imagineAssets = await generateDesignImagineAssets({
+        operatorMessage: input.operatorMessage,
+        designBriefMarkdown: input.designBriefMarkdown,
+        researchNotes,
+        deviceType: previewDeviceType,
+        signal: input.signal,
+      });
+    } catch (e) {
+      log.warn("design studio imagine pipeline skipped", { error: getErrorMessage(e) });
+    }
   }
   const imagineAssetsNotes = formatImagineAssetsForBuilder(imagineAssets);
 
