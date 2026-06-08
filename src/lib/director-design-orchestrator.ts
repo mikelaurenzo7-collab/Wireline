@@ -13,18 +13,26 @@ import {
 import type { DesignImagineAsset } from "./director-design-imagine";
 import { formatJuryVerdictSummary, resolveArchitectJury } from "./director-design-jury";
 import {
+  createDesignStudioDeadline,
+  designStudioRemainingMs,
+  maxTokensForPass,
+  shouldSkipOptionalChallenger,
+  shouldStartRefinementPass,
+  type DesignStudioDeadline,
+} from "./director-design-deadline";
+import {
   buildDesignBuilderUserPrompt,
   buildEngineerUserPrompt,
   buildFinisherUserPrompt,
   buildVisualCriticUserPrompt,
+  DESIGN_BUILDER_REFINEMENT_SYSTEM,
+  DESIGN_BUILDER_VISION_SYSTEM,
   DESIGN_EMERGENCY_POLISH_SYSTEM,
   DESIGN_FINAL_APPROVAL_TOOL,
   DESIGN_FINAL_APPROVER_SYSTEM,
-  DESIGN_HTML_ENGINEER_SYSTEM,
   DESIGN_LAYOUT_SCOUT_SYSTEM,
   DESIGN_PRODUCTION_FINISHER_SYSTEM,
   DESIGN_RESEARCH_SYSTEM,
-  DESIGN_UI_ARCHITECT_SYSTEM,
   DESIGN_US_LOCALIZATION_SYSTEM,
   DESIGN_VISUAL_CRITIC_SYSTEM,
 } from "./director-design-prompts";
@@ -50,8 +58,11 @@ import {
   resolveDesignPreviewDeviceType,
 } from "./director-html-prototype";
 import { buildStitchDesignBriefArtifact } from "./director-stitch-brief";
-import type { DirectorStitchTurnInput, DirectorStitchTurnResult } from "./director-stitch-service";
-import type { StitchProgressCallback } from "./director-stitch-service";
+import type {
+  DirectorDesignStudioInput,
+  DirectorDesignTurnResult,
+  DesignProgressCallback,
+} from "./director-design-turn";
 import { runCompletion } from "./claude-structured";
 import {
   isOpenRouterConfigured,
@@ -181,14 +192,14 @@ async function runPrimaryHtmlBuild(input: {
   if (!team) return input.priorHtml ?? "";
 
   const hasPrior = Boolean(input.priorHtml?.trim());
+  const isVisionPass = input.passNumber === 1 && !hasPrior;
   const user = hasPrior
     ? buildEngineerUserPrompt({
         operatorMessage: input.operatorMessage,
         designBriefMarkdown: input.designBriefMarkdown,
         html: input.priorHtml!,
         passNumber: input.passNumber,
-        researchNotes: input.researchNotes,
-        imagineAssetsNotes: input.imagineAssetsNotes,
+        revisionNotes: input.revisionNotes,
         winningArchitectLabel: "Spectrum primary",
       })
     : buildDesignBuilderUserPrompt({
@@ -201,12 +212,14 @@ async function runPrimaryHtmlBuild(input: {
         passNumber: input.passNumber,
       });
 
+  const system = isVisionPass ? DESIGN_BUILDER_VISION_SYSTEM : DESIGN_BUILDER_REFINEMENT_SYSTEM;
+
   try {
     const raw = await runOpenRouterRole(
       team.htmlBuilder,
-      DESIGN_HTML_ENGINEER_SYSTEM,
+      system,
       user,
-      12_288,
+      maxTokensForPass(input.passNumber, "build"),
       input.signal,
     );
     return stripHtmlFences(raw);
@@ -242,9 +255,9 @@ async function runChallengerDraft(input: {
     });
     const raw = await runOpenRouterCompletion({
       model: input.architect.openRouterModelId,
-      system: DESIGN_UI_ARCHITECT_SYSTEM,
+      system: DESIGN_BUILDER_REFINEMENT_SYSTEM,
       user,
-      maxTokens: 12_288,
+      maxTokens: maxTokensForPass(input.passNumber, "build"),
       signal: input.signal,
     });
     const html = stripHtmlFences(raw);
@@ -324,7 +337,7 @@ async function runVisualCritic(input: {
         team.visualCritic,
         DESIGN_VISUAL_CRITIC_SYSTEM,
         user,
-        1536,
+        maxTokensForPass(input.passNumber, "critic"),
         input.signal,
       )
     ).trim();
@@ -353,7 +366,7 @@ async function runProductionFinisher(input: {
       team.productionFinisher,
       DESIGN_PRODUCTION_FINISHER_SYSTEM,
       user,
-      12_288,
+      maxTokensForPass(input.passNumber, "finisher"),
       input.signal,
     );
     return stripHtmlFences(raw);
@@ -475,7 +488,7 @@ async function runSpectrumPass(input: {
   imagineAssetsNotes?: string;
   revisionNotes?: string;
   incumbentHtml?: string;
-  onProgress?: StitchProgressCallback;
+  onProgress?: DesignProgressCallback;
   phases: string[];
   signal?: AbortSignal;
 }): Promise<{ html: string }> {
@@ -524,13 +537,14 @@ async function runSpectrumPass(input: {
   return { html };
 }
 
-/** Run the full Design Studio pipeline and return a stitch-shaped Director turn. */
+/** Run the full Design Studio pipeline and return a Director turn. */
 export async function runDirectorDesignStudio(
-  input: DirectorStitchTurnInput & { designBriefMarkdown: string },
-): Promise<DirectorStitchTurnResult> {
+  input: DirectorDesignStudioInput,
+): Promise<DirectorDesignTurnResult> {
   const t0 = Date.now();
+  const deadline = createDesignStudioDeadline(t0);
   const phases: string[] = [];
-  const onProgress: StitchProgressCallback | undefined = input.onProgress;
+  const onProgress: DesignProgressCallback | undefined = input.onProgress;
   const studioPhases = WIRELINE_STITCH_UI.studioLoadingPhases;
   let phaseCursor = 0;
   const nextStudioPhase = () => studioPhases[phaseCursor++] ?? studioPhases.at(-1)!;
@@ -574,6 +588,15 @@ export async function runDirectorDesignStudio(
     pass <= WIRELINE_DESIGN_TEAM.maxRefinementPasses;
     pass = (pass + 1) as DesignPassNumber
   ) {
+    if (pass > 1 && !shouldStartRefinementPass(deadline, pass)) {
+      log.info("design studio skipping pass — time budget", {
+        pass,
+        remainingMs: designStudioRemainingMs(deadline),
+      });
+      phases.push(`Pass ${pass} skipped (time budget)`);
+      break;
+    }
+
     passCount = pass;
     const priorHtml = pass > 1 ? html : undefined;
 
@@ -597,7 +620,14 @@ export async function runDirectorDesignStudio(
     let qualityReport = assessDesignStudioHtmlQuality(html);
     let passesGate = designQualityPasses(qualityReport);
 
-    if (pass === 1 && !passesGate && !challengerUsed && spectrumTeam()?.enableOptionalChallenger) {
+    const runChallenger =
+      pass === 1 &&
+      !passesGate &&
+      !challengerUsed &&
+      spectrumTeam()?.enableOptionalChallenger &&
+      !shouldSkipOptionalChallenger(deadline);
+
+    if (runChallenger) {
       onProgress?.(designStudioProgressLabel(1, "challenger"));
       phases.push("Hy3 challenger");
       const challenged = await runOptionalChallenger({

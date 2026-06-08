@@ -1,8 +1,11 @@
 /**
  * Expert prompts for the Wireline Design Studio pipeline (Spectrum Desk).
+ *
+ * Pass 1: Claude Design–style high-fidelity vision spec (~5k chars) → full HTML draft.
+ * Pass 2+: Short delta prompts — fix list + incumbent HTML only.
  */
 import { DESIGN_KIT_PROMPT_BLOCK } from "./director-design-kit";
-import { CLIENT_STITCH_DELIVERY_BRIEF } from "./director-stitch-intent";
+import { buildDesignVisionSpec } from "./director-design-vision";
 import { DESIGN_PASS_FOCUS, type DesignPassNumber } from "./director-design-team";
 
 export const DESIGN_RESEARCH_SYSTEM = `You are the lead design researcher for Wireline Spectrum Desk.
@@ -21,40 +24,44 @@ export const DESIGN_LAYOUT_SCOUT_SYSTEM = `You are a layout scout for Wireline S
 Suggest 3 unconventional layout archetypes for this US local-business page — spatial rhythm, hero shape, section order.
 No HTML. Max 150 words. Avoid three-column feature-card grids.`;
 
-export const DESIGN_UI_ARCHITECT_SYSTEM = `You are a UI architect on Wireline Spectrum Desk.
-Output ONLY a complete HTML document — distinctive landing-page quality for American local businesses.
+/** Pass 1 — implement the full vision spec (Claude Design high-fidelity mode). */
+export const DESIGN_BUILDER_VISION_SYSTEM = `You are the lead UI builder on Wireline Spectrum Desk (pass 1 — high fidelity).
+You receive an exhaustive vision spec (~5000 characters). Implement it completely in one HTML file.
 
 Rules:
-- Single file: <!doctype html>, one <style> block, semantic landmarks, WCAG AA contrast.
-- Google Fonts via <link> only (display + UI sans — avoid Inter-only unless brief requests).
-- Realistic US industry copy — no lorem ipsum, no translation-English.
-- Mobile-first unless brief says desktop.
-- CTAs: <button> or <a class="wl-btn wl-btn--primary"> — never bare text links for primary actions.
-- Use Wireline kit classes: wl-page, wl-hero, wl-headline, wl-btn, wl-badge, wl-section.
-- Avoid generic AI purple gradients and identical three-card rows.
-- No markdown fences. No commentary outside HTML.`;
+- Output ONLY a complete HTML document — no markdown fences, no commentary.
+- Single file: <!doctype html>, one embedded <style> block with full Wireline kit CSS, semantic landmarks.
+- Google Fonts via <link> (display + UI sans — avoid Inter-only unless spec requests).
+- Realistic US local-business copy — no lorem ipsum.
+- Every section in the vision spec must appear in the page (hero, trust row, content, footer).
+- CTAs: wl-btn wl-btn--primary (min 48px height) — never bare text links for primary actions.
+- Match the layout archetype and visual system in the spec — distinctive, not template-like.
 
-export const DESIGN_HTML_ENGINEER_SYSTEM = `You are the HTML engineer on Wireline Spectrum Desk.
-You receive an architect draft. Output ONLY the improved complete HTML document.
+No markdown fences. No commentary outside HTML.`;
 
-Tighten:
-- Semantic structure, kit class vocabulary, component correctness
-- Real buttons with padding, radius, min 48px touch targets
-- Embedded <style> with full kit CSS foundation
-- Preserve the architect's distinctive layout intent — do not flatten to a generic template
+/** Pass 2+ — surgical refinement on incumbent HTML. */
+export const DESIGN_BUILDER_REFINEMENT_SYSTEM = `You are refining an existing Wireline Design HTML page (pass 2+).
+Output ONLY the improved complete HTML document.
 
-No markdown fences. No commentary.`;
+Rules:
+- Apply ONLY the pass focus and fix list — preserve layout and copy that already work.
+- Do not restart from scratch or flatten to a generic template.
+- Keep embedded <style> and Wireline kit classes intact unless a fix requires a CSS tweak.
+- No markdown fences. No commentary.`;
 
-export const DESIGN_VISUAL_CRITIC_SYSTEM = `You are the visual design critic on Wireline Spectrum Desk (vision-native).
-Review the HTML against the brief. Output revision notes ONLY — no HTML.
+export const DESIGN_UI_ARCHITECT_SYSTEM = DESIGN_BUILDER_VISION_SYSTEM;
+
+export const DESIGN_HTML_ENGINEER_SYSTEM = DESIGN_BUILDER_REFINEMENT_SYSTEM;
+
+export const DESIGN_VISUAL_CRITIC_SYSTEM = `You are the visual design critic on Wireline Spectrum Desk.
+Review HTML against the brief. Output revision notes ONLY — no HTML.
 
 Format:
 ## Strengths (max 3 bullets)
-## Must fix (max 8 bullets, actionable CSS/HTML changes)
-## Polish (max 4 bullets)
+## Must fix (max 6 bullets, actionable)
+## Polish (max 3 bullets)
 
-Be harsh on text-link CTAs, flat wireframes, missing trust row, weak hero hierarchy.
-Target American SMB trust — licensed, insured, local, phone-first.`;
+Be harsh on text-link CTAs, flat wireframes, missing trust row, weak hero hierarchy.`;
 
 export const DESIGN_PRODUCTION_FINISHER_SYSTEM = `You are the production finisher on Wireline Spectrum Desk.
 Apply critic notes and pass focus. Output ONLY the complete polished HTML document.
@@ -66,7 +73,7 @@ Requirements:
 - No markdown fences`;
 
 export const DESIGN_EMERGENCY_POLISH_SYSTEM = `You are the emergency finisher for Wireline Spectrum Desk.
-The HTML failed Stitch-quality checks. Output ONLY the fixed complete HTML document.
+The HTML failed quality gate checks. Output ONLY the fixed complete HTML document.
 
 Requirements:
 - Include the full Wireline Design Kit CSS in <style>
@@ -97,35 +104,57 @@ export function buildDesignBuilderUserPrompt(input: {
   layoutScoutNotes?: string;
   architectLabel?: string;
 }): string {
+  if (input.passNumber === 1 && !input.priorHtml?.trim()) {
+    const vision = buildDesignVisionSpec({
+      operatorMessage: input.operatorMessage,
+      designBriefMarkdown: input.designBriefMarkdown,
+      researchNotes: input.researchNotes,
+      layoutScoutNotes: input.layoutScoutNotes,
+      imagineAssetsNotes: input.imagineAssetsNotes,
+    });
+    return [
+      vision,
+      "",
+      `## Pass 1 builder focus\n${DESIGN_PASS_FOCUS[1]}`,
+      DESIGN_KIT_PROMPT_BLOCK,
+      "Implement the vision spec above as production HTML. Every section in the blueprint must render.",
+    ].join("\n");
+  }
+
+  return buildDesignRefinementUserPrompt({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    html: input.priorHtml ?? "",
+    passNumber: input.passNumber,
+    revisionNotes: input.revisionNotes,
+    architectLabel: input.architectLabel,
+  });
+}
+
+/** Pass 2+ — short, focused delta prompt (not a repeat of the 5k vision). */
+export function buildDesignRefinementUserPrompt(input: {
+  operatorMessage: string;
+  designBriefMarkdown: string;
+  html: string;
+  passNumber: DesignPassNumber;
+  revisionNotes?: string;
+  architectLabel?: string;
+}): string {
+  const briefExcerpt = input.designBriefMarkdown.trim().slice(0, input.passNumber === 2 ? 1_200 : 600);
+  const htmlSlice = input.html.trim().slice(0, input.passNumber === 2 ? 22_000 : 18_000);
   const parts = [
-    `Operator request:\n${input.operatorMessage.trim()}`,
-    `## design.md\n${input.designBriefMarkdown.trim()}`,
-    `## Delivery standards\n${CLIENT_STITCH_DELIVERY_BRIEF}`,
-    `## Pass ${input.passNumber} focus\n${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    DESIGN_KIT_PROMPT_BLOCK,
+    `Pass ${input.passNumber} refinement — apply focus only, keep what works.`,
+    `## Focus\n${DESIGN_PASS_FOCUS[input.passNumber]}`,
+    `## Operator intent\n${input.operatorMessage.trim().slice(0, 280)}`,
+    `## design.md (excerpt)\n${briefExcerpt}`,
   ];
-  if (input.architectLabel) {
-    parts.push(
-      `## Your architect lane\n${input.architectLabel} — bring a distinctive spatial take.`,
-    );
-  }
-  if (input.layoutScoutNotes?.trim()) {
-    parts.push(`## Layout scout ideas\n${input.layoutScoutNotes.trim()}`);
-  }
-  if (input.imagineAssetsNotes?.trim()) {
-    parts.push(input.imagineAssetsNotes.trim());
-  }
-  if (input.researchNotes?.trim()) {
-    parts.push(`## Research direction (follow closely)\n${input.researchNotes.trim()}`);
-  }
   if (input.revisionNotes?.trim()) {
-    parts.push(`## Fix these issues (keep what works)\n${input.revisionNotes.trim()}`);
+    parts.push(`## Must fix\n${input.revisionNotes.trim().slice(0, 2_000)}`);
   }
-  if (input.priorHtml?.trim()) {
-    parts.push(
-      `## Incumbent HTML (pass 2 challenger vote — beat this draft)\n${input.priorHtml.trim().slice(0, 28_000)}`,
-    );
+  if (input.architectLabel) {
+    parts.push(`## Challenger lane\n${input.architectLabel} — beat incumbent layout without generic templates.`);
   }
+  parts.push(`## Incumbent HTML\n${htmlSlice}`);
   return parts.join("\n\n");
 }
 
@@ -137,18 +166,16 @@ export function buildEngineerUserPrompt(input: {
   researchNotes?: string;
   imagineAssetsNotes?: string;
   winningArchitectLabel?: string;
+  revisionNotes?: string;
 }): string {
-  const parts = [
-    `Operator request:\n${input.operatorMessage.trim()}`,
-    `## Pass ${input.passNumber} engineer focus\n${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    `## design.md (excerpt)\n${input.designBriefMarkdown.trim().slice(0, 4000)}`,
-    input.winningArchitectLabel ? `## Winning architect\n${input.winningArchitectLabel}` : "",
-    input.researchNotes?.trim() ? `## Research\n${input.researchNotes.trim().slice(0, 2000)}` : "",
-    input.imagineAssetsNotes?.trim() ? input.imagineAssetsNotes.trim() : "",
-    DESIGN_KIT_PROMPT_BLOCK,
-    `## Architect HTML to engineer\n${input.html.trim().slice(0, 28_000)}`,
-  ];
-  return parts.filter(Boolean).join("\n\n");
+  return buildDesignRefinementUserPrompt({
+    operatorMessage: input.operatorMessage,
+    designBriefMarkdown: input.designBriefMarkdown,
+    html: input.html,
+    passNumber: input.passNumber,
+    revisionNotes: input.revisionNotes,
+    architectLabel: input.winningArchitectLabel,
+  });
 }
 
 export function buildVisualCriticUserPrompt(input: {
@@ -157,11 +184,13 @@ export function buildVisualCriticUserPrompt(input: {
   html: string;
   passNumber: DesignPassNumber;
 }): string {
+  const briefCap = input.passNumber === 1 ? 2_000 : 800;
+  const htmlCap = input.passNumber === 1 ? 20_000 : 14_000;
   return [
-    `Operator request:\n${input.operatorMessage.trim()}`,
-    `## Pass ${input.passNumber}\n${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    `## design.md (excerpt)\n${input.designBriefMarkdown.trim().slice(0, 3000)}`,
-    `## HTML to critique\n${input.html.trim().slice(0, 24_000)}`,
+    `Pass ${input.passNumber} critique — ${DESIGN_PASS_FOCUS[input.passNumber]}`,
+    `Intent: ${input.operatorMessage.trim().slice(0, 200)}`,
+    `## design.md\n${input.designBriefMarkdown.trim().slice(0, briefCap)}`,
+    `## HTML\n${input.html.trim().slice(0, htmlCap)}`,
   ].join("\n\n");
 }
 
@@ -174,10 +203,10 @@ export function buildFinisherUserPrompt(input: {
   revisionNotes?: string;
   imagineAssetsNotes?: string;
 }): string {
+  const briefCap = input.passNumber === 1 ? 1_500 : 500;
   const parts = [
-    `Operator request:\n${input.operatorMessage.trim()}`,
-    `## Pass ${input.passNumber} finish focus\n${DESIGN_PASS_FOCUS[input.passNumber]}`,
-    `## design.md (excerpt)\n${input.designBriefMarkdown.trim().slice(0, 3000)}`,
+    `Pass ${input.passNumber} finish — ${DESIGN_PASS_FOCUS[input.passNumber]}`,
+    `## design.md\n${input.designBriefMarkdown.trim().slice(0, briefCap)}`,
   ];
   if (input.criticNotes?.trim()) {
     parts.push(`## Visual critic notes\n${input.criticNotes.trim()}`);
@@ -189,7 +218,8 @@ export function buildFinisherUserPrompt(input: {
     parts.push(input.imagineAssetsNotes.trim());
   }
   parts.push(DESIGN_KIT_PROMPT_BLOCK);
-  parts.push(`## HTML to finish\n${input.html.trim().slice(0, 28_000)}`);
+  const htmlCap = input.passNumber === 1 ? 24_000 : 16_000;
+  parts.push(`## HTML to finish\n${input.html.trim().slice(0, htmlCap)}`);
   return parts.join("\n\n");
 }
 

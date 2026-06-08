@@ -8,7 +8,6 @@ import {
   resolveStitchMediaOperation,
   resolveStitchModelId,
   shouldRouteDirectorMessageToStitch,
-  shouldRouteStitchSessionFollowUp,
   WIRELINE_STITCH_DESIGN_BRIEF,
   wantsStitchMediaRequest,
   wantsWirelineProductDesign,
@@ -92,7 +91,7 @@ describe("director stitch intent", () => {
     );
   });
 
-  it("routes only when Design mode, clarify follow-up, or stitch session edit", () => {
+  it("routes only when Design mode or clarify follow-up", () => {
     expect(
       shouldRouteDirectorMessageToStitch("Design a landing page", {
         stitchOptions: { designMode: true },
@@ -116,16 +115,10 @@ describe("director stitch intent", () => {
     ).toBe(true);
     expect(hasPendingStitchClarifyInHistory([])).toBe(false);
     expect(
-      shouldRouteStitchSessionFollowUp("Make the hero darker", {
-        projectId: "123",
-        screenId: "456",
-      }),
-    ).toBe(true);
-    expect(
       shouldRouteDirectorMessageToStitch("Make the hero darker", {
-        stitchSession: { projectId: "123", screenId: "456" },
+        stitchOptions: undefined,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("uses desktop canvas for admin dashboards", () => {

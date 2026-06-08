@@ -77,28 +77,16 @@ export function hasPendingStitchClarifyInHistory(
  * Single gate for Stitch routing — explicit Design toggle or answering a Stitch clarify turn.
  * Keyword sniffing alone does not enter design mode (avoids fleet vs design confusion).
  */
-/** Follow-up edits/variants after a Stitch screen exists in this thread. */
-export function shouldRouteStitchSessionFollowUp(
-  operatorMessage: string,
-  session: StitchSession | null | undefined,
-): boolean {
-  if (!session?.screenId || !session?.projectId) return false;
-  const operation = resolveStitchMediaOperation(operatorMessage.trim(), session);
-  return operation === "edit" || operation === "variants" || operation === "build_site";
-}
-
 export function shouldRouteDirectorMessageToStitch(
   operatorMessage: string,
   options?: {
     stitchOptions?: StitchBriefOptions;
     history?: Array<{ role: "operator" | "director"; content: string }>;
-    stitchSession?: StitchSession | null;
   },
 ): boolean {
   if (!operatorMessage.trim()) return false;
   if (isStitchDesignModeActive(options?.stitchOptions)) return true;
   if (hasPendingStitchClarifyInHistory(options?.history ?? [])) return true;
-  if (shouldRouteStitchSessionFollowUp(operatorMessage, options?.stitchSession)) return true;
   return false;
 }
 

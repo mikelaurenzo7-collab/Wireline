@@ -1,8 +1,33 @@
 /**
- * Design Studio output quality — aligned with Stitch polished-HTML heuristics.
+ * Design Studio output quality — polished-HTML heuristics for LLM-generated pages.
  */
-import { isPolishedStitchHtml, STITCH_HTML_MIN_BYTES } from "./google-stitch-mcp-client";
 import { DESIGN_KIT_CLASS_VOCABULARY } from "./director-design-kit";
+
+/** Minimum bytes for a production-quality landing page (not a wireframe stub). */
+export const DESIGN_HTML_MIN_BYTES = 2_048;
+
+/**
+ * Reject early wireframe HTML (bare links, no CSS).
+ * Production HTML must ship embedded styles — external-only sheets break blob iframe previews.
+ */
+export function isPolishedDesignHtml(buf: Buffer): boolean {
+  if (buf.byteLength < DESIGN_HTML_MIN_BYTES) return false;
+  const text = buf.toString("utf8");
+  if (!/<html[\s>]|<!doctype\s+html/i.test(text)) return false;
+
+  const hasStyleBlock = /<style[\s>]/i.test(text);
+  const inlineStyleCount = (text.match(/\sstyle\s*=/gi) ?? []).length;
+  const bareLinkCount = (text.match(/<a\s+[^>]*href/gi) ?? []).length;
+
+  if (bareLinkCount >= 5 && !hasStyleBlock && inlineStyleCount < 3) {
+    return false;
+  }
+
+  if (hasStyleBlock) return true;
+  if (inlineStyleCount >= 8) return true;
+
+  return false;
+}
 
 export interface DesignStudioQualityReport {
   polished: boolean;
@@ -20,11 +45,11 @@ export function assessDesignStudioHtmlQuality(html: string): DesignStudioQuality
   const text = html.trim();
   const issues: string[] = [];
 
-  const polished = isPolishedStitchHtml(buf);
+  const polished = isPolishedDesignHtml(buf);
   if (!polished) {
-    if (buf.byteLength < STITCH_HTML_MIN_BYTES) {
+    if (buf.byteLength < DESIGN_HTML_MIN_BYTES) {
       issues.push(
-        "HTML too small — expand hero, trust row, and embedded CSS to Stitch polish threshold.",
+        "HTML too small — expand hero, trust row, and embedded CSS to production polish threshold.",
       );
     } else {
       issues.push(

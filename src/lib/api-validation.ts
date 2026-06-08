@@ -481,15 +481,6 @@ export const directorChatModelSelectionSchema = z.discriminatedUnion("provider",
 export const directorStitchOptionsSchema = z.object({
   designMode: z.boolean().optional(),
   useAccountBranding: z.boolean().optional(),
-  useStitchPixelRender: z.boolean().optional(),
-});
-
-export const directorStitchFinalizeSchema = z.object({
-  projectId: z.string().min(1).max(64),
-  screenId: z.string().min(1).max(128),
-  operatorMessage: z.string().max(4000).optional(),
-  deviceType: z.enum(["DESKTOP", "MOBILE", "TABLET", "AGNOSTIC"]).optional(),
-  renderId: z.string().min(1).max(128).optional(),
 });
 
 export const directorMessageSchema = z

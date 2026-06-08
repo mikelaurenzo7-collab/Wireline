@@ -1,4 +1,4 @@
-import { isGoogleStitchConfigured } from "./google-stitch-config";
+import { isOpenRouterConfigured } from "./openrouter-structured";
 
 export interface DirectorFeatureFlags {
   toolExecution: boolean;
@@ -6,7 +6,7 @@ export interface DirectorFeatureFlags {
   artifactsPanel: boolean;
   /** Live Gemini grounded web search injected into Director turns */
   webResearch: boolean;
-  /** Google Stitch UI generation for website / mockup / hero media requests */
+  /** Wireline Design Studio (Spectrum Desk via OpenRouter) */
   stitchMedia: boolean;
 }
 
@@ -18,12 +18,12 @@ function envEnabled(name: string, defaultValue: boolean): boolean {
 
 export function loadDirectorFeatureFlags(): DirectorFeatureFlags {
   const webResearchDefault = Boolean(process.env.GEMINI_API_KEY?.trim());
-  const stitchDefault = isGoogleStitchConfigured();
+  const designDefault = isOpenRouterConfigured();
   return {
     toolExecution: envEnabled("DIRECTOR_TOOL_EXECUTION_ENABLED", true),
     creativeTools: envEnabled("DIRECTOR_CREATIVE_TOOLS_ENABLED", true),
     artifactsPanel: envEnabled("DIRECTOR_ARTIFACTS_PANEL_ENABLED", true),
     webResearch: envEnabled("DIRECTOR_WEB_RESEARCH_ENABLED", webResearchDefault),
-    stitchMedia: envEnabled("DIRECTOR_STITCH_MEDIA_ENABLED", stitchDefault),
+    stitchMedia: envEnabled("DIRECTOR_STITCH_MEDIA_ENABLED", designDefault),
   };
 }

@@ -40,9 +40,7 @@ import {
 } from "lucide-react";
 import {
   authFetch,
-  DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS,
   DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS,
-  DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
   readApiJson,
 } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -304,12 +302,8 @@ export default function DirectorWorkspace({
     artifactsPanel: true,
     stitchMedia: true,
   });
-  const [stitchRendering, setStitchRendering] = useState(false);
-  const [stitchPrompt, setStitchPrompt] = useState("");
-  const [stitchPollExhausted, setStitchPollExhausted] = useState<Record<string, true>>({});
-  const [stitchPendingElapsedMs, setStitchPendingElapsedMs] = useState<Record<string, number>>({});
-  const stitchPendingTimerRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
-  const stitchPendingElapsedRef = useRef<Record<string, number>>({});
+  const [designRendering, setDesignRendering] = useState(false);
+  const [designPrompt, setDesignPrompt] = useState("");
   const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
   const [designMode, setDesignMode] = useState(false);
   const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
@@ -337,16 +331,6 @@ export default function DirectorWorkspace({
     [messages],
   );
 
-  const latestStitchSession = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message = messages[i];
-      if (message?.role === "director" && message.stitchSession?.screenId) {
-        return message.stitchSession;
-      }
-    }
-    return null;
-  }, [messages]);
-
   const buildStitchComposerOptions = useCallback(
     (trimmed: string): StitchBriefOptions | undefined => {
       if (!featureFlags.stitchMedia) return undefined;
@@ -356,7 +340,6 @@ export default function DirectorWorkspace({
       const route = shouldRouteDirectorMessageToStitch(trimmed, {
         stitchOptions: stitchOptionsProbe,
         history: stitchThreadHistory,
-        stitchSession: latestStitchSession,
       });
       if (!route) return undefined;
       return {
@@ -367,7 +350,6 @@ export default function DirectorWorkspace({
     [
       designMode,
       featureFlags.stitchMedia,
-      latestStitchSession,
       stitchBrandingAvailable,
       stitchClarifyPending,
       stitchThreadHistory,
@@ -375,15 +357,14 @@ export default function DirectorWorkspace({
     ],
   );
 
-  const shouldUseStitchComposer = useCallback(
+  const shouldUseDesignComposer = useCallback(
     (trimmed: string) =>
       featureFlags.stitchMedia &&
       shouldRouteDirectorMessageToStitch(trimmed, {
         stitchOptions: designMode ? { designMode: true } : undefined,
         history: stitchThreadHistory,
-        stitchSession: latestStitchSession,
       }),
-    [designMode, featureFlags.stitchMedia, latestStitchSession, stitchThreadHistory],
+    [designMode, featureFlags.stitchMedia, stitchThreadHistory],
   );
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
@@ -395,9 +376,6 @@ export default function DirectorWorkspace({
   const lastStreamOperatorRef = useRef<string | null>(null);
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
-  /** Stitch finalize polls already started this mount — dedupes resume across reloads/streams. */
-  const stitchPollRef = useRef<Set<string>>(new Set());
-  const stitchThreadVersionRef = useRef(0);
   const sendNonStreamingRef = useRef<
     | ((
         trimmed: string,
@@ -406,7 +384,7 @@ export default function DirectorWorkspace({
           skipOperatorPersist?: boolean;
           timeoutMs?: number;
           recoverPersistedReply?: boolean;
-          requireStitchReply?: boolean;
+          requireDesignReply?: boolean;
         },
       ) => Promise<void>)
     | null
@@ -474,192 +452,6 @@ export default function DirectorWorkspace({
     },
     [focusAgentId, focusedAgent?.name],
   );
-
-  const pollStitchFinalize = useCallback(
-    async (message: DirectorMessage, operatorMessage: string) => {
-      const session = message.stitchSession;
-      if (!session?.projectId || !session.screenId) return false;
-      const threadVersion = stitchThreadVersionRef.current;
-
-      const waits = [
-        2_000,
-        5_000,
-        8_000,
-        10_000,
-        12_000,
-        ...Array.from({ length: 48 }, () => 30_000),
-      ];
-      setStitchPollExhausted((prev) => {
-        if (!prev[message.id]) return prev;
-        const next = { ...prev };
-        delete next[message.id];
-        return next;
-      });
-      let finalizeNotFoundStreak = 0;
-      for (const waitMs of waits) {
-        await new Promise((resolve) => setTimeout(resolve, waitMs));
-        if (stitchThreadVersionRef.current !== threadVersion) {
-          stitchPollRef.current.delete(message.id);
-          return false;
-        }
-        let r: Response;
-        try {
-          r = await authFetch("/api/director/stitch/finalize", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            timeoutMs: DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS,
-            body: JSON.stringify({
-              projectId: session.projectId,
-              screenId: session.screenId,
-              renderId: session.renderId,
-              operatorMessage: operatorMessage || session.operatorMessage,
-              deviceType: session.deviceType,
-            }),
-          });
-        } catch {
-          continue;
-        }
-        if (r.status === 202) {
-          finalizeNotFoundStreak = 0;
-          continue;
-        }
-        if (r.status === 404) {
-          finalizeNotFoundStreak += 1;
-          // Pending session metadata can lag the first poll — stop after repeated misses.
-          if (finalizeNotFoundStreak >= 6) {
-            setStitchPollExhausted((prev) => ({ ...prev, [message.id]: true }));
-            stitchPollRef.current.delete(message.id);
-            return false;
-          }
-          continue;
-        }
-        if (!r.ok) continue;
-        finalizeNotFoundStreak = 0;
-        const data = await r.json().catch(() => null);
-        if (!data || !data.ok || !Array.isArray(data.previews) || data.previews.length === 0) {
-          continue;
-        }
-        if (stitchThreadVersionRef.current !== threadVersion) {
-          stitchPollRef.current.delete(message.id);
-          return false;
-        }
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === message.id
-              ? {
-                  ...m,
-                  previews: data.previews as DirectorPreview[],
-                  stitchAssetsPending: false,
-                }
-              : m,
-          ),
-        );
-        if (Array.isArray(data.artifacts)) {
-          setArtifacts((prev) => {
-            const merged = [...prev];
-            for (const a of data.artifacts as DirectorArtifact[]) {
-              if (!merged.some((x) => x.id === a.id)) merged.unshift(a);
-            }
-            return merged;
-          });
-        }
-        setStitchPollExhausted((prev) => {
-          if (!prev[message.id]) return prev;
-          const next = { ...prev };
-          delete next[message.id];
-          return next;
-        });
-        stitchPollRef.current.delete(message.id);
-        return true;
-      }
-      setStitchPollExhausted((prev) => ({ ...prev, [message.id]: true }));
-      stitchPollRef.current.delete(message.id);
-      return false;
-    },
-    [],
-  );
-
-  /** Operator text that triggered a given director message — used to resume Stitch finalize. */
-  const operatorMessageForReply = useCallback((messageId: string): string => {
-    const msgs = messagesRef.current;
-    const idx = msgs.findIndex((m) => m.id === messageId);
-    if (idx < 0) return "";
-    for (let i = idx - 1; i >= 0; i--) {
-      if (msgs[i]?.role === "operator") return msgs[i]!.content;
-    }
-    return "";
-  }, []);
-
-  const startStitchFinalizePoll = useCallback(
-    (message: DirectorMessage) => {
-      if (stitchPollRef.current.has(message.id)) return;
-      stitchPollRef.current.add(message.id);
-      void pollStitchFinalize(message, operatorMessageForReply(message.id));
-    },
-    [operatorMessageForReply, pollStitchFinalize],
-  );
-
-  // Resume Stitch finalize polling for any pending render — inline reply, streamed reply,
-  // recovered turn, or a page reload all surface here. Without this, a screen that finishes
-  // packaging after the initial request is stranded in "packaging…" forever and the preview
-  // (and its Preview/Screenshot/Export tabs) never appears. Deduped per message per mount.
-  useEffect(() => {
-    for (const m of messages) {
-      if (m.role !== "director" || m.stitchAssetsPending !== true) continue;
-      const session = m.stitchSession;
-      if (!session?.projectId || !session.screenId) continue;
-      if (m.previews && m.previews.length > 0) continue;
-      startStitchFinalizePoll(m);
-    }
-  }, [messages, startStitchFinalizePoll]);
-
-  useEffect(() => {
-    const pollSet = stitchPollRef.current;
-    const versionRef = stitchThreadVersionRef;
-    return () => {
-      versionRef.current += 1;
-      pollSet.clear();
-    };
-  }, []);
-
-  useEffect(() => {
-    const pendingMessages = messages.filter(
-      (m) =>
-        m.stitchAssetsPending &&
-        !(m.previews && m.previews.length > 0) &&
-        m.stitchSession?.screenId,
-    );
-    const timerMap = stitchPendingTimerRef.current;
-    const activeIds = new Set(pendingMessages.map((m) => m.id));
-
-    for (const [id, timer] of timerMap) {
-      if (!activeIds.has(id)) {
-        clearInterval(timer);
-        timerMap.delete(id);
-        setStitchPendingElapsedMs((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }
-    }
-
-    for (const m of pendingMessages) {
-      if (!timerMap.has(m.id)) {
-        const priorMs = stitchPendingElapsedRef.current[m.id] ?? 0;
-        const start = Date.now() - priorMs;
-        const timer = setInterval(() => {
-          stitchPendingElapsedRef.current[m.id] = Date.now() - start;
-          setStitchPendingElapsedMs((prev) => ({
-            ...prev,
-            [m.id]: Date.now() - start,
-          }));
-        }, 1000);
-        timerMap.set(m.id, timer);
-      }
-    }
-  }, [messages]);
 
   const loadMessages = useCallback(async () => {
     if (authLoading) return;
@@ -841,7 +633,7 @@ export default function DirectorWorkspace({
         skipOperatorPersist?: boolean;
         timeoutMs?: number;
         recoverPersistedReply?: boolean;
-        requireStitchReply?: boolean;
+        requireDesignReply?: boolean;
       },
     ) => {
       try {
@@ -867,13 +659,11 @@ export default function DirectorWorkspace({
         const parsed = await readApiJson<Record<string, unknown>>(r);
         if (!parsed.ok) throw new Error(parsed.error);
         appendDirectorReply(parsed.data);
-        // Pending Stitch renders are resumed by the finalize-poll effect (keyed on the
-        // appended message), so inline, streamed, and reloaded turns all converge there.
       } catch {
         if (opts?.recoverPersistedReply) {
           const recovered = await recoverPersistedDirectorReply(
             trimmed,
-            opts.requireStitchReply === true,
+            opts.requireDesignReply === true,
           );
           if (recovered) return;
         }
@@ -882,9 +672,9 @@ export default function DirectorWorkspace({
         }
         setInput(trimmed);
         toastError(
-          opts?.requireStitchReply ? "Stitch didn't finish in time" : "Couldn't send",
-          opts?.requireStitchReply
-            ? "Your render may still land in this thread — refresh in a moment or try again."
+          opts?.requireDesignReply ? "Design didn't finish in time" : "Couldn't send",
+          opts?.requireDesignReply
+            ? "Spectrum Desk may still be running — refresh in a moment or try again."
             : "Try again in a moment",
         );
       } finally {
@@ -1135,23 +925,21 @@ export default function DirectorWorkspace({
         modelSelection: chatModelSelection,
       };
 
-      const useStitchPost = !opts?.approval && trimmed && shouldUseStitchComposer(trimmed);
+      const useDesignPost = !opts?.approval && trimmed && shouldUseDesignComposer(trimmed);
 
-      if (useStitchPost) {
+      if (useDesignPost) {
         pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
-        setStitchPrompt(trimmed);
-        setStitchRendering(true);
+        setDesignPrompt(trimmed);
+        setDesignRendering(true);
         try {
           await sendNonStreaming(trimmed, optimistic?.id, {
-            timeoutMs: designMode
-              ? DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS
-              : DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+            timeoutMs: DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS,
             recoverPersistedReply: true,
-            requireStitchReply: true,
+            requireDesignReply: true,
           });
         } finally {
-          setStitchRendering(false);
-          setStitchPrompt("");
+          setDesignRendering(false);
+          setDesignPrompt("");
         }
         return;
       }
@@ -1212,7 +1000,7 @@ export default function DirectorWorkspace({
       chatModelSelection,
       buildStitchComposerOptions,
       designMode,
-      shouldUseStitchComposer,
+      shouldUseDesignComposer,
     ],
   );
 
@@ -1467,12 +1255,9 @@ export default function DirectorWorkspace({
     try {
       const r = await authFetch("/api/director/messages", { method: "DELETE" });
       if (!r.ok) throw new Error("Clear failed");
-      stitchThreadVersionRef.current += 1;
-      stitchPollRef.current.clear();
       setMessages([]);
       setArtifacts([]);
       setResolved({});
-      setStitchPollExhausted({});
       setComposerAccessory(null);
       setForceDeep(false);
       setDesignMode(false);
@@ -2209,57 +1994,6 @@ export default function DirectorWorkspace({
                         </div>
                       )}
 
-                      {m.stitchAssetsPending &&
-                        !(m.previews && m.previews.length > 0) &&
-                        m.stitchSession?.screenId && (
-                          <div
-                            role="status"
-                            aria-live="polite"
-                            className="w-full max-w-md flex items-center gap-2.5 rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 px-3.5 py-3 shadow-sm"
-                          >
-                            <Loader2 className="w-4 h-4 text-brand animate-spin shrink-0" />
-                            <div className="min-w-0 flex-1 space-y-1">
-                              <p className="wl-micro-meta--muted leading-relaxed">
-                                {stitchPollExhausted[m.id]
-                                  ? "Still packaging preview — this can take longer than usual."
-                                  : `Packaging preview — ${WIRELINE_STITCH_UI.loadingPhases[Math.min(Math.floor((stitchPendingElapsedMs[m.id] ?? 0) / 6000) % WIRELINE_STITCH_UI.loadingPhases.length, WIRELINE_STITCH_UI.loadingPhases.length - 1)]}`}
-                              </p>
-                              <p className="wl-micro-meta--muted/60 font-mono tabular-nums">
-                                {(() => {
-                                  const elapsed = Math.round(
-                                    (stitchPendingElapsedMs[m.id] ?? 0) / 1000,
-                                  );
-                                  const minutes = Math.floor(elapsed / 60);
-                                  const seconds = elapsed % 60;
-                                  return minutes > 0
-                                    ? `${minutes}m ${seconds}s elapsed`
-                                    : `${seconds}s elapsed`;
-                                })()}
-                              </p>
-                              {stitchPollExhausted[m.id] && (
-                                <ShadButton
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  disableAnimations
-                                  onClick={() => {
-                                    setStitchPollExhausted((prev) => {
-                                      const next = { ...prev };
-                                      delete next[m.id];
-                                      return next;
-                                    });
-                                    startStitchFinalizePoll(m);
-                                  }}
-                                  className="h-auto px-0 py-0 wl-label text-brand font-semibold hover:bg-transparent hover:text-brand-deep"
-                                >
-                                  <RefreshCw className="w-3 h-3" />
-                                  Check again for preview
-                                </ShadButton>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
                       {m.previews && m.previews.length > 0 && !isStitchPreview(m.previews[0]) && (
                         <div className="w-full">
                           {/* Gallery header */}
@@ -2432,17 +2166,14 @@ export default function DirectorWorkspace({
           )}
 
           {/* Wireline Design render — dedicated live panel (non-streaming POST) */}
-          {isSending && stitchRendering && (
+          {isSending && designRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
-              <DirectorStitchLiveSession
-                operatorPrompt={stitchPrompt}
-                variant={designMode ? "studio" : "pixel"}
-              />
+              <DirectorStitchLiveSession operatorPrompt={designPrompt} variant="studio" />
             </div>
           )}
 
           {/* Live streaming — mission control panel */}
-          {isSending && !stitchRendering && (
+          {isSending && !designRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorLiveSession
                 phase={streamState.phase === "idle" ? "connecting" : streamState.phase}

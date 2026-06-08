@@ -13,7 +13,6 @@ import {
   validateBody,
   directorMessageSchema,
   directorStreamMessageSchema,
-  directorStitchFinalizeSchema,
   directorExecuteSchema,
   directorProposalResolveSchema,
   pdfUploadSchema,
@@ -81,11 +80,8 @@ import {
   ensureDirectorSchema,
   insertDirectorMessage,
   listDirectorArtifactsSafe,
-  loadCompletedDirectorStitchPreview,
-  loadPendingDirectorStitchSession,
   loadDirectorMessages,
   patchDirectorMessageResolved,
-  persistDirectorStitchPreviewCompletion,
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
 import { attachDesignHtmlPrototypeToTurn } from "../lib/director-html-prototype";
@@ -93,12 +89,11 @@ import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 import { wantsLongDeliverable } from "../lib/director-deliverables";
 import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
 import {
-  resolveStitchDirectorPath,
-  STITCH_DESIGN_LLM_MODEL_LABEL,
-  STITCH_DESIGN_LLM_REASONING,
-  type StitchDesignLlmFallback,
-} from "../lib/director-stitch-fallback";
-import { finalizeDirectorStitchScreen } from "../lib/director-stitch-service";
+  resolveDesignDirectorPath,
+  DESIGN_LLM_MODEL_LABEL,
+  DESIGN_LLM_REASONING,
+  type DesignLlmFallback,
+} from "../lib/director-design-path";
 import {
   collapseDirectorThreadDuplicates,
   insertDirectorReplyIfAbsent,
@@ -823,10 +818,10 @@ router.post(
         approvals = creative.approvals;
         clarifyingQuestions = creative.clarifyingQuestions;
       } else {
-        let stitchDesignFallback: StitchDesignLlmFallback | undefined;
+        let stitchDesignFallback: DesignLlmFallback | undefined;
         const stitchPath =
           operatorMessage && featureFlags.stitchMedia
-            ? await resolveStitchDirectorPath({
+            ? await resolveDesignDirectorPath({
                 userId: req.user.id,
                 operatorMessage,
                 history,
@@ -834,7 +829,7 @@ router.post(
               })
             : { kind: "none" as const };
 
-        if (stitchPath.kind === "stitch") {
+        if (stitchPath.kind === "design") {
           const stitchTurn = stitchPath.turn;
           reply = stitchTurn.reply;
           previews = stitchTurn.previews;
@@ -844,8 +839,6 @@ router.post(
           modelProvider = "wireline";
           thinkingDurationMs = stitchTurn.durationMs;
           reasoning = stitchTurn.thinkingSummary;
-          stitchSession = stitchTurn.stitchSession;
-          stitchAssetsPending = stitchTurn.stitchAssetsPending === true;
         } else {
           if (stitchPath.kind === "llm-fallback") {
             stitchDesignFallback = stitchPath.fallback;
@@ -885,10 +878,10 @@ router.post(
               reply = turn.reply;
               suggestions = turn.suggestions;
               model = turn.model;
-              modelLabel = stitchDesignFallback ? STITCH_DESIGN_LLM_MODEL_LABEL : turn.modelLabel;
+              modelLabel = stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : turn.modelLabel;
               modelProvider = stitchDesignFallback ? "wireline" : turn.modelProvider;
               modelId = turn.modelId;
-              reasoning = stitchDesignFallback ? STITCH_DESIGN_LLM_REASONING : turn.reasoning;
+              reasoning = stitchDesignFallback ? DESIGN_LLM_REASONING : turn.reasoning;
               thinkingDurationMs = turn.thinkingDurationMs;
               changes = turn.changes;
               toolToggles = turn.toolToggles;
@@ -930,12 +923,10 @@ router.post(
                   reply = retry.reply;
                   suggestions = retry.suggestions;
                   model = retry.model;
-                  modelLabel = stitchDesignFallback
-                    ? STITCH_DESIGN_LLM_MODEL_LABEL
-                    : retry.modelLabel;
+                  modelLabel = stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : retry.modelLabel;
                   modelProvider = stitchDesignFallback ? "wireline" : retry.modelProvider;
                   modelId = retry.modelId;
-                  reasoning = stitchDesignFallback ? STITCH_DESIGN_LLM_REASONING : retry.reasoning;
+                  reasoning = stitchDesignFallback ? DESIGN_LLM_REASONING : retry.reasoning;
                   thinkingDurationMs = retry.thinkingDurationMs;
                   changes = retry.changes;
                   toolToggles = retry.toolToggles;
@@ -1170,9 +1161,9 @@ router.post(
         }
       };
 
-      let stitchDesignFallback: StitchDesignLlmFallback | undefined;
+      let stitchDesignFallback: DesignLlmFallback | undefined;
       const stitchPath = featureFlags.stitchMedia
-        ? await resolveStitchDirectorPath({
+        ? await resolveDesignDirectorPath({
             userId: req.user.id,
             operatorMessage,
             history,
@@ -1185,7 +1176,7 @@ router.post(
           })
         : { kind: "none" as const };
 
-      if (stitchPath.kind === "stitch") {
+      if (stitchPath.kind === "design") {
         const stitchTurn = stitchPath.turn;
         sendStitchMeta();
         sse.write("thinking_end", {
@@ -1203,8 +1194,6 @@ router.post(
           mode: "fleet",
           thinkingDurationMs: stitchTurn.durationMs,
           reasoning: stitchTurn.thinkingSummary,
-          stitchSession: stitchTurn.stitchSession,
-          stitchAssetsPending: stitchTurn.stitchAssetsPending === true,
         };
         await finalizeDirectorStreamTurn(
           sse,
@@ -1221,9 +1210,9 @@ router.post(
       if (stitchPath.kind === "llm-fallback") {
         stitchDesignFallback = stitchPath.fallback;
         sse.write("thinking_start", {});
-        sse.write("thinking_chunk", { text: STITCH_DESIGN_LLM_REASONING });
+        sse.write("thinking_chunk", { text: DESIGN_LLM_REASONING });
         sse.write("thinking_end", {
-          thinking: STITCH_DESIGN_LLM_REASONING,
+          thinking: DESIGN_LLM_REASONING,
           durationMs: 0,
         });
       }
@@ -1243,7 +1232,7 @@ router.post(
       const streamMeta = directorStreamMetaModel(streamCtx);
       sse.write("meta", {
         model: streamMeta.model,
-        modelLabel: stitchDesignFallback ? STITCH_DESIGN_LLM_MODEL_LABEL : streamCtx.modelLabel,
+        modelLabel: stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : streamCtx.modelLabel,
         modelProvider: streamCtx.llmProvider,
         modelId: streamCtx.modelId,
         deep: streamMeta.deep,
@@ -1315,7 +1304,7 @@ router.post(
               focusAgentId: retry.focusAgentId,
               focusAgentName: retry.focusAgentName,
               model: retry.model,
-              modelLabel: stitchDesignFallback ? STITCH_DESIGN_LLM_MODEL_LABEL : retry.modelLabel,
+              modelLabel: stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : retry.modelLabel,
               modelProvider: stitchDesignFallback ? "wireline" : retry.modelProvider,
               modelId: retry.modelId,
             };
@@ -1364,11 +1353,11 @@ router.post(
           focusAgentName: normalized.focusAgentName,
           model: normalized.model,
           modelLabel: stitchDesignFallback
-            ? STITCH_DESIGN_LLM_MODEL_LABEL
+            ? DESIGN_LLM_MODEL_LABEL
             : (normalized.modelLabel ?? streamCtx.modelLabel),
           modelProvider: stitchDesignFallback ? "wireline" : streamCtx.llmProvider,
           modelId: streamCtx.modelId,
-          reasoning: stitchDesignFallback ? STITCH_DESIGN_LLM_REASONING : thinking,
+          reasoning: stitchDesignFallback ? DESIGN_LLM_REASONING : thinking,
           thinkingDurationMs,
           researchSources: streamCtx.researchSources,
           ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
@@ -1471,99 +1460,6 @@ router.post(
           detail: errMsg,
         });
       }
-    }
-  },
-);
-
-router.post(
-  "/api/director/stitch/finalize",
-  authenticateUser,
-  claudeRateLimiter,
-  validateBody(directorStitchFinalizeSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { projectId, screenId, operatorMessage, deviceType, renderId } = req.body;
-      let existingPreview: Awaited<ReturnType<typeof loadCompletedDirectorStitchPreview>> = null;
-      try {
-        existingPreview = await loadCompletedDirectorStitchPreview({
-          userId: req.user.id,
-          projectId,
-          screenId,
-          renderId,
-          deviceType,
-        });
-      } catch (lookupErr) {
-        if (lookupErr instanceof AppError) throw lookupErr;
-        log.warn("director stitch completed preview lookup failed", {
-          userId: req.user.id,
-          error: getErrorMessage(lookupErr),
-        });
-      }
-      if (existingPreview) {
-        return res.json({
-          ok: true,
-          previews: existingPreview,
-          artifacts: [],
-        });
-      }
-      const pendingSession = await loadPendingDirectorStitchSession({
-        userId: req.user.id,
-        projectId,
-        screenId,
-        renderId,
-        deviceType,
-      });
-      if (!pendingSession) {
-        return res.status(404).json({
-          error: "Stitch render session not found",
-          code: "STITCH_RENDER_SESSION_NOT_FOUND",
-        });
-      }
-      const effectiveOperatorMessage =
-        operatorMessage?.trim() ||
-        pendingSession.operatorMessage?.trim() ||
-        "Finalize Stitch render";
-      const effectiveDeviceType = pendingSession.deviceType ?? deviceType;
-      const result = await finalizeDirectorStitchScreen({
-        userId: req.user.id,
-        projectId,
-        screenId,
-        operatorMessage: effectiveOperatorMessage,
-        deviceType: effectiveDeviceType,
-        renderId: pendingSession.renderId,
-      });
-      if (!result) {
-        return res.status(202).json({
-          ok: false,
-          pending: true,
-          message: "Preview assets are not ready yet",
-        });
-      }
-      try {
-        await persistDirectorStitchPreviewCompletion({
-          userId: req.user.id,
-          projectId,
-          screenId,
-          renderId: pendingSession.renderId,
-          deviceType: effectiveDeviceType,
-          previews: result.previews,
-        });
-      } catch (persistErr) {
-        if (persistErr instanceof AppError) throw persistErr;
-        log.warn("director stitch preview persistence failed", {
-          userId: req.user.id,
-          error: getErrorMessage(persistErr),
-        });
-      }
-      return res.json({
-        ok: true,
-        previews: result.previews,
-        artifacts: result.artifacts,
-      });
-    } catch (e) {
-      if (e instanceof AppError) throw e;
-      log.error("director stitch finalize failed", { error: getErrorMessage(e) });
-      throw AppError.fromHttpStatus(500, "Failed to finalize Stitch preview");
     }
   },
 );

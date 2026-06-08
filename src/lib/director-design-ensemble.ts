@@ -2,7 +2,7 @@
  * Spectrum Desk — deterministic HTML scoring and optional challenger pick.
  */
 import { assessDesignStudioHtmlQuality } from "./director-design-quality";
-import { STITCH_HTML_MIN_BYTES } from "./google-stitch-mcp-client";
+import { DESIGN_HTML_MIN_BYTES } from "./director-design-quality";
 
 export interface DesignArchitectCandidateResult {
   architectId: string;
@@ -25,7 +25,7 @@ export function scoreDesignCandidateForVote(html: string): number {
 
   const sizeBonus = Math.min(
     40,
-    Math.floor((report.byteLength / Math.max(STITCH_HTML_MIN_BYTES, 1)) * 20),
+    Math.floor((report.byteLength / Math.max(DESIGN_HTML_MIN_BYTES, 1)) * 20),
   );
   score += sizeBonus;
 

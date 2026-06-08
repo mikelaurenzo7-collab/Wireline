@@ -50,9 +50,9 @@ export const DESIGN_CODE_REVIEW_PASS_SCORE = 8;
 
 /** Focus for each refinement pass — merged into builder / finisher prompts. */
 export const DESIGN_PASS_FOCUS = {
-  1: "Foundation — bold layout archetype, hero hierarchy, primary CTA, realistic US industry copy, mobile grid.",
-  2: "Components — pill trust badges, real button CTAs (not text links), typography scale, spacing rhythm, surface depth.",
-  3: "Production — WCAG AA contrast, 44px touch targets, focus states, micro-copy polish, premium agency finish.",
+  1: "Vision pass — implement the full 5k spec: every section, hero photography slot, trust row, services, footer, embedded kit CSS.",
+  2: "Component pass — fix critic/gate issues only: real wl-btn CTAs, trust badges, type scale, spacing, keep layout.",
+  3: "Ship pass — WCAG AA, 44px targets, focus rings, US microcopy polish — minimal structural change.",
 } as const;
 
 export type DesignPassNumber = 1 | 2 | 3;
@@ -231,7 +231,7 @@ export function isSpectrumDesignTeam(
 }
 
 export const WIRELINE_DESIGN_STUDIO_REASONING =
-  "Spectrum Desk — DeepSeek brief, Step layout, Qwen build, Sonnet critique, MiniMax finish (2–3 passes)";
+  "Spectrum Desk — vision spec, DeepSeek research, Step layout, Qwen high-fidelity build, Sonnet critique, MiniMax finish";
 
 export function designTeamThinkingSummary(phases: string[]): string {
   return phases.filter(Boolean).join(" · ");
@@ -256,7 +256,7 @@ export function designStudioProgressLabel(
     engineer: `Pass ${pass} — engineering components…`,
     critic: `Pass ${pass} — visual design critique…`,
     finisher: `Pass ${pass} — production finish…`,
-    gate: "Quality gate — Stitch checks…",
+    gate: "Quality gate — production checks…",
     localize: "US copy and trust localization…",
   };
   return labels[stage];

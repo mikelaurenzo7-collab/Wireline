@@ -17,11 +17,6 @@ export interface StitchBriefOptions {
   designMode?: boolean;
   /** When true, merge account branding into design.md (default: true if branding exists). */
   useAccountBranding?: boolean;
-  /**
-   * When true with designMode, use Google Stitch pixel rendering instead of the
-   * Wireline Design Studio LLM pipeline (Opus research + Grok/Gemini passes + Opus review).
-   */
-  useStitchPixelRender?: boolean;
 }
 
 export function stitchBrandingFromSnake(settings: {
