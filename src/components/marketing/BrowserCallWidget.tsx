@@ -4,7 +4,6 @@ import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { BRAND } from "../../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 // Retrieve Vapi public key safely from Vite environment
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
@@ -157,7 +156,7 @@ export default function BrowserCallWidget({
           </>
         ) : (
           <>
-            <Mic className="w-4 h-4" style={asStyle({ color: activeColor })} />
+            <Mic className="w-4 h-4 wl-call-color" data-call-color={activeColor} />
             <span>{buttonLabel}</span>
           </>
         )}
@@ -165,8 +164,8 @@ export default function BrowserCallWidget({
         {/* Glow Ring behind button when active */}
         {callActive && (
           <span
-            className="absolute inset-0 rounded-full animate-ping -z-10 opacity-20 pointer-events-none"
-            style={asStyle({ backgroundColor: activeColor })}
+            className="absolute inset-0 rounded-full animate-ping -z-10 opacity-20 pointer-events-none wl-call-bg"
+            data-call-color={activeColor}
           />
         )}
       </ShadButton>
@@ -185,12 +184,10 @@ export default function BrowserCallWidget({
               return (
                 <div
                   key={bar}
-                  className="w-0.5 rounded-full transition-all duration-75"
-                  style={asStyle({
-                    height: `${height}%`,
-                    backgroundColor: activeColor,
-                    opacity: speakerActive ? 0.9 : 0.4,
-                  })}
+                  className="w-0.5 rounded-full transition-all duration-75 wl-call-volume-bar"
+                  data-pct={`${height}%`}
+                  data-call-color={activeColor}
+                  data-volume-active={speakerActive ? "true" : "false"}
                 />
               );
             })}

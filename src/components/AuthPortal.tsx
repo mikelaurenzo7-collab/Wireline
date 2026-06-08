@@ -554,12 +554,8 @@ export default function AuthPortal() {
                             <>
                               <div
                                 className="pw-strength-bar mt-1.5"
-                                style={
-                                  {
-                                    "--pw-strength-pct": `${(pwStrength.score / 4) * 100}%`,
-                                    "--wl-accent": pwStrength.color,
-                                  } as React.CSSProperties
-                                }
+                                data-pw-pct={`${(pwStrength.score / 4) * 100}%`}
+                                data-accent={pwStrength.color}
                               >
                                 <div className="pw-strength-fill pw-strength-fill--accent" />
                               </div>

@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { asStyle } from "@/src/lib/css-style";
 import {
   Sparkles,
   Loader2,
@@ -205,10 +204,7 @@ export default function DailyBrief() {
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={asStyle({ background: moodAccent, boxShadow: `0 0 12px ${moodAccent}` })}
-                />
+                <span className="w-2 h-2 rounded-full wl-mood-dot" data-mood-color={moodAccent} />
                 <span className="text-[10px] uppercase tracking-[0.3em] text-ink/70">
                   {moodLabel}
                 </span>

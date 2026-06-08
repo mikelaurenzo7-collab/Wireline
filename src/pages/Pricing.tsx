@@ -406,17 +406,9 @@ export default function Pricing() {
               <div
                 className={`relative transition-all duration-300 wl-card-shine ${
                   tier.highlight
-                    ? "wl-panel-elevated border-2 border-brand/40"
+                    ? "wl-panel-elevated border-2 border-brand/40 wl-pricing-tier--highlight"
                     : "wl-panel border border-ink/[0.08] hover:border-brand/30"
                 } p-5 flex flex-col flex-1 overflow-hidden`}
-                style={
-                  tier.highlight
-                    ? {
-                        boxShadow:
-                          "0 0 60px -15px rgba(107, 43, 153 ,0.55), 0 24px 48px -16px rgba(107, 43, 153 ,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset",
-                      }
-                    : undefined
-                }
               >
                 <div className="mb-4">
                   <h2 className="font-display italic text-2xl text-ink mb-1">{tier.name}</h2>

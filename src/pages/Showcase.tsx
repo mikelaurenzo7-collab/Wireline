@@ -17,7 +17,6 @@ import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { WIRELINE_DEMO_AGENTS, type ContactAgent } from "../data/contact-agents";
 import { SHOWCASE_AGENTS, type ShowcaseAgent } from "../data/showcase-agents";
-import { asStyle } from "@/src/lib/css-style";
 
 /**
  * Single showcase card. The marquee persona (Mira, the singing
@@ -37,8 +36,8 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
     >
       <div className="flex items-start gap-4 mb-5">
         <div
-          className="w-12 h-12 flex items-center justify-center shrink-0"
-          style={asStyle({ background: agent.tint })}
+          className="w-12 h-12 flex items-center justify-center shrink-0 wl-showcase-avatar"
+          data-showcase-tint={agent.tint}
           aria-hidden="true"
         >
           <Sparkles className="w-5 h-5 text-white" strokeWidth={2.2} />
@@ -82,8 +81,8 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
     >
       <div className="flex items-start gap-3">
         <div
-          className="w-10 h-10 flex items-center justify-center shrink-0"
-          style={asStyle({ background: `${agent.tint}1f`, color: agent.tint })}
+          className="w-10 h-10 flex items-center justify-center shrink-0 wl-showcase-badge"
+          data-showcase-tint={agent.tint}
         >
           <Phone className="w-4 h-4" strokeWidth={2.3} />
         </div>

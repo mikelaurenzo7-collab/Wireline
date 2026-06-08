@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { fetchInsight, Spinner, ErrCard } from "./shared";
 import { cn } from "../../lib/utils";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
-import { asStyle } from "@/src/lib/css-style";
 
 export default function HeatmapView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
@@ -68,17 +67,9 @@ export default function HeatmapView({ days }: { days: number }) {
                   return (
                     <td key={h} className="px-0.5 py-0.5">
                       <div
-                        className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer"
-                        style={asStyle({
-                          background:
-                            cell && cell.count > 0
-                              ? `linear-gradient(135deg, rgba(107, 43, 153 ,${opacity}), rgba(107, 43, 153 ,${opacity * 0.8}))`
-                              : "rgba(0,0,0,0.03)",
-                          border:
-                            cell && cell.count > 0
-                              ? `1px solid rgba(107, 43, 153 ,${0.2 + intensity * 0.4})`
-                              : "1px solid rgba(0,0,0,0.04)",
-                        })}
+                        className="aspect-square rounded-md transition-all hover:scale-110 cursor-pointer wl-heatmap-cell"
+                        data-heat-active={cell && cell.count > 0 ? "true" : "false"}
+                        data-heat-opacity={opacity}
                         title={`${wd} ${h}:00 — ${cell?.count || 0} calls${cell?.avg_score ? `, avg score ${cell.avg_score}` : ""}`}
                       />
                     </td>
@@ -93,13 +84,7 @@ export default function HeatmapView({ days }: { days: number }) {
         <span>Less</span>
         <div className="flex gap-1">
           {[0.1, 0.3, 0.55, 0.8, 1].map((o, i) => (
-            <div
-              key={i}
-              className="w-4 h-4 rounded"
-              style={asStyle({
-                background: `linear-gradient(135deg, rgba(107, 43, 153 ,${o}), rgba(107, 43, 153 ,${o * 0.8}))`,
-              })}
-            />
+            <div key={i} className="w-4 h-4 rounded wl-heatmap-legend-cell" data-heat-opacity={o} />
           ))}
         </div>
         <span>More</span>

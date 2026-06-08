@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { asStyle } from "@/src/lib/css-style";
 import {
   DollarSign,
   Brain,
@@ -119,10 +118,7 @@ function SpendBudgetCard() {
   const period = status?.period || "—";
 
   return (
-    <div
-      className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")}
-      style={asStyle({ "--wl-accent": barColor }) as React.CSSProperties}
-    >
+    <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")} data-accent={barColor}>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
@@ -153,8 +149,8 @@ function SpendBudgetCard() {
           </div>
           <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
             <div
-              className="absolute inset-y-0 w-px bg-black/30"
-              style={asStyle({ left: `${warnPct}%` })}
+              className="absolute inset-y-0 w-px bg-black/30 wl-threshold-marker"
+              data-threshold-left={`${warnPct}%`}
               title={`Warn threshold ${warnPct}%`}
             />
             <motion.div

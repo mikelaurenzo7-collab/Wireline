@@ -6,7 +6,6 @@ import { useToast } from "../contexts/ToastContext";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { BRAND } from "../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
@@ -129,8 +128,8 @@ function GoalEditor({
     <div className="relative rounded-md wl-panel border border-border p-5 flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2">
         <span
-          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-          style={asStyle({ background: `${metric.accent}1a`, color: metric.accent })}
+          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 wl-accent-metric-chip"
+          data-accent={metric.accent}
         >
           <Target className="w-3.5 h-3.5" />
         </span>
@@ -227,8 +226,8 @@ function GoalCard({
   return (
     <div className="relative rounded-md wl-panel border border-border p-5 flex flex-col gap-4 h-full overflow-hidden">
       <div
-        className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={asStyle({ background: `radial-gradient(circle, ${goal.accent}, transparent)` })}
+        className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none wl-accent-halo"
+        data-accent={goal.accent}
       />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -242,8 +241,8 @@ function GoalCard({
           )}
         </div>
         <span
-          className="shrink-0 px-2 py-1 rounded-full text-[9px] uppercase tracking-[0.12em] font-medium"
-          style={asStyle({ background: `${status.color}1a`, color: status.color })}
+          className="shrink-0 px-2 py-1 rounded-full text-[9px] uppercase tracking-[0.12em] font-medium wl-status-chip"
+          data-status-color={status.color}
         >
           {status.label}
         </span>
@@ -359,8 +358,8 @@ function EmptyMetricCard({
     <div className="relative rounded-md wl-panel border border-dashed border-border p-5 flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2">
         <span
-          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-          style={asStyle({ background: `${metric.accent}14`, color: metric.accent })}
+          className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 wl-accent-metric-chip--subtle"
+          data-accent={metric.accent}
         >
           <Target className="w-3.5 h-3.5" />
         </span>

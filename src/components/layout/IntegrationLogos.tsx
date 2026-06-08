@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React from "react";
 import { motion } from "motion/react";
-import { asStyle } from "@/src/lib/css-style";
 
 /**
  * Compact monochrome SVG logos for integrations and partners we ship.
@@ -302,14 +301,12 @@ function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) 
           key={logo.name}
           className="text-ink/70 hover:text-ink transition-colors duration-200"
           title={logo.name}
-          style={asStyle({
-            height,
-            transform: logo.scale ? `scale(${logo.scale})` : undefined,
-          })}
+          data-logo-height={height}
+          data-logo-scale={logo.scale}
         >
-          <div className="w-auto inline-flex items-center" style={asStyle({ height })}>
+          <div className="w-auto inline-flex items-center" data-logo-height={height}>
             {React.cloneElement(logo.svg as React.ReactElement<any>, {
-              style: { height: "100%", width: "auto", display: "block", fill: "currentColor" },
+              className: "wl-integration-logo-svg",
             })}
           </div>
         </div>

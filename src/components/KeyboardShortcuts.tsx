@@ -2,8 +2,6 @@ import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Keyboard } from "lucide-react";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { BRAND } from "../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 interface KeyboardShortcutsProps {
   open: boolean;
@@ -120,12 +118,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-8 h-8 rounded-md flex items-center justify-center"
-                    style={asStyle({
-                      background: `linear-gradient(135deg, ${BRAND.purple}22, ${BRAND.purple}22)`,
-                    })}
-                  >
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center wl-shortcuts-icon">
                     <Keyboard className="w-4 h-4 text-brand" />
                   </div>
                   <div>

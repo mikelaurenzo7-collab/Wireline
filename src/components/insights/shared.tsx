@@ -12,7 +12,6 @@ import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucid
 import { authFetch, readApiJson } from "../../lib/api";
 import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../lib/wireline-director-design";
 import { BRAND } from "../../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
 
@@ -123,7 +122,7 @@ export function Stat({ label, value, accent }: { label: string; value: any; acce
       <div className={WL_OPS_CLASSES.insightLabel}>{label}</div>
       <div
         className={cn("font-display italic text-xl mt-1", accent ? "wl-accent-text" : "text-brand")}
-        style={accent ? (`--wl-accent: ${accent}` as unknown as React.CSSProperties) : undefined}
+        data-accent={accent}
       >
         {value}
       </div>
@@ -145,15 +144,12 @@ export function SpendStat({
   accent: string;
 }) {
   return (
-    <div className={WL_APP_CLASSES.insightStatCard + " p-5"}>
-      <div
-        className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={asStyle({ background: `radial-gradient(circle, ${accent}, transparent)` })}
-      />
+    <div className={WL_APP_CLASSES.insightStatCard + " p-5"} data-accent={accent}>
+      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none wl-accent-halo" />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-3">
           <p className={WL_OPS_CLASSES.insightLabel}>{label}</p>
-          <Icon className="w-4 h-4" style={asStyle({ color: accent })} />
+          <Icon className="w-4 h-4 wl-accent-text" />
         </div>
         <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
       </div>

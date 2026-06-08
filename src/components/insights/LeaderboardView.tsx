@@ -5,7 +5,6 @@ import { Trophy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { AGENT_ROLES } from "../fleet/helpers";
 import { fetchInsight, Spinner, ErrCard, InsightEmpty, Stat } from "./shared";
-import { asStyle } from "@/src/lib/css-style";
 
 function RolePill({ role }: { role?: string }) {
   const meta =
@@ -102,18 +101,23 @@ export default function LeaderboardView({ days }: { days: number }) {
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.06 }}
-            className={`relative rounded-md wl-panel border ${rs.ring} p-5 flex items-center gap-5 overflow-hidden`}
-            style={asStyle({
-              boxShadow: `0 0 40px -20px ${rs.glow}, 0 1px 0 rgba(255,255,255,0.80) inset`,
-            })}
+            className={cn(
+              "relative rounded-md wl-panel border p-5 flex items-center gap-5 overflow-hidden",
+              i < 3 && "wl-leaderboard-card",
+              rs.ring,
+            )}
+            data-rank={i < 3 ? String(i) : undefined}
           >
             <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display italic text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
               {i + 1}
             </div>
             <div className="shrink-0 flex flex-col items-center gap-0.5">
               <div
-                className="w-12 h-12 rounded-md flex items-center justify-center font-display italic text-2xl border border-white/10"
-                style={rs.gradient ? { background: rs.gradient } : undefined}
+                className={cn(
+                  "w-12 h-12 rounded-md flex items-center justify-center font-display italic text-2xl border border-white/10",
+                  i < 3 && "wl-leaderboard-avatar",
+                )}
+                data-rank={i < 3 ? String(i) : undefined}
               >
                 {i === 0 ? (
                   <Trophy className={`w-5 h-5 ${rs.textClass}`} />

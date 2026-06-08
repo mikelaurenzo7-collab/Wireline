@@ -1,9 +1,8 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { ChevronDown, Phone, Zap, Wrench } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { AgentToolName, ToolIntegration } from "../lib/agent-capabilities";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
-import { asStyle } from "@/src/lib/css-style";
 import {
   getIntegrationPlaybook,
   getCatalogEntry,
@@ -49,10 +48,7 @@ export default function IntegrationCapabilityPanel({
   const href = connectHref ?? playbook.connectPath;
 
   return (
-    <div
-      className={cn("space-y-3", compact && "space-y-2")}
-      style={asStyle({ "--wl-accent": accentColor }) as CSSProperties}
-    >
+    <div className={cn("space-y-3", compact && "space-y-2")} data-accent={accentColor}>
       {!compact && (
         <p className="text-[11px] text-ink/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
           {playbook.headline}

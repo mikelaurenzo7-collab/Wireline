@@ -44,30 +44,31 @@ export function Medallion({
   const signature = variant === "signature" || shimmer === true;
   const showSweep = signature && shimmer !== false;
 
-  const accentStyle: React.CSSProperties | undefined = accent
-    ? {
-        backgroundImage: `linear-gradient(135deg, ${accent}, color-mix(in srgb, ${accent} 62%, #000))`,
-      }
-    : undefined;
-
   return (
-    <div className={cn("relative inline-flex items-center justify-center", className)}>
+    <div
+      className={cn("relative inline-flex items-center justify-center", className)}
+      data-accent={accent}
+    >
       {withHalo && (
         <span
           aria-hidden="true"
-          className="absolute inset-0 -z-10 rounded-full bg-brand/20 blur-2xl scale-150"
-          style={accent ? { backgroundColor: accent, opacity: 0.22 } : undefined}
+          className={cn(
+            "absolute inset-0 -z-10 rounded-full blur-2xl scale-150",
+            accent ? "medallion-accent-halo" : "bg-brand/20",
+          )}
         />
       )}
       <div
         className={cn(
-          "group relative overflow-hidden rounded-md bg-gradient-to-br from-brand via-brand/85 to-brand-deep text-on-brand flex items-center justify-center ring-1 ring-white/12",
+          "group relative overflow-hidden rounded-md text-on-brand flex items-center justify-center ring-1 ring-white/12",
+          accent
+            ? "medallion-accent-face"
+            : "bg-gradient-to-br from-brand via-brand/85 to-brand-deep",
           signature ? "shadow-sm shadow-brand/25" : "shadow-[0_1px_2px_rgba(26,22,20,0.08)]",
           showSweep && "medallion-glint",
           !signature && "medallion-instrument",
           sizeClasses,
         )}
-        style={accentStyle}
       >
         <span aria-hidden className="absolute inset-0 pointer-events-none medallion-specular" />
         {showSweep && (

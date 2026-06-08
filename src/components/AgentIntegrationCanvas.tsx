@@ -1,4 +1,4 @@
-import React, { useState, type CSSProperties } from "react";
+import React, { useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -24,18 +24,6 @@ interface Props {
   onToggleIntegrationGroup: (integration: string, enable: boolean) => void;
   onToggleTool: (tool: AgentToolName) => void;
   onResetToDefaults: () => void;
-}
-
-function integrationAccentStyle(accent: string): CSSProperties {
-  return { "--wl-integration-accent": accent } as CSSProperties;
-}
-
-function nodePositionStyle(cx: number, cy: number, accent: string): CSSProperties {
-  return {
-    "--node-x": `${cx}%`,
-    "--node-y": `${cy}%`,
-    "--wl-integration-accent": accent,
-  } as CSSProperties;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -168,7 +156,7 @@ export default function AgentIntegrationCanvas({
                   fill="none"
                   strokeDasharray={isActive ? "2.5 2" : enabled ? "1.5 2.5" : undefined}
                   className={isActive ? "wl-canvas-line--active" : undefined}
-                  style={isActive ? integrationAccentStyle(n.color) : undefined}
+                  data-integration-accent={isActive ? n.color : undefined}
                 />
               );
             })}
@@ -260,7 +248,9 @@ export default function AgentIntegrationCanvas({
                 data-enabled={isEnabled}
                 data-connected={connected}
                 className="wl-canvas-node absolute flex flex-col items-center gap-1 h-auto p-0 hover:bg-transparent transition-transform duration-150"
-                style={nodePositionStyle(n.cx, n.cy, n.color)}
+                data-node-x={`${n.cx}%`}
+                data-node-y={`${n.cy}%`}
+                data-integration-accent={n.color}
               >
                 {/* Icon box with count badge */}
                 <div className="relative">
@@ -310,7 +300,7 @@ export default function AgentIntegrationCanvas({
                   data-enabled={isEnabled}
                   data-connected={connected}
                   className="wl-canvas-chip flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border h-auto shrink-0"
-                  style={integrationAccentStyle(meta.color)}
+                  data-integration-accent={meta.color}
                 >
                   <meta.Icon className="wl-canvas-chip__icon" />
                   <span className="wl-canvas-chip__label text-[10px] font-medium">

@@ -17,7 +17,6 @@ import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
-import { asStyle } from "@/src/lib/css-style";
 
 export type FloorCall = {
   id: string;
@@ -331,10 +330,8 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               {[140, 200, 160, 230].map((mult, i) => (
                                 <div
                                   key={i}
-                                  className="w-1 bg-brand rounded-full transition-all duration-75"
-                                  style={asStyle({
-                                    height: `${Math.min(100, Math.max(12, audioLevel * mult))}%`,
-                                  })}
+                                  className="w-1 bg-brand rounded-full transition-all duration-75 wl-live-audio-bar"
+                                  data-pct={`${Math.min(100, Math.max(12, audioLevel * mult))}%`}
                                 />
                               ))}
                             </div>

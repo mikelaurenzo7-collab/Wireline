@@ -1,5 +1,4 @@
 import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
-import { asStyle } from "@/src/lib/css-style";
 
 export type SentimentSlice = { name: string; value: number; color: string };
 
@@ -45,7 +44,10 @@ export default function OpsSentimentChart({ data, total }: Props) {
         {data.map((d) => (
           <div key={d.name} className="flex items-center justify-between group">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full" style={asStyle({ background: d.color })} />
+              <span
+                className="w-2 h-2 rounded-full wl-sentiment-dot"
+                data-sentiment-color={d.color}
+              />
               <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
                 {d.name}
               </span>

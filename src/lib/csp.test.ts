@@ -37,8 +37,6 @@ describe("buildCSP", () => {
     const csp = buildCSP(false);
     expect(csp).toContain("script-src 'self' https://plausible.io");
     // script-src must never carry 'unsafe-inline' / 'unsafe-eval' in prod.
-    // style-src legitimately uses 'unsafe-inline', so we scope the check to
-    // the script-src directive only.
     const scriptDirective = csp
       .split(";")
       .map((d) => d.trim())
@@ -73,7 +71,9 @@ describe("buildCSP", () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("base-uri 'self'");
     expect(csp).toContain("form-action 'self'");
-    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).toContain("style-src-elem 'self'");
+    expect(csp).toContain("style-src-attr 'unsafe-inline'");
+    expect(csp).not.toMatch(/(?:^|;)\s*style-src\s[^;]*'unsafe-inline'/);
     expect(csp).not.toContain("fonts.googleapis.com");
     expect(csp).toContain("font-src 'self' data:");
     expect(csp).not.toContain("fonts.gstatic.com");
@@ -99,16 +99,18 @@ describe("buildCSP", () => {
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
   });
 
-  it("prod style-src keeps unsafe-inline until runtime style props are gone", () => {
+  it("prod style-src-elem is strict while style-src-attr allows library animations", () => {
     const csp = buildCSP(false);
-    const styleDirective = csp
-      .split(";")
-      .map((d) => d.trim())
-      .find((d) => d.startsWith("style-src"))!;
-    // baseline.total === 0 eliminates style={{ in source only; style={asStyle}
-    // and <style> children still need unsafe-inline at runtime.
-    expect(styleDirective).toContain("'unsafe-inline'");
+    const directives = Object.fromEntries(
+      csp.split(";").map((d) => {
+        const [key, ...rest] = d.trim().split(/\s+/);
+        return [key, rest.join(" ")];
+      }),
+    );
+    expect(directives["style-src-elem"]).toBe("'self'");
+    expect(directives["style-src-attr"]).toBe("'unsafe-inline'");
     expect(baseline.total).toBe(0);
+    expect(baseline.styleTags).toBe(0);
   });
 });
 

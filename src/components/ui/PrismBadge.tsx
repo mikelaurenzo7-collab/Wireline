@@ -18,7 +18,7 @@
  *   <PrismBadge variant="live">LIVE</PrismBadge>
  *   <PrismBadge variant="static" size="sm">Pro</PrismBadge>
  */
-import React, { useId } from "react";
+import React from "react";
 import { cn } from "../../lib/utils";
 
 type PrismVariant = "live" | "static" | "ghost";
@@ -48,7 +48,6 @@ export function PrismBadge({
   size = "sm",
   className,
 }: PrismBadgeProps) {
-  const uid = useId().replace(/:/g, "");
   const isAnimated = variant === "live";
 
   return (
@@ -62,76 +61,20 @@ export function PrismBadge({
       data-circular
       data-variant={variant}
     >
-      {/* Holographic gradient layer — conic-gradient in scoped style block */}
       <span
-        className={cn(
-          "absolute inset-0 prism-holo-layer",
-          `prism-holo-${uid}`,
-          isAnimated && "prism-holo-animated",
-        )}
+        className={cn("absolute inset-0 prism-holo-layer", isAnimated && "prism-holo-animated")}
         aria-hidden="true"
       />
 
-      {/* Frosted overlay for text legibility — backdropFilter blur(2px) */}
       <span className="absolute inset-0 prism-frost" aria-hidden="true" />
 
-      {/* Specular edge highlight — rgba(255, 255, 255, 0.4), inset 0 1px 0 */}
       <span
         className="absolute inset-0 rounded-full prism-specular-edge"
         aria-hidden="true"
         data-circular
       />
 
-      {/* Text content */}
       <span className="relative z-[1] text-brand-deep mix-blend-multiply">{children}</span>
-
-      <style>{`
-        .prism-holo-${uid} {
-          background: conic-gradient(
-            from var(--prism-angle-${uid}, 0deg),
-            rgba(139, 63, 214, 0.6),
-            rgba(214, 63, 150, 0.5),
-            rgba(88, 28, 135, 0.6),
-            rgba(139, 63, 214, 0.4),
-            rgba(183, 63, 214, 0.5),
-            rgba(139, 63, 214, 0.6)
-          );
-          filter: blur(6px) saturate(150%);
-          opacity: ${variant === "ghost" ? 0.25 : 0.7};
-          ${isAnimated ? `animation: prism-rotate-${uid} 4s linear infinite;` : ""}
-        }
-        .prism-frost {
-          background: ${variant === "ghost" ? "rgba(239, 233, 220, 0.6)" : "rgba(239, 233, 220, 0.45)"};
-          backdrop-filter: blur(2px);
-        }
-        .prism-specular-edge {
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.05);
-        }
-        .prism-badge-ghost.prism-badge-surface {
-          background: transparent;
-        }
-        @keyframes prism-rotate-${uid} {
-          0% { --prism-angle-${uid}: 0deg; }
-          100% { --prism-angle-${uid}: 360deg; }
-        }
-        @property --prism-angle-${uid} {
-          syntax: "<angle>";
-          initial-value: 0deg;
-          inherits: false;
-        }
-        .dark .prism-badge-surface {
-          color: #f3e8ff;
-        }
-        .dark .prism-badge-surface .prism-holo-layer {
-          opacity: 0.5;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .prism-holo-animated {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </span>
   );
 }

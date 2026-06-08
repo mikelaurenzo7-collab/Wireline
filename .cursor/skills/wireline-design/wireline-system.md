@@ -26,6 +26,7 @@ Route accents: `ROUTE_ACCENTS`, `NAV_GROUP_ACCENTS` — stay in purple/cream fam
 - **shadcn**: `:root` / `.dark` (`--background`, `--primary`, `--card`, `--sidebar-*`, …)
 - **Tailwind @theme**: `--color-brand`, `--color-paper`, `--font-sans`, `--font-display`, `--font-mono`
 - **Legacy utilities** (`emerald-*`, `amber-*`, `blue-*`, `sky-*`) are **remapped to purple/cream** — safe for old code, don’t add new off-hue literals
+- **Dynamic accent utilities** (`.wl-accent-surface`, `.wl-accent-text`, `.wl-accent-progress`, …) — consume `--wl-accent` set via `data-accent` on a wrapper (see [csp-theming.md](csp-theming.md))
 
 ### Director accents — `wireline-director-design.ts`
 
@@ -58,6 +59,24 @@ Route accents: `ROUTE_ACCENTS`, `NAV_GROUP_ACCENTS` — stay in purple/cream fam
 | `glass-1`, `glass-2` | Sticky header, modals — sparingly |
 | `hairline`, `aurora-divider` | Section separators |
 | `scroll-viewport` | Scrollable regions inside locked shell |
+| `wl-pricing-tier--highlight` | Marketing pricing spotlight (no inline box-shadow) |
+
+## Identity primitives (Constellation + v3)
+
+Decorative motion lives in **`index.css`**, not TSX `<style>` blocks. All include `prefers-reduced-motion` guards.
+
+| Era | Components | Notes |
+|-----|------------|-------|
+| Constellation | `ConstellationField`, `PulseRing`, `AuroraWave`, `StatusOrb` | SVG + shared keyframes |
+| Identity v3 | `NebulaPulse`, `GlyphMorph`, `PrismBadge`, `VoidButton`, `SignalThread` | Marketing / hero / CTA |
+| Marketing | `SectionStickers`, `RobotHead` | Gutter stickers; calc insets via `apply-dom-layout` |
+| Fleet | `Medallion` | `data-accent` + `medallion-accent-face` for contextual empty states |
+
+**VoidButton** — event-horizon CTA: `void-button`, `data-uid="void"`, layers `void-bg` / `void-warp-ring` / `void-corona` / `void-shimmer-stripe`.
+
+**Toast** — `data-toast={type}` sets `--toast-color`; classes `wl-toast-accent`, `wl-toast-icon`. Stack clearance: `data-marketing-sticky` on `.toast-stack`.
+
+Contract tests: `src/components/ui/__tests__/constellation-primitives.test.tsx` (asserts `index.css`, not inline component CSS).
 
 ## Director / mission control
 
@@ -85,51 +104,76 @@ CSS blocks in `index.css`: `.wl-director-bubble`, `.wl-operator-bubble`, `.wl-co
 ```
 AuroraBackdrop (fixed, z-0)
   AppShell
-    Sidebar (brand-heavy)
+    Sidebar (brand-heavy, data-rail expanded|collapsed)
     main.app-surface
       TopBar (title, eyebrow, subtitle from route context)
       scroll-viewport → page content
 ```
 
-- **Marketing** surfaces: `.marketing-surface` — can be more expressive
+- **Marketing** surfaces: `.marketing-surface` — can be more expressive; `SectionStickers` in gutters
 - **App** surfaces: `.app-surface` — prioritize clarity and density
+- **First paint**: `public/app-shell.css` skeleton before React hydrates
 
 ## Components to reuse
 
 | Need | Use |
 |------|-----|
-| Button | `shadcn/ShadButton`, `HaloButton`, `VoidButton` (check existing usage on screen) |
-| Empty | `EmptyState`, `InlineEmpty` |
+| Button | `ShadButton`, `HaloButton`, `VoidButton` (hero CTA) |
+| Empty / marker | `Medallion` (`data-accent`, variant `instrument` \| `signature`) |
+| Empty state | `EmptyState`, `InlineEmpty` |
 | Section title | `SectionHeader` |
 | Status / agent | `StatusOrb`, `wl-orbit`, `AgentActivityIndicator` |
 | Streaming tasks | `LiveTaskPipeline` |
 | Cards | `shadcn/Card`, `ArtifactCard` |
 | Proposals | `chat/ProposalCard` |
+| Integration demos | `PreviewCards` + `preview-cards.css` |
+| Capability map | `AgentIntegrationCanvas` + `wl-canvas-node` |
+| Insights heatmap | `wl-heatmap-cell` + `data-heat-opacity` |
+| Notifications | `Toast` + `data-toast` |
 
 Add shadcn: `npx shadcn@latest add <component> -y` (aliases in `components.json`).
+
+## CSP-safe dynamic styling
+
+**Full guide:** [csp-theming.md](csp-theming.md)
+
+Quick rules:
+
+1. **Accent on wrapper** — `data-accent={hex}` + child `wl-accent-*` classes
+2. **Progress / metrics** — `data-pct`, `data-progress`, or `--progress-pct` utilities
+3. **No `style={` in TSX** — CI ratchet `npm run csp:check`
+4. **Calc gutters** — `applyEdgeInset` / `applyCssVar` from `src/lib/apply-dom-layout.ts`
+5. **Framer / Recharts** — runtime `style=""` OK under `style-src-attr 'unsafe-inline'`
 
 ## Accessibility
 
 - Global `:focus-visible` uses `--focus-ring` / `--focus-ring-dark`
 - Don’t rely on color alone for status — pair icon + label
-- `aria-live` on streaming Director regions
+- `aria-live` on streaming Director regions and toast stack (`role="log"`)
 - Touch targets ≥ 44px on primary mobile actions — use `touch-press`
 - Test dark mode contrast on `muted-foreground` and sidebar text
+- Primitives freeze or simplify under `prefers-reduced-motion`
 
-## When to edit `index.css` vs TSX
+## When to edit what
 
 | Change | Where |
 |--------|--------|
 | New semantic color, shadow, motion token | `index.css` `:root` / `.dark` / `@theme` |
-| New reusable panel/bubble pattern | `index.css` utility block + optional constant in `wireline-director-design.ts` |
+| New reusable panel/bubble/primitive pattern | `index.css` block + tests if primitive |
+| Vendor-dense thumbnail palette | co-located `*.css` next to component |
+| Dynamic accent on a screen | `data-accent` + existing `wl-accent-*` before new CSS |
 | One-screen layout | TSX + existing utilities |
 | Copy shared across Director | `wireline-director-design.ts` |
+| CSP header change | `src/lib/csp.ts` → `node scripts/check-csp-drift.mjs --write` |
 
 ## Tests to run after design contract changes
 
 ```bash
 npm run test:design
-# or individually:
+npm run csp:check
+# Primitive / director contracts:
+npm test -- constellation-primitives
 npm test -- wireline-director-design
+npm test -- csp-inventory
 npm test -- shadcn-pivot-ratchet
 ```

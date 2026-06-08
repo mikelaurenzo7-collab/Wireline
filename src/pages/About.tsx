@@ -13,8 +13,6 @@ import { PageMeta } from "../lib/page-meta";
 import WirelineMark from "../components/WirelineMark";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import { BRAND } from "../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 const PRINCIPLES = [
   {
@@ -77,11 +75,7 @@ export default function About() {
             className="wl-panel card-shimmer border border-brand/20 p-5 sm:p-8 flex flex-col sm:flex-row items-start gap-4 sm:gap-6"
           >
             <div
-              className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0"
-              style={asStyle({
-                background: BRAND.purple,
-                boxShadow: "0 8px 24px -8px rgba(107,43,153,0.4)",
-              })}
+              className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center shrink-0 wl-about-mark-chip"
               aria-hidden="true"
             >
               <WirelineMark className="w-8 h-8 sm:w-10 sm:h-10 text-white" strokeWidth={120} />

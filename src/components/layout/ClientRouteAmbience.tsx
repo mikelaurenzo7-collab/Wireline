@@ -1,7 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { getRouteAccentFromLocation } from "../../constants/navigation";
-import { asStyle } from "@/src/lib/css-style";
 
 /**
  * Soft route-tinted glow behind page content — ties each surface to the
@@ -16,7 +15,8 @@ export default function ClientRouteAmbience() {
     <div
       className="pointer-events-none absolute inset-0 overflow-hidden -z-10"
       aria-hidden="true"
-      style={asStyle({ "--wl-route-from": from, "--wl-route-to": to }) as React.CSSProperties}
+      data-route-from={from}
+      data-route-to={to}
     >
       <motion.div
         key={key}

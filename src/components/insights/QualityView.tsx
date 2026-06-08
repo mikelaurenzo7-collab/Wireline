@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { BarChart3, TrendingUp, Loader2, Star, Play } from "lucide-react";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { asStyle } from "@/src/lib/css-style";
 import {
   AreaChart,
   Area,
@@ -153,18 +152,11 @@ export default function QualityView({ days }: { days: number }) {
           <div
             key={label}
             className="relative rounded-md wl-panel border border-black/8 p-4 overflow-hidden"
+            data-accent={accent}
           >
-            <div
-              className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none"
-              style={asStyle({ background: `radial-gradient(circle,${accent},transparent)` })}
-            />
+            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none wl-accent-halo" />
             <p className="wl-insight-label mb-2">{label}</p>
-            <p
-              className="font-display italic text-2xl leading-none"
-              style={asStyle({ color: accent })}
-            >
-              {value}
-            </p>
+            <p className="font-display italic text-2xl leading-none wl-accent-text">{value}</p>
           </div>
         ))}
       </div>
@@ -184,8 +176,8 @@ export default function QualityView({ days }: { days: number }) {
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full"
-                    style={asStyle({ background: bucket.color || QA_BRAND })}
+                    className="h-full rounded-full wl-qa-bg"
+                    data-qa-color={bucket.color || QA_BRAND}
                   />
                 </div>
                 <span className="text-[9px] font-mono text-ink w-6 text-right shrink-0">
@@ -324,8 +316,8 @@ export default function QualityView({ days }: { days: number }) {
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.8 }}
-                      className="h-full rounded-full"
-                      style={asStyle({ background: qaColor(pct) })}
+                      className="h-full rounded-full wl-qa-bg"
+                      data-qa-color={qaColor(pct)}
                     />
                   </div>
                   <span className="text-[9px] font-mono text-ink w-8 text-right">{avg}/20</span>

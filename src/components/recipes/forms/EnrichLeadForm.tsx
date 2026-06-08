@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payload bridges loosely typed agent API. */
 import { useState } from "react";
 import { Building2, ExternalLink } from "lucide-react";
-import { asStyle } from "@/src/lib/css-style";
 import {
   FormShell,
   Field,
@@ -84,17 +83,15 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <div
-                  className="w-9 h-9 rounded-md flex items-center justify-center"
-                  style={asStyle({
-                    background: `linear-gradient(135deg, ${confidenceAccent}, ${confidenceAccent}aa)`,
-                  })}
+                  className="w-9 h-9 rounded-md flex items-center justify-center medallion-accent-face"
+                  data-accent={confidenceAccent}
                 >
                   <Building2 className="w-4 h-4 text-paper" />
                 </div>
                 <div>
                   <div
-                    className="text-[10px] uppercase tracking-[0.4em]"
-                    style={asStyle({ color: confidenceAccent })}
+                    className="text-[10px] uppercase tracking-[0.4em] wl-confidence-text"
+                    data-confidence-color={confidenceAccent}
                   >
                     {enrichment.research_confidence} confidence
                   </div>

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
-import { asStyle } from "@/src/lib/css-style";
 import {
   Target,
   Zap,
@@ -377,7 +376,7 @@ function TemplateCard({
         "relative rounded-md wl-panel transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
         hovered ? "border-brand/20 shadow-md shadow-brand/8" : "shadow-sm",
       )}
-      style={asStyle({ "--wl-accent": template.accent }) as CSSProperties}
+      data-accent={template.accent}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >

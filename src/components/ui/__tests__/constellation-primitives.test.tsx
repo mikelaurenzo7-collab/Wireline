@@ -250,7 +250,8 @@ describe("NebulaPulse", () => {
   });
 
   it("renders plasma nodes with radial gradients", () => {
-    expect(src).toContain("radial-gradient");
+    const css = readIndexCss();
+    expect(css).toContain("radial-gradient");
     expect(src).toContain("nebula-plasma-node");
   });
 
@@ -301,16 +302,18 @@ describe("GlyphMorph", () => {
   });
 
   it("staggers animation delay per character", () => {
-    expect(src).toContain("stagger");
-    expect(src).toContain("animationDelay");
+    const css = readIndexCss();
+    expect(src).toContain("data-stagger");
+    expect(src).toContain("data-index");
+    expect(css).toContain("animation-delay: calc(var(--glyph-stagger");
   });
 
   it("uses editorial spring easing for reveal mode", () => {
-    expect(src).toContain("cubic-bezier(0.22, 1, 0.36, 1)");
+    expect(readIndexCss()).toContain("cubic-bezier(0.22, 1, 0.36, 1)");
   });
 
   it("uses step timing for glitch mode", () => {
-    expect(src).toContain("steps(2, jump-none)");
+    expect(readIndexCss()).toContain("steps(2, jump-none)");
   });
 
   it("provides aria-label on container for accessibility", () => {
@@ -326,7 +329,9 @@ describe("GlyphMorph", () => {
   });
 
   it("includes reduced-motion guard", () => {
-    expect(src).toContain("prefers-reduced-motion");
+    const css = readIndexCss();
+    expect(css).toContain("prefers-reduced-motion");
+    expect(css).toContain(".glyph-morph-char");
   });
 
   it("supports multiple HTML element tags", () => {
@@ -336,13 +341,15 @@ describe("GlyphMorph", () => {
   });
 
   it("uses 3D transforms for reveal depth", () => {
-    expect(src).toContain("rotateX");
-    expect(src).toContain("scale(0.85)");
+    const css = readIndexCss();
+    expect(css).toContain("rotateX");
+    expect(css).toContain("scale(0.85)");
   });
 
   it("applies blur on entry for cinematic reveal", () => {
-    expect(src).toContain("blur(4px)");
-    expect(src).toContain("blur(0px)");
+    const css = readIndexCss();
+    expect(css).toContain("blur(4px)");
+    expect(css).toContain("blur(0)");
   });
 });
 
@@ -366,17 +373,20 @@ describe("PrismBadge", () => {
   });
 
   it("uses conic-gradient for holographic effect", () => {
-    expect(src).toContain("conic-gradient");
+    expect(readIndexCss()).toContain("conic-gradient");
+    expect(src).toContain("prism-holo-layer");
   });
 
   it("uses @property for animatable CSS angle", () => {
-    expect(src).toContain("@property");
-    expect(src).toContain("<angle>");
+    const css = readIndexCss();
+    expect(css).toContain("@property");
+    expect(css).toContain("<angle>");
   });
 
   it("applies frosted overlay for text legibility", () => {
-    expect(src).toContain("backdropFilter");
-    expect(src).toContain("blur(2px)");
+    const css = readIndexCss();
+    expect(src).toContain("prism-frost");
+    expect(css).toContain("backdrop-filter: blur(2px)");
   });
 
   it("uses mono font with uppercase tracking for labels", () => {
@@ -386,8 +396,10 @@ describe("PrismBadge", () => {
   });
 
   it("renders specular edge highlight", () => {
-    expect(src).toContain("rgba(255, 255, 255, 0.4)");
-    expect(src).toContain("inset 0 1px 0");
+    const css = readIndexCss();
+    expect(src).toContain("prism-specular-edge");
+    expect(css).toContain("rgba(255, 255, 255, 0.4)");
+    expect(css).toContain("inset 0 1px 0");
   });
 
   it("uses data-circular for border-radius exception", () => {
@@ -395,11 +407,13 @@ describe("PrismBadge", () => {
   });
 
   it("includes reduced-motion guard", () => {
-    expect(src).toContain("prefers-reduced-motion");
+    const css = readIndexCss();
+    expect(css).toContain("prefers-reduced-motion");
+    expect(src).toContain("prism-holo-animated");
   });
 
   it("supports dark mode color adjustments", () => {
-    expect(src).toContain(".dark");
+    expect(readIndexCss()).toContain(".dark .prism-badge-surface");
   });
 });
 
@@ -427,7 +441,8 @@ describe("VoidButton", () => {
   });
 
   it("renders event-horizon radial gradient background", () => {
-    expect(src).toContain("radial-gradient");
+    const css = readIndexCss();
+    expect(css).toContain("radial-gradient");
     expect(src).toContain("void-bg");
   });
 
@@ -435,7 +450,7 @@ describe("VoidButton", () => {
     const css = readIndexCss();
     expect(src).toContain("void-warp-ring");
     expect(css).toContain("scale(0.5)");
-    expect(src).toContain("scale(2.2)");
+    expect(css).toContain("scale(2.2)");
   });
 
   it("uses spring-like overshoot easing for physics feel", () => {
@@ -444,7 +459,9 @@ describe("VoidButton", () => {
   });
 
   it("renders surface shimmer stripe animation", () => {
-    expect(src).toContain("void-shimmer-sweep");
+    const css = readIndexCss();
+    expect(src).toContain("void-shimmer-stripe");
+    expect(css).toContain("void-shimmer-sweep");
   });
 
   it("includes focus-visible ring for keyboard users", () => {
@@ -457,12 +474,16 @@ describe("VoidButton", () => {
   });
 
   it("includes reduced-motion guard", () => {
-    expect(src).toContain("prefers-reduced-motion");
+    const css = readIndexCss();
+    expect(css).toContain("prefers-reduced-motion");
+    expect(src).toContain("void-button");
   });
 
   it("renders inner specular corona on hover", () => {
-    expect(src).toContain("rgba(255,255,255,0.2)");
+    const css = readIndexCss();
+    expect(src).toContain("void-corona");
     expect(src).toContain("group-hover:opacity-100");
+    expect(css).toContain("rgba(255, 255, 255, 0.2)");
   });
 });
 
@@ -512,7 +533,9 @@ describe("SignalThread", () => {
   });
 
   it("includes reduced-motion guard", () => {
-    expect(src).toContain("prefers-reduced-motion");
+    const css = readIndexCss();
+    expect(css).toContain("prefers-reduced-motion");
+    expect(css).toContain(".signal-thread-pulse");
   });
 
   it("staggers pulse timing by distributing begin offsets", () => {

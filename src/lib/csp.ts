@@ -64,13 +64,17 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
       ? `'self' 'nonce-${nonce}' https://plausible.io`
       : "'self' https://plausible.io";
 
+  // style-src-elem blocks injected <style> tags (XSS). style-src-attr allows
+  // library-generated style="" attributes (Framer Motion, Recharts) without
+  // permitting arbitrary inline <style> blocks in HTML.
+  const styleSrcElem = isDev ? "'self' 'unsafe-inline'" : "'self'";
+  const styleSrcAttr = "'unsafe-inline'";
+
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
-    // style-src keeps 'unsafe-inline' until all runtime style={} props and
-    // component-local <style> blocks are migrated (inventory ratchet tracks
-    // style={{ in source only — see scripts/csp-inventory.mjs).
-    `style-src 'self' 'unsafe-inline'`,
+    `style-src-elem ${styleSrcElem}`,
+    `style-src-attr ${styleSrcAttr}`,
     `img-src 'self' data: blob: https:`,
     `font-src 'self' data:`,
     `connect-src ${connectSrcs}`,

@@ -37,8 +37,8 @@ export function InlineEmpty({ label, icon: Icon, accent, className }: InlineEmpt
     <div className={cn(WL_APP_CLASSES.inlineEmpty, className)}>
       {Icon && (
         <Icon
-          className="w-3.5 h-3.5 shrink-0 opacity-60"
-          style={accent ? { color: accent } : undefined}
+          className={cn("w-3.5 h-3.5 shrink-0 opacity-60", accent && "wl-accent-text")}
+          data-accent={accent}
         />
       )}
 

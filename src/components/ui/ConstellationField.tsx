@@ -15,7 +15,6 @@
 import React, { useId, useMemo } from "react";
 import { cn } from "../../lib/utils";
 import { BRAND_FALLBACK } from "../../lib/brand-token";
-import { asStyle } from "@/src/lib/css-style";
 
 const PRIMARY_FALLBACK = `var(--primary, ${BRAND_FALLBACK})`;
 
@@ -129,7 +128,7 @@ export function ConstellationField({
         className,
       )}
       aria-hidden="true"
-      style={asStyle({ opacity: fieldOpacity })}
+      data-opacity={fieldOpacity}
     >
       <svg
         viewBox="0 0 100 100"

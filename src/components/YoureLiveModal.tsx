@@ -137,13 +137,9 @@ function ConfettiExplosion({ active }: { active: boolean }) {
               ease: [0.25, 0.1, 0.25, 1],
             }}
             className="absolute wl-confetti-piece"
-            style={
-              {
-                "--confetti-w": `${piece.size}px`,
-                "--confetti-h": `${piece.size * 0.6}px`,
-                "--confetti-bg": piece.color,
-              } as React.CSSProperties
-            }
+            data-confetti-w={`${piece.size}px`}
+            data-confetti-h={`${piece.size * 0.6}px`}
+            data-confetti-bg={piece.color}
           />
         ))}
       </AnimatePresence>

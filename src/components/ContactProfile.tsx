@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useEffect, useState, useMemo, useId } from "react";
 import { useParams, Link } from "react-router-dom";
-import { asStyle } from "@/src/lib/css-style";
 import {
   Phone,
   PhoneIncoming,
@@ -297,15 +296,15 @@ function StatCard({
   gradientId: string;
 }) {
   return (
-    <div className="relative rounded-md sm:rounded-md wl-panel border border-black/8 p-4 sm:p-5 overflow-hidden">
-      <div
-        className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={asStyle({ background: `radial-gradient(circle, ${accent}, transparent)` })}
-      />
+    <div
+      className="relative rounded-md sm:rounded-md wl-panel border border-black/8 p-4 sm:p-5 overflow-hidden"
+      data-accent={accent}
+    >
+      <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
           <p className="wl-label-muted">{label}</p>
-          <Icon className="w-4 h-4" style={asStyle({ color: accent })} />
+          <Icon className="w-4 h-4 wl-accent-text" />
         </div>
         <p className="font-display italic text-2xl sm:text-3xl lg:text-4xl text-ink leading-none tabular-nums">
           {value}

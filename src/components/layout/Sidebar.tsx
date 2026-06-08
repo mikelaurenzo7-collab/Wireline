@@ -12,7 +12,6 @@
  */
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { asStyle } from "@/src/lib/css-style";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -73,8 +72,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
   const expanded = userOverride !== null ? userOverride : autoExpanded;
   const effective = expanded || peek;
-  const railWidth = effective ? RAIL_EXPANDED : RAIL_COLLAPSED;
-
   useEffect(() => {
     const committed = expanded ? RAIL_EXPANDED : RAIL_COLLAPSED;
     document.documentElement.style.setProperty("--wireline-rail-w", `${committed}px`);
@@ -104,7 +101,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] elev-3 wl-rail-shell",
           "border-r border-white/[0.08]",
         )}
-        style={asStyle({ width: railWidth })}
+        data-rail={effective ? "expanded" : "collapsed"}
       >
         {/* Logo */}
         <Link
@@ -562,7 +559,7 @@ function TierInline() {
           aria-valuemax={cap}
           aria-label="Voice minutes usage"
           className="mt-0.5 h-[2px] rounded-full overflow-hidden bg-white/15 dark:bg-white/8"
-          style={asStyle({ "--wl-tier-pct": `${pct}%` }) as React.CSSProperties}
+          data-tier-pct={`${pct}%`}
         >
           <div
             className={cn(

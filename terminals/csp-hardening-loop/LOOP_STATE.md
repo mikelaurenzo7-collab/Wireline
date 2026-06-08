@@ -1,63 +1,96 @@
 # CSP Hardening Loop — Final State
 
+
+
 > Agent memory across loop ticks. Updated 2026-06-08.
 
-## User directives
-- Autonomous phase-by-phase CSP hardening
-- Code-review after every phase; fix before advancing
-- Strict `/code-review` before merge to `origin/main`
-- E2E visual QA when complete
 
-## Branch
-`feat/csp-hardening` → merge to `main` after review
 
-## Phase status
+## Combined plan (Phases 0–6 + code reviews)
 
-| Phase | Status | Notes |
-|-------|--------|-------|
-| 0 | **DONE** | Inventory ratchet, vercel sync, CI `csp:check` |
-| 1 | **DONE** | Static safe-area / display migrations |
-| 2 | **DONE** | `--wl-accent` utilities in index.css |
-| 3 | **DONE** | Motion primitives → CSS keyframes |
-| 4 | **DONE** | PreviewCards 118 → 0 via preview-cards.css |
-| 5 | **PARTIAL** | Source `style={{` → 0; prod CSP still needs `unsafe-inline` for `style={}` + `<style>` |
-| 6 | DEFERRED | Optional hardening |
+
+
+| Step | Item | Status |
+
+|------|------|--------|
+
+| 0 | Inventory ratchet + vercel sync + CI `csp:check` | **DONE** |
+
+| 1 | Static safe-area / display migrations | **DONE** |
+
+| 2 | `--wl-accent` utilities in index.css | **DONE** |
+
+| 3 | Motion primitives → CSS keyframes | **DONE** |
+
+| 4 | PreviewCards → preview-cards.css | **DONE** |
+
+| 5a | Eliminate `style={` in `.tsx` (real migration, not asStyle shim) | **DONE** |
+
+| 5b | Move `<style>` JSX blocks → index.css (VoidButton, Prism, Glyph, SignalThread, Stickers) | **DONE** |
+
+| 5c | Pricing spotlight → `.wl-pricing-tier--highlight` | **DONE** |
+
+| 6a | Inventory: comment-strip + `<style` ratchet (`src/lib/csp-inventory.ts`) | **DONE** |
+
+| 6b | CSP split: `style-src-elem 'self'` + `style-src-attr 'unsafe-inline'` | **DONE** |
+
+| 6c | App shell skeleton → `public/app-shell.css` (no inline `<style>`) | **DONE** |
+
+| 6d | SectionStickers calc gutters → `applyEdgeInset` (DOM API, not broken attr) | **DONE** |
+
+| 6e | Remove `css-style.ts` / codemod scripts | **DONE** |
+
+| 7 | `npm run verify` + visual QA | **PENDING** |
+
+
 
 ## Metrics
 
-| Milestone | Inline `style={{` count |
-|-----------|-------------------------|
-| Baseline | 329 (79 files) |
-| After Phases 0–4 | 169 |
-| After Phase 3 + Canvas | 153 |
-| **Final** | **0** (0 files) |
 
-Runtime `style={asStyle(...)}` usages remain (~90) for CSS custom properties.
+
+| Ratchet | Count |
+
+|---------|-------|
+
+| `style={` in `.tsx` (comments stripped) | **0** |
+
+| `<style` in `.tsx` | **0** |
+
+| `asStyle()` usages | **0** (module deleted) |
+
+
+
+## Prod CSP (buildCSP false)
+
+
+
+- `style-src-elem 'self'` — blocks injected `<style>` tags; shell CSS is `/app-shell.css`
+
+- `style-src-attr 'unsafe-inline'` — Framer Motion / Recharts / imperative sticker gutters
+
+- No blanket `style-src 'unsafe-inline'`
+
+
 
 ## Key artifacts
-- `scripts/csp-inventory.mjs` + `csp-inventory-baseline.json` (total: 0)
+
+
+
+- `src/lib/csp-inventory.ts` + `scripts/csp-inventory-run.ts`
+
+- `src/lib/apply-dom-layout.ts` — calc-safe positioning without `style={` in JSX
+
+- `public/app-shell.css` — first-paint skeleton
+
 - `scripts/check-csp-drift.mjs` — vercel.json sync
-- `scripts/csp-style-codemod.mjs` + `fix-asstyle-imports.mjs`
-- `src/lib/css-style.ts` — `asStyle()` wrapper (inventory ratchet, not CSP-safe alone)
-- `src/components/integrations/preview-cards.css`
-- Phase 5 CSP tighten **blocked** until `style={}` and `<style>` tags eliminated
 
-## Code review — Phase 5 blocker (critical)
-Removing `style-src 'unsafe-inline'` while `style={asStyle(...)}` remains would **break production UI** (accent colors, progress bars, route ambience). `VoidButton` also emits `<style>` children. Inventory counts `style={{` only — not equivalent to CSP-safe.
+- `.cursor/skills/wireline-design/` — `csp-theming.md` + updated SKILL / wireline-system / surfaces
 
-**Decision:** Keep prod `style-src 'self' 'unsafe-inline'`; document Phase 5b for full runtime elimination.
 
-## Commits (branch)
-- c048221 Phase 0
-- 08a947c Phases 1–2
-- 01c3e3f Phase 4 PreviewCards
-- 9d3bba2 Phase 3 motion
-- ce5db40 AgentIntegrationCanvas + gated test
-- (pending) Phases 1–5 completion batch
 
-## Verification
-- `vitest run`: 1452 passed
-- `tsc --noEmit`: pass
-- `eslint src/`: pass
-- `csp:check`: pass (inventory 0, vercel synced)
-- `vite build`: pass
+## Branch
+
+
+
+`feat/csp-phase6-runtime-styles` → merge to `main` after verify
+

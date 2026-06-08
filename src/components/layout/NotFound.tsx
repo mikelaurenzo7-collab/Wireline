@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChevronRight, Home, Phone, MessageSquare, Compass, LayoutGrid } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -178,7 +177,7 @@ function NotFoundCard({
     <Link
       to={to}
       className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
-      style={asStyle({ "--wl-accent": accent }) as React.CSSProperties}
+      data-accent={accent}
     >
       <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-black/8 wl-accent-icon-chip">
         <Icon className="w-4 h-4" strokeWidth={2.2} />

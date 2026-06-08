@@ -17,9 +17,8 @@
  *   <GlyphMorph text="Wireline" mode="reveal" />
  *   <GlyphMorph text="LIVE" mode="breathe" className="text-brand" />
  */
-import React, { useId } from "react";
+import React from "react";
 import { cn } from "../../lib/utils";
-import { asStyle } from "@/src/lib/css-style";
 
 type MorphMode = "reveal" | "breathe" | "glitch";
 
@@ -48,97 +47,30 @@ export function GlyphMorph({
   className,
   as: Tag = "span",
 }: GlyphMorphProps) {
-  const uid = useId().replace(/:/g, "");
-
   const chars = text.split("");
 
   return (
     <Tag
       className={cn(
-        "inline-flex overflow-hidden",
+        "inline-flex overflow-hidden glyph-morph",
+        `glyph-morph--${mode}`,
         mode === "breathe" && "glyph-morph-breathe",
         className,
       )}
+      data-stagger={`${stagger}ms`}
+      data-duration={`${duration}ms`}
       aria-label={text}
     >
       {chars.map((char, i) => (
         <span
-          key={`${uid}-${i}`}
+          key={`${mode}-${i}-${char}`}
           className={cn("inline-block glyph-morph-char", mode === "glitch" && "glyph-morph-glitch")}
-          style={asStyle({
-            animationName:
-              mode === "reveal"
-                ? `glyph-reveal-${uid}`
-                : mode === "breathe"
-                  ? `glyph-breathe-${uid}`
-                  : `glyph-glitch-${uid}`,
-            animationDuration: `${duration}ms`,
-            animationDelay: `${i * stagger}ms`,
-            animationFillMode: "both",
-            animationTimingFunction:
-              mode === "glitch" ? "steps(2, jump-none)" : "cubic-bezier(0.22, 1, 0.36, 1)",
-            animationIterationCount: mode === "reveal" ? 1 : "infinite",
-          })}
+          data-index={i}
           aria-hidden="true"
         >
           {char === " " ? "\u00A0" : char}
         </span>
       ))}
-
-      <style>{`
-        @keyframes glyph-reveal-${uid} {
-          0% {
-            opacity: 0;
-            transform: translateY(40%) rotateX(-45deg) scale(0.85);
-            filter: blur(4px);
-          }
-          60% {
-            opacity: 1;
-            filter: blur(0px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) rotateX(0deg) scale(1);
-            filter: blur(0px);
-          }
-        }
-        @keyframes glyph-breathe-${uid} {
-          0%, 100% {
-            transform: translateY(0);
-            opacity: 0.85;
-          }
-          50% {
-            transform: translateY(-6%);
-            opacity: 1;
-          }
-        }
-        @keyframes glyph-glitch-${uid} {
-          0%, 90%, 100% {
-            transform: translate(0, 0) skewX(0deg);
-            opacity: 1;
-          }
-          92% {
-            transform: translate(-2px, 1px) skewX(-2deg);
-            opacity: 0.8;
-          }
-          94% {
-            transform: translate(2px, -1px) skewX(1deg);
-            opacity: 0.9;
-          }
-          96% {
-            transform: translate(-1px, 0) skewX(0deg);
-            opacity: 1;
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .glyph-morph-char {
-            animation: none !important;
-            opacity: 1 !important;
-            transform: none !important;
-            filter: none !important;
-          }
-        }
-      `}</style>
     </Tag>
   );
 }

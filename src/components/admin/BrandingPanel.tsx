@@ -5,7 +5,6 @@ import { Input } from "../ui/shadcn/Input";
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN, WL_ADMIN_CLASSES } from "../../lib/wireline-ops-design";
 import { BRAND } from "../../constants/brand-colors";
-import { asStyle } from "@/src/lib/css-style";
 
 interface BrandingPanelProps {
   settings: any;
@@ -91,13 +90,11 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
 
           <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-white/25 rounded-md">
             <p className="app-form-eyebrow text-muted/70 mb-5">Preview</p>
-            <div className="brand-preview-card w-full p-5 rounded-md bg-paper relative overflow-hidden group">
-              <div
-                className="absolute inset-0 opacity-10 pointer-events-none"
-                style={asStyle({
-                  background: `radial-gradient(circle at top right, ${settings.primary_color}, transparent)`,
-                })}
-              />
+            <div
+              className="brand-preview-card w-full p-5 rounded-md bg-paper relative overflow-hidden group"
+              data-brand-color={settings.primary_color}
+            >
+              <div className="absolute inset-0 opacity-10 pointer-events-none brand-preview-accent-bg" />
               <div className="flex items-center gap-3 mb-4">
                 {settings.brand_logo_url ? (
                   <img
@@ -110,12 +107,9 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                     height={24}
                   />
                 ) : (
-                  <Zap className="w-6 h-6" style={asStyle({ color: settings.primary_color })} />
+                  <Zap className="w-6 h-6 wl-brand-text" />
                 )}
-                <span
-                  className="font-display uppercase tracking-widest text-sm"
-                  style={asStyle({ color: settings.primary_color })}
-                >
+                <span className="font-display uppercase tracking-widest text-sm wl-brand-text">
                   {settings.brand_name || "WIRELINE"}
                 </span>
               </div>
@@ -124,10 +118,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
                 <div className="h-2 w-2/3 rounded-full bg-ink/5" />
               </div>
               <div className="mt-6 flex justify-end">
-                <div
-                  className="px-3.5 py-2 rounded-full text-[8px] uppercase tracking-[0.18em] font-bold text-white"
-                  style={asStyle({ backgroundColor: settings.primary_color })}
-                >
+                <div className="px-3.5 py-2 rounded-full text-[8px] uppercase tracking-[0.18em] font-bold text-white wl-brand-bg">
                   Action
                 </div>
               </div>

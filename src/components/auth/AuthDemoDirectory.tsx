@@ -1,4 +1,4 @@
-import React, { useState, type CSSProperties } from "react";
+import React, { useState } from "react";
 import { ChevronDown, Phone } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -24,7 +24,7 @@ function AgentContactCard({
             landing ? "w-9 h-9" : "w-6 h-6",
             isDemo ? "bg-black/[0.04]" : "wl-accent-surface",
           )}
-          style={isDemo ? undefined : ({ "--wl-accent": agent.tint } as CSSProperties)}
+          data-accent={isDemo ? undefined : agent.tint}
         >
           <Phone
             className={cn(
@@ -103,7 +103,7 @@ function AgentContactCard({
             "w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-white/10",
             isDemo ? "bg-white/[0.03]" : "wl-accent-surface",
           )}
-          style={isDemo ? undefined : ({ "--wl-accent": agent.tint } as CSSProperties)}
+          data-accent={isDemo ? undefined : agent.tint}
         >
           <Phone
             className={cn("w-3.5 h-3.5", isDemo ? "text-zinc-400" : "wl-accent-text")}

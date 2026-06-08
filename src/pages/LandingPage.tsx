@@ -9,7 +9,6 @@ import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
-import { asStyle } from "@/src/lib/css-style";
 
 const STATS = [
   { value: "24/7", label: "Availability" },
@@ -258,7 +257,7 @@ export default function LandingPage() {
                 >
                   <p
                     className="stat-value-flip font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none text-ink tracking-tight"
-                    style={asStyle({ animationDelay: `${0.3 + i * 0.2}s` })}
+                    data-delay={`${0.3 + i * 0.2}s`}
                   >
                     {stat.value}
                   </p>
@@ -350,8 +349,7 @@ export default function LandingPage() {
         {/* ─── Footer ─────────────────────────────────────────────── */}
         <footer
           data-testid="landing-footer"
-          className="footer-brand-glow bg-ink text-paper border-t border-paper/[0.08]"
-          style={asStyle({ background: "#1A1614" })}
+          className="footer-brand-glow bg-ink text-paper border-t border-paper/[0.08] wl-landing-footer-bg"
         >
           <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
             <div className="wl-reveal-stagger grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">

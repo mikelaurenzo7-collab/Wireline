@@ -1,6 +1,5 @@
 import { cn } from "../../lib/utils";
 import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
-import { asStyle } from "@/src/lib/css-style";
 
 const NODES: { cx: number; cy: number; delay: number }[] = [
   { cx: 100, cy: 28, delay: 0 },
@@ -58,11 +57,7 @@ export function FleetConstellation({
         />
       ))}
       {NODES.map((node, i) => (
-        <g
-          key={i}
-          className="wl-fleet-constellation-node"
-          style={asStyle({ animationDelay: `${node.delay}s` })}
-        >
+        <g key={i} className="wl-fleet-constellation-node" data-delay={`${node.delay}s`}>
           <circle className="wl-fleet-constellation-node-halo" cx={node.cx} cy={node.cy} r="5" />
           <circle className="wl-fleet-constellation-node-core" cx={node.cx} cy={node.cy} r="2.25" />
         </g>

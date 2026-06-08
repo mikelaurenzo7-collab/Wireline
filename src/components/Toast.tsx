@@ -3,27 +3,23 @@ import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useToast, type Toast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
-import { isMarketingStickyCtaRoute, MARKETING_STICKY_CTA_BOTTOM } from "../lib/marketing-mobile";
+import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { cn } from "../lib/utils";
-import { BRAND } from "../constants/brand-colors";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { asStyle } from "@/src/lib/css-style";
 
 const META = {
   success: {
     icon: CheckCircle2,
-    color: "#10b981",
     border: "border-[color-mix(in_srgb,var(--wl-signal)_35%,transparent)]",
     bg: "wl-status-success",
   },
-  error: { icon: XCircle, color: "#f43f5e", border: "border-rose-500/30", bg: "bg-rose-500/10" },
+  error: { icon: XCircle, border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {
     icon: AlertTriangle,
-    color: BRAND.purple,
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
   },
-  info: { icon: Info, color: BRAND.purple, border: "border-brand/30", bg: "bg-brand/10" },
+  info: { icon: Info, border: "border-brand/30", bg: "bg-brand/10" },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -41,17 +37,12 @@ function ToastItem({ toast }: { toast: Toast }) {
       exit={{ opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
       className={cn(
-        // Full-width on mobile (parent strip already handles padding);
-        // fixed-width on sm+ to keep the desktop stack tidy.
-        "relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter",
+        "toast-item relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter",
         m.border,
       )}
+      data-toast={toast.type}
     >
-      {/* Accent strip */}
-      <div
-        className="absolute left-0 inset-y-0 w-0.5 rounded-full"
-        style={asStyle({ background: m.color })}
-      />
+      <div className="absolute left-0 inset-y-0 w-0.5 rounded-full wl-toast-accent" />
 
       <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
         <div
@@ -60,7 +51,7 @@ function ToastItem({ toast }: { toast: Toast }) {
             m.bg,
           )}
         >
-          <Icon className="w-3.5 h-3.5" style={asStyle({ color: m.color })} strokeWidth={2} />
+          <Icon className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
           <p className="text-[12px] font-semibold text-ink leading-snug truncate">{toast.title}</p>
@@ -93,10 +84,6 @@ export default function ToastStack() {
   // The mobile bottom tab bar was removed, so signed-in toasts now sit at the
   // standard bottom gutter. Only the public marketing sticky CTA still needs
   // extra clearance.
-  const mobileBottom = marketingSticky
-    ? MARKETING_STICKY_CTA_BOTTOM
-    : "calc(0.75rem + env(safe-area-inset-bottom, 0px))";
-
   return (
     <div
       role="log"
@@ -104,10 +91,7 @@ export default function ToastStack() {
       aria-atomic="false"
       aria-label="Notifications"
       className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
-      style={asStyle({
-        ["--toast-mobile-bottom" as string]: mobileBottom,
-        paddingBottom: 0,
-      })}
+      data-marketing-sticky={marketingSticky ? "true" : undefined}
     >
       <AnimatePresence initial={false} mode="sync">
         {toasts.map((t) => (

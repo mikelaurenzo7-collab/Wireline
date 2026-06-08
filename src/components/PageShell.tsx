@@ -4,7 +4,6 @@ import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
 import { resolveBrandAccent } from "../lib/brand-token";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { asStyle } from "@/src/lib/css-style";
 
 /* ──────────────────────────────────────────────────────────────────────────
    PageShell — viewport-fit page primitive.
@@ -491,7 +490,7 @@ export function Panel({
         "panel-mobile-surface",
         className,
       )}
-      style={asStyle({ "--wl-accent": resolvedAccent }) as React.CSSProperties}
+      data-accent={resolvedAccent}
     >
       {/* Subtle ambient glow behind header */}
       {Icon && (
@@ -559,7 +558,7 @@ export function StatTile({
   return (
     <div
       className="stat-tile-mobile relative wl-panel border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive"
-      style={asStyle({ "--wl-accent": resolvedAccent }) as React.CSSProperties}
+      data-accent={resolvedAccent}
     >
       {/* Ambient glow */}
       <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-25 blur-3xl pointer-events-none wl-accent-halo" />

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { asStyle } from "@/src/lib/css-style";
 import {
   CreditCard,
   Loader2,
@@ -358,7 +357,7 @@ function PlanPicker({
                   ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
                   : "border-white/10 hover:border-white/20",
               )}
-              style={asStyle({ "--wl-accent": accent }) as CSSProperties}
+              data-accent={accent}
             >
               {!isSignupMatch && plan.id === "pro" && (
                 <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand text-white">
@@ -477,7 +476,7 @@ function ActiveSubCard({
   return (
     <div
       className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden"
-      style={asStyle({ "--wl-accent": accent }) as CSSProperties}
+      data-accent={accent}
     >
       <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-glow" />
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">

@@ -17,7 +17,7 @@
  *   <VoidButton onClick={...}>Deploy Agent</VoidButton>
  *   <VoidButton size="sm" variant="secondary">Cancel</VoidButton>
  */
-import React, { useId } from "react";
+import React from "react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "./shadcn/ShadButton";
 
@@ -52,13 +52,12 @@ export function VoidButton({
   disabled,
   ...props
 }: VoidButtonProps) {
-  const uid = useId().replace(/:/g, "");
-
   return (
     <ShadButton
       type="button"
       variant="ghost"
       disableAnimations
+      data-uid="void"
       className={cn(
         "group relative inline-flex items-center justify-center font-semibold uppercase tracking-[0.12em] transition-all cursor-pointer overflow-hidden void-button h-auto rounded-none hover:bg-transparent",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
@@ -71,65 +70,21 @@ export function VoidButton({
       disabled={disabled}
       {...props}
     >
-      {/* Event-horizon background — radial-gradient in index.css .void-bg */}
       {variant === "primary" && <span className="absolute inset-0 void-bg" aria-hidden="true" />}
 
-      {/* Gravitational warp ring — expands on hover */}
       <span
         className="absolute inset-0 opacity-0 group-hover:opacity-100 void-warp-ring"
         aria-hidden="true"
       />
 
-      {/* Inner specular corona — rgba(255,255,255,0.2) in index.css .void-corona */}
       <span
         className="absolute inset-0 opacity-0 group-hover:opacity-100 void-corona"
         aria-hidden="true"
       />
 
-      {/* Surface shimmer stripe */}
-      <span
-        className={cn("absolute inset-0 void-shimmer-stripe", `void-shimmer-${uid}`)}
-        aria-hidden="true"
-      />
+      <span className="absolute inset-0 void-shimmer-stripe" aria-hidden="true" />
 
-      {/* Button content */}
       <span className="relative z-[1] inline-flex items-center gap-inherit">{children}</span>
-
-      <style>{`
-        .void-shimmer-${uid} {
-          animation: void-shimmer-sweep-${uid} 3.5s ease-in-out 1s infinite;
-        }
-        .void-button:hover .void-bg {
-          transform: scale(1.03);
-          filter: brightness(1.12) saturate(1.2);
-        }
-        .void-button:active .void-bg {
-          transform: scale(0.97);
-          filter: brightness(0.92);
-        }
-        .void-button:hover .void-warp-ring {
-          transform: scale(2.2) !important;
-        }
-        @keyframes void-shimmer-sweep-${uid} {
-          0% { transform: translateX(-100%); }
-          30% { transform: translateX(100%); }
-          100% { transform: translateX(100%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .void-button:hover .void-bg {
-            transform: none;
-          }
-          .void-button:active .void-bg {
-            transform: none;
-          }
-          .void-button:hover .void-warp-ring {
-            transform: none !important;
-          }
-          .void-shimmer-${uid} {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </ShadButton>
   );
 }

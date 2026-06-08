@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState } from "react";
-import { asStyle } from "@/src/lib/css-style";
 import {
   Zap,
   Plus,
@@ -401,10 +400,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 {icp.industryLabel}.
               </p>
               <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-brand"
-                  style={asStyle({ width: `${icp.completeness}%` })}
-                />
+                <div className="h-full bg-brand" data-pct={`${icp.completeness}%`} />
               </div>
             </div>
 

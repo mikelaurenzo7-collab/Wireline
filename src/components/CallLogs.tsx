@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { asStyle } from "@/src/lib/css-style";
 import {
   PhoneIncoming,
   PhoneOutgoing,
@@ -673,14 +672,14 @@ function CallDetail({
                   <div className="rounded-md wl-panel p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div
-                        className="text-[9px] uppercase tracking-[0.3em] flex items-center gap-1.5"
-                        style={asStyle({ color: qaColor(qaScore) })}
+                        className="text-[9px] uppercase tracking-[0.3em] flex items-center gap-1.5 wl-qa-text"
+                        data-qa-color={qaColor(qaScore)}
                       >
                         <Star className="w-3 h-3" /> QA Scorecard
                       </div>
                       <div
-                        className="font-display italic text-2xl leading-none"
-                        style={asStyle({ color: qaColor(qaScore) })}
+                        className="font-display italic text-2xl leading-none wl-qa-text"
+                        data-qa-color={qaColor(qaScore)}
                       >
                         {qaScore}
                         <span className="text-xs text-ink/40 ml-1 not-italic">/100</span>
@@ -997,16 +996,12 @@ function RecordingPlayer({ url }: { url: string }) {
       >
         {/* Filled track */}
         <div
-          className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
-          style={asStyle({
-            width: `${pct}%`,
-            background: "linear-gradient(90deg, var(--color-brand), #7B3FA0)",
-          })}
+          className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100 wl-recording-fill"
+          data-progress={`${pct}%`}
         />
-        {/* Hover thumb */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-          style={asStyle({ left: `calc(${pct}% - 6px)` })}
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand shadow-md opacity-0 group-hover:opacity-100 transition-opacity wl-recording-thumb"
+          data-progress={`${pct}%`}
         />
       </div>
 
