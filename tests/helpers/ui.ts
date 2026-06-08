@@ -123,7 +123,7 @@ export const AUTHENTICATED_SUBTAB_SURFACES = [
       "Branding",
       "Carrier",
       "Growth",
-      "System",
+      "Integrations",
       "Activity",
       "DNC",
       "Audit",

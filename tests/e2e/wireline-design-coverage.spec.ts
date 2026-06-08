@@ -258,6 +258,15 @@ test.describe("Wireline design coverage — mobile authenticated shell", () => {
     await page.getByRole("button", { name: "Close navigation" }).click();
   });
 
+  test("mobile bottom nav reaches Phone without opening drawer", async ({ page }) => {
+    await gotoAuthenticated(page, "/chat");
+    const bottomNav = page.getByTestId("mobile-bottom-nav");
+    await expect(bottomNav).toBeVisible();
+    await bottomNav.getByRole("link", { name: "Phone", exact: true }).click();
+    await expect(page).toHaveURL(/\/phone/);
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("/training — exactly one h1 (workspace title, not agent name)", async ({ page }) => {
     await gotoAuthenticated(page, "/training");
     await assertSingleH1(page);

@@ -7,7 +7,10 @@ type OpsPulseStripProps = {
   pendingActions: number;
   fleetAgents: number;
   escalations: number;
+  /** Core ops metrics (live calls, actions, escalations) */
   loading?: boolean;
+  /** Fleet roster count — can load after presence without blocking other metrics */
+  fleetLoading?: boolean;
 };
 
 function PulseMetric({
@@ -23,12 +26,13 @@ function PulseMetric({
   alert?: boolean;
   loading?: boolean;
 }) {
-  const display = loading ? "—" : value;
+  const display = loading ? "…" : String(value);
   return (
     <div className={WL_OPS_CLASSES.metric}>
       <span className={WL_OPS_CLASSES.metricLabel}>{label}</span>
       <motion.span
         key={loading ? "loading" : value}
+        aria-busy={loading}
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
@@ -51,13 +55,15 @@ export function OpsPulseStrip({
   fleetAgents,
   escalations,
   loading,
+  fleetLoading,
 }: OpsPulseStripProps) {
+  const fleetBusy = fleetLoading ?? loading;
   return (
     <div
       className={WL_OPS_CLASSES.pulseStrip}
       role="status"
       aria-live="polite"
-      aria-busy={loading}
+      aria-busy={loading || fleetBusy}
       aria-label="Live Ops fleet pulse"
     >
       <PulseMetric label={OPS_PULSE_METRICS.live.label} value={liveCalls} mono loading={loading} />
@@ -71,7 +77,7 @@ export function OpsPulseStrip({
         label={OPS_PULSE_METRICS.fleet.label}
         value={fleetAgents}
         mono
-        loading={loading}
+        loading={fleetBusy}
       />
       <PulseMetric
         label={OPS_PULSE_METRICS.escalations.label}

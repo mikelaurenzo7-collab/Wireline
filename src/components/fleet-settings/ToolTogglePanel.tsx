@@ -19,7 +19,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
   return (
     <div className="rounded-md wl-panel border border-border p-3 space-y-3">
       <div className="rounded-md border border-black/8 dark:border-white/8 bg-paper/80 dark:bg-white/3 p-3 space-y-3">
-        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70">Channels</div>
+        <div className="text-[10px] uppercase tracking-[0.3em] text-brand/70">Channels</div>
         <div className="flex flex-wrap gap-2">
           {(["voice", "email", "sms"] as const).map((ch) => {
             const channels: string[] = selectedAgent.channels || ["voice"];
@@ -49,7 +49,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
           })}
         </div>
 
-        <div className="text-[9px] uppercase tracking-[0.3em] text-brand/70 pt-2">
+        <div className="text-[10px] uppercase tracking-[0.3em] text-brand/70 pt-2">
           Autonomy Level
         </div>
         <div className="flex flex-wrap gap-2">
@@ -82,14 +82,14 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
             );
           })}
         </div>
-        <p className="text-[9px] text-ink/40 leading-relaxed">
+        <p className="text-[10px] text-ink/40 leading-relaxed">
           Inherit uses the tenant-wide setting. Full Auto executes actions immediately. Supervised
           queues for approval on high-risk actions. Draft Only always requires operator sign-off.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-black/8 dark:border-white/8">
           <div className="space-y-1.5">
-            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
               <MessageCircle className="w-2.5 h-2.5 text-brand" /> Slack channel
             </label>
             <Input

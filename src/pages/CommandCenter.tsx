@@ -396,7 +396,8 @@ export default function LiveOps() {
   const pendingActions = actions.filter((a) => a.status === "pending").length;
   const escalations = calls.filter((c) => c.status === "escalated").length;
   const fleetAgentCount = agentsHydrated ? Math.max(stats?.agents?.length ?? 0, agents.length) : 0;
-  const pulseLoading = loading || presenceLoading || !agentsHydrated;
+  const pulseLoading = loading || presenceLoading;
+  const fleetPulseLoading = !agentsHydrated;
 
   return (
     <PageTransition>
@@ -413,13 +414,14 @@ export default function LiveOps() {
             fleetAgents={fleetAgentCount}
             escalations={escalations}
             loading={pulseLoading}
+            fleetLoading={fleetPulseLoading}
           />
 
           <ClientToolbar
             className="shrink-0 px-2 sm:px-3"
             left={
               <span className="app-toolbar-stat">
-                {pulseLoading
+                {pulseLoading || fleetPulseLoading
                   ? OPS_CHANNEL_TOOLBAR.ops.loading
                   : activeTab === "floor"
                     ? OPS_CHANNEL_TOOLBAR.ops.floor(calls.length)

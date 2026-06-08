@@ -259,7 +259,7 @@ export default function AgentConfigPanel({
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span
                           className={cn(
-                            "px-1.5 py-0.5 rounded-full border text-[9px] uppercase tracking-[0.25em] leading-none",
+                            "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-none",
                             selectedAgent.channel === "email"
                               ? "bg-brand/10 border-brand/30 text-brand"
                               : "bg-brand/10 border-brand/30 text-brand",
@@ -268,7 +268,7 @@ export default function AgentConfigPanel({
                           {selectedAgent.channel}
                         </span>
                         <RoleBadge role={selectedAgent.role} size="sm" />
-                        <div className="text-[9px] uppercase tracking-[0.25em] text-ink/40 inline-flex items-center gap-1.5">
+                        <div className="text-[10px] uppercase tracking-[0.25em] text-ink/40 inline-flex items-center gap-1.5">
                           ID: <span className="font-mono text-ink/80">{selectedAgent.id}</span>
                         </div>
                       </div>
@@ -277,7 +277,7 @@ export default function AgentConfigPanel({
                       <div className="rounded-md wl-panel border border-border p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
                         <div className="flex-1 min-w-[180px] space-y-1">
-                          <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                          <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                             Agent role
                           </label>
                           <div className="relative">
@@ -344,7 +344,7 @@ export default function AgentConfigPanel({
                           <div className="md:col-span-2 space-y-2 mb-2">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                               <div className="rounded-md wl-panel border border-border p-2.5">
-                                <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
+                                <div className="wl-label tracking-[0.22em] text-brand mb-1">
                                   Calls
                                 </div>
                                 <div className="font-display italic text-xl text-ink">
@@ -352,7 +352,7 @@ export default function AgentConfigPanel({
                                 </div>
                               </div>
                               <div className="rounded-md wl-panel border border-border p-2.5">
-                                <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1 flex items-center gap-1">
+                                <div className="wl-label tracking-[0.22em] text-brand mb-1 flex items-center gap-1">
                                   <Clock className="w-2 h-2" /> Min
                                 </div>
                                 <div className="font-display italic text-xl text-ink">
@@ -360,7 +360,7 @@ export default function AgentConfigPanel({
                                 </div>
                               </div>
                               <div className="rounded-md wl-panel border border-border p-2.5">
-                                <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
+                                <div className="wl-label tracking-[0.22em] text-brand mb-1">
                                   Avg Score
                                 </div>
                                 <div className="font-display italic text-xl text-ink">
@@ -372,7 +372,7 @@ export default function AgentConfigPanel({
                                 </div>
                               </div>
                               <div className="rounded-md wl-panel border border-border p-2.5 relative">
-                                <div className="text-[8px] uppercase tracking-[0.3em] text-brand mb-1">
+                                <div className="wl-label tracking-[0.22em] text-brand mb-1">
                                   Sentiment
                                 </div>
                                 <div className="font-display italic text-xl text-ink">
@@ -396,7 +396,7 @@ export default function AgentConfigPanel({
                             {/* 7-day activity sparkline */}
                             {s.sparkline && s.sparkline.some((v: number) => v > 0) && (
                               <div className="rounded-md wl-panel border border-border px-3 py-2 flex items-center gap-3">
-                                <span className="text-[8px] uppercase tracking-[0.3em] text-ink/40 shrink-0">
+                                <span className="wl-label tracking-[0.22em] text-ink/40 shrink-0">
                                   7d
                                 </span>
                                 <div className="flex-1 min-w-0">
@@ -406,7 +406,7 @@ export default function AgentConfigPanel({
                                   {s.sparkline.map((v: number, i: number) => (
                                     <span
                                       key={`day-${i}`}
-                                      className="text-[8px] font-mono tabular-nums text-ink/40"
+                                      className="text-[10px] font-mono tabular-nums text-ink/40"
                                       title={`${v} call${v !== 1 ? "s" : ""}`}
                                     >
                                       {v}
@@ -419,7 +419,7 @@ export default function AgentConfigPanel({
                         );
                       })()}
                     <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                         <LinkIcon className="w-2.5 h-2.5 text-brand" /> Knowledge URL
                       </label>
                       <Input
@@ -433,7 +433,7 @@ export default function AgentConfigPanel({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                         <Phone className="w-2.5 h-2.5 text-brand" /> Transfer phone
                       </label>
                       <Input
@@ -518,7 +518,7 @@ export default function AgentConfigPanel({
                           />
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                               Silence timeout
                             </label>
                             <Select
@@ -552,7 +552,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                               Archetype
                             </label>
                             <div className="relative">
@@ -579,7 +579,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                               Personality vibe
                             </label>
                             <div className="grid grid-cols-3 gap-1.5">
@@ -611,14 +611,14 @@ export default function AgentConfigPanel({
                                 );
                               })}
                             </div>
-                            <p className="text-[9px] text-ink/40 leading-relaxed">
+                            <p className="text-[10px] text-ink/40 leading-relaxed">
                               Pick once. The agent keeps this one personality, voice, and cadence
                               for the whole call — it never switches tone mid-conversation.
                             </p>
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                               Ambient atmosphere
                             </label>
                             <div className="relative">
@@ -642,7 +642,7 @@ export default function AgentConfigPanel({
 
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                                 Speaking rate
                               </label>
                               <span className="text-[10px] font-medium tabular-nums text-ink">
@@ -662,7 +662,7 @@ export default function AgentConfigPanel({
                               className="w-full accent-brand cursor-pointer"
                               aria-label="ElevenLabs speaking rate"
                             />
-                            <p className="text-[9px] text-ink/40 leading-relaxed">
+                            <p className="text-[10px] text-ink/40 leading-relaxed">
                               0.7 = slower (elderly callers). 1.2 = faster (impatient callers).
                               ElevenLabs voices only.
                             </p>
@@ -679,7 +679,7 @@ export default function AgentConfigPanel({
 
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
                               <Zap className="w-2.5 h-2.5 text-brand" /> Initial greeting
                             </label>
                           </div>
@@ -773,7 +773,7 @@ export default function AgentConfigPanel({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                                 Relay tone
                               </label>
                               <div className="relative">
@@ -797,7 +797,7 @@ export default function AgentConfigPanel({
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                                 Signature
                               </label>
                               <Input
@@ -879,7 +879,7 @@ export default function AgentConfigPanel({
                             className="w-full h-48 px-4 py-3 rounded-md bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
                             placeholder="Leave blank to use the auto-composed prompt. Type here to define the agent's full identity, tone, and behavior — this replaces the generated base prompt."
                           />
-                          <div className="flex items-center justify-between text-[9px] text-ink/40">
+                          <div className="flex items-center justify-between text-[10px] text-ink/40">
                             <span>
                               {usingAutoComposed
                                 ? "Using auto-composed prompt"
@@ -1005,7 +1005,7 @@ export default function AgentConfigPanel({
                           Hard constraints
                         </p>
                       </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive text-[9px] uppercase tracking-[0.25em] leading-none">
+                      <span className="px-1.5 py-0.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive text-[10px] uppercase tracking-[0.25em] leading-none">
                         Inviolable
                       </span>
                     </header>
@@ -1108,7 +1108,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                         Add directive
                       </label>
                       <div className="flex gap-1.5">
@@ -1149,7 +1149,7 @@ export default function AgentConfigPanel({
                           Knowledge base
                         </p>
                       </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.25em] leading-none">
+                      <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] leading-none">
                         Factual
                       </span>
                     </header>
@@ -1252,7 +1252,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
-                      <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                         Add fact
                       </label>
                       <div className="flex gap-1.5">

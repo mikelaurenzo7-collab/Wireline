@@ -12,6 +12,8 @@ import { assertNoHorizontalOverflow } from "../helpers/ui";
  */
 
 const DASHBOARD_ROUTES: { path: string; heading: RegExp; name: string }[] = [
+  { path: "/ops", heading: /live ops/i, name: "Live Ops" },
+  { path: "/triage", heading: /triage/i, name: "Triage" },
   { path: "/chat", heading: /chat/i, name: "Agent Chat" },
   { path: "/phone", heading: /phone|calls/i, name: "Phone Channel" },
   { path: "/email", heading: /email|inbox/i, name: "Email Channel" },

@@ -247,8 +247,8 @@ export function RoleBadge({ role, size = "sm" }: { role?: string; size?: "xs" | 
         meta.tw.text,
         meta.tw.border,
         size === "xs"
-          ? "text-[8px] uppercase tracking-[0.22em] px-1.5 py-0.5"
-          : "text-[9px] uppercase tracking-[0.22em] px-2 py-0.5",
+          ? "wl-label tracking-[0.18em] px-1.5 py-0.5"
+          : "wl-label tracking-[0.18em] px-2 py-0.5",
       )}
     >
       <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", meta.tw.dot)} />

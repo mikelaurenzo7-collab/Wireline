@@ -388,7 +388,7 @@ export default function AgentTraining({
                 <tab.icon className="w-3 h-3" />
                 <span>{tab.label}</span>
                 <HelpTooltip content={tab.help} placement="top">
-                  <span className="w-4 h-4 rounded-full border border-current/30 text-[8px] flex items-center justify-center opacity-70 hover:opacity-100">
+                  <span className="w-4 h-4 rounded-full border border-current/30 text-[10px] flex items-center justify-center opacity-70 hover:opacity-100">
                     ?
                   </span>
                 </HelpTooltip>
@@ -589,7 +589,7 @@ export default function AgentTraining({
                         Lines your agent never crosses
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[9px] uppercase tracking-[0.12em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[10px] uppercase tracking-[0.12em] leading-none">
                       Always-on
                     </span>
                   </header>
@@ -650,7 +650,7 @@ export default function AgentTraining({
                                   <div className="mb-1.5">
                                     <span
                                       className={cn(
-                                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] uppercase tracking-[0.2em] font-semibold border",
+                                        "wl-label inline-flex items-center gap-1 px-2 py-0.5 rounded-full tracking-[0.16em] border",
                                         d.priority <= 2
                                           ? "bg-rose-500/10 border-rose-500/30 text-rose-600"
                                           : d.priority <= 4
@@ -705,7 +705,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                       Add directive
                     </label>
                     <div className="flex gap-1.5">
@@ -745,7 +745,7 @@ export default function AgentTraining({
                         Knowledge base
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand text-[9px] uppercase tracking-[0.12em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.12em] leading-none">
                       Factual
                     </span>
                   </header>
@@ -843,7 +843,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                       Add fact
                     </label>
                     <div className="flex gap-1.5">
@@ -899,13 +899,13 @@ export default function AgentTraining({
                         key={lesson.id}
                         className="rounded-md bg-brand/8 border border-brand/20 p-3"
                       >
-                        <div className="text-[9px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
+                        <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
                           <Sparkles className="w-3 h-3" /> Pattern learned from calls
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
                           <Clock className="w-3 h-3 text-ink/40" />
-                          <span className="text-[9px] uppercase tracking-[0.3em] text-ink/40">
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
                             {formatDate(lesson.created_at)}
                           </span>
                         </div>
@@ -1024,7 +1024,7 @@ export default function AgentTraining({
                           : "Start voice test"}
                     </ShadButton>
                     {simConnected && (
-                      <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase tracking-[0.3em] text-brand">
+                      <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-brand">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                         Live — speak now
                       </div>

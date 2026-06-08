@@ -2333,10 +2333,11 @@ export default function DirectorWorkspace({
             disableAnimations
             onClick={scrollToLatest}
             className={cn(WL_DIRECTOR_CLASSES.scrollToBottom, "touch-press")}
-            aria-label="Jump to latest messages"
+            aria-label="Jump to composer and latest messages"
           >
             <ChevronDown className="w-3.5 h-3.5" aria-hidden />
-            Latest
+            <span className="hidden sm:inline">Latest</span>
+            <span className="sm:hidden">Composer</span>
           </ShadButton>
         )}
       </div>

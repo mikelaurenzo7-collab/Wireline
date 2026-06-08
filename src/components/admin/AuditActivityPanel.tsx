@@ -98,7 +98,7 @@ export function AuditActivityPanel() {
               disableAnimations
               onClick={() => setDays(d)}
               className={cn(
-                "h-auto px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.22em]",
+                "h-auto px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.22em]",
                 days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
               )}
             >
@@ -142,7 +142,7 @@ export function AuditActivityPanel() {
               <div key={s.label} className="p-4 rounded-md wl-panel border border-white/10">
                 <div className="flex items-center gap-2 mb-2 opacity-40">
                   <s.icon className="w-3 h-3" />
-                  <span className="text-[8px] uppercase tracking-widest">{s.label}</span>
+                  <span className="wl-label tracking-[0.2em]">{s.label}</span>
                 </div>
                 <p className="text-sm font-display">{s.val}</p>
               </div>
@@ -265,23 +265,23 @@ export function AuditActivityPanel() {
                       <p className="text-[11px] font-medium text-ink truncate uppercase tracking-wider">
                         {formatActionName(entry.action)}
                       </p>
-                      <p className="text-[9px] text-muted truncate">
+                      <p className="text-[10px] text-muted truncate">
                         {entry.metadata?.agent_name || "System"} · {entry.model || entry.model_id}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {(entry.latencyMs || entry.latency_ms) && (
-                        <span className="text-[8px] font-mono text-muted/70 tabular-nums flex items-center gap-1">
+                        <span className="text-[10px] font-mono text-muted/70 tabular-nums flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {entry.latencyMs || entry.latency_ms}ms
                         </span>
                       )}
-                      <span className="text-[9px] font-mono text-ink/70 tabular-nums w-16 text-right">
+                      <span className="text-[10px] font-mono text-ink/70 tabular-nums w-16 text-right">
                         {(entry.costUsd ?? entry.cost_usd) != null
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
                           : "—"}
                       </span>
-                      <span className="text-[8px] text-muted/70 tabular-nums w-24 text-right">
+                      <span className="text-[10px] text-muted/70 tabular-nums w-24 text-right">
                         {formatDateTime(
                           entry.createdAt ?? entry.created_at,
                           { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },

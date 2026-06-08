@@ -122,11 +122,11 @@ export default function AgentListPanel({
                     </div>
                     <div className="flex items-center flex-wrap gap-1.5 mt-1">
                       <RoleBadge role={agent.role} size="xs" />
-                      <span className="text-[8px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
+                      <span className="wl-label tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
                         {agent.channel}
                       </span>
                       {agentStats[agent.id] && (
-                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
                           {agentStats[agent.id].callCount} calls
                         </span>
                       )}

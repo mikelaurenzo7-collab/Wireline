@@ -84,7 +84,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     return (
       <div className="p-12 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-brand" />
-        <p className="text-[9px] uppercase tracking-[0.5em] text-muted/70">Loading observations…</p>
+        <p className="wl-label-muted tracking-[0.35em]">Loading observations…</p>
       </div>
     );
   }
@@ -100,13 +100,11 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
             <h3 className="text-[11px] font-medium text-ink uppercase tracking-[0.28em]">
               Training Buffer
             </h3>
-            <p className="text-[9px] text-muted/70 uppercase tracking-[0.3em]">
-              Promote observations to directives
-            </p>
+            <p className="wl-label-muted">Promote observations to directives</p>
           </div>
         </div>
         {lessons.length > 0 && (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 border border-brand/25 text-brand text-[9px] uppercase tracking-[0.28em]">
+          <span className="wl-label flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 border border-brand/25 text-brand">
             <Zap className="w-2.5 h-2.5" />
             {lessons.length} new
           </span>
@@ -124,9 +122,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
               <div className="w-12 h-12 rounded-md wl-panel border border-brand/30 flex items-center justify-center text-brand">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <p className="text-[9px] uppercase tracking-[0.5em] text-brand/70">
-                Fully synchronized
-              </p>
+              <p className="wl-label text-brand/70 tracking-[0.35em]">Fully synchronized</p>
             </motion.div>
           ) : (
             lessons.map((lesson) => (
@@ -145,19 +141,20 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
 
                   <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[8px] uppercase tracking-[0.3em] text-muted/70">
+                      <span className="wl-label-muted tracking-[0.22em]">
                         Observation · {formatDate(lesson.created_at)}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <ShadButton
                           type="button"
-                          variant="outline"
+                          variant="editorial"
                           size="sm"
                           disableAnimations
                           onClick={() => promoteToDirective(lesson)}
                           disabled={isPromoting === lesson.id}
-                          title="Promote to directive"
-                          className="h-7 px-2.5 rounded-md border-brand/35 bg-brand/8 text-brand-deep text-[9px] uppercase tracking-[0.2em] hover:bg-brand/15 hover:text-brand-deep"
+                          title="Promote this observation into a hard directive on the agent"
+                          aria-label={`Promote observation to directive: ${lesson.lesson.slice(0, 80)}`}
+                          className="h-8 px-3 rounded-md text-[10px] uppercase tracking-[0.18em] touch-press"
                         >
                           {isPromoting === lesson.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -189,7 +186,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                       {lesson.lesson}
                     </p>
 
-                    <p className="text-[8px] uppercase tracking-[0.3em] text-muted/70">
+                    <p className="wl-label-muted tracking-[0.22em]">
                       Captured{" "}
                       {formatDateTime(lesson.created_at, {
                         month: "short",
