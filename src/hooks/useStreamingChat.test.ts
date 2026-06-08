@@ -2,7 +2,11 @@
  * useStreamingChat — unit tests for SSE streaming hook logic.
  */
 import { describe, it, expect } from "vitest";
-import { parseSseEvents, type SseParserState } from "./useStreamingChat";
+import {
+  isDirectorBootstrapMeta,
+  parseSseEvents,
+  type SseParserState,
+} from "./useStreamingChat";
 
 describe("useStreamingChat module", () => {
   it("exports the hook and expected types", async () => {
@@ -74,6 +78,13 @@ describe("useStreamingChat module", () => {
     );
 
     expect(events).toEqual([{ event: "done", data: { reply: "ok" } }]);
+  });
+
+  it("isDirectorBootstrapMeta distinguishes early connect meta from routed meta", () => {
+    expect(isDirectorBootstrapMeta({ status: "connecting" })).toBe(true);
+    expect(isDirectorBootstrapMeta({ status: "connecting", model: "sonnet", deep: false })).toBe(
+      false,
+    );
   });
 
   it("parseSseEvents handles CRLF-framed SSE blocks", () => {

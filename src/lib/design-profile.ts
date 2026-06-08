@@ -8,7 +8,10 @@ import {
   loadDirectorArtifactData,
   storeDirectorArtifact,
 } from "./director-artifacts";
+import { isPostgresMissingRelation } from "./director-store";
+import { log } from "./server-context";
 import { drizzle } from "./server-context";
+import { getErrorMessage } from "./server-utils";
 import * as schema from "../db/schema";
 
 export type DesignProfileAssetRole = "logo" | "font" | "css" | "reference";
@@ -104,28 +107,45 @@ export function isDesignProfileConfigured(input: {
   );
 }
 
+export const EMPTY_DESIGN_PROFILE: DesignProfileRecord = {
+  companyBlurb: "",
+  styleNotes: "",
+  assets: [],
+  updatedAt: null,
+  configured: false,
+};
+
 export async function loadDesignProfile(userId: string): Promise<DesignProfileRecord> {
-  const [row] = await drizzle
-    .select()
-    .from(schema.designProfiles)
-    .where(eq(schema.designProfiles.userId, userId))
-    .limit(1);
+  try {
+    const [row] = await drizzle
+      .select()
+      .from(schema.designProfiles)
+      .where(eq(schema.designProfiles.userId, userId))
+      .limit(1);
 
-  const manifest = parseManifest(row?.assetManifest);
-  const companyBlurb = row?.companyBlurb?.trim() ?? "";
-  const styleNotes = row?.styleNotes?.trim() ?? "";
+    const manifest = parseManifest(row?.assetManifest);
+    const companyBlurb = row?.companyBlurb?.trim() ?? "";
+    const styleNotes = row?.styleNotes?.trim() ?? "";
 
-  return {
-    companyBlurb,
-    styleNotes,
-    assets: manifestToAssets(userId, manifest),
-    updatedAt: row?.updatedAt?.toISOString() ?? null,
-    configured: isDesignProfileConfigured({
+    return {
       companyBlurb,
       styleNotes,
-      assets: manifest,
-    }),
-  };
+      assets: manifestToAssets(userId, manifest),
+      updatedAt: row?.updatedAt?.toISOString() ?? null,
+      configured: isDesignProfileConfigured({
+        companyBlurb,
+        styleNotes,
+        assets: manifest,
+      }),
+    };
+  } catch (e) {
+    if (isPostgresMissingRelation(e)) {
+      log.warn("design profile table missing, returning empty profile", { userId });
+      return EMPTY_DESIGN_PROFILE;
+    }
+    log.warn("design profile load failed", { userId, error: getErrorMessage(e) });
+    throw e;
+  }
 }
 
 async function upsertProfileRow(

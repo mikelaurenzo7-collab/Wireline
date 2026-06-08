@@ -370,11 +370,6 @@ export async function buildDirectorStreamContext(
   });
 
   const effectiveDeepThink = skipAdaptiveThinking ? false : llm.deepThink;
-  const deep =
-    !input.shallowOnly &&
-    !focusId &&
-    !skipAdaptiveThinking &&
-    (llm.deepThink || llm.modelKind === "opus");
 
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);

@@ -2359,14 +2359,10 @@ export default function DirectorWorkspace({
           )}
 
           {/* Live streaming — mission control panel */}
-          {isSending && !designRendering && (
+          {isSending && !designRendering && streamState.phase !== "error" && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorLiveSession
-                phase={
-                  streamState.phase === "idle" || streamState.phase === "error"
-                    ? "connecting"
-                    : streamState.phase
-                }
+                phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
                 isDeep={streamState.isDeep}
                 model={streamState.model}
                 modelDisplayLabel={streamState.modelDisplayLabel}

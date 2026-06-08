@@ -12,9 +12,9 @@
  *
  * Model strategy (hybrid, cost-aware):
  *   - Normal turns run on Sonnet — high-frequency, latency-sensitive, cheap.
- *   - When the operator asks for genuinely heavy strategic work ("audit my
- *     whole fleet", "analyze everything and build a plan"), we escalate to
- *     Opus with adaptive thinking. Only when the operator toggles Deep analysis.
+ *   - Heavy deliverables (business plan, competitor research) may auto-escalate
+ *     to Opus without adaptive thinking.
+ *   - Adaptive thinking (Deep analysis) runs only when the operator toggles Deep.
  */
 import { runStructuredWithThinking } from "./claude-structured";
 import { CLAUDE_MODELS } from "./claude-models";

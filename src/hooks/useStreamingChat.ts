@@ -106,6 +106,11 @@ const dispatchSseEvent = (
   }
 };
 
+/** True for the early SSE meta frame before model routing completes. */
+export function isDirectorBootstrapMeta(data: Record<string, unknown>): boolean {
+  return data.status === "connecting" && typeof data.model !== "string";
+}
+
 /** Parse SSE line batches incrementally. Exported for tests. */
 export function parseSseEvents(
   lines: string[],
@@ -283,8 +288,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
             case "meta": {
               streamEstablishedRef.current = true;
               window.clearTimeout(handshakeTimeoutId);
-              const bootstrapOnly =
-                data.status === "connecting" && typeof data.model !== "string";
+              const bootstrapOnly = isDirectorBootstrapMeta(data);
               if (bootstrapOnly) {
                 armPrepareTimeout();
               } else {

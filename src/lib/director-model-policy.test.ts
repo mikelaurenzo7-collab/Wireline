@@ -112,4 +112,11 @@ describe("directorStreamMetaModel", () => {
       deep: true,
     });
   });
+
+  it("does not mark deep for opus without adaptive thinking", () => {
+    expect(directorStreamMetaModel({ modelKind: "opus", deepThink: false })).toEqual({
+      model: "opus",
+      deep: false,
+    });
+  });
 });
