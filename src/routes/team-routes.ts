@@ -34,7 +34,7 @@ router.get(
       const members = await drizzle
         .select()
         .from(schema.teamMembers)
-        .where(eq(schema.teamMembers.tenantId, req.user.id))
+        .where(eq(schema.teamMembers.tenantId, req.tenantId))
         .orderBy(desc(schema.teamMembers.createdAt));
 
       res.json({ members: members || [] });
@@ -59,7 +59,7 @@ router.post(
       const [data] = (await drizzle
         .insert(schema.teamMembers)
         .values({
-          tenantId: req.user.id,
+          tenantId: req.tenantId,
           userId: null,
           email,
           role: role || "member",
@@ -70,7 +70,7 @@ router.post(
       // Attempt to send invitation email autonomously via user's connected integrations
       try {
         const { IntegrationService } = await import("../lib/integrations");
-        const service = new IntegrationService(req.user.id);
+        const service = new IntegrationService(req.tenantId);
         const appUrl = process.env.APP_URL || "https://wireline.ai";
         const invitedBy = req.user.email || "A colleague";
         const safeInvitedBy = escapeHtml(invitedBy);
@@ -121,7 +121,7 @@ router.delete(
         .where(
           and(
             eq(schema.teamMembers.id, req.params.id),
-            eq(schema.teamMembers.tenantId, req.user.id),
+            eq(schema.teamMembers.tenantId, req.tenantId),
           ),
         );
 

@@ -13,6 +13,8 @@ import { computeOutcomeBreakdown, computeCallStats } from "../lib/campaign-analy
 import { validateBody } from "../lib/api-validation";
 import { claudeRateLimiter, campaignWriteRateLimit } from "../middleware/api-rate-limits";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
+import { outboundVoiceGuard } from "../lib/voice-spend-control";
 
 const router = Router();
 
@@ -299,6 +301,7 @@ router.get(
 router.post(
   "/api/campaigns/:id/launch",
   authenticateUser,
+  outboundVoiceGuard("campaign"),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const campaignId = req.params.id;
@@ -323,7 +326,7 @@ router.post(
         .limit(1);
 
       if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found.");
-      if (campaign.status === "running")
+      if (campaign.status === CAMPAIGN_STATUS.RUNNING)
         throw AppError.fromHttpStatus(409, "Campaign is already running.");
 
       const queued = await drizzle
@@ -340,7 +343,7 @@ router.post(
           and(
             eq(schema.outboundLeads.campaignId, campaignId),
             eq(schema.outboundLeads.userId, req.user.id),
-            eq(schema.outboundLeads.status, "Queued"),
+            eq(schema.outboundLeads.status, LEAD_STATUS.QUEUED),
           ),
         );
 
@@ -350,7 +353,7 @@ router.post(
 
       await drizzle
         .update(schema.outboundCampaigns)
-        .set({ status: "running", updatedAt: new Date() })
+        .set({ status: CAMPAIGN_STATUS.RUNNING, updatedAt: new Date() })
         .where(
           and(
             eq(schema.outboundCampaigns.id, campaignId),
@@ -368,7 +371,7 @@ router.post(
           mq.enqueue(drizzle, {
             userId: req.user.id,
             type: "campaign_dial",
-            payload: { userId: req.user.id },
+            payload: { userId: req.user.id, campaignId },
           }),
         )
         .catch((err: unknown) =>
@@ -379,6 +382,7 @@ router.post(
         );
     } catch (error: any) {
       log.error("Campaign launch failed", { error: getErrorMessage(error) });
+      if (error instanceof AppError) throw error;
       throw AppError.fromHttpStatus(500, "Failed to launch campaign.");
     }
   },

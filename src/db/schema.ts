@@ -1684,14 +1684,13 @@ export const designIntegrations = pgTable(
 export type DesignIntegration = typeof designIntegrations.$inferSelect;
 
 export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
-  code: text("code").primaryKey(),
-  token: text("token").notNull(),
+  codeHash: text("code_hash").primaryKey(),
   userId: uuid("user_id").notNull(),
   email: text("email").notNull(),
   fullName: text("full_name"),
   isOwner: boolean("is_owner").notNull().default(false),
-  /** Binds exchange to the browser that started OAuth (httpOnly cookie). */
-  bridgeState: text("bridge_state"),
+  /** HMAC of the browser bridge-state cookie; plaintext is never stored. */
+  bridgeStateHash: text("bridge_state_hash").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

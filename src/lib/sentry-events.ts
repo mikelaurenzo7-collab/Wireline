@@ -18,6 +18,7 @@ export const SentryEvents = {
   emailSent: logEvent("email_sent"),
   emailFailed: logEvent("email_failed"),
   outboundDialStarted: logEvent("outbound_dial_started"),
+  outboundLeadsImported: logEvent("outbound_leads_imported"),
   leadConnected: logEvent("lead_connected"),
   apiError: logEvent("api_error"),
   aiApiFailure: logEvent("ai_api_failure"),

@@ -27,7 +27,7 @@ import { AppError } from "../lib/api-error";
  * Outlook can keep using email/password.
  */
 
-import { randomBytes } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { Router, Request, Response } from "express";
 import { google } from "googleapis";
 import { drizzle, log } from "../lib/server-context";
@@ -48,6 +48,20 @@ import {
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
 
 const router = Router();
+
+function oauthBridgeSecret(): string {
+  const secret =
+    process.env.OAUTH_BRIDGE_SECRET ||
+    process.env.OAUTH_STATE_SECRET ||
+    process.env.INTERNAL_JWT_SECRET ||
+    process.env.JWT_SECRET;
+  if (!secret) throw AppError.fromHttpStatus(503, "OAuth bridge secret is not configured.");
+  return secret;
+}
+
+export function hashOAuthBridgeValue(value: string): string {
+  return createHmac("sha256", oauthBridgeSecret()).update(value, "utf8").digest("hex");
+}
 
 // Minimal identity scopes — NOT mailbox-readable.
 const GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"];
@@ -143,20 +157,32 @@ async function ensurePendingCodeSchema(): Promise<void> {
     pendingCodeSchemaRepair = (async () => {
       await drizzle.execute(sql`
         CREATE TABLE IF NOT EXISTS wireline_oauth_pending_codes (
-          code text PRIMARY KEY,
-          token text NOT NULL,
+          code_hash text PRIMARY KEY,
           user_id uuid NOT NULL,
           email text NOT NULL,
           full_name text,
           is_owner boolean NOT NULL DEFAULT false,
-          bridge_state text,
+          bridge_state_hash text NOT NULL,
           expires_at timestamptz NOT NULL,
           created_at timestamptz NOT NULL DEFAULT now()
         )
       `);
       await drizzle.execute(sql`
         ALTER TABLE wireline_oauth_pending_codes
-          ADD COLUMN IF NOT EXISTS bridge_state text
+          ADD COLUMN IF NOT EXISTS code_hash text,
+          ADD COLUMN IF NOT EXISTS bridge_state_hash text
+      `);
+      await drizzle.execute(sql`
+        DELETE FROM wireline_oauth_pending_codes
+        WHERE code_hash IS NULL OR bridge_state_hash IS NULL
+      `);
+      await drizzle.execute(sql`
+        ALTER TABLE wireline_oauth_pending_codes
+          DROP COLUMN IF EXISTS code,
+          DROP COLUMN IF EXISTS token,
+          DROP COLUMN IF EXISTS bridge_state,
+          ALTER COLUMN code_hash SET NOT NULL,
+          ALTER COLUMN bridge_state_hash SET NOT NULL
       `);
       await drizzle.execute(sql`
         CREATE INDEX IF NOT EXISTS idx_oauth_pending_codes_expires_at
@@ -199,14 +225,12 @@ async function insertPendingCode(
   },
 ): Promise<void> {
   await drizzle.insert(schema.oauthPendingCodes).values({
-    code,
-    // Legacy NOT NULL column retained for old deployments; never store live JWTs here.
-    token: "pending",
+    codeHash: hashOAuthBridgeValue(code),
     userId: entry.user.id,
     email: entry.user.email,
     fullName: entry.user.fullName,
     isOwner: entry.isOwner,
-    bridgeState: entry.bridgeState,
+    bridgeStateHash: hashOAuthBridgeValue(entry.bridgeState),
     expiresAt: new Date(Date.now() + PENDING_CODE_TTL_MS),
   });
 }
@@ -254,23 +278,22 @@ async function storePendingCode(
 async function consumePendingCode(code: string): Promise<{
   user: { id: string; email: string; fullName: string | null };
   isOwner: boolean;
-  bridgeState: string | null;
+  bridgeStateHash: string | null;
 } | null> {
   // Single-shot read-and-delete. We rely on a DELETE … RETURNING so
   // a concurrent exchange request can only succeed for one caller.
   const rows = (await drizzle.execute(sql`
     DELETE FROM wireline_oauth_pending_codes
-    WHERE code = ${code}
-    RETURNING code, token, user_id, email, full_name, is_owner, bridge_state, expires_at
+    WHERE code_hash = ${hashOAuthBridgeValue(code)}
+    RETURNING code_hash, user_id, email, full_name, is_owner, bridge_state_hash, expires_at
   `)) as unknown as {
     rows?: Array<{
-      code: string;
-      token: string;
+      code_hash: string;
       user_id: string;
       email: string;
       full_name: string | null;
       is_owner: boolean;
-      bridge_state: string | null;
+      bridge_state_hash: string | null;
       expires_at: Date | string;
     }>;
   };
@@ -281,7 +304,7 @@ async function consumePendingCode(code: string): Promise<{
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
   return {
     isOwner: row.is_owner,
-    bridgeState: row.bridge_state,
+    bridgeStateHash: row.bridge_state_hash,
     user: { id: row.user_id, email: row.email, fullName: row.full_name },
   };
 }
@@ -602,7 +625,11 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
     throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
   const cookieState = readOAuthBridgeStateCookie(req);
-  if (!cookieState || !entry.bridgeState || cookieState !== entry.bridgeState) {
+  if (
+    !cookieState ||
+    !entry.bridgeStateHash ||
+    hashOAuthBridgeValue(cookieState) !== entry.bridgeStateHash
+  ) {
     throw AppError.fromHttpStatus(400, "Invalid or expired code");
   }
   clearOAuthBridgeStateCookie(res);

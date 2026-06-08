@@ -66,9 +66,13 @@ export interface RbacDeps {
  */
 export async function getCallerRole(
   drizzle: VercelPgDatabase<typeof schema>,
-  userId: string,
+  tenantIdOrUserId: string,
+  maybeUserId?: string,
 ): Promise<AccessRole> {
-  const cached = roleCache.get(userId);
+  const tenantId = maybeUserId ? tenantIdOrUserId : tenantIdOrUserId;
+  const userId = maybeUserId || tenantIdOrUserId;
+  const cacheKey = `${tenantId}:${userId}`;
+  const cached = roleCache.get(cacheKey);
   if (cached && Date.now() - cached.cached_at < ROLE_CACHE_TTL_MS) {
     return cached.role;
   }
@@ -76,22 +80,38 @@ export async function getCallerRole(
   const [data] = await drizzle
     .select({ role: schema.teamMembers.role })
     .from(schema.teamMembers)
-    .where(and(eq(schema.teamMembers.userId, userId), isNull(schema.teamMembers.revokedAt)))
+    .where(
+      and(
+        eq(schema.teamMembers.tenantId, tenantId),
+        eq(schema.teamMembers.userId, userId),
+        isNull(schema.teamMembers.revokedAt),
+      ),
+    )
     .orderBy(desc(schema.teamMembers.createdAt))
     .limit(1);
+
+  if (!data && tenantId !== userId) {
+    throw new Error("No active membership for tenant");
+  }
 
   let role: AccessRole = "owner";
   const r = data?.role;
   if (r && r in ROLE_HIERARCHY) {
     role = r as AccessRole;
   }
-  roleCache.set(userId, { role, cached_at: Date.now() });
+  roleCache.set(cacheKey, { role, cached_at: Date.now() });
   return role;
 }
 
 /** Force-bust the role cache (e.g. after a role change). */
-export function invalidateRoleCache(userId: string): void {
-  roleCache.delete(userId);
+export function invalidateRoleCache(userId: string, tenantId?: string): void {
+  if (tenantId) {
+    roleCache.delete(`${tenantId}:${userId}`);
+    return;
+  }
+  for (const key of [...roleCache.keys()]) {
+    if (key.endsWith(`:${userId}`)) roleCache.delete(key);
+  }
 }
 
 function deny(res: Response, status: 401 | 403, message: string, code: string): void {
@@ -118,7 +138,8 @@ export function createRbacMiddleware(deps: RbacDeps) {
         return;
       }
       try {
-        const role = await getCallerRole(deps.drizzle, userId);
+        const tenantId = ((req as any).tenantId as string | undefined) || userId;
+        const role = await getCallerRole(deps.drizzle, tenantId, userId);
         (req as any).role = role;
         if (!hasPermission(role, permission)) {
           // Audit the refused privilege use — SOC 2 CC7.2 evidence.
@@ -159,7 +180,8 @@ export function createRbacMiddleware(deps: RbacDeps) {
         return;
       }
       try {
-        const role = await getCallerRole(deps.drizzle, userId);
+        const tenantId = ((req as any).tenantId as string | undefined) || userId;
+        const role = await getCallerRole(deps.drizzle, tenantId, userId);
         (req as any).role = role;
         if (ROLE_HIERARCHY[role] < threshold) {
           deny(res, 403, `Forbidden: requires role "${minRole}" or higher`, "FORBIDDEN");

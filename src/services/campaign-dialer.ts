@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, sql, lt } from "drizzle-orm";
+import { eq, and, sql, lt, inArray } from "drizzle-orm";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { placeOutboundCall } from "../lib/vapi-client";
+import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
+import { CAMPAIGN_STATUS, LEAD_PROCESSABLE_STATUSES, LEAD_STATUS } from "../lib/outbound-status";
 
 /**
  * Returns true when `now` (HH:MM, 24-hour) falls inside the [start, end] call
@@ -25,7 +27,7 @@ export function isWithinCallWindow(start: string, end: string, now: string): boo
 
 export class CampaignDialerService {
   /**
-   * Processes active campaigns and dials eligible leads.
+   * Processes running campaigns and dials eligible leads.
    * @param userId Optional filter to only process campaigns for a specific user.
    */
   async processAllCampaigns(userId?: string) {
@@ -36,13 +38,13 @@ export class CampaignDialerService {
         .where(
           userId
             ? and(
-                eq(schema.outboundCampaigns.status, "active"),
+                eq(schema.outboundCampaigns.status, CAMPAIGN_STATUS.RUNNING),
                 eq(schema.outboundCampaigns.userId, userId),
               )
-            : eq(schema.outboundCampaigns.status, "active"),
+            : eq(schema.outboundCampaigns.status, CAMPAIGN_STATUS.RUNNING),
         );
 
-      log.info(`Processing ${activeCampaigns.length} active campaigns`);
+      log.info(`Processing ${activeCampaigns.length} running campaigns`);
 
       for (const campaign of activeCampaigns) {
         if (
@@ -71,7 +73,7 @@ export class CampaignDialerService {
       .where(
         and(
           eq(schema.outboundLeads.campaignId, campaign.id),
-          sql`${schema.outboundLeads.status} IN ('Pending', 'Retrying')`,
+          inArray(schema.outboundLeads.status, [...LEAD_PROCESSABLE_STATUSES]),
           lt(schema.outboundLeads.attempts, campaign.maxAttempts || 3),
         ),
       )
@@ -79,6 +81,24 @@ export class CampaignDialerService {
 
     for (const lead of leads) {
       await this.dialLead(lead, campaign);
+    }
+
+    const [remaining] = await drizzle
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.outboundLeads)
+      .where(
+        and(
+          eq(schema.outboundLeads.campaignId, campaign.id),
+          inArray(schema.outboundLeads.status, [...LEAD_PROCESSABLE_STATUSES]),
+          lt(schema.outboundLeads.attempts, campaign.maxAttempts || 3),
+        ),
+      );
+
+    if (Number(remaining?.count || 0) === 0) {
+      await drizzle
+        .update(schema.outboundCampaigns)
+        .set({ status: CAMPAIGN_STATUS.COMPLETED, updatedAt: new Date() })
+        .where(eq(schema.outboundCampaigns.id, campaign.id));
     }
   }
 
@@ -91,7 +111,7 @@ export class CampaignDialerService {
       if (lead.customerNumber && (await isDncBlocked(lead.userId!, lead.customerNumber))) {
         await drizzle
           .update(schema.outboundLeads)
-          .set({ status: "Blocked-DNC" })
+          .set({ status: LEAD_STATUS.BLOCKED_DNC })
           .where(eq(schema.outboundLeads.id, lead.id));
 
         await drizzle.insert(schema.consentLog).values({
@@ -117,7 +137,7 @@ export class CampaignDialerService {
         await drizzle
           .update(schema.outboundLeads)
           .set({
-            status: "Blocked-TCPA",
+            status: LEAD_STATUS.BLOCKED_TCPA,
             metadata: { ...metadata, tcpa: tcpaDecision },
           })
           .where(eq(schema.outboundLeads.id, lead.id));
@@ -132,7 +152,10 @@ export class CampaignDialerService {
         return;
       }
 
-      // 3. Place Call
+      // 3. Centralized launch/spend/rate/quota guard.
+      await assertOutboundVoiceAllowed({ userId: lead.userId!, source: "campaign", units: 0 });
+
+      // 4. Place Call
       const result = await placeOutboundCall({
         userId: lead.userId!,
         agentId: campaign.agentId!,
@@ -146,7 +169,7 @@ export class CampaignDialerService {
           drizzle
             .update(schema.outboundLeads)
             .set({
-              status: "Dialing",
+              status: LEAD_STATUS.DIALING,
               attempts: (lead.attempts || 0) + 1,
               lastCalledAt: new Date(),
               callId: result.callId,
@@ -165,7 +188,7 @@ export class CampaignDialerService {
         await drizzle
           .update(schema.outboundLeads)
           .set({
-            status: "Error",
+            status: LEAD_STATUS.ERROR,
             attempts: (lead.attempts || 0) + 1,
             lastCalledAt: new Date(),
             metadata: { ...((lead.metadata as object) || {}), lastError: result.error },

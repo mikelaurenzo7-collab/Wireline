@@ -8,6 +8,33 @@ import * as schema from "../db/schema";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 export { DEMO_SOURCE_COOKIE, parseDemoSourceFromQuery } from "./demo-funnel-shared";
 
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function validateDemoRecapUrl(rawUrl: string): string {
+  const allowed = new Set(
+    [
+      process.env.APP_URL,
+      process.env.PUBLIC_APP_URL,
+      process.env.VITE_APP_URL,
+      "https://trywireline.com",
+    ]
+      .filter(Boolean)
+      .map((url) => new URL(url as string).origin),
+  );
+  const parsed = new URL(rawUrl);
+  if (!["https:", "http:"].includes(parsed.protocol) || !allowed.has(parsed.origin)) {
+    throw new Error("Invalid demo recap signup URL");
+  }
+  return parsed.toString();
+}
+
 export function hashCallerNumber(number: string | null | undefined): string | null {
   if (!number) return null;
   const digits = number.replace(/\D/g, "").slice(-10);
@@ -131,6 +158,8 @@ export async function sendDemoRecapEmail(args: {
 }): Promise<boolean> {
   try {
     const { sendEmail } = await import("./email-service");
+    const safeSummary = escapeHtml(args.summary);
+    const safeSignupUrl = escapeHtml(validateDemoRecapUrl(args.signupUrl));
     const result = await sendEmail({
       to: args.to,
       subject: `Your Wireline demo with ${args.agentName}`,
@@ -142,8 +171,8 @@ export async function sendDemoRecapEmail(args: {
         `Start your free trial: ${args.signupUrl}`,
       ].join("\n"),
       html: `<p>Thanks for calling our live demo line.</p>
-<p><strong>What we discussed:</strong> ${args.summary}</p>
-<p><a href="${args.signupUrl}">Start your free trial</a> — we'll pre-load a starter agent matched to your use case.</p>`,
+<p><strong>What we discussed:</strong> ${safeSummary}</p>
+<p><a href="${safeSignupUrl}">Start your free trial</a> — we'll pre-load a starter agent matched to your use case.</p>`,
     });
     return result.ok;
   } catch {
