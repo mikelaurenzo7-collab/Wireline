@@ -1,7 +1,7 @@
 /**
  * Client-side demo attribution — persists ?demo= / utm_source for signup funnel.
  */
-import { DEMO_SOURCE_COOKIE, parseDemoSourceFromQuery } from "./demo-funnel";
+import { DEMO_SOURCE_COOKIE, parseDemoSourceFromQuery } from "./demo-funnel-shared";
 
 const COOKIE_MAX_AGE_DAYS = 30;
 

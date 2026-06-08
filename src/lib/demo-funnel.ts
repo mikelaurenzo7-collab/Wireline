@@ -6,7 +6,7 @@ import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
-export const DEMO_SOURCE_COOKIE = "wireline_demo_source";
+export { DEMO_SOURCE_COOKIE, parseDemoSourceFromQuery } from "./demo-funnel-shared";
 
 export function hashCallerNumber(number: string | null | undefined): string | null {
   if (!number) return null;
@@ -21,15 +21,6 @@ export function resolveShowcaseAgentByNumber(dialedNumber: string | null): strin
   const all = [...WIRELINE_CONTACT_AGENTS, ...WIRELINE_DEMO_AGENTS];
   const match = all.find((a) => a.tel.replace(/\D/g, "").slice(-10) === digits);
   return match?.name ?? null;
-}
-
-export function parseDemoSourceFromQuery(search: string): string | null {
-  const params = new URLSearchParams(search);
-  const demo = params.get("demo") || params.get("agent");
-  const utm = params.get("utm_source");
-  if (demo) return `landing:${demo}`;
-  if (utm) return `utm:${utm}`;
-  return null;
 }
 
 export async function recordDemoCallEvent(args: {
