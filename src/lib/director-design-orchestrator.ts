@@ -11,7 +11,7 @@ import {
   DESIGN_CRITIC_GEMINI_SYSTEM,
   DESIGN_CRITIC_SONNET_SYSTEM,
   DESIGN_CRITIC_TOOL,
-  DESIGN_FINAL_REVIEW_SYSTEM,
+  DESIGN_FINAL_REVIEWER_SYSTEM,
   DESIGN_FINAL_REVIEW_TOOL,
 } from "./director-design-prompts";
 import {
@@ -193,7 +193,7 @@ async function runFinalReview(input: {
 
   return runStructured<DesignFinalReview>({
     model: WIRELINE_DESIGN_TEAM.finalReviewer.wirelineModel,
-    system: DESIGN_FINAL_REVIEW_SYSTEM,
+    system: DESIGN_FINAL_REVIEWER_SYSTEM,
     user: [
       `Operator request:\n${input.operatorMessage}`,
       `## design.md\n${input.designBriefMarkdown.slice(0, 4000)}`,
