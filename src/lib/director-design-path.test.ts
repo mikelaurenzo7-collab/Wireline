@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  buildDesignChatGuidance,
-  resolveDesignDirectorPath,
-} from "./director-design-path";
+import { buildDesignChatGuidance, resolveDesignDirectorPath } from "./director-design-path";
 
 vi.mock("./director-design-orchestrator", () => ({
   runDirectorDesignStudio: vi.fn(),
@@ -13,6 +10,14 @@ vi.mock("./director-design-turn", async (importOriginal) => {
   return {
     ...actual,
     prepareDirectorDesignTurn: vi.fn(),
+  };
+});
+
+vi.mock("./design-profile", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./design-profile")>();
+  return {
+    ...actual,
+    buildDesignProfileBriefExtras: vi.fn().mockResolvedValue(null),
   };
 });
 
@@ -112,7 +117,8 @@ describe("director design path", () => {
     if (result.kind === "llm-fallback") {
       expect(result.fallback.deliverableGuidance).toContain("design.md");
       expect(result.fallback.artifacts[0]).toMatchObject({
-        artifactType: "stitch-design-brief",
+        artifactType: "design-brief",
+        legacyArtifactType: "stitch-design-brief",
         name: "design.md",
       });
     }

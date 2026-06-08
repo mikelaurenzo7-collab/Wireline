@@ -207,7 +207,6 @@ export const MODEL_PRICING = {
   [CLAUDE_MODELS.HAIKU]: { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   [CLAUDE_MODELS.SONNET]: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
   [CLAUDE_MODELS.OPUS]: { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
-  "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-opus-4-7": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-opus-4-6": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-3-5-sonnet-20241022": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },

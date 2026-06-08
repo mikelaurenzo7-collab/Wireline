@@ -1121,12 +1121,13 @@ router.post(
   withAudit("director"),
   validateBody(directorStreamMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
-    let sse: ReturnType<typeof createSseStream> | undefined;
+    let sseHandle: ReturnType<typeof createSseStream> | undefined;
     try {
       const operatorMessage = req.body.content.trim();
       const focusAgentId = String(req.body.focusAgentId || "").trim() || undefined;
 
-      sse = createSseStream(req, res);
+      const sse = createSseStream(req, res);
+      sseHandle = sse;
       writeSseBootstrap(sse);
 
       const streamAbort = new AbortController();
@@ -1163,7 +1164,7 @@ router.post(
       ]);
 
       const focusAgentName = focusAgentId
-        ? fleet.find((a) => a.id === focusAgentId)?.name
+        ? (fleet.find((a) => a.id === focusAgentId)?.name ?? undefined)
         : undefined;
       const routingPreview = previewDirectorStreamRouting({
         userId: req.user.id,
@@ -1549,9 +1550,9 @@ router.post(
       if (e instanceof AppError) throw e;
       const errMsg = getErrorMessage(e);
       log.error("director stream setup failed", { error: errMsg });
-      if (sse && !sse.clientDisconnected) {
-        sse.write("error", { message: "Failed to start stream" });
-        sse.end();
+      if (sseHandle && !sseHandle.clientDisconnected) {
+        sseHandle.write("error", { message: "Failed to start stream" });
+        sseHandle.end();
         return;
       }
       if (!res.headersSent) {

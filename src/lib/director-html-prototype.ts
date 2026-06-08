@@ -13,7 +13,7 @@ const HTML_FENCE_RE = /```(?:html)?\s*\n([\s\S]*?)```/i;
 export function extractDirectorHtmlPrototype(content: string): string | null {
   const match = content.match(HTML_FENCE_RE);
   const raw = match?.[1]?.trim();
-  if (!raw || raw.length < 80) return null;
+  if (!raw || raw.length < 32) return null;
   if (!/<html[\s>]/i.test(raw) && !/<!doctype/i.test(raw)) return null;
   return raw;
 }

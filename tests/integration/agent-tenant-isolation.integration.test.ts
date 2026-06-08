@@ -8,7 +8,7 @@ import { SESSION_COOKIE_NAME } from "../../src/lib/session-cookie";
 import * as schema from "../../src/db/schema";
 import { mountRouteTestRequestContext, mountTestErrorHandler } from "../helpers/express-test-app";
 
-const hasDb = Boolean(process.env.POSTGRES_URL);
+const hasDb = Boolean(process.env.POSTGRES_URL && process.env.WIRELINE_RUN_LIVE_DB_TESTS === "1");
 
 function sessionCookie(userId: string, email: string): string {
   const token = generateToken({ id: userId, email });
