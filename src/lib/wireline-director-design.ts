@@ -450,6 +450,17 @@ export const WIRELINE_STITCH_UI = {
     "Applying brand tokens…",
     "Packaging preview…",
   ],
+  /** Design Studio (LLM pipeline) — shown when Stitch pixel render is off. */
+  studioLoadingPhases: [
+    "Gathering creative direction…",
+    "Building your page…",
+    "Reviewing layout and accessibility…",
+    "Final polish…",
+  ],
+  studioLoadingHint:
+    "Wireline Design Studio usually finishes in about a minute — your page will appear inline when it's ready.",
+  designStudioReasoning:
+    "Wireline Design Studio — brief, build, dual critique, final review",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb: "Production HTML/CSS — hand off to your team or keep iterating in chat.",
@@ -727,6 +738,12 @@ export const LIVE_FEED_LABELS = {
 /** Director thread / session management copy */
 export const DIRECTOR_SESSION_COPY = {
   applySaved: (label: string) => `${label} saved to agent — safe to clear thread`,
+  applyAllLabel: "Apply all",
+  applyAllProgress: (done: number, total: number) => `Applying ${done} of ${total}…`,
+  applyAllSuccess: (n: number) =>
+    n === 1 ? "1 agent update applied" : `${n} agent updates applied`,
+  applyAllPartial: (applied: number, failed: number) =>
+    `${applied} applied · ${failed} failed — retry remaining cards individually`,
   clearSuccess: "Thread cleared",
   clearSuccessDetail: "Chat and artifacts removed. Applied agent settings were kept.",
   pendingApprovals: (n: number) => (n === 1 ? "1 approval pending" : `${n} approvals pending`),

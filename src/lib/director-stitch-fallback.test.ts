@@ -4,9 +4,18 @@ import {
   resolveStitchDirectorPath,
 } from "./director-stitch-fallback";
 
-vi.mock("./director-stitch-service", () => ({
-  tryDirectorStitchTurn: vi.fn(),
+vi.mock("./director-design-orchestrator", () => ({
+  runDirectorDesignStudio: vi.fn(),
 }));
+
+vi.mock("./director-stitch-service", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./director-stitch-service")>();
+  return {
+    ...actual,
+    tryDirectorStitchTurn: vi.fn(),
+    prepareStitchDirectorTurn: vi.fn(),
+  };
+});
 
 vi.mock("./director-stitch-session", () => ({
   loadLatestStitchSession: vi.fn().mockResolvedValue(null),
@@ -27,18 +36,26 @@ vi.mock("./director-stitch-brief", async (importOriginal) => {
   };
 });
 
-import { tryDirectorStitchTurn } from "./director-stitch-service";
+import { runDirectorDesignStudio } from "./director-design-orchestrator";
+import { prepareStitchDirectorTurn, tryDirectorStitchTurn } from "./director-stitch-service";
 import { GoogleStitchError } from "./google-stitch-mcp-client";
 
 describe("director stitch fallback", () => {
   beforeEach(() => {
     vi.mocked(tryDirectorStitchTurn).mockReset();
+    vi.mocked(prepareStitchDirectorTurn).mockReset();
+    vi.mocked(runDirectorDesignStudio).mockReset();
   });
 
   const input = {
     userId: "user-1",
     operatorMessage: "Design a landing page for homeowners who need emergency plumbing",
     history: [] as Array<{ role: "operator" | "director"; content: string }>,
+    stitchOptions: { designMode: true as const, useStitchPixelRender: true as const },
+  };
+
+  const studioInput = {
+    ...input,
     stitchOptions: { designMode: true as const },
   };
 
@@ -50,9 +67,31 @@ describe("director stitch fallback", () => {
     expect(guidance).toContain(md);
   });
 
+  it("routes design mode to Design Studio by default", async () => {
+    vi.mocked(prepareStitchDirectorTurn).mockResolvedValueOnce({
+      phase: "render",
+      input: {
+        ...studioInput,
+        designBriefMarkdown: "# brief",
+      },
+    });
+    vi.mocked(runDirectorDesignStudio).mockResolvedValueOnce({
+      reply: "Your page is ready.",
+      previews: [{ conceptId: "d1", title: "Page", rationale: "", previewDataUrl: "" }],
+      artifacts: [],
+      thinkingSummary: "Build",
+      durationMs: 100,
+    });
+
+    const result = await resolveStitchDirectorPath(studioInput);
+    expect(result.kind).toBe("stitch");
+    expect(runDirectorDesignStudio).toHaveBeenCalled();
+    expect(tryDirectorStitchTurn).not.toHaveBeenCalled();
+  });
+
   it("returns clarify turns as stitch without LLM fallback", async () => {
-    vi.mocked(tryDirectorStitchTurn).mockResolvedValueOnce({
-      kind: "turn",
+    vi.mocked(prepareStitchDirectorTurn).mockResolvedValueOnce({
+      phase: "clarify",
       turn: {
         reply: "Before I generate screens, I need a bit more context.",
         previews: [],
@@ -64,10 +103,11 @@ describe("director stitch fallback", () => {
     });
 
     const result = await resolveStitchDirectorPath({
-      ...input,
+      ...studioInput,
       operatorMessage: "Design a landing page",
     });
     expect(result.kind).toBe("stitch");
+    expect(runDirectorDesignStudio).not.toHaveBeenCalled();
   });
 
   it("returns stitch turn when render succeeds", async () => {
@@ -181,7 +221,7 @@ describe("director stitch fallback", () => {
             "Before I generate screens, I need a bit more context (business, audience, goal).",
         },
       ],
-      stitchOptions: { designMode: true },
+      stitchOptions: { designMode: true, useStitchPixelRender: true },
     });
     expect(result.kind).toBe("stitch");
   });

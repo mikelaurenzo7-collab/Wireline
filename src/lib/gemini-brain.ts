@@ -27,6 +27,33 @@ async function generateWithAudit(
   return result;
 }
 
+function parseGeminiJsonText<T>(text: string): T {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced?.[1] ?? trimmed).trim();
+  return JSON.parse(candidate) as T;
+}
+
+/** JSON extraction for Design Studio critics — any Gemini text model. */
+export async function runGeminiJsonCompletion<T>(input: {
+  model: string;
+  system: string;
+  user: string;
+  signal?: AbortSignal;
+}): Promise<T> {
+  if (!genAI) throw new Error("GEMINI_API_KEY not configured");
+  const model = genAI.getGenerativeModel({
+    model: input.model,
+    systemInstruction: input.system,
+  });
+  const result = await generateWithAudit(input.model, () =>
+    model.generateContent({ contents: [{ role: "user", parts: [{ text: input.user }] }] }),
+  );
+  const text = result.response.text();
+  if (!text?.trim()) throw new Error("Gemini returned empty completion");
+  return parseGeminiJsonText<T>(text);
+}
+
 /**
  * Gemini grounded web search. The `googleSearchRetrieval` tool lets
  * Gemini search the live web during generation and cite its sources.

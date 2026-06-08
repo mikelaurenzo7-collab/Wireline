@@ -9,6 +9,10 @@ import { estimateOpenRouterCostUsd } from "./openrouter-models";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
+export function isOpenRouterConfigured(): boolean {
+  return Boolean(process.env.OPENROUTER_API_KEY?.trim());
+}
+
 function openRouterHeaders(): Record<string, string> {
   const key = process.env.OPENROUTER_API_KEY?.trim();
   if (!key) throw new Error("OPENROUTER_API_KEY not configured");
@@ -70,6 +74,56 @@ export function accumulateOpenRouterStreamLine(
     }
   }
   return usage;
+}
+
+export interface OpenRouterCompletionOptions {
+  model: string;
+  system: string;
+  user: string;
+  maxTokens?: number;
+  signal?: AbortSignal;
+}
+
+/** Plain-text completion for Design Studio builder and creative consultants. */
+export async function runOpenRouterCompletion(opts: OpenRouterCompletionOptions): Promise<string> {
+  const t0 = Date.now();
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: openRouterHeaders(),
+    signal: opts.signal,
+    body: JSON.stringify({
+      model: opts.model,
+      max_tokens: opts.maxTokens ?? 8192,
+      messages: [
+        { role: "system", content: opts.system },
+        { role: "user", content: opts.user },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`OpenRouter error ${res.status}: ${errText.slice(0, 200)}`);
+  }
+
+  const body = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  const latencyMs = Date.now() - t0;
+  const usage = body.usage ?? {};
+  recordOpenRouterUsage(
+    opts.model,
+    {
+      input_tokens: usage.prompt_tokens ?? 0,
+      output_tokens: usage.completion_tokens ?? 0,
+    },
+    latencyMs,
+  );
+
+  const text = body.choices?.[0]?.message?.content?.trim();
+  if (!text) throw new Error("OpenRouter returned empty completion");
+  return text;
 }
 
 export async function runOpenRouterStructured<T = any>(

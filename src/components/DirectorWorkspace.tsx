@@ -36,10 +36,12 @@ import {
   Sparkles,
   LayoutTemplate,
   RefreshCw,
+  CheckCheck,
 } from "lucide-react";
 import {
   authFetch,
   DIRECTOR_STITCH_FINALIZE_TIMEOUT_MS,
+  DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS,
   DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
   readApiJson,
 } from "../lib/api";
@@ -68,12 +70,14 @@ import ProposalCard from "./chat/ProposalCard";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
 import type { ProposedAction, ProposedChange, ProposedToolToggle } from "../lib/workspace-planner";
 import {
+  buildDirectorApproveAllConfigConfirm,
   buildDirectorClearThreadConfirm,
   countPendingDirectorProposals,
   countPendingDirectorProposalsForMessage,
   isPersistedDirectorMessageId,
   mergeResolvedFromDirectorMessages,
   parseDirectorProposalKey,
+  planBulkDirectorConfigApprovals,
   type DirectorProposalResolution,
 } from "../lib/director-proposal-state";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/director-fleet-plan";
@@ -285,6 +289,11 @@ export default function DirectorWorkspace({
   );
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [busyLabel, setBusyLabel] = useState<string | undefined>();
+  const [isApprovingAll, setIsApprovingAll] = useState(false);
+  const [approveAllProgress, setApproveAllProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
   const [callConsent, setCallConsent] = useState<Record<string, boolean>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -1134,7 +1143,9 @@ export default function DirectorWorkspace({
         setStitchRendering(true);
         try {
           await sendNonStreaming(trimmed, optimistic?.id, {
-            timeoutMs: DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
+            timeoutMs: designMode
+              ? DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS
+              : DIRECTOR_STITCH_REQUEST_TIMEOUT_MS,
             recoverPersistedReply: true,
             requireStitchReply: true,
           });
@@ -1220,6 +1231,14 @@ export default function DirectorWorkspace({
 
   const resolveCoachAgentId = (message: DirectorMessage) => message.coachAgentId ?? null;
 
+  const bulkConfigPlan = useMemo(
+    () =>
+      planBulkDirectorConfigApprovals(visibleMessages, resolved, {
+        messageHasCoachAgent: (m) => !!resolveCoachAgentId(m as DirectorMessage),
+      }),
+    [visibleMessages, resolved],
+  );
+
   const resolveActionAgentId = (
     action: ProposedAction | DirectorProposedAction,
     message: DirectorMessage,
@@ -1231,7 +1250,12 @@ export default function DirectorWorkspace({
     null;
 
   const approveChange = useCallback(
-    async (key: string, change: ProposedChange, agentId: string) => {
+    async (
+      key: string,
+      change: ProposedChange,
+      agentId: string,
+      opts?: { quiet?: boolean },
+    ): Promise<boolean> => {
       setBusyKey(key);
       setBusyLabel("Applying configuration…");
       try {
@@ -1245,9 +1269,15 @@ export default function DirectorWorkspace({
         );
         if (!r.ok) throw new Error("Apply failed");
         markResolved(key, "done");
-        toastSuccess("Updated", DIRECTOR_SESSION_COPY.applySaved(change.label));
+        if (!opts?.quiet) {
+          toastSuccess("Updated", DIRECTOR_SESSION_COPY.applySaved(change.label));
+        }
+        return true;
       } catch {
-        toastError("Couldn't apply change", "Try again in a moment");
+        if (!opts?.quiet) {
+          toastError("Couldn't apply change", "Try again in a moment");
+        }
+        return false;
       } finally {
         setBusyKey(null);
       }
@@ -1256,7 +1286,12 @@ export default function DirectorWorkspace({
   );
 
   const approveToggle = useCallback(
-    async (key: string, toggle: ProposedToolToggle, agentId: string) => {
+    async (
+      key: string,
+      toggle: ProposedToolToggle,
+      agentId: string,
+      opts?: { quiet?: boolean },
+    ): Promise<boolean> => {
       setBusyKey(key);
       setBusyLabel(toggle.enable ? "Connecting capability…" : "Disconnecting…");
       try {
@@ -1274,15 +1309,80 @@ export default function DirectorWorkspace({
           setEnabledTools(data.enabledTools);
         }
         markResolved(key, "done");
-        toastSuccess(toggle.enable ? "Capability on" : "Capability off", toggle.label);
+        if (!opts?.quiet) {
+          toastSuccess(toggle.enable ? "Capability on" : "Capability off", toggle.label);
+        }
+        return true;
       } catch {
-        toastError("Couldn't update capability", "Try again in a moment");
+        if (!opts?.quiet) {
+          toastError("Couldn't update capability", "Try again in a moment");
+        }
+        return false;
       } finally {
         setBusyKey(null);
       }
     },
     [focusAgentId, markResolved, toastSuccess, toastError],
   );
+
+  const approveAllConfig = useCallback(async () => {
+    const { keys, skippedMissingCoach } = bulkConfigPlan;
+    if (keys.length === 0 || isApprovingAll || busyKey) return;
+    if (
+      !confirm(buildDirectorApproveAllConfigConfirm(keys.length, skippedMissingCoach))
+    ) {
+      return;
+    }
+    setIsApprovingAll(true);
+    setApproveAllProgress({ done: 0, total: keys.length });
+    let applied = 0;
+    let failed = 0;
+    for (const entry of keys) {
+      if (resolved[entry.key]) continue;
+      const message = visibleMessages.find((m) => m.id === entry.messageId);
+      const proposals = message?.proposals;
+      const agentId = message ? resolveCoachAgentId(message) : null;
+      if (!message || !proposals || !agentId) {
+        failed++;
+        setApproveAllProgress({ done: applied + failed, total: keys.length });
+        continue;
+      }
+      let ok = false;
+      if (entry.kind === "change") {
+        const change = proposals.changes[entry.index];
+        if (change) {
+          ok = await approveChange(entry.key, change, agentId, { quiet: true });
+        }
+      } else {
+        const toggle = proposals.toolToggles[entry.index];
+        if (toggle) {
+          ok = await approveToggle(entry.key, toggle, agentId, { quiet: true });
+        }
+      }
+      if (ok) applied++;
+      else failed++;
+      setApproveAllProgress({ done: applied + failed, total: keys.length });
+    }
+    setIsApprovingAll(false);
+    setApproveAllProgress(null);
+    if (failed === 0) {
+      toastSuccess("All updates applied", DIRECTOR_SESSION_COPY.applyAllSuccess(applied));
+    } else if (applied > 0) {
+      toastError("Some updates failed", DIRECTOR_SESSION_COPY.applyAllPartial(applied, failed));
+    } else {
+      toastError("Couldn't apply updates", "Try again or approve cards individually");
+    }
+  }, [
+    approveChange,
+    approveToggle,
+    bulkConfigPlan,
+    busyKey,
+    isApprovingAll,
+    resolved,
+    toastError,
+    toastSuccess,
+    visibleMessages,
+  ]);
 
   const approveAction = useCallback(
     async (key: string, action: ProposedAction | DirectorProposedAction, agentId: string) => {
@@ -1537,13 +1637,36 @@ export default function DirectorWorkspace({
                   </Link>
                 </ShadButton>
               )}
+            {bulkConfigPlan.keys.length > 1 ? (
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
+                onClick={approveAllConfig}
+                disabled={isApprovingAll || isClearing || !!busyKey}
+                className="touch-press shrink-0 wl-label text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
+                aria-label={DIRECTOR_SESSION_COPY.applyAllLabel}
+              >
+                {isApprovingAll ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <CheckCheck className="w-3 h-3" />
+                )}
+                <span className="hidden sm:inline">{DIRECTOR_SESSION_COPY.applyAllLabel}</span>
+                <span className="sm:hidden">All</span>
+                <span className="ml-1 rounded-full bg-brand/15 px-1.5 py-0.5 wl-micro-badge font-semibold normal-case tracking-normal text-brand">
+                  {bulkConfigPlan.keys.length}
+                </span>
+              </ShadButton>
+            ) : null}
             <ShadButton
               type="button"
               variant="ghost"
               size="sm"
               disableAnimations
               onClick={clearThread}
-              disabled={isClearing}
+              disabled={isClearing || isApprovingAll}
               className="touch-press shrink-0 wl-label-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
               aria-label="Clear thread"
             >
@@ -1779,6 +1902,15 @@ export default function DirectorWorkspace({
 
                         {m.role === "director" ? (
                           <>
+                            {m.previews &&
+                              m.previews.length > 0 &&
+                              isStitchPreview(m.previews[0]) && (
+                                <div className="mb-3 -mx-0.5">
+                                  <DirectorStitchPreviewVariantGrid
+                                    previews={m.previews.filter((p) => isStitchPreview(p))}
+                                  />
+                                </div>
+                              )}
                             <DirectorMessageBody content={m.content} />
                             {m.deliverableArtifact?.downloadUrl && (
                               <DirectorDeliverableDownload artifact={m.deliverableArtifact} />
@@ -2077,12 +2209,6 @@ export default function DirectorWorkspace({
                         </div>
                       )}
 
-                      {m.previews && m.previews.length > 0 && isStitchPreview(m.previews[0]) && (
-                        <DirectorStitchPreviewVariantGrid
-                          previews={m.previews.filter((p) => isStitchPreview(p))}
-                        />
-                      )}
-
                       {m.stitchAssetsPending &&
                         !(m.previews && m.previews.length > 0) &&
                         m.stitchSession?.screenId && (
@@ -2308,7 +2434,10 @@ export default function DirectorWorkspace({
           {/* Wireline Design render — dedicated live panel (non-streaming POST) */}
           {isSending && stitchRendering && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
-              <DirectorStitchLiveSession operatorPrompt={stitchPrompt} />
+              <DirectorStitchLiveSession
+                operatorPrompt={stitchPrompt}
+                variant={designMode ? "studio" : "pixel"}
+              />
             </div>
           )}
 

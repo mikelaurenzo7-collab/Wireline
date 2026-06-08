@@ -10,26 +10,33 @@ import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-dire
 export interface DirectorStitchLiveSessionProps {
   operatorPrompt?: string;
   className?: string;
+  /** Studio = LLM pipeline (fast). Pixel = Google Stitch render (slow). */
+  variant?: "studio" | "pixel";
 }
 
 export default function DirectorStitchLiveSession({
   operatorPrompt,
   className,
+  variant = "studio",
 }: DirectorStitchLiveSessionProps) {
-  const phases = WIRELINE_STITCH_UI.loadingPhases;
+  const phases =
+    variant === "pixel" ? WIRELINE_STITCH_UI.loadingPhases : WIRELINE_STITCH_UI.studioLoadingPhases;
+  const loadingHint =
+    variant === "pixel" ? WIRELINE_STITCH_UI.loadingHint : WIRELINE_STITCH_UI.studioLoadingHint;
+  const phaseIntervalMs = variant === "pixel" ? 18_000 : 8_000;
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
 
   useEffect(() => {
     const phaseTimer = window.setInterval(() => {
       setPhaseIndex((i) => Math.min(i + 1, phases.length - 1));
-    }, 18_000);
+    }, phaseIntervalMs);
     const clock = window.setInterval(() => setElapsedSec((s) => s + 1), 1000);
     return () => {
       window.clearInterval(phaseTimer);
       window.clearInterval(clock);
     };
-  }, [phases.length]);
+  }, [phaseIntervalMs, phases.length]);
 
   const phase = phases[phaseIndex] ?? phases[0]!;
 
@@ -62,9 +69,7 @@ export default function DirectorStitchLiveSession({
             <span className="absolute -inset-3 rounded-full border border-brand/20 animate-ping" />
           </div>
           <p className="text-[12px] font-semibold text-ink/90">{phase}</p>
-          <p className="wl-micro-meta--muted max-w-[240px] leading-relaxed">
-            {WIRELINE_STITCH_UI.loadingHint}
-          </p>
+          <p className="wl-micro-meta--muted max-w-[240px] leading-relaxed">{loadingHint}</p>
           {operatorPrompt && (
             <p className="wl-micro-meta text-brand/70 line-clamp-2 max-w-[260px] italic">
               “{operatorPrompt}”

@@ -13,13 +13,17 @@ import {
   resolveUseAccountBranding,
   type StitchBriefOptions,
 } from "./director-stitch-brief";
+import { runDirectorDesignStudio } from "./director-design-orchestrator";
+import { isStitchDesignModeActive } from "./director-stitch-intent";
 import {
+  prepareStitchDirectorTurn,
   tryDirectorStitchTurn,
   type DirectorStitchTurnAttempt,
   type DirectorStitchTurnResult,
 } from "./director-stitch-service";
 import { GoogleStitchError } from "./google-stitch-mcp-client";
 import { log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 
 export interface StitchDesignBriefContext {
@@ -148,7 +152,13 @@ async function buildLlmFallbackResult(
   return { kind: "llm-fallback", fallback };
 }
 
-/** Try Stitch; on any failure Claude Opus delivers the same brief as an HTML prototype in chat. */
+function shouldUseDesignStudio(stitchOptions?: StitchBriefOptions): boolean {
+  return (
+    isStitchDesignModeActive(stitchOptions) && stitchOptions?.useStitchPixelRender !== true
+  );
+}
+
+/** Design Studio (default) or Stitch pixel render; on failure Opus drafts HTML in chat. */
 export async function resolveStitchDirectorPath(
   input: StitchDirectorPathInput,
 ): Promise<StitchDirectorPathResult> {
@@ -161,6 +171,34 @@ export async function resolveStitchDirectorPath(
     })
   ) {
     return { kind: "none" };
+  }
+
+  if (shouldUseDesignStudio(input.stitchOptions)) {
+    const prepared = await prepareStitchDirectorTurn(input);
+    if (prepared.phase === "clarify") {
+      return { kind: "stitch", turn: prepared.turn };
+    }
+    try {
+      const turn = await runDirectorDesignStudio({
+        ...prepared.input,
+        onProgress: input.onProgress,
+        signal: input.signal,
+      });
+      return { kind: "stitch", turn };
+    } catch (e) {
+      log.error("design studio failed — falling back to chat design", {
+        userId: input.userId,
+        error: getErrorMessage(e),
+      });
+      return buildLlmFallbackResult(input, {
+        kind: "recoverable-failure",
+        error: new GoogleStitchError(
+          getErrorMessage(e),
+          "TOOL_ERROR",
+          true,
+        ),
+      });
+    }
   }
 
   const stitchAttempt = await tryDirectorStitchTurn(input);

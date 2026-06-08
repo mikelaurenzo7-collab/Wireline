@@ -30,6 +30,8 @@ export const OPENAI_MODELS = {
 export const GEMINI_MODELS = {
   /** GA release, May 19 2026. Replaces gemini-3-flash-preview. */
   FLASH_3_5: "gemini-3.5-flash",
+  /** Design Studio visual critic — long-context brand review. */
+  PRO_3_1: "gemini-3.1-pro-preview",
   /** Legacy — kept for operators who pinned this model explicitly. */
   FLASH_3_PREVIEW: "gemini-3-flash-preview",
   FLASH_2_5: "gemini-2.5-flash",

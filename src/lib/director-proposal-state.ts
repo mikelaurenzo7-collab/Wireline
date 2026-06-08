@@ -96,6 +96,62 @@ export function countPendingDirectorProposals(
   return pending;
 }
 
+export type DirectorConfigProposalRef = {
+  key: string;
+  kind: "change" | "toggle";
+  messageId: string;
+  index: number;
+};
+
+export function planBulkDirectorConfigApprovals(
+  messages: DirectorProposalMessage[],
+  resolved: Record<string, DirectorProposalResolution>,
+  opts: { messageHasCoachAgent?: (message: DirectorProposalMessage) => boolean } = {},
+): { keys: DirectorConfigProposalRef[]; skippedMissingCoach: number } {
+  const hasCoach = opts.messageHasCoachAgent ?? (() => true);
+  const keys: DirectorConfigProposalRef[] = [];
+  let skippedMissingCoach = 0;
+
+  for (const message of messages) {
+    if (message.role !== "director" || !message.proposals) continue;
+    if (!hasCoach(message)) {
+      skippedMissingCoach +=
+        message.proposals.changes.length + message.proposals.toolToggles.length;
+      continue;
+    }
+    for (let index = 0; index < message.proposals.changes.length; index++) {
+      const key = directorProposalKey(message.id, "change", index);
+      if (!resolved[key]) keys.push({ key, kind: "change", messageId: message.id, index });
+    }
+    for (let index = 0; index < message.proposals.toolToggles.length; index++) {
+      const key = directorProposalKey(message.id, "toggle", index);
+      if (!resolved[key]) keys.push({ key, kind: "toggle", messageId: message.id, index });
+    }
+  }
+
+  return { keys, skippedMissingCoach };
+}
+
+export function buildDirectorApproveAllConfigConfirm(
+  applyCount: number,
+  skippedMissingCoach: number,
+): string {
+  const lines = [
+    `Apply ${applyCount} pending agent update${applyCount === 1 ? "" : "s"}?`,
+    "",
+    "Each card saves to the coached agent immediately (greeting, tone, knowledge, capabilities, etc.).",
+    "Outbound calls, emails, and integration runs still need per-card approval.",
+  ];
+  if (skippedMissingCoach > 0) {
+    lines.push(
+      "",
+      `${skippedMissingCoach} update${skippedMissingCoach === 1 ? "" : "s"} skipped on messages without a coached agent.`,
+    );
+  }
+  lines.push("", "This cannot be undone from Director — you can edit agents later in Fleet.");
+  return lines.join("\n");
+}
+
 export function buildDirectorClearThreadConfirm(pendingApprovals: number): string {
   const lines = [
     "Clear your Director conversation and generated artifacts?",

@@ -88,6 +88,7 @@ import {
   persistDirectorStitchPreviewCompletion,
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
+import { attachDesignHtmlPrototypeToTurn } from "../lib/director-html-prototype";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 import { wantsLongDeliverable } from "../lib/director-deliverables";
 import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
@@ -195,12 +196,11 @@ async function finalizeDirectorStreamTurn(
 
   void (async () => {
     try {
-      const enriched = await attachDeliverableArtifactToTurn(
+      const enriched = await enrichDirectorTurnPayload(
         userId,
         operatorMessage,
-        trimmed,
-        featureFlags,
         quickPayload,
+        featureFlags,
       );
       const insertResult = await insertDirectorReplyIfAbsent({
         userId,
@@ -244,7 +244,13 @@ function filterDirectorArtifactsForThread(
     .filter(Boolean);
 
   return artifacts.filter((a) => {
-    if (a.toolName !== "director_deliverable" && a.toolName !== "google_stitch") return true;
+    if (
+      a.toolName !== "director_deliverable" &&
+      a.toolName !== "google_stitch" &&
+      a.toolName !== "wireline_design_studio"
+    ) {
+      return true;
+    }
     const preview = (
       a.metadata as { operatorPreview?: string } | undefined
     )?.operatorPreview?.trim();
@@ -373,6 +379,18 @@ async function attachDeliverableArtifactToTurn(
     deliverableArtifact,
     artifacts: [deliverableArtifact, ...existingArtifacts],
   };
+}
+
+/** Inline HTML preview metadata + deliverable artifact attachment for persisted turns. */
+async function enrichDirectorTurnPayload(
+  userId: string,
+  operatorMessage: string,
+  turnData: Record<string, unknown>,
+  featureFlags: DirectorFeatureFlags,
+): Promise<Record<string, unknown>> {
+  const withPreview = await attachDesignHtmlPrototypeToTurn(userId, operatorMessage, turnData);
+  const reply = typeof withPreview.reply === "string" ? withPreview.reply : "";
+  return attachDeliverableArtifactToTurn(userId, operatorMessage, reply, featureFlags, withPreview);
 }
 
 function withSignedUrl(
@@ -939,11 +957,9 @@ router.post(
         }
       }
 
-      const turnPayload = await attachDeliverableArtifactToTurn(
+      const turnPayload = await enrichDirectorTurnPayload(
         req.user.id,
         operatorMessage,
-        reply,
-        featureFlags,
         {
           reply,
           suggestions,
@@ -967,7 +983,11 @@ router.post(
           stitchSession,
           stitchAssetsPending,
         },
+        featureFlags,
       );
+
+      reply = typeof turnPayload.reply === "string" ? turnPayload.reply : reply;
+      previews = Array.isArray(turnPayload.previews) ? turnPayload.previews : previews;
 
       const insertResult = await insertDirectorReplyIfAbsent({
         userId: req.user.id,
@@ -1017,8 +1037,8 @@ router.post(
         actions,
         integrationJobs,
         approvals,
-        previews,
-        artifacts,
+        previews: turnPayload.previews ?? previews,
+        artifacts: turnPayload.artifacts ?? artifacts,
         clarifyingQuestions,
         toolTelemetry,
         featureFlags,
@@ -1332,7 +1352,7 @@ router.post(
           }
         }
 
-        const donePayload: Record<string, unknown> = {
+        let donePayload: Record<string, unknown> = {
           reply,
           suggestions: normalized.suggestions,
           changes: normalized.changes,
@@ -1353,6 +1373,14 @@ router.post(
           researchSources: streamCtx.researchSources,
           ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
         };
+
+        donePayload = await enrichDirectorTurnPayload(
+          req.user.id,
+          operatorMessage,
+          donePayload,
+          featureFlags,
+        );
+        reply = typeof donePayload.reply === "string" ? donePayload.reply : reply;
 
         streamFinalized = await finalizeDirectorStreamTurn(
           sse,
