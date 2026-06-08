@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Sparkles,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import {
   buildStitchPreviewPageUrl,
@@ -80,6 +80,7 @@ function DeviceFrame({
               src={ready.imageSrc}
               alt={preview.title}
               loading="lazy"
+              decoding="async"
               onError={onImageError}
               className="block w-full max-h-[420px] object-contain object-top bg-paper dark:bg-velvet"
             />
@@ -139,6 +140,7 @@ export default function DirectorStitchPreviewTeaser({
   const [imageBroken, setImageBroken] = useState(false);
   const hasPage = stitchPreviewPageUrlIsValid(preview);
   const previewUrl = hasPage ? buildStitchPreviewPageUrl(preview) : null;
+  const reduceMotion = useReducedMotion();
 
   const handleImageError = useCallback(() => setImageBroken(true), []);
   const handleRetry = useCallback(() => {
@@ -189,9 +191,9 @@ export default function DirectorStitchPreviewTeaser({
 
       {previewUrl && !inGrid && (
         <motion.div
-          initial={{ opacity: 0, y: 4 }}
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className="mt-3 flex flex-wrap gap-2"
         >
           <ShadButton
@@ -207,9 +209,9 @@ export default function DirectorStitchPreviewTeaser({
       )}
       {previewUrl && inGrid && (
         <motion.div
-          initial={{ opacity: 0, y: 4 }}
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className="mt-2 flex flex-wrap gap-2"
         >
           <ShadButton
@@ -241,6 +243,7 @@ export interface DirectorStitchPreviewVariantGridProps {
 export function DirectorStitchPreviewVariantGrid({
   previews,
 }: DirectorStitchPreviewVariantGridProps) {
+  const reduceMotion = useReducedMotion();
   if (previews.length === 0) return null;
   if (previews.length === 1) {
     return <DirectorStitchPreviewTeaser preview={previews[0]} />;
@@ -248,9 +251,9 @@ export function DirectorStitchPreviewVariantGrid({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-3xl"
     >
       <div

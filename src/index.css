@@ -3630,7 +3630,7 @@ html, body, .marketing-surface, .app-surface {
   background: color-mix(in srgb, var(--color-ink) 6%, transparent);
 }
 .wl-stitch-device--mobile {
-  max-width: 320px;
+  max-width: min(100%, 390px);
 }
 .wl-stitch-device--desktop {
   max-width: 100%;
@@ -3649,7 +3649,12 @@ html, body, .marketing-surface, .app-surface {
   border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
 }
 .dark .wl-stitch-device-chrome {
-  background: linear-gradient(180deg, rgba(22, 18, 32, 0.95), rgba(15, 12, 23, 0.88));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-ink) 12%, transparent),
+    color-mix(in srgb, var(--color-ink) 6%, transparent)
+  );
+  border-bottom-color: color-mix(in srgb, var(--color-brand) 18%, transparent);
 }
 .wl-stitch-device-dot {
   width: 0.45rem;
@@ -3672,9 +3677,28 @@ html, body, .marketing-surface, .app-surface {
 }
 .wl-stitch-device-screen {
   background: var(--paper);
+  position: relative;
 }
 .dark .wl-stitch-device-screen {
   background: rgba(8, 6, 14, 0.92);
+}
+/* Scroll affordance for mobile frames */
+.wl-stitch-device--mobile .wl-stitch-device-screen::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.wl-stitch-device--mobile:hover .wl-stitch-device-screen::after {
+  opacity: 1;
 }
 .wl-stitch-live-iframe {
   display: block;
@@ -3682,6 +3706,8 @@ html, body, .marketing-surface, .app-surface {
   min-height: min(56vh, 560px);
   border: 0;
   background: var(--paper, white);
+  contain: strict;
+  content-visibility: auto;
 }
 .wl-stitch-device--studio {
   max-width: min(100%, 64rem);
@@ -3704,6 +3730,7 @@ html, body, .marketing-surface, .app-surface {
 .wl-stitch-live-shimmer {
   position: relative;
   overflow: hidden;
+  contain: paint;
 }
 .wl-stitch-live-shimmer::after {
   content: "";
@@ -3717,13 +3744,32 @@ html, body, .marketing-surface, .app-surface {
   );
   animation: wl-stitch-shimmer 2.4s ease-in-out infinite;
   pointer-events: none;
+  will-change: transform;
+  transform: translateZ(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-stitch-live-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 @keyframes wl-stitch-shimmer {
   0% {
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
   }
   100% {
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+/* Respect reduced motion globally for Stitch surfaces */
+@media (prefers-reduced-motion: reduce) {
+  .wl-stitch-device,
+  .wl-stitch-device-chrome,
+  .wl-stitch-device-screen,
+  .wl-stitch-live-iframe {
+    transition: none !important;
+    animation: none !important;
   }
 }
 
