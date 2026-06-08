@@ -72,8 +72,10 @@ describe("buildCSP", () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("base-uri 'self'");
     expect(csp).toContain("form-action 'self'");
-    expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
-    expect(csp).toContain("font-src 'self' data: https://fonts.gstatic.com");
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).not.toContain("fonts.googleapis.com");
+    expect(csp).toContain("font-src 'self' data:");
+    expect(csp).not.toContain("fonts.gstatic.com");
     expect(csp).toContain("img-src 'self' data: blob: https:");
     expect(csp).toContain("frame-src 'self' blob:");
   });

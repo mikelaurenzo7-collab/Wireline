@@ -83,6 +83,9 @@ jobs:
       - name: Docs and pricing drift check
         run: npm run docs:check
 
+      - name: Guard — CSP drift and inline-style ratchet
+        run: npm run csp:check
+
       - name: Strict Typecheck
         run: npm run lint:strict
 

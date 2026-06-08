@@ -67,16 +67,14 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   return [
     `default-src 'self'`,
     `script-src ${scriptSrc}`,
-    // style-src includes 'unsafe-inline' because Tailwind utility classes and
-    // Google Fonts @import in src/index.css emit inline styles at runtime.
-    // Residual risk: inline-style XSS amplification if script-src is ever weakened.
-    // Migration path: hashed/nonce style-src once inline utilities are externalized.
-    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    // style-src includes 'unsafe-inline' because React components still emit
+    // style={{ ... }} at runtime. Fonts are self-hosted via @fontsource in
+    // src/index.css — no fonts.googleapis.com / fonts.gstatic.com needed.
+    // Migration path: drop 'unsafe-inline' once inline styles are eliminated
+    // (see scripts/csp-inventory.mjs ratchet).
+    `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: https:`,
-    // fonts.gstatic.com serves the actual .woff2 files referenced by the
-    // Google Fonts CSS above. Without this entry the fonts fail to download
-    // and the UI silently falls back to a system serif.
-    `font-src 'self' data: https://fonts.gstatic.com`,
+    `font-src 'self' data:`,
     `connect-src ${connectSrcs}`,
     `media-src 'self' blob:`,
     `worker-src 'self' blob:`,
