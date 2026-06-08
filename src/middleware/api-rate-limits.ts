@@ -64,7 +64,7 @@ interface RateLimitMiddleware {
 }
 
 /** Generic rate limit middleware factory. */
-function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
+export function createRateLimiter(opts: RateLimiterOptions): RateLimitMiddleware {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Extract user ID from authenticated session.

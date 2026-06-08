@@ -14,6 +14,9 @@ import statusRouter from "./status";
 import slackRouter from "./slack";
 import xRouter from "./x";
 import zoomRouter from "./zoom";
+import figmaRouter from "./figma";
+import canvaDesignRouter from "./canva-design";
+import githubDesignRouter from "./github-design";
 
 const router = express.Router();
 
@@ -32,5 +35,8 @@ router.use(statusRouter);
 router.use(slackRouter);
 router.use(xRouter);
 router.use(zoomRouter);
+router.use(figmaRouter);
+router.use(canvaDesignRouter);
+router.use(githubDesignRouter);
 
 export default router;

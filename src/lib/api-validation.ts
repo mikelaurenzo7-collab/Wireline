@@ -555,6 +555,34 @@ export const designProfileAssetUploadSchema = z.object({
   role: z.enum(["logo", "font", "css", "reference"]).optional(),
 });
 
+export const designExportPreviewSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    deviceType: z.enum(["DESKTOP", "MOBILE", "TABLET", "AGNOSTIC"]).optional(),
+    htmlArtifactId: z.string().min(1).max(32).optional(),
+    imageArtifactId: z.string().min(1).max(32).optional(),
+    renderId: z.string().max(64).optional(),
+    conceptId: z.string().max(64).optional(),
+    promptSummary: z.string().max(2000).optional(),
+  })
+  .refine((data) => Boolean(data.htmlArtifactId || data.imageArtifactId), {
+    message: "At least one artifact id (htmlArtifactId or imageArtifactId) is required",
+  });
+
+export const designImportFigmaSchema = z.object({
+  fileKeyOrUrl: z.string().min(8).max(512),
+});
+
+export const designImportWebsiteSchema = z.object({
+  url: z.string().min(4).max(512),
+});
+
+export const designGithubPrSchema = designExportPreviewSchema.extend({
+  repoFullName: z.string().regex(/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/),
+  baseBranch: z.string().min(1).max(120).optional(),
+  prTitle: z.string().min(1).max(200).optional(),
+});
+
 export const workspaceMessageSchema = z.object({
   content: z.string().min(1, "Message content required").max(4000),
 });

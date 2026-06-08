@@ -6,6 +6,7 @@ describe("design-profile", () => {
     expect(isDesignProfileConfigured({ companyBlurb: "Acme" })).toBe(true);
     expect(isDesignProfileConfigured({ styleNotes: "Bold palette" })).toBe(true);
     expect(isDesignProfileConfigured({ assets: [{ id: "1" }] })).toBe(true);
+    expect(isDesignProfileConfigured({ tokenManifest: { colors: ["#E85D04"] } })).toBe(true);
     expect(isDesignProfileConfigured({})).toBe(false);
   });
 

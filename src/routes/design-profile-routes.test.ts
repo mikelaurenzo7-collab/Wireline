@@ -26,34 +26,48 @@ vi.mock("../lib/design-profile", () => ({
     companyBlurb: h.state.profile?.companyBlurb ?? "",
     styleNotes: h.state.profile?.styleNotes ?? "",
     assets: [],
+    tokenManifest: {},
     updatedAt: null,
     configured: Boolean(h.state.profile?.companyBlurb?.trim()),
   })),
-  updateDesignProfile: vi.fn(async (_userId: string, patch: { companyBlurb?: string; styleNotes?: string }) => {
-    h.state.profile = {
-      userId: "user-1",
-      companyBlurb: patch.companyBlurb ?? h.state.profile?.companyBlurb ?? "",
-      styleNotes: patch.styleNotes ?? h.state.profile?.styleNotes ?? "",
-      assetManifest: h.state.profile?.assetManifest ?? [],
-    };
-    return {
-      companyBlurb: h.state.profile.companyBlurb,
-      styleNotes: h.state.profile.styleNotes,
-      assets: [],
-      updatedAt: new Date().toISOString(),
-      configured: Boolean(h.state.profile.companyBlurb.trim()),
-    };
-  }),
-  addDesignProfileAsset: vi.fn(async (_userId: string, input: { fileName: string; data: Buffer }) => {
-    h.state.uploads.push({ fileName: input.fileName, size: input.data.byteLength });
-    return {
-      companyBlurb: "",
-      styleNotes: "",
-      assets: [{ id: "asset-1", name: input.fileName, mimeType: "image/png", role: "reference", sizeBytes: input.data.byteLength }],
-      updatedAt: new Date().toISOString(),
-      configured: true,
-    };
-  }),
+  updateDesignProfile: vi.fn(
+    async (_userId: string, patch: { companyBlurb?: string; styleNotes?: string }) => {
+      h.state.profile = {
+        userId: "user-1",
+        companyBlurb: patch.companyBlurb ?? h.state.profile?.companyBlurb ?? "",
+        styleNotes: patch.styleNotes ?? h.state.profile?.styleNotes ?? "",
+        assetManifest: h.state.profile?.assetManifest ?? [],
+      };
+      return {
+        companyBlurb: h.state.profile.companyBlurb,
+        styleNotes: h.state.profile.styleNotes,
+        assets: [],
+        tokenManifest: {},
+        updatedAt: new Date().toISOString(),
+        configured: Boolean(h.state.profile.companyBlurb.trim()),
+      };
+    },
+  ),
+  addDesignProfileAsset: vi.fn(
+    async (_userId: string, input: { fileName: string; data: Buffer }) => {
+      h.state.uploads.push({ fileName: input.fileName, size: input.data.byteLength });
+      return {
+        companyBlurb: "",
+        styleNotes: "",
+        assets: [
+          {
+            id: "asset-1",
+            name: input.fileName,
+            mimeType: "image/png",
+            role: "reference",
+            sizeBytes: input.data.byteLength,
+          },
+        ],
+        updatedAt: new Date().toISOString(),
+        configured: true,
+      };
+    },
+  ),
   removeDesignProfileAsset: vi.fn(async (_userId: string, assetId: string) => {
     h.state.deletedAssetIds.push(assetId);
     return {

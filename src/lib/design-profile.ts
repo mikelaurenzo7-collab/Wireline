@@ -26,12 +26,66 @@ export interface DesignProfileAsset {
   downloadUrl?: string;
 }
 
+export interface DesignProfileTokenManifest {
+  sourceUrl?: string;
+  figmaFileKey?: string;
+  colors?: string[];
+  fontFamilies?: string[];
+  typography?: string[];
+  components?: string[];
+  themeColor?: string;
+  fileName?: string;
+  importedAt?: string;
+}
+
 export interface DesignProfileRecord {
   companyBlurb: string;
   styleNotes: string;
   assets: DesignProfileAsset[];
+  tokenManifest: DesignProfileTokenManifest;
   updatedAt: string | null;
   configured: boolean;
+}
+
+function parseTokenManifest(raw: unknown): DesignProfileTokenManifest {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const row = raw as Record<string, unknown>;
+  const colors = Array.isArray(row.colors)
+    ? row.colors
+        .map((c) => String(c).trim())
+        .filter(Boolean)
+        .slice(0, 32)
+    : undefined;
+  const fontFamilies = Array.isArray(row.fontFamilies)
+    ? row.fontFamilies
+        .map((f) => String(f).trim())
+        .filter(Boolean)
+        .slice(0, 16)
+    : undefined;
+  const typography = Array.isArray(row.typography)
+    ? row.typography
+        .map((t) => String(t).trim())
+        .filter(Boolean)
+        .slice(0, 16)
+    : undefined;
+  const components = Array.isArray(row.components)
+    ? row.components
+        .map((c) => String(c).trim())
+        .filter(Boolean)
+        .slice(0, 24)
+    : undefined;
+
+  return {
+    sourceUrl: row.sourceUrl ? String(row.sourceUrl) : undefined,
+    figmaFileKey: row.figmaFileKey ? String(row.figmaFileKey) : undefined,
+    colors: colors && colors.length > 0 ? colors : undefined,
+    fontFamilies: fontFamilies && fontFamilies.length > 0 ? fontFamilies : undefined,
+    typography: typography && typography.length > 0 ? typography : undefined,
+    components: components && components.length > 0 ? components : undefined,
+    themeColor: row.themeColor ? String(row.themeColor) : undefined,
+    fileName: row.fileName ? String(row.fileName) : undefined,
+    importedAt: row.importedAt ? String(row.importedAt) : undefined,
+  };
 }
 
 interface DesignProfileManifestEntry {
@@ -99,11 +153,21 @@ export function isDesignProfileConfigured(input: {
   companyBlurb?: string;
   styleNotes?: string;
   assets?: unknown[];
+  tokenManifest?: DesignProfileTokenManifest;
 }): boolean {
+  const tokens = input.tokenManifest;
+  const hasTokens = Boolean(
+    tokens &&
+    ((tokens.colors?.length ?? 0) > 0 ||
+      (tokens.fontFamilies?.length ?? 0) > 0 ||
+      (tokens.typography?.length ?? 0) > 0 ||
+      tokens.themeColor),
+  );
   return (
     Boolean(input.companyBlurb?.trim()) ||
     Boolean(input.styleNotes?.trim()) ||
-    (Array.isArray(input.assets) && input.assets.length > 0)
+    (Array.isArray(input.assets) && input.assets.length > 0) ||
+    hasTokens
   );
 }
 
@@ -111,6 +175,7 @@ export const EMPTY_DESIGN_PROFILE: DesignProfileRecord = {
   companyBlurb: "",
   styleNotes: "",
   assets: [],
+  tokenManifest: {},
   updatedAt: null,
   configured: false,
 };
@@ -124,6 +189,7 @@ export async function loadDesignProfile(userId: string): Promise<DesignProfileRe
       .limit(1);
 
     const manifest = parseManifest(row?.assetManifest);
+    const tokenManifest = parseTokenManifest(row?.tokenManifest);
     const companyBlurb = row?.companyBlurb?.trim() ?? "";
     const styleNotes = row?.styleNotes?.trim() ?? "";
 
@@ -131,11 +197,13 @@ export async function loadDesignProfile(userId: string): Promise<DesignProfileRe
       companyBlurb,
       styleNotes,
       assets: manifestToAssets(userId, manifest),
+      tokenManifest,
       updatedAt: row?.updatedAt?.toISOString() ?? null,
       configured: isDesignProfileConfigured({
         companyBlurb,
         styleNotes,
         assets: manifest,
+        tokenManifest,
       }),
     };
   } catch (e) {
@@ -150,7 +218,11 @@ export async function loadDesignProfile(userId: string): Promise<DesignProfileRe
 
 async function upsertProfileRow(
   userId: string,
-  patch: { companyBlurb?: string; styleNotes?: string; assetManifest?: DesignProfileManifestEntry[] },
+  patch: {
+    companyBlurb?: string;
+    styleNotes?: string;
+    assetManifest?: DesignProfileManifestEntry[];
+  },
 ): Promise<void> {
   const [existing] = await drizzle
     .select({ userId: schema.designProfiles.userId })
@@ -199,11 +271,7 @@ function inferRoleFromMime(
   if (requested) return requested;
   const lower = fileName.toLowerCase();
   if (lower.endsWith(".css") || mimeType === "text/css") return "css";
-  if (
-    lower.endsWith(".woff2") ||
-    lower.endsWith(".woff") ||
-    mimeType.includes("font")
-  ) {
+  if (lower.endsWith(".woff2") || lower.endsWith(".woff") || mimeType.includes("font")) {
     return "font";
   }
   if (mimeType.startsWith("image/")) return "reference";
@@ -382,10 +450,25 @@ export async function buildDesignProfileBriefExtras(
     assetLines.push(`- ${asset.role} (${asset.name}): ${url}`);
   }
 
+  const token = profile.tokenManifest;
+  const tokenLines = [
+    token.themeColor ? `- Theme color: ${token.themeColor}` : "",
+    token.colors?.length ? `- Imported colors: ${token.colors.join(", ")}` : "",
+    token.fontFamilies?.length ? `- Imported fonts: ${token.fontFamilies.join(", ")}` : "",
+    token.typography?.length ? `- Figma typography: ${token.typography.join(", ")}` : "",
+    token.components?.length
+      ? `- Figma components: ${token.components.slice(0, 12).join(", ")}`
+      : "",
+    token.figmaFileKey ? `- Figma file key: ${token.figmaFileKey}` : "",
+    token.sourceUrl ? `- Brand source: ${token.sourceUrl}` : "",
+  ].filter(Boolean);
+
   const lines = [
     "## Design system profile (operator-provided)",
     profile.companyBlurb ? `- Company: ${profile.companyBlurb}` : "",
     profile.styleNotes ? `- Style notes: ${profile.styleNotes}` : "",
+    tokenLines.length > 0 ? "- Imported brand tokens:" : "",
+    ...tokenLines.map((line) => `  ${line}`),
     assetLines.length > 0 ? "- Assets:" : "",
     ...assetLines.map((line) => (line.startsWith("- ") ? `  ${line}` : line)),
     cssChunks.length > 0 ? "" : "",
@@ -396,6 +479,7 @@ export async function buildDesignProfileBriefExtras(
   const assetContext = [
     profile.companyBlurb ? `Company blurb: ${profile.companyBlurb}` : "",
     profile.styleNotes ? `Style notes: ${profile.styleNotes}` : "",
+    tokenLines.join("\n"),
     assetLines.join("\n"),
     cssChunks.join("\n\n"),
   ]

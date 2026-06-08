@@ -7,7 +7,9 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   Download,
   ExternalLink,
+  Github,
   LayoutTemplate,
+  Link2,
   Loader2,
   Monitor,
   RefreshCw,
@@ -16,9 +18,11 @@ import {
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import { fetchDirectorArtifactSignedUrl } from "../../hooks/useDirectorArtifactInlineSrc";
 import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
+import { authFetch, readApiJson } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Input } from "../ui/shadcn/Input";
 import { useToast } from "../../contexts/ToastContext";
 
 export interface DirectorStitchPreviewStudioProps {
@@ -33,6 +37,37 @@ export interface DirectorStitchPreviewStudioProps {
 }
 
 type StitchTab = "preview" | "screenshot" | "export";
+
+type DesignIntegrationProvider = "figma" | "canva" | "github";
+
+interface DesignIntegrationStatus {
+  provider: DesignIntegrationProvider;
+  connected: boolean;
+  connectedAccount?: string;
+}
+
+interface GithubRepoSummary {
+  fullName: string;
+  defaultBranch: string;
+}
+
+const OAUTH_URL_BY_PROVIDER: Record<DesignIntegrationProvider, string> = {
+  figma: "/api/oauth/figma/url",
+  canva: "/api/oauth/canva/url",
+  github: "/api/oauth/github/url",
+};
+
+const CONNECT_LABEL_BY_PROVIDER: Record<DesignIntegrationProvider, string> = {
+  figma: WIRELINE_STITCH_UI.connectFigmaLabel,
+  canva: WIRELINE_STITCH_UI.connectCanvaLabel,
+  github: WIRELINE_STITCH_UI.connectGithubLabel,
+};
+
+function parseContentDispositionFilename(header: string | null): string | undefined {
+  if (!header) return undefined;
+  const match = header.match(/filename="([^"]+)"/i);
+  return match?.[1];
+}
 
 const QUICK_EDITS = [
   "Make the hero section darker with higher contrast",
@@ -153,9 +188,224 @@ export default function DirectorStitchPreviewStudio({
   const loadStartRef = useRef<number>(Date.now());
   const [elapsedMs, setElapsedMs] = useState(0);
   const [exportBusy, setExportBusy] = useState<Record<string, true>>({});
+  const [integrations, setIntegrations] = useState<DesignIntegrationStatus[]>([]);
+  const [githubRepos, setGithubRepos] = useState<GithubRepoSummary[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState("");
+  const [connectBusy, setConnectBusy] = useState<DesignIntegrationProvider | null>(null);
   const [iframeFailed, setIframeFailed] = useState(false);
-  const { error: toastError } = useToast();
+  const { error: toastError, success: toastSuccess, warning: toastWarning } = useToast();
   const reduceMotion = useReducedMotion();
+
+  const hasExportableArtifact = Boolean(ready.htmlArtifactId || ready.imageArtifactId);
+  const githubConnected = integrations.some((i) => i.provider === "github" && i.connected);
+
+  const refreshIntegrations = useCallback(async () => {
+    try {
+      const r = await authFetch("/api/design/integrations");
+      const out = await readApiJson<{ integrations?: DesignIntegrationStatus[] }>(r);
+      if (out.ok === false) return;
+      setIntegrations(out.data.integrations ?? []);
+    } catch {
+      // Non-blocking — export downloads still work without integrations.
+    }
+  }, []);
+
+  const refreshGithubRepos = useCallback(async () => {
+    try {
+      const r = await authFetch("/api/design/github/repos");
+      const out = await readApiJson<{ repos?: GithubRepoSummary[] }>(r);
+      if (out.ok === false) return;
+      const repos = out.data.repos ?? [];
+      setGithubRepos(repos);
+      setSelectedRepo((prev) => prev || repos[0]?.fullName || "");
+    } catch {
+      setGithubRepos([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshIntegrations();
+  }, [refreshIntegrations]);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "DESIGN_OAUTH_SUCCESS") return;
+      const provider = event.data.provider as DesignIntegrationProvider | undefined;
+      void refreshIntegrations();
+      if (provider) {
+        toastSuccess(
+          "Connected",
+          `${CONNECT_LABEL_BY_PROVIDER[provider] ?? provider} is ready for export.`,
+        );
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [refreshIntegrations, toastSuccess]);
+
+  useEffect(() => {
+    if (!githubConnected) {
+      setGithubRepos([]);
+      setSelectedRepo("");
+      return;
+    }
+    void refreshGithubRepos();
+  }, [githubConnected, refreshGithubRepos]);
+
+  const openOAuthPopup = useCallback(
+    (url: string) => {
+      const width = Math.min(600, window.innerWidth * 0.9);
+      const height = Math.min(700, window.innerHeight * 0.8);
+      const left = (window.innerWidth - width) / 2;
+      const top = (window.innerHeight - height) / 2;
+      const win = window.open(
+        url,
+        "design_oauth_popup",
+        `width=${width},height=${height},left=${left},top=${top}`,
+      );
+      if (!win) {
+        toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
+      }
+    },
+    [toastWarning],
+  );
+
+  const connectIntegration = useCallback(
+    async (provider: DesignIntegrationProvider) => {
+      setConnectBusy(provider);
+      try {
+        const r = await authFetch(OAUTH_URL_BY_PROVIDER[provider]);
+        const out = await readApiJson<{ url?: string; error?: string }>(r);
+        if (out.ok === false) throw new Error(out.error);
+        if (out.data.error) throw new Error(out.data.error);
+        const url = out.data.url;
+        if (!url) throw new Error("OAuth URL missing");
+        openOAuthPopup(url);
+      } catch (e) {
+        toastError(
+          "Connection failed",
+          e instanceof Error ? e.message : `Could not start ${provider} OAuth.`,
+        );
+      } finally {
+        setConnectBusy(null);
+      }
+    },
+    [openOAuthPopup, toastError],
+  );
+
+  const buildExportPayload = useCallback(() => {
+    return {
+      title: preview.title,
+      deviceType: preview.deviceType,
+      htmlArtifactId: ready.htmlArtifactId,
+      imageArtifactId: ready.imageArtifactId,
+      renderId: preview.renderId,
+      conceptId: preview.conceptId,
+    };
+  }, [preview, ready]);
+
+  const downloadZipExport = useCallback(
+    async (endpoint: string, busyKey: string, fallbackFileName: string) => {
+      setExportBusy((prev) => ({ ...prev, [busyKey]: true }));
+      try {
+        const r = await authFetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildExportPayload()),
+        });
+        if (!r.ok) {
+          const body = (await r.json().catch(() => ({}))) as { error?: string; message?: string };
+          throw new Error(body.error || body.message || "Export failed");
+        }
+        const blob = await r.blob();
+        const fileName =
+          parseContentDispositionFilename(r.headers.get("Content-Disposition")) || fallbackFileName;
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        toastSuccess("Export ready", fileName);
+      } catch (e) {
+        toastError("Export failed", e instanceof Error ? e.message : "Could not export design.");
+      } finally {
+        setExportBusy((prev) => {
+          const next = { ...prev };
+          delete next[busyKey];
+          return next;
+        });
+      }
+    },
+    [buildExportPayload, toastError, toastSuccess],
+  );
+
+  const sendToCanva = useCallback(async () => {
+    const busyKey = "canva";
+    setExportBusy((prev) => ({ ...prev, [busyKey]: true }));
+    try {
+      const r = await authFetch("/api/design/export/canva", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildExportPayload()),
+      });
+      const out = await readApiJson<{ message?: string; editUrl?: string; error?: string }>(r);
+      if (out.ok === false) throw new Error(out.error);
+      toastSuccess("Sent to Canva", out.data.message || "Marketing creative is ready in Canva.");
+      if (out.data.editUrl) {
+        window.open(out.data.editUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (e) {
+      toastError(
+        "Canva export failed",
+        e instanceof Error ? e.message : "Could not send to Canva.",
+      );
+    } finally {
+      setExportBusy((prev) => {
+        const next = { ...prev };
+        delete next[busyKey];
+        return next;
+      });
+    }
+  }, [buildExportPayload, toastError, toastSuccess]);
+
+  const createGithubPr = useCallback(async () => {
+    if (!selectedRepo) {
+      toastError("Repository required", "Connect GitHub and pick a repository first.");
+      return;
+    }
+    const busyKey = "github-pr";
+    setExportBusy((prev) => ({ ...prev, [busyKey]: true }));
+    try {
+      const r = await authFetch("/api/design/export/github-pr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildExportPayload(),
+          repoFullName: selectedRepo,
+          prTitle: `Wireline Design: ${preview.title}`,
+        }),
+      });
+      const out = await readApiJson<{ prUrl?: string; error?: string; message?: string }>(r);
+      if (out.ok === false) throw new Error(out.error);
+      toastSuccess("Pull request created", "Your design handoff PR is ready on GitHub.");
+      if (out.data.prUrl) {
+        window.open(out.data.prUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (e) {
+      toastError(
+        "GitHub PR failed",
+        e instanceof Error ? e.message : "Could not create pull request.",
+      );
+    } finally {
+      setExportBusy((prev) => {
+        const next = { ...prev };
+        delete next[busyKey];
+        return next;
+      });
+    }
+  }, [buildExportPayload, preview.title, selectedRepo, toastError, toastSuccess]);
 
   useEffect(() => {
     loadStartRef.current = Date.now();
@@ -376,57 +626,214 @@ export default function DirectorStitchPreviewStudio({
           )}
 
           {tab === "export" && (
-            <div className="p-4 sm:p-5 space-y-3">
-              <p className="text-[12px] text-ink font-medium">{preview.title}</p>
-              <p className="wl-micro-meta--muted leading-relaxed">
-                {WIRELINE_STITCH_UI.exportBlurb}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {ready.htmlArtifactId && (
+            <div className="p-4 sm:p-5 space-y-4">
+              <div>
+                <p className="text-[12px] text-ink font-medium">{preview.title}</p>
+                <p className="wl-micro-meta--muted leading-relaxed mt-1">
+                  {WIRELINE_STITCH_UI.exportBlurb}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p
+                  className={cn(
+                    WL_DIRECTOR_CLASSES.metaCaption,
+                    "text-muted-foreground font-medium uppercase tracking-wide",
+                  )}
+                >
+                  Connected apps
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(["figma", "canva", "github"] as const).map((provider) => {
+                    const status = integrations.find((i) => i.provider === provider);
+                    const connected = Boolean(status?.connected);
+                    const label = CONNECT_LABEL_BY_PROVIDER[provider];
+                    return (
+                      <ShadButton
+                        key={provider}
+                        type="button"
+                        variant={connected ? "outline" : "default"}
+                        size="sm"
+                        disableAnimations
+                        disabled={connectBusy === provider || connected}
+                        onClick={() => void connectIntegration(provider)}
+                        className="h-auto gap-1.5 touch-press"
+                      >
+                        {connectBusy === provider ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                        ) : provider === "github" ? (
+                          <Github className="w-3.5 h-3.5" aria-hidden />
+                        ) : (
+                          <Link2 className="w-3.5 h-3.5" aria-hidden />
+                        )}
+                        {connected
+                          ? `${label} · ${status?.connectedAccount || "connected"}`
+                          : label}
+                      </ShadButton>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p
+                  className={cn(
+                    WL_DIRECTOR_CLASSES.metaCaption,
+                    "text-muted-foreground font-medium uppercase tracking-wide",
+                  )}
+                >
+                  Handoff lanes
+                </p>
+                <div className="flex flex-wrap gap-2">
                   <ShadButton
                     type="button"
-                    onClick={() => void openArtifactDownload(ready.htmlArtifactId, false)}
-                    disabled={Boolean(exportBusy[ready.htmlArtifactId])}
+                    onClick={() =>
+                      void downloadZipExport(
+                        "/api/design/export/figma",
+                        "figma",
+                        "wireline-figma-export.zip",
+                      )
+                    }
+                    disabled={!hasExportableArtifact || Boolean(exportBusy.figma)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold bg-brand text-white hover:bg-brand-deep transition-colors h-auto disabled:opacity-60"
                   >
-                    {exportBusy[ready.htmlArtifactId] ? (
+                    {exportBusy.figma ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <Download className="w-3.5 h-3.5" />
                     )}
-                    HTML prototype
+                    {WIRELINE_STITCH_UI.exportFigmaLabel}
                   </ShadButton>
-                )}
-                {ready.imageArtifactId && (
                   <ShadButton
                     type="button"
-                    onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
-                    disabled={Boolean(exportBusy[ready.imageArtifactId])}
+                    onClick={() =>
+                      void downloadZipExport(
+                        "/api/design/export/react",
+                        "react",
+                        "wireline-react-export.zip",
+                      )
+                    }
+                    disabled={!hasExportableArtifact || Boolean(exportBusy.react)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto disabled:opacity-60"
                   >
-                    {exportBusy[ready.imageArtifactId] ? (
+                    {exportBusy.react ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <Download className="w-3.5 h-3.5" />
                     )}
-                    PNG screenshot
+                    {WIRELINE_STITCH_UI.exportReactLabel}
                   </ShadButton>
-                )}
-                {ready.htmlArtifactId && (
                   <ShadButton
                     type="button"
-                    onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
-                    disabled={Boolean(exportBusy[ready.htmlArtifactId])}
+                    onClick={() => void sendToCanva()}
+                    disabled={!ready.imageArtifactId || Boolean(exportBusy.canva)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
                   >
-                    {exportBusy[ready.htmlArtifactId] ? (
+                    {exportBusy.canva ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <ExternalLink className="w-3.5 h-3.5" />
                     )}
-                    Open live
+                    {WIRELINE_STITCH_UI.exportCanvaLabel}
                   </ShadButton>
+                </div>
+                <p className="wl-micro-meta--muted">{WIRELINE_STITCH_UI.exportCanvaHint}</p>
+                {githubConnected && (
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <label className="sr-only" htmlFor="design-github-repo">
+                      GitHub repository
+                    </label>
+                    <Input
+                      id="design-github-repo"
+                      value={selectedRepo}
+                      onChange={(e) => setSelectedRepo(e.target.value)}
+                      list="design-github-repo-options"
+                      placeholder="owner/repo"
+                      className="h-9 text-[12px] sm:max-w-xs"
+                    />
+                    <datalist id="design-github-repo-options">
+                      {githubRepos.map((repo) => (
+                        <option key={repo.fullName} value={repo.fullName} />
+                      ))}
+                    </datalist>
+                    <ShadButton
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disableAnimations
+                      onClick={() => void createGithubPr()}
+                      disabled={
+                        !hasExportableArtifact || !selectedRepo || Boolean(exportBusy["github-pr"])
+                      }
+                      className="h-auto gap-1.5 touch-press shrink-0"
+                    >
+                      {exportBusy["github-pr"] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        <Github className="w-3.5 h-3.5" aria-hidden />
+                      )}
+                      {WIRELINE_STITCH_UI.exportGithubPrLabel}
+                    </ShadButton>
+                  </div>
                 )}
+              </div>
+
+              <div className="space-y-2 pt-1 border-t border-brand/10">
+                <p
+                  className={cn(
+                    WL_DIRECTOR_CLASSES.metaCaption,
+                    "text-muted-foreground font-medium uppercase tracking-wide",
+                  )}
+                >
+                  Raw artifacts
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ready.htmlArtifactId && (
+                    <ShadButton
+                      type="button"
+                      onClick={() => void openArtifactDownload(ready.htmlArtifactId, false)}
+                      disabled={Boolean(exportBusy[ready.htmlArtifactId])}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-brand/25 text-brand bg-brand/5 hover:bg-brand/10 h-auto disabled:opacity-60"
+                    >
+                      {exportBusy[ready.htmlArtifactId] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Download className="w-3.5 h-3.5" />
+                      )}
+                      HTML prototype
+                    </ShadButton>
+                  )}
+                  {ready.imageArtifactId && (
+                    <ShadButton
+                      type="button"
+                      onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
+                      disabled={Boolean(exportBusy[ready.imageArtifactId])}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
+                    >
+                      {exportBusy[ready.imageArtifactId] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Download className="w-3.5 h-3.5" />
+                      )}
+                      PNG screenshot
+                    </ShadButton>
+                  )}
+                  {ready.htmlArtifactId && (
+                    <ShadButton
+                      type="button"
+                      onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
+                      disabled={Boolean(exportBusy[ready.htmlArtifactId])}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
+                    >
+                      {exportBusy[ready.htmlArtifactId] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      )}
+                      Open live
+                    </ShadButton>
+                  )}
+                </div>
               </div>
             </div>
           )}

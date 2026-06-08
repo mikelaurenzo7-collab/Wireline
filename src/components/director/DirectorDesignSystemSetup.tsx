@@ -22,6 +22,7 @@ export interface DesignProfileState {
   companyBlurb: string;
   styleNotes: string;
   assets: DesignProfileAsset[];
+  tokenManifest?: Record<string, unknown>;
   configured: boolean;
 }
 
@@ -41,6 +42,10 @@ export function DirectorDesignSystemSetup({ onConfiguredChange }: DirectorDesign
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [importingFigma, setImportingFigma] = useState(false);
+  const [importingWebsite, setImportingWebsite] = useState(false);
+  const [figmaImportUrl, setFigmaImportUrl] = useState("");
+  const [websiteImportUrl, setWebsiteImportUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blurbRef = useRef(profile.companyBlurb);
@@ -151,6 +156,60 @@ export function DirectorDesignSystemSetup({ onConfiguredChange }: DirectorDesign
     }
   };
 
+  const importFromFigma = async () => {
+    const fileKeyOrUrl = figmaImportUrl.trim();
+    if (!fileKeyOrUrl) return;
+    setImportingFigma(true);
+    setError(null);
+    try {
+      const r = await authFetch("/api/design/import/figma", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileKeyOrUrl }),
+      });
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string; message?: string };
+        throw new Error(body.error || body.message || "Figma import failed");
+      }
+      const profileRes = await authFetch("/api/design/profile");
+      if (!profileRes.ok) throw new Error("Imported tokens but could not refresh profile");
+      const data = (await profileRes.json()) as { profile: DesignProfileState };
+      applyProfile(data.profile);
+      setFigmaImportUrl("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Figma import failed");
+    } finally {
+      setImportingFigma(false);
+    }
+  };
+
+  const importFromWebsite = async () => {
+    const url = websiteImportUrl.trim();
+    if (!url) return;
+    setImportingWebsite(true);
+    setError(null);
+    try {
+      const r = await authFetch("/api/design/import/website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      if (!r.ok) {
+        const body = (await r.json().catch(() => ({}))) as { error?: string; message?: string };
+        throw new Error(body.error || body.message || "Website import failed");
+      }
+      const profileRes = await authFetch("/api/design/profile");
+      if (!profileRes.ok) throw new Error("Imported brand but could not refresh profile");
+      const data = (await profileRes.json()) as { profile: DesignProfileState };
+      applyProfile(data.profile);
+      setWebsiteImportUrl("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Website import failed");
+    } finally {
+      setImportingWebsite(false);
+    }
+  };
+
   const removeAsset = async (assetId: string) => {
     setError(null);
     try {
@@ -176,11 +235,71 @@ export function DirectorDesignSystemSetup({ onConfiguredChange }: DirectorDesign
 
   return (
     <div className="wl-design-setup-panel space-y-3">
+      <div>
+        <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "text-foreground font-semibold")}>
+          {WIRELINE_STITCH_UI.brandKitTitle}
+        </p>
+        <p className="wl-micro-meta--muted-foreground mt-0.5">
+          {WIRELINE_STITCH_UI.designSystemSetupHint}
+        </p>
+      </div>
+
       {profile.configured && (
         <div className="wl-design-setup-status" role="status">
           {WIRELINE_STITCH_UI.designSystemSetupConfiguredLabel}
         </div>
       )}
+
+      <div className="space-y-2 rounded-md border border-brand/10 p-2.5 bg-brand/[0.03]">
+        <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "text-muted-foreground font-medium")}>
+          {WIRELINE_STITCH_UI.importFigmaLabel}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            value={figmaImportUrl}
+            onChange={(e) => setFigmaImportUrl(e.target.value)}
+            placeholder={WIRELINE_STITCH_UI.importFigmaPlaceholder}
+            className="h-9 text-[12px] flex-1"
+            disabled={importingFigma || importingWebsite || uploading || saving}
+          />
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
+            disabled={!figmaImportUrl.trim() || importingFigma || importingWebsite}
+            onClick={() => void importFromFigma()}
+            className="touch-press shrink-0"
+          >
+            {importingFigma ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : null}
+            Import
+          </ShadButton>
+        </div>
+        <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "text-muted-foreground font-medium")}>
+          {WIRELINE_STITCH_UI.importWebsiteLabel}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            value={websiteImportUrl}
+            onChange={(e) => setWebsiteImportUrl(e.target.value)}
+            placeholder={WIRELINE_STITCH_UI.importWebsitePlaceholder}
+            className="h-9 text-[12px] flex-1"
+            disabled={importingFigma || importingWebsite || uploading || saving}
+          />
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
+            disabled={!websiteImportUrl.trim() || importingFigma || importingWebsite}
+            onClick={() => void importFromWebsite()}
+            className="touch-press shrink-0"
+          >
+            {importingWebsite ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : null}
+            Import
+          </ShadButton>
+        </div>
+      </div>
 
       <label className="block space-y-1">
         <span className={cn(WL_DIRECTOR_CLASSES.metaCaption, "text-muted-foreground font-medium")}>

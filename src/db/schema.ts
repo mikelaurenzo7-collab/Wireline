@@ -1651,10 +1651,37 @@ export const designProfiles = pgTable("wireline_design_profiles", {
   companyBlurb: text("company_blurb").notNull().default(""),
   styleNotes: text("style_notes").notNull().default(""),
   assetManifest: jsonb("asset_manifest").notNull().default([]),
+  tokenManifest: jsonb("token_manifest").notNull().default({}),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export type DesignProfile = typeof designProfiles.$inferSelect;
+
+/** OAuth connections for Wireline Design export lanes (Figma, Canva, GitHub). */
+export const designIntegrations = pgTable(
+  "wireline_design_integrations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    provider: text("provider").notNull(),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    connectedAccount: text("connected_account"),
+    metadata: jsonb("metadata").notNull().default({}),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t: any) => ({
+    userProviderUniq: unique("wireline_design_integrations_user_id_provider_key").on(
+      t.userId,
+      t.provider,
+    ),
+  }),
+);
+
+export type DesignIntegration = typeof designIntegrations.$inferSelect;
 
 export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
   code: text("code").primaryKey(),
