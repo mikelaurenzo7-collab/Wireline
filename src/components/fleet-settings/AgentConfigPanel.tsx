@@ -206,7 +206,7 @@ export default function AgentConfigPanel({
           disableAnimations
           onClick={() => setSelectedAgent(null)}
           aria-label="Back to agent list"
-          className="md:hidden mb-3 h-10 rounded-full text-[10px] uppercase tracking-[0.28em] text-ink/80"
+          className="md:hidden mb-3 h-10 rounded-full wl-label text-ink/80"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Back to fleet
         </ShadButton>
@@ -259,7 +259,7 @@ export default function AgentConfigPanel({
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span
                           className={cn(
-                            "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-none",
+                            "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                             selectedAgent.channel === "email"
                               ? "bg-brand/10 border-brand/30 text-brand"
                               : "bg-brand/10 border-brand/30 text-brand",
@@ -268,7 +268,7 @@ export default function AgentConfigPanel({
                           {selectedAgent.channel}
                         </span>
                         <RoleBadge role={selectedAgent.role} size="sm" />
-                        <div className="text-[10px] uppercase tracking-[0.25em] text-ink/40 inline-flex items-center gap-1.5">
+                        <div className="wl-micro-meta inline-flex items-center gap-1.5">
                           ID: <span className="font-mono text-ink/80">{selectedAgent.id}</span>
                         </div>
                       </div>
@@ -277,7 +277,7 @@ export default function AgentConfigPanel({
                       <div className="rounded-md wl-panel border border-border p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
                         <div className="flex-1 min-w-[180px] space-y-1">
-                          <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                          <label className="wl-label text-ink/40">
                             Agent role
                           </label>
                           <div className="relative">
@@ -302,7 +302,7 @@ export default function AgentConfigPanel({
                           </div>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <p className="text-[10px] text-ink/40 leading-relaxed max-w-[280px]">
+                          <p className="wl-micro-meta leading-relaxed max-w-[280px]">
                             {
                               AGENT_ROLES.find(
                                 (r) => r.value === (selectedAgent.role || "customer_service"),
@@ -318,7 +318,7 @@ export default function AgentConfigPanel({
                               applyRoleTemplate(selectedAgent.role || "customer_service")
                             }
                             disabled={isApplyingTemplate}
-                            className="self-start rounded-full text-[10px] uppercase tracking-[0.25em] text-ink/80"
+                            className="self-start rounded-full wl-label text-ink/80"
                           >
                             {isApplyingTemplate ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -406,7 +406,7 @@ export default function AgentConfigPanel({
                                   {s.sparkline.map((v: number, i: number) => (
                                     <span
                                       key={`day-${i}`}
-                                      className="text-[10px] font-mono tabular-nums text-ink/40"
+                                      className="wl-micro-badge font-mono tabular-nums text-ink/40"
                                       title={`${v} call${v !== 1 ? "s" : ""}`}
                                     >
                                       {v}
@@ -419,7 +419,7 @@ export default function AgentConfigPanel({
                         );
                       })()}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                      <label className="wl-label text-ink/40 flex items-center gap-1.5">
                         <LinkIcon className="w-2.5 h-2.5 text-brand" /> Knowledge URL
                       </label>
                       <Input
@@ -433,7 +433,7 @@ export default function AgentConfigPanel({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                      <label className="wl-label text-ink/40 flex items-center gap-1.5">
                         <Phone className="w-2.5 h-2.5 text-brand" /> Transfer phone
                       </label>
                       <Input
@@ -518,7 +518,7 @@ export default function AgentConfigPanel({
                           />
 
                           <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="wl-label text-ink/40">
                               Silence timeout
                             </label>
                             <Select
@@ -552,7 +552,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="wl-label text-ink/40">
                               Archetype
                             </label>
                             <div className="relative">
@@ -579,7 +579,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="wl-label text-ink/40">
                               Personality vibe
                             </label>
                             <div className="grid grid-cols-3 gap-1.5">
@@ -600,7 +600,7 @@ export default function AgentConfigPanel({
                                     disableAnimations
                                     onClick={() => updateAgentMeta({ personality_vibe: v })}
                                     className={cn(
-                                      "h-auto px-2 py-1.5 rounded-md text-[10px] uppercase tracking-[0.2em] font-medium",
+                                      "h-auto px-2 py-1.5 rounded-md wl-label font-medium",
                                       isActive
                                         ? "bg-brand/15 border-brand/40 text-brand"
                                         : "text-muted hover:text-ink hover:border-brand/20",
@@ -611,14 +611,14 @@ export default function AgentConfigPanel({
                                 );
                               })}
                             </div>
-                            <p className="text-[10px] text-ink/40 leading-relaxed">
+                            <p className="wl-micro-meta leading-relaxed">
                               Pick once. The agent keeps this one personality, voice, and cadence
                               for the whole call — it never switches tone mid-conversation.
                             </p>
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                            <label className="wl-label text-ink/40">
                               Ambient atmosphere
                             </label>
                             <div className="relative">
@@ -642,10 +642,10 @@ export default function AgentConfigPanel({
 
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                              <label className="wl-label text-ink/40">
                                 Speaking rate
                               </label>
-                              <span className="text-[10px] font-medium tabular-nums text-ink">
+                              <span className="wl-micro-badge font-medium text-ink">
                                 {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(2)}×
                               </span>
                             </div>
@@ -662,7 +662,7 @@ export default function AgentConfigPanel({
                               className="w-full accent-brand cursor-pointer"
                               aria-label="ElevenLabs speaking rate"
                             />
-                            <p className="text-[10px] text-ink/40 leading-relaxed">
+                            <p className="wl-micro-meta leading-relaxed">
                               0.7 = slower (elderly callers). 1.2 = faster (impatient callers).
                               ElevenLabs voices only.
                             </p>
@@ -679,7 +679,7 @@ export default function AgentConfigPanel({
 
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+                            <label className="wl-label text-ink/40 flex items-center gap-1.5">
                               <Zap className="w-2.5 h-2.5 text-brand" /> Initial greeting
                             </label>
                           </div>
@@ -693,10 +693,10 @@ export default function AgentConfigPanel({
 
                         <div className="flex items-center justify-between gap-3 rounded-md border border-black/8 dark:border-black/8 bg-black/[0.02] dark:bg-white/3 px-3 py-2.5">
                           <div className="min-w-0">
-                            <p className="text-[10px] uppercase tracking-[0.25em] text-brand/70 flex items-center gap-1.5">
+                            <p className="wl-label text-brand/70 flex items-center gap-1.5">
                               <Workflow className="w-3 h-3" /> Conversation flow
                             </p>
-                            <p className="text-[10px] text-ink/45 mt-1 leading-relaxed">
+                            <p className="wl-micro-meta text-ink/45 mt-1 leading-relaxed">
                               Stage scripts and handoffs for live calls.
                             </p>
                           </div>
@@ -706,7 +706,7 @@ export default function AgentConfigPanel({
                             size="sm"
                             disableAnimations
                             asChild
-                            className="shrink-0 rounded-full text-[10px] uppercase tracking-[0.2em]"
+                            className="shrink-0 rounded-full wl-label"
                           >
                             <Link
                               to={`/training?agent=${encodeURIComponent(selectedAgent.id)}&tab=flow`}
@@ -736,7 +736,7 @@ export default function AgentConfigPanel({
                             <div className="rounded-md wl-panel border border-border p-3 flex items-center justify-between gap-3">
                               <div className="space-y-0.5 min-w-0">
                                 <h4 className="text-sm text-ink">Auto-respond</h4>
-                                <p className="text-[10px] text-ink/40 leading-relaxed">
+                                <p className="wl-micro-meta leading-relaxed">
                                   Autonomous reply on incoming threads.
                                 </p>
                               </div>
@@ -773,7 +773,7 @@ export default function AgentConfigPanel({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                              <label className="wl-label text-ink/40">
                                 Relay tone
                               </label>
                               <div className="relative">
@@ -797,7 +797,7 @@ export default function AgentConfigPanel({
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                              <label className="wl-label text-ink/40">
                                 Signature
                               </label>
                               <Input
@@ -847,13 +847,13 @@ export default function AgentConfigPanel({
                                 void updateAgentMeta({ system_prompt_override: null });
                               }}
                               disabled={usingAutoComposed}
-                              className="shrink-0 rounded-full text-[10px] uppercase tracking-[0.25em] text-ink/80"
+                              className="shrink-0 rounded-full wl-label text-ink/80"
                             >
                               <RefreshCw className="w-2.5 h-2.5" />
                               Use auto-composed prompt
                             </ShadButton>
                           </div>
-                          <p className="text-[10px] text-ink/40 leading-relaxed">
+                          <p className="wl-micro-meta leading-relaxed">
                             Override the auto-composed identity prompt. Caller context, knowledge,
                             directives and the compliance / escalation guardrails are still appended
                             automatically on every call. Leave blank to use the auto-composed
@@ -879,7 +879,7 @@ export default function AgentConfigPanel({
                             className="w-full h-48 px-4 py-3 rounded-md bg-black/5 border border-black/10 text-ink outline-none focus:border-brand/50 transition-all resize-none text-sm leading-relaxed placeholder:text-ink/40"
                             placeholder="Leave blank to use the auto-composed prompt. Type here to define the agent's full identity, tone, and behavior — this replaces the generated base prompt."
                           />
-                          <div className="flex items-center justify-between text-[10px] text-ink/40">
+                          <div className="flex items-center justify-between wl-micro-meta">
                             <span>
                               {usingAutoComposed
                                 ? "Using auto-composed prompt"
@@ -934,7 +934,7 @@ export default function AgentConfigPanel({
                         <h3 className="font-display italic lowercase text-xl text-ink leading-none">
                           behavioral engine
                         </h3>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-1">
+                        <p className="wl-label text-ink/40 mt-1">
                           Base heuristic instructions
                         </p>
                       </div>
@@ -950,7 +950,7 @@ export default function AgentConfigPanel({
                         size="sm"
                         disableAnimations
                         onClick={() => updatePersonality(agentConfig.personality)}
-                        className="rounded-full text-[10px] uppercase tracking-[0.25em] text-brand"
+                        className="rounded-full wl-label text-brand"
                       >
                         <Save className="w-3.5 h-3.5" />
                         Save
@@ -1001,11 +1001,11 @@ export default function AgentConfigPanel({
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                           tactical logic
                         </h3>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+                        <p className="wl-label text-ink/40 mt-0.5">
                           Hard constraints
                         </p>
                       </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive text-[10px] uppercase tracking-[0.25em] leading-none">
+                      <span className="px-1.5 py-0.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive wl-label leading-none">
                         Inviolable
                       </span>
                     </header>
@@ -1041,7 +1041,7 @@ export default function AgentConfigPanel({
                                       size="sm"
                                       disableAnimations
                                       onClick={() => setEditingDirective(null)}
-                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-muted"
+                                      className="rounded-full wl-label text-muted"
                                     >
                                       Cancel
                                     </ShadButton>
@@ -1058,7 +1058,7 @@ export default function AgentConfigPanel({
                                         )
                                       }
                                       disabled={isSavingEntry}
-                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-brand"
+                                      className="rounded-full wl-label text-brand"
                                     >
                                       {isSavingEntry ? "Saving…" : "Save"}
                                     </ShadButton>
@@ -1108,7 +1108,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
-                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                      <label className="wl-label text-ink/40">
                         Add directive
                       </label>
                       <div className="flex gap-1.5">
@@ -1145,11 +1145,11 @@ export default function AgentConfigPanel({
                         <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                           knowledge base
                         </h3>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+                        <p className="wl-label text-ink/40 mt-0.5">
                           Knowledge base
                         </p>
                       </div>
-                      <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] leading-none">
+                      <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-brand wl-label leading-none">
                         Factual
                       </span>
                     </header>
@@ -1185,7 +1185,7 @@ export default function AgentConfigPanel({
                                       size="sm"
                                       disableAnimations
                                       onClick={() => setEditingKnowledge(null)}
-                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-muted"
+                                      className="rounded-full wl-label text-muted"
                                     >
                                       Cancel
                                     </ShadButton>
@@ -1202,7 +1202,7 @@ export default function AgentConfigPanel({
                                         )
                                       }
                                       disabled={isSavingEntry}
-                                      className="rounded-full text-[10px] uppercase tracking-[0.25em] text-brand"
+                                      className="rounded-full wl-label text-brand"
                                     >
                                       {isSavingEntry ? "Saving…" : "Save"}
                                     </ShadButton>
@@ -1252,7 +1252,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
-                      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                      <label className="wl-label text-ink/40">
                         Add fact
                       </label>
                       <div className="flex gap-1.5">

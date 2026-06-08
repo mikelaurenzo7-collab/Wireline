@@ -71,7 +71,7 @@ export default function IntegrationCapabilityPanel({
                 <p
                   className={cn(
                     "text-ink font-medium leading-snug text-pretty",
-                    compact ? "text-[10px]" : "text-[11px]",
+                    compact ? "wl-micro-badge" : "text-eyebrow",
                   )}
                 >
                   {task.callerMoment}
@@ -82,7 +82,7 @@ export default function IntegrationCapabilityPanel({
                 <p
                   className={cn(
                     "text-muted/80 leading-relaxed text-pretty",
-                    compact ? "text-[10px]" : "text-[10px]",
+                    "wl-micro-meta",
                   )}
                 >
                   {task.agentAction}
@@ -96,7 +96,7 @@ export default function IntegrationCapabilityPanel({
                     <span
                       key={toolName}
                       className={cn(
-                        "inline-flex px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wide border",
+                        "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
                         on
                           ? "wl-accent-tag border-current/25 bg-current/8"
                           : "border-black/10 bg-black/4 text-ink/40",
@@ -116,7 +116,7 @@ export default function IntegrationCapabilityPanel({
       {!connected && compact && (
         <a
           href={href}
-          className="inline-flex text-[10px] uppercase tracking-[0.28em] hover:underline underline-offset-2 wl-accent-text"
+          className="inline-flex wl-label hover:underline underline-offset-2 wl-accent-text"
         >
           Connect in Integration Hub →
         </a>
@@ -132,11 +132,11 @@ export default function IntegrationCapabilityPanel({
               onClick={() => setToolsOpen((o) => !o)}
               className="flex-1 h-auto justify-between gap-2 px-0 py-0 hover:bg-transparent"
             >
-              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-muted/80">
+              <span className="inline-flex items-center gap-1.5 wl-label text-muted/80">
                 <Wrench className="w-3 h-3" />
                 Fine-tune tools
               </span>
-              <span className="text-[10px] text-ink/40 tabular-nums">
+              <span className="wl-micro-meta tabular-nums">
                 {integrationTools.filter((t) => enabledSet.has(t.name)).length}/
                 {integrationTools.length}
               </span>
@@ -155,7 +155,7 @@ export default function IntegrationCapabilityPanel({
                   size="sm"
                   disableAnimations
                   onClick={() => onToggleIntegrationGroup(integration, true)}
-                  className="px-2 py-0.5 h-auto rounded text-[10px] uppercase tracking-[0.2em]"
+                  className="px-2 py-0.5 h-auto rounded wl-label"
                 >
                   All on
                 </ShadButton>
@@ -165,7 +165,7 @@ export default function IntegrationCapabilityPanel({
                   size="sm"
                   disableAnimations
                   onClick={() => onToggleIntegrationGroup(integration, false)}
-                  className="px-2 py-0.5 h-auto rounded text-[10px] uppercase tracking-[0.2em]"
+                  className="px-2 py-0.5 h-auto rounded wl-label"
                 >
                   All off
                 </ShadButton>
@@ -186,7 +186,7 @@ export default function IntegrationCapabilityPanel({
                       />
                       <span className="min-w-0 flex-1">
                         <span className="block text-[11px] text-ink font-medium">{tool.label}</span>
-                        <span className="block text-[10px] text-ink/40 leading-snug">
+                        <span className="block wl-micro-meta leading-snug">
                           {tool.description}
                         </span>
                       </span>

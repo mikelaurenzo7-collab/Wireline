@@ -386,18 +386,18 @@ export default function Integrations() {
                                 <div className="flex items-center gap-2">
                                   {acc.provider === "yahoo" ? (
                                     <span
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.3em]"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand wl-label"
                                       title="Yahoo inbox sync is coming soon — OAuth connection is stored"
                                     >
                                       Connected · Inbox soon
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.3em]">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 border border-brand/30 text-brand wl-label">
                                       <CheckCircle2 className="w-2.5 h-2.5" /> Synced
                                     </span>
                                   )}
                                   <span
-                                    className={`text-[10px] uppercase tracking-[0.3em] font-mono ${meta.color}`}
+                                    className={`wl-label font-mono ${meta.color}`}
                                   >
                                     {meta.label}
                                   </span>
@@ -406,7 +406,7 @@ export default function Integrations() {
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
-                              <Label className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground inline-flex items-center gap-1.5">
+                              <Label className="wl-label-muted-foreground inline-flex items-center gap-1.5">
                                 <Bot className="w-3 h-3 text-brand" /> Route to
                               </Label>
                               <div className="relative">

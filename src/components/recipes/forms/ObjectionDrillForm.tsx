@@ -69,7 +69,7 @@ export function ObjectionDrillForm({
                 <h4 className="font-display italic text-xl">{s.title}</h4>
                 <span
                   className={cn(
-                    "px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em]",
+                    "px-2.5 py-0.5 rounded-full wl-label",
                     s.difficulty === "easy" && "wl-status-success border wl-text-success",
                     s.difficulty === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     s.difficulty === "hard" &&
@@ -80,19 +80,19 @@ export function ObjectionDrillForm({
                 </span>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.3em] text-rose-500 mb-1">
+                <div className="wl-label text-rose-500 mb-1">
                   Prospect
                 </div>
                 <p className="text-ink/90 italic">"{s.prospect_says}"</p>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-1">
+                <div className="wl-label text-brand mb-1">
                   Recommended Response
                 </div>
                 <p className="text-ink/90">{s.recommended_response}</p>
               </div>
               <div className="pt-2 border-t border-white/5">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-1">
+                <div className="wl-label-muted mb-1">
                   Coaching Note
                 </div>
                 <p className="text-ink/70 text-xs leading-relaxed">{s.coaching_note}</p>

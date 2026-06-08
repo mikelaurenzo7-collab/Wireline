@@ -65,7 +65,7 @@ export default function CallbacksList({
           size="sm"
           onClick={onRefresh}
           className={cn(
-            "h-7 rounded-full text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand hover:border-brand/40 touch-press",
+            "h-7 rounded-full wl-label text-muted hover:text-brand hover:border-brand/40 touch-press",
             WL_OPS_CLASSES.filterChip,
           )}
         >
@@ -111,7 +111,7 @@ export default function CallbacksList({
                   </span>
                   <span
                     className={cn(
-                      "text-[10px] uppercase tracking-[0.3em] flex-shrink-0",
+                      "wl-label flex-shrink-0",
                       isPast ? "text-amber-600" : "text-brand",
                     )}
                   >
@@ -119,14 +119,14 @@ export default function CallbacksList({
                   </span>
                 </div>
                 {cb.customer_name && (
-                  <p className="text-[10px] text-muted mt-0.5">{cb.customer_number}</p>
+                  <p className="wl-micro-meta--muted mt-0.5">{cb.customer_number}</p>
                 )}
                 {cb.last_contact_summary && (
-                  <p className="text-[10px] text-ink/40 mt-1 line-clamp-1">
+                  <p className="wl-micro-meta mt-1 line-clamp-1">
                     {cb.last_contact_summary}
                   </p>
                 )}
-                <p className="text-[10px] text-ink/40 mt-1">
+                <p className="wl-micro-meta mt-1">
                   {scheduledAt.toLocaleString("en-US", {
                     weekday: "short",
                     month: "short",

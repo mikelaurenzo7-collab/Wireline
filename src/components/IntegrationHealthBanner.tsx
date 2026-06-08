@@ -51,13 +51,13 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
               variant="link"
               size="sm"
               onClick={onOpenIntegrations}
-              className="h-auto p-0 text-[10px] uppercase tracking-[0.18em] text-brand"
+              className="h-auto p-0 wl-label text-brand"
             >
               Open integrations
             </ShadButton>
           )}
         </div>
-        <ul className="list-disc pl-4 space-y-1 text-[10px] text-muted leading-relaxed">
+        <ul className="list-disc pl-4 space-y-1 wl-micro-meta--muted leading-relaxed">
           {reasons.map((r, i) => (
             <li key={i}>{r}</li>
           ))}

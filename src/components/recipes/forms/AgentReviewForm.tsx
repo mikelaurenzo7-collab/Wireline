@@ -120,7 +120,7 @@ export function AgentReviewForm({
             </ResultCard>
           </div>
           <div className="space-y-2.5">
-            <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
+            <h4 className="wl-label text-brand">
               Suggested Directives — One-Click Apply
             </h4>
             {review.suggested_directives.map((d: any, i: number) => (
@@ -130,7 +130,7 @@ export function AgentReviewForm({
               >
                 <div
                   className={cn(
-                    "shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] mt-0.5",
+                    "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                     d.priority === "critical" &&
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     d.priority === "high" && "bg-brand-3/15 text-brand-3 border border-brand-3/30",
@@ -152,7 +152,7 @@ export function AgentReviewForm({
                   onClick={() => apply(i, d)}
                   disabled={applying === i || appliedSet.has(i)}
                   className={cn(
-                    "shrink-0 rounded-full text-[10px] uppercase tracking-[0.3em]",
+                    "shrink-0 rounded-full wl-label",
                     appliedSet.has(i)
                       ? "border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success"
                       : "border-brand/30 text-brand hover:bg-brand/10",

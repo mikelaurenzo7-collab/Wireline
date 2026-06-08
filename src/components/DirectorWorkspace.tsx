@@ -1524,7 +1524,7 @@ export default function DirectorWorkspace({
                   variant="ghost"
                   size="sm"
                   disableAnimations
-                  className="touch-press shrink-0 text-[10px] uppercase tracking-[0.14em] text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
+                  className="touch-press shrink-0 wl-label text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
                 >
                   <Link
                     to={buildStitchPreviewPageUrl(latestStitchPreview.preview)}
@@ -1544,7 +1544,7 @@ export default function DirectorWorkspace({
               disableAnimations
               onClick={clearThread}
               disabled={isClearing}
-              className="touch-press shrink-0 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
+              className="touch-press shrink-0 wl-label-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
               aria-label="Clear thread"
             >
               {isClearing ? (
@@ -1554,7 +1554,7 @@ export default function DirectorWorkspace({
               )}
               <span>Clear</span>
               {pendingApprovalCount > 0 ? (
-                <span className="ml-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-amber-800 dark:text-amber-200">
+                <span className="ml-1 rounded-full bg-brand/15 px-1.5 py-0.5 wl-micro-badge font-semibold normal-case tracking-normal text-brand">
                   {pendingApprovalCount}
                 </span>
               ) : null}
@@ -1723,7 +1723,7 @@ export default function DirectorWorkspace({
                           <span className="shrink-0 flex w-6 h-6 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/15">
                             <Compass className="w-3 h-3" />
                           </span>
-                          <span className="text-[10px] text-muted uppercase tracking-[0.12em] font-medium">
+                          <span className="wl-micro-meta--muted uppercase tracking-[0.12em] font-medium">
                             Director
                             {m.coachAgentName ? (
                               <span className="text-brand/70 normal-case tracking-normal">
@@ -1817,12 +1817,12 @@ export default function DirectorWorkspace({
                               );
                               return pendingTotal > 0 ? (
                                 <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2 mb-1">
-                                  <p className="text-[10px] uppercase tracking-[0.16em] text-brand font-semibold">
+                                  <p className="wl-label text-brand font-semibold">
                                     {workflowTotal > 0
                                       ? LIVE_FEED_LABELS.proposal
                                       : "Proposed agent updates"}
                                   </p>
-                                  <p className="text-[10px] text-muted mt-0.5 leading-relaxed">
+                                  <p className="wl-micro-meta--muted mt-0.5 leading-relaxed">
                                     {LIVE_FEED_LABELS.proposalCount(pendingTotal)} ·{" "}
                                     {LIVE_FEED_LABELS.proposalHint}
                                   </p>
@@ -2098,7 +2098,7 @@ export default function DirectorWorkspace({
                                   ? "Still packaging preview — this can take longer than usual."
                                   : `Packaging preview — ${WIRELINE_STITCH_UI.loadingPhases[Math.min(Math.floor((stitchPendingElapsedMs[m.id] ?? 0) / 6000) % WIRELINE_STITCH_UI.loadingPhases.length, WIRELINE_STITCH_UI.loadingPhases.length - 1)]}`}
                               </p>
-                              <p className="text-[10px] text-muted/60 font-mono tabular-nums">
+                              <p className="wl-micro-meta--muted/60 font-mono tabular-nums">
                                 {(() => {
                                   const elapsed = Math.round(
                                     (stitchPendingElapsedMs[m.id] ?? 0) / 1000,
@@ -2124,7 +2124,7 @@ export default function DirectorWorkspace({
                                     });
                                     startStitchFinalizePoll(m);
                                   }}
-                                  className="h-auto px-0 py-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand hover:bg-transparent hover:text-brand-deep"
+                                  className="h-auto px-0 py-0 wl-label text-brand font-semibold hover:bg-transparent hover:text-brand-deep"
                                 >
                                   <RefreshCw className="w-3 h-3" />
                                   Check again for preview
@@ -2140,7 +2140,7 @@ export default function DirectorWorkspace({
                           <div className="flex items-center gap-2 mb-2">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
                               <Sparkles className="w-3 h-3 text-brand" />
-                              <span className="text-[10px] uppercase tracking-[0.12em] font-bold text-brand">
+                              <span className="wl-label font-bold text-brand">
                                 {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""}{" "}
                                 generated
                               </span>
@@ -2184,7 +2184,7 @@ export default function DirectorWorkspace({
                                           <a
                                             href={`data:image/svg+xml;base64,${btoa(p.svg)}`}
                                             download={`${p.title || "concept"}.svg`}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-paper/95 transition-colors"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm wl-micro-meta font-medium text-ink/80 hover:bg-paper/95 transition-colors"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <Download className="w-3 h-3" />
@@ -2195,11 +2195,11 @@ export default function DirectorWorkspace({
                                       {/* Format badge */}
                                       <div className="absolute top-2.5 right-2.5 flex gap-1">
                                         {p.svg && (
-                                          <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-mono text-white/90 uppercase font-bold">
+                                          <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm wl-micro-badge font-mono text-white/90 uppercase font-bold">
                                             SVG
                                           </span>
                                         )}
-                                        <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-mono text-white/90 uppercase font-bold">
+                                        <span className="px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm wl-micro-badge font-mono text-white/90 uppercase font-bold">
                                           PNG
                                         </span>
                                       </div>
@@ -2208,7 +2208,7 @@ export default function DirectorWorkspace({
                                     <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-br from-brand/5 to-brand-deep/5">
                                       <div className="text-center space-y-2">
                                         <Palette className="w-10 h-10 text-brand/20 mx-auto" />
-                                        <p className="text-[10px] text-muted/60">
+                                        <p className="wl-micro-meta--muted/60">
                                           Generating preview…
                                         </p>
                                       </div>
@@ -2222,7 +2222,7 @@ export default function DirectorWorkspace({
                                     <p className="text-[12px] font-semibold text-ink leading-tight">
                                       {p.title}
                                     </p>
-                                    <p className="text-[10px] text-muted/70 line-clamp-2 mt-0.5 leading-relaxed">
+                                    <p className="wl-micro-meta--muted line-clamp-2 mt-0.5 leading-relaxed">
                                       {p.rationale}
                                     </p>
                                   </div>
@@ -2241,7 +2241,7 @@ export default function DirectorWorkspace({
                                             true,
                                           )
                                         }
-                                        className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
+                                        className="px-2.5 py-1 rounded-md wl-label font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
                                       >
                                         <Sparkles className="w-2.5 h-2.5" />
                                         Vectorize
@@ -2265,7 +2265,7 @@ export default function DirectorWorkspace({
                                             true,
                                           )
                                         }
-                                        className="px-2.5 py-1 rounded-md text-[10px] font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
+                                        className="px-2.5 py-1 rounded-md wl-label font-semibold border border-brand/20 bg-brand/5 text-brand hover:bg-brand/10"
                                       >
                                         <Download className="w-2.5 h-2.5" />
                                         Export pack
@@ -2277,7 +2277,7 @@ export default function DirectorWorkspace({
                                           `Refine concept ${p.title}: keep the core shape but adjust typography.`,
                                         )
                                       }
-                                      className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                      className="px-2.5 py-1 rounded-md wl-label border border-black/10 hover:border-brand/20 hover:bg-brand/5"
                                     >
                                       Edit
                                     </ShadButton>
@@ -2287,7 +2287,7 @@ export default function DirectorWorkspace({
                                           `Regenerate 3 new options from ${p.title} with stronger contrast.`,
                                         )
                                       }
-                                      className="px-2.5 py-1 rounded-md text-[10px] border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                      className="px-2.5 py-1 rounded-md wl-label border border-black/10 hover:border-brand/20 hover:bg-brand/5"
                                     >
                                       Regenerate
                                     </ShadButton>

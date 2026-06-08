@@ -360,7 +360,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+            <span className="wl-label-muted">
               {event.type === "call_in"
                 ? "Inbound call"
                 : event.type === "call_out"
@@ -370,7 +370,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
             {event.lead_score !== undefined && event.lead_score > 0 && (
               <span
                 className={cn(
-                  "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.25em]",
+                  "px-2 py-0.5 rounded-full wl-label",
                   event.lead_score >= 70
                     ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
                     : event.lead_score >= 50
@@ -381,12 +381,12 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 {event.lead_score}/100
               </span>
             )}
-            <span className="text-[10px] text-muted">{formatDateTime(event.ts)}</span>
+            <span className="wl-micro-meta--muted">{formatDateTime(event.ts)}</span>
           </div>
           <p className="text-sm text-ink/85 mt-2 line-clamp-2">{event.summary}</p>
           {isCall && (
             <>
-              <div className="flex items-center gap-3 mt-2 text-[10px] uppercase tracking-[0.3em] text-muted">
+              <div className="flex items-center gap-3 mt-2 wl-label-muted">
                 {event.duration_seconds !== undefined && (
                   <span>
                     {Math.floor((event.duration_seconds || 0) / 60)}m{" "}
@@ -416,7 +416,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 <p className="text-[11px] text-ink/40 mt-1 line-clamp-1">{event.coaching_note}</p>
               )}
               {event.lesson_extracted && (
-                <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded wl-status-success wl-text-success border border-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]">
+                <span className="inline-block mt-1 wl-micro-badge px-1.5 py-0.5 rounded wl-status-success wl-text-success border border-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]">
                   Lesson captured
                 </span>
               )}
@@ -426,7 +426,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 mt-1.5 px-2 py-1 rounded-full bg-brand/8 border border-brand/20 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/15 hover:border-brand/35 transition-all"
+                  className="inline-flex items-center gap-1 mt-1.5 px-2 py-1 rounded-full bg-brand/8 border border-brand/20 text-brand wl-label hover:bg-brand/15 hover:border-brand/35 transition-all"
                 >
                   <Volume2 className="w-2.5 h-2.5" /> Listen to recording
                 </a>

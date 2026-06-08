@@ -194,7 +194,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                   onClick={loadMore}
                   disabled={loadingMore}
                   aria-label="Load more calls"
-                  className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink"
+                  className="h-auto px-0 wl-label-muted hover:text-ink"
                 >
                   {loadingMore ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -302,7 +302,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                               {/* Lead score badge */}
                               <span
                                 className={cn(
-                                  "shrink-0 px-1.5 py-0 rounded-full text-[10px] font-mono leading-tight border",
+                                  "shrink-0 px-1.5 py-0 rounded-full wl-micro-badge font-mono leading-tight border",
                                   (call.lead_score || 0) >= 80
                                     ? "bg-brand/12 text-brand border-brand/20"
                                     : (call.lead_score || 0) >= 50
@@ -316,7 +316,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                               {call.qa_score != null && (
                                 <span
                                   className={cn(
-                                    "shrink-0 px-1.5 py-0 rounded-full text-[10px] font-mono leading-tight border",
+                                    "shrink-0 px-1.5 py-0 rounded-full wl-micro-badge font-mono leading-tight border",
                                     call.qa_score >= 75
                                       ? "bg-brand/8 text-brand border-brand/20"
                                       : call.qa_score >= 50
@@ -330,17 +330,17 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                               <SentimentDot sentiment={call.sentiment} />
                               {outcomeLabel && <CallOutcomeBadge label={outcomeLabel} />}
                             </div>
-                            <p className="text-[10px] text-ink/40 truncate leading-tight">
+                            <p className="wl-micro-meta truncate leading-tight">
                               {call.summary || "Decoding…"}
                             </p>
                           </div>
 
                           {/* Date/time */}
                           <div className="text-right shrink-0">
-                            <div className="text-[10px] text-muted/80">
+                            <div className="wl-micro-meta--muted">
                               {formatDate(call.created_at)}
                             </div>
-                            <div className="text-[10px] text-ink/40 uppercase tracking-[0.2em]">
+                            <div className="wl-micro-meta uppercase tracking-[0.2em]">
                               {formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}
                             </div>
                           </div>
@@ -376,7 +376,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                 </div>
                 <div>
                   <p className="text-sm font-display italic text-ink/70 mb-1">No call selected</p>
-                  <p className="text-[10px] text-ink/40 leading-relaxed max-w-[200px]">
+                  <p className="wl-micro-meta leading-relaxed max-w-[200px]">
                     Click any call on the left to view the full transcript, summary, and QA
                     analysis.
                   </p>
@@ -438,7 +438,7 @@ function CallOutcomeBadge({ label }: { label: string }) {
   return (
     <span
       className={cn(
-        "shrink-0 px-1.5 py-0 rounded-full text-[10px] font-mono uppercase leading-tight border",
+        "shrink-0 px-1.5 py-0 rounded-full wl-micro-badge font-mono uppercase leading-tight border",
         tone,
       )}
     >
@@ -533,7 +533,7 @@ function CallDetail({
               disableAnimations
               onClick={onBack}
               aria-label="Back to call list"
-              className="lg:hidden h-7 px-2 rounded-full text-[10px] uppercase tracking-[0.22em] text-muted"
+              className="lg:hidden h-7 px-2 rounded-full wl-label-muted"
             >
               <ArrowLeft className="w-2.5 h-2.5" /> Back
             </ShadButton>
@@ -547,7 +547,7 @@ function CallDetail({
             disabled={scoring}
             title="Run AI quality scoring"
             className={cn(
-              "h-7 px-2.5 rounded-full text-[10px] uppercase tracking-[0.22em]",
+              "h-7 px-2.5 rounded-full wl-label",
               qaScore !== null
                 ? "text-muted hover:text-brand hover:border-brand/30"
                 : "bg-brand/10 border-brand/30 text-brand hover:bg-brand/20",
@@ -591,7 +591,7 @@ function CallDetail({
                 aria-controls={`call-panel-${t.id}`}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  "h-auto px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.22em]",
+                  "h-auto px-2.5 py-1 rounded-full border wl-label",
                   active
                     ? "bg-black/[0.06] border-brand/40 text-ink hover:bg-black/[0.06]"
                     : "border-black/8 text-muted hover:text-ink",
@@ -602,7 +602,7 @@ function CallDetail({
               </ShadButton>
             );
           })}
-          <div className="ml-auto flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-muted">
+          <div className="ml-auto flex items-center gap-2 wl-label-muted">
             <Clock className="w-3 h-3" />
             <span>{formatDuration(call.duration_seconds || 0)}</span>
             <span className="w-1 h-1 rounded-full bg-white/15" />
@@ -626,7 +626,7 @@ function CallDetail({
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-3"
               >
                 <div className="rounded-md wl-panel p-4">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
+                  <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
                   <p className="text-ink/90 font-display italic text-lg md:text-xl leading-snug">
@@ -661,7 +661,7 @@ function CallDetail({
                 </div>
                 {call.coaching_note && (
                   <div className="rounded-md wl-panel border border-brand/20 p-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
+                    <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                       <MessageSquare className="w-3 h-3" /> AI coaching note
                     </div>
                     <p className="text-[12px] text-ink/80 leading-relaxed">{call.coaching_note}</p>
@@ -672,7 +672,7 @@ function CallDetail({
                   <div className="rounded-md wl-panel p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div
-                        className="text-[10px] uppercase tracking-[0.3em] flex items-center gap-1.5 wl-qa-text"
+                        className="wl-label flex items-center gap-1.5 wl-qa-text"
                         data-qa-color={qaColor(qaScore)}
                       >
                         <Star className="w-3 h-3" /> QA Scorecard
@@ -690,7 +690,7 @@ function CallDetail({
                         const val = qaBreakdown[key] ?? 0;
                         return (
                           <div key={key} className="flex items-center gap-2">
-                            <span className="text-[10px] uppercase tracking-[0.22em] text-muted w-20 shrink-0">
+                            <span className="wl-label-muted w-20 shrink-0">
                               {label}
                             </span>
                             <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
@@ -701,7 +701,7 @@ function CallDetail({
                                 className={cn("h-full rounded-full", qaDimBarClass(val))}
                               />
                             </div>
-                            <span className="text-[10px] font-mono text-ink w-8 text-right shrink-0">
+                            <span className="wl-micro-badge font-mono text-ink w-8 text-right shrink-0">
                               {val}/20
                             </span>
                           </div>
@@ -732,10 +732,10 @@ function CallDetail({
                       )}
                     </div>
                     <div className="text-left min-w-0">
-                      <p className="text-[10px] uppercase tracking-[0.28em] text-brand">
+                      <p className="wl-label text-brand">
                         {scoring ? "Scoring…" : "Run QA Scoring"}
                       </p>
-                      <p className="text-[10px] text-ink/40 mt-0.5">
+                      <p className="wl-micro-meta mt-0.5">
                         Wireline AI evaluates this call across 5 quality dimensions
                       </p>
                     </div>
@@ -756,7 +756,7 @@ function CallDetail({
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-2"
               >
                 {transcriptLines.length === 0 ? (
-                  <p className="text-ink/40 text-[10px] uppercase tracking-[0.4em] text-center py-12">
+                  <p className="text-ink/40 wl-label text-center py-12">
                     No transcript available
                   </p>
                 ) : (
@@ -805,7 +805,7 @@ function CallDetail({
                       >
                         <div
                           className={cn(
-                            "text-[10px] uppercase tracking-[0.32em] mb-1",
+                            "wl-label mb-1",
                             isAI ? "text-muted" : isUser ? "text-brand" : "text-ink",
                           )}
                         >
@@ -836,7 +836,7 @@ function CallDetail({
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
                     <Activity className="w-6 h-6 text-ink/40" />
                     <p className="text-eyebrow/60">No recording available</p>
-                    <p className="text-[10px] text-ink/40">
+                    <p className="wl-micro-meta">
                       Recordings are stored by the voice carrier when enabled
                     </p>
                   </div>
@@ -861,7 +861,7 @@ function Stat({
 }) {
   return (
     <div className="rounded-md wl-panel p-2.5">
-      <div className="text-[10px] uppercase tracking-[0.28em] text-brand mb-1 flex items-center gap-1">
+      <div className="wl-label text-brand mb-1 flex items-center gap-1">
         {Icon && <Icon className="w-3 h-3" />}
         {label}
       </div>
@@ -929,14 +929,14 @@ function RecordingPlayer({ url }: { url: string }) {
     return (
       <div className="rounded-md wl-panel border border-destructive/20 p-4 text-center space-y-2">
         <Activity className="w-5 h-5 text-destructive mx-auto" />
-        <p className="text-[10px] text-destructive">
+        <p className="wl-micro-meta text-destructive">
           Recording could not be loaded. It may have expired.
         </p>
         <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1 wl-label text-muted hover:text-ink transition-colors"
         >
           <ExternalLink className="w-3 h-3" /> Try opening directly
         </a>
@@ -948,7 +948,7 @@ function RecordingPlayer({ url }: { url: string }) {
     <div className="rounded-md wl-panel p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-[0.3em] text-brand flex items-center gap-1.5">
+        <div className="wl-label text-brand flex items-center gap-1.5">
           <Volume2 className="w-3 h-3" />
           Call Recording
         </div>
@@ -957,7 +957,7 @@ function RecordingPlayer({ url }: { url: string }) {
           download
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1 wl-label text-muted hover:text-ink transition-colors"
           aria-label="Download recording"
         >
           <Download className="w-3 h-3" /> Download
@@ -1045,7 +1045,7 @@ function RecordingPlayer({ url }: { url: string }) {
         </ShadButton>
 
         {/* Time */}
-        <span className="text-[10px] font-mono text-muted tabular-nums ml-1">
+        <span className="wl-micro-badge font-mono text-muted tabular-nums ml-1">
           {fmtTime(currentTime)}
           <span className="text-ink/40 mx-0.5">/</span>
           {fmtTime(duration)}
@@ -1062,7 +1062,7 @@ function RecordingPlayer({ url }: { url: string }) {
           disableAnimations
           onClick={cycleSpeed}
           aria-label={`Playback speed: ${SPEEDS[speedIdx]}x`}
-          className="h-6 px-2 rounded-full text-[10px] font-mono text-muted hover:text-ink"
+          className="h-6 px-2 rounded-full wl-micro-badge font-mono text-muted hover:text-ink"
         >
           {SPEEDS[speedIdx]}x
         </ShadButton>

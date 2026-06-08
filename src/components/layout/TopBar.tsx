@@ -183,7 +183,7 @@ export default function TopBar({
           </span>
         )}
         {isDrawer && NAV_SHORTCUT_HINTS[item.path] && !badge && (
-          <kbd className="relative z-10 ml-auto shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded border border-black/10 bg-black/[0.03] text-muted leading-none">
+          <kbd className="relative z-10 ml-auto shrink-0 wl-micro-badge font-mono px-1.5 py-0.5 rounded border border-black/10 bg-black/[0.03] text-muted leading-none">
             {NAV_SHORTCUT_HINTS[item.path]}
           </kbd>
         )}
@@ -191,7 +191,7 @@ export default function TopBar({
           <span
             aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
             className={cn(
-              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-mono leading-none flex items-center justify-center transition-transform duration-200 group-hover:scale-105",
+              "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full wl-micro-badge font-mono leading-none flex items-center justify-center transition-transform duration-200 group-hover:scale-105",
               active
                 ? "bg-white/25 text-paper"
                 : "bg-rose-500/20 text-rose-400 border border-rose-500/30",
@@ -336,7 +336,7 @@ export default function TopBar({
                 title={user?.email || "Account"}
               >
                 <div
-                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center font-medium text-[10px] shrink-0 wl-avatar-cream"
+                  className="avatar-ring w-6 h-6 rounded-full flex items-center justify-center font-medium wl-micro-badge shrink-0 wl-avatar-cream"
                   aria-hidden="true"
                 >
                   {user?.email?.slice(0, 1).toUpperCase() ?? "?"}

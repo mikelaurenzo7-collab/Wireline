@@ -116,7 +116,7 @@ function LoadingProgress({ elapsedMs }: { elapsedMs: number }) {
         <p className="text-[11px] text-muted mt-1">{timeLabel} elapsed</p>
       </div>
       {elapsedMs > 15_000 && (
-        <p className="text-[10px] text-muted/70">{WIRELINE_STITCH_UI.loadingHint}</p>
+        <p className="wl-micro-meta--muted">{WIRELINE_STITCH_UI.loadingHint}</p>
       )}
     </div>
   );
@@ -239,7 +239,7 @@ export default function DirectorStitchPreviewStudio({
             size="sm"
             disableAnimations
             onClick={() => setRetryNonce((n) => n + 1)}
-            className="h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+            className="h-auto px-2.5 py-1 wl-label text-brand hover:text-brand-deep"
           >
             <RefreshCw className="w-3 h-3" />
             Retry preview
@@ -267,7 +267,7 @@ export default function DirectorStitchPreviewStudio({
           >
             {WIRELINE_STITCH_UI.badgeLabel}
           </span>
-          <span className="text-[10px] text-muted/60 font-mono tabular-nums">
+          <span className="wl-micro-meta--muted/60 font-mono tabular-nums">
             {deviceLabel(preview.deviceType)}
           </span>
         </span>
@@ -338,7 +338,7 @@ export default function DirectorStitchPreviewStudio({
                     variant="ghost"
                     size="sm"
                     onClick={() => setTab("screenshot")}
-                    className="h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+                    className="h-auto px-2.5 py-1 wl-label text-brand hover:text-brand-deep"
                   >
                     View screenshot instead
                   </ShadButton>
@@ -423,7 +423,7 @@ export default function DirectorStitchPreviewStudio({
               disabled={disabled}
               onClick={() => onSuggestEdit(prompt)}
               aria-label={`Suggest edit: ${prompt}`}
-              className="px-2.5 py-1 rounded-full text-[10px] font-medium border border-brand/15 bg-brand/[0.04] text-brand-deep hover:bg-brand/10 hover:border-brand/25 shrink-0 max-w-[280px] truncate"
+              className="px-2.5 py-1 rounded-full wl-micro-meta font-medium border border-brand/15 bg-brand/[0.04] text-brand-deep hover:bg-brand/10 hover:border-brand/25 shrink-0 max-w-[280px] truncate"
             >
               {prompt}
             </ShadButton>

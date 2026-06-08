@@ -110,7 +110,7 @@ export default function ProposalCard({
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em]",
+            "mt-2 flex items-center gap-1.5 wl-label",
             state === "done" ? "wl-text-success" : "text-muted/70",
           )}
         >

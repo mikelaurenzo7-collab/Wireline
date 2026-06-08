@@ -39,7 +39,7 @@ function AgentCard({
     >
       {isDemo && (
         <span
-          className="absolute top-2 right-2 z-10 text-[10px] uppercase tracking-[0.32em] px-2 py-0.5 rounded-md bg-brand/10 border border-brand/30 text-brand-deep leading-none"
+          className="absolute top-2 right-2 z-10 wl-label px-2 py-0.5 rounded-md bg-brand/10 border border-brand/30 text-brand-deep leading-none"
           title="Role-play demo line — not a real customer service number"
         >
           Demo

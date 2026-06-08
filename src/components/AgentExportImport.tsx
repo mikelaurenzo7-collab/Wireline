@@ -97,7 +97,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
         disableAnimations
         onClick={handleExport}
         disabled={isExporting}
-        className="h-8 rounded-full border-white/10 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:border-brand/30 hover:text-brand disabled:opacity-40"
+        className="h-8 rounded-full border-white/10 px-3 wl-micro-meta hover:border-brand/30 hover:text-brand disabled:opacity-40"
         title="Export agent config as JSON"
       >
         {isExporting ? (
@@ -117,7 +117,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
         disableAnimations
         onClick={() => fileRef.current?.click()}
         disabled={isImporting}
-        className="h-8 rounded-full border-white/10 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:border-brand/30 hover:text-brand disabled:opacity-40"
+        className="h-8 rounded-full border-white/10 px-3 wl-micro-meta hover:border-brand/30 hover:text-brand disabled:opacity-40"
         title="Import agent config from JSON"
       >
         {isImporting ? (
@@ -135,7 +135,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
             initial={{ opacity: 0, x: -6 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-1.5 text-brand text-[10px] uppercase tracking-[0.25em]"
+            className="flex items-center gap-1.5 text-brand wl-label"
           >
             <CheckCircle2 className="w-3 h-3" />
             Merged

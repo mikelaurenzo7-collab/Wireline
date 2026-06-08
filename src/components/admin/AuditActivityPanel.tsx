@@ -98,7 +98,7 @@ export function AuditActivityPanel() {
               disableAnimations
               onClick={() => setDays(d)}
               className={cn(
-                "h-auto px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.22em]",
+                "h-auto px-3 py-1 rounded-full wl-label",
                 days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
               )}
             >
@@ -111,7 +111,7 @@ export function AuditActivityPanel() {
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
           <Loader2 className="w-5 h-5 animate-spin text-brand/40" />
-          <p className="text-[10px] text-muted uppercase tracking-[0.2em]">Aggregating ledger...</p>
+          <p className="wl-micro-meta--muted uppercase tracking-[0.2em]">Aggregating ledger...</p>
         </div>
       ) : (
         <>
@@ -155,13 +155,13 @@ export function AuditActivityPanel() {
               <h4 className="text-eyebrow">Cost by Action</h4>
               <div className="space-y-4">
                 {byAction.length === 0 ? (
-                  <p className="py-8 text-center text-[10px] text-muted uppercase tracking-widest">
+                  <p className="py-8 text-center wl-micro-meta--muted uppercase tracking-widest">
                     No actions logged
                   </p>
                 ) : (
                   byAction.map((a) => (
                     <div key={a.action} className="space-y-1.5">
-                      <div className="flex justify-between items-end text-[10px] uppercase tracking-wider">
+                      <div className="flex justify-between items-end wl-label">
                         <span className="text-muted">{formatActionName(a.action)}</span>
                         <span className="font-mono text-ink/70">${Number(a.cost).toFixed(4)}</span>
                       </div>
@@ -241,7 +241,7 @@ export function AuditActivityPanel() {
             <div className="space-y-1">
               {recent.length === 0 && !recentLoading ? (
                 <div className="py-20 text-center">
-                  <p className="text-[10px] text-muted uppercase tracking-[0.3em]">
+                  <p className="wl-micro-meta--muted uppercase tracking-[0.3em]">
                     No recent activity found
                   </p>
                 </div>
@@ -265,23 +265,23 @@ export function AuditActivityPanel() {
                       <p className="text-[11px] font-medium text-ink truncate uppercase tracking-wider">
                         {formatActionName(entry.action)}
                       </p>
-                      <p className="text-[10px] text-muted truncate">
+                      <p className="wl-micro-meta--muted truncate">
                         {entry.metadata?.agent_name || "System"} · {entry.model || entry.model_id}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {(entry.latencyMs || entry.latency_ms) && (
-                        <span className="text-[10px] font-mono text-muted/70 tabular-nums flex items-center gap-1">
+                        <span className="wl-micro-badge font-mono text-muted/70 tabular-nums flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {entry.latencyMs || entry.latency_ms}ms
                         </span>
                       )}
-                      <span className="text-[10px] font-mono text-ink/70 tabular-nums w-16 text-right">
+                      <span className="wl-micro-badge font-mono text-ink/70 tabular-nums w-16 text-right">
                         {(entry.costUsd ?? entry.cost_usd) != null
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
                           : "—"}
                       </span>
-                      <span className="text-[10px] text-muted/70 tabular-nums w-24 text-right">
+                      <span className="wl-micro-meta--muted tabular-nums w-24 text-right">
                         {formatDateTime(
                           entry.createdAt ?? entry.created_at,
                           { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },

@@ -85,7 +85,7 @@ export function QualifyForm({
               <ResultCard key={k} title={k}>
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="font-display italic text-3xl text-ink">{q[k].score}</div>
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted">/ 100</div>
+                  <div className="wl-label-muted">/ 100</div>
                 </div>
                 <p className="text-sm text-ink/70">{q[k].evidence}</p>
               </ResultCard>

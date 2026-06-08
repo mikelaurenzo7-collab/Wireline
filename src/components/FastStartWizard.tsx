@@ -395,7 +395,7 @@ export default function FastStartWizard({
               </div>
               <div>
                 <h2 className="font-display italic text-xl text-ink">Fast Start</h2>
-                <p className="text-[10px] text-muted">{estimatedTimeText} to your first AI agent</p>
+                <p className="wl-micro-meta--muted">{estimatedTimeText} to your first AI agent</p>
               </div>
             </div>
             <ShadButton
@@ -438,7 +438,7 @@ export default function FastStartWizard({
                   <currentStep.icon className="w-6 h-6 text-brand" />
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-brand">
+                  <p className="wl-label text-brand">
                     Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
                   </p>
                   <h3 className="font-display italic text-2xl text-ink">{currentStep.title}</h3>
@@ -504,7 +504,7 @@ export default function FastStartWizard({
                           size="sm"
                           disableAnimations
                           onClick={() => setBusinessDescription(`I'm a ${example} that...`)}
-                          className="rounded-full text-[10px] px-2 py-1 h-auto min-h-0"
+                          className="rounded-full wl-label px-2 py-1 h-auto min-h-0"
                         >
                           {example}
                         </ShadButton>
@@ -561,7 +561,7 @@ export default function FastStartWizard({
                             )}
                           </div>
                           <p className="text-xs text-muted capitalize">{voice.gender}</p>
-                          <p className="text-[10px] text-brand mt-2">{voice.provider}</p>
+                          <p className="wl-micro-meta text-brand mt-2">{voice.provider}</p>
                         </ShadButton>
                       ))}
                     </div>

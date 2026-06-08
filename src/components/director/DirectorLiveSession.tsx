@@ -48,7 +48,7 @@ function LiveReplyPreview({ text }: { text: string }) {
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-brand/8 bg-brand/[0.04]">
         <span className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand/70")}>Live output</span>
-        <span className="inline-flex items-center gap-1 text-[10px] text-muted font-mono tabular-nums">
+        <span className="inline-flex items-center gap-1 wl-micro-meta--muted font-mono tabular-nums">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
@@ -159,7 +159,7 @@ export default function DirectorLiveSession({
             <span className="wl-label text-muted">Director</span>
             <span
               className={cn(
-                "text-[10px] uppercase tracking-[0.14em] px-1.5 py-0.5 rounded-full font-semibold",
+                "wl-label px-1.5 py-0.5 rounded-full font-semibold",
                 isDeep
                   ? WL_DIRECTOR_CLASSES.opusBadge
                   : "bg-brand/10 text-brand/80 border border-brand/15",
@@ -167,7 +167,7 @@ export default function DirectorLiveSession({
             >
               {modelLabel}
             </span>
-            <span className="text-[10px] font-mono text-muted/60 tabular-nums ml-auto">
+            <span className="wl-micro-badge font-mono text-muted/60 tabular-nums ml-auto">
               {formatElapsed(elapsedMs)}
               {thinkingDurationMs && phase !== "thinking" ? (
                 <span className="text-brand/50">

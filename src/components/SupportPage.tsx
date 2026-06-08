@@ -175,7 +175,7 @@ export function SupportPage() {
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5">
+                <label className="block wl-label text-muted mb-1.5">
                   What's this about?
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -202,7 +202,7 @@ export function SupportPage() {
               <div>
                 <label
                   htmlFor="support-email"
-                  className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+                  className="block wl-label text-muted mb-1.5"
                 >
                   Your email
                 </label>
@@ -224,7 +224,7 @@ export function SupportPage() {
               <div>
                 <label
                   htmlFor="support-subject"
-                  className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+                  className="block wl-label text-muted mb-1.5"
                 >
                   Subject
                 </label>
@@ -242,7 +242,7 @@ export function SupportPage() {
               <div>
                 <label
                   htmlFor="support-body"
-                  className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+                  className="block wl-label text-muted mb-1.5"
                 >
                   Details
                 </label>
@@ -289,7 +289,7 @@ export function SupportPage() {
           )}
         </div>
 
-        <p className="text-[10px] text-muted/70 text-center mt-8 leading-relaxed">
+        <p className="wl-micro-meta--muted text-center mt-8 leading-relaxed">
           Tickets are stored alongside your account data per the{" "}
           <Link to="/privacy" className="text-muted hover:text-ink underline">
             Privacy Policy

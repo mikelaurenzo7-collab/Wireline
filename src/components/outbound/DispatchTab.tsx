@@ -232,13 +232,13 @@ export default function DispatchTab({
                         />
                         {customerNumber.length > 0 &&
                           !/^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
-                            <p className="text-[10px] text-destructive mt-0.5">
+                            <p className="wl-micro-meta text-destructive mt-0.5">
                               Use format: +1 (555) 000-0000
                             </p>
                           )}
                         {customerNumber.length > 0 &&
                           /^\+?[\d\s\-()]{7,15}$/.test(customerNumber) && (
-                            <p className="text-[10px] text-brand mt-0.5 flex items-center gap-1">
+                            <p className="wl-micro-meta text-brand mt-0.5 flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" /> Valid number
                             </p>
                           )}
@@ -272,7 +272,7 @@ export default function DispatchTab({
                           onChange={(e) => setHasOutboundConsent(e.target.checked)}
                           className="mt-0.5 accent-brand"
                         />
-                        <span className="text-[10px] text-muted/80 leading-relaxed">
+                        <span className="wl-micro-meta--muted leading-relaxed">
                           I have prior express written consent to place this AI-assisted marketing
                           call, and this number is not on my DNC list.
                         </span>
@@ -281,7 +281,7 @@ export default function DispatchTab({
                       {isDncBlocked && (
                         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 flex items-start gap-2 text-destructive shadow-[0_0_15px_rgba(244,63,94,0.1)]">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <div className="text-[10px] leading-snug">
+                          <div className="wl-micro-meta leading-snug">
                             <strong className="font-bold">Blocked by DNC Policy:</strong> This
                             number is registered on your active Do-Not-Call list and cannot be
                             dialed.
@@ -292,7 +292,7 @@ export default function DispatchTab({
                       {quotaExhausted && (
                         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 flex items-start gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-destructive/90 leading-snug">
+                          <p className="wl-micro-meta text-destructive/90 leading-snug">
                             Daily voice-minute limit reached. Resets at midnight UTC.
                           </p>
                         </div>
@@ -300,7 +300,7 @@ export default function DispatchTab({
                       {quotaNearLimit && (
                         <div className="rounded-md border border-brand/30 bg-brand/5 px-3 py-2 flex items-start gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-brand/90 leading-snug">
+                          <p className="wl-micro-meta text-brand/90 leading-snug">
                             Near daily limit — {quotaUsed} of {quotaLimit} minutes used.
                           </p>
                         </div>
@@ -341,9 +341,9 @@ export default function DispatchTab({
                       <div className="rounded-md wl-panel border border-border p-3">
                         <div className="flex items-center gap-1.5 mb-2 text-brand">
                           <Terminal className="w-3 h-3" />
-                          <span className="text-[10px] uppercase tracking-[0.3em]">CSV format</span>
+                          <span className="wl-label">CSV format</span>
                         </div>
-                        <ul className="text-[10px] text-muted/80 space-y-0.5">
+                        <ul className="wl-micro-meta--muted space-y-0.5">
                           <li className="flex items-center gap-1.5">
                             <ChevronRight className="w-2.5 h-2.5 text-brand" /> Headers:{" "}
                             <span className="text-ink/80">phone, name, context</span>
@@ -394,7 +394,7 @@ export default function DispatchTab({
                           onChange={(e) => setHasOutboundConsent(e.target.checked)}
                           className="mt-0.5 accent-brand"
                         />
-                        <span className="text-[10px] text-muted/80 leading-relaxed">
+                        <span className="wl-micro-meta--muted leading-relaxed">
                           I have prior express written consent for every number in this manifest and
                           will honor opt-outs immediately.
                         </span>
@@ -421,7 +421,7 @@ export default function DispatchTab({
 
                       <div className="rounded-md wl-panel border border-brand/20 p-3 flex items-start gap-2">
                         <Shield className="w-3.5 h-3.5 text-brand shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-muted/80 leading-relaxed">
+                        <p className="wl-micro-meta--muted leading-relaxed">
                           Bulk data is scrubbed and encrypted before dispatch.
                         </p>
                       </div>
@@ -478,7 +478,7 @@ export default function DispatchTab({
                         ? "Dispatch queued calls"
                         : "Confirm outbound consent before dispatching queued calls"
                     }
-                    className="rounded-full bg-brand/20 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/30"
+                    className="rounded-full bg-brand/20 border-brand/40 text-brand wl-label hover:bg-brand/30"
                   >
                     {isDialing ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -536,7 +536,7 @@ export default function DispatchTab({
                                 {lead.customer_name || "Unknown subject"}
                               </h3>
                               {lead.source === "inbound" && (
-                                <span className="px-1.5 py-0.5 rounded-full bg-brand-2/15 border border-brand-2/40 text-brand-2 text-[10px] uppercase tracking-[0.25em] leading-none">
+                                <span className="px-1.5 py-0.5 rounded-full bg-brand-2/15 border border-brand-2/40 text-brand-2 wl-label leading-none">
                                   Inbound
                                 </span>
                               )}
@@ -544,7 +544,7 @@ export default function DispatchTab({
                             <div className="flex flex-wrap items-center gap-2">
                               <span
                                 className={cn(
-                                  "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-none inline-flex items-center gap-1",
+                                  "px-1.5 py-0.5 rounded-full border wl-label leading-none inline-flex items-center gap-1",
                                   lead.status === "Completed"
                                     ? "bg-brand/10 border-brand/30 text-brand"
                                     : lead.status === "Queued"
@@ -556,7 +556,7 @@ export default function DispatchTab({
                               </span>
                               <Link
                                 to={`/contact/${encodeURIComponent(lead.phone_number || lead.customer_number || "unknown")}`}
-                                className="px-2 py-0.5 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 hover:border-brand/60 text-[10px] text-brand font-mono tabular-nums"
+                                className="px-2 py-0.5 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 hover:border-brand/60 wl-micro-badge text-brand font-mono tabular-nums"
                               >
                                 {lead.phone_number || lead.customer_number}
                               </Link>
@@ -619,7 +619,7 @@ export default function DispatchTab({
                     disableAnimations
                     onClick={loadMoreLeads}
                     disabled={isLoadingMore}
-                    className="rounded-full border-border text-[10px] uppercase tracking-[0.25em] hover:border-brand/40"
+                    className="rounded-full border-border wl-label hover:border-brand/40"
                   >
                     {isLoadingMore ? (
                       <Loader2 className="w-3 h-3 animate-spin" />

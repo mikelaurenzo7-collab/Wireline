@@ -46,7 +46,7 @@ export default function DirectorStitchLiveSession({
             {WIRELINE_STITCH_UI.badgeLabel}
           </span>
         </span>
-        <span className="text-[10px] font-mono text-muted/70 tabular-nums">{elapsedSec}s</span>
+        <span className="wl-micro-badge font-mono text-muted/70 tabular-nums">{elapsedSec}s</span>
       </div>
 
       <div className="wl-stitch-device wl-stitch-device--mobile mx-auto wl-stitch-live-shimmer">
@@ -62,11 +62,11 @@ export default function DirectorStitchLiveSession({
             <span className="absolute -inset-3 rounded-full border border-brand/20 animate-ping" />
           </div>
           <p className="text-[12px] font-semibold text-ink/90">{phase}</p>
-          <p className="text-[10px] text-muted max-w-[240px] leading-relaxed">
+          <p className="wl-micro-meta--muted max-w-[240px] leading-relaxed">
             {WIRELINE_STITCH_UI.loadingHint}
           </p>
           {operatorPrompt && (
-            <p className="text-[10px] text-brand/70 line-clamp-2 max-w-[260px] italic">
+            <p className="wl-micro-meta text-brand/70 line-clamp-2 max-w-[260px] italic">
               “{operatorPrompt}”
             </p>
           )}

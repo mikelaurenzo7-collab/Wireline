@@ -244,7 +244,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-mono text-ink/90">{e}</div>
-                  <div className="text-[10px] text-ink/65 leading-snug">
+                  <div className="wl-micro-meta opacity-90 leading-snug">
                     {EVENT_DESCRIPTIONS[e]}
                   </div>
                 </div>
@@ -400,7 +400,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               disableAnimations
               onClick={toggleActive}
               className={cn(
-                "h-auto px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] border",
+                "h-auto px-2 py-0.5 rounded-full wl-label border",
                 hook.active ? WL_APP_CLASSES.statusActive : "bg-muted/15 text-muted border-border",
               )}
             >
@@ -409,7 +409,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             {hook.last_status !== null && (
               <span
                 className={cn(
-                  "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] border flex items-center gap-1",
+                  "px-2 py-0.5 rounded-full wl-label border flex items-center gap-1",
                   hook.last_status >= 200 && hook.last_status < 300
                     ? WL_APP_CLASSES.statusOk
                     : "bg-destructive/10 text-destructive border-destructive/20",
@@ -429,14 +429,14 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             {hook.events.map((e) => (
               <span
                 key={e}
-                className="px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.2em] bg-brand/10 text-brand border border-brand/20 font-mono"
+                className="px-1.5 py-0.5 rounded wl-label bg-brand/10 text-brand border border-brand/20 font-mono"
               >
                 {e}
               </span>
             ))}
           </div>
           {hook.last_triggered_at && (
-            <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-2 flex items-center gap-2">
+            <div className="wl-label-muted mt-2 flex items-center gap-2">
               <span>Last fired: {formatDateTime(hook.last_triggered_at)}</span>
               {hook.delivery_count !== null && hook.delivery_count > 0 && (
                 <span>· {hook.delivery_count} deliveries</span>
@@ -445,7 +445,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             </div>
           )}
           {hook.secret_last_four && (
-            <div className="flex items-center gap-2 mt-2 text-[10px] text-muted">
+            <div className="flex items-center gap-2 mt-2 wl-micro-meta--muted">
               <span className="uppercase tracking-[0.3em]">Secret</span>
               <code className="font-mono text-ink/70">
                 {"•".repeat(12)}
@@ -463,7 +463,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             disableAnimations
             onClick={toggleDeliveries}
             className={cn(
-              "rounded-full text-[10px] uppercase tracking-[0.3em]",
+              "rounded-full wl-label",
               showDeliveries && "bg-brand/15 border-brand/40 text-brand",
             )}
           >
@@ -479,7 +479,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             disableAnimations
             onClick={test}
             disabled={busy !== null}
-            className="rounded-full text-[10px] uppercase tracking-[0.3em] hover:border-brand/40 hover:text-brand"
+            className="rounded-full wl-label hover:border-brand/40 hover:text-brand"
           >
             {busy === "test" ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -497,7 +497,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 disableAnimations
                 onClick={remove}
                 disabled={busy !== null}
-                className="rounded-full text-[10px] uppercase tracking-[0.3em]"
+                className="rounded-full wl-label"
               >
                 {busy === "delete" ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
               </ShadButton>
@@ -507,7 +507,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 size="sm"
                 disableAnimations
                 onClick={() => setConfirmDelete(false)}
-                className="rounded-full text-[10px] uppercase tracking-[0.3em]"
+                className="rounded-full wl-label"
               >
                 Cancel
               </ShadButton>
@@ -538,7 +538,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           >
             <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                <div className="wl-label-muted">
                   Recent deliveries
                 </div>
                 <ShadButton
@@ -548,7 +548,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                   disableAnimations
                   onClick={loadDeliveries}
                   disabled={loadingDeliveries}
-                  className="text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink"
+                  className="wl-label-muted hover:text-ink"
                 >
                   {loadingDeliveries ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -559,10 +559,10 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 </ShadButton>
               </div>
               {loadingDeliveries && !deliveries && (
-                <div className="text-[10px] text-muted italic py-3">Loading deliveries…</div>
+                <div className="wl-micro-meta--muted italic py-3">Loading deliveries…</div>
               )}
               {deliveries && deliveries.length === 0 && (
-                <div className="text-[10px] text-ink/65 italic py-3">
+                <div className="wl-micro-meta opacity-90 italic py-3">
                   No deliveries yet. Hit Test or trigger an event.
                 </div>
               )}
@@ -582,7 +582,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                     >
                       <span
                         className={cn(
-                          "px-1.5 py-0.5 rounded text-[10px] uppercase tracking-[0.25em] border flex items-center gap-1",
+                          "px-1.5 py-0.5 rounded wl-label border flex items-center gap-1",
                           pillClass,
                         )}
                       >
@@ -625,7 +625,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                             disableAnimations
                             onClick={() => retryDelivery(d.id)}
                             disabled={deliveryBusy === d.id}
-                            className="h-auto px-2 py-0.5 rounded text-[10px] uppercase tracking-[0.25em] bg-brand/15 border-brand/40 text-brand hover:bg-brand/25"
+                            className="h-auto px-2 py-0.5 rounded wl-label bg-brand/15 border-brand/40 text-brand hover:bg-brand/25"
                           >
                             {deliveryBusy === d.id ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />

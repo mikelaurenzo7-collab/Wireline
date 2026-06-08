@@ -130,7 +130,7 @@ export function ArtifactCard({
               <a
                 href={downloadUrl}
                 download={name}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/95 backdrop-blur-sm text-[10px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/95 backdrop-blur-sm wl-label font-semibold text-ink shadow-lg hover:bg-white transition-colors"
                 title="Download"
               >
                 <Download className="w-3 h-3" />
@@ -140,7 +140,7 @@ export function ArtifactCard({
                 href={downloadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm text-[10px] font-medium text-ink/80 hover:bg-paper/95 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm wl-micro-meta font-medium text-ink/80 hover:bg-paper/95 transition-colors"
                 title="Open"
               >
                 <ExternalLink className="w-3 h-3" />
@@ -162,7 +162,7 @@ export function ArtifactCard({
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-medium text-ink truncate">{name}</p>
-          <p className="text-[10px] text-muted">
+          <p className="wl-micro-meta--muted">
             {type.toUpperCase()}
             {sizeBytes != null && ` · ${formatBytes(sizeBytes)}`}
           </p>
@@ -219,7 +219,7 @@ export function ArtifactCard({
             </audio>
           )}
           {(type === "code" || type === "json" || type === "markdown") && (
-            <pre className="text-[10px] font-mono text-muted max-h-48 overflow-auto p-2 rounded-md bg-black/5">
+            <pre className="wl-micro-badge font-mono text-muted max-h-48 overflow-auto p-2 rounded-md bg-black/5">
               {effectivePreview}
             </pre>
           )}

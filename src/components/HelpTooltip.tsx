@@ -65,7 +65,7 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
           variant="outline"
           size="icon"
           aria-label="Help"
-          className="w-4 h-4 min-h-0 min-w-0 h-4 rounded-full text-[10px] text-muted border-white/20 hover:border-brand/40 hover:text-brand after:hidden"
+          className="w-4 h-4 min-h-0 min-w-0 h-4 rounded-full wl-micro-meta--muted border-white/20 hover:border-brand/40 hover:text-brand after:hidden"
         >
           ?
         </ShadButton>
@@ -83,7 +83,7 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
           >
             <div className="wl-panel-elevated rounded-md border px-3 py-2 shadow-xl wl-help-tooltip-surface">
               {title && (
-                <p className="text-[10px] font-semibold text-ink mb-1 leading-tight">{title}</p>
+                <p className="wl-label font-semibold text-ink mb-1 leading-tight">{title}</p>
               )}
               <p className="text-xs text-ink/70 leading-relaxed whitespace-normal">{content}</p>
             </div>

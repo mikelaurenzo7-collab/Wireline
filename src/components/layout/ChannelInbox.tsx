@@ -33,7 +33,7 @@ export function ChannelInboxListPane({
       <div className={WL_CHANNEL_CLASSES.inboxListHeader}>
         <span className="wl-label-muted">{label}</span>
         {count != null && (
-          <span className="text-[10px] font-mono text-muted tabular-nums">{count}</span>
+          <span className="wl-micro-badge font-mono text-muted tabular-nums">{count}</span>
         )}
       </div>
       <div className="flex-1 min-h-0 scroll-viewport panel-scroll p-2">{children}</div>

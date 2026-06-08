@@ -2,6 +2,11 @@
 
 /* ── Shared tokens ───────────────────────────────────────────────────────── */
 
+.wl-preview-micro {
+  font-size: 0.625rem;
+  line-height: 1.25;
+}
+
 .wl-preview-body {
   background: #1c0f33;
 }

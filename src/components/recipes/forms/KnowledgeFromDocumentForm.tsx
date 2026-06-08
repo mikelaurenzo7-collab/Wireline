@@ -144,7 +144,7 @@ export function KnowledgeFromDocumentForm({
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-ink leading-tight">{file.name}</p>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                    <p className="wl-label-muted">
                       {(file.size / 1024 / 1024).toFixed(2)} MB · ready
                     </p>
                   </div>
@@ -159,7 +159,7 @@ export function KnowledgeFromDocumentForm({
                       setResult(null);
                       setApplied(null);
                     }}
-                    className="relative z-10 h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-rose-500 hover:text-rose-400"
+                    className="relative z-10 h-auto px-0 wl-label text-rose-500 hover:text-rose-400"
                   >
                     <Trash2 className="w-3 h-3" /> Remove
                   </ShadButton>
@@ -171,7 +171,7 @@ export function KnowledgeFromDocumentForm({
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                    <p className="wl-label-muted">
                       Up to 32 MB · Wireline AI reads it natively
                     </p>
                   </div>
@@ -207,7 +207,7 @@ export function KnowledgeFromDocumentForm({
               setResult(null);
               setApplied(null);
             }}
-            className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
+            className="h-auto px-0 wl-label-muted hover:text-brand"
           >
             ← Back to Upload
           </ShadButton>
@@ -222,7 +222,7 @@ export function KnowledgeFromDocumentForm({
           </ResultCard>
           <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
+              <h4 className="wl-label text-brand">
                 Extracted · {selected.size}/{result.entries.length} selected
               </h4>
               <ShadButton
@@ -231,7 +231,7 @@ export function KnowledgeFromDocumentForm({
                 size="sm"
                 disableAnimations
                 onClick={toggleAll}
-                className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
+                className="h-auto px-0 wl-label-muted hover:text-brand"
               >
                 {selected.size === result.entries.length ? "Deselect All" : "Select All"}
               </ShadButton>
@@ -270,7 +270,7 @@ export function KnowledgeFromDocumentForm({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-ink/90">{e.fact}</div>
-                      <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-1">
+                      <div className="wl-label-muted mt-1">
                         {e.category}
                       </div>
                     </div>

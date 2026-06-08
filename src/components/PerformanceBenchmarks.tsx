@@ -90,18 +90,18 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           {/* Label + bar */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] uppercase tracking-[0.25em] text-ink/70">
+              <span className="wl-micro-meta">
                 {item.label}
               </span>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
-                  <span className="text-ink/40 ml-0.5 text-[10px]">{item.unit}</span>
+                  <span className="text-ink/40 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
-                <span className="text-ink/40 text-[10px]">vs</span>
+                <span className="wl-micro-meta">vs</span>
                 <span className="font-mono text-[11px] text-ink/70">
                   {item.benchmark}
-                  <span className="text-ink/40 ml-0.5 text-[10px]">{item.unit}</span>
+                  <span className="text-ink/40 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function PerformanceBenchmarks() {
   if (error || !data) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-[10px] uppercase tracking-[0.5em] text-rose-500/60">
+        <p className="wl-label text-rose-500/60">
           {error || "No data"}
         </p>
       </div>
@@ -226,12 +226,12 @@ export default function PerformanceBenchmarks() {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
         <TrendingUp className="w-8 h-8 text-ink/40" />
-        <p className="text-[10px] uppercase tracking-[0.5em] text-ink/40">
+        <p className="wl-micro-meta">
           No call data in the last 30 days
         </p>
         <Link
           to="/outbound"
-          className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/10 transition-all"
+          className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand wl-label hover:bg-brand/10 transition-all"
         >
           Start Outbound Campaign →
         </Link>

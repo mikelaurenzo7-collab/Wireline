@@ -95,7 +95,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] uppercase tracking-[0.3em]",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border wl-label",
         m.color,
         m.bg,
         m.border,
@@ -194,7 +194,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
       >
         <header className="px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-0.5">Appointments</p>
+            <p className="wl-label text-brand mb-0.5">Appointments</p>
             <h2 className="font-display italic text-2xl text-ink">
               {isEdit ? "Edit Appointment" : "New Appointment"}
             </h2>
@@ -316,7 +316,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           <ShadButton
             onClick={onClose}
             variant="outline"
-            className="h-9 px-4 rounded-full text-[10px] uppercase tracking-[0.28em]"
+            className="h-9 px-4 rounded-full wl-label"
           >
             Cancel
           </ShadButton>
@@ -324,7 +324,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
             onClick={save}
             disabled={saving}
             variant="default"
-            className="h-9 px-5 rounded-full text-[10px] uppercase tracking-[0.28em]"
+            className="h-9 px-5 rounded-full wl-label"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -350,7 +350,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40 flex items-center gap-1.5">
+      <label className="wl-label text-ink/40 flex items-center gap-1.5">
         {Icon && <Icon className="w-2.5 h-2.5 text-brand" />}
         {label}
       </label>
@@ -451,7 +451,7 @@ function CalendarGrid({
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
-            className="py-2 text-center text-[10px] uppercase tracking-[0.3em] text-ink/40"
+            className="py-2 text-center wl-label text-ink/40"
           >
             {d}
           </div>
@@ -497,7 +497,7 @@ function CalendarGrid({
                             disableAnimations
                             onClick={() => onSelect(a)}
                             className={cn(
-                              "w-full h-auto justify-start px-1.5 py-0.5 rounded text-[10px] truncate touch-press",
+                              "w-full h-auto justify-start px-1.5 py-0.5 rounded wl-micro-meta truncate touch-press",
                               m.bg,
                               m.color,
                             )}
@@ -507,7 +507,7 @@ function CalendarGrid({
                         );
                       })}
                       {dayAppts.length > 3 && (
-                        <div className="text-[10px] text-ink/40 pl-1">
+                        <div className="wl-micro-meta pl-1">
                           +{dayAppts.length - 3} more
                         </div>
                       )}
@@ -632,7 +632,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
           setShowModal(true);
         }}
         variant="default"
-        className="h-9 px-4 rounded-full text-[10px] uppercase tracking-[0.28em] touch-press"
+        className="h-9 px-4 rounded-full wl-label touch-press"
       >
         <Plus className="w-3.5 h-3.5" /> {OPS_CHANNEL_TOOLBAR.appointments.book}
       </ShadButton>
@@ -864,7 +864,7 @@ function AppointmentRow({
             <StatusBadge status={appt.status} />
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap text-[10px] text-ink/40">
+          <div className="flex items-center gap-3 flex-wrap wl-micro-meta">
             <span className="inline-flex items-center gap-1">
               <Wrench className="w-3 h-3 text-brand" />
               {appt.service_type}
@@ -894,7 +894,7 @@ function AppointmentRow({
           {appt.notes && (
             <div className="flex items-start gap-1.5 mt-1">
               <StickyNote className="w-3 h-3 text-ink/40 shrink-0 mt-0.5" />
-              <p className="text-[10px] text-ink/40 leading-snug line-clamp-2">{appt.notes}</p>
+              <p className="wl-micro-meta leading-snug line-clamp-2">{appt.notes}</p>
             </div>
           )}
         </div>
@@ -936,7 +936,7 @@ function AppointmentRow({
                         onStatusChange(s);
                         setShowStatusMenu(false);
                       }}
-                      className="w-full h-auto justify-start rounded-none px-3 py-2 text-[10px] text-ink hover:bg-black/5"
+                      className="w-full h-auto justify-start rounded-none px-3 py-2 wl-micro-meta text-ink hover:bg-black/5"
                     >
                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
                       {s}

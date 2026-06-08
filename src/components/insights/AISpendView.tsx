@@ -343,11 +343,11 @@ export default function AISpendView({ days }: { days: number }) {
                         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
                         className="absolute inset-y-0 left-0 rounded-md flex items-center px-3 bg-brand"
                       >
-                        <span className="text-[10px] font-mono text-on-brand font-medium">
+                        <span className="wl-micro-badge font-mono text-on-brand font-medium">
                           ${safeFixed(d.cost, 2)}
                         </span>
                       </motion.div>
-                      <span className="absolute inset-y-0 right-3 flex items-center text-[10px] text-muted">
+                      <span className="absolute inset-y-0 right-3 flex items-center wl-micro-meta--muted">
                         {d.calls} calls
                       </span>
                     </div>

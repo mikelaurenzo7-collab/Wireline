@@ -49,7 +49,7 @@ export default function WorkspaceTopBar({
             )}
           >
             {eyebrow && (
-              <p className={cn(WL_APP_CLASSES.workspaceEyebrow, "truncate hidden sm:block")}>
+              <p className={cn(WL_APP_CLASSES.workspaceEyebrow, "truncate")}>
                 {eyebrow}
               </p>
             )}

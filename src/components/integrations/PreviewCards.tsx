@@ -42,7 +42,7 @@ export function CRMPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-crm-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-crm-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Database size={10} /> Opportunity Created
       </div>
       <div className="wl-preview-body p-3 space-y-2.5">
@@ -52,7 +52,7 @@ export function CRMPreviewCard() {
           </div>
           <div>
             <div className="text-xs text-white font-medium">Acme Corporation</div>
-            <div className="text-[10px] wl-preview-muted">John Smith · (555) 234-5678</div>
+            <div className="wl-preview-micro wl-preview-muted">John Smith · (555) 234-5678</div>
           </div>
         </div>
 
@@ -61,7 +61,7 @@ export function CRMPreviewCard() {
           {stages.map((s, i) => (
             <div key={s} className="flex items-center gap-0.5 flex-1">
               <div
-                className="wl-preview-crm-stage text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap"
+                className="wl-preview-crm-stage wl-preview-micro px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap"
                 data-lit={i <= stage ? "true" : "false"}
                 data-current={i === stage ? "true" : "false"}
               >
@@ -77,7 +77,7 @@ export function CRMPreviewCard() {
           ))}
         </div>
 
-        <div className="text-[10px] wl-preview-muted">
+        <div className="wl-preview-micro wl-preview-muted">
           Deal value: <span className="text-white font-medium">$4,800</span> · Stage moved to{" "}
           <span className="wl-preview-crm-accent">Qualified</span>
         </div>
@@ -96,7 +96,7 @@ export function XPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-x-header flex items-center gap-2 px-3 py-2 text-[10px] font-semibold">
+      <div className="wl-preview-x-header flex items-center gap-2 px-3 py-2 wl-preview-micro font-semibold">
         <span>@wireline</span>
         <span className="wl-preview-x-muted">· just now</span>
       </div>
@@ -105,7 +105,7 @@ export function XPreviewCard() {
           <div className="text-[11px] leading-relaxed wl-preview-x-text">
             Thanks for calling in — we&apos;ll follow up with your quote by end of day. 🎯
           </div>
-          <div className="flex items-center gap-3 mt-2 text-[10px] wl-preview-x-meta">
+          <div className="flex items-center gap-3 mt-2 wl-preview-micro wl-preview-x-meta">
             <span>♡ 12</span>
             <span>↻ 3</span>
             <span>💬 2</span>
@@ -126,7 +126,7 @@ export function SlackPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-slack-header flex items-center gap-2 px-3 py-2 text-[10px] font-semibold">
+      <div className="wl-preview-slack-header flex items-center gap-2 px-3 py-2 wl-preview-micro font-semibold">
         <span className="wl-preview-slack-hash">#</span> hot-leads
       </div>
       <div className="wl-preview-slack-body p-3 space-y-1.5">
@@ -134,7 +134,7 @@ export function SlackPreviewCard() {
           className="wl-preview-fade-up flex items-start gap-2"
           data-visible={visible ? "true" : "false"}
         >
-          <div className="wl-preview-orbit-accent w-7 h-7 rounded-md shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5">
+          <div className="wl-preview-orbit-accent w-7 h-7 rounded-md shrink-0 flex items-center justify-center wl-preview-micro font-bold text-white mt-0.5">
             W
           </div>
           <div className="min-w-0">
@@ -142,7 +142,7 @@ export function SlackPreviewCard() {
               <span className="text-[11px] font-semibold wl-preview-slack-name">
                 Wireline Agent
               </span>
-              <span className="text-[10px] wl-preview-muted-35">just now</span>
+              <span className="wl-preview-micro wl-preview-muted-35">just now</span>
             </div>
             <div className="text-[11px] leading-relaxed wl-preview-slack-message">
               🔥 <strong>Qualified lead:</strong> Jennifer Park, ACME Corp
@@ -153,7 +153,7 @@ export function SlackPreviewCard() {
               {["👀 1", "⚡ 2"].map((r) => (
                 <span
                   key={r}
-                  className="wl-preview-slack-reaction text-[10px] px-1.5 py-0.5 rounded"
+                  className="wl-preview-slack-reaction wl-preview-micro px-1.5 py-0.5 rounded"
                 >
                   {r}
                 </span>
@@ -180,7 +180,7 @@ export function SMSPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-sms-header flex items-center justify-center py-2 text-[10px] font-medium">
+      <div className="wl-preview-sms-header flex items-center justify-center py-2 wl-preview-micro font-medium">
         Wireline · (630) 581-1834
       </div>
       <div className="wl-preview-sms-body px-3 py-3 space-y-2">
@@ -208,7 +208,7 @@ export function SMSPreviewCard() {
         )}
         {(phase === "sent" || phase === "replied") && (
           <div className="flex items-center justify-end gap-1 wl-preview-appear-up-delayed">
-            <span className="text-[10px] wl-preview-sms-delivered">Delivered</span>
+            <span className="wl-preview-micro wl-preview-sms-delivered">Delivered</span>
           </div>
         )}
 
@@ -228,17 +228,17 @@ export function SMSPreviewCard() {
 export function ZoomPreviewCard() {
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-zoom-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-zoom-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Video size={10} /> Meeting Created
       </div>
       <div className="wl-preview-body p-3 space-y-2">
         <div className="text-xs text-white font-medium">Product Demo — Acme Corp</div>
-        <div className="text-[10px] wl-preview-muted">Tomorrow, 2:00 PM CST · 45 min</div>
-        <div className="wl-preview-zoom-link-box flex items-center gap-2 px-2.5 py-2 rounded-md text-[10px]">
+        <div className="wl-preview-micro wl-preview-muted">Tomorrow, 2:00 PM CST · 45 min</div>
+        <div className="wl-preview-zoom-link-box flex items-center gap-2 px-2.5 py-2 rounded-md wl-preview-micro">
           <Video size={12} className="wl-preview-zoom-accent" />
           <span className="wl-preview-zoom-accent">zoom.us/j/928473021</span>
         </div>
-        <div className="text-[10px] wl-preview-muted-40">
+        <div className="wl-preview-micro wl-preview-muted-40">
           Link sent to caller via SMS &amp; email
         </div>
       </div>
@@ -256,7 +256,7 @@ export function CalendarPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-cal-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-cal-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <CalendarCheck size={10} /> Appointment Booked
       </div>
       <div className="wl-preview-body p-3 space-y-2">
@@ -265,16 +265,16 @@ export function CalendarPreviewCard() {
             className="wl-preview-cal-date-box w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0"
             data-confirmed={confirmed ? "true" : "false"}
           >
-            <div className="text-[10px] font-semibold uppercase wl-preview-cal-month">JUN</div>
+            <div className="wl-preview-micro font-semibold uppercase wl-preview-cal-month">JUN</div>
             <div className="text-lg font-bold leading-none text-white">17</div>
           </div>
           <div>
             <div className="text-xs text-white font-medium">Site Inspection</div>
-            <div className="text-[10px] wl-preview-muted">10:00 – 11:00 AM · Google Meet</div>
+            <div className="wl-preview-micro wl-preview-muted">10:00 – 11:00 AM · Google Meet</div>
           </div>
         </div>
         <div
-          className="wl-preview-cal-status flex items-center gap-1.5 text-[10px]"
+          className="wl-preview-cal-status flex items-center gap-1.5 wl-preview-micro"
           data-confirmed={confirmed ? "true" : "false"}
         >
           <div
@@ -300,11 +300,11 @@ export function ShopifyPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-shopify-header flex items-center justify-between px-3 py-2 text-[10px] font-semibold">
+      <div className="wl-preview-shopify-header flex items-center justify-between px-3 py-2 wl-preview-micro font-semibold">
         <span className="flex items-center gap-1.5">
           <ShoppingBag size={10} /> Order #4821
         </span>
-        <span className="wl-preview-shopify-badge px-1.5 py-0.5 rounded-full text-[10px]">
+        <span className="wl-preview-shopify-badge px-1.5 py-0.5 rounded-full wl-preview-micro">
           Fulfilled
         </span>
       </div>
@@ -313,13 +313,13 @@ export function ShopifyPreviewCard() {
           <div className="wl-preview-shopify-thumb w-10 h-10 rounded-md shrink-0" />
           <div>
             <div className="text-xs text-white font-medium">Merino Wool Throw — Forest</div>
-            <div className="text-[10px] wl-preview-muted-45">Qty 2 · $89.00 each</div>
+            <div className="wl-preview-micro wl-preview-muted-45">Qty 2 · $89.00 each</div>
           </div>
         </div>
 
         {/* Fulfillment progress bar */}
         <div className="space-y-1">
-          <div className="flex justify-between text-[10px] wl-preview-muted-40">
+          <div className="flex justify-between wl-preview-micro wl-preview-muted-40">
             <span>Fulfillment</span>
             <span className="wl-preview-shopify-accent">100%</span>
           </div>
@@ -331,7 +331,7 @@ export function ShopifyPreviewCard() {
           </div>
         </div>
 
-        <div className="wl-preview-shopify-footer flex items-center justify-between text-[10px] pt-1 border-t">
+        <div className="wl-preview-shopify-footer flex items-center justify-between wl-preview-micro pt-1 border-t">
           <span className="wl-preview-muted-45">
             Tracking: <span className="font-mono wl-preview-muted-70">1Z999AA10</span>
           </span>
@@ -352,22 +352,22 @@ export function SquarePreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-square-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-square-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <CreditCard size={10} /> Invoice Sent
       </div>
       <div className="wl-preview-body p-3 space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-white font-medium">Invoice #INV-0047</div>
-            <div className="text-[10px] wl-preview-muted-45">Landscaping · Spring Package</div>
+            <div className="wl-preview-micro wl-preview-muted-45">Landscaping · Spring Package</div>
           </div>
           <div className="text-right">
             <div className="text-sm font-bold text-white">$650.00</div>
-            <div className="text-[10px] wl-preview-muted-40">Due May 28</div>
+            <div className="wl-preview-micro wl-preview-muted-40">Due May 28</div>
           </div>
         </div>
         <div
-          className="wl-preview-square-action flex items-center gap-2 px-2.5 py-2 rounded-md text-[10px] font-medium"
+          className="wl-preview-square-action flex items-center gap-2 px-2.5 py-2 rounded-md wl-preview-micro font-medium"
           data-sent={sent ? "true" : "false"}
         >
           {sent ? <CheckCircle2 size={11} /> : <CreditCard size={11} />}
@@ -390,7 +390,7 @@ export function DocuSignPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-docusign-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold">
+      <div className="wl-preview-docusign-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold">
         <FileText size={10} /> Contract Dispatched
       </div>
       <div className="wl-preview-body p-3 space-y-2.5">
@@ -400,7 +400,7 @@ export function DocuSignPreviewCard() {
           </div>
           <div>
             <div className="text-xs text-white font-medium">Service Agreement 2025</div>
-            <div className="text-[10px] wl-preview-muted-45">Sent to john@acmecorp.com</div>
+            <div className="wl-preview-micro wl-preview-muted-45">Sent to john@acmecorp.com</div>
           </div>
         </div>
         <div className="space-y-1">
@@ -418,7 +418,7 @@ export function DocuSignPreviewCard() {
                   data-first={i === 0 ? "true" : "false"}
                 />
                 <span
-                  className="wl-preview-docusign-label text-[10px]"
+                  className="wl-preview-docusign-label wl-preview-micro"
                   data-signed={isThisSigned ? "true" : "false"}
                 >
                   {field} field
@@ -426,7 +426,7 @@ export function DocuSignPreviewCard() {
                 {isThisSigned ? (
                   <CheckCircle2 size={9} className="wl-preview-orbit-accent-text ml-auto" />
                 ) : i === 0 ? (
-                  <span className="wl-preview-docusign-awaiting ml-auto text-[10px]">Awaiting</span>
+                  <span className="wl-preview-docusign-awaiting ml-auto wl-preview-micro">Awaiting</span>
                 ) : null}
               </div>
             );
@@ -447,15 +447,15 @@ export function MetaPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-meta-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-meta-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Target size={10} /> Lead Submitted to Meta CAPI
       </div>
       <div className="wl-preview-body p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <div className="text-[10px] uppercase tracking-[0.25em] wl-preview-meta-label">
+          <div className="wl-preview-micro uppercase tracking-[0.25em] wl-preview-meta-label">
             Conversion Event
           </div>
-          <div className="wl-preview-meta-badge text-[10px] px-2 py-0.5 rounded-full font-medium">
+          <div className="wl-preview-meta-badge wl-preview-micro px-2 py-0.5 rounded-full font-medium">
             Lead
           </div>
         </div>
@@ -467,13 +467,13 @@ export function MetaPreviewCard() {
             ["Campaign", "Spring Outreach"],
           ].map(([label, val]) => (
             <div key={label} className="flex items-center justify-between">
-              <span className="text-[10px] wl-preview-muted-40">{label}</span>
-              <span className="text-[10px] text-white">{val}</span>
+              <span className="wl-preview-micro wl-preview-muted-40">{label}</span>
+              <span className="wl-preview-micro text-white">{val}</span>
             </div>
           ))}
         </div>
         <div
-          className="wl-preview-meta-status text-[10px] text-center py-1.5 rounded"
+          className="wl-preview-meta-status wl-preview-micro text-center py-1.5 rounded"
           data-fired={fired ? "true" : "false"}
         >
           {fired ? "✓ Server-side event fired · deduplication enabled" : "Sending event…"}
@@ -505,7 +505,7 @@ export function ApolloPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-apollo-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-apollo-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Search size={10} /> Lead Enriched
       </div>
       <div className="wl-preview-body p-3 space-y-2">
@@ -515,7 +515,7 @@ export function ApolloPreviewCard() {
           </div>
           <div>
             <div className="text-xs text-white font-medium">Jennifer Park</div>
-            <div className="text-[10px] wl-preview-muted">VP of Operations · Acme Corp</div>
+            <div className="wl-preview-micro wl-preview-muted">VP of Operations · Acme Corp</div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
@@ -525,8 +525,8 @@ export function ApolloPreviewCard() {
               className="wl-preview-apollo-field wl-preview-reveal-item px-2 py-1 rounded"
               data-revealed={i < revealed ? "true" : "false"}
             >
-              <div className="text-[10px] wl-preview-muted-40">{k}</div>
-              <div className="text-[10px] text-white font-medium truncate">{v}</div>
+              <div className="wl-preview-micro wl-preview-muted-40">{k}</div>
+              <div className="wl-preview-micro text-white font-medium truncate">{v}</div>
             </div>
           ))}
         </div>
@@ -550,11 +550,11 @@ export function GeminiPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-gemini-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-gemini-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Sparkles size={10} /> Grounded Web Search
       </div>
       <div className="wl-preview-body p-3 space-y-2">
-        <div className="wl-preview-gemini-search-box flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px]">
+        <div className="wl-preview-gemini-search-box flex items-center gap-2 px-2.5 py-1.5 rounded-md wl-preview-micro">
           <Search size={10} className="wl-preview-gemini-search-icon" />
           <span className="wl-preview-gemini-search-text">
             &quot;Acme Corp pricing page 2025&quot;
@@ -572,8 +572,8 @@ export function GeminiPreviewCard() {
                 G
               </div>
               <div>
-                <div className="text-[10px] wl-preview-gemini-result-src">{src}</div>
-                <div className="text-[10px] wl-preview-gemini-result-text">{text}</div>
+                <div className="wl-preview-micro wl-preview-gemini-result-src">{src}</div>
+                <div className="wl-preview-micro wl-preview-gemini-result-text">{text}</div>
               </div>
             </div>
           ))}
@@ -593,12 +593,12 @@ export function TeamsPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-teams-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-teams-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Users2 size={10} /> Teams Alert Sent
       </div>
       <div className="wl-preview-body wl-preview-teams-body p-3 space-y-2">
         <div className="flex items-center gap-1.5 mb-1">
-          <div className="wl-preview-teams-channel text-[10px] px-1.5 py-0.5 rounded">
+          <div className="wl-preview-teams-channel wl-preview-micro px-1.5 py-0.5 rounded">
             # sales-alerts
           </div>
         </div>
@@ -606,15 +606,15 @@ export function TeamsPreviewCard() {
           className="wl-preview-fade-up flex items-start gap-2"
           data-visible={visible ? "true" : "false"}
         >
-          <div className="wl-preview-orbit-accent w-7 h-7 rounded shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5">
+          <div className="wl-preview-orbit-accent w-7 h-7 rounded shrink-0 flex items-center justify-center wl-preview-micro font-bold text-white mt-0.5">
             W
           </div>
           <div>
-            <div className="text-[10px] font-semibold text-white">
+            <div className="wl-preview-micro font-semibold text-white">
               Wireline Bot{" "}
-              <span className="text-[10px] font-normal wl-preview-muted-35">just now</span>
+              <span className="wl-preview-micro font-normal wl-preview-muted-35">just now</span>
             </div>
-            <div className="wl-preview-teams-card mt-1 px-2.5 py-2 rounded text-[10px] leading-relaxed">
+            <div className="wl-preview-teams-card mt-1 px-2.5 py-2 rounded wl-preview-micro leading-relaxed">
               <div className="font-semibold text-white mb-0.5">Compliance flag raised</div>
               <div className="wl-preview-teams-card-body">
                 Agent Sarah escalated — caller requested DNC removal. Review required.
@@ -642,11 +642,11 @@ export function ExcelPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-excel-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-excel-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Table2 size={10} /> Row Appended to Log
       </div>
       <div className="wl-preview-body overflow-x-auto">
-        <table className="w-full text-[10px] border-collapse">
+        <table className="w-full wl-preview-micro border-collapse">
           <thead>
             <tr className="wl-preview-excel-thead">
               {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
@@ -680,7 +680,7 @@ export function ExcelPreviewCard() {
             ))}
           </tbody>
         </table>
-        <div className="wl-preview-excel-footer px-3 py-1.5 text-[10px]">
+        <div className="wl-preview-excel-footer px-3 py-1.5 wl-preview-micro">
           Wireline Call Log · OneDrive · Sheet1
         </div>
       </div>
@@ -703,11 +703,11 @@ export function SheetsPreviewCard() {
 
   return (
     <div className="wl-integration-preview-card rounded-md overflow-hidden text-left">
-      <div className="wl-preview-sheets-header flex items-center gap-1.5 px-3 py-2 text-[10px] font-semibold text-white">
+      <div className="wl-preview-sheets-header flex items-center gap-1.5 px-3 py-2 wl-preview-micro font-semibold text-white">
         <Table2 size={10} /> Row Appended to Sheet
       </div>
       <div className="wl-preview-body overflow-x-auto">
-        <table className="w-full text-[10px] border-collapse">
+        <table className="w-full wl-preview-micro border-collapse">
           <thead>
             <tr className="wl-preview-sheets-thead">
               {["Timestamp", "Caller", "Outcome", "Duration"].map((h) => (
@@ -741,7 +741,7 @@ export function SheetsPreviewCard() {
             ))}
           </tbody>
         </table>
-        <div className="wl-preview-sheets-footer px-3 py-1.5 text-[10px]">
+        <div className="wl-preview-sheets-footer px-3 py-1.5 wl-preview-micro">
           Wireline Call Log · Google Drive · Call Log
         </div>
       </div>

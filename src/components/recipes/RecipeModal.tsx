@@ -126,12 +126,12 @@ export function RecipeModal({
                 <div className="flex items-center gap-2">
                   <h2 className="font-display italic text-2xl leading-none">{meta.title}</h2>
                   {meta.thinking && (
-                    <span className="px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 text-[10px] uppercase tracking-[0.25em] text-brand flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-full bg-brand/10 border border-brand/20 wl-label text-brand flex items-center gap-1">
                       <Brain className="w-2.5 h-2.5" /> Adaptive
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-muted mt-1">
+                <p className="wl-label-muted mt-1">
                   {meta.tagline}
                 </p>
               </div>

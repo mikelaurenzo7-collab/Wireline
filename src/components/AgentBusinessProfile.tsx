@@ -317,7 +317,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   }
                   aria-pressed={!closed}
                   className={cn(
-                    "h-7 px-2.5 rounded-full text-[10px] uppercase tracking-[0.25em]",
+                    "h-7 px-2.5 rounded-full wl-label",
                     closed
                       ? "border-rose-500/30 text-rose-500 bg-rose-500/8 shadow-none"
                       : "border-brand/30 text-brand bg-brand/8",
@@ -399,12 +399,12 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
                   {active && (
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
+                    <span className="wl-label text-brand">
                       Active
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-muted/80 leading-relaxed mt-1">{opt.hint}</p>
+                <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
               </ShadButton>
             );
           })}
@@ -437,12 +437,12 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
                   {active && (
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
+                    <span className="wl-label text-brand">
                       Active
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-muted/80 leading-relaxed mt-1">{opt.hint}</p>
+                <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
               </ShadButton>
             );
           })}
@@ -489,7 +489,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             agent's to the support lead. */}
         <div className="mt-4 pt-4 border-t border-black/5">
           <p className="text-eyebrow/65 font-semibold mb-1">Route alerts to (this agent only)</p>
-          <p className="text-[10px] text-ink/40 mb-3 leading-relaxed">
+          <p className="wl-micro-meta mb-3 leading-relaxed">
             Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
             <a href="/admin?tab=carrier" className="text-brand hover:underline">
               Settings → Carrier
@@ -498,7 +498,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
+              <span className="wl-label text-ink/40 font-semibold block mb-1">
                 Escalation phone (SMS)
               </span>
               <Input
@@ -516,7 +516,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               />
             </label>
             <label className="block">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-ink/40 font-semibold block mb-1">
+              <span className="wl-label text-ink/40 font-semibold block mb-1">
                 Escalation email
               </span>
               <Input
@@ -657,7 +657,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             disableAnimations
             onClick={commitDraftVar}
             disabled={!draftVarKey.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]{0,40}$/.test(draftVarKey)}
-            className="h-9 px-3 rounded-md bg-brand/15 border-brand/35 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25"
+            className="h-9 px-3 rounded-md bg-brand/15 border-brand/35 text-brand wl-label hover:bg-brand/25"
           >
             <Plus className="w-3 h-3" /> Add
           </ShadButton>
@@ -693,7 +693,7 @@ function Section({
         </div>
         <div className="min-w-0">
           <h3 className="font-display italic text-lg text-ink leading-tight">{title}</h3>
-          {hint && <p className="text-[10px] text-muted/80 leading-relaxed mt-0.5">{hint}</p>}
+          {hint && <p className="wl-micro-meta--muted leading-relaxed mt-0.5">{hint}</p>}
         </div>
       </header>
       <div className="relative">{children}</div>
@@ -709,7 +709,7 @@ function PresetButton({ onClick, label }: { onClick: () => void; label: string }
       size="sm"
       disableAnimations
       onClick={onClick}
-      className="h-7 px-2.5 rounded-full text-[10px] uppercase tracking-[0.25em] text-muted/80"
+      className="h-7 px-2.5 rounded-full wl-label-muted opacity-80"
     >
       {label}
     </ShadButton>
@@ -727,9 +727,9 @@ function Field({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] uppercase tracking-[0.32em] text-ink/40">{label}</label>
+      <label className="wl-micro-meta">{label}</label>
       {children}
-      {hint && <p className="text-[10px] text-ink/40 leading-snug">{hint}</p>}
+      {hint && <p className="wl-micro-meta leading-snug">{hint}</p>}
     </div>
   );
 }
@@ -738,7 +738,7 @@ function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
   const tone = len > max * 0.9 ? "text-brand" : "text-ink/40";
   return (
-    <p className={cn("text-[10px] tabular-nums text-right", tone)}>
+    <p className={cn("wl-micro-badge tabular-nums text-right", tone)}>
       {len}/{max}
     </p>
   );
@@ -827,7 +827,7 @@ function ChipDraftInput({
         disableAnimations
         disabled={disabled || !value.trim()}
         onClick={() => onCommit(value)}
-        className="h-9 px-3 rounded-md text-[10px] uppercase tracking-[0.25em] text-muted"
+        className="h-9 px-3 rounded-md wl-label text-muted"
       >
         <Plus className="w-3 h-3" /> Add
       </ShadButton>
@@ -862,7 +862,7 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
             setCustom(false);
             onChange("America/New_York");
           }}
-          className="h-9 px-3 rounded-md text-[10px] uppercase tracking-[0.25em] text-muted"
+          className="h-9 px-3 rounded-md wl-label text-muted"
         >
           Common
         </ShadButton>
@@ -891,7 +891,7 @@ function TzSelect({ value, onChange }: { value: string; onChange: (v: string) =>
         size="sm"
         disableAnimations
         onClick={() => setCustom(true)}
-        className="h-9 px-3 rounded-md text-[10px] uppercase tracking-[0.25em] text-muted"
+        className="h-9 px-3 rounded-md wl-label text-muted"
       >
         Custom
       </ShadButton>

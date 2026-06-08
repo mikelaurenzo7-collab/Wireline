@@ -60,7 +60,7 @@ export function IntegrationPlaybookPanel({
             </div>
             <div>
               <div className="text-sm font-semibold text-ink">{activeIntegration.label}</div>
-              <div className="text-[10px] text-muted/70 leading-relaxed text-pretty">
+              <div className="wl-micro-meta--muted leading-relaxed text-pretty">
                 {activePlaybook?.orbitHint ?? activeIntegration.tagline}
               </div>
             </div>
@@ -79,7 +79,7 @@ export function IntegrationPlaybookPanel({
         </div>
 
         {/* Connection status */}
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between wl-micro-meta">
           <div className="flex items-center gap-1.5">
             <div
               className={cn(
@@ -121,7 +121,7 @@ export function IntegrationPlaybookPanel({
         {/* Recent activity feed */}
         {ACTIVITY_LOG[activeKey] && (
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] wl-label-muted">
+            <div className="flex items-center gap-1.5 wl-label wl-label-muted">
               <Activity size={9} />
               Recent Activity
             </div>
@@ -130,7 +130,7 @@ export function IntegrationPlaybookPanel({
                 <div
                   key={i}
                   className={cn(
-                    "flex items-center gap-2 px-2.5 py-1.5 text-[10px] border-b border-border/60 last:border-b-0",
+                    "flex items-center gap-2 px-2.5 py-1.5 wl-micro-meta border-b border-border/60 last:border-b-0",
                     i === 0 ? "bg-brand/[0.06]" : "bg-transparent",
                   )}
                 >

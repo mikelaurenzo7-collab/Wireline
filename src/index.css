@@ -448,6 +448,15 @@
   background: var(--mood-color);
   box-shadow: 0 0 12px var(--mood-color);
 }
+.wl-mood-dot[data-mood="green"] {
+  --mood-color: var(--color-brand);
+}
+.wl-mood-dot[data-mood="yellow"] {
+  --mood-color: color-mix(in srgb, var(--color-ink) 38%, var(--color-paper));
+}
+.wl-mood-dot[data-mood="red"] {
+  --mood-color: var(--destructive);
+}
 
 .wl-confidence-text {
   color: var(--confidence-color);
@@ -1449,7 +1458,7 @@ html, body, .marketing-surface, .app-surface {
 
 .wl-director-message-meta {
   margin-top: 0.25rem;
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-family: var(--font-mono, ui-monospace, monospace);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1554,7 +1563,7 @@ html, body, .marketing-surface, .app-surface {
 
 /* Director reference typography — gold standard for live session; ops surfaces mirror these */
 .wl-director-micro {
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -1566,9 +1575,9 @@ html, body, .marketing-surface, .app-surface {
   color: color-mix(in srgb, var(--color-muted) 88%, transparent);
 }
 .wl-director-spotlight-label {
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--color-brand) 82%, transparent);
   line-height: 1.3;
@@ -2252,6 +2261,23 @@ html, body, .marketing-surface, .app-surface {
   color: var(--color-muted);
 }
 
+/* Dense tables / channel lists — metadata without shouting uppercase */
+.wl-micro-meta {
+  font-size: 0.625rem;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--color-ink) 42%, transparent);
+}
+.wl-micro-meta--muted {
+  font-size: 0.625rem;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--color-muted) 82%, transparent);
+}
+.wl-micro-badge {
+  font-size: 0.625rem;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Instrument-grade product typography — authenticated surfaces */
 .wl-pro-eyebrow {
   font-size: 0.625rem;
@@ -2492,6 +2518,7 @@ html, body, .marketing-surface, .app-surface {
   gap: 0.5rem;
   font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-muted);
@@ -4326,6 +4353,19 @@ html, body, .marketing-surface, .app-surface {
   border-radius: 0.25rem;
 }
 
+.dark .workspace-top-bar {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--wl-velvet, #0f0c17) 94%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.dark .workspace-top-bar .app-tab-strip,
+.dark .workspace-top-bar .wl-subtab-strip {
+  background: color-mix(in srgb, var(--wl-velvet, #0f0c17) 88%, transparent) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
 /* Desktop route context — editorial hierarchy in cream workspace */
 .wl-page-context {
   padding: 0.35rem 0.25rem 0;
@@ -4609,7 +4649,7 @@ html, body, .marketing-surface, .app-surface {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   gap: 0.5rem;
-  padding: 0.65rem 0.75rem 0;
+  padding: 0.65rem 0.75rem 0.5rem;
 }
 @media (min-width: 640px) {
   .wl-ops-pulse-strip {
@@ -4690,9 +4730,9 @@ button.wl-ops-metric--interactive[data-active="true"] {
 
 .wl-ops-metric-label {
   display: block;
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--color-brand) 72%, var(--color-ink));
   margin-bottom: 0.2rem;
@@ -5260,9 +5300,9 @@ select:focus {
 }
 
 /* Priority badge variants */
-.badge-high   { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.2em] leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
-.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.2em] leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
-.badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.2em] leading-none bg-black/5 border border-black/10 text-muted; }
+.badge-high   { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label leading-none bg-rose-500/10 border border-rose-500/30 text-rose-600; }
+.badge-medium { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label leading-none bg-amber-500/10 border border-amber-500/30 text-amber-700; }
+.badge-low    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label leading-none bg-black/5 border border-black/10 text-muted; }
 
 /* Sidebar nav item â€” active solid pill */
 .nav-active-bg {

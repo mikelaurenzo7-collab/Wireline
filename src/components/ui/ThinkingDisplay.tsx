@@ -109,13 +109,13 @@ export function ThinkingDisplay({
         </span>
 
         {/* Label */}
-        <span className="text-[10px] uppercase tracking-[0.16em] text-brand/60 font-medium">
+        <span className="wl-label text-brand/60 font-medium">
           {isDeep ? "Deep Analysis" : "Reasoning"}
         </span>
 
         {/* Duration badge */}
         {durationLabel && (
-          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-brand/8 text-[10px] text-brand/70 font-mono tabular-nums">
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-brand/8 wl-micro-meta text-brand/70 font-mono tabular-nums">
             <Clock className="w-2.5 h-2.5" />
             {durationLabel}
           </span>
@@ -123,7 +123,7 @@ export function ThinkingDisplay({
 
         {/* Summary (when collapsed) */}
         {!isExpanded && (
-          <span className="flex-1 text-left text-[10px] text-muted/70 truncate ml-1">
+          <span className="flex-1 text-left wl-micro-meta--muted truncate ml-1">
             {summary}
           </span>
         )}
@@ -236,7 +236,7 @@ export function LiveThinkingIndicator({
         </motion.span>
       </AnimatePresence>
       {isDeep && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium">
+        <span className="wl-label px-1.5 py-0.5 rounded-full bg-brand/10 text-brand font-medium">
           Deep
         </span>
       )}

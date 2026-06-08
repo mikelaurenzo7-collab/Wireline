@@ -126,7 +126,7 @@ export default function AgentListPanel({
                         {agent.channel}
                       </span>
                       {agentStats[agent.id] && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
+                        <span className="wl-micro-badge font-mono px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
                           {agentStats[agent.id].callCount} calls
                         </span>
                       )}

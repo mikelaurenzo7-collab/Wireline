@@ -59,7 +59,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <AlertOctagon className="w-7 h-7 text-rose-500" />
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.4em] text-rose-500">
+                <div className="wl-label text-rose-500">
                   Something broke
                 </div>
                 <h2 className="font-display italic text-3xl text-ink leading-tight mt-1">
@@ -72,7 +72,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               the dashboard.
             </p>
             <details className="relative z-10 rounded-md bg-ink/[0.03] border border-black/8 dark:bg-white/[0.04] dark:border-white/[0.08] p-4 text-xs text-ink/70 font-mono overflow-x-auto">
-              <summary className="cursor-pointer text-[10px] uppercase tracking-[0.3em] text-muted hover:text-ink transition-colors">
+              <summary className="cursor-pointer wl-label-muted hover:text-ink transition-colors">
                 Error details
               </summary>
               <pre className="mt-3 whitespace-pre-wrap break-words">{this.state.error.message}</pre>

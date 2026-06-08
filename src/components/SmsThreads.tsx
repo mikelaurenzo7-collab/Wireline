@@ -264,7 +264,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             </p>
                           </div>
                           {t.unread_count > 0 && (
-                            <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand text-[10px] font-bold">
+                            <span className="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-on-brand wl-label font-bold">
                               {t.unread_count}
                             </span>
                           )}
@@ -304,7 +304,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     disableAnimations
                     onClick={() => setActiveId(null)}
                     aria-label="Back to threads"
-                    className="lg:hidden self-start h-auto p-1 mb-2 text-[10px] uppercase tracking-[0.3em] text-muted"
+                    className="lg:hidden self-start h-auto p-1 mb-2 wl-label-muted"
                   >
                     <ArrowLeft className="w-2.5 h-2.5" /> Back
                   </ShadButton>
@@ -327,7 +327,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
                             {m.body}
                           </p>
-                          <p className="text-[10px] uppercase tracking-[0.25em] text-ink/40 mt-1.5">
+                          <p className="wl-micro-meta mt-1.5">
                             {m.direction === "out" ? "You" : "Caller"} ·{" "}
                             {formatDate(
                               m.created_at,

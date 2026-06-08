@@ -281,7 +281,7 @@ export default function AgentTraining({
             <div className="w-6 h-6 rounded-md bg-brand flex items-center justify-center shrink-0">
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
             </div>
-            <span className="text-[10px] uppercase tracking-[0.14em] text-brand">AI assists</span>
+            <span className="wl-label text-brand">AI assists</span>
             <span className="text-[11px] text-ink/70">— one-click recipes</span>
             <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
           </summary>
@@ -379,7 +379,7 @@ export default function AgentTraining({
                 aria-controls={`training-panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id as TrainingTab)}
                 className={cn(
-                  "h-auto px-2.5 py-1.5 rounded-md border text-[10px] uppercase tracking-[0.12em] gap-1.5",
+                  "h-auto px-2.5 py-1.5 rounded-md border wl-label gap-1.5",
                   activeTab === tab.id
                     ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
                     : "wl-panel border-border text-muted hover:border-brand/25 hover:text-ink",
@@ -388,7 +388,7 @@ export default function AgentTraining({
                 <tab.icon className="w-3 h-3" />
                 <span>{tab.label}</span>
                 <HelpTooltip content={tab.help} placement="top">
-                  <span className="w-4 h-4 rounded-full border border-current/30 text-[10px] flex items-center justify-center opacity-70 hover:opacity-100">
+                  <span className="w-4 h-4 rounded-full border border-current/30 wl-micro-badge flex items-center justify-center opacity-70 hover:opacity-100">
                     ?
                   </span>
                 </HelpTooltip>
@@ -426,7 +426,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-xl text-ink">
                         analysis engine
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                      <p className="wl-label text-ink/40">
                         Find improvement opportunities from your calls
                       </p>
                     </div>
@@ -438,7 +438,7 @@ export default function AgentTraining({
                     disableAnimations
                     onClick={handleOptimize}
                     disabled={isOptimizing}
-                    className="h-8 rounded-md border-brand/40 bg-brand/8 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/15"
+                    className="h-8 rounded-md border-brand/40 bg-brand/8 text-brand wl-label hover:bg-brand/15"
                   >
                     {isOptimizing ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -456,7 +456,7 @@ export default function AgentTraining({
                     className="space-y-3"
                   >
                     <div className="rounded-md bg-black/20 border border-white/8 p-4">
-                      <h4 className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mb-2">
+                      <h4 className="wl-label text-ink/40 mb-2">
                         Analysis
                       </h4>
                       <p className="font-display italic text-lg text-ink leading-snug">
@@ -479,7 +479,7 @@ export default function AgentTraining({
                                 size="sm"
                                 disableAnimations
                                 onClick={() => applySuggestion(s)}
-                                className="w-full h-8 rounded-md bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
+                                className="w-full h-8 rounded-md bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25"
                               >
                                 Apply
                               </ShadButton>
@@ -507,7 +507,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-xl text-ink">
                         personality
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                      <p className="wl-label text-ink/40">
                         Base behavioral heuristics and tone
                       </p>
                     </div>
@@ -523,7 +523,7 @@ export default function AgentTraining({
                           setEditingPersonality(false);
                           setPersonalityDraft(personality);
                         }}
-                        className="h-8 rounded-md text-[10px] uppercase tracking-[0.12em] text-muted"
+                        className="h-8 rounded-md wl-label text-muted"
                       >
                         Cancel
                       </ShadButton>
@@ -533,7 +533,7 @@ export default function AgentTraining({
                         size="sm"
                         disableAnimations
                         onClick={() => saveManualEntry("personality", personalityDraft)}
-                        className="h-8 rounded-md bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
+                        className="h-8 rounded-md bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25"
                       >
                         Save
                       </ShadButton>
@@ -545,7 +545,7 @@ export default function AgentTraining({
                       size="sm"
                       disableAnimations
                       onClick={() => setEditingPersonality(true)}
-                      className="h-8 rounded-md text-[10px] uppercase tracking-[0.12em] text-muted/80"
+                      className="h-8 rounded-md wl-label text-muted/80"
                     >
                       <Pencil className="w-3 h-3" /> Edit
                     </ShadButton>
@@ -585,11 +585,11 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         rules
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+                      <p className="wl-label text-ink/40 mt-0.5">
                         Lines your agent never crosses
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 text-[10px] uppercase tracking-[0.12em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 wl-label leading-none">
                       Always-on
                     </span>
                   </header>
@@ -625,7 +625,7 @@ export default function AgentTraining({
                                     size="sm"
                                     disableAnimations
                                     onClick={() => setEditingDirective(null)}
-                                    className="h-7 px-2.5 text-[10px] uppercase tracking-[0.12em] text-muted"
+                                    className="h-7 px-2.5 wl-label text-muted"
                                   >
                                     Cancel
                                   </ShadButton>
@@ -638,7 +638,7 @@ export default function AgentTraining({
                                       saveManualEntry("directive", editingDirective!.content, d.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
+                                    className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
                                   </ShadButton>
@@ -705,7 +705,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                    <label className="wl-label text-ink/40">
                       Add directive
                     </label>
                     <div className="flex gap-1.5">
@@ -741,11 +741,11 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         fact archive
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+                      <p className="wl-label text-ink/40 mt-0.5">
                         Knowledge base
                       </p>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand text-[10px] uppercase tracking-[0.12em] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand wl-label leading-none">
                       Factual
                     </span>
                   </header>
@@ -789,7 +789,7 @@ export default function AgentTraining({
                                     size="sm"
                                     disableAnimations
                                     onClick={() => setEditingKnowledge(null)}
-                                    className="h-7 px-2.5 text-[10px] uppercase tracking-[0.12em] text-muted"
+                                    className="h-7 px-2.5 wl-label text-muted"
                                   >
                                     Cancel
                                   </ShadButton>
@@ -802,7 +802,7 @@ export default function AgentTraining({
                                       saveManualEntry("knowledge", editingKnowledge!.content, k.id)
                                     }
                                     disabled={isSavingEntry}
-                                    className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.12em] hover:bg-brand/25"
+                                    className="h-7 px-2.5 bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25"
                                   >
                                     {isSavingEntry ? "Saving…" : "Save"}
                                   </ShadButton>
@@ -843,7 +843,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                    <label className="wl-label text-ink/40">
                       Add fact
                     </label>
                     <div className="flex gap-1.5">
@@ -888,7 +888,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         ai auto-calibration
                       </h3>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-brand">
+                      <p className="wl-label text-brand">
                         Synthetic learning engine active
                       </p>
                     </div>
@@ -899,13 +899,13 @@ export default function AgentTraining({
                         key={lesson.id}
                         className="rounded-md bg-brand/8 border border-brand/20 p-3"
                       >
-                        <div className="text-[10px] uppercase tracking-[0.3em] text-brand mb-2 flex items-center gap-1.5">
+                        <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                           <Sparkles className="w-3 h-3" /> Pattern learned from calls
                         </div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
                           <Clock className="w-3 h-3 text-ink/40" />
-                          <span className="text-[10px] uppercase tracking-[0.3em] text-ink/40">
+                          <span className="wl-label text-ink/40">
                             {formatDate(lesson.created_at)}
                           </span>
                         </div>
@@ -1024,7 +1024,7 @@ export default function AgentTraining({
                           : "Start voice test"}
                     </ShadButton>
                     {simConnected && (
-                      <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-[0.3em] text-brand">
+                      <div className="flex items-center justify-center gap-1.5 wl-label text-brand">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                         Live — speak now
                       </div>

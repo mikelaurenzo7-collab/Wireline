@@ -158,7 +158,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
               <span className="flex-1 text-left text-xs text-white/70 group-hover:text-white dark:text-white/60 dark:group-hover:text-white/80 transition-colors">
                 Search…
               </span>
-              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/20 bg-white/10 text-white/60 dark:border-white/12 dark:bg-white/4 dark:text-white/40 leading-none">
+              <kbd className="wl-micro-badge font-mono px-1.5 py-0.5 rounded border border-white/20 bg-white/10 text-white/60 dark:border-white/12 dark:bg-white/4 dark:text-white/40 leading-none">
                 /
               </kbd>
             </>
@@ -353,7 +353,7 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
           {shortcut && !badge && (
             <kbd
               className={cn(
-                "relative z-10 text-[10px] font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
+                "relative z-10 wl-micro-badge font-mono px-1.5 py-0.5 rounded leading-none border whitespace-nowrap",
                 active
                   ? "border-white/25 text-white/70 bg-white/10 dark:border-white/15 dark:text-white/55 dark:bg-white/10"
                   : "border-white/20 text-white/50 bg-white/[0.05] group-hover:border-white/30 group-hover:text-white/70 dark:border-white/12 dark:text-white/40 dark:bg-white/4 dark:group-hover:border-white/20 dark:group-hover:text-white/60",
@@ -368,8 +368,8 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
         <span
           aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
           className={cn(
-            "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-mono leading-none flex items-center justify-center font-semibold",
-            !expanded && "absolute top-1 right-1 min-w-[14px] h-3.5 px-1 text-[10px]",
+            "relative z-10 shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full wl-micro-badge font-mono leading-none flex items-center justify-center font-semibold",
+            !expanded && "absolute top-1 right-1 min-w-[14px] h-3.5 px-1 wl-micro-badge",
             active
               ? "bg-white/25 text-white dark:bg-white/20 dark:text-white"
               : "bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30",
@@ -388,7 +388,7 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
         <TooltipContent side="right" className="ml-1">
           <span className="flex items-center gap-2">
             {item.label}
-            {shortcut && <kbd className="text-[10px] font-mono text-white/40">{shortcut}</kbd>}
+            {shortcut && <kbd className="wl-micro-badge font-mono text-white/40">{shortcut}</kbd>}
           </span>
         </TooltipContent>
       </Tooltip>
@@ -431,7 +431,7 @@ function LivePulse({ count, expanded }: { count: number; expanded: boolean }) {
           <span className="chrome-eyebrow tracking-[0.2em]">
             {live ? "Fleet pulse" : "Standing by"}
           </span>
-          <span className="text-[10px] font-mono text-white/75">{count > 0 ? count : "—"}</span>
+          <span className="wl-micro-badge font-mono text-white/75">{count > 0 ? count : "—"}</span>
         </div>
       )}
     </div>

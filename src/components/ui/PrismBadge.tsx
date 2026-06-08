@@ -34,8 +34,8 @@ interface PrismBadgeProps {
 }
 
 const SIZE_CLASSES: Record<PrismSize, string> = {
-  xs: "px-1.5 py-0.5 text-[10px]",
-  sm: "px-2.5 py-1 text-[10px]",
+  xs: "px-1.5 py-0.5 wl-micro-badge",
+  sm: "px-2.5 py-1 wl-micro-badge",
   md: "px-3.5 py-1.5 text-[11px]",
 };
 

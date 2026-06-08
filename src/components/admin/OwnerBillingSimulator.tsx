@@ -48,7 +48,7 @@ export function OwnerBillingSimulator({
           <div className="rounded-md wl-panel border border-rose-500/20 p-3 space-y-3 relative">
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 text-rose-500" />
-              <label className="text-[10px] uppercase tracking-[0.3em] text-rose-500">
+              <label className="wl-label text-rose-500">
                 Operational state
               </label>
             </div>
@@ -59,7 +59,7 @@ export function OwnerBillingSimulator({
                 disableAnimations
                 onClick={() => onSettingsChange({ ...settings, subscription_status: "active" })}
                 className={cn(
-                  "h-auto w-full gap-1.5 rounded-md py-3 text-[10px] uppercase tracking-[0.25em]",
+                  "h-auto w-full gap-1.5 rounded-md py-3 wl-label",
                   settings.subscription_status === "active"
                     ? "border-brand/40 bg-brand/15 text-brand"
                     : "border-white/10 bg-white/5 text-ink/40 hover:border-white/20",
@@ -74,7 +74,7 @@ export function OwnerBillingSimulator({
                 disableAnimations
                 onClick={() => onSettingsChange({ ...settings, subscription_status: "past_due" })}
                 className={cn(
-                  "h-auto w-full gap-1.5 rounded-md py-3 text-[10px] uppercase tracking-[0.25em]",
+                  "h-auto w-full gap-1.5 rounded-md py-3 wl-label",
                   settings.subscription_status === "past_due"
                     ? "bg-rose-500/15 border-rose-500/40 text-rose-500"
                     : "border-white/10 bg-white/5 text-ink/40 hover:border-white/20",
@@ -86,13 +86,13 @@ export function OwnerBillingSimulator({
                 Suspended
               </ShadButton>
             </div>
-            <p className="text-[10px] text-muted/80 leading-relaxed">
+            <p className="wl-micro-meta--muted leading-relaxed">
               Suspending an account locks fleet routing and disables carrier webhooks immediately.
             </p>
           </div>
 
           <div className="rounded-md wl-panel border border-white/10 p-3 space-y-3">
-            <label className="text-[10px] uppercase tracking-[0.3em] text-ink/40">Max agents</label>
+            <label className="wl-label text-ink/40">Max agents</label>
             <div className="flex items-center gap-3">
               <Slider
                 min="1"
@@ -124,14 +124,14 @@ export function OwnerBillingSimulator({
           </div>
           <div className="space-y-2 text-[11px] font-mono">
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">Core</span>
+              <span className="wl-label text-ink/40">Core</span>
               <span className="text-ink">v2.0.4</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">State</span>
+              <span className="wl-label text-ink/40">State</span>
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.25em] leading-none",
+                  "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                   settings.subscription_status === "active"
                     ? "wl-status-success border wl-text-success"
                     : "bg-rose-500/10 border-rose-500/30 text-rose-500",
@@ -141,11 +141,11 @@ export function OwnerBillingSimulator({
               </span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">Agents</span>
+              <span className="wl-label text-ink/40">Agents</span>
               <span className="text-ink tabular-nums">{agents.length} deployed</span>
             </div>
             <div className="flex items-center justify-between py-1">
-              <span className="text-ink/40 uppercase tracking-[0.2em] text-[10px]">Quota</span>
+              <span className="wl-label text-ink/40">Quota</span>
               <span className="text-brand tabular-nums">
                 {Math.max(0, settings.max_agents - agents.length)} free
               </span>

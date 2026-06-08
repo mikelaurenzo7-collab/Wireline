@@ -65,7 +65,7 @@ export default function AgentIntegrationCanvas({
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           <div>
             <h3 className="font-display italic lowercase text-base text-ink">agent capabilities</h3>
-            <p className="text-[10px] text-muted/70 leading-relaxed text-pretty">
+            <p className="wl-micro-meta--muted leading-relaxed text-pretty">
               Each connection maps to caller moments — what {agentName || "this agent"} does when
               customers ask.
             </p>
@@ -78,7 +78,7 @@ export default function AgentIntegrationCanvas({
           disableAnimations
           onClick={onResetToDefaults}
           disabled={usingRoleDefaults}
-          className="rounded-full text-[10px] uppercase tracking-[0.25em]"
+          className="rounded-full wl-label"
         >
           <RefreshCw className="w-2.5 h-2.5" />
           Role defaults
@@ -86,7 +86,7 @@ export default function AgentIntegrationCanvas({
       </div>
 
       {/* Status chips */}
-      <div className="flex flex-wrap gap-2 text-[10px]">
+      <div className="flex flex-wrap gap-2 wl-micro-meta">
         <span
           className={cn(
             "px-2 py-1 rounded-full border uppercase tracking-[0.22em]",
@@ -268,7 +268,7 @@ export default function AgentIntegrationCanvas({
 
                 {/* Label + connected dot */}
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="wl-canvas-node__label text-[10px] font-medium leading-none">
+                  <span className="wl-canvas-node__label wl-micro-meta font-medium leading-none">
                     {n.label}
                   </span>
                   <div className="wl-canvas-node__dot w-1 h-1 rounded-full transition-colors duration-300" />
@@ -303,11 +303,11 @@ export default function AgentIntegrationCanvas({
                   data-integration-accent={meta.color}
                 >
                   <meta.Icon className="wl-canvas-chip__icon" />
-                  <span className="wl-canvas-chip__label text-[10px] font-medium">
+                  <span className="wl-canvas-chip__label wl-micro-meta font-medium">
                     {meta.label}
                   </span>
                   {isEnabled && (
-                    <span className="wl-canvas-chip__count text-[10px] font-bold px-1 py-0.5 rounded-full leading-none">
+                    <span className="wl-canvas-chip__count wl-label font-bold px-1 py-0.5 rounded-full leading-none">
                       {enabledCount}
                     </span>
                   )}

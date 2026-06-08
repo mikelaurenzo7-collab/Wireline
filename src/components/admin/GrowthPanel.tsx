@@ -149,11 +149,11 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-ink font-bold">
+                      <label className="wl-label text-ink font-bold">
                         Job Titles
                       </label>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-muted">
+                    <span className="wl-label text-muted">
                       Role Density
                     </span>
                   </div>
@@ -180,7 +180,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_titles || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
                         <ShadButton
@@ -204,11 +204,11 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-muted" />
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-ink font-bold">
+                      <label className="wl-label text-ink font-bold">
                         Industries
                       </label>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-muted">
+                    <span className="wl-label text-muted">
                       Market Scope
                     </span>
                   </div>
@@ -236,7 +236,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_industries || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md text-[10px] font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
                         <ShadButton
@@ -260,11 +260,11 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-muted" />
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-ink font-bold">
+                      <label className="wl-label text-ink font-bold">
                         Geographic Target
                       </label>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-muted">
+                    <span className="wl-label text-muted">
                       Legal Nexus
                     </span>
                   </div>
@@ -291,7 +291,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_states || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 wl-panel border border-black/20 bg-black/5 rounded-md text-[10px] font-bold text-ink flex items-center gap-2 hover:border-black/30 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-black/20 bg-black/5 rounded-md wl-label font-bold text-ink flex items-center gap-2 hover:border-black/30 transition-all"
                       >
                         {t}
                         <ShadButton
@@ -315,11 +315,11 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-ink font-bold">
+                      <label className="wl-label text-ink font-bold">
                         Company Size
                       </label>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-muted">
+                    <span className="wl-label text-muted">
                       Org Scale
                     </span>
                   </div>
@@ -354,7 +354,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                           }
                         }}
                         className={cn(
-                          "px-2 py-2 rounded-md border text-[10px] font-bold h-auto min-h-0",
+                          "px-2 py-2 rounded-md border wl-label font-bold h-auto min-h-0",
                           (settings.target_employee_ranges || []).includes(range.value)
                             ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(107, 43, 153 ,0.1)]"
                             : "bg-black/5 border-input text-muted/70 hover:border-black/20",
@@ -382,7 +382,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
           <div className="space-y-4">
             <div className="p-5 rounded-md wl-panel border border-input bg-brand/5 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-[0.3em] font-black text-brand">
+                <span className="wl-label font-black text-brand">
                   ICP Efficiency
                 </span>
                 <Sparkles className="w-4 h-4 text-brand animate-pulse" />
@@ -394,7 +394,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 </span>
                 <TrendingUp className="w-4 h-4 text-brand mb-1" />
               </div>
-              <p className="text-[10px] text-muted leading-relaxed">
+              <p className="wl-micro-meta--muted leading-relaxed">
                 ICP configuration completeness for{" "}
                 {settings.prospecting_enabled ? "autonomous prospecting" : "saved targeting"} —{" "}
                 {icp.industryLabel}.
@@ -406,10 +406,10 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] uppercase tracking-widest text-muted font-bold">
+                <span className="wl-label text-muted font-bold">
                   ICP tags
                 </span>
-                <span className="text-[10px] font-mono text-muted">SAVED</span>
+                <span className="wl-micro-badge font-mono text-muted">SAVED</span>
               </div>
               {[
                 { label: "Titles", value: (settings.target_titles || []).length },
@@ -421,7 +421,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   key={stat.label}
                   className="p-3 rounded-md wl-panel border border-input flex items-center justify-between"
                 >
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-muted">
+                  <span className="wl-label-muted">
                     {stat.label}
                   </span>
                   <span
@@ -437,10 +437,10 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
             </div>
 
             <div className="p-4 rounded-md bg-black/20 border border-white/5">
-              <p className="text-[10px] uppercase tracking-widest text-muted/70 mb-2">
+              <p className="wl-label text-muted/70 mb-2">
                 Strategy Advice
               </p>
-              <p className="text-[10px] italic text-muted leading-relaxed">"{icp.advice}"</p>
+              <p className="wl-micro-meta italic text-muted leading-relaxed">"{icp.advice}"</p>
             </div>
           </div>
         </Panel>

@@ -535,7 +535,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
       <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-brand">
           <Loader2 className="w-8 h-8 animate-spin" />
-          <span className="text-[10px] uppercase tracking-[0.3em]">Loading Neural Flow...</span>
+          <span className="wl-label">Loading Neural Flow...</span>
         </div>
       </div>
     );
@@ -555,7 +555,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           disableAnimations
           onClick={() => setMobilePanel("steps")}
           className={cn(
-            "h-auto px-3 py-1.5 rounded-md text-[10px] uppercase tracking-[0.2em] font-medium",
+            "h-auto px-3 py-1.5 rounded-md wl-label font-medium",
             mobilePanel === "steps"
               ? "bg-brand text-on-brand hover:bg-brand hover:text-on-brand"
               : "text-muted hover:text-ink",
@@ -570,7 +570,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           disableAnimations
           onClick={() => setMobilePanel("editor")}
           className={cn(
-            "h-auto px-3 py-1.5 rounded-md text-[10px] uppercase tracking-[0.2em] font-medium",
+            "h-auto px-3 py-1.5 rounded-md wl-label font-medium",
             mobilePanel === "editor"
               ? "bg-brand text-on-brand hover:bg-brand hover:text-on-brand"
               : "text-muted hover:text-ink",
@@ -595,7 +595,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 <Workflow className="w-5 h-5 text-brand" />
                 Conversation Flow
               </h3>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-1">
+              <p className="wl-label text-ink/40 mt-1">
                 Linear stage progression
               </p>
             </div>
@@ -616,7 +616,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             Seeded flows for the 4 demo agent archetypes get them to a
             working draft in one click, then they customize. */}
           <div className="pt-3 border-t border-white/8 space-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.32em] text-ink/40">
+            <div className="flex items-center gap-1.5 wl-micro-meta">
               <Sparkles className="w-3 h-3 text-brand" /> Start from a template
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -629,7 +629,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   disableAnimations
                   onClick={() => handleApplyTemplate(key)}
                   title={FLOW_TEMPLATES[key].description}
-                  className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand truncate"
+                  className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 wl-micro-meta text-ink/85 hover:border-brand/40 hover:text-brand truncate"
                 >
                   {FLOW_TEMPLATES[key].label}
                 </ShadButton>
@@ -648,7 +648,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               variant="ghost"
               disableAnimations
               onClick={() => setShowSnippets((v) => !v)}
-              className="w-full h-auto justify-between gap-2 text-[10px] uppercase tracking-[0.32em] text-ink/40 hover:text-ink px-0"
+              className="w-full h-auto justify-between gap-2 wl-micro-meta hover:text-ink px-0"
             >
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-brand" />
@@ -660,7 +660,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
                   <div key={cat} className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-[0.4em] text-brand/70">
+                    <div className="wl-label text-brand/70">
                       {cat}
                     </div>
                     {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
@@ -672,14 +672,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         disableAnimations
                         onClick={() => insertSnippet(snip.text)}
                         title={snip.text}
-                        className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 text-[10px] text-ink/85 hover:border-brand/40 hover:text-brand"
+                        className="h-auto w-full justify-start text-left rounded-md border-border px-2.5 py-1.5 wl-micro-meta text-ink/85 hover:border-brand/40 hover:text-brand"
                       >
                         {snip.label}
                       </ShadButton>
                     ))}
                   </div>
                 ))}
-                <p className="text-[10px] text-ink/40 leading-relaxed pt-2 border-t border-white/8">
+                <p className="wl-micro-meta leading-relaxed pt-2 border-t border-white/8">
                   Adds the snippet to the currently selected stage's instructions. Edit after
                   pasting.
                 </p>
@@ -692,7 +692,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           incomplete without preventing them from saving a draft. */}
         {validationIssues.length > 0 && (
           <div className="rounded-md border border-brand/30 bg-brand/5 p-3 space-y-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-brand">
+            <div className="flex items-center gap-1.5 wl-label text-brand">
               <AlertTriangle className="w-3 h-3" />
               {validationIssues.length} item{validationIssues.length === 1 ? "" : "s"} to finish
             </div>
@@ -704,7 +704,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 </li>
               ))}
               {validationIssues.length > 6 && (
-                <li className="text-ink/40 text-[10px]">+{validationIssues.length - 6} more</li>
+                <li className="wl-micro-meta">+{validationIssues.length - 6} more</li>
               )}
             </ul>
           </div>
@@ -748,7 +748,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
 
                       <div
                         className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border text-[10px] font-mono",
+                          "w-6 h-6 rounded-full flex items-center justify-center shrink-0 border wl-micro-badge font-mono",
                           activeStepId === step.id
                             ? "bg-brand text-on-brand border-brand"
                             : "bg-black/20 text-muted border-white/20",
@@ -767,7 +767,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {step.name || "Unnamed Stage"}
                         </div>
                         {step.isEndNode && (
-                          <div className="text-[10px] uppercase tracking-[0.2em] text-rose-400 mt-0.5">
+                          <div className="wl-label text-rose-400 mt-0.5">
                             Terminal Node
                           </div>
                         )}
@@ -830,7 +830,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       placeholder="Stage Name"
                       className="bg-transparent text-xl font-display italic text-ink outline-none placeholder:text-ink/40 w-full"
                     />
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+                    <div className="wl-label text-ink/40 mt-0.5">
                       Stage definition
                     </div>
                   </div>
@@ -855,7 +855,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     >
                       {activeStep.isEndNode && <CheckCircle2 className="w-3 h-3 text-white" />}
                     </div>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-muted group-hover:text-ink transition-colors">
+                    <span className="wl-label-muted group-hover:text-ink transition-colors">
                       Terminal stage (Ends call)
                     </span>
                   </label>
@@ -869,12 +869,12 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       We deliberately don't show "Saved ✓" here — the
                       Save button itself already does that. */}
                   {autosaving ? (
-                    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-muted">
+                    <span className="inline-flex items-center gap-1.5 wl-label text-muted">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Saving
                     </span>
                   ) : isDirty ? (
-                    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-brand">
+                    <span className="inline-flex items-center gap-1.5 wl-label text-brand">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                       Unsaved
                     </span>
@@ -886,7 +886,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     disableAnimations
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="h-9 px-4 rounded-full bg-brand/15 border-brand/40 text-brand text-[10px] uppercase tracking-[0.25em] hover:bg-brand/25 ml-2"
+                    className="h-9 px-4 rounded-full bg-brand/15 border-brand/40 text-brand wl-label hover:bg-brand/25 ml-2"
                   >
                     {isSaving ? (
                       <div className="w-3.5 h-3.5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
@@ -937,7 +937,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     const tooLong = words > 200;
                     const tooShort = words > 0 && words < 8;
                     return (
-                      <div className="flex items-center justify-between text-[10px] text-ink/40 -mt-1 px-1">
+                      <div className="flex items-center justify-between wl-micro-meta -mt-1 px-1">
                         <span className={cn(tooLong && "text-brand", tooShort && "text-rose-500")}>
                           {words === 0
                             ? "Write what the agent should say in this stage"
@@ -995,7 +995,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           setCoachingStepId(null);
                         }
                       }}
-                      className="rounded-full border-brand/30 text-[10px] uppercase tracking-[0.22em] text-brand hover:bg-brand/8"
+                      className="rounded-full border-brand/30 wl-label text-brand hover:bg-brand/8"
                     >
                       {coachingStepId === activeStep.id ? (
                         <>

@@ -88,7 +88,7 @@ export default function AttributionView({ days }: { days: number }) {
                   <td className="px-3 py-2.5 text-right">
                     <span
                       className={cn(
-                        "inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums border",
+                        "inline-block px-1.5 py-0.5 rounded-full wl-micro-badge font-medium border",
                         Number(conv) >= 30
                           ? "wl-status-success wl-text-success border"
                           : Number(conv) >= 15

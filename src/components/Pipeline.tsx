@@ -245,7 +245,7 @@ export default function Pipeline() {
                           {leads.length === 0 && !loading && (
                             <div className="border border-dashed border-brand/15 rounded-md bg-brand/[0.03] py-1">
                               <InlineEmpty label={OPS_PIPELINE.emptyColumn} className="py-3" />
-                              <p className="text-[10px] text-ink/40 text-center pb-3 px-2">
+                              <p className="wl-micro-meta text-center pb-3 px-2">
                                 {OPS_PIPELINE.dragHint}
                               </p>
                             </div>
@@ -295,7 +295,7 @@ export default function Pipeline() {
                                     {lead.demo && (
                                       <Badge
                                         variant="outline"
-                                        className="text-[10px] uppercase tracking-[0.32em] px-1.5 py-0.5 rounded-md bg-brand/10 border border-dashed border-brand/40 text-brand-deep leading-none shrink-0"
+                                        className="wl-label px-1.5 py-0.5 rounded-md bg-brand/10 border border-dashed border-brand/40 text-brand-deep leading-none shrink-0"
                                         title="Seeded showcase record — not a real lead"
                                       >
                                         Demo
@@ -303,8 +303,8 @@ export default function Pipeline() {
                                     )}
                                   </CardTitle>
                                 </CardHeader>
-                                <CardContent className="p-0 text-[10px] text-muted-foreground leading-normal">
-                                  <div className="flex items-center gap-2 mt-1 text-[10px] text-muted/80">
+                                <CardContent className="p-0 wl-micro-meta--muted-foreground leading-normal">
+                                  <div className="flex items-center gap-2 mt-1 wl-micro-meta--muted">
                                     {lead.customerNumber && (
                                       <span className="inline-flex items-center gap-1 truncate">
                                         <Phone className="w-3 h-3" />
@@ -321,7 +321,7 @@ export default function Pipeline() {
                                   {lead.campaignSource && (
                                     <Badge
                                       variant="secondary"
-                                      className="text-[10px] tracking-[0.24em] uppercase text-brand mt-1.5 border-brand/20 bg-brand/10 hover:bg-brand/15"
+                                      className="wl-label text-brand mt-1.5 border-brand/20 bg-brand/10 hover:bg-brand/15"
                                     >
                                       {lead.campaignSource}
                                     </Badge>
@@ -330,7 +330,7 @@ export default function Pipeline() {
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <p className="text-[10px] text-ink/40 mt-2 line-clamp-2 leading-snug cursor-help text-left">
+                                          <p className="wl-micro-meta mt-2 line-clamp-2 leading-snug cursor-help text-left">
                                             {lead.lastContactSummary}
                                           </p>
                                         </TooltipTrigger>
@@ -341,7 +341,7 @@ export default function Pipeline() {
                                     </TooltipProvider>
                                   )}
                                   <div className="flex items-center justify-between mt-2">
-                                    <span className="text-[10px] text-ink/40">
+                                    <span className="wl-micro-meta">
                                       {lead.attempts ?? 0} attempt
                                       {(lead.attempts ?? 0) === 1 ? "" : "s"}
                                     </span>
@@ -353,7 +353,7 @@ export default function Pipeline() {
                                             key={s.id}
                                             onClick={() => moveLead(lead.id, s.id)}
                                             variant="outline"
-                                            className="text-[10px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
+                                            className="wl-label px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
                                             title={`Move to ${s.label}`}
                                             aria-label={`Move ${lead.customerName || "lead"} to ${s.label}`}
                                           >

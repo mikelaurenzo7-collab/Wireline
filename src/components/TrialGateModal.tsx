@@ -217,7 +217,7 @@ export default function TrialGateModal() {
             </ShadButton>
 
             <div className="px-6 sm:px-8 pt-8 pb-6">
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand mb-3 font-medium">
+              <div className="flex items-center gap-2 wl-label text-brand mb-3 font-medium">
                 <Sparkles className="w-3 h-3" />
                 Upgrade to keep going
               </div>
@@ -251,19 +251,19 @@ export default function TrialGateModal() {
                       )}
                     >
                       {isRecommended && (
-                        <div className="absolute -top-2 left-4 px-2 py-0.5 rounded-full bg-brand text-on-brand text-[10px] uppercase tracking-[0.2em] font-medium">
+                        <div className="absolute -top-2 left-4 px-2 py-0.5 rounded-full bg-brand text-on-brand wl-label font-medium">
                           Recommended
                         </div>
                       )}
                       <div className="font-display italic text-lg text-ink mb-1">{tier.label}</div>
                       <div className="flex items-baseline gap-1 mb-2">
                         <span className="font-display italic text-2xl text-ink">${tier.price}</span>
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-muted/70">
+                        <span className="wl-label-muted/70">
                           /mo
                         </span>
                       </div>
                       <p className="text-[11px] text-ink/65 leading-relaxed mb-3">{tier.pitch}</p>
-                      <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-brand">
+                      <div className="inline-flex items-center gap-1.5 wl-label text-brand">
                         {isPending ? (
                           <>
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -291,7 +291,7 @@ export default function TrialGateModal() {
                 </div>
               )}
 
-              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] uppercase tracking-[0.25em] text-muted/70">
+              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 wl-label text-muted/70">
                 <span>Phone number stays included</span>
                 <span>·</span>
                 <span>Cancel anytime</span>

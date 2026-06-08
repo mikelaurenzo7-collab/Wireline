@@ -65,7 +65,7 @@ function VoicePreviewButton({ voiceId, voiceName }: { voiceId: string; voiceName
       disableAnimations
       onClick={toggle}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 h-auto p-0 text-[10px] uppercase tracking-[0.22em] text-brand"
+      className="inline-flex items-center gap-1.5 h-auto p-0 wl-label text-brand"
     >
       {loading ? (
         <Loader2 className="w-3 h-3 animate-spin" />
@@ -255,7 +255,7 @@ export default function DeployAgentModal({
             <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-white/8">
                 <div className="space-y-1.5 min-w-0">
-                  <p className="text-[10px] uppercase tracking-[0.42em] text-ink/40">
+                  <p className="wl-micro-meta">
                     Deploy · {template.category}
                   </p>
                   <h2 className="font-display italic text-2xl text-ink leading-tight">
@@ -283,7 +283,7 @@ export default function DeployAgentModal({
                 <div className="space-y-2">
                   <label
                     htmlFor="agent-name"
-                    className="text-[10px] uppercase tracking-[0.36em] text-muted/80"
+                    className="wl-label-muted opacity-80"
                   >
                     Agent name
                   </label>
@@ -300,7 +300,7 @@ export default function DeployAgentModal({
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
                     className="w-full bg-black/5 border border-black/10 rounded-md px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
-                  <p className="text-[10px] text-ink/40">
+                  <p className="wl-micro-meta">
                     What callers and your team will see. You can change this any time in /agents.
                   </p>
                 </div>
@@ -309,7 +309,7 @@ export default function DeployAgentModal({
                 {!isEmail ? (
                   <div className="space-y-3">
                     <div className="flex items-baseline justify-between">
-                      <label className="text-[10px] uppercase tracking-[0.36em] text-muted/80">
+                      <label className="wl-label-muted opacity-80">
                         Voice
                       </label>
                       <ShadButton
@@ -317,7 +317,7 @@ export default function DeployAgentModal({
                         variant="link"
                         disableAnimations
                         onClick={() => setShowVoiceList((v) => !v)}
-                        className="h-auto p-0 text-[10px] uppercase tracking-[0.32em] text-muted hover:text-brand"
+                        className="h-auto p-0 wl-label-muted hover:text-brand"
                       >
                         {showVoiceList ? "Hide options" : "Pick a specific voice"}
                       </ShadButton>
@@ -359,7 +359,7 @@ export default function DeployAgentModal({
                           transition={{ duration: 0.25 }}
                           className="space-y-1.5 overflow-hidden"
                         >
-                          <p className="text-[10px] uppercase tracking-[0.32em] text-ink/40 pt-1">
+                          <p className="wl-micro-meta pt-1">
                             Specific {gender} voice
                           </p>
                           {voicesForGender.map((v) => {
@@ -379,7 +379,7 @@ export default function DeployAgentModal({
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
-                                <span className="text-[10px] uppercase tracking-[0.32em] text-ink/40 shrink-0">
+                                <span className="wl-micro-meta shrink-0">
                                   {v.provider}
                                 </span>
                               </ShadButton>
@@ -391,7 +391,7 @@ export default function DeployAgentModal({
 
                     {selectedVoice && !showVoiceList && (
                       <div className="space-y-1.5">
-                        <p className="text-[10px] text-ink/40">
+                        <p className="wl-micro-meta">
                           Picked: <span className="text-ink/75">{selectedVoice.name}</span>
                         </p>
                         {/* Real per-voice audio preview via the
@@ -503,7 +503,7 @@ function GenderTile({
         </div>
         <div className="min-w-0">
           <p className="text-[12px] font-semibold tracking-wide">{label}</p>
-          <p className="text-[10px] text-ink/40 truncate">{sublabel}</p>
+          <p className="wl-micro-meta truncate">{sublabel}</p>
         </div>
       </div>
     </ShadButton>

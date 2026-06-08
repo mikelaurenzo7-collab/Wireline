@@ -301,7 +301,7 @@ export default function StripeBillingCard() {
         />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-4 text-[10px] text-muted/70 uppercase tracking-[0.2em]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-4 wl-micro-meta--muted uppercase tracking-[0.2em]">
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Stripe · PCI DSS Level 1 · Cancel anytime
@@ -360,12 +360,12 @@ function PlanPicker({
               data-accent={accent}
             >
               {!isSignupMatch && plan.id === "pro" && (
-                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand text-white">
+                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full wl-label bg-brand text-white">
                   Most popular
                 </div>
               )}
               {isSignupMatch && (
-                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand text-white">
+                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full wl-label bg-brand text-white">
                   Matched from visit
                 </div>
               )}
@@ -373,7 +373,7 @@ function PlanPicker({
                 <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
                   <Icon className="w-6 h-6 wl-accent-text" />
                 </div>
-                <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                <span className="wl-label-muted/70">
                   {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
                 </span>
               </div>
@@ -385,7 +385,7 @@ function PlanPicker({
                       <span className="font-display italic text-4xl text-ink">
                         ${plan.price_usd_monthly.toLocaleString()}
                       </span>
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-muted/70">
+                      <span className="wl-label-muted/70">
                         /mo
                       </span>
                     </>
@@ -412,7 +412,7 @@ function PlanPicker({
                 onClick={() => onSelectPlan(plan.id)}
                 disabled={isBusy || !plan.configured}
                 className={cn(
-                  "w-full py-3 rounded-md text-[10px] uppercase tracking-[0.28em] font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
+                  "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
                   !isBusy && "wl-accent-subscribe",
                 )}
               >
@@ -425,7 +425,7 @@ function PlanPicker({
                 )}
               </ShadButton>
               {!plan.configured && (
-                <p className="text-[10px] uppercase tracking-[0.28em] text-muted/70 text-center leading-relaxed">
+                <p className="wl-label text-muted/70 text-center leading-relaxed">
                   Available soon — contact us to start on this tier
                 </p>
               )}
@@ -486,19 +486,19 @@ function ActiveSubCard({
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] uppercase tracking-[0.45em] text-muted/70">
+              <span className="wl-label-muted opacity-70">
                 Current plan
               </span>
               <span
                 className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.25em] border",
+                  "inline-flex items-center px-2 py-0.5 rounded-full wl-label border",
                   statusBadge.cls,
                 )}
               >
                 {statusBadge.label}
               </span>
               {sub.cancel_at_period_end && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.25em] border bg-rose-500/15 border-rose-500/30 text-rose-500">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full wl-label border bg-rose-500/15 border-rose-500/30 text-rose-500">
                   Cancels at period end
                 </span>
               )}

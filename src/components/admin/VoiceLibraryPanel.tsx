@@ -204,7 +204,7 @@ export default function VoiceLibraryPanel() {
           <div>
             <label
               htmlFor="clone-name"
-              className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+              className="block wl-label text-muted mb-1.5"
             >
               Voice name
             </label>
@@ -224,7 +224,7 @@ export default function VoiceLibraryPanel() {
           <div>
             <label
               htmlFor="clone-file"
-              className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+              className="block wl-label text-muted mb-1.5"
             >
               Audio sample (30-90s)
             </label>
@@ -237,7 +237,7 @@ export default function VoiceLibraryPanel() {
               className="w-full text-[12px] text-ink file:mr-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-brand/10 file:text-brand file:text-[11px] file:cursor-pointer"
             />
             {cloneFile && (
-              <p className="text-[10px] text-muted mt-1">
+              <p className="wl-micro-meta--muted mt-1">
                 {cloneFile.name} · {(cloneFile.size / 1024 / 1024).toFixed(2)} MB
               </p>
             )}
@@ -291,7 +291,7 @@ export default function VoiceLibraryPanel() {
 
       {/* Owned voice list */}
       <div className="space-y-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+        <p className="wl-label-muted">
           Your cloned voices · {ownedVoices.length}
         </p>
         {loading ? (
@@ -332,7 +332,7 @@ export default function VoiceLibraryPanel() {
               </ShadButton>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-ink truncate">{v.name}</p>
-                <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
+                <p className="wl-label-muted/70">
                   Cloned voice
                 </p>
               </div>
@@ -353,7 +353,7 @@ export default function VoiceLibraryPanel() {
         )}
       </div>
 
-      <p className="text-[10px] text-muted/70 text-center mt-4 leading-relaxed">
+      <p className="wl-micro-meta--muted text-center mt-4 leading-relaxed">
         Cloned voices flow through Wireline's voice engine and work on every agent + every call.
         Delete them anytime — agents using a deleted voice fall back to a default.
       </p>

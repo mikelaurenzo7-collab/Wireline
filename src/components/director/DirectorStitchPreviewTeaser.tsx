@@ -112,7 +112,7 @@ function DeviceFrame({
                 size="sm"
                 disableAnimations
                 onClick={onRetryPreview}
-                className="mt-1 h-auto px-2.5 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+                className="mt-1 h-auto px-2.5 py-1 wl-label text-brand hover:text-brand-deep"
               >
                 <RefreshCw className="w-3 h-3" />
                 Retry preview
@@ -166,7 +166,7 @@ export default function DirectorStitchPreviewTeaser({
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] font-bold text-brand">
+            <span className="inline-flex items-center gap-1 wl-label font-bold text-brand">
               <Sparkles className="w-3 h-3" />
               {WIRELINE_STITCH_UI.previewTeaserTitle}
             </span>
@@ -219,7 +219,7 @@ export default function DirectorStitchPreviewTeaser({
             variant="ghost"
             size="sm"
             disableAnimations
-            className="h-auto px-2 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+            className="h-auto px-2 py-1 wl-label text-brand hover:text-brand-deep"
           >
             <Link to={previewUrl}>
               {WIRELINE_STITCH_UI.previewTeaserAction}
@@ -273,7 +273,7 @@ export function DirectorStitchPreviewVariantGrid({
                   variant="ghost"
                   size="sm"
                   disableAnimations
-                  className="h-auto px-2 py-1 text-[10px] font-semibold text-brand hover:text-brand-deep"
+                  className="h-auto px-2 py-1 wl-label text-brand hover:text-brand-deep"
                 >
                   <Link to={url}>
                     {WIRELINE_STITCH_UI.previewTeaserAction}

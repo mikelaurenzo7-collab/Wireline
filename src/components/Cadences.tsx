@@ -246,7 +246,7 @@ export default function Cadences() {
     <div className="h-full overflow-y-auto pr-1 space-y-4 pb-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-1">
+          <p className="wl-label text-brand mb-1">
             Outbound · Sequences
           </p>
           <h3 className="font-display italic text-xl text-ink leading-none">
@@ -294,13 +294,13 @@ export default function Cadences() {
                   className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press"
                 >
                   <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
-                  <p className="text-[10px] text-ink/40 mb-3">{t.description}</p>
+                  <p className="wl-micro-meta mb-3">{t.description}</p>
                   <div className="flex items-center gap-1 flex-wrap">
                     {t.steps.map((s, i) => (
                       <span
                         key={i}
                         className={cn(
-                          "text-[10px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                          "wl-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
                           stepBadgeClass(s.type),
                         )}
                       >
@@ -326,16 +326,16 @@ export default function Cadences() {
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="text-[13px] font-semibold text-ink">{c.name}</h4>
                   {c.active ? (
-                    <span className="text-[10px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
+                    <span className="wl-label px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       Active
                     </span>
                   ) : (
-                    <span className="text-[10px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-white/5 text-muted border border-white/15">
+                    <span className="wl-label px-1.5 py-0.5 rounded bg-white/5 text-muted border border-white/15">
                       Paused
                     </span>
                   )}
                   {runsByCadence[c.id] > 0 && (
-                    <span className="text-[10px] uppercase tracking-[0.25em] px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
+                    <span className="wl-label px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       {runsByCadence[c.id]} active run{runsByCadence[c.id] === 1 ? "" : "s"}
                     </span>
                   )}
@@ -346,7 +346,7 @@ export default function Cadences() {
                     <span
                       key={i}
                       className={cn(
-                        "text-[10px] uppercase tracking-[0.2em] px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
+                        "wl-label px-1.5 py-0.5 rounded border inline-flex items-center gap-1",
                         stepBadgeClass(s.type),
                       )}
                     >
@@ -415,7 +415,7 @@ export default function Cadences() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="text-[10px] uppercase tracking-[0.32em] text-muted/80 mb-1.5 block">
+                <label className="wl-label-muted/80 mb-1.5 block">
                   Name
                 </label>
                 <Input
@@ -426,7 +426,7 @@ export default function Cadences() {
                 />
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-[0.32em] text-muted/80 mb-1.5 block">
+                <label className="wl-label-muted/80 mb-1.5 block">
                   Description (optional)
                 </label>
                 <Input
@@ -446,7 +446,7 @@ export default function Cadences() {
                 >
                   <span
                     className={cn(
-                      "shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold border",
+                      "shrink-0 w-7 h-7 rounded-md flex items-center justify-center wl-label font-bold border",
                       stepBadgeClass(s.type),
                     )}
                   >
@@ -481,7 +481,7 @@ export default function Cadences() {
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
                         className="w-20 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
                       />
-                      <span className="text-[10px] text-ink/40">hours delay</span>
+                      <span className="wl-micro-meta">hours delay</span>
                     </div>
                     {s.type !== "call" && (
                       <Input
@@ -515,7 +515,7 @@ export default function Cadences() {
                 size="sm"
                 disableAnimations
                 onClick={addStep}
-                className="h-auto px-0 text-[10px] uppercase tracking-[0.28em] text-muted hover:text-brand"
+                className="h-auto px-0 wl-label text-muted hover:text-brand"
               >
                 <Plus className="w-3 h-3" />
                 Add step

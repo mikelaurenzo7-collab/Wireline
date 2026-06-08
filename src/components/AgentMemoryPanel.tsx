@@ -94,7 +94,7 @@ export default function AgentMemoryPanel({
               <h3 className="font-display italic lowercase text-xl text-ink leading-tight">
                 what {agentName} remembers
               </h3>
-              <p className="text-[10px] uppercase tracking-[0.28em] text-ink/40">
+              <p className="wl-label text-ink/40">
                 Carried between every call
               </p>
             </div>
@@ -112,7 +112,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic lowercase text-lg text-ink leading-none">
                 persistent thread
               </h4>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+              <p className="wl-label text-ink/40 mt-0.5">
                 {messageCount} message{messageCount === 1 ? "" : "s"} · the thread is the memory
               </p>
             </div>
@@ -124,7 +124,7 @@ export default function AgentMemoryPanel({
               size="sm"
               disableAnimations
               onClick={onClearMemory}
-              className="shrink-0 min-h-9 text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8"
+              className="shrink-0 min-h-9 wl-label-muted hover:text-rose-600 hover:bg-rose-500/8"
               title="Clear this agent's memory thread"
             >
               <Trash2 className="w-3 h-3" />
@@ -147,7 +147,7 @@ export default function AgentMemoryPanel({
             <h4 className="font-display italic lowercase text-lg text-ink leading-none">
               recent calls it recalls
             </h4>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+            <p className="wl-label text-ink/40 mt-0.5">
               Last {recentCalls.length || "few"} conversations
             </p>
           </div>
@@ -177,13 +177,13 @@ export default function AgentMemoryPanel({
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {c.intent && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] border border-brand/30 bg-brand/8 text-brand">
+                    <span className="px-2 py-0.5 rounded-full wl-label border border-brand/30 bg-brand/8 text-brand">
                       {c.intent}
                     </span>
                   )}
                   {c.sentiment && (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.14em] border ${
+                      className={`px-2 py-0.5 rounded-full wl-label border ${
                         SENTIMENT_TONE[c.sentiment.toLowerCase()] || SENTIMENT_TONE.neutral
                       }`}
                     >
@@ -191,7 +191,7 @@ export default function AgentMemoryPanel({
                     </span>
                   )}
                   {c.createdAt && (
-                    <span className="text-[10px] uppercase tracking-[0.18em] text-muted/60 ml-auto">
+                    <span className="wl-label-muted/60 ml-auto">
                       {formatDate(c.createdAt)}
                     </span>
                   )}
@@ -212,7 +212,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic lowercase text-lg text-ink leading-none">
                 patterns learned from calls
               </h4>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-brand mt-0.5">
+              <p className="wl-label text-brand mt-0.5">
                 Auto-calibration
               </p>
             </div>
@@ -237,7 +237,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic lowercase text-lg text-ink leading-none">
                 rules, facts &amp; personality
               </h4>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 mt-0.5">
+              <p className="wl-label text-ink/40 mt-0.5">
                 {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}
                 fact{knowledge.length === 1 ? "" : "s"}
               </p>
@@ -249,7 +249,7 @@ export default function AgentMemoryPanel({
             size="sm"
             disableAnimations
             onClick={onOpenTraining}
-            className="shrink-0 min-h-9 text-[10px] uppercase tracking-[0.18em] text-brand hover:bg-brand/10"
+            className="shrink-0 min-h-9 wl-label text-brand hover:bg-brand/10"
           >
             <ArrowUpRight className="w-3 h-3" />
             <span className="hidden sm:inline">Manage in Training</span>

@@ -40,7 +40,7 @@ export function ClaudeRecipeButton({
     default:
       "rounded-full border-brand/30 text-[11px] uppercase tracking-[0.3em] text-brand hover:bg-brand/10 hover:border-brand/60",
     ghost:
-      "rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand h-auto px-3 py-1.5",
+      "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
     compact: "w-9 h-9 rounded-full border-brand/30 text-brand hover:bg-brand/10 after:hidden",
   };
 

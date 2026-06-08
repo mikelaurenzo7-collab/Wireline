@@ -243,7 +243,7 @@ export default function IntakeKeysManager() {
             <div className="rounded-md bg-black/5 border border-black/10 p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="space-y-1.5">
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                  <span className="wl-label-muted">
                     Key name
                   </span>
                   <Input
@@ -254,7 +254,7 @@ export default function IntakeKeysManager() {
                   />
                 </label>
                 <label className="space-y-1.5">
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                  <span className="wl-label-muted">
                     Default agent (optional)
                   </span>
                   <Select
@@ -311,7 +311,7 @@ export default function IntakeKeysManager() {
                   <div className="text-xs font-medium flex items-center gap-2">
                     <Zap className="w-3 h-3" /> Auto-dial inbound leads
                   </div>
-                  <div className="text-[10px] leading-snug mt-0.5 text-ink/65">
+                  <div className="wl-micro-meta leading-snug mt-0.5 text-ink/65">
                     {defaultAgentId
                       ? "Every lead pushed via this key triggers an outbound call from the selected agent. Subscription must be active."
                       : "Pick a default agent above to enable auto-dial."}
@@ -369,7 +369,7 @@ export default function IntakeKeysManager() {
                   <div className="text-sm text-ink font-medium">{k.name}</div>
                   <span
                     className={cn(
-                      "text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full border",
+                      "wl-label px-2 py-0.5 rounded-full border",
                       k.active
                         ? WL_APP_CLASSES.statusActive
                         : "bg-muted/10 border-border text-muted",
@@ -378,12 +378,12 @@ export default function IntakeKeysManager() {
                     {k.active ? "Active" : "Paused"}
                   </span>
                   {agent && (
-                    <span className="text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2">
+                    <span className="wl-label px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2">
                       Agent · {agent.name}
                     </span>
                   )}
                   {k.auto_dial && k.default_agent_id && (
-                    <span className="text-[10px] uppercase tracking-[0.3em] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-600 flex items-center gap-1">
+                    <span className="wl-label px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-600 flex items-center gap-1">
                       <Zap className="w-2.5 h-2.5" /> Auto-dial
                     </span>
                   )}
@@ -408,7 +408,7 @@ export default function IntakeKeysManager() {
                       : "Set a default agent before enabling auto-dial."
                   }
                   className={cn(
-                    "h-9 px-3 text-[10px] uppercase tracking-[0.25em]",
+                    "h-9 px-3 wl-label",
                     !k.default_agent_id
                       ? "border-border text-muted/70"
                       : k.auto_dial
@@ -425,7 +425,7 @@ export default function IntakeKeysManager() {
                   size="sm"
                   disableAnimations
                   onClick={() => toggleActive(k)}
-                  className="h-9 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-ink border-black/8 hover:border-black/15"
+                  className="h-9 px-3 wl-micro-meta hover:text-ink border-black/8 hover:border-black/15"
                 >
                   {k.active ? "Pause" : "Resume"}
                 </ShadButton>
@@ -437,7 +437,7 @@ export default function IntakeKeysManager() {
                       size="sm"
                       disableAnimations
                       onClick={() => remove(k.id)}
-                      className="h-9 px-3 text-[10px] uppercase tracking-[0.25em]"
+                      className="h-9 px-3 wl-label"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Confirm
                     </ShadButton>
@@ -447,7 +447,7 @@ export default function IntakeKeysManager() {
                       size="sm"
                       disableAnimations
                       onClick={() => setConfirmDelete(null)}
-                      className="h-9 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 border-black/8"
+                      className="h-9 px-3 wl-micro-meta border-black/8"
                     >
                       Cancel
                     </ShadButton>
@@ -459,7 +459,7 @@ export default function IntakeKeysManager() {
                     size="sm"
                     disableAnimations
                     onClick={() => setConfirmDelete(k.id)}
-                    className="h-9 px-3 text-[10px] uppercase tracking-[0.25em] text-ink/70 hover:text-rose-600 hover:border-rose-500/40"
+                    className="h-9 px-3 wl-micro-meta hover:text-rose-600 hover:border-rose-500/40"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </ShadButton>
@@ -478,7 +478,7 @@ export default function IntakeKeysManager() {
         )}
       >
         <div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-brand-2 mb-2">
+          <div className="wl-label text-brand-2 mb-2">
             Quick start · curl
           </div>
           <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
@@ -487,7 +487,7 @@ export default function IntakeKeysManager() {
   -H "Idempotency-Key: form-submission-12345" \\
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'`}</pre>
         </div>
-        <div className="text-[10px] text-ink/65 leading-relaxed font-sans space-y-1.5">
+        <div className="wl-micro-meta opacity-90 leading-relaxed font-sans space-y-1.5">
           <div>
             <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>{" "}
             — optional, any string ≤ 255 chars. Same key + same operator returns the original{" "}

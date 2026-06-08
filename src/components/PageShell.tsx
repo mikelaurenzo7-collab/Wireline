@@ -246,7 +246,7 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
-                          "ml-0.5 px-1.5 py-px rounded-full text-[10px] font-mono leading-none",
+                          "ml-0.5 px-1.5 py-px rounded-full wl-micro-badge font-mono leading-none",
                           active ? "app-tab-active-badge" : "bg-black/8 text-muted",
                         )}
                       >
@@ -290,7 +290,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "touch-press relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-all text-[10px] uppercase tracking-[0.1em] font-medium whitespace-nowrap rounded-none",
+                    "touch-press relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-all wl-label font-medium whitespace-nowrap rounded-none",
                     active ? "app-tab-active" : "text-muted",
                   )}
                 >
@@ -307,7 +307,7 @@ export default function PageShell({
                     {tab.badge != null && tab.badge !== 0 && (
                       <span
                         className={cn(
-                          "ml-0.5 px-1.5 py-px rounded-full text-[10px] font-mono leading-none",
+                          "ml-0.5 px-1.5 py-px rounded-full wl-micro-badge font-mono leading-none",
                           active ? "app-tab-active-badge" : "bg-black/8 text-muted",
                         )}
                       >
@@ -584,7 +584,7 @@ export function StatTile({
           {trend && (
             <span
               className={cn(
-                "shrink-0 text-[10px] font-mono font-medium",
+                "shrink-0 wl-micro-badge font-mono font-medium",
                 trendPositive ? "wl-text-success" : "text-rose-500",
               )}
             >

@@ -74,7 +74,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
         {/* Image artifact thumbnails — the actual logos/visuals */}
         {imageArts.length > 0 && (
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-brand/70 font-semibold mb-2 flex items-center gap-1.5">
+            <p className="wl-label text-brand/70 font-semibold mb-2 flex items-center gap-1.5">
               <ImageIcon className="w-3 h-3" />
               Media · {imageArts.length} image{imageArts.length !== 1 ? "s" : ""}
             </p>
@@ -95,7 +95,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                     <a
                       href={a.downloadUrl}
                       download={a.name}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper/95 backdrop-blur-sm text-[10px] font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper/95 backdrop-blur-sm wl-label font-semibold text-ink shadow-lg hover:bg-white transition-colors"
                     >
                       <Download className="w-2.5 h-2.5" />
                       Download
@@ -103,7 +103,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                   </div>
                   {/* File info strip */}
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 pt-3 pb-1.5 opacity-100 group-hover:opacity-0 transition-opacity">
-                    <p className="text-[10px] text-white/90 font-medium truncate leading-tight">
+                    <p className="wl-micro-meta text-white/90 font-medium truncate leading-tight">
                       {a.name}
                     </p>
                   </div>
@@ -121,7 +121,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
         {fileArts.length > 0 && (
           <div className={cn(imageArts.length > 0 && "pt-2 border-t border-brand/8")}>
             {imageArts.length > 0 && (
-              <p className="text-[10px] uppercase tracking-[0.16em] text-muted/60 font-semibold mb-2 flex items-center gap-1.5">
+              <p className="wl-label text-muted/60 font-semibold mb-2 flex items-center gap-1.5">
                 <FileText className="w-3 h-3" />
                 Files · {fileArts.length}
               </p>

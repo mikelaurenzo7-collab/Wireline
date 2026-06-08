@@ -394,7 +394,7 @@ function TemplateCard({
             {/* Deployed-in-fleet badge */}
             {alreadyDeployed && (
               <span
-                className="px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.22em] leading-none flex items-center gap-1 wl-status-success border wl-text-success"
+                className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
                   deployedCount === 1 ? "Already in your fleet" : `${deployedCount} in your fleet`
                 }
@@ -406,7 +406,7 @@ function TemplateCard({
             {/* Channel badge — hide on narrow screens when deployed badge shows */}
             <span
               className={cn(
-                "px-1.5 py-0.5 rounded-full border text-[10px] uppercase tracking-[0.22em] leading-none",
+                "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
                   ? "wl-status-success border wl-text-success"
                   : "bg-brand/10 border-brand/30 text-brand",
@@ -417,7 +417,7 @@ function TemplateCard({
             </span>
             {/* Extra badge — desktop only to reduce chip noise on mobile */}
             {template.badge && (
-              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 text-[10px] uppercase tracking-[0.18em] leading-none text-ink/70">
+              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 wl-label leading-none text-ink/70">
                 {template.badge}
               </span>
             )}
@@ -638,7 +638,7 @@ export default function AgentTemplates() {
               size="sm"
               onClick={() => setActiveCategory(cat)}
               className={cn(
-                "rounded-full text-[10px] uppercase tracking-[0.25em]",
+                "rounded-full wl-label",
                 activeCategory === cat
                   ? "bg-brand/15 border-brand/40 text-brand"
                   : "text-muted hover:text-ink hover:border-brand/25",

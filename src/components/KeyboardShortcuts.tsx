@@ -123,7 +123,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                   </div>
                   <div>
                     <h2 className="text-sm font-medium text-ink">Keyboard shortcuts</h2>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+                    <p className="wl-label-muted">
                       Quick navigation & actions
                     </p>
                   </div>
@@ -147,7 +147,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {SHORTCUTS.map((section) => (
                     <div key={section.category}>
-                      <h3 className="text-[10px] font-semibold uppercase tracking-[0.42em] text-muted/80 mb-3 flex items-center gap-2">
+                      <h3 className="wl-label text-muted/80 mb-3 flex items-center gap-2 font-semibold">
                         <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
                         {section.category}
                         <span className="h-px flex-1 bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
@@ -170,7 +170,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-3 border-t border-white/8 flex items-center justify-center gap-2 text-[10px] text-muted">
+              <div className="px-6 py-3 border-t border-white/8 flex items-center justify-center gap-2 wl-micro-meta--muted">
                 <Kbd>?</Kbd>
                 <span>
                   Press <strong className="text-ink/70">?</strong> anytime to show this panel

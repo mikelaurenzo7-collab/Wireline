@@ -502,6 +502,15 @@ export const WL_FLEET_CLASSES = {
 } as const;
 
 /** Mobile drawer section labels */
+/** Dense list / channel metadata — 10px floor (see index.css wl-micro-*) */
+export const WL_MICRO_CLASSES = {
+  label: "wl-label",
+  labelMuted: "wl-label-muted",
+  meta: "wl-micro-meta",
+  metaMuted: "wl-micro-meta--muted",
+  badge: "wl-micro-badge",
+} as const;
+
 export const WL_CHROME_CLASSES = {
   drawerSection: "wl-drawer-section-label",
   railItemActive: "wl-rail-item--active",

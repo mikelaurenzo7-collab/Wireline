@@ -54,7 +54,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
     return (
       <div
         className={cn(
-          "flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-ink/40",
+          "flex items-center gap-2 wl-label text-ink/40",
           compact ? "py-1.5 px-3" : "py-4 px-5",
         )}
       >
@@ -80,7 +80,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <div
-        className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 text-[10px] font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
+        className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
         data-usage-state={usageState}
         title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
       >
@@ -110,7 +110,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
               Voice minutes
             </h4>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-ink/40 font-medium">
+            <p className="wl-label text-ink/40 font-medium">
               This month · resets {resetLabel}
             </p>
           </div>
@@ -122,7 +122,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             </span>
             <span className="text-ink/40"> / {included.toLocaleString()}</span>
           </div>
-          <p className="text-[10px] uppercase tracking-[0.3em] text-brand font-semibold mt-0.5">
+          <p className="wl-label text-brand font-semibold mt-0.5">
             {pct}% used
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
           <div className="text-[11px] leading-relaxed">
-            <span className="text-rose-400 font-semibold uppercase tracking-wider text-[10px] mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
+            <span className="text-rose-400 font-semibold wl-label mr-1.5 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded-md">
               Overage
             </span>
             <span className="text-rose-400 font-bold">

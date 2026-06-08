@@ -54,7 +54,7 @@ export default function CsvExportButton({
     default:
       "rounded-full text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40",
     ghost:
-      "rounded-full text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand h-auto px-3 py-1.5",
+      "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
   };
 
   return (

@@ -177,14 +177,14 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                     {formatE164(n.phone_number)}
                   </p>
                   {n.region && (
-                    <p className="text-[10px] text-muted mt-1 flex items-center gap-1">
+                    <p className="wl-micro-meta--muted mt-1 flex items-center gap-1">
                       <MapPin className="w-2.5 h-2.5" />
                       {n.region}
                     </p>
                   )}
                 </div>
                 {claiming === n.phone_number && (
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-brand">
+                  <span className="wl-label text-brand">
                     Claiming…
                   </span>
                 )}
@@ -250,7 +250,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 size="sm"
                 disableAnimations
                 onClick={() => setSearchAreaCode(ac.code)}
-                className="h-auto rounded-full border-black/8 bg-black/[0.03] px-2.5 py-1 text-[10px] text-muted hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
+                className="h-auto rounded-full border-black/8 bg-black/[0.03] px-2.5 py-1 wl-micro-meta--muted hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
                 title={`${ac.city}, ${ac.state}`}
               >
                 <span className="font-mono">{ac.code}</span>

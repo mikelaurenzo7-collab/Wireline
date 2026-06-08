@@ -89,7 +89,7 @@ export function ThreadSummaryForm({
                 <li key={i} className="flex items-start gap-2">
                   <span
                     className={cn(
-                      "shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] mt-0.5",
+                      "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                       a.owner === "us"
                         ? "bg-brand/15 text-brand border border-brand/30"
                         : "bg-rose-500/15 text-rose-500 border border-rose-500/30",

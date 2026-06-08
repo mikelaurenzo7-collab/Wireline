@@ -30,7 +30,7 @@ export default function DesignPreviewPage() {
               {WIRELINE_STITCH_UI.previewPageBackLabel}
             </ShadButton>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-brand flex items-center gap-1.5">
+              <p className="wl-label font-bold text-brand flex items-center gap-1.5">
                 <LayoutTemplate className="w-3.5 h-3.5" />
                 {WIRELINE_STITCH_UI.previewPageTitle}
               </p>

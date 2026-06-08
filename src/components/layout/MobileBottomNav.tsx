@@ -1,7 +1,7 @@
 /**
- * Dormant — reserved for iOS App Store / installed PWA shell review.
- * Mobile browser navigation uses TopBar hamburger + Sidebar drawer only.
- * Re-mount from AppShell when an installed-shell tab bar is needed again.
+ * Intentionally unmounted — do not wire into AppShell.
+ * Mobile navigation is TopBar hamburger + Sidebar drawer (no bottom tab bar).
+ * Kept only as a reference if a future installed PWA shell needs quick tabs.
  */
 
 import React from "react";

@@ -154,7 +154,7 @@ export default function PostSignupOnboarding() {
                 transition={{ delay: 0.08 * i, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 className="flex gap-3 items-start"
               >
-                <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand/12 text-[10px] font-mono font-bold text-brand border border-brand/20">
+                <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand/12 wl-micro-badge font-mono font-bold text-brand border border-brand/20">
                   {i + 1}
                 </span>
                 <div>
@@ -173,11 +173,11 @@ export default function PostSignupOnboarding() {
               variant="editorial"
               disableAnimations
               onClick={handleStartWizard}
-              className="touch-press flex-1 rounded-full text-[10px] uppercase tracking-[0.24em] gap-2"
+              className="touch-press flex-1 rounded-full wl-label gap-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
               {ONBOARDING_WELCOME.ctaPrimary}
-              <span className="text-[10px] opacity-80 normal-case tracking-normal">
+              <span className="wl-micro-meta opacity-80 normal-case tracking-normal">
                 ({ONBOARDING_WELCOME.timeHint})
               </span>
             </ShadButton>
@@ -186,7 +186,7 @@ export default function PostSignupOnboarding() {
               variant="outline"
               disableAnimations
               onClick={handleExploreFirst}
-              className="touch-press flex-1 rounded-full text-[10px] uppercase tracking-[0.22em] gap-1.5"
+              className="touch-press flex-1 rounded-full wl-label gap-1.5"
             >
               <Compass className="w-3.5 h-3.5" />
               {ONBOARDING_WELCOME.ctaSecondary}

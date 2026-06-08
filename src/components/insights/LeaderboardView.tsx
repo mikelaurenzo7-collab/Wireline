@@ -14,7 +14,7 @@ function RolePill({ role }: { role?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 font-black uppercase tracking-widest text-[10px] px-2 py-0.5 border-2",
+        "inline-flex items-center gap-1 font-black uppercase tracking-widest wl-label px-2 py-0.5 border-2",
         meta.tw.bg,
         meta.tw.text,
         meta.tw.border,
@@ -128,7 +128,7 @@ export default function LeaderboardView({ days }: { days: number }) {
               {a.rank_delta != null && (
                 <span
                   className={cn(
-                    "text-[10px] font-bold tabular-nums leading-none",
+                    "wl-label font-bold tabular-nums leading-none",
                     a.rank_delta > 0
                       ? "wl-text-success"
                       : a.rank_delta < 0

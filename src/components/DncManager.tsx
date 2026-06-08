@@ -285,7 +285,7 @@ export default function DncManager() {
                   size="sm"
                   disableAnimations
                   onClick={() => setShowAdd(true)}
-                  className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.28em] hover:bg-rose-500/25 shadow-none touch-press"
+                  className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 wl-label hover:bg-rose-500/25 shadow-none touch-press"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   {OPS_CHANNEL_TOOLBAR.dnc.add}
@@ -306,7 +306,7 @@ export default function DncManager() {
                 className="relative rounded-md wl-panel border border-border p-4 overflow-hidden"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] uppercase tracking-[0.32em] text-muted">{label}</p>
+                  <p className="wl-label-muted">{label}</p>
                   <Icon className="w-3.5 h-3.5 text-brand" />
                 </div>
                 <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
@@ -392,11 +392,11 @@ export default function DncManager() {
                             {entry.phone_raw || entry.phone}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-ink/40">
+                            <span className="wl-micro-meta">
                               {formatDate(entry.created_at)}
                             </span>
                             <span className="w-1 h-1 rounded-full bg-white/15" />
-                            <span className="text-[10px] text-ink/40">
+                            <span className="wl-micro-meta">
                               {reasonLabel(entry.reason)}
                             </span>
                           </div>
@@ -405,7 +405,7 @@ export default function DncManager() {
                       <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <span
                           className={cn(
-                            "text-[10px] uppercase tracking-[0.22em] px-2 py-0.5 rounded-full border",
+                            "wl-label px-2 py-0.5 rounded-full border",
                             sourceColor(entry.source),
                           )}
                         >
@@ -413,7 +413,7 @@ export default function DncManager() {
                         </span>
                         {confirmId === entry.id ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-rose-500">Remove?</span>
+                            <span className="wl-micro-meta text-rose-500">Remove?</span>
                             <ShadButton
                               type="button"
                               variant="destructive"
@@ -421,7 +421,7 @@ export default function DncManager() {
                               disableAnimations
                               onClick={() => handleDelete(entry.id)}
                               disabled={deletingId === entry.id}
-                              className="h-7 px-2.5 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 text-[10px] uppercase tracking-[0.22em] hover:bg-rose-500/30 shadow-none"
+                              className="h-7 px-2.5 rounded-full bg-rose-500/20 border-rose-500/40 text-rose-500 wl-label hover:bg-rose-500/30 shadow-none"
                             >
                               {deletingId === entry.id ? (
                                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -475,7 +475,7 @@ export default function DncManager() {
                 <DialogTitle className="font-display italic text-xl text-ink leading-none">
                   Add to DNC
                 </DialogTitle>
-                <DialogDescription className="text-[10px] uppercase tracking-[0.32em] text-muted mt-1">
+                <DialogDescription className="wl-label-muted mt-1">
                   Do Not Call List
                 </DialogDescription>
               </div>
@@ -483,7 +483,7 @@ export default function DncManager() {
 
             <div className="space-y-4 py-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.32em] text-muted mb-2">
+                <label className="block wl-label-muted mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -502,7 +502,7 @@ export default function DncManager() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.32em] text-muted mb-2">
+                <label className="block wl-label-muted mb-2">
                   Reason
                 </label>
                 <div className="relative">
@@ -526,7 +526,7 @@ export default function DncManager() {
 
               <div className="flex items-center gap-2.5 p-3 rounded-md bg-brand/5 border border-brand/15">
                 <AlertTriangle className="w-4 h-4 text-brand shrink-0" />
-                <p className="text-[10px] text-brand/80 leading-snug">
+                <p className="wl-micro-meta text-brand/80 leading-snug">
                   This number will immediately be blocked from all outbound calls and campaigns.
                 </p>
               </div>
@@ -536,14 +536,14 @@ export default function DncManager() {
               <ShadButton
                 variant="outline"
                 onClick={() => setShowAdd(false)}
-                className="flex-1 rounded-md h-10 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink"
+                className="flex-1 rounded-md h-10 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink"
               >
                 Cancel
               </ShadButton>
               <ShadButton
                 onClick={handleAdd}
                 disabled={adding || !addPhone.trim()}
-                className="flex-1 rounded-md h-10 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-500 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 rounded-md h-10 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-500 uppercase tracking-[0.2em] wl-label font-bold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {adding ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

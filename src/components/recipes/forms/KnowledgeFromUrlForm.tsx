@@ -171,7 +171,7 @@ export function KnowledgeFromUrlForm({
             <Globe className="w-4 h-4 text-brand" />
             <div>
               <div className="text-sm text-ink">Crawl whole site</div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted">
+              <div className="wl-label-muted">
                 {crawl ? `Follow nav links · up to ${maxPages} pages` : "Single page only"}
               </div>
             </div>
@@ -197,7 +197,7 @@ export function KnowledgeFromUrlForm({
         </label>
         {crawl && (
           <div className="flex items-center gap-3 pt-1">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted shrink-0">
+            <span className="wl-label-muted shrink-0">
               Max pages
             </span>
             <div className="flex gap-2">
@@ -255,7 +255,7 @@ export function KnowledgeFromUrlForm({
           </ResultCard>
           <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">
+              <h4 className="wl-label text-brand">
                 Extracted · {selected.size}/{result.entries.length} selected
               </h4>
               <ShadButton
@@ -264,7 +264,7 @@ export function KnowledgeFromUrlForm({
                 size="sm"
                 disableAnimations
                 onClick={toggleAll}
-                className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand"
+                className="h-auto px-0 wl-label-muted hover:text-brand"
               >
                 {selected.size === result.entries.length ? "Deselect All" : "Select All"}
               </ShadButton>
@@ -303,7 +303,7 @@ export function KnowledgeFromUrlForm({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-ink/90">{e.fact}</div>
-                      <div className="text-[10px] uppercase tracking-[0.3em] text-muted mt-1">
+                      <div className="wl-label-muted mt-1">
                         {e.category}
                       </div>
                     </div>

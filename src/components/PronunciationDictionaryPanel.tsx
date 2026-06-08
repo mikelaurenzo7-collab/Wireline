@@ -245,7 +245,7 @@ export default function PronunciationDictionaryPanel() {
           <div>
             <label
               htmlFor="dict-name"
-              className="block text-[10px] uppercase tracking-[0.28em] text-muted mb-1.5"
+              className="block wl-label text-muted mb-1.5"
             >
               Dictionary name
             </label>
@@ -304,7 +304,7 @@ export default function PronunciationDictionaryPanel() {
 
       {/* Dictionary list */}
       <div className="space-y-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-muted">
+        <p className="wl-label-muted">
           Your dictionaries · {dicts.length}
         </p>
         {loading ? (
@@ -330,12 +330,12 @@ export default function PronunciationDictionaryPanel() {
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-ink truncate">{dict.name}</p>
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-muted/70">
+                  <p className="wl-label-muted/70">
                     {dict.entries.length} {dict.entries.length === 1 ? "rule" : "rules"}
                     {dict.elevenlabsDictionaryId ? " · synced" : " · draft"}
                   </p>
                 </div>
-                <label className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted cursor-pointer">
+                <label className="flex items-center gap-2 wl-label-muted cursor-pointer">
                   <Checkbox
                     checked={dict.active}
                     onChange={() => toggleActive(dict)}
@@ -372,7 +372,7 @@ export default function PronunciationDictionaryPanel() {
                   disableAnimations
                   onClick={() => saveDict(dict)}
                   disabled={savingId === dict.id}
-                  className="rounded-full text-[10px] uppercase tracking-[0.28em] py-2"
+                  className="rounded-full wl-label py-2"
                 >
                   {savingId === dict.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -387,7 +387,7 @@ export default function PronunciationDictionaryPanel() {
         )}
       </div>
 
-      <p className="text-[10px] text-muted/70 text-center mt-4 leading-relaxed">
+      <p className="wl-micro-meta--muted text-center mt-4 leading-relaxed">
         Dictionaries sync to ElevenLabs and apply to every 11labs voice your agents use. Toggle
         Active off to pause a dictionary without deleting it.
       </p>
@@ -410,7 +410,7 @@ interface EntryEditorProps {
 function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorProps) {
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 text-[10px] uppercase tracking-[0.22em] text-muted/70 px-1">
+      <div className="grid grid-cols-[1fr_1fr_84px_28px] gap-2 wl-label-muted/70 px-1">
         <span>Replace</span>
         <span>With</span>
         <span>Kind</span>
@@ -493,7 +493,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
         size="sm"
         disableAnimations
         onClick={onAddRow}
-        className="h-auto px-0 text-[10px] uppercase tracking-[0.28em] text-brand hover:text-brand"
+        className="h-auto px-0 wl-label text-brand hover:text-brand"
       >
         <Plus className="w-3 h-3" />
         Add row

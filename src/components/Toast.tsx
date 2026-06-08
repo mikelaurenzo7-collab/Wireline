@@ -16,8 +16,8 @@ const META = {
   error: { icon: XCircle, border: "border-rose-500/30", bg: "bg-rose-500/10" },
   warning: {
     icon: AlertTriangle,
-    border: "border-amber-500/30",
-    bg: "bg-amber-500/10",
+    border: "border-brand/35",
+    bg: "bg-brand/10",
   },
   info: { icon: Info, border: "border-brand/30", bg: "bg-brand/10" },
 };

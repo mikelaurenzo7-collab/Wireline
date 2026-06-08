@@ -434,10 +434,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="text-[10px] uppercase tracking-[0.24em] text-ink/55 truncate">
+                              <span className="wl-label text-ink/55 truncate">
                                 {thread.customer_email}
                               </span>
-                              <span className="text-[10px] tabular-nums text-ink/55 shrink-0">
+                              <span className="wl-micro-badge tabular-nums text-ink/55 shrink-0">
                                 {formatDate(thread.last_message_at)}
                               </span>
                             </div>
@@ -450,7 +450,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               </p>
                               <span
                                 className={cn(
-                                  "shrink-0 px-1.5 py-0.5 rounded-full border text-[10px] font-mono",
+                                  "shrink-0 px-1.5 py-0.5 rounded-full border wl-micro-badge font-mono",
                                   scoreTone,
                                 )}
                               >
@@ -562,7 +562,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             >
                               <div
                                 className={cn(
-                                  "text-[10px] uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5",
+                                  "wl-label mb-2 flex items-center gap-1.5",
                                   msg.role === "ai" ? "text-brand" : "text-ink/55",
                                 )}
                               >
@@ -581,7 +581,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 {msg.content}
                               </p>
                             </div>
-                            <span className="text-[10px] uppercase tracking-[0.3em] text-ink/55 mt-1.5 tabular-nums">
+                            <span className="wl-label text-ink/55 mt-1.5 tabular-nums">
                               {formatTime(msg.created_at)}
                             </span>
                           </motion.div>
@@ -596,7 +596,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Zap className="w-3 h-3 text-brand" />
-                            <span className="text-[10px] uppercase tracking-[0.3em] text-ink/55">
+                            <span className="wl-label text-ink/55">
                               Quick replies
                             </span>
                           </div>
@@ -617,7 +617,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                     disableAnimations
                                     onClick={() => setReplyText(r.body)}
                                     title={r.body}
-                                    className="rounded-full text-[10px] tracking-wide"
+                                    className="rounded-full wl-label tracking-wide"
                                   >
                                     <span>{r.label}</span>
                                   </ShadButton>
@@ -629,7 +629,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
                         <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/55">
                           <Terminal className="w-3 h-3" />
-                          <span className="text-[10px] uppercase tracking-[0.35em]">
+                          <span className="wl-label">
                             Compose reply
                           </span>
                         </div>
@@ -685,7 +685,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             size="sm"
                             disableAnimations
                             onClick={sendReply}
-                            className="rounded-full text-[10px] tracking-[0.25em] touch-press"
+                            className="rounded-full wl-label touch-press"
                           >
                             <Send className="w-3 h-3" /> Send
                           </ShadButton>

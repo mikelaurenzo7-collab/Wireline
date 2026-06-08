@@ -80,7 +80,7 @@ export default function FailureModesView() {
                 </h4>
                 <span
                   className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em]",
+                    "px-2 py-0.5 rounded-full wl-label",
                     m.severity === "critical" &&
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     m.severity === "high" &&
@@ -92,7 +92,7 @@ export default function FailureModesView() {
                 >
                   {m.severity}
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] bg-brand-2/15 text-brand-2 border border-brand-2/30">
+                <span className="px-2 py-0.5 rounded-full wl-label bg-brand-2/15 text-brand-2 border border-brand-2/30">
                   {m.fix_target}
                 </span>
               </div>

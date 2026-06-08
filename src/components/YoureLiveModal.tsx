@@ -206,7 +206,7 @@ function NextStepCard({
           </div>
           <p className="text-xs text-muted mt-1 leading-relaxed">{description}</p>
           <p
-            className={`text-[10px] uppercase tracking-[0.24em] mt-2 ${primary ? "text-brand/70" : "text-muted/70"}`}
+            className={`wl-label mt-2 ${primary ? "text-brand/70" : "text-muted/70"}`}
           >
             {action}
           </p>
@@ -442,7 +442,7 @@ export default function YoureLiveModal({
                     <span className="block text-[11px] font-semibold text-ink uppercase tracking-[0.1em]">
                       {item.label}
                     </span>
-                    <span className="block text-[10px] text-muted leading-snug mt-0.5">
+                    <span className="block wl-micro-meta--muted leading-snug mt-0.5">
                       {item.detail}
                     </span>
                   </span>
@@ -458,7 +458,7 @@ export default function YoureLiveModal({
             variant="outline"
             disableAnimations
             onClick={handleShare}
-            className="touch-press rounded-full text-[10px] uppercase tracking-[0.22em] gap-1.5"
+            className="touch-press rounded-full wl-label gap-1.5"
           >
             {copied ? (
               <>
@@ -482,7 +482,7 @@ export default function YoureLiveModal({
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="touch-press rounded-full text-[10px] uppercase tracking-[0.22em] gap-1.5 font-mono"
+              className="touch-press rounded-full wl-label gap-1.5 font-mono"
             >
               <Copy className="w-3.5 h-3.5" />
               {phoneNumber}

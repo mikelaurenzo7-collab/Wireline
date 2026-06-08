@@ -178,7 +178,7 @@ export function DirectorComposerAccessory({
                         <p className="text-[11px] font-semibold text-foreground truncate">
                           {c.label}
                         </p>
-                        <p className="text-[10px] text-muted-foreground truncate">{c.desc}</p>
+                        <p className="wl-micro-meta--muted-foreground truncate">{c.desc}</p>
                       </div>
                     </Link>
                   ))}
@@ -230,12 +230,12 @@ export function DirectorComposerAccessory({
                       focusAgentId === a.id && "bg-brand/8 border border-brand/15",
                     )}
                   >
-                    <span className="w-6 h-6 rounded-full bg-brand/10 text-brand text-[10px] font-bold flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-brand/10 text-brand wl-label font-bold flex items-center justify-center shrink-0">
                       {a.name.slice(0, 1).toUpperCase()}
                     </span>
                     <span className="min-w-0 text-left">
                       <span className="block text-[11px] font-semibold truncate">{a.name}</span>
-                      <span className="block text-[10px] text-muted-foreground truncate">
+                      <span className="block wl-micro-meta--muted-foreground truncate">
                         {a.role?.replace(/_/g, " ") || "Agent"}
                       </span>
                     </span>
@@ -272,7 +272,7 @@ export function DirectorComposerAccessory({
                       return (
                         <span
                           key={tool}
-                          className="inline-flex px-2 py-1 rounded-md bg-brand/8 border border-brand/15 text-[10px] text-foreground"
+                          className="inline-flex px-2 py-1 rounded-md bg-brand/8 border border-brand/15 wl-micro-meta text-foreground"
                         >
                           {toolMeta?.label || tool}
                         </span>
@@ -302,7 +302,7 @@ export function DirectorComposerAccessory({
                     <span className="block text-[11px] font-semibold text-foreground">
                       Document
                     </span>
-                    <span className="block text-[10px] text-muted-foreground">PDFs & files</span>
+                    <span className="block wl-micro-meta--muted-foreground">PDFs & files</span>
                   </span>
                 </ShadButton>
                 <ShadButton
@@ -315,7 +315,7 @@ export function DirectorComposerAccessory({
                   <Brain className="w-4 h-4 text-brand" />
                   <span className="text-left">
                     <span className="block text-[11px] font-semibold text-foreground">Context</span>
-                    <span className="block text-[10px] text-muted-foreground">Global rule</span>
+                    <span className="block wl-micro-meta--muted-foreground">Global rule</span>
                   </span>
                 </ShadButton>
                 <ShadButton
@@ -330,7 +330,7 @@ export function DirectorComposerAccessory({
                     <span className="block text-[11px] font-semibold text-foreground">
                       Instruction
                     </span>
-                    <span className="block text-[10px] text-muted-foreground">Playbook</span>
+                    <span className="block wl-micro-meta--muted-foreground">Playbook</span>
                   </span>
                 </ShadButton>
               </div>

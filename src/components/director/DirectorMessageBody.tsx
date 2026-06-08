@@ -66,7 +66,7 @@ function renderInline(text: string): React.ReactNode[] {
               </span>
             )}
             {imgMatch[1] && (
-              <span className="block text-[10px] text-muted/60 mt-1 italic">{imgMatch[1]}</span>
+              <span className="block wl-micro-meta--muted/60 mt-1 italic">{imgMatch[1]}</span>
             )}
           </span>,
         );
@@ -122,7 +122,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
   return (
     <div className="rounded-md border border-black/8 dark:border-white/10 overflow-hidden group">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04]">
-        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted">
+        <span className="font-mono wl-label text-muted">
           {lang || "code"}
         </span>
         <ShadButton
@@ -131,7 +131,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
           size="sm"
           disableAnimations
           onClick={() => void onCopy()}
-          className="h-7 min-h-0 px-2 text-[10px] text-muted-foreground hover:text-ink opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+          className="h-7 min-h-0 px-2 wl-micro-meta--muted-foreground hover:text-ink opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
           aria-label={copied ? "Copied" : "Copy code"}
         >
           {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -267,7 +267,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
             const text = l.replace(/^\d+\.\s*/, "");
             return (
               <li key={i} className="text-ink/90 flex gap-1.5 leading-normal">
-                <span className="text-brand/60 shrink-0 font-mono text-[10px] w-4">{i + 1}.</span>
+                <span className="text-brand/60 shrink-0 font-mono wl-micro-badge w-4">{i + 1}.</span>
                 <span>{renderInline(text)}</span>
               </li>
             );

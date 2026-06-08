@@ -80,7 +80,7 @@ export default function CreateCampaignModal({
     <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-md border border-white/10 dark:border-white/5 shadow-2xl p-0 wl-modal-surface rounded-md overflow-hidden">
         <DialogHeader className="px-5 py-4 border-b border-white/10 dark:border-white/5 flex flex-col space-y-0 text-left">
-          <DialogDescription className="text-[10px] uppercase tracking-[0.4em] text-brand mb-0.5 font-bold">
+          <DialogDescription className="wl-label text-brand mb-0.5 font-bold">
             Signal · Campaigns
           </DialogDescription>
           <DialogTitle className="font-display italic lowercase text-2xl text-ink dark:text-foreground leading-none">
@@ -199,14 +199,14 @@ export default function CreateCampaignModal({
           <ShadButton
             variant="outline"
             onClick={onClose}
-            className="rounded-md h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] text-[10px] font-bold text-muted hover:text-ink dark:text-foreground"
+            className="rounded-md h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink dark:text-foreground"
           >
             Cancel
           </ShadButton>
           <ShadButton
             onClick={save}
             disabled={saving}
-            className="rounded-md h-9 bg-brand/15 hover:bg-brand/25 border border-brand/50 text-brand uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="rounded-md h-9 bg-brand/15 hover:bg-brand/25 border border-brand/50 text-brand uppercase tracking-[0.2em] wl-label font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />

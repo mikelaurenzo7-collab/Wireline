@@ -98,7 +98,7 @@ export default function SystemStatusBadge() {
             dot alone communicates status, and the title attribute
             provides the full label on hover. Frees ~90px of TopBar
             width which Mike's ThinkPad needed back. */}
-        <span className="hidden xl:inline text-[10px] uppercase tracking-[0.28em] text-ink/70">
+        <span className="hidden xl:inline wl-label text-ink/70">
           {overall === "ok"
             ? "Live"
             : overall === "degraded"
@@ -140,7 +140,7 @@ export default function SystemStatusBadge() {
           ))}
 
           <div className="pt-2 border-t border-white/8 flex items-center justify-between">
-            <span className="text-[10px] text-ink/65 uppercase tracking-wider">
+            <span className="wl-micro-meta opacity-90 uppercase tracking-wider">
               {health.status === "ok" ? "Nominal" : "Degraded"}
             </span>
             <ShadButton
@@ -151,7 +151,7 @@ export default function SystemStatusBadge() {
               onClick={() => {
                 poll();
               }}
-              className="h-auto gap-1 px-0 py-0 text-[10px] uppercase tracking-wider text-brand/70 hover:text-brand"
+              className="h-auto gap-1 px-0 py-0 wl-label text-brand/70 hover:text-brand"
             >
               <Wifi className="w-2.5 h-2.5" /> Refresh
             </ShadButton>
@@ -182,7 +182,7 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
         )}
         <span className="text-[11px] text-ink/80">{label}</span>
       </div>
-      <span className={cn("text-[10px]", ok ? "text-ink/65" : "text-rose-400/80")}>{detail}</span>
+      <span className={cn("wl-micro-meta", ok ? "text-ink/65" : "text-rose-400/80")}>{detail}</span>
     </div>
   );
 }

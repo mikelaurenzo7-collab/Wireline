@@ -104,7 +104,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
       <div className="h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-brand">
           <Loader2 className="w-8 h-8 animate-spin" />
-          <span className="text-[10px] uppercase tracking-[0.3em]">Loading capabilities...</span>
+          <span className="wl-label">Loading capabilities...</span>
         </div>
       </div>
     );
@@ -158,7 +158,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
           <div key={group} className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="h-px bg-brand/30 w-8" />
-              <h4 className="text-[10px] uppercase tracking-[0.3em] text-brand/80">
+              <h4 className="wl-label text-brand/80">
                 {group === "core" ? "Core actions" : `${group} integrations`}
               </h4>
               <div className="h-px bg-brand/10 flex-1" />
@@ -212,7 +212,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                           {tool.integration && (
                             <span
                               className={cn(
-                                "text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full border",
+                                "wl-label px-2 py-0.5 rounded-full border",
                                 isMissingIntegration
                                   ? "border-rose-500/30 text-rose-600 bg-rose-500/10"
                                   : "border-brand/20 text-brand bg-brand/10",
@@ -226,7 +226,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                         <p className="text-caption leading-relaxed">{tool.description}</p>
 
                         {isMissingIntegration && (
-                          <div className="mt-3 flex items-center gap-1.5 text-rose-600 text-[10px] bg-rose-500/5 py-1.5 px-2 rounded-md border border-rose-500/20">
+                          <div className="mt-3 flex items-center gap-1.5 wl-micro-meta text-rose-600 bg-rose-500/5 py-1.5 px-2 rounded-md border border-rose-500/20">
                             <AlertCircle className="w-3 h-3 shrink-0" />
                             <span>Requires global integration configuration.</span>
                           </div>

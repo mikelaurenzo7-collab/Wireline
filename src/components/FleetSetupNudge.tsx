@@ -111,14 +111,14 @@ export default function FleetSetupNudge({ className }: { className?: string }) {
             size="sm"
             disableAnimations
             onClick={() => setShowFastStart(true)}
-            className="touch-press rounded-full text-[10px] tracking-[0.22em]"
+            className="touch-press rounded-full wl-label"
           >
             <Rocket className="w-3.5 h-3.5" />
             Fast Start
           </ShadButton>
           <Link
             to="/agents"
-            className="touch-press inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-border text-[10px] uppercase tracking-[0.22em] text-ink/70 hover:text-ink hover:border-brand/30 transition-colors min-h-[36px]"
+            className="touch-press inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-border wl-label text-ink/70 hover:text-ink hover:border-brand/30 transition-colors min-h-[36px]"
           >
             Agents
             <ArrowRight className="w-3 h-3" />

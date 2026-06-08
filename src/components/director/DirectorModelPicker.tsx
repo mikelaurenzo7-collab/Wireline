@@ -234,7 +234,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
           <p className="text-[11px] font-medium text-foreground">
             {DIRECTOR_MODEL_PICKER_COPY.label}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+          <p className="wl-micro-meta--muted-foreground mt-1 leading-snug">
             {DIRECTOR_MODEL_PICKER_COPY.hint}
           </p>
         </div>
@@ -300,11 +300,11 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
               {DIRECTOR_MODEL_PICKER_COPY.openRouterSection}
             </p>
             {catalog?.openRouterRequiresUpgrade ? (
-              <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
+              <p className="wl-micro-meta--muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.requiresUpgrade}
               </p>
             ) : !catalog?.openRouterEnabled ? (
-              <p className="text-[10px] text-muted-foreground px-2 py-2 leading-snug">
+              <p className="wl-micro-meta--muted-foreground px-2 py-2 leading-snug">
                 {DIRECTOR_MODEL_PICKER_COPY.notConfigured}
               </p>
             ) : (
@@ -385,7 +385,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                           />
                         ))}
                         {filteredCatalog.length === 0 && searchNorm ? (
-                          <p className="text-[10px] text-muted-foreground px-2 py-2">
+                          <p className="wl-micro-meta--muted-foreground px-2 py-2">
                             {DIRECTOR_MODEL_PICKER_COPY.noSearchResults}
                           </p>
                         ) : null}
@@ -398,7 +398,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                   searchNorm &&
                   filteredCurated.length === 0 &&
                   filteredCatalog.length === 0 && (
-                    <p className="text-[10px] text-muted-foreground px-2 py-2">
+                    <p className="wl-micro-meta--muted-foreground px-2 py-2">
                       {DIRECTOR_MODEL_PICKER_COPY.noSearchResults}
                     </p>
                   )}

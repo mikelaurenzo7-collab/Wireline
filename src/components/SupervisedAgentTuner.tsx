@@ -154,7 +154,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                           disabled={isPromoting === lesson.id}
                           title="Promote this observation into a hard directive on the agent"
                           aria-label={`Promote observation to directive: ${lesson.lesson.slice(0, 80)}`}
-                          className="h-8 px-3 rounded-md text-[10px] uppercase tracking-[0.18em] touch-press shadow-sm"
+                          className="h-8 px-3 rounded-md wl-label touch-press shadow-sm"
                         >
                           {isPromoting === lesson.id ? (
                             <Loader2 className="w-3 h-3 animate-spin" />

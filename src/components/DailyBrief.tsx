@@ -24,6 +24,7 @@ import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { WL_STAT_CLASSES } from "../lib/wireline-ops-design";
 
 interface BriefData {
   brief: {
@@ -115,9 +116,7 @@ export default function DailyBrief() {
     return (
       <div className="rounded-md wl-panel border border-border p-8 flex items-center gap-4">
         <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="text-[11px] uppercase tracking-[0.4em] text-muted">
-          Wireline is analyzing your day…
-        </span>
+        <span className="wl-label text-muted">Wireline is analyzing your day…</span>
       </div>
     );
 
@@ -159,12 +158,6 @@ export default function DailyBrief() {
     cost_pct: Number.isFinite(data.week_delta?.cost_pct) ? data.week_delta!.cost_pct : 0,
   };
 
-  const moodAccent =
-    brief.mood === "green"
-      ? "var(--color-brand)"
-      : brief.mood === "yellow"
-        ? "#C4B5A0"
-        : "var(--color-brand)";
   const moodLabel =
     brief.mood === "green"
       ? "All systems go"
@@ -192,8 +185,8 @@ export default function DailyBrief() {
               />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
-                <Brain className="w-3 h-3" /> Daily Brief ·{" "}
+              <div className="wl-label text-brand flex items-center gap-2">
+                <Brain className="w-3 h-3" aria-hidden /> Daily Brief ·{" "}
                 {formatDate(
                   new Date(),
                   { weekday: "long", month: "long", day: "numeric" },
@@ -202,10 +195,8 @@ export default function DailyBrief() {
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="w-2 h-2 rounded-full wl-mood-dot" data-mood-color={moodAccent} />
-                <span className="text-[10px] uppercase tracking-[0.3em] text-ink/70">
-                  {moodLabel}
-                </span>
+                <span className="w-2 h-2 rounded-full wl-mood-dot" data-mood={brief.mood} />
+                <span className="wl-label-muted text-ink/70">{moodLabel}</span>
               </div>
             </div>
           </div>
@@ -214,19 +205,19 @@ export default function DailyBrief() {
               onClick={() => setShowSchedule((s) => !s)}
               variant="outline"
               className={cn(
-                "px-3 py-1.5 h-auto rounded-full text-[10px] uppercase tracking-[0.3em] transition-all",
+                "px-3 py-1.5 h-auto rounded-full wl-label transition-all",
                 showSchedule
                   ? "bg-brand/15 border-brand/40 text-brand"
                   : "wl-panel border-border text-muted hover:text-brand hover:border-brand/40",
               )}
             >
-              <Mail className="w-3 h-3" /> Email Schedule
+              <Mail className="w-3 h-3" aria-hidden /> Email Schedule
             </ShadButton>
             <ShadButton
               onClick={() => load(true)}
               disabled={loading}
               variant="outline"
-              className="px-3 py-1.5 h-auto rounded-full wl-panel border-border text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand hover:border-brand/40"
+              className="px-3 py-1.5 h-auto rounded-full wl-panel border-border wl-label text-muted hover:text-brand hover:border-brand/40"
             >
               {loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -296,8 +287,8 @@ export default function DailyBrief() {
           {/* Action items */}
           {brief.action_items.length > 0 && (
             <div className="space-y-2.5">
-              <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand flex items-center gap-2">
-                <Zap className="w-3 h-3" /> Do today
+              <h4 className="wl-label text-brand flex items-center gap-2">
+                <Zap className="w-3 h-3" aria-hidden /> Do today
               </h4>
               <div className="space-y-2">
                 {brief.action_items.map((a, i) => (
@@ -307,7 +298,7 @@ export default function DailyBrief() {
                   >
                     <span
                       className={cn(
-                        "shrink-0 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-[0.3em] mt-0.5",
+                        "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                         a.urgency === "high" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                         a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
@@ -325,7 +316,7 @@ export default function DailyBrief() {
 
           <Link
             to="/ops?tab=triage"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand"
+            className="app-micro-cta inline-flex items-center gap-2 px-5 py-3 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 transition-all text-brand"
           >
             Open Triage Inbox <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -351,14 +342,14 @@ function Quick({
   // For "spend", going up is bad — invert the color sense.
   const isGood = invertDelta ? !isUp : isUp;
   return (
-    <div className="rounded-md wl-panel border border-border p-4">
-      <div className="text-[10px] uppercase tracking-[0.3em] text-muted mb-2">{label}</div>
+    <div className={cn(WL_STAT_CLASSES.tile, "p-4")}>
+      <div className={cn(WL_STAT_CLASSES.label, "mb-2 mt-0")}>{label}</div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-semibold text-3xl text-ink tabular-nums">{value}</span>
+        <span className={cn(WL_STAT_CLASSES.valueInk, "text-3xl font-semibold")}>{value}</span>
         {showDelta && (
           <span
             className={cn(
-              "text-[10px] uppercase tracking-[0.2em] flex items-center gap-1",
+              "wl-label flex items-center gap-1",
               isGood ? "text-brand" : "text-rose-500",
             )}
           >
@@ -382,8 +373,8 @@ function Section({
 }) {
   return (
     <div className="rounded-md wl-panel border border-border p-5">
-      <h4 className="text-[10px] uppercase tracking-[0.4em] mb-3 flex items-center gap-2 text-brand">
-        <Icon className="w-3 h-3" /> {title}
+      <h4 className="wl-label text-brand mb-3 flex items-center gap-2">
+        <Icon className="w-3 h-3" aria-hidden /> {title}
       </h4>
       <ul className="space-y-1.5 text-sm text-ink/85 list-disc list-inside marker:text-brand/50">
         {children}
@@ -471,7 +462,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
   return (
     <div className="px-7 py-5 border-b border-white/8 bg-black/20 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand">
+        <div className="flex items-center gap-2 wl-label text-brand">
           <Mail className="w-3 h-3" /> Email this brief on a schedule
         </div>
         <ShadButton
@@ -531,7 +522,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <div className="text-xs font-medium">
                 Send the daily brief by email at the time below (UTC)
               </div>
-              <div className="text-[10px] leading-snug mt-0.5 text-ink/65">
+              <div className="wl-micro-meta leading-snug mt-0.5 text-ink/65">
                 Background scheduler ticks every 5 minutes. Emails are sent through{" "}
                 {gmailAddress ? (
                   <span className="font-mono text-ink/75">{gmailAddress}</span>
@@ -545,7 +536,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="space-y-1.5">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-muted flex items-center gap-1.5">
+              <span className="wl-label-muted flex items-center gap-1.5">
                 <Clock className="w-3 h-3" /> Send time (UTC)
               </span>
               <Input
@@ -554,12 +545,12 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setSendAt(e.target.value)}
                 className="w-full h-11 px-4 rounded-md bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
-              <span className="text-[10px] text-ink/65 leading-snug">
+              <span className="wl-micro-meta opacity-90 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
               </span>
             </label>
             <label className="space-y-1.5">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-muted">Recipient</span>
+              <span className="wl-label-muted">Recipient</span>
               <Input
                 type="email"
                 autoComplete="email"
@@ -576,12 +567,12 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
           </div>
 
           {lastSentAt && (
-            <div className="text-[10px] uppercase tracking-[0.3em] text-brand/70">
+            <div className="wl-label text-brand/70">
               Last sent {formatDateTime(lastSentAt, undefined, "—")}
             </div>
           )}
           {lastError && (
-            <div className="text-[10px] text-rose-500 flex items-start gap-1.5">
+            <div className="wl-micro-meta text-rose-500 flex items-start gap-1.5">
               <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
               <span className="font-mono">Last error: {lastError}</span>
             </div>

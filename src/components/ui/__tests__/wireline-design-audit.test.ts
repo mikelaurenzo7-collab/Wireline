@@ -7,6 +7,7 @@ import {
   DESIGN_AUDIT_BASELINE,
   APP_MICRO_TEXT_8_PATTERN,
   APP_MICRO_TEXT_9_PATTERN,
+  APP_MICRO_TEXT_10_PATTERN,
   OFF_BRAND_GRADIENT_PATTERN,
   OFF_BRAND_HEX_PATTERN,
 } from "../../../lib/wireline-design-audit";
@@ -74,6 +75,14 @@ describe("wireline design audit — authenticated app surfaces", () => {
       countPatternInScope(APP_MICRO_TEXT_9_PATTERN, "app"),
       DESIGN_AUDIT_BASELINE.appText9px,
       "app text-[9px]",
+    );
+  });
+
+  it("has no text-[10px] arbitrary micro labels in app code", () => {
+    assertMax(
+      countPatternInScope(APP_MICRO_TEXT_10_PATTERN, "app"),
+      DESIGN_AUDIT_BASELINE.appText10px,
+      "app text-[10px]",
     );
   });
 });

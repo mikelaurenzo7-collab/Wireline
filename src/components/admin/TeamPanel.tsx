@@ -47,7 +47,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-3 p-4 rounded-md wl-panel border border-input bg-brand/5">
               <div className="flex-1 space-y-1.5">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-muted font-bold ml-1">
+                <label className="wl-label-muted font-bold ml-1">
                   Invite New Member
                 </label>
                 <div className="flex gap-2">
@@ -109,7 +109,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     <p className="text-xs text-muted uppercase tracking-widest font-medium">
                       No team members found
                     </p>
-                    <p className="text-[10px] text-muted/70 mt-1">
+                    <p className="wl-micro-meta--muted mt-1">
                       Invite your first colleague to begin collaborating.
                     </p>
                   </div>
@@ -147,7 +147,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <roleInfo.icon className={cn("w-3 h-3", roleInfo.color)} />
-                            <p className="text-[10px] uppercase tracking-wider text-muted font-bold">
+                            <p className="wl-label text-muted font-bold">
                               {roleInfo.label}
                             </p>
                           </div>
@@ -156,13 +156,13 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                           <div className="text-right hidden sm:block">
                             <p
                               className={cn(
-                                "text-[10px] uppercase tracking-widest font-black mb-0.5",
+                                "wl-label font-black mb-0.5",
                                 m.user_id ? "text-brand" : "text-rose-500",
                               )}
                             >
                               {m.user_id ? "Authenticated" : "Pending Invite"}
                             </p>
-                            <p className="text-[10px] text-muted uppercase">
+                            <p className="wl-micro-meta--muted uppercase">
                               Joined {new Date(m.created_at).toLocaleDateString()}
                             </p>
                           </div>
@@ -220,14 +220,14 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className={cn("text-[10px] uppercase tracking-[0.3em] font-black", p.color)}
+                    className={cn("wl-label font-black", p.color)}
                   >
                     {p.label}
                   </span>
                   <Shield className={cn("w-3.5 h-3.5", p.color)} />
                 </div>
                 <p className="text-xs font-bold text-ink">{p.role}</p>
-                <p className="text-[10px] text-muted leading-relaxed">{p.desc}</p>
+                <p className="wl-micro-meta--muted leading-relaxed">{p.desc}</p>
               </div>
             ))}
           </div>
@@ -237,10 +237,10 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
           <div className="flex gap-3">
             <KeyRound className="w-4 h-4 text-rose-600 shrink-0" />
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">
+              <p className="wl-label font-bold text-rose-600 uppercase tracking-wider">
                 Security Notice
               </p>
-              <p className="text-[10px] text-rose-600/70 leading-relaxed">
+              <p className="wl-micro-meta text-rose-600/70 leading-relaxed">
                 Revoking access is immediate. All active sessions for the user will be terminated
                 across the Wireline network.
               </p>

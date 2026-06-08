@@ -40,7 +40,7 @@ export function Field({
     <div className="space-y-2">
       <label className="app-section-title">{label}</label>
       {children}
-      {hint && <p className="text-[10px] text-muted/70 leading-relaxed">{hint}</p>}
+      {hint && <p className="wl-micro-meta--muted leading-relaxed">{hint}</p>}
     </div>
   );
 }
@@ -128,7 +128,7 @@ export const ResultCard: React.FC<{ title: string; copyText?: string; children?:
   return (
     <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3 relative">
       <div className="flex items-center justify-between">
-        <h4 className="text-[10px] uppercase tracking-[0.4em] text-brand">{title}</h4>
+        <h4 className="wl-label text-brand">{title}</h4>
         {copyText && (
           <ShadButton
             type="button"
@@ -140,7 +140,7 @@ export const ResultCard: React.FC<{ title: string; copyText?: string; children?:
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
             }}
-            className="h-auto px-0 text-[10px] uppercase tracking-[0.3em] text-muted hover:text-brand gap-1.5"
+            className="h-auto px-0 wl-label-muted hover:text-brand gap-1.5"
           >
             {copied ? (
               <>
@@ -177,7 +177,7 @@ export function ErrCard({ error }: { error: string }) {
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-[0.3em] text-muted">{label}</div>
+      <div className="wl-label-muted">{label}</div>
       <div className="text-sm text-ink mt-0.5 truncate">{value}</div>
     </div>
   );

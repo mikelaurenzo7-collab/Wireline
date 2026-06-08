@@ -227,7 +227,7 @@ function ProposalCard({
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           className={cn(
-            "mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em]",
+            "mt-2 flex items-center gap-1.5 wl-label",
             state === "done" ? "text-brand" : "text-muted/70",
           )}
         >
@@ -702,7 +702,7 @@ export default function AgentWorkspace({
             </span>
             <div>
               <p className="text-[13px] font-semibold text-ink leading-tight">{agentName}</p>
-              <p className="flex items-center gap-1.5 text-[10px] text-muted leading-tight">
+              <p className="flex items-center gap-1.5 wl-micro-meta--muted leading-tight">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
@@ -719,7 +719,7 @@ export default function AgentWorkspace({
               size="sm"
               disableAnimations
               onClick={clearThread}
-              className="shrink-0 rounded-md text-[10px] uppercase tracking-[0.18em] text-muted hover:text-rose-600 hover:bg-rose-500/8"
+              className="shrink-0 rounded-md wl-label-muted hover:text-rose-600 hover:bg-rose-500/8"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear</span>
@@ -749,7 +749,7 @@ export default function AgentWorkspace({
                 <tab.icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
                 {tab.id === "connectors" && enabledTools.length > 0 && (
-                  <span className="text-[10px] text-muted/70">{enabledTools.length}</span>
+                  <span className="wl-micro-meta--muted">{enabledTools.length}</span>
                 )}
               </ShadButton>
             );
@@ -786,7 +786,7 @@ export default function AgentWorkspace({
                   </span>
                 </div>
 
-                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-brand/70 mb-2">
+                <p className="font-mono wl-label text-brand/70 mb-2">
                   Direct line
                 </p>
                 <h3 className="font-display italic text-2xl text-ink mb-2">
@@ -833,10 +833,10 @@ export default function AgentWorkspace({
                     {/* Agent avatar */}
                     {m.role === "agent" && (
                       <div className="flex items-center gap-2 mb-2 ml-1">
-                        <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
+                        <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 wl-micro-badge font-semibold">
                           {agentName.slice(0, 1).toUpperCase()}
                         </span>
-                        <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
+                        <span className="wl-micro-meta--muted uppercase tracking-[0.14em] font-medium">
                           {agentName}
                         </span>
                       </div>
@@ -963,10 +963,10 @@ export default function AgentWorkspace({
                     className="flex flex-col items-start"
                   >
                     <div className="flex items-center gap-2 mb-2 ml-1">
-                      <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 text-[10px] font-semibold">
+                      <span className="shrink-0 flex w-7 h-7 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-md shadow-brand/15 wl-micro-badge font-semibold">
                         {agentName.slice(0, 1).toUpperCase()}
                       </span>
-                      <span className="text-[10px] text-muted uppercase tracking-[0.14em] font-medium">
+                      <span className="wl-micro-meta--muted uppercase tracking-[0.14em] font-medium">
                         {agentName}
                       </span>
                     </div>
@@ -1021,7 +1021,7 @@ export default function AgentWorkspace({
                 >
                   <div className="flex items-center gap-2 px-2 py-2 border-b border-border mb-2">
                     <Plug className="w-3.5 h-3.5 text-brand" />
-                    <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                    <span className="wl-label text-muted-foreground font-semibold">
                       {enabledTools.length > 0
                         ? `${enabledTools.length} Active Tools`
                         : "No Tools Active"}
@@ -1098,7 +1098,7 @@ export default function AgentWorkspace({
                     <Plug className="w-3.5 h-3.5" />
                     <span>Tools</span>
                     {enabledTools.length > 0 && (
-                      <span className="text-[10px] text-ink/40">({enabledTools.length})</span>
+                      <span className="wl-micro-meta">({enabledTools.length})</span>
                     )}
                     <ChevronDown
                       className={cn("w-3 h-3 transition-transform", toolsOpen && "rotate-180")}
@@ -1167,7 +1167,7 @@ export default function AgentWorkspace({
                               <span className="block text-[11px] font-semibold text-foreground">
                                 Document
                               </span>
-                              <span className="block text-[10px] text-muted-foreground">
+                              <span className="block wl-micro-meta--muted-foreground">
                                 PDFs & files
                               </span>
                             </div>
@@ -1188,7 +1188,7 @@ export default function AgentWorkspace({
                               <span className="block text-[11px] font-semibold text-foreground">
                                 Memory
                               </span>
-                              <span className="block text-[10px] text-muted">
+                              <span className="block wl-micro-meta--muted">
                                 Add a fact or preference
                               </span>
                             </div>
@@ -1209,7 +1209,7 @@ export default function AgentWorkspace({
                               <span className="block text-[11px] font-medium text-ink dark:text-white">
                                 Instruction
                               </span>
-                              <span className="block text-[10px] text-muted">
+                              <span className="block wl-micro-meta--muted">
                                 Add a skill to the prompt
                               </span>
                             </div>
