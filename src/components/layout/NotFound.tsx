@@ -94,8 +94,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
             />
             <a
               href="tel:+16305811834"
-              className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
-              style={{ boxShadow: "0 8px 24px -12px rgba(107, 43, 153 ,0.35)" }}
+              className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors shadow-[0_8px_24px_-12px_rgba(107,43,153,0.35)]"
             >
               <div
                 className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"

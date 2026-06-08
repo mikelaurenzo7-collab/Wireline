@@ -41,8 +41,7 @@ export default function MobileBottomNav({ onOpenDrawer }: { onOpenDrawer: () => 
     <nav
       data-testid="mobile-bottom-nav"
       aria-label="Quick navigation"
-      className="lg:hidden fixed inset-x-0 bottom-0 z-[70] border-t border-black/8 bg-paper/95 dark:bg-[color:var(--wl-velvet)]/95 backdrop-blur-md shadow-[0_-6px_20px_rgba(0,0,0,0.06)]"
-      style={{ paddingBottom: "max(0.35rem, env(safe-area-inset-bottom))" }}
+      className="lg:hidden fixed inset-x-0 bottom-0 z-[70] border-t border-black/8 bg-paper/95 dark:bg-[color:var(--wl-velvet)]/95 backdrop-blur-md shadow-[0_-6px_20px_rgba(0,0,0,0.06)] pb-[max(0.35rem,env(safe-area-inset-bottom))]"
     >
       <ul className="grid grid-cols-4 gap-0.5 px-1 pt-1">
         {QUICK_TABS.map((tab) => {

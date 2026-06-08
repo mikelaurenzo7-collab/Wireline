@@ -329,9 +329,11 @@ export default function AppShell() {
 
       {/* Left-edge swipe zone for mobile drawer */}
       <div
-        className="md:hidden fixed top-0 left-0 bottom-0 w-5 z-[45]"
+        className={cn(
+          "md:hidden fixed top-0 left-0 bottom-0 w-5 z-[45] touch-pan-y",
+          drawerOpen ? "pointer-events-none" : "pointer-events-auto",
+        )}
         aria-hidden="true"
-        style={{ touchAction: "pan-y", pointerEvents: drawerOpen ? "none" : "auto" }}
         onPointerDown={(e) => {
           edgeSwipe.current = { x: e.clientX, y: e.clientY };
           (e.currentTarget as Element).setPointerCapture(e.pointerId);

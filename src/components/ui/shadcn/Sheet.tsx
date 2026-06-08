@@ -54,13 +54,11 @@ const SheetContent = React.forwardRef<
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
-      className={cn(sheetVariants({ side }), className)}
-      style={{
-        paddingTop: `max(1.5rem, env(safe-area-inset-top, 0px))`,
-        paddingBottom: `max(1.5rem, env(safe-area-inset-bottom, 0px))`,
-        paddingLeft: `max(1.5rem, env(safe-area-inset-left, 0px))`,
-        paddingRight: `max(1.5rem, env(safe-area-inset-right, 0px))`,
-      }}
+      className={cn(
+        sheetVariants({ side }),
+        "pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pl-[max(1.5rem,env(safe-area-inset-left,0px))] pr-[max(1.5rem,env(safe-area-inset-right,0px))]",
+        className,
+      )}
       {...props}
     >
       {children}

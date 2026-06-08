@@ -96,12 +96,7 @@ export default function AppPageIntro({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden"
-              style={{
-                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-                boxShadow:
-                  "0 -24px 48px -20px rgba(30, 0, 48, 0.35), 0 1px 0 rgba(255,255,255,0.75) inset",
-              }}
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(30,0,48,0.35),0_1px_0_rgba(255,255,255,0.75)_inset]"
               role="dialog"
               aria-label="Page actions"
               aria-modal="true"

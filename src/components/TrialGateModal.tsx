@@ -188,11 +188,7 @@ export default function TrialGateModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-0 sm:px-4 sm:py-6 bg-black/55 backdrop-blur-sm"
-          style={{
-            paddingTop: "env(safe-area-inset-top, 0)",
-            paddingBottom: "env(safe-area-inset-bottom, 0)",
-          }}
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-0 sm:px-4 sm:py-6 bg-black/55 backdrop-blur-sm pt-[env(safe-area-inset-top,0)] pb-[env(safe-area-inset-bottom,0)]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="trial-gate-title"

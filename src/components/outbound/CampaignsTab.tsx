@@ -341,10 +341,7 @@ export default function CampaignsTab({
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
-                    <RefreshCw
-                      className="w-2.5 h-2.5 text-ink/40 animate-spin"
-                      style={{ animationDuration: "3s" }}
-                    />
+                    <RefreshCw className="w-2.5 h-2.5 text-ink/40 animate-spin [animation-duration:3s]" />
                     <span className="text-[10px] text-ink/40">Refreshing every 10s</span>
                   </div>
                 </div>

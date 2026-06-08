@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import DeployAgentModal, { DeployValues } from "./DeployAgentModal";
 import {
@@ -376,23 +376,18 @@ function TemplateCard({
         "relative rounded-md wl-panel transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
         hovered ? "border-brand/20 shadow-md shadow-brand/8" : "shadow-sm",
       )}
+      style={{ "--wl-accent": template.accent } as CSSProperties}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Accent glow on hover */}
-      <div
-        className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none"
-        style={{ background: template.accent }}
-      />
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-glow" />
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         {/* Header row */}
         <div className="flex items-start justify-between gap-2">
-          <div
-            className="w-10 h-10 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: `${template.accent}18`, border: `1px solid ${template.accent}40` }}
-          >
-            <Icon className="w-5 h-5" style={{ color: template.accent }} />
+          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
+            <Icon className="w-5 h-5 wl-accent-text" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -441,16 +436,9 @@ function TemplateCard({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              className="rounded-md p-3 border text-[11px] text-ink/80 leading-relaxed italic relative"
-              style={{
-                background: `${template.accent}0D`,
-                borderColor: `${template.accent}30`,
-              }}
+              className="rounded-md p-3 border text-[11px] text-ink/80 leading-relaxed italic relative wl-accent-bubble"
             >
-              <MessageCircle
-                className="absolute -top-2 -left-1.5 w-4 h-4"
-                style={{ color: template.accent }}
-              />
+              <MessageCircle className="absolute -top-2 -left-1.5 w-4 h-4 wl-accent-text" />
               <span className="pl-2">&ldquo;{template.firstMessage}&rdquo;</span>
             </motion.div>
           )}

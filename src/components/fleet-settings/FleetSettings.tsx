@@ -388,7 +388,6 @@ export default function FleetSettings() {
             tabIndex={0}
             hidden={activeTab !== "templates"}
             className="flex-1 min-h-0 flex flex-col overflow-hidden"
-            style={{ display: activeTab === "templates" ? undefined : "none" }}
           >
             <AgentTemplates />
           </div>
@@ -397,7 +396,6 @@ export default function FleetSettings() {
             role="tabpanel"
             tabIndex={0}
             hidden={activeTab !== "fleet"}
-            style={{ display: activeTab === "fleet" ? undefined : "none" }}
             className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden"
           >
             {/* Sidebar: Agents List — extracted to fleet-settings/AgentListPanel.tsx */}

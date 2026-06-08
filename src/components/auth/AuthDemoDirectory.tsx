@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, type CSSProperties } from "react";
 import { ChevronDown, Phone } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -22,12 +22,15 @@ function AgentContactCard({
           className={cn(
             "rounded-md flex items-center justify-center shrink-0",
             landing ? "w-9 h-9" : "w-6 h-6",
+            isDemo ? "bg-black/[0.04]" : "wl-accent-surface",
           )}
-          style={{ background: isDemo ? "rgba(0,0,0,0.04)" : `${agent.tint}18` }}
+          style={isDemo ? undefined : ({ "--wl-accent": agent.tint } as CSSProperties)}
         >
           <Phone
-            className={landing ? "w-4 h-4" : "w-3 h-3"}
-            style={{ color: isDemo ? "#6B635A" : agent.tint }}
+            className={cn(
+              landing ? "w-4 h-4" : "w-3 h-3",
+              isDemo ? "text-[#6B635A]" : "wl-accent-text",
+            )}
             strokeWidth={2.4}
           />
         </div>
@@ -96,12 +99,14 @@ function AgentContactCard({
     <div className="relative rounded-md p-3 overflow-hidden border border-black/8 bg-white/60">
       <div className="flex items-start gap-3">
         <div
-          className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-white/10"
-          style={{ background: isDemo ? "rgba(255,255,255,0.03)" : `${agent.tint}1a` }}
+          className={cn(
+            "w-8 h-8 rounded-md flex items-center justify-center shrink-0 border border-white/10",
+            isDemo ? "bg-white/[0.03]" : "wl-accent-surface",
+          )}
+          style={isDemo ? undefined : ({ "--wl-accent": agent.tint } as CSSProperties)}
         >
           <Phone
-            className="w-3.5 h-3.5"
-            style={{ color: isDemo ? "#a1a1aa" : agent.tint }}
+            className={cn("w-3.5 h-3.5", isDemo ? "text-zinc-400" : "wl-accent-text")}
             strokeWidth={2.4}
           />
         </div>

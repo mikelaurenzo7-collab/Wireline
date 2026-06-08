@@ -109,10 +109,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-x-3 sm:inset-x-4 bottom-0 sm:bottom-auto sm:top-[10%] z-[91] mx-auto max-w-2xl"
-            style={{
-              paddingBottom: "env(safe-area-inset-bottom, 0)",
-            }}
+            className="fixed inset-x-3 sm:inset-x-4 bottom-0 sm:bottom-auto sm:top-[10%] z-[91] mx-auto max-w-2xl pb-[env(safe-area-inset-bottom,0)]"
             ref={dialogRef}
             role="dialog"
             aria-modal="true"

@@ -206,10 +206,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div
-          className="shrink-0 border-t border-white/[0.15] dark:border-white/[0.08] px-1.5 pt-1.5 pb-1.5 space-y-px"
-          style={{ paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))" }}
-        >
+        <div className="shrink-0 border-t border-white/[0.15] dark:border-white/[0.08] px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] space-y-px">
           <LivePulse count={liveCalls} expanded={effective} />
 
           {effective && user && (

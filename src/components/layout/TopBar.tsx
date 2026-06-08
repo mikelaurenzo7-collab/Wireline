@@ -215,15 +215,11 @@ export default function TopBar({
         aria-label="Main navigation"
         className={cn(
           "shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300 wl-panel-elevated elev-1",
+          "pt-[max(0px,env(safe-area-inset-top,0))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]",
           theme === "light"
             ? "border-brand/10 text-ink animate-fade-in"
             : "border-brand/20 text-white animate-fade-in",
         )}
-        style={{
-          paddingTop: "max(0px, env(safe-area-inset-top, 0))",
-          paddingLeft: "env(safe-area-inset-left)",
-          paddingRight: "env(safe-area-inset-right)",
-        }}
       >
         <div className="h-11 flex items-center gap-2 px-3 lg:pl-3 lg:pr-4">
           {/* Logo / Brand — VISIBLE under lg only. On lg+ the Sidebar (Aurora
@@ -490,12 +486,7 @@ export default function TopBar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden"
-              style={{
-                paddingTop: "max(1rem, env(safe-area-inset-top))",
-                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-                paddingLeft: "max(1rem, env(safe-area-inset-left))",
-              }}
+              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]"
               aria-label="Main navigation"
             >
               <div className="flex items-center justify-between mb-4">

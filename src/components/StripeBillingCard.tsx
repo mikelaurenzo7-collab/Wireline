@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import {
   CreditCard,
@@ -357,35 +357,21 @@ function PlanPicker({
                   ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
                   : "border-white/10 hover:border-white/20",
               )}
+              style={{ "--wl-accent": accent } as CSSProperties}
             >
               {!isSignupMatch && plan.id === "pro" && (
-                <div
-                  className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
-                  style={{
-                    background: BRAND.purple,
-                    color: "#fff",
-                  }}
-                >
+                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand text-white">
                   Most popular
                 </div>
               )}
               {isSignupMatch && (
-                <div
-                  className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em]"
-                  style={{
-                    background: BRAND.purple,
-                    color: "#fff",
-                  }}
-                >
+                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full text-[9px] uppercase tracking-[0.3em] bg-brand text-white">
                   Matched from visit
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <div
-                  className="w-12 h-12 rounded-md flex items-center justify-center"
-                  style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
-                >
-                  <Icon className="w-6 h-6" style={{ color: accent }} />
+                <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
+                  <Icon className="w-6 h-6 wl-accent-text" />
                 </div>
                 <span className="text-[9px] uppercase tracking-[0.3em] text-muted/70">
                   {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
@@ -412,8 +398,7 @@ function PlanPicker({
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-caption">
                     <Check
-                      className="w-3.5 h-3.5 mt-0.5 shrink-0"
-                      style={{ color: accent }}
+                      className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
                       strokeWidth={2.5}
                     />
                     <span>{f}</span>
@@ -426,8 +411,10 @@ function PlanPicker({
                 variant="outline"
                 onClick={() => onSelectPlan(plan.id)}
                 disabled={isBusy || !plan.configured}
-                className="w-full py-3 rounded-md text-[10px] uppercase tracking-[0.28em] font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow"
-                style={!isBusy ? { borderColor: `${accent}50` } : {}}
+                className={cn(
+                  "w-full py-3 rounded-md text-[10px] uppercase tracking-[0.28em] font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
+                  !isBusy && "wl-accent-subscribe",
+                )}
               >
                 {isBusy ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -442,12 +429,7 @@ function PlanPicker({
                   Available soon — contact us to start on this tier
                 </p>
               )}
-              <div
-                className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300"
-                style={{
-                  background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-                }}
-              />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
             </motion.div>
           );
         })}
@@ -492,18 +474,15 @@ function ActiveSubCard({
               };
 
   return (
-    <div className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden">
-      <div
-        className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none"
-        style={{ background: accent }}
-      />
+    <div
+      className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden"
+      style={{ "--wl-accent": accent } as CSSProperties}
+    >
+      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-glow" />
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
         <div className="flex items-center gap-5">
-          <div
-            className="w-16 h-16 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: `${accent}18`, border: `1px solid ${accent}40` }}
-          >
-            <Icon className="w-8 h-8" style={{ color: accent }} />
+          <div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
+            <Icon className="w-8 h-8 wl-accent-text" />
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
@@ -551,12 +530,7 @@ function ActiveSubCard({
           variant="outline"
           onClick={onPortal}
           disabled={busy}
-          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button"
-          style={{
-            background: `${accent}12`,
-            borderColor: `${accent}40`,
-            color: accent,
-          }}
+          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
         >
           {busy ? (
             <Loader2 className="w-4 h-4 animate-spin" />

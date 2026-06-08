@@ -118,19 +118,17 @@ function SpendBudgetCard() {
   const period = status?.period || "—";
 
   return (
-    <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")}>
+    <div
+      className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")}
+      style={{ "--wl-accent": barColor } as React.CSSProperties}
+    >
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-md flex items-center justify-center"
-            style={{ background: `${barColor}22`, border: `1px solid ${barColor}55` }}
-          >
-            <Shield className="w-4 h-4" style={{ color: barColor }} />
+          <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
+            <Shield className="w-4 h-4 wl-accent-text" />
           </div>
           <div>
-            <div className="wl-insight-label tracking-[0.32em]" style={{ color: barColor }}>
-              Monthly Budget
-            </div>
+            <div className="wl-insight-label tracking-[0.32em] wl-accent-text">Monthly Budget</div>
             <div className="text-sm text-ink/70 mt-1">
               Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)
             </div>
@@ -162,8 +160,7 @@ function SpendBudgetCard() {
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(100, pct)}%` }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-y-0 left-0 rounded-full"
-              style={{ background: `linear-gradient(90deg, ${barColor}aa, ${barColor})` }}
+              className="absolute inset-y-0 left-0 rounded-full wl-accent-progress"
             />
           </div>
           {Array.isArray(status?.alerts_fired) && status.alerts_fired.length > 0 && (

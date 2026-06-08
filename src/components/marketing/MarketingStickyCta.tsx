@@ -29,13 +29,7 @@ export default function MarketingStickyCta({
       )}
       aria-hidden={false}
     >
-      <div
-        className="pointer-events-auto border-t border-black/8 bg-paper/92 backdrop-blur-xl px-4 pt-3"
-        style={{
-          paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
-          boxShadow: "0 -12px 40px -16px rgba(30, 0, 48, 0.18)",
-        }}
-      >
+      <div className="pointer-events-auto border-t border-black/8 bg-paper/92 backdrop-blur-xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_-16px_rgba(30,0,48,0.18)]">
         <div className="max-w-lg mx-auto flex gap-2">
           <Link to={secondaryHref} className="marketing-btn-secondary flex-1 min-h-[48px] text-sm">
             {secondaryLabel}

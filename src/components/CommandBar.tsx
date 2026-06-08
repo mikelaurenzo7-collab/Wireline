@@ -316,10 +316,7 @@ export default function CommandBar() {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-start justify-center px-4"
-          style={{ paddingTop: "max(1rem, calc(env(safe-area-inset-top, 0px) + 8dvh))" }}
-        >
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center px-4 pt-[max(1rem,calc(env(safe-area-inset-top,0px)+8dvh))]">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}

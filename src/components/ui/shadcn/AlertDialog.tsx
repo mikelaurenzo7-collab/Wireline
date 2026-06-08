@@ -39,11 +39,9 @@ const AlertDialogContent = React.forwardRef<
         "data-[state=closed]:slide-out-to-bottom-8 data-[state=open]:slide-in-from-bottom-8",
         "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0",
         "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+        "pb-[max(0px,env(safe-area-inset-bottom,0px))]",
         className,
       )}
-      style={{
-        paddingBottom: `max(0px, env(safe-area-inset-bottom, 0px))`,
-      }}
       {...props}
     />
   </AlertDialogPortal>

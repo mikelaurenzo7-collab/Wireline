@@ -64,6 +64,41 @@
   background: linear-gradient(to right, rgba(139,63,214,0.12), rgba(139,63,214,0.04), transparent);
 }
 
+/* Dynamic accent theming — set --wl-accent on a root; children use these utilities
+   instead of per-element style={{ color/background: accent }}. */
+.wl-accent-surface {
+  background: color-mix(in srgb, var(--wl-accent) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wl-accent) 25%, transparent);
+}
+.wl-accent-text {
+  color: var(--wl-accent);
+}
+.wl-accent-glow {
+  background: var(--wl-accent);
+}
+.wl-accent-bubble {
+  background: color-mix(in srgb, var(--wl-accent) 5%, transparent);
+  border-color: color-mix(in srgb, var(--wl-accent) 19%, transparent);
+}
+.wl-accent-hover-bar {
+  background: linear-gradient(90deg, transparent, var(--wl-accent), transparent);
+}
+.wl-accent-cta {
+  background: color-mix(in srgb, var(--wl-accent) 7%, transparent);
+  border-color: color-mix(in srgb, var(--wl-accent) 25%, transparent);
+  color: var(--wl-accent);
+}
+.wl-accent-progress {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wl-accent) 67%, transparent),
+    var(--wl-accent)
+  );
+}
+.wl-accent-subscribe {
+  border-color: color-mix(in srgb, var(--wl-accent) 31%, transparent);
+}
+
 /* Body receives the paper feel at the root level on all surfaces */
 html, body, .marketing-surface, .app-surface {
   background-color: var(--color-paper);

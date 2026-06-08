@@ -188,10 +188,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           />
-          <div
-            className="relative mt-[4.5rem] mx-4 flex flex-col bg-paper border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden"
-            style={{ maxHeight: "calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px))" }}
-          >
+          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-paper border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
             <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
               {MOBILE_LINKS.map((link) => {
                 const isActive =
@@ -214,10 +211,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 );
               })}
             </nav>
-            <div
-              className="shrink-0 border-t border-ink/[0.08] p-4 flex flex-col gap-2.5"
-              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
-            >
+            <div className="shrink-0 border-t border-ink/[0.08] p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-2.5">
               {signedIn && !isAuth ? (
                 <Link
                   to="/ops"

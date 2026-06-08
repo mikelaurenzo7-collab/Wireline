@@ -392,10 +392,7 @@ export default function AuthPortal() {
           className="bg-paper/92 backdrop-blur-xl border-b border-ink/[0.06]"
         />
 
-        <div
-          className="relative z-10 flex flex-1 min-h-0 items-center justify-center px-4 sm:px-6 py-8 pt-20 sm:pt-24"
-          style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom, 0px))" }}
-        >
+        <div className="relative z-10 flex flex-1 min-h-0 items-center justify-center px-4 sm:px-6 py-8 pt-20 sm:pt-24 pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
