@@ -1,0 +1,55 @@
+import { Router, Response } from "express";
+import { z } from "zod";
+import type { AuthenticatedRequest } from "../types/auth";
+import { authenticateUser } from "../middleware/auth";
+import { createRateLimiter } from "../middleware/api-rate-limits";
+import { approveLesson, rejectLesson, getLearningDigest } from "../lib/agent-learning-loop";
+import { getErrorMessage } from "../lib/server-utils";
+import { log } from "../lib/server-context";
+
+const router = Router();
+const limiter = createRateLimiter({ windowMs: 60_000, max: 120 });
+
+const reviewSchema = z.object({
+  lesson_id: z.string(),
+  action: z.enum(["approve", "reject"]),
+});
+
+router.post(
+  "/api/agents/lessons/review",
+  authenticateUser,
+  limiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = reviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: "Invalid body" });
+    }
+    try {
+      const lessonId = BigInt(parsed.data.lesson_id);
+      const ok =
+        parsed.data.action === "approve"
+          ? await approveLesson(lessonId, req.user.id)
+          : await rejectLesson(lessonId, req.user.id);
+      return res.json({ ok });
+    } catch (e: unknown) {
+      log.error("lesson review failed", { error: getErrorMessage(e) });
+      return res.status(500).json({ ok: false, error: "Lesson review failed" });
+    }
+  },
+);
+
+router.get(
+  "/api/agents/:id/learning-digest",
+  authenticateUser,
+  limiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const digest = await getLearningDigest(req.user.id, req.params.id);
+      return res.json({ ok: true, digest });
+    } catch (e: unknown) {
+      return res.status(500).json({ ok: false, error: getErrorMessage(e) });
+    }
+  },
+);
+
+export default router;

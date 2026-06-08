@@ -117,6 +117,7 @@ export async function buildVapiAssistant({
       .where(
         and(
           eq(schema.agentLessons.agentId, webhookAgentId),
+          sql`(${schema.agentLessons.lessonStatus} IS NULL OR ${schema.agentLessons.lessonStatus} = 'approved')`,
           // Either no source call (synthetic / operator lesson),
           // OR a source call with qa_score >= 70.
           sql`(${schema.agentLessons.sourceCallId} IS NULL OR ${schema.callLogs.qaScore} >= 70)`,

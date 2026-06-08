@@ -892,6 +892,13 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "demo_line_canary") {
     const { runDemoLineCanary } = await import("./demo-line-canary");
     const result = await runDemoLineCanary();
+    await drizzle
+      .update(schema.jobs)
+      .set({
+        result: { allHealthy: result.allHealthy, timestamp: result.timestamp },
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, job.id));
     log.info("demo_line_canary job completed", {
       jobId: job.id,
       allHealthy: result.allHealthy,
@@ -902,6 +909,27 @@ export async function handleJob(job: JobRow): Promise<void> {
       // If alert failed to send, let the job retry
       throw new Error("Canary detected failures but could not deliver alert");
     }
+  }
+
+  if (job.type === "margin_at_risk_alert") {
+    const { countAtRiskTenants, listAtRiskTenants } = await import("./tenant-economics");
+    const { sendEmail } = await import("./email-service");
+    const count = await countAtRiskTenants();
+    if (count === 0) return;
+    const top = await listAtRiskTenants(5);
+    const ownerEmail = process.env.OWNER_EMAIL;
+    if (!ownerEmail) return;
+    const lines = top
+      .map(
+        (t) =>
+          `• ${t.user_id.slice(0, 8)}… plan=${t.plan_id ?? "—"} margin=${t.gross_margin_pct ?? "n/a"}% overage=${t.overage_minutes}m`,
+      )
+      .join("\n");
+    await sendEmail({
+      to: ownerEmail,
+      subject: `[Wireline] ${count} tenant(s) at margin risk`,
+      html: `<p>${count} tenant(s) are below the margin safety threshold this month.</p><pre>${lines}</pre>`,
+    });
   }
 }
 

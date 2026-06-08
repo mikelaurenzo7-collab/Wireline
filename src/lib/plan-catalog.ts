@@ -30,6 +30,9 @@
  * Pricing.tsx renders these same numbers; keep in sync.
  */
 
+/** Documented variable COGS per voice minute — used by voice reliability dashboard. */
+export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
+
 export type StripePlanId = "personal" | "starter" | "pro" | "business" | "enterprise";
 
 export type StripePlan = {

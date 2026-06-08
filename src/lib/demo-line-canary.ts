@@ -21,6 +21,7 @@
 
 import { log } from "./server-context";
 import { sendEmail } from "./email-service";
+import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -56,6 +57,8 @@ export interface CanaryRunResult {
   allHealthy: boolean;
   lines: LineProbeResult[];
   alertSent: boolean;
+  voiceWindowHealthy?: boolean;
+  voiceWindow?: Awaited<ReturnType<typeof computeVoiceHealthWindow>>;
   error?: string;
 }
 
@@ -179,6 +182,18 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
   const unhealthyLines = result.lines.filter((l) => !l.numberOk || !l.assistantOk);
   result.allHealthy = unhealthyLines.length === 0;
 
+  try {
+    const voiceWindow = await computeVoiceHealthWindow({ demoOnly: true, windowMinutes: 60 });
+    result.voiceWindow = voiceWindow;
+    result.voiceWindowHealthy = voiceWindow.healthy;
+    if (!voiceWindow.healthy) {
+      result.allHealthy = false;
+      await alertOnVoiceDegradation({ window: voiceWindow, channel: "demo-line" });
+    }
+  } catch (err: any) {
+    log.warn("Demo-line canary voice window check failed", { error: err?.message });
+  }
+
   if (!result.allHealthy) {
     log.error("Demo-line canary detected failures", {
       unhealthy: unhealthyLines.map((l) => ({ name: l.name, tel: l.tel, error: l.error })),
@@ -215,6 +230,9 @@ async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
     ...unhealthy.map((l) => `  ❌ ${l.name} (${l.tel}): ${l.error || "unknown"}`),
     "",
     `Healthy lines: ${run.lines.filter((l) => l.numberOk && l.assistantOk).length}/${run.lines.length}`,
+    run.voiceWindow
+      ? `Voice window (${run.voiceWindow.windowMinutes}m): ${run.voiceWindowHealthy ? "healthy" : "degraded"} · calls=${run.voiceWindow.totalCalls} · ttft_p95=${run.voiceWindow.ttftP95Ms ?? "—"}ms`
+      : "",
     "",
     "Check: GET /api/health/canary for full details.",
     "",

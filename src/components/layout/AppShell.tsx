@@ -25,6 +25,7 @@ import { useVisualViewport } from "../../hooks/useVisualViewport";
 
 const CommandBar = lazy(() => import("../CommandBar"));
 const PostSignupOnboarding = lazy(() => import("../PostSignupOnboarding"));
+const ActivationNudge = lazy(() => import("../ActivationNudge"));
 const TrialGateModal = lazy(() => import("../TrialGateModal"));
 const KeyboardShortcuts = lazy(() => import("../KeyboardShortcuts"));
 
@@ -41,7 +42,7 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/integrations": "Email, CRM & third-party connections",
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
-  "/chat": "Director wingman — plan, coach, and approve from one thread",
+  "/chat": "Fleet coach — plan, coach agents, and approve from one thread",
   "/help": "Team lines, demos & quick paths into the product",
 };
 
@@ -142,6 +143,10 @@ function getPageContext(
       if (pathname === "/insights") {
         const insightsTab = params.get("tab");
         const insightsMeta: Record<string, { title: string; subtitle: string }> = {
+          reliability: {
+            title: "Reliability",
+            subtitle: "Latency, hangups, tool calls, escalations, webhooks, and COGS/min",
+          },
           quality: { title: "Quality", subtitle: "Scorecards, failures, and latency" },
           revenue: { title: "Revenue", subtitle: "Attribution, spend, and funnel economics" },
         };
@@ -368,6 +373,9 @@ export default function AppShell() {
       >
         <EmailVerifyBanner />
         <TrialBanner />
+        <Suspense fallback={null}>
+          <ActivationNudge />
+        </Suspense>
 
         {showPageContext && (
           <WorkspaceTopBar

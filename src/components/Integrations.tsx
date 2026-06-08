@@ -17,6 +17,7 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Label } from "./ui/shadcn/Label";
 import { EmptyState } from "./ui/EmptyState";
+import CertifiedIntegrationsStrip from "./CertifiedIntegrationsStrip";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -258,6 +259,7 @@ export default function Integrations() {
         ) : (
           <PageShell title="" eyebrow="" subtitle="" scrollable>
             <div className="flex flex-col gap-3">
+              <CertifiedIntegrationsStrip />
               <Panel
                 title="Email carriers"
                 hint="GMAIL · OUTLOOK"
@@ -396,9 +398,7 @@ export default function Integrations() {
                                       <CheckCircle2 className="w-2.5 h-2.5" /> Synced
                                     </span>
                                   )}
-                                  <span
-                                    className={`wl-label font-mono ${meta.color}`}
-                                  >
+                                  <span className={`wl-label font-mono ${meta.color}`}>
                                     {meta.label}
                                   </span>
                                 </div>

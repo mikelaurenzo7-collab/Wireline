@@ -160,6 +160,14 @@ export const settings = pgTable("wireline_settings", {
   autonomyLevel: text("autonomy_level").default("draft"),
   /** Opt-in: send a 1-question CSAT SMS after completed calls. */
   csatSmsEnabled: boolean("csat_sms_enabled").default(false),
+  /**
+   * First useful production call — north-star activation timestamp.
+   * Set once by tenant-activation when a non-demo phone call clears quality bar.
+   */
+  activatedAt: timestamp("activated_at", { withTimezone: true }),
+  firstActivationCallId: bigint("first_activation_call_id", { mode: "bigint" }),
+  timeToActivationSeconds: integer("time_to_activation_seconds"),
+  activationChannel: text("activation_channel"),
 });
 
 // 1.1 USER PREFERENCES
@@ -442,6 +450,8 @@ export const agentLessons = pgTable(
     lesson: text("lesson").notNull(),
     sourceCallId: text("source_call_id"),
     source: text("source"),
+    /** pending | approved | rejected — only approved lessons inject into runtime. */
+    lessonStatus: text("lesson_status").default("approved"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
@@ -694,6 +704,12 @@ export const callLogs = pgTable(
     pipelineError: text("pipeline_error"), // High-level error classification: stt|tts|llm|connection|unknown
     latencyP50Ms: integer("latency_p50_ms"), // Provider-reported p50 latency (if available)
     latencyP95Ms: integer("latency_p95_ms"), // Provider-reported p95 latency (if available)
+    /** Vapi call end reason — distinct from pipeline_error (see voice-reliability dashboard). */
+    endedReason: text("ended_reason"),
+    toolCallsTotal: integer("tool_calls_total").default(0),
+    toolCallsFailed: integer("tool_calls_failed").default(0),
+    escalationAttempted: boolean("escalation_attempted").default(false),
+    escalationSucceeded: boolean("escalation_succeeded").default(false),
   },
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_id ON wireline_call_logs USING btree (user_id)`,
@@ -707,7 +723,42 @@ export const callLogs = pgTable(
     ttftIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_ttft ON wireline_call_logs USING btree (ttft_ms) WHERE ttft_ms IS NOT NULL`,
     demoCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_demo_created ON wireline_call_logs USING btree (demo, created_at) WHERE demo = true`,
     pipelineErrorIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_pipeline_error ON wireline_call_logs USING btree (pipeline_error) WHERE pipeline_error IS NOT NULL`,
+    endedReasonIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_ended_reason ON wireline_call_logs USING btree (ended_reason) WHERE ended_reason IS NOT NULL`,
     userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_phone_tail ON wireline_call_logs (user_id, right(regexp_replace(customer_number, '[^0-9]', '', 'g'), 10))`,
+  }),
+);
+
+/** Live-call staging for tool/escalation counters before end-of-call-report writes callLogs. */
+export const callReliabilityStaging = pgTable(
+  "wireline_call_reliability_staging",
+  {
+    vapiCallId: text("vapi_call_id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    toolCallsTotal: integer("tool_calls_total").default(0).notNull(),
+    toolCallsFailed: integer("tool_calls_failed").default(0).notNull(),
+    escalationAttempted: boolean("escalation_attempted").default(false).notNull(),
+    escalationSucceeded: boolean("escalation_succeeded").default(false).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_reliability_staging_user ON wireline_call_reliability_staging USING btree (user_id)`,
+  }),
+);
+
+/** Inbound provider webhook outcomes — powers webhook failure rate on voice reliability dashboard. */
+export const webhookHealth = pgTable(
+  "wireline_webhook_health",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    userId: uuid("user_id"),
+    provider: text("provider").notNull(),
+    eventType: text("event_type").notNull(),
+    outcome: text("outcome").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhook_health_user_created ON wireline_webhook_health USING btree (user_id, created_at)`,
+    providerCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_webhook_health_provider_created ON wireline_webhook_health USING btree (provider, created_at)`,
   }),
 );
 
@@ -1350,6 +1401,29 @@ export const emailSuppressions = pgTable("wireline_email_suppressions", {
   reason: text("reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+
+/** Public demo-line acquisition funnel events (showcase calls → recap → signup). */
+export const demoCallEvents = pgTable(
+  "wireline_demo_call_events",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
+    dialedNumber: text("dialed_number").notNull(),
+    showcaseAgent: text("showcase_agent"),
+    callerNumberHash: text("caller_number_hash"),
+    source: text("source"),
+    intentVertical: text("intent_vertical"),
+    recapSentAt: timestamp("recap_sent_at", { withTimezone: true }),
+    signupUserId: uuid("signup_user_id"),
+    callLogId: bigint("call_log_id", { mode: "bigint" }),
+    vapiCallId: text("vapi_call_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    createdIdx: sql`CREATE INDEX IF NOT EXISTS idx_demo_call_events_created ON wireline_demo_call_events USING btree (created_at)`,
+    agentIdx: sql`CREATE INDEX IF NOT EXISTS idx_demo_call_events_agent ON wireline_demo_call_events USING btree (showcase_agent) WHERE showcase_agent IS NOT NULL`,
+    sourceIdx: sql`CREATE INDEX IF NOT EXISTS idx_demo_call_events_source ON wireline_demo_call_events USING btree (source) WHERE source IS NOT NULL`,
+  }),
+);
 
 // 4.3 ONBOARDING & PROGRESS
 export const onboardingProgress = pgTable(

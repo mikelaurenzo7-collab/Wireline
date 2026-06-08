@@ -5,6 +5,7 @@ import * as schema from "../../db/schema";
 import { NotificationService } from "../../lib/notifications";
 import { createMeeting as createZoomMeeting } from "../../lib/zoom-service";
 import { sanitizePhone } from "../../lib/vapi-helpers";
+import { recordEscalationOutcome } from "../../lib/call-reliability-capture";
 
 import type { ToolCallContext, ToolCallResult } from "./types";
 
@@ -147,6 +148,9 @@ export async function handleWorkflowToolCall(
   }
 
   if (fn === "escalate_to_human") {
+    const callId =
+      (payload.call as { id?: string } | undefined)?.id ||
+      (message.call as { id?: string } | undefined)?.id;
     try {
       const { reason } = args || {};
 
@@ -199,6 +203,13 @@ export async function handleWorkflowToolCall(
         // honours the `message` as the announcement BEFORE the
         // transfer happens (the caller hears it, the human picks
         // up to a context-set call).
+        if (callId && agent?.user_id) {
+          void recordEscalationOutcome({
+            vapiCallId: callId,
+            userId: agent.user_id,
+            succeeded: true,
+          });
+        }
         return {
           toolCallId,
           result: "Transferring you now — please hold.",
@@ -210,12 +221,26 @@ export async function handleWorkflowToolCall(
         };
       }
 
+      if (callId && agent?.user_id) {
+        void recordEscalationOutcome({
+          vapiCallId: callId,
+          userId: agent.user_id,
+          succeeded: true,
+        });
+      }
       return {
         toolCallId,
         result:
           "Escalation signal sent to human supervisors. Apologize warmly and let the caller know a human will reach out shortly.",
       };
     } catch {
+      if (callId && agent?.user_id) {
+        void recordEscalationOutcome({
+          vapiCallId: callId,
+          userId: agent.user_id,
+          succeeded: false,
+        });
+      }
       return {
         toolCallId,
         result: "I've noted the escalation. Someone from the team will be in touch shortly.",

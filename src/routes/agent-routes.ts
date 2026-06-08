@@ -27,6 +27,7 @@ import * as claudeBrain from "../lib/claude-brain";
 import { computeAgentPerformance, emptyAgentPerformance } from "../lib/agent-performance";
 import { computeScorecard, type CallLogRow } from "../lib/agent-scorecard";
 import { enforceTrialAgentCap } from "../lib/trial-gate";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { SentryEvents } from "../lib/sentry-events";
 import { getDefaultAgentTools, normalizeEnabledTools } from "../lib/agent-capabilities";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -774,6 +775,7 @@ router.post(
   authenticateUser,
   agentMutationRateLimit,
   enforceTrialAgentCap,
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Validate input using Zod schema

@@ -11,6 +11,8 @@ import {
 } from "./voice-observability";
 
 const mockCallLogs: any[] = [];
+const mockWebhookHealth: any[] = [];
+let selectPass = 0;
 
 vi.mock("./server-context", () => ({
   drizzle: {
@@ -22,11 +24,12 @@ vi.mock("./server-context", () => ({
     select: vi.fn(() => ({
       from: vi.fn(() => {
         const makeThenable = () => {
+          const rows = selectPass % 2 === 0 ? mockCallLogs : mockWebhookHealth;
+          selectPass += 1;
           const obj: any = {
             orderBy: vi.fn(() => obj),
-            limit: vi.fn().mockResolvedValue(mockCallLogs),
-            then: (resolve: any, reject?: any) =>
-              Promise.resolve(mockCallLogs).then(resolve, reject),
+            limit: vi.fn().mockResolvedValue(rows),
+            then: (resolve: any, reject?: any) => Promise.resolve(rows).then(resolve, reject),
           };
           return obj;
         };
@@ -74,6 +77,8 @@ describe("recordVoiceMetrics", () => {
 describe("computeVoiceHealthWindow", () => {
   beforeEach(() => {
     mockCallLogs.length = 0;
+    mockWebhookHealth.length = 0;
+    selectPass = 0;
     vi.clearAllMocks();
   });
 
@@ -82,6 +87,11 @@ describe("computeVoiceHealthWindow", () => {
     sttError?: boolean;
     ttsError?: boolean;
     pipelineError?: string | null;
+    endedReason?: string | null;
+    toolCallsTotal?: number;
+    toolCallsFailed?: number;
+    escalationAttempted?: boolean;
+    escalationSucceeded?: boolean;
     demo?: boolean;
     createdAt?: Date;
   }) {
@@ -91,6 +101,11 @@ describe("computeVoiceHealthWindow", () => {
       sttError: opts.sttError ?? false,
       ttsError: opts.ttsError ?? false,
       pipelineError: opts.pipelineError ?? null,
+      endedReason: opts.endedReason ?? null,
+      toolCallsTotal: opts.toolCallsTotal ?? 0,
+      toolCallsFailed: opts.toolCallsFailed ?? 0,
+      escalationAttempted: opts.escalationAttempted ?? false,
+      escalationSucceeded: opts.escalationSucceeded ?? false,
     };
   }
 
@@ -171,6 +186,17 @@ describe("computeVoiceHealthWindow", () => {
     expect(result.ttsErrorRate).toBe(20);
   });
 
+  it("does not count customer hangups as pipeline errors", async () => {
+    mockCallLogs.push(
+      makeRow({ ttftMs: 400, endedReason: "customer-ended-call", pipelineError: null }),
+      makeRow({ ttftMs: 420, endedReason: "assistant-ended-call", pipelineError: null }),
+      makeRow({ ttftMs: 430, pipelineError: "llm" }),
+    );
+    const result = await computeVoiceHealthWindow({ windowMinutes: 5 });
+    expect(result.pipelineErrorRate).toBeCloseTo(33.33, 1);
+    expect(result.abnormalHangupRate).toBe(0);
+  });
+
   it("filters by demoOnly flag", async () => {
     // demoOnly filtering is handled by SQL; for unit tests we rely on mock returning demo rows
     mockCallLogs.push(makeRow({ demo: true, ttftMs: 500 }));
@@ -191,6 +217,10 @@ describe("alertOnVoiceDegradation", () => {
         sttErrorRate: 2,
         ttsErrorRate: 1,
         pipelineErrorRate: 0,
+        abnormalHangupRate: 0,
+        toolCallFailureRate: 0,
+        webhookFailureRate: 0,
+        escalationFailureRate: 0,
         healthy: false,
       },
       channel: "demo-line",

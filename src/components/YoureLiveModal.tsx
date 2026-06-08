@@ -35,7 +35,12 @@ import {
   DialogDescription,
 } from "./ui/shadcn/Dialog";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { CONSOLE_MAP, YOURE_LIVE_COPY } from "../lib/wireline-onboarding-copy";
+import {
+  ACTIVATION_COMPLETE_COPY,
+  ACTIVATION_PENDING_COPY,
+  CONSOLE_MAP,
+  YOURE_LIVE_COPY,
+} from "../lib/wireline-onboarding-copy";
 import { BRAND } from "../constants/brand-colors";
 import { cn } from "../lib/utils";
 
@@ -50,6 +55,8 @@ const CONSOLE_MAP_ICONS = {
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type YoureLiveModalMode = "activation_pending" | "activated" | "legacy";
+
 export interface YoureLiveModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -59,6 +66,8 @@ export interface YoureLiveModalProps {
   knowledgeItems: number;
   onTestCall: () => void;
   onViewDashboard: () => void;
+  /** activation_pending = setup done; activated = first useful call recorded */
+  mode?: YoureLiveModalMode;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -205,11 +214,7 @@ function NextStepCard({
             />
           </div>
           <p className="text-xs text-muted mt-1 leading-relaxed">{description}</p>
-          <p
-            className={`wl-label mt-2 ${primary ? "text-brand/70" : "text-muted/70"}`}
-          >
-            {action}
-          </p>
+          <p className={`wl-label mt-2 ${primary ? "text-brand/70" : "text-muted/70"}`}>{action}</p>
         </div>
       </div>
     </motion.button>
@@ -220,6 +225,13 @@ function NextStepCard({
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 
+function formatTel(number: string): string {
+  const digits = number.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) return `tel:+${digits}`;
+  if (digits.length === 10) return `tel:+1${digits}`;
+  return `tel:${number}`;
+}
+
 export default function YoureLiveModal({
   isOpen,
   onClose,
@@ -229,15 +241,26 @@ export default function YoureLiveModal({
   knowledgeItems,
   onTestCall,
   onViewDashboard,
+  mode = "legacy",
 }: YoureLiveModalProps) {
   const navigate = useNavigate();
   const [showConfetti, setShowConfetti] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Trigger confetti and conversion analytics when modal opens
+  const isActivated = mode === "activated" || mode === "legacy";
+  const isPending = mode === "activation_pending";
+  const copy = isPending
+    ? ACTIVATION_PENDING_COPY
+    : isActivated && mode === "activated"
+      ? ACTIVATION_COMPLETE_COPY
+      : null;
+
+  // Trigger confetti and conversion analytics when modal opens (activation only)
   useEffect(() => {
     if (isOpen) {
-      setShowConfetti(true);
+      setShowConfetti(isActivated);
+
+      if (!isActivated) return;
 
       // Dispatch conversion tracking to Meta Pixel, Google Tag Manager, and Plausible
       if (typeof window !== "undefined") {
@@ -255,13 +278,13 @@ export default function YoureLiveModal({
             });
           }
           if (typeof w.plausible === "function") {
-            w.plausible("OnboardingWizardComplete", {
+            w.plausible(mode === "activated" ? "TenantActivated" : "OnboardingWizardComplete", {
               props: { agent: agentName },
             });
           }
           if (w.dataLayer && typeof w.dataLayer.push === "function") {
             w.dataLayer.push({
-              event: "onboarding_complete",
+              event: mode === "activated" ? "tenant_activated" : "onboarding_complete",
               agentName: agentName,
             });
           }
@@ -273,7 +296,7 @@ export default function YoureLiveModal({
       const timer = setTimeout(() => setShowConfetti(false), 3000);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, agentName]);
+  }, [isOpen, agentName, isActivated, mode]);
 
   const formatTime = useCallback((ms: number): string => {
     const minutes = Math.floor(ms / 60000);
@@ -304,6 +327,17 @@ export default function YoureLiveModal({
   if (!isOpen) return null;
 
   const isQuickSetup = timeToFirstCallMs < 300000; // Under 5 minutes
+  const eyebrow = copy?.eyebrow ?? YOURE_LIVE_COPY.eyebrow;
+  const title = copy?.title ?? YOURE_LIVE_COPY.title;
+  const titleAccent = "titleAccent" in (copy ?? {}) ? copy?.titleAccent : null;
+  const subtitle = copy?.subtitle(agentName) ?? YOURE_LIVE_COPY.subtitle(agentName);
+  const timeBadge = isPending
+    ? "Setup complete"
+    : isQuickSetup
+      ? "Lightning fast"
+      : mode === "activated"
+        ? "Time to activation"
+        : "Setup complete";
 
   const signalClass = "text-[color:var(--wl-signal,#10B981)]";
 
@@ -343,17 +377,40 @@ export default function YoureLiveModal({
           </motion.div>
 
           <DialogHeader className="flex flex-col space-y-0 text-center items-center pb-1">
-            <DialogDescription className="wl-label text-brand mb-1">
-              {YOURE_LIVE_COPY.eyebrow}
-            </DialogDescription>
+            <DialogDescription className="wl-label text-brand mb-1">{eyebrow}</DialogDescription>
             <DialogTitle className="font-display italic text-3xl text-ink leading-tight">
-              {YOURE_LIVE_COPY.title}
+              {title}
+              {titleAccent ? (
+                <>
+                  {" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand-deep">
+                    {titleAccent}
+                  </span>
+                </>
+              ) : null}
             </DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm text-muted mt-1 max-w-xs mx-auto">
-            {YOURE_LIVE_COPY.subtitle(agentName)}
-          </p>
+          <p className="text-sm text-muted mt-1 max-w-xs mx-auto">{subtitle}</p>
+
+          {isPending && phoneNumber ? (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="mt-4 p-4 rounded-md border border-brand/25 bg-brand/5 text-left"
+            >
+              <p className="wl-label text-brand mb-1">{ACTIVATION_PENDING_COPY.phoneLabel}</p>
+              <p className="font-mono text-lg text-ink tabular-nums">{phoneNumber}</p>
+              <a
+                href={formatTel(phoneNumber)}
+                className="touch-press mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full bg-brand text-on-brand wl-label py-2.5 min-h-[44px] hover:opacity-95 transition-opacity"
+              >
+                <Mic className="w-4 h-4" />
+                {ACTIVATION_PENDING_COPY.dialCta}
+              </a>
+            </motion.div>
+          ) : null}
 
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -363,7 +420,7 @@ export default function YoureLiveModal({
           >
             <Sparkles className="w-3.5 h-3.5 text-brand" />
             <span className="text-[11px] font-medium text-brand tabular-nums">
-              {isQuickSetup ? "Lightning fast" : "Setup complete"} · {formatTime(timeToFirstCallMs)}
+              {timeBadge} · {formatTime(timeToFirstCallMs)}
             </span>
           </motion.div>
 
@@ -396,24 +453,33 @@ export default function YoureLiveModal({
         </div>
 
         <div className="px-6 sm:px-8 py-5 space-y-3">
-          <p className="wl-label text-muted mb-1">{YOURE_LIVE_COPY.nextLabel}</p>
+          <p className="wl-label text-muted mb-1">
+            {copy && "nextLabel" in copy ? copy.nextLabel : YOURE_LIVE_COPY.nextLabel}
+          </p>
 
           <NextStepCard
-            icon={Mic}
-            title={YOURE_LIVE_COPY.testCallTitle}
-            description={YOURE_LIVE_COPY.testCallDetail}
-            action={YOURE_LIVE_COPY.testCallAction}
-            onClick={onTestCall}
-            primary
+            icon={LayoutGrid}
+            title={isPending ? ACTIVATION_PENDING_COPY.opsTitle : YOURE_LIVE_COPY.opsTitle}
+            description={isPending ? ACTIVATION_PENDING_COPY.opsDetail : YOURE_LIVE_COPY.opsDetail}
+            action={isPending ? ACTIVATION_PENDING_COPY.opsAction : YOURE_LIVE_COPY.opsAction}
+            onClick={onViewDashboard}
+            primary={isPending}
             delay={0}
           />
 
           <NextStepCard
-            icon={LayoutGrid}
-            title={YOURE_LIVE_COPY.opsTitle}
-            description={YOURE_LIVE_COPY.opsDetail}
-            action={YOURE_LIVE_COPY.opsAction}
-            onClick={onViewDashboard}
+            icon={Mic}
+            title={
+              isPending ? ACTIVATION_PENDING_COPY.browserTestTitle : YOURE_LIVE_COPY.testCallTitle
+            }
+            description={
+              isPending ? ACTIVATION_PENDING_COPY.browserTestDetail : YOURE_LIVE_COPY.testCallDetail
+            }
+            action={
+              isPending ? ACTIVATION_PENDING_COPY.browserTestAction : YOURE_LIVE_COPY.testCallAction
+            }
+            onClick={onTestCall}
+            primary={!isPending}
             delay={1}
           />
         </div>

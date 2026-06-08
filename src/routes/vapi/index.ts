@@ -21,8 +21,13 @@ import { handleEndOfCallReport } from "../../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
 import { touchNavCounts } from "../../lib/nav-counts-invalidate";
+import {
+  isToolCallFailureResult,
+  recordInboundWebhookHealth,
+  recordToolCallBatch,
+} from "../../lib/call-reliability-capture";
 
-import { handleShowcaseToolCalls } from "./showcase-handlers";
+import { extractShowcaseCallContext, handleShowcaseToolCalls } from "./showcase-handlers";
 import { dispatchAgentToolCall } from "../../lib/agent-tool-dispatch";
 import type { ToolCallContext, ToolCallResult } from "./types";
 
@@ -53,6 +58,14 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         ts: Date.now(),
       });
     }
+    const messageType =
+      ((req.body as Record<string, unknown>)?.message as { type?: string } | undefined)?.type ??
+      "unknown";
+    void recordInboundWebhookHealth({
+      provider: "vapi",
+      eventType: messageType,
+      outcome: "rejected",
+    });
     return res.status(auth.status).json({
       code: "ERROR",
       error: auth.error,
@@ -95,6 +108,40 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       "end-of-call-report",
     ].includes(message.type)
   ) {
+    if (message.type === "end-of-call-report") {
+      const callContext = extractShowcaseCallContext(payload, message);
+      const {
+        recordDemoCallEvent,
+        classifyDemoIntent,
+        sendDemoRecapEmail,
+        markDemoRecapSent,
+        extractEmailFromText,
+      } = await import("../../lib/demo-funnel");
+      const summary =
+        message.analysis?.summary || message.call?.analysis?.summary || "Demo conversation";
+      const eventId = await recordDemoCallEvent({
+        dialedNumber: callContext.dialedNumber || showcaseRoute.agent.tel,
+        showcaseAgent: showcaseRoute.agent.name,
+        callerNumber: callContext.callerNumber,
+        source: "showcase_webhook",
+        intentVertical: classifyDemoIntent(summary, showcaseRoute.agent.name),
+        vapiCallId: callContext.callId,
+      });
+      if (eventId) {
+        const appUrl = (process.env.APP_URL || "https://trywireline.com").replace(/\/+$/, "");
+        const signupUrl = `${appUrl}/signup?demo=${encodeURIComponent(showcaseRoute.agent.name.toLowerCase())}`;
+        const prospectEmail = extractEmailFromText(String(summary));
+        if (prospectEmail) {
+          const sent = await sendDemoRecapEmail({
+            to: prospectEmail,
+            agentName: showcaseRoute.agent.name,
+            summary: String(summary).slice(0, 500),
+            signupUrl,
+          });
+          if (sent) await markDemoRecapSent(eventId);
+        }
+      }
+    }
     return res.json({ received: true });
   }
 
@@ -203,6 +250,24 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       ),
     );
     const results = finalizeVapiToolBatch(toolCalls, toolCallRows);
+    const callId =
+      (payload.call as { id?: string } | undefined)?.id ||
+      (message.call as { id?: string } | undefined)?.id;
+    if (callId && agent?.user_id && toolCalls.length > 0) {
+      const failed = results.filter((row) => isToolCallFailureResult(row.result)).length;
+      void recordToolCallBatch({
+        vapiCallId: callId,
+        userId: agent.user_id,
+        total: toolCalls.length,
+        failed,
+      });
+    }
+    void recordInboundWebhookHealth({
+      userId: agent?.user_id,
+      provider: "vapi",
+      eventType: "tool-calls",
+      outcome: "success",
+    });
     return res.json({ results });
   }
 
@@ -346,9 +411,24 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         log.error("Failed to process call completion (sync fallback)", {
           error: getErrorMessage(e2),
         });
+        void recordInboundWebhookHealth({
+          userId: agent?.user_id,
+          provider: "vapi",
+          eventType: "end-of-call-report",
+          outcome: "error",
+        });
         return res.json({ success: false });
       }
     }
+  }
+
+  if (message?.type) {
+    void recordInboundWebhookHealth({
+      userId: agent?.user_id,
+      provider: "vapi",
+      eventType: message.type,
+      outcome: "success",
+    });
   }
 
   return res.json({ received: true });

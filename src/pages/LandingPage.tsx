@@ -7,6 +7,7 @@ import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
+import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 
@@ -94,6 +95,7 @@ const FOOTER_COLS = [
 export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
+    captureDemoSourceFromLocation();
   }, []);
 
   const csDemo = LANDING_PUBLIC_DEMO_AGENTS.find((a) => a.name === "Jordan");

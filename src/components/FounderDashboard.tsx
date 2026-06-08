@@ -25,6 +25,7 @@ import { WL_APP_CLASSES } from "../lib/wireline-director-design";
 import { OPS_FOUNDER, WL_FLEET_CLASSES } from "../lib/wireline-ops-design";
 import { MetricStatTile } from "./ui/MetricStatTile";
 import FounderOperatorConsole from "./admin/FounderOperatorConsole";
+import FounderOperatingCockpit from "./FounderOperatingCockpit";
 
 /**
  * Founder's Dashboard — Mike's command surface for his staff of 6
@@ -38,6 +39,12 @@ interface FounderStats {
   ok: boolean;
   generated_at: string;
   users: { total: number; paying: number; trialing: number; new_last_7d: number };
+  activation?: {
+    activated_total: number;
+    activated_last_7d: number;
+    activation_rate_pct: number;
+    median_time_to_activation_seconds: number | null;
+  };
   agents: { total: number };
   calls: { total: number; today: number; last_7d: number };
   health: { errors_24h: number; warnings_24h: number };
@@ -291,6 +298,8 @@ export default function FounderDashboard() {
           </p>
         </div>
 
+        <FounderOperatingCockpit />
+
         {stats && (
           <div className="mb-5">
             <p className="app-section-title mb-2">Platform · live</p>
@@ -299,6 +308,29 @@ export default function FounderDashboard() {
               <MetricStatTile label="Trialing" value={stats.users.trialing} tone="brand" />
               <MetricStatTile label="Total users" value={stats.users.total} tone="ink" />
               <MetricStatTile label="New (7d)" value={stats.users.new_last_7d} tone="brand" />
+              {stats.activation ? (
+                <>
+                  <MetricStatTile
+                    label="Activated"
+                    value={stats.activation.activated_total}
+                    tone="brand"
+                  />
+                  <MetricStatTile
+                    label="Activation %"
+                    value={stats.activation.activation_rate_pct}
+                    tone="ink"
+                  />
+                  <MetricStatTile
+                    label="Median TTV (min)"
+                    value={
+                      stats.activation.median_time_to_activation_seconds != null
+                        ? Math.round(stats.activation.median_time_to_activation_seconds / 60)
+                        : 0
+                    }
+                    tone="muted"
+                  />
+                </>
+              ) : null}
               <MetricStatTile label="Calls today" value={stats.calls.today} tone="ink" />
               <MetricStatTile
                 label="Errors (24h)"

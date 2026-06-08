@@ -115,6 +115,7 @@ router.post(
         utmSource,
         utmMedium,
         utmCampaign,
+        demoSource,
       } = req.body;
       // Body is now validated by Zod middleware (email already lowercased + trimmed).
 
@@ -142,6 +143,11 @@ router.post(
       });
 
       scheduleFounderBootstrap(result.user.id, result.user.email);
+
+      if (demoSource) {
+        const { attributeDemoSignup } = await import("../lib/demo-funnel");
+        await attributeDemoSignup(result.user.id, demoSource);
+      }
 
       // Mint + email the verification link. Best-effort: if the
       // transport is down (no RESEND_API_KEY), signup still succeeds

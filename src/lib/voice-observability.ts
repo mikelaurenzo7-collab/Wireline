@@ -14,6 +14,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { dispatchWebhook } from "./webhook-helpers";
+import { isAbnormalHangup, isPipelineFailure } from "./call-reliability-capture";
 
 export interface VoiceMetricsPayload {
   vapiCallId: string;
@@ -64,11 +65,21 @@ export interface HealthWindowResult {
   sttErrorRate: number;
   ttsErrorRate: number;
   pipelineErrorRate: number;
+  abnormalHangupRate: number;
+  toolCallFailureRate: number;
+  webhookFailureRate: number;
+  escalationFailureRate: number;
   healthy: boolean;
 }
 
 const DEFAULT_TTFT_ALERT_MS = 1200; // p95 >1.2s triggers alert
 const DEFAULT_ERROR_RATE_ALERT_PCT = 5; // >5% error rate triggers alert
+const DEFAULT_HANGUP_RATE_ALERT_PCT = 10;
+const DEFAULT_TOOL_FAILURE_RATE_ALERT_PCT = 5;
+const DEFAULT_WEBHOOK_FAILURE_RATE_ALERT_PCT = 5;
+const DEFAULT_ESCALATION_FAILURE_RATE_ALERT_PCT = 10;
+
+export { isPipelineFailure } from "./call-reliability-capture";
 
 /**
  * Compute health metrics over a trailing window. Used by:
@@ -96,9 +107,23 @@ export async function computeVoiceHealthWindow(opts: {
       sttError: schema.callLogs.sttError,
       ttsError: schema.callLogs.ttsError,
       pipelineError: schema.callLogs.pipelineError,
+      endedReason: schema.callLogs.endedReason,
+      toolCallsTotal: schema.callLogs.toolCallsTotal,
+      toolCallsFailed: schema.callLogs.toolCallsFailed,
+      escalationAttempted: schema.callLogs.escalationAttempted,
+      escalationSucceeded: schema.callLogs.escalationSucceeded,
     })
     .from(schema.callLogs)
     .where(baseWhere);
+
+  const webhookWhere = and(
+    gte(schema.webhookHealth.createdAt, since),
+    opts.userId ? eq(schema.webhookHealth.userId, opts.userId) : undefined,
+  );
+  const webhookRows = await drizzle
+    .select({ outcome: schema.webhookHealth.outcome })
+    .from(schema.webhookHealth)
+    .where(webhookWhere);
 
   const total = rows.length;
   if (total === 0) {
@@ -110,6 +135,10 @@ export async function computeVoiceHealthWindow(opts: {
       sttErrorRate: 0,
       ttsErrorRate: 0,
       pipelineErrorRate: 0,
+      abnormalHangupRate: 0,
+      toolCallFailureRate: 0,
+      webhookFailureRate: 0,
+      escalationFailureRate: 0,
       healthy: true, // No data is not a failure; absence of signal ≠ signal of absence
     };
   }
@@ -123,16 +152,44 @@ export async function computeVoiceHealthWindow(opts: {
 
   const sttErrors = rows.filter((r) => r.sttError).length;
   const ttsErrors = rows.filter((r) => r.ttsError).length;
-  const pipelineErrors = rows.filter((r) => r.pipelineError != null).length;
+  const pipelineErrors = rows.filter((r) => isPipelineFailure(r.pipelineError)).length;
+  const abnormalHangups = rows.filter((r) => isAbnormalHangup(r.endedReason)).length;
+
+  let toolTotal = 0;
+  let toolFailed = 0;
+  let escalationAttempted = 0;
+  let escalationFailed = 0;
+  for (const row of rows) {
+    toolTotal += row.toolCallsTotal ?? 0;
+    toolFailed += row.toolCallsFailed ?? 0;
+    if (row.escalationAttempted) {
+      escalationAttempted++;
+      if (!row.escalationSucceeded) escalationFailed++;
+    }
+  }
+
+  const webhookTotal = webhookRows.length;
+  const webhookFailed = webhookRows.filter((r) => r.outcome !== "success").length;
 
   const sttRate = (sttErrors / total) * 100;
   const ttsRate = (ttsErrors / total) * 100;
   const pipelineRate = (pipelineErrors / total) * 100;
+  const hangupRate = (abnormalHangups / total) * 100;
+  const toolFailureRate = toolTotal > 0 ? (toolFailed / toolTotal) * 100 : 0;
+  const webhookFailureRate = webhookTotal > 0 ? (webhookFailed / webhookTotal) * 100 : 0;
+  const escalationFailureRate =
+    escalationAttempted > 0 ? (escalationFailed / escalationAttempted) * 100 : 0;
 
   const healthy =
     (ttftP95 == null || ttftP95 <= DEFAULT_TTFT_ALERT_MS) &&
     sttRate <= DEFAULT_ERROR_RATE_ALERT_PCT &&
-    ttsRate <= DEFAULT_ERROR_RATE_ALERT_PCT;
+    ttsRate <= DEFAULT_ERROR_RATE_ALERT_PCT &&
+    pipelineRate <= DEFAULT_ERROR_RATE_ALERT_PCT &&
+    hangupRate <= DEFAULT_HANGUP_RATE_ALERT_PCT &&
+    (toolTotal === 0 || toolFailureRate <= DEFAULT_TOOL_FAILURE_RATE_ALERT_PCT) &&
+    (webhookTotal === 0 || webhookFailureRate <= DEFAULT_WEBHOOK_FAILURE_RATE_ALERT_PCT) &&
+    (escalationAttempted === 0 ||
+      escalationFailureRate <= DEFAULT_ESCALATION_FAILURE_RATE_ALERT_PCT);
 
   return {
     windowMinutes,
@@ -142,6 +199,10 @@ export async function computeVoiceHealthWindow(opts: {
     sttErrorRate: Math.round(sttRate * 100) / 100,
     ttsErrorRate: Math.round(ttsRate * 100) / 100,
     pipelineErrorRate: Math.round(pipelineRate * 100) / 100,
+    abnormalHangupRate: Math.round(hangupRate * 100) / 100,
+    toolCallFailureRate: Math.round(toolFailureRate * 100) / 100,
+    webhookFailureRate: Math.round(webhookFailureRate * 100) / 100,
+    escalationFailureRate: Math.round(escalationFailureRate * 100) / 100,
     healthy,
   };
 }
@@ -168,6 +229,11 @@ export async function alertOnVoiceDegradation(opts: {
     ttftP95Ms: window.ttftP95Ms,
     sttErrorRate: window.sttErrorRate,
     ttsErrorRate: window.ttsErrorRate,
+    pipelineErrorRate: window.pipelineErrorRate,
+    abnormalHangupRate: window.abnormalHangupRate,
+    toolCallFailureRate: window.toolCallFailureRate,
+    webhookFailureRate: window.webhookFailureRate,
+    escalationFailureRate: window.escalationFailureRate,
     healthy: window.healthy,
   });
 
@@ -178,6 +244,11 @@ export async function alertOnVoiceDegradation(opts: {
       ttft_p95_ms: window.ttftP95Ms,
       stt_error_rate: window.sttErrorRate,
       tts_error_rate: window.ttsErrorRate,
+      pipeline_error_rate: window.pipelineErrorRate,
+      abnormal_hangup_rate: window.abnormalHangupRate,
+      tool_call_failure_rate: window.toolCallFailureRate,
+      webhook_failure_rate: window.webhookFailureRate,
+      escalation_failure_rate: window.escalationFailureRate,
       window_minutes: window.windowMinutes,
       total_calls: window.totalCalls,
       at: new Date().toISOString(),

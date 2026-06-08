@@ -374,7 +374,7 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
 ] as const;
 
 export const DIRECTOR_COMPOSER_HINTS = [
-  "Message Director…",
+  "Coach your fleet…",
   "Ask for a fleet audit, GTM plan, or weekly priorities…",
   "Draft scripts, SOPs, email sequences, or a business plan…",
   "Design a website or ask for TypeScript / SQL / automation code…",
@@ -586,16 +586,11 @@ export const WL_APP_CLASSES = {
   bannerCta: "app-micro-cta",
 } as const;
 
-export type DirectorStreamPhase =
-  | "connecting"
-  | "preparing"
-  | "thinking"
-  | "replying"
-  | "done";
+export type DirectorStreamPhase = "connecting" | "preparing" | "thinking" | "replying" | "done";
 
 export const DIRECTOR_PHASE_COPY: Record<DirectorStreamPhase, { headline: string; sub: string }> = {
   connecting: {
-    headline: "Opening mission control",
+    headline: "Opening fleet coach",
     sub: "Secure channel to your fleet wingman",
   },
   preparing: {
@@ -719,12 +714,12 @@ export const DIRECTOR_CAPABILITY_PILLS = [
 ] as const;
 
 export const DIRECTOR_LOADING_COPY = {
-  headline: "Opening mission control",
+  headline: "Opening fleet coach",
   sub: "Thread history · fleet context · integrations",
 } as const;
 
 export const DIRECTOR_EMPTY_HERO = {
-  eyebrow: "Mission control",
+  eyebrow: "Fleet coach",
   title: "Orchestrate your fleet from",
   titleAccent: "one console",
   subtitleWithFleet: (n: number) =>

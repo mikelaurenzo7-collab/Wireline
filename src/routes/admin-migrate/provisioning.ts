@@ -269,6 +269,9 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
       newUsers7d,
       payingUsers,
       trialUsers,
+      activatedUsers,
+      activated7d,
+      medianActivation,
       agentCount,
       callsTotal,
       callsToday,
@@ -289,6 +292,17 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
       drizzle.execute(
         sql`SELECT count(*)::int AS c FROM wireline_settings WHERE subscription_status = 'trialing' AND (trial_ends_at IS NULL OR trial_ends_at > now())`,
       ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_settings WHERE activated_at IS NOT NULL`,
+      ),
+      drizzle.execute(
+        sql`SELECT count(*)::int AS c FROM wireline_settings WHERE activated_at >= ${since7d.toISOString()}`,
+      ),
+      drizzle.execute(
+        sql`SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY time_to_activation_seconds)::float AS p50
+            FROM wireline_settings
+            WHERE activated_at IS NOT NULL AND time_to_activation_seconds IS NOT NULL`,
+      ),
       drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_agents`),
       drizzle.execute(sql`SELECT count(*)::int AS c FROM wireline_call_logs WHERE demo = false`),
       drizzle.execute(
@@ -306,15 +320,28 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
     ]);
 
     const row = (r: any) => num(r?.rows?.[0]?.c);
+    const medianRow = (r: any) => {
+      const v = r?.rows?.[0]?.p50;
+      return v == null ? null : Math.round(Number(v));
+    };
+
+    const total = row(totalUsers);
+    const activated = row(activatedUsers);
 
     return res.json({
       ok: true,
       generated_at: new Date().toISOString(),
       users: {
-        total: row(totalUsers),
+        total,
         paying: row(payingUsers),
         trialing: row(trialUsers),
         new_last_7d: row(newUsers7d),
+      },
+      activation: {
+        activated_total: activated,
+        activated_last_7d: row(activated7d),
+        activation_rate_pct: total > 0 ? Math.round((activated / total) * 100) : 0,
+        median_time_to_activation_seconds: medianRow(medianActivation),
       },
       agents: { total: row(agentCount) },
       calls: {
@@ -326,6 +353,9 @@ router.get("/api/admin/founder-stats", optionalAuth, async (req: Request, res: R
         errors_24h: row(errors24h),
         warnings_24h: row(warnings24h),
       },
+      economics_at_risk_count: await import("../../lib/tenant-economics").then((m) =>
+        m.countAtRiskTenants().catch(() => 0),
+      ),
     });
   } catch (e: any) {
     log.error("founder-stats failed", { error: e?.message });

@@ -398,6 +398,31 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       );
     }
 
+    // Daily at 05:00 UTC: margin-at-risk founder alert
+    if (
+      now.getUTCHours() === 5 &&
+      now.getUTCMinutes() === 0 &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
+      const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
+      const recentMargin = await drizzle
+        .select({ id: schema.jobs.id })
+        .from(schema.jobs)
+        .where(
+          and(eq(schema.jobs.type, "margin_at_risk_alert"), gte(schema.jobs.createdAt, since23h)),
+        )
+        .limit(1);
+      if (!recentMargin.length) {
+        await enqueue(drizzle, {
+          userId: SYSTEM_USER_ID,
+          type: "margin_at_risk_alert",
+          payload: {},
+        }).catch((e: unknown) =>
+          log.warn("margin_at_risk_alert enqueue failed", { error: getErrorMessage(e) }),
+        );
+      }
+    }
+
     // Daily at 04:00 UTC: demo-line canary — verifies all 8 showcase
     // phone lines are still wired correctly in Vapi (number exists,
     // assistant assigned and reachable). Fires owner alert on failure.

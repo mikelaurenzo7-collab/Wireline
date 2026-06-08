@@ -13,18 +13,25 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
+import { requirePermission } from "../middleware/require-role";
 import { insightsRateLimit } from "../middleware/api-rate-limits";
+import { validateQuery } from "../lib/api-validation";
 import {
   recordVoiceMetrics,
   computeVoiceHealthWindow,
   alertOnVoiceDegradation,
   getLatencyTrends,
 } from "../lib/voice-observability";
+import { getVoiceReliabilityPayload } from "../lib/voice-reliability";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
 
 // POST /api/voice/metrics — called by Vapi webhooks (or similar) on call end
+const VoiceReliabilityQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(90).optional(),
+});
+
 const MetricsBodySchema = z.object({
   vapiCallId: z.string().min(1),
   ttftMs: z.number().int().min(0).optional(),
@@ -93,6 +100,10 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
       stt_error_rate: window.sttErrorRate,
       tts_error_rate: window.ttsErrorRate,
       pipeline_error_rate: window.pipelineErrorRate,
+      abnormal_hangup_rate: window.abnormalHangupRate,
+      tool_call_failure_rate: window.toolCallFailureRate,
+      webhook_failure_rate: window.webhookFailureRate,
+      escalation_failure_rate: window.escalationFailureRate,
       checked_at: new Date().toISOString(),
     });
   } catch (err) {
@@ -104,6 +115,32 @@ router.get("/health/voice-status", async (_req: Request, res: Response) => {
     res.status(200).json({ status: "unknown", probe: "failed" });
   }
 });
+
+// GET /api/insights/voice-reliability — consolidated voice operating metrics (auth)
+router.get(
+  "/insights/voice-reliability",
+  authenticateUser,
+  requirePermission("insights.read"),
+  insightsRateLimit,
+  validateQuery(VoiceReliabilityQuerySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const days = (req.query as { days?: number }).days ?? 30;
+      const payload = await getVoiceReliabilityPayload({
+        userId: req.user.id,
+        days,
+      });
+      res.json(payload);
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("GET /insights/voice-reliability failed", {
+        userId: req.user.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw AppError.fromHttpStatus(500, "Failed to load voice reliability metrics");
+    }
+  },
+);
 
 // GET /api/insights/latency — tenant latency trends (auth)
 router.get(

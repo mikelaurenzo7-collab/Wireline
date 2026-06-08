@@ -169,6 +169,7 @@ export const signupSchema = z.object({
   utmSource: z.string().trim().max(120).optional(),
   utmMedium: z.string().trim().max(120).optional(),
   utmCampaign: z.string().trim().max(120).optional(),
+  demoSource: z.string().trim().max(160).optional(),
 });
 
 export const signupIntentSchema = signupSchema
@@ -545,7 +546,10 @@ export const designProfilePatchSchema = z.object({
 });
 
 export const designProfileAssetUploadSchema = z.object({
-  fileBase64: z.string().min(1).max(3 * 1024 * 1024),
+  fileBase64: z
+    .string()
+    .min(1)
+    .max(3 * 1024 * 1024),
   fileName: z.string().min(1).max(255),
   mimeType: z.string().max(128).optional(),
   role: z.enum(["logo", "font", "css", "reference"]).optional(),

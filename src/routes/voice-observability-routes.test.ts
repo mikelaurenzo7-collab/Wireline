@@ -111,6 +111,33 @@ vi.mock("../middleware/auth", () => ({
     next();
   }),
 }));
+vi.mock("../middleware/require-role", () => ({
+  requirePermission: () => (_req: any, _res: any, next: any) => next(),
+}));
+vi.mock("../lib/voice-reliability", () => ({
+  getVoiceReliabilityPayload: vi.fn().mockResolvedValue({
+    summary: {
+      windowDays: 30,
+      totalCalls: 2,
+      healthy: true,
+      latency: { ttftP50Ms: 500, ttftP95Ms: 900, ttfAudioP50Ms: null, healthy: true },
+      hangups: { abnormalCount: 0, abnormalRatePct: 0, byReason: {} },
+      toolCalls: { total: 4, failed: 0, successRatePct: 100 },
+      escalations: { attempted: 0, succeeded: 0, successRatePct: null },
+      webhooks: { total: 0, failures: 0, failureRatePct: null },
+      economics: {
+        cogsPerMinUsd: 0.12,
+        estimatedCogsPerMinUsd: 0.128,
+        revenuePerMinUsd: 0.18,
+        grossMarginPct: 33.33,
+        totalCostUsd: 1.2,
+        totalMinutes: 10,
+      },
+    },
+    trends: [],
+    generatedAt: new Date().toISOString(),
+  }),
+}));
 vi.mock("drizzle-orm", () => ({
   eq: (left: string, right: unknown) => ({ left, right }),
   and: (...conds: any[]) => ({ op: "and", conds }),
@@ -321,6 +348,19 @@ describe("voice observability routes", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.days).toBe(90);
+    });
+  });
+
+  describe("GET /api/insights/voice-reliability", () => {
+    it("returns consolidated reliability payload", async () => {
+      const response = await request(await buildApp())
+        .get("/api/insights/voice-reliability?days=14")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty("summary");
+      expect(response.body).toHaveProperty("trends");
+      expect(response.body.summary.totalCalls).toBe(2);
     });
   });
 

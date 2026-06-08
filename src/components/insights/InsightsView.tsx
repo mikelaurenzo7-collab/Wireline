@@ -27,12 +27,14 @@ import HeatmapView from "./HeatmapView";
 import LeaderboardView from "./LeaderboardView";
 import FailureModesView from "./FailureModesView";
 import VoiceLatencyView from "./VoiceLatencyView";
+import VoiceReliabilityView from "./VoiceReliabilityView";
 import AISpendView from "./AISpendView";
 import QualityView from "./QualityView";
+import LearningMetricsView from "./LearningMetricsView";
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
 
-type InsightGroupId = "performance" | "quality" | "revenue";
+type InsightGroupId = "performance" | "reliability" | "quality" | "revenue";
 
 const INSIGHTS_ROUTE = resolveAppPageSubTabRoute("/insights")!;
 
@@ -67,8 +69,10 @@ export default function InsightsView() {
       leaderboard: wrap("Leaderboard", <LeaderboardView days={days} />),
       failures: wrap("Failures", <FailureModesView />),
       latency: wrap("Latency", <VoiceLatencyView days={days} />),
+      reliability: wrap("Reliability", <VoiceReliabilityView days={days} />),
       spend: wrap("AI Spend", <AISpendView days={days} />),
       quality: wrap("Scorecards", <QualityView days={days} />),
+      learning: wrap("Learning", <LearningMetricsView />),
     };
     return views[activeView] ?? views.funnel;
   }, [activeView, days]);

@@ -109,7 +109,9 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_CHANNEL_TOOLBAR.audit.stat(1200)).toBe("1,200 events");
     expect(OPS_AUDIT_SEVERITY.critical.label).toBe("Critical");
     expect(OPS_TRIAGE_ACCENTS.escalations).toBe(BRAND.rose);
-    expect(OPS_INSIGHTS_GROUPS).toHaveLength(3);
+    expect(OPS_INSIGHTS_GROUPS).toHaveLength(4);
+    expect(OPS_INSIGHTS_GROUPS.some((g) => g.id === "reliability")).toBe(true);
+    expect(OPS_INSIGHTS_EMPTY.reliability.title.toLowerCase()).toContain("reliability");
     expect(OPS_CHANNEL_TOOLBAR.triage.stat(4)).toBe("4 need attention");
     expect(OPS_CHANNEL_TOOLBAR.triage.stat(0)).toBe("All clear");
     expect(OPS_CHANNEL_TOOLBAR.insights.stat(30)).toBe("30-day window");

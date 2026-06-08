@@ -22,6 +22,7 @@ import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 
 const router = express.Router();
 
@@ -573,6 +574,7 @@ router.get(
 router.post(
   "/billing/checkout",
   authenticateUser,
+  enforceLaunchHardGate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");

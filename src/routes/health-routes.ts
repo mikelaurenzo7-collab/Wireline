@@ -6,6 +6,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { getHealthCapabilities, getIntegrationsStatus } from "../lib/integrations-registry";
+import { evaluateLaunchReadiness } from "../lib/launch-readiness";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { getOperatorSloSnapshot } from "../lib/operator-slos";
@@ -69,6 +70,21 @@ router.get("/", healthRateLimiter, async (_req: Request, res: Response) => {
   res.status(dbStatus.ok ? 200 : 503).json({
     ok: dbStatus.ok,
     timestamp: new Date().toISOString(),
+  });
+});
+
+/** Public launch-readiness summary for uptime monitors and campaign gates. */
+router.get("/launch-readiness", healthRateLimiter, (_req: Request, res: Response) => {
+  const report = evaluateLaunchReadiness();
+  res.status(report.campaign_ready ? 200 : 503).json({
+    ok: report.campaign_ready,
+    overall_score: report.overall_score,
+    campaign_ready: report.campaign_ready,
+    capabilities: report.capabilities.map((c) => ({
+      id: c.id,
+      level: c.level,
+    })),
+    timestamp: report.generated_at,
   });
 });
 

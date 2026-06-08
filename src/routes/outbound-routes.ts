@@ -10,6 +10,7 @@ import { parseFormData } from "../lib/form-validators";
 import { OutboundBulkSchema } from "../lib/form-validators";
 import { enforceSpendCap, enforce24hSpendCap } from "../lib/spend-guards";
 import { enforceTrialOutboundCap } from "../lib/trial-gate";
+import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { quotaRejectionHeaders } from "../lib/tenant-quotas";
@@ -140,6 +141,7 @@ router.post(
   // pick-a-plan modal; tenants over their monthly hard-cap see the
   // standard spend-limit message. Both are 402 but with distinct
   // code values for the frontend.
+  enforceLaunchHardGate,
   enforceTrialOutboundCap,
   enforce24hSpendCap,
   enforceSpendCap,

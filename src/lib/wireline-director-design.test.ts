@@ -98,7 +98,7 @@ describe("Wireline Director design contract", () => {
   });
 
   it("phase copy stays Wireline-native (wingman / fleet, not generic chatbot)", () => {
-    expect(DIRECTOR_PHASE_COPY.connecting.headline.toLowerCase()).toContain("mission");
+    expect(DIRECTOR_PHASE_COPY.connecting.headline.toLowerCase()).toContain("coach");
     expect(DIRECTOR_PHASE_COPY.replying.headline.toLowerCase()).toContain("wingman");
     const coached = directorPhaseCopy({
       phase: "thinking",
@@ -161,8 +161,8 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_CAPABILITY_CATALOG.every((c) => c.example.length > 8)).toBe(true);
   });
 
-  it("loading copy stays mission-control native", () => {
-    expect(DIRECTOR_LOADING_COPY.headline.toLowerCase()).toContain("mission");
+  it("loading copy stays fleet-coach native", () => {
+    expect(DIRECTOR_LOADING_COPY.headline.toLowerCase()).toContain("coach");
     expect(DIRECTOR_LOADING_COPY.sub.toLowerCase()).toContain("fleet");
   });
 

@@ -26,6 +26,7 @@ import { getDefaultChannel, postMessage as slackPostMessage } from "./slack-serv
 import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
 import { findCallLogByVapiCallId, isOutboundCallPlaceholder } from "./outbound-call-tracking";
+import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
 
 export interface CallReportPayload {
   message: {
@@ -78,12 +79,14 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
   // wrote a new row, so post-call LLM analysis (line 84+) runs exactly once.
   let insertedFresh = false;
   let insertedCallLogId: bigint | null = null;
+  const vapiCallId = call?.id || "unknown";
+  const stagedReliability = await takeStagedReliabilityMetrics(vapiCallId);
   try {
     const inserted = await drizzle
       .insert(schema.callLogs)
       .values({
         userId,
-        vapiCallId: call?.id || "unknown",
+        vapiCallId,
         agentId: webhookAgentId,
         direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
         customerNumber: call?.customer?.number || "",
@@ -92,7 +95,11 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         summary: analysis?.summary || "No summary provided.",
         transcript: message.transcript || "",
         recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
-        pipelineError: endedReason,
+        endedReason,
+        toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
+        toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
+        escalationAttempted: stagedReliability?.escalationAttempted ?? false,
+        escalationSucceeded: stagedReliability?.escalationSucceeded ?? false,
       })
       .returning({ id: schema.callLogs.id });
     insertedFresh = true;
@@ -111,7 +118,11 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
               summary: analysis?.summary || "No summary provided.",
               transcript: message.transcript || "",
               recordingUrl: message.recordingUrl || message.stereoRecordingUrl || null,
-              pipelineError: endedReason,
+              endedReason,
+              toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0,
+              toolCallsFailed: stagedReliability?.toolCallsFailed ?? 0,
+              escalationAttempted: stagedReliability?.escalationAttempted ?? false,
+              escalationSucceeded: stagedReliability?.escalationSucceeded ?? false,
             })
             .where(eq(schema.callLogs.vapiCallId, vapiCallId));
           insertedFresh = true;
@@ -152,9 +163,12 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
         direction: call?.type === "outboundPhoneCall" ? "outbound" : "inbound",
         durationSeconds: duration,
         summary: analysis?.summary || null,
+        transcript: message.transcript || null,
         sentiment: null,
         intentLabel: null,
         endedReason,
+        vapiCallType: call?.type || null,
+        demo: false,
       }).catch((err: any) =>
         log.warn("runPostCallDigest unhandled rejection", { error: err?.message }),
       );
@@ -454,6 +468,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
           agentId: webhookAgentId,
           lesson: geminiResult.lesson,
           sourceCallId: call?.id,
+          lessonStatus: "pending",
         });
       }
     } catch (gemErr) {

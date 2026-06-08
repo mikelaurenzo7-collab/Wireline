@@ -64,8 +64,8 @@ export const OPS_COPY = {
   roiLabel: "Fleet efficiency",
   setupEyebrow: "Fleet setup",
   setupBody: (done: number, total: number) =>
-    `${done} of ${total} complete — agent, knowledge, number, and test call.`,
-  setupHint: "Finish in Chat, then monitor the floor here.",
+    `${done} of ${total} complete — agent, knowledge, number, and first useful call.`,
+  setupHint: "Activation = one real phone conversation, not browser test alone.",
   testCallNumber: "(630) 642-5661",
   testCallHref: "tel:+16306425661",
 } as const;
@@ -545,9 +545,14 @@ export const OPS_INSIGHTS_GROUPS = [
     tabs: ["funnel", "goals", "heatmap", "leaderboard"] as const,
   },
   {
+    id: "reliability",
+    label: "Reliability",
+    tabs: ["reliability"] as const,
+  },
+  {
     id: "quality",
     label: "Quality",
-    tabs: ["failures", "latency", "quality"] as const,
+    tabs: ["failures", "latency", "quality", "learning"] as const,
   },
   {
     id: "revenue",
@@ -605,6 +610,16 @@ export const OPS_INSIGHTS_EMPTY = {
     eyebrow: "Voice latency",
     title: "No latency samples yet",
     description: "Run live calls to populate TTFT, tool timing, and voice health metrics.",
+    actions: [
+      { label: "Live Ops", to: "/ops", primary: true },
+      { label: "Call history", to: "/phone" },
+    ],
+  },
+  reliability: {
+    eyebrow: "Voice reliability",
+    title: "No reliability samples yet",
+    description:
+      "Run production calls to populate latency, hangups, tool-call success, escalations, webhook health, and COGS/min.",
     actions: [
       { label: "Live Ops", to: "/ops", primary: true },
       { label: "Call history", to: "/phone" },

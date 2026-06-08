@@ -22,6 +22,7 @@ const HelpCenter = lazyRoute(() => import("../components/HelpCenter"));
 const Status = lazyRoute(() => import("../components/Status"));
 const PublicChangelog = lazyRoute(() => import("../components/PublicChangelog"));
 const Security = lazyRoute(() => import("../components/Security"));
+const TrustPackPage = lazyRoute(() => import("../components/TrustPackPage"));
 const Pipeline = lazyRoute(() => import("../components/Pipeline"));
 const FounderDashboard = lazyRoute(() => import("../components/FounderDashboard"));
 const AgentChat = lazyRoute(() => import("../pages/AgentChat"));
@@ -269,6 +270,16 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <Security />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/trust/:vertical"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <TrustPackPage />
                 </ErrorBoundary>
               </PageTransition>
             }

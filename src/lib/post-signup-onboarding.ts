@@ -1,18 +1,21 @@
 /**
  * Post-signup onboarding — first-session Fast Start orchestration.
- * Keeps Live Ops clean; wizard auto-opens once after account creation.
+ * North star: time to first useful production call (tenant activation).
  */
 
 import { authFetch } from "./api";
 import {
   fetchFleetSetupProgress,
+  fetchActivationStatus,
   isFleetSetupComplete,
   type FleetSetupProgress,
 } from "./fleet-setup-progress";
+import type { TenantActivationStatus } from "./tenant-activation";
 
 export const FRESH_SIGNUP_SESSION_KEY = "wireline_fresh_signup";
 export const POST_SIGNUP_FLOW_SESSION_KEY = "wireline_post_signup_flow";
 export const POST_SIGNUP_DISMISS_KEY = "wireline_post_signup_dismissed";
+export const ACTIVATION_CELEBRATED_KEY = "wireline_activation_celebrated";
 
 export type UserPreferencesSnake = {
   tour_completed?: boolean;
@@ -24,6 +27,16 @@ export async function fetchUserPreferences(): Promise<UserPreferencesSnake | nul
     const res = await authFetch("/api/user-preferences");
     if (!res.ok) return null;
     return (await res.json()) as UserPreferencesSnake;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchActivationStatusFull(): Promise<TenantActivationStatus | null> {
+  try {
+    const res = await authFetch("/api/activation/status");
+    if (!res.ok) return null;
+    return (await res.json()) as TenantActivationStatus;
   } catch {
     return null;
   }
@@ -130,16 +143,33 @@ export function markOnboardingCelebrated(): void {
   }
 }
 
+export function isActivationCelebrated(): boolean {
+  try {
+    return localStorage.getItem(ACTIVATION_CELEBRATED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function markActivationCelebrated(): void {
+  try {
+    localStorage.setItem(ACTIVATION_CELEBRATED_KEY, "true");
+  } catch {
+    /* ignore */
+  }
+}
+
 export type PostSignupEligibility = {
   shouldShow: boolean;
   reason: "fresh_signup" | "incomplete_fleet" | null;
   progress: FleetSetupProgress | null;
   planId: string | null;
+  activated: boolean;
 };
 
 /** Whether to auto-open the welcome + Fast Start flow. */
 export async function evaluatePostSignupEligibility(): Promise<PostSignupEligibility> {
-  const [prefs, progress, planId] = await Promise.all([
+  const [prefs, progress, planId, activation] = await Promise.all([
     fetchUserPreferences(),
     fetchFleetSetupProgress().catch(() => null),
     authFetch("/api/billing/status")
@@ -152,36 +182,44 @@ export async function evaluatePostSignupEligibility(): Promise<PostSignupEligibi
             null) as string | null,
       )
       .catch(() => null),
+    fetchActivationStatus(),
   ]);
+
+  if (activation) {
+    if (!prefs?.onboarding_completed) {
+      await markOnboardingCompleted();
+      markOnboardingCelebrated();
+    }
+    clearFreshSignupSession();
+    return { shouldShow: false, reason: null, progress, planId, activated: true };
+  }
 
   if (prefs?.onboarding_completed) {
     clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId };
+    return { shouldShow: false, reason: null, progress, planId, activated: false };
   }
 
   if (progress && isFleetSetupComplete(progress)) {
-    await markOnboardingCompleted();
-    markOnboardingCelebrated();
     clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId };
+    return { shouldShow: false, reason: null, progress, planId, activated: false };
   }
 
   const isWhiteGlove = planId === "business" || planId === "enterprise";
   if (isWhiteGlove) {
     clearFreshSignupSession();
-    return { shouldShow: false, reason: null, progress, planId };
+    return { shouldShow: false, reason: null, progress, planId, activated: false };
   }
 
   const fresh = isFreshSignupSession();
   const incomplete = progress ? progress.agents === 0 : true;
 
   if (fresh) {
-    return { shouldShow: true, reason: "fresh_signup", progress, planId };
+    return { shouldShow: true, reason: "fresh_signup", progress, planId, activated: false };
   }
 
   if (!isPostSignupDismissed() && incomplete) {
-    return { shouldShow: true, reason: "incomplete_fleet", progress, planId };
+    return { shouldShow: true, reason: "incomplete_fleet", progress, planId, activated: false };
   }
 
-  return { shouldShow: false, reason: null, progress, planId };
+  return { shouldShow: false, reason: null, progress, planId, activated: false };
 }

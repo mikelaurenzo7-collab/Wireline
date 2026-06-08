@@ -61,6 +61,16 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Owner email OR X-Migration-Token (timing-safe), enforced in handler",
   },
   {
+    pattern:
+      /^\/api\/admin\/(operating-cockpit|tenant-economics|launch-readiness|economics-at-risk-count|trust-pack\/soc2)$/,
+    reason:
+      "Owner email OR X-Migration-Token (timing-safe), enforced in handler via authorizeMigration",
+  },
+  {
+    pattern: /^\/api\/integrations\/certified$/,
+    reason: "Public certified-integration status; rate-limited, no tenant data",
+  },
+  {
     pattern: /^\/api\/daily-brief\/schedule$/,
     reason: "Vercel cron; Bearer CRON_SECRET (timing-safe)",
   },

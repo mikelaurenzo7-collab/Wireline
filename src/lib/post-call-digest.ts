@@ -32,6 +32,15 @@ import { BRAND } from "../constants/brand-colors";
  * sentiment + intent label into one of 7 buckets used everywhere
  * downstream (Insights breakdown, digest email subject, pipeline stage).
  */
+export type CallOutcomeTag =
+  | "booked"
+  | "qualified"
+  | "followup"
+  | "dnc"
+  | "unreachable"
+  | "info"
+  | "other";
+
 export function classifyCallOutcome(input: {
   summary?: string | null;
   sentiment?: string | null;
@@ -39,7 +48,7 @@ export function classifyCallOutcome(input: {
   durationSeconds?: number | null;
   /** Vapi disconnect reason — e.g. silence-timed-out, customer-ended-call */
   endedReason?: string | null;
-}): "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other" {
+}): CallOutcomeTag {
   const ended = (input.endedReason || "").toLowerCase();
   if (
     ended.includes("silence-timed-out") ||
@@ -92,9 +101,12 @@ interface CallContext {
   direction?: string | null;
   durationSeconds?: number | null;
   summary?: string | null;
+  transcript?: string | null;
   sentiment?: string | null;
   intentLabel?: string | null;
   endedReason?: string | null;
+  vapiCallType?: string | null;
+  demo?: boolean;
 }
 
 /**
@@ -138,6 +150,30 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       .where(eq(schema.callLogs.id, callLogIdBig));
   } catch (err: any) {
     log.warn("post-call digest: callLog update failed", { error: err?.message });
+  }
+
+  // 1b. Activation — first useful production call (idempotent per tenant).
+  try {
+    const { maybeRecordTenantActivation } = await import("./tenant-activation");
+    await maybeRecordTenantActivation({
+      userId: ctx.userId,
+      callLogId: callLogIdBig,
+      call: {
+        demo: ctx.demo,
+        vapiCallType: ctx.vapiCallType,
+        direction: ctx.direction,
+        customerNumber: ctx.customerNumber,
+        durationSeconds: ctx.durationSeconds,
+        transcript: ctx.transcript,
+        summary: ctx.summary,
+        sentiment: ctx.sentiment,
+        intentLabel: ctx.intentLabel,
+        endedReason: ctx.endedReason,
+        outcomeTag,
+      },
+    });
+  } catch (err: any) {
+    log.warn("post-call digest: activation check failed", { error: err?.message });
   }
 
   // 2. CRM auto-log — best effort

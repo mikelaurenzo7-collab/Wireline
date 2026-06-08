@@ -10,7 +10,9 @@
  * number to hear exactly what an agent for your business sounds like" —
  * the most convincing path from "I'm curious" to "let me sign up."
  */
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { motion } from "motion/react";
 import { ArrowRight, Phone, Sparkles, Volume2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
@@ -102,6 +104,10 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
 }
 
 export default function Showcase() {
+  useEffect(() => {
+    captureDemoSourceFromLocation();
+  }, []);
+
   return (
     <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
       <PageMeta

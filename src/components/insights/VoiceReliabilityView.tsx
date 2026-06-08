@@ -1,0 +1,364 @@
+ 
+import { useEffect, useState } from "react";
+import {
+  Activity,
+  AlertTriangle,
+  DollarSign,
+  Gauge,
+  PhoneOff,
+  ShieldAlert,
+  Wrench,
+} from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { cn } from "../../lib/utils";
+import { VOICE_VARIABLE_COST_PER_MIN_USD } from "../../lib/plan-catalog";
+import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
+
+interface VoiceReliabilityPayload {
+  summary: {
+    windowDays: number;
+    totalCalls: number;
+    healthy: boolean;
+    latency: {
+      ttftP50Ms: number | null;
+      ttftP95Ms: number | null;
+      ttfAudioP50Ms: number | null;
+      healthy: boolean;
+    };
+    hangups: {
+      abnormalCount: number;
+      abnormalRatePct: number;
+      byReason: Record<string, number>;
+    };
+    toolCalls: {
+      total: number;
+      failed: number;
+      successRatePct: number | null;
+    };
+    escalations: {
+      attempted: number;
+      succeeded: number;
+      successRatePct: number | null;
+    };
+    webhooks: {
+      total: number;
+      failures: number;
+      failureRatePct: number | null;
+    };
+    economics: {
+      cogsPerMinUsd: number | null;
+      estimatedCogsPerMinUsd: number;
+      revenuePerMinUsd: number | null;
+      grossMarginPct: number | null;
+      totalCostUsd: number;
+      totalMinutes: number;
+    };
+  };
+  trends: Array<{
+    date: string;
+    totalCalls: number;
+    avgTtftMs: number | null;
+    p95TtftMs: number | null;
+    abnormalHangupRate: number;
+    toolCallFailureRate: number;
+    webhookFailureRate: number;
+    cogsPerMinUsd: number | null;
+  }>;
+  generatedAt: string;
+}
+
+interface RecentCallRow {
+  id: bigint;
+  vapiCallId: string | null;
+  createdAt: string;
+  durationSeconds: number | null;
+  ttftMs: number | null;
+  ttfAudioMs: number | null;
+  sttError: boolean | null;
+  ttsError: boolean | null;
+  pipelineError: string | null;
+  sentiment: string | null;
+  outcomeTag: string | null;
+}
+
+function formatPct(value: number | null, fallback = "—"): string {
+  return value == null ? fallback : `${value.toFixed(1)}%`;
+}
+
+function formatUsd(value: number | null, digits = 3): string {
+  return value == null ? "—" : `$${value.toFixed(digits)}`;
+}
+
+export default function VoiceReliabilityView({ days }: { days: number }) {
+  const [data, setData] = useState<VoiceReliabilityPayload | null>(null);
+  const [recent, setRecent] = useState<RecentCallRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setErr(null);
+
+    Promise.all([
+      fetchInsight<VoiceReliabilityPayload>(`/api/insights/voice-reliability?days=${days}`),
+      fetchInsight<{ calls: RecentCallRow[] }>(`/api/insights/latency/recent?limit=25`).catch(
+        () => ({ calls: [] }),
+      ),
+    ])
+      .then(([reliability, recentData]) => {
+        if (!active) return;
+        setData(reliability);
+        setRecent(recentData.calls ?? []);
+      })
+      .catch((e) => {
+        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [days]);
+
+  if (loading) return <Spinner />;
+  if (err) return <ErrCard error={err} />;
+  if (!data || data.summary.totalCalls === 0) {
+    return <InsightEmpty configKey="reliability" icon={ShieldAlert} />;
+  }
+
+  const { summary, trends } = data;
+  const topHangups = Object.entries(summary.hangups.byReason)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+
+  const tiles = [
+    {
+      icon: Gauge,
+      label: "TTFT p95",
+      value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "—",
+      sub: "target <1.2s",
+      healthy: summary.latency.healthy,
+    },
+    {
+      icon: PhoneOff,
+      label: "Abnormal hangups",
+      value: formatPct(summary.hangups.abnormalRatePct, "0.0%"),
+      sub: `${summary.hangups.abnormalCount} calls`,
+      healthy: summary.hangups.abnormalRatePct <= 10,
+    },
+    {
+      icon: Wrench,
+      label: "Tool-call success",
+      value: formatPct(summary.toolCalls.successRatePct),
+      sub:
+        summary.toolCalls.total > 0
+          ? `${summary.toolCalls.total - summary.toolCalls.failed}/${summary.toolCalls.total}`
+          : "no tool calls yet",
+      healthy: summary.toolCalls.successRatePct == null || summary.toolCalls.successRatePct >= 95,
+    },
+    {
+      icon: ShieldAlert,
+      label: "Escalation success",
+      value: formatPct(summary.escalations.successRatePct),
+      sub:
+        summary.escalations.attempted > 0
+          ? `${summary.escalations.succeeded}/${summary.escalations.attempted}`
+          : "no escalations yet",
+      healthy:
+        summary.escalations.successRatePct == null || summary.escalations.successRatePct >= 90,
+    },
+    {
+      icon: Activity,
+      label: "Webhook failures",
+      value: formatPct(summary.webhooks.failureRatePct),
+      sub: `${summary.webhooks.failures}/${summary.webhooks.total || 0} events`,
+      healthy: summary.webhooks.failureRatePct == null || summary.webhooks.failureRatePct <= 5,
+    },
+    {
+      icon: DollarSign,
+      label: "COGS / min",
+      value: formatUsd(summary.economics.cogsPerMinUsd),
+      sub: `est. $${VOICE_VARIABLE_COST_PER_MIN_USD}/min · margin ${formatPct(summary.economics.grossMarginPct)}`,
+      healthy:
+        summary.economics.cogsPerMinUsd == null ||
+        summary.economics.cogsPerMinUsd <= VOICE_VARIABLE_COST_PER_MIN_USD * 1.15,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {!summary.healthy && (
+        <div className="flex items-center gap-2 p-3 rounded-md bg-amber-50 border border-amber-200">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-xs text-amber-800">
+            Voice reliability is below operating thresholds in the last {summary.windowDays} days.
+            Review latency, hangups, tool calls, escalations, and webhook health below.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {tiles.map((tile) => (
+          <div
+            key={tile.label}
+            className={cn(
+              "rounded-md border p-4 wl-panel",
+              tile.healthy ? "border-brand/20 bg-brand/5" : "border-amber-200/70 bg-amber-50/40",
+            )}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <tile.icon
+                className={cn("w-3.5 h-3.5", tile.healthy ? "text-brand" : "text-amber-700")}
+              />
+              <p className="font-mono wl-label text-muted">{tile.label}</p>
+            </div>
+            <p
+              className={cn(
+                "font-display italic text-2xl",
+                tile.healthy ? "text-ink" : "text-amber-900",
+              )}
+            >
+              {tile.value}
+            </p>
+            <p className="wl-director-meta mt-1">{tile.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {trends.length > 1 && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div className="rounded-md wl-panel border border-black/8 p-5">
+            <p className="wl-insight-label text-brand/70 mb-4">TTFT trend</p>
+            <div className="h-52 min-h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} unit="ms" />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="avgTtftMs"
+                    name="Avg TTFT"
+                    stroke="var(--brand)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="p95TtftMs"
+                    name="p95 TTFT"
+                    stroke="#b45309"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-md wl-panel border border-black/8 p-5">
+            <p className="wl-insight-label text-brand/70 mb-4">Failure rates</p>
+            <div className="h-52 min-h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} unit="%" />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="abnormalHangupRate"
+                    name="Hangups"
+                    stackId="1"
+                    stroke="#b45309"
+                    fill="#f59e0b33"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="toolCallFailureRate"
+                    name="Tool failures"
+                    stackId="1"
+                    stroke="#7c3aed"
+                    fill="#8b5cf633"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="webhookFailureRate"
+                    name="Webhook failures"
+                    stackId="1"
+                    stroke="#dc2626"
+                    fill="#ef444433"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-md wl-panel border border-black/8 p-5">
+          <p className="wl-insight-label text-brand/70 mb-4">Hangup reasons</p>
+          <div className="space-y-2">
+            {topHangups.length === 0 ? (
+              <p className="text-sm text-muted">No hangup reasons recorded yet.</p>
+            ) : (
+              topHangups.map(([reason, count]) => (
+                <div
+                  key={reason}
+                  className="flex items-center justify-between gap-3 py-2 border-b border-black/5 last:border-0"
+                >
+                  <span className="text-sm text-ink/85 truncate">{reason}</span>
+                  <span className="font-mono text-[11px] text-muted shrink-0">{count}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-md wl-panel border border-black/8 p-5">
+          <p className="wl-insight-label text-brand/70 mb-4">Recent calls</p>
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {recent.length === 0 ? (
+              <p className="text-sm text-muted">No recent calls with telemetry.</p>
+            ) : (
+              recent.map((call) => (
+                <div
+                  key={String(call.id)}
+                  className="flex items-center justify-between gap-3 py-2 border-b border-black/5 last:border-0"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm text-ink/85 truncate">
+                      {call.outcomeTag || call.sentiment || "call"}
+                    </p>
+                    <p className="text-[11px] text-muted font-mono">
+                      {call.ttftMs != null ? `${call.ttftMs}ms TTFT` : "no TTFT"}
+                      {call.pipelineError ? ` · ${call.pipelineError}` : ""}
+                    </p>
+                  </div>
+                  <span className="font-mono text-[11px] text-muted shrink-0">
+                    {call.durationSeconds ?? 0}s
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

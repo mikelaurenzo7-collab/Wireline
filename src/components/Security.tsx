@@ -207,6 +207,24 @@ export default function Security() {
             </ul>
           </div>
 
+          <div className="mt-10 pt-6 border-t border-black/8">
+            <p className="text-eyebrow mb-3">Vertical trust packs</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 marketing-body">
+              <Link to="/trust/medical" className="text-brand hover:underline">
+                Healthcare
+              </Link>
+              <Link to="/trust/legal" className="text-brand hover:underline">
+                Legal
+              </Link>
+              <Link to="/trust/insurance" className="text-brand hover:underline">
+                Insurance
+              </Link>
+              <Link to="/trust/enterprise" className="text-brand hover:underline">
+                Enterprise
+              </Link>
+            </div>
+          </div>
+
           <div className="mt-10 text-caption text-center space-y-2">
             <p>
               Questions?{" "}

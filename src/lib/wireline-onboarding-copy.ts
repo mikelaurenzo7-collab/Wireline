@@ -6,18 +6,21 @@ import { getSignupWedgeRecommendation } from "./signup-intent";
 
 export const ONBOARDING_WELCOME = {
   eyebrow: "Welcome aboard",
-  title: "Deploy your first agent",
-  titleAccent: "in one sitting",
+  title: "Get to your first",
+  titleAccent: "real call",
   subtitle:
-    "Wireline is mission control for your AI fleet. We'll walk you through business context, voice, and optional phone — under three minutes.",
+    "Wireline wins when a customer talks to your agent on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
   bullets: [
     { label: "Agent", detail: "Name, role, and script generated from your description" },
     { label: "Knowledge", detail: "Optional website scrape for services and policies" },
-    { label: "Go live", detail: "Dedicated US line included — or skip to browser test first" },
+    {
+      label: "Activate",
+      detail: "Provision a US line, dial in, and complete one real conversation",
+    },
   ],
   ctaPrimary: "Start Fast Setup",
   ctaSecondary: "Explore the console",
-  timeHint: "~3 minutes",
+  timeHint: "~3 min setup",
 } as const;
 
 export function onboardingWelcomeSubtitle(signupWedge: string | null): string {
@@ -94,4 +97,38 @@ export const YOURE_LIVE_COPY = {
   opsTitle: "Watch Live Ops",
   opsDetail: "See active callers, approve actions, and monitor fleet pulse.",
   opsAction: "Open Live Ops",
+} as const;
+
+/** Shown after Fast Start — agent exists but activation (first useful call) pending. */
+export const ACTIVATION_PENDING_COPY = {
+  eyebrow: "One step left",
+  title: "Make your first",
+  titleAccent: "real call",
+  subtitle: (agentName: string) =>
+    `${agentName} is provisioned. Dial your line from your phone — activation counts when a customer-quality conversation completes.`,
+  phoneLabel: "Your live number",
+  dialCta: "Call now to activate",
+  browserTestTitle: "Browser test (optional)",
+  browserTestDetail:
+    "Preview voice and script in Chat — simulator calls do not count toward activation.",
+  browserTestAction: "Open Chat",
+  opsTitle: "Watch Live Ops",
+  opsDetail: "See the call land in real time once you dial in.",
+  opsAction: "Open Live Ops",
+} as const;
+
+/** Full celebration after first useful production call. */
+export const ACTIVATION_COMPLETE_COPY = {
+  eyebrow: "Activated",
+  title: "First live call",
+  titleAccent: "complete",
+  subtitle: (agentName: string) =>
+    `${agentName} just handled a real customer conversation. You're officially live.`,
+  nextLabel: "What to do next",
+} as const;
+
+export const ACTIVATION_NUDGE_COPY = {
+  eyebrow: "Activation",
+  body: "Dial your line for a real conversation — that's when Wireline counts you as live.",
+  cta: "Call to activate",
 } as const;

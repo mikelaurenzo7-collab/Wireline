@@ -6,6 +6,7 @@ import { SystemPanel } from "./SystemPanel";
 import { OwnerBillingSimulator } from "./OwnerBillingSimulator";
 import { cn } from "../../lib/utils";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+import LaunchReadinessPanel from "./LaunchReadinessPanel";
 
 /**
  * Platform-operator tools — env integration matrix, SLO telemetry, and
@@ -54,6 +55,7 @@ export default function FounderOperatorConsole() {
 
   return (
     <div className="mb-8 space-y-6">
+      <LaunchReadinessPanel />
       <div>
         <p className="app-section-title mb-1 flex items-center gap-2">
           <ShieldCheck className="w-3.5 h-3.5 text-brand" />

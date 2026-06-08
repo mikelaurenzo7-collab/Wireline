@@ -25,6 +25,7 @@ import { SubscriptionPanel } from "./admin/SubscriptionPanel";
 import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
+import ComplianceChecklist from "./admin/ComplianceChecklist";
 import { isOwnerOnlyAdminTab, isWirelineOperator } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
@@ -489,7 +490,10 @@ export default function AdminSettings() {
                       exit={{ opacity: 0 }}
                       className="h-full"
                     >
-                      <AuditActivityPanel />
+                      <div className="space-y-5">
+                        <ComplianceChecklist />
+                        <AuditActivityPanel />
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

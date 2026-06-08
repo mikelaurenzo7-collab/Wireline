@@ -33,6 +33,10 @@ import { Alert, AlertDescription } from "./ui/shadcn/Alert";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { BRAND } from "../constants/brand-colors";
 import { markFreshSignupSession } from "../lib/post-signup-onboarding";
+import {
+  captureDemoSourceFromLocation,
+  readDemoSourceCookie,
+} from "../lib/demo-attribution-client";
 
 function extractServerErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
@@ -262,6 +266,7 @@ export default function AuthPortal() {
 
   useEffect(() => {
     setSignupIntent(captureSignupIntentFromLocation());
+    captureDemoSourceFromLocation();
   }, []);
 
   useEffect(() => {
@@ -326,6 +331,7 @@ export default function AuthPortal() {
       } else {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
         const attribution = isSignUp ? sanitizeSignupIntent(signupIntent) : null;
+        const demoSource = isSignUp ? readDemoSourceCookie() : null;
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -341,6 +347,7 @@ export default function AuthPortal() {
                   utmCampaign: attribution.utmCampaign,
                 }
               : {}),
+            ...(demoSource ? { demoSource } : {}),
           }),
         });
 

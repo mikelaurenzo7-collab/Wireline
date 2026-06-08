@@ -1,6 +1,6 @@
 /**
  * Auto-opens after signup (or when a signed-in user has zero agents).
- * Welcome beat → FastStartWizard → YoureLiveModal. Suppresses Product Tour overlap.
+ * Welcome → FastStartWizard → activation pending → celebrate on first useful call.
  */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,9 @@ import {
   beginOnboardingTimer,
   clearFreshSignupSession,
   evaluatePostSignupEligibility,
+  fetchActivationStatusFull,
+  isActivationCelebrated,
+  markActivationCelebrated,
   markOnboardingCelebrated,
   markOnboardingCompleted,
   markPostSignupDismissed,
@@ -31,20 +34,32 @@ import {
 import { ONBOARDING_WELCOME, onboardingWelcomeSubtitle } from "../lib/wireline-onboarding-copy";
 import { cn } from "../lib/utils";
 
-type Phase = "idle" | "welcome" | "wizard" | "celebrate";
+type Phase = "idle" | "welcome" | "wizard" | "activate_pending" | "celebrate_activation";
 
 export default function PostSignupOnboarding() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("idle");
   const [completion, setCompletion] = useState<FastStartResult | null>(null);
   const [signupWedge, setSignupWedge] = useState<string | null>(null);
+  const [activationSeconds, setActivationSeconds] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       const eligibility = await evaluatePostSignupEligibility();
-      if (cancelled || !eligibility.shouldShow) {
+      if (cancelled) return;
+
+      if (eligibility.activated && !isActivationCelebrated()) {
+        const status = await fetchActivationStatusFull();
+        if (cancelled) return;
+        setActivationSeconds(status?.timeToActivationSeconds ?? null);
+        setPhase("celebrate_activation");
+        setPostSignupFlowActive(true);
+        return;
+      }
+
+      if (!eligibility.shouldShow) {
         setPostSignupFlowActive(false);
         return;
       }
@@ -61,6 +76,28 @@ export default function PostSignupOnboarding() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (phase !== "activate_pending") return;
+
+    let cancelled = false;
+    const poll = async () => {
+      const status = await fetchActivationStatusFull();
+      if (cancelled || !status?.activated) return;
+      setActivationSeconds(status.timeToActivationSeconds);
+      await markOnboardingCompleted();
+      markOnboardingCelebrated();
+      markActivationCelebrated();
+      setPhase("celebrate_activation");
+    };
+
+    void poll();
+    const interval = setInterval(() => void poll(), 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [phase]);
 
   const finishFlow = useCallback(() => {
     setPostSignupFlowActive(false);
@@ -79,12 +116,10 @@ export default function PostSignupOnboarding() {
   }, []);
 
   const handleWizardComplete = useCallback(async (result: FastStartResult) => {
-    await markOnboardingCompleted();
-    markOnboardingCelebrated();
     clearFreshSignupSession();
     setCompletion(result);
-    setPhase("celebrate");
-    setPostSignupFlowActive(false);
+    setPhase("activate_pending");
+    setPostSignupFlowActive(true);
   }, []);
 
   const handleWizardClose = useCallback(() => {
@@ -93,9 +128,26 @@ export default function PostSignupOnboarding() {
     finishFlow();
   }, [finishFlow]);
 
-  const handleCelebrateClose = useCallback(() => {
+  const handleActivatePendingClose = useCallback(() => {
     finishFlow();
   }, [finishFlow]);
+
+  const handleActivationCelebrateClose = useCallback(() => {
+    finishFlow();
+  }, [finishFlow]);
+
+  const setupMs =
+    completion?.timeToCompleteMs ??
+    (() => {
+      try {
+        const start = localStorage.getItem("wireline_onboarding_start");
+        return start ? Date.now() - Number(start) : 0;
+      } catch {
+        return 0;
+      }
+    })();
+
+  const activationMs = activationSeconds != null ? activationSeconds * 1000 : setupMs;
 
   return (
     <>
@@ -203,24 +255,51 @@ export default function PostSignupOnboarding() {
       />
 
       <AnimatePresence>
-        {phase === "celebrate" && completion && (
+        {phase === "activate_pending" && completion && (
           <YoureLiveModal
             isOpen
-            onClose={handleCelebrateClose}
+            mode="activation_pending"
+            onClose={handleActivatePendingClose}
             agentName={completion.agentName}
             phoneNumber={
               completion.phoneNumber && completion.phoneNumber !== "Browser test only"
                 ? completion.phoneNumber
                 : null
             }
-            timeToFirstCallMs={completion.timeToCompleteMs}
+            timeToFirstCallMs={setupMs}
             knowledgeItems={completion.knowledgeItems}
             onTestCall={() => {
-              handleCelebrateClose();
+              handleActivatePendingClose();
               navigate("/chat");
             }}
             onViewDashboard={() => {
-              handleCelebrateClose();
+              handleActivatePendingClose();
+              navigate("/ops");
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {phase === "celebrate_activation" && (
+          <YoureLiveModal
+            isOpen
+            mode="activated"
+            onClose={handleActivationCelebrateClose}
+            agentName={completion?.agentName ?? "Your agent"}
+            phoneNumber={
+              completion?.phoneNumber && completion.phoneNumber !== "Browser test only"
+                ? completion.phoneNumber
+                : null
+            }
+            timeToFirstCallMs={activationMs}
+            knowledgeItems={completion?.knowledgeItems ?? 0}
+            onTestCall={() => {
+              handleActivationCelebrateClose();
+              navigate("/chat");
+            }}
+            onViewDashboard={() => {
+              handleActivationCelebrateClose();
               navigate("/ops");
             }}
           />
