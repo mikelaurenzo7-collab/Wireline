@@ -31,7 +31,7 @@ const ROUTES = [
   { path: "/insights", label: "Insights", tab: null },
   { path: "/integrations", label: "Integrations", tab: null },
   { path: "/admin", label: "Settings", tab: null },
-  { path: "/triage", label: "Triage", tab: null },
+  { path: "/ops?tab=triage", label: "Triage", tab: "Triage" },
 ];
 
 const CHAT_PROBES = [

@@ -3,6 +3,7 @@ import {
   AlertOctagon,
   BarChart3,
   BookOpen,
+  Inbox,
   Calendar,
   CalendarClock,
   Database,
@@ -63,6 +64,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     tabs: [
       { id: "floor", label: "Live floor", icon: Radio },
       { id: "intel", label: "Actions", icon: ListTodo },
+      { id: "triage", label: "Triage", icon: Inbox },
       { id: "analytics", label: "Analytics", icon: Globe },
     ],
   },

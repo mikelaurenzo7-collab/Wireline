@@ -30,7 +30,7 @@ Prioritized map for design passes. Start with **P0** when the user doesn’t spe
 | Surface | Primary files |
 |---------|---------------|
 | Phone / email / SMS routes | `routes/*`, channel-specific pages |
-| Ops / triage / insights | ops-related route components |
+| Ops / Live Ops (triage tab) / insights | `CommandCenter.tsx`, `TriageInbox.tsx`, ops-related route components |
 | Pipeline | pipeline views |
 | Admin / audit / DNC | admin routes — compliance clarity |
 

@@ -85,7 +85,7 @@ export default function CommandBar() {
       icon: Inbox,
       category: "Navigation",
       shortcut: "T",
-      action: () => navigate("/triage"),
+      action: () => navigate("/ops?tab=triage"),
     },
     {
       id: "insights",

@@ -11,7 +11,6 @@ const APP_ROUTES_SRC = readFileSync(join(import.meta.dirname, "AppRoutes.tsx"), 
 /** Canonical authenticated pages that must have a Route (not only redirects). */
 const REQUIRED_PAGE_ROUTES = [
   "/ops",
-  "/triage",
   "/founder",
   "/insights",
   "/phone",
@@ -46,6 +45,7 @@ const REQUIRED_LEGACY_REDIRECTS: { path: string; target: string }[] = [
   { path: "/billing", target: "/admin?tab=subscription" },
   { path: "/admin/growth", target: "/admin?tab=flywheel" },
   { path: "/ops/actions", target: "/ops?tab=intel" },
+  { path: "/triage", target: "/ops?tab=triage" },
   { path: "/activity", target: "ActivityRedirect" },
 ];
 

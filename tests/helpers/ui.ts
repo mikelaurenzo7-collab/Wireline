@@ -107,7 +107,7 @@ export const AUTHENTICATED_SUBTAB_SURFACES = [
   {
     path: "/ops",
     tablist: "Live Ops sections",
-    tabs: ["Live floor", "Actions", "Analytics"] as const,
+    tabs: ["Live floor", "Actions", "Triage", "Analytics"] as const,
   },
   {
     path: "/training",

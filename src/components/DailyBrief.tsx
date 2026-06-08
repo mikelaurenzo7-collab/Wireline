@@ -102,9 +102,7 @@ export default function DailyBrief() {
             <Brain className="w-7 h-7 text-on-brand" />
           </div>
           <div className="flex-1">
-            <h3 className="font-display italic text-2xl text-ink leading-tight">
-              Daily Brief is offline
-            </h3>
+            <h3 className="text-xl font-semibold text-ink leading-tight">Daily Brief is offline</h3>
             <p className="text-sm text-ink/65">
               Contact your administrator to enable the Wireline Daily Brief.
             </p>
@@ -256,7 +254,7 @@ export default function DailyBrief() {
         <div className="relative z-10 p-7 space-y-7">
           {/* Headline */}
           <div className="space-y-3">
-            <h2 className="font-display italic text-3xl md:text-5xl text-ink leading-tight">
+            <h2 className="text-2xl md:text-3xl font-semibold text-ink leading-tight tracking-tight">
               {brief.headline}
             </h2>
             <p className="text-ink/70 text-sm md:text-base leading-relaxed max-w-3xl">
@@ -326,7 +324,7 @@ export default function DailyBrief() {
           )}
 
           <Link
-            to="/triage"
+            to="/ops?tab=triage"
             className="inline-flex items-center gap-2 px-5 py-3 rounded-full wl-panel border border-brand/30 hover:bg-brand/10 transition-all text-[11px] uppercase tracking-[0.3em] text-brand"
           >
             Open Triage Inbox <ChevronRight className="w-3.5 h-3.5" />

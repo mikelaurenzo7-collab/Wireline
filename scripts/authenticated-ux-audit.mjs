@@ -27,10 +27,9 @@ const VIEWPORTS = [
 ];
 
 const ROUTES = [
-  { path: "/ops", name: "Live Ops", tabs: ["Live floor", "Actions", "Analytics"] },
+  { path: "/ops", name: "Live Ops", tabs: ["Live floor", "Actions", "Triage", "Analytics"] },
   { path: "/chat", name: "Chat / Director", tabs: null },
   { path: "/training", name: "Training", tabs: ["Knowledge", "Voices", "Pronunciation", "Simulator", "Flow"] },
-  { path: "/triage", name: "Triage", tabs: null },
   { path: "/insights", name: "Insights", tabs: ["Performance", "Quality", "Revenue"] },
   { path: "/phone", name: "Phone", tabs: ["Call History", "Outbound", "Appointments"] },
   { path: "/email", name: "Email", tabs: null },
@@ -50,6 +49,7 @@ const DEEP_LINKS = [
   "/ops?tab=intel",
   "/ops?tab=analytics",
   "/ops?tab=floor",
+  "/ops?tab=triage",
   "/admin?tab=subscription",
   "/admin?tab=flywheel",
   "/training?tab=database",
@@ -228,17 +228,23 @@ async function mobileNavCheck(page) {
   console.log("\n── Mobile nav ──");
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoStable(page, `${base}/chat`);
-  const bottomNav = page.getByTestId("mobile-bottom-nav");
-  if ((await bottomNav.count()) === 0) {
-    add("p1", "mobile:bottom-nav", "mobile bottom nav missing");
+  const openNav = page.getByRole("button", { name: "Open navigation" });
+  if ((await openNav.count()) === 0) {
+    add("p1", "mobile:drawer", "Open navigation control missing");
   } else {
-    const phoneQuick = bottomNav.getByRole("link", { name: "Phone", exact: true });
-    if ((await phoneQuick.count()) === 0) {
-      add("p1", "mobile:nav-phone", "Phone quick tab missing");
+    await openNav.click();
+    const drawer = page.getByRole("navigation", { name: "Main navigation" });
+    if ((await drawer.count()) === 0) {
+      add("p1", "mobile:drawer", "Main navigation drawer missing");
     } else {
-      await phoneQuick.click();
-      await page.waitForURL(/\/phone/, { timeout: 15_000 });
-      ok("mobile:nav-phone", "bottom nav → Phone");
+      const phoneLink = drawer.getByRole("link", { name: "Phone", exact: true });
+      if ((await phoneLink.count()) === 0) {
+        add("p1", "mobile:nav-phone", "Phone link missing in drawer");
+      } else {
+        await phoneLink.click();
+        await page.waitForURL(/\/phone/, { timeout: 15_000 });
+        ok("mobile:nav-phone", "drawer → Phone");
+      }
     }
   }
   await page.screenshot({ path: path.join(SS, "mobile_nav_phone.png") });

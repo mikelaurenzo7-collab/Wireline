@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
 import { RefreshCw } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
 import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
 import { log } from "../lib/server-logger";
@@ -9,6 +8,8 @@ import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/Liv
 import { ActionFeed } from "../components/CommandCenter/ActionFeed";
 import { OpsPulseStrip } from "../components/CommandCenter/OpsPulseStrip";
 import { OpsIntelligenceRail } from "../components/CommandCenter/OpsIntelligenceRail";
+import { TriagePanel } from "../components/TriageInbox";
+import CsvExportButton from "../components/CsvExportButton";
 import PageTransition from "../components/layout/PageTransition";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientToolbar from "../components/layout/ClientToolbar";
@@ -41,7 +42,7 @@ type LiveCall = {
 
 const OPS_ROUTE = resolveAppPageSubTabRoute("/ops")!;
 
-type OpsTabId = "floor" | "intel" | "analytics";
+type OpsTabId = "floor" | "intel" | "triage" | "analytics";
 
 type ActionItem = {
   id: string;
@@ -108,7 +109,7 @@ type TaskPayload = {
 
 export default function LiveOps() {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = resolveAppPageSubTabId(OPS_ROUTE, searchParams.get("tab")) as OpsTabId;
 
   const [calls, setCalls] = useState<LiveCall[]>([]);
@@ -121,6 +122,9 @@ export default function LiveOps() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activatingGrowth, setActivatingGrowth] = useState(false);
   const [agentsHydrated, setAgentsHydrated] = useState(false);
+  const [triageAttention, setTriageAttention] = useState(0);
+  const [triageLoading, setTriageLoading] = useState(false);
+  const triageRefreshRef = useRef<(() => void) | null>(null);
   const mountedRef = useRef(true);
   const dossiersRef = useRef(dossiers);
   dossiersRef.current = dossiers;
@@ -367,8 +371,12 @@ export default function LiveOps() {
 
   const refresh = async () => {
     setIsRefreshing(true);
-    await fetchAll();
-    await fetchPresence();
+    if (activeTab === "triage") {
+      triageRefreshRef.current?.();
+    } else {
+      await fetchAll();
+      await fetchPresence();
+    }
     setIsRefreshing(false);
   };
 
@@ -398,6 +406,19 @@ export default function LiveOps() {
   const fleetAgentCount = agentsHydrated ? Math.max(stats?.agents?.length ?? 0, agents.length) : 0;
   const pulseLoading = loading || presenceLoading;
   const fleetPulseLoading = !agentsHydrated;
+  const toolbarBusy = activeTab === "triage" ? triageLoading : pulseLoading || fleetPulseLoading;
+  const mainColSpan = activeTab === "triage" ? "lg:col-span-12" : "lg:col-span-8 xl:col-span-9";
+
+  const navigateOpsTab = (tab: Exclude<OpsTabId, "analytics">) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   return (
     <PageTransition>
@@ -413,6 +434,8 @@ export default function LiveOps() {
             pendingActions={pendingActions}
             fleetAgents={fleetAgentCount}
             escalations={escalations}
+            activeTab={activeTab}
+            onMetricNavigate={navigateOpsTab}
             loading={pulseLoading}
             fleetLoading={fleetPulseLoading}
           />
@@ -420,36 +443,55 @@ export default function LiveOps() {
           <ClientToolbar
             className="shrink-0 px-2 sm:px-3"
             left={
-              <span className="app-toolbar-stat">
-                {pulseLoading || fleetPulseLoading
+              <span className="app-toolbar-stat inline-flex items-center gap-2">
+                {activeTab === "triage" && !toolbarBusy && triageAttention > 0 && (
+                  <span
+                    className="w-2 h-2 rounded-full bg-brand animate-pulse shrink-0"
+                    aria-hidden
+                  />
+                )}
+                {toolbarBusy
                   ? OPS_CHANNEL_TOOLBAR.ops.loading
                   : activeTab === "floor"
                     ? OPS_CHANNEL_TOOLBAR.ops.floor(calls.length)
                     : activeTab === "intel"
                       ? OPS_CHANNEL_TOOLBAR.ops.intel(pendingActions)
-                      : OPS_CHANNEL_TOOLBAR.ops.analytics}
+                      : activeTab === "triage"
+                        ? OPS_CHANNEL_TOOLBAR.ops.triage(triageAttention)
+                        : OPS_CHANNEL_TOOLBAR.ops.analytics}
               </span>
             }
             actions={
-              <ShadButton
-                type="button"
-                variant="outline"
-                size="icon"
-                disableAnimations
-                onClick={refresh}
-                disabled={isRefreshing || loading}
-                className="touch-press shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
-                aria-label="Refresh"
-                title="Refresh"
-              >
-                <RefreshCw className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
-              </ShadButton>
+              <>
+                {activeTab === "triage" && <CsvExportButton type="tasks" label="CSV" />}
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disableAnimations
+                  onClick={refresh}
+                  disabled={isRefreshing || (activeTab === "triage" ? triageLoading : loading)}
+                  className="touch-press shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
+                  aria-label="Refresh"
+                  title="Refresh"
+                >
+                  <RefreshCw
+                    className={clsx(
+                      "w-4 h-4",
+                      (isRefreshing || (activeTab === "triage" ? triageLoading : false)) &&
+                        "animate-spin",
+                    )}
+                  />
+                </ShadButton>
+              </>
             }
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch px-2 sm:px-3 pt-1 pb-3 flex-1 min-h-0 overflow-hidden">
             {/* Left Pane (Main Operations) */}
-            <div className="lg:col-span-8 xl:col-span-9 flex flex-col min-h-0 min-w-0 gap-3 overflow-hidden">
+            <div
+              className={clsx(mainColSpan, "flex flex-col min-h-0 min-w-0 gap-3 overflow-hidden")}
+            >
               {activeTab === "floor" && (
                 <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
                   <div
@@ -479,6 +521,15 @@ export default function LiveOps() {
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
                 </section>
+              )}
+
+              {activeTab === "triage" && (
+                <TriagePanel
+                  embedded
+                  refreshRef={triageRefreshRef}
+                  onAttentionChange={setTriageAttention}
+                  onLoadingChange={setTriageLoading}
+                />
               )}
 
               {activeTab === "analytics" && (
@@ -544,7 +595,7 @@ export default function LiveOps() {
                           <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
                           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
                           <span className="wl-label block mb-1 relative z-10">Cost / Min</span>
-                          <span className="font-display italic text-2xl text-ink tabular-nums relative z-10">
+                          <span className="text-2xl font-semibold text-ink tabular-nums relative z-10">
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
@@ -552,7 +603,7 @@ export default function LiveOps() {
                           <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
                           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
                           <span className="wl-label block mb-1 relative z-10">Cost / Lead</span>
-                          <span className="font-display italic text-2xl text-ink tabular-nums relative z-10">
+                          <span className="text-2xl font-semibold text-ink tabular-nums relative z-10">
                             ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                           </span>
                         </div>
@@ -583,12 +634,14 @@ export default function LiveOps() {
               )}
             </div>
 
-            <OpsIntelligenceRail
-              liveCalls={calls.length}
-              fleetAgents={fleetAgentCount}
-              activatingGrowth={activatingGrowth}
-              onActivatingGrowthChange={setActivatingGrowth}
-            />
+            {activeTab !== "triage" && (
+              <OpsIntelligenceRail
+                liveCalls={calls.length}
+                fleetAgents={fleetAgentCount}
+                activatingGrowth={activatingGrowth}
+                onActivatingGrowthChange={setActivatingGrowth}
+              />
+            )}
           </div>
         </div>
       </ClientRouteViewport>

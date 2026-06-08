@@ -10,7 +10,6 @@ import OwnerOnlyRoute from "../components/OwnerOnlyRoute";
 
 import { ActivityRedirect } from "./LegacyRedirects";
 
-const TriageInbox = lazyRoute(() => import("../components/TriageInbox"));
 const ContactProfile = lazyRoute(() => import("../components/ContactProfile"));
 const InsightsView = lazyRoute(() => import("../components/InsightsView"));
 const FleetSettings = lazyRoute(() => import("../components/FleetSettings"));
@@ -53,16 +52,7 @@ export default function AppRoutes() {
           <Route path="/dashboard" element={<Navigate to="/ops" replace />} />
           <Route path="/command" element={<Navigate to="/ops" replace />} />
           <Route path="/live" element={<Navigate to="/ops" replace />} />
-          <Route
-            path="/triage"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <TriageInbox />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
+          <Route path="/triage" element={<Navigate to="/ops?tab=triage" replace />} />
           <Route
             path="/founder"
             element={

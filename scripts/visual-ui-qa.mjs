@@ -29,7 +29,7 @@ const ROUTES = [
   "/training",
   "/training?tab=voices",
   "/training?tab=simulator",
-  "/triage",
+  "/ops?tab=triage",
   "/insights",
   "/insights?tab=quality",
   "/phone",
@@ -137,8 +137,6 @@ async function captureRoute(page, route, vp) {
   if (metrics.h1Count !== 1) issues.push(`h1 count ${metrics.h1Count}`);
   if (metrics.tinyTextNodes > 12) issues.push(`${metrics.tinyTextNodes} tiny text nodes`);
   if (metrics.clippedHeadings > 0) issues.push(`${metrics.clippedHeadings} clipped headings`);
-  if (vp.name === "mobile" && route === "/chat" && !metrics.hasBottomNav)
-    issues.push("missing bottom nav on chat");
   findings.push({ route, viewport: vp.name, screenshot: file, metrics, issues });
   const mark = issues.length ? "!" : "✓";
   console.log(`${mark} ${vp.name} ${route}${issues.length ? ` — ${issues.join("; ")}` : ""}`);

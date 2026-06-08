@@ -66,7 +66,7 @@ test.describe("Wireline authenticated shell (mobile)", () => {
     { path: "/", heading: /live ops/i },
     { path: "/outbound", heading: /^outbound$/i },
     { path: "/insights", heading: /^insights$/i },
-    { path: "/triage", heading: /^triage$/i },
+    { path: "/ops?tab=triage", heading: /live ops/i },
     { path: "/cockpit", heading: /^cockpit$/i },
   ];
 

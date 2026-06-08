@@ -67,7 +67,7 @@ export function OpsIntelligenceRail({
 
       <div className={clsx(WL_OPS_CLASSES.railCard, "space-y-2.5")}>
         <div>
-          <h4 className="font-display italic text-[15px] leading-tight text-foreground">
+          <h4 className="text-sm font-semibold leading-tight text-foreground">
             {OPS_COPY.growthTitle}
           </h4>
           <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">

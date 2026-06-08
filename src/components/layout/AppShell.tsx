@@ -7,7 +7,6 @@ import ErrorBoundary from "../ErrorBoundary";
 import AuroraBackdrop from "./AuroraBackdrop";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
-import MobileBottomNav from "./MobileBottomNav";
 import WorkspaceTopBar from "./WorkspaceTopBar";
 import { shouldShowAppPageContext } from "../../lib/wireline-app-chrome";
 import TrialBanner from "./TrialBanner";
@@ -35,7 +34,6 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/sms": "Two-way conversations & automated follow-ups",
   "/training": "Teach, tune & refine your agents",
   "/ops": "Live callers, supervisor tools & fleet pulse",
-  "/triage": "Flagged conversations needing human review",
   "/insights": "Performance analytics, topics & trend discovery",
   "/pipeline": "Leads across the funnel — scored and staged",
   "/admin": "Account configuration & integrations",
@@ -82,6 +80,12 @@ function getPageContext(
             eyebrow: section,
             title: "Live Ops",
             subtitle: "Pending actions & follow-ups",
+          };
+        if (opsTab === "triage")
+          return {
+            eyebrow: section,
+            title: "Live Ops",
+            subtitle: "Hot leads, escalations & review queue",
           };
         if (opsTab === "analytics")
           return {
@@ -356,7 +360,6 @@ export default function AppShell() {
         navBadges={navBadges}
       />
       <Sidebar navBadges={navBadges} />
-      <MobileBottomNav onOpenDrawer={() => setDrawerOpen(true)} />
 
       <main
         id="main-content"
@@ -376,7 +379,7 @@ export default function AppShell() {
         )}
 
         <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
-          <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-2 pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:px-3 md:pb-2.5 lg:px-3 lg:pb-3">
+          <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:px-3 md:pb-2.5 lg:px-3 lg:pb-3">
             <div
               className={cn(
                 "app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pb-0 md:pb-3 lg:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas",

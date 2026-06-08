@@ -11,6 +11,7 @@ export const WL_OPS_CLASSES = {
   canvas: "wl-ops-canvas",
   pulseStrip: "wl-ops-pulse-strip",
   metric: "wl-ops-metric",
+  metricInteractive: "wl-ops-metric wl-ops-metric--interactive",
   metricValue: "wl-ops-metric-value",
   metricLabel: "wl-ops-metric-label",
   floorFrame: "wl-ops-floor-frame",
@@ -21,6 +22,7 @@ export const WL_OPS_CLASSES = {
   setupNudge: "wl-setup-nudge",
   /** Toolbar filter / action chip typography */
   filterChip: "wl-ops-chip",
+  triageGrid: "wl-ops-triage-grid",
   dotSep: "wl-dot-sep",
   divider: "wl-ops-divider",
   /** Re-export for ops panels that embed signal chrome */
@@ -283,7 +285,7 @@ export const OPS_TRIAGE_ACCENTS = {
   knowledgeGaps: BRAND.purple,
 } as const;
 
-/** Triage panel empty states — `/triage` widget columns */
+/** Triage panel empty states — Live Ops `?tab=triage` widget columns */
 export const OPS_TRIAGE_EMPTY = {
   hotLeads: {
     eyebrow: "Hot leads",
@@ -291,7 +293,7 @@ export const OPS_TRIAGE_EMPTY = {
     description: "High-intent callers surface here after outbound dials or inbound conversations.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Monitor floor", to: "/ops" },
+      { label: "Monitor floor", to: "/ops?tab=floor" },
     ],
   },
   compliance: {
@@ -315,7 +317,7 @@ export const OPS_TRIAGE_EMPTY = {
     eyebrow: "Escalations",
     title: "No escalations",
     description: "Supervisor handoffs and urgent calls will land here.",
-    actions: [{ label: "Live floor", to: "/ops" }],
+    actions: [{ label: "Live floor", to: "/ops?tab=floor" }],
   },
 } as const;
 
@@ -379,6 +381,7 @@ export const OPS_CHANNEL_TOOLBAR = {
     floor: (n: number) => `${n} live caller${n === 1 ? "" : "s"}`,
     intel: (n: number) => `${n} pending action${n === 1 ? "" : "s"}`,
     analytics: "Fleet analytics",
+    triage: (n: number) => OPS_CHANNEL_TOOLBAR.triage.stat(n),
   },
   insights: {
     stat: (days: number) => `${days}-day window`,

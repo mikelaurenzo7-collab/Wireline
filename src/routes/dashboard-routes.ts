@@ -70,7 +70,7 @@ router.get(
       ).length;
 
       const counts = {
-        "/triage": triageCount,
+        "/ops": triageCount,
         "/inbox": emailCount,
         "/outbound": outboundCount,
         "/live": distressedCount,

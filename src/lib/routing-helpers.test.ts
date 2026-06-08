@@ -22,6 +22,7 @@ describe("page-sub-tabs", () => {
   it("keeps canonical tab ids", () => {
     expect(resolveAppPageSubTabId(ops, "analytics")).toBe("analytics");
     expect(resolveAppPageSubTabId(ops, "intel")).toBe("intel");
+    expect(resolveAppPageSubTabId(ops, "triage")).toBe("triage");
   });
 });
 

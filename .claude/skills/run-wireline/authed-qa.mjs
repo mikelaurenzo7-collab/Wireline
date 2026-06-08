@@ -14,7 +14,7 @@ const OUT_DIR = process.env.QA_OUT || "/tmp/wireline-screenshots";
 if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 
 const ROUTES = (process.env.QA_ROUTES ||
-  "/chat,/agents,/training,/ops,/triage,/phone,/email,/sms,/pipeline,/insights,/integrations,/admin")
+  "/chat,/agents,/training,/ops,/ops?tab=triage,/phone,/email,/sms,/pipeline,/insights,/integrations,/admin")
   .split(",");
 
 const MOCK_USER = {

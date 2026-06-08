@@ -5,7 +5,7 @@ import { touchNavCounts } from "./nav-counts-invalidate";
 describe("touchNavCounts", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    setCachedNavCounts("user-1", { "/triage": 3, "/inbox": 1, "/outbound": 0, "/live": 0 });
+    setCachedNavCounts("user-1", { "/ops": 3, "/inbox": 1, "/outbound": 0, "/live": 0 });
   });
 
   afterEach(() => {

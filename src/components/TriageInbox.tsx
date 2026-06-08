@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Flame,
@@ -95,12 +95,25 @@ interface TriageData {
   counts: Record<string, number>;
 }
 
-export default function TriageInbox() {
+export type TriagePanelProps = {
+  /** When true, renders inside Live Ops — no page chrome or duplicate toolbar. */
+  embedded?: boolean;
+  onAttentionChange?: (count: number) => void;
+  onLoadingChange?: (loading: boolean) => void;
+  refreshRef?: React.MutableRefObject<(() => void) | null>;
+};
+
+export function TriagePanel({
+  embedded = false,
+  onAttentionChange,
+  onLoadingChange,
+  refreshRef,
+}: TriagePanelProps) {
   const [data, setData] = useState<TriageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setFetchErr(null);
     try {
@@ -113,14 +126,30 @@ export default function TriageInbox() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
   const counts = data?.counts || ({} as Record<string, number>);
   const totalAttention = Object.values(counts).reduce((s, n) => s + n, 0);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    onAttentionChange?.(totalAttention);
+  }, [totalAttention, onAttentionChange]);
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
+
+  useEffect(() => {
+    if (!refreshRef) return;
+    refreshRef.current = fetchData;
+    return () => {
+      refreshRef.current = null;
+    };
+  }, [fetchData, refreshRef]);
 
   // Per-bucket panel renderer — shared error / loading shell so every
   // card on the dense triage grid behaves identically. Each Panel is
@@ -196,6 +225,125 @@ export default function TriageInbox() {
         : prev,
     );
 
+  const allClearBanner =
+    !loading && data && !fetchErr && totalAttention === 0 ? (
+      <div
+        role="status"
+        className={cn(
+          "mb-3 rounded-md border px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2",
+          WL_APP_CLASSES.statusSuccess,
+        )}
+      >
+        <div className="flex items-start gap-3 flex-1 min-w-[12rem] text-left">
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 wl-text-success" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-ink">{OPS_TRIAGE_COPY.allClearBannerTitle}</p>
+            <p className="text-xs text-muted mt-0.5">{OPS_TRIAGE_COPY.allClearBannerBody}</p>
+          </div>
+        </div>
+        <Link to="/ops?tab=floor" className="app-micro-cta touch-press shrink-0">
+          {OPS_TRIAGE_COPY.allClearBannerCta}
+        </Link>
+      </div>
+    ) : null;
+
+  const triageGrid = (
+    <div
+      className={cn(
+        "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
+        WL_OPS_CLASSES.triageGrid,
+        "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+        "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
+        "auto-rows-fr lg:grid-flow-row-dense",
+      )}
+      data-testid="triage-grid"
+    >
+      <div className="lg:col-span-1">
+        {bucketPanel(
+          "Hot Leads",
+          Flame,
+          counts.hot_leads ? `${counts.hot_leads} ready to close` : "Cold floor",
+          <WidgetBoundary label="Hot Leads">
+            <HotLeads items={data?.hot_leads || []} />
+          </WidgetBoundary>,
+          OPS_TRIAGE_ACCENTS.hotLeads,
+        )}
+      </div>
+
+      <div>
+        {bucketPanel(
+          "Open Tasks",
+          ListTodo,
+          counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
+          <WidgetBoundary label="Open Tasks">
+            <OpenTasks
+              items={data?.pending_tasks || []}
+              onCompleted={removeTask}
+              onFetchFailed={fetchData}
+            />
+          </WidgetBoundary>,
+          OPS_TRIAGE_ACCENTS.openTasks,
+        )}
+      </div>
+
+      <div className="lg:row-span-2">
+        {bucketPanel(
+          "Escalations",
+          AlertOctagon,
+          counts.escalations ? `${counts.escalations} pending` : "All clear",
+          <WidgetBoundary label="Escalations">
+            <Escalations items={data?.escalations || []} />
+          </WidgetBoundary>,
+          OPS_TRIAGE_ACCENTS.escalations,
+        )}
+      </div>
+
+      <div>
+        {bucketPanel(
+          "Compliance",
+          ShieldAlert,
+          counts.compliance ? `${counts.compliance} flags` : "Clean",
+          <WidgetBoundary label="Compliance">
+            <ComplianceList items={data?.compliance || []} />
+          </WidgetBoundary>,
+          OPS_TRIAGE_ACCENTS.compliance,
+        )}
+      </div>
+
+      <div className="md:col-span-2 lg:col-span-1">
+        {bucketPanel(
+          "Knowledge Gaps",
+          BookOpen,
+          counts.knowledge_gaps ? `${counts.knowledge_gaps} to capture` : "Up to date",
+          <WidgetBoundary label="Knowledge Gaps">
+            <KnowledgeGaps
+              items={data?.knowledge_gaps || []}
+              onPromoted={fetchData}
+              onDiscard={removeGap}
+            />
+          </WidgetBoundary>,
+          OPS_TRIAGE_ACCENTS.knowledgeGaps,
+        )}
+      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+          className={cn(
+            WL_OPS_CLASSES.floorFrame,
+            "flex-1 min-h-0 flex flex-col overflow-hidden p-2 sm:p-3",
+          )}
+        >
+          {allClearBanner}
+          {triageGrid}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <ClientRouteViewport>
       <ClientToolbar
@@ -241,132 +389,15 @@ export default function TriageInbox() {
         }
       />
       <PageShell title="" eyebrow="" subtitle="">
-        {!loading && data && !fetchErr && totalAttention === 0 && (
-          <div
-            role="status"
-            className={cn(
-              "mb-3 rounded-md border px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2",
-              WL_APP_CLASSES.statusSuccess,
-            )}
-          >
-            <div className="flex items-start gap-3 flex-1 min-w-[12rem] text-left">
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 wl-text-success" aria-hidden />
-              <div>
-                <p className="font-display italic text-sm text-ink">
-                  {OPS_TRIAGE_COPY.allClearBannerTitle}
-                </p>
-                <p className="text-xs text-muted mt-0.5">{OPS_TRIAGE_COPY.allClearBannerBody}</p>
-              </div>
-            </div>
-            <Link to="/ops" className="app-micro-cta touch-press shrink-0">
-              {OPS_TRIAGE_COPY.allClearBannerCta}
-            </Link>
-          </div>
-        )}
-        {/* ────────────────────────────────────────────────────────────
-          Dense triage grid — five buckets visible simultaneously.
-          Replaces the tabbed layout (which buried 4 of 5 buckets and
-          left an empty Panel below the active list when items were
-          short).
-          
-          Layout:
-            - base / sm   : 1 column stack
-            - md          : 2 columns
-            - lg          : 3 columns; hot leads spans 2, escalations
-                            spans 1 full-height tower on the right
-            - xl          : same 3 columns but with taller rows
-          
-          Each card scrolls internally → the page itself never scrolls.
-          ──────────────────────────────────────────────────────────── */}
-        <div
-          className={cn(
-            "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
-            "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-            "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
-            // Dense flow packs the row-span-2 escalations tower + 4 cards into
-            // exactly the two explicit rows; without it the tower leaves a gap
-            // that spills a card into an implicit (auto-rows-fr) 3rd row, leaving
-            // dead space at the bottom of the grid on tall screens.
-            "auto-rows-fr lg:grid-flow-row-dense",
-          )}
-          data-testid="triage-grid"
-        >
-          {/* Column 1, Row 1: Hot Leads */}
-          <div className="lg:col-span-1">
-            {bucketPanel(
-              "Hot Leads",
-              Flame,
-              counts.hot_leads ? `${counts.hot_leads} ready to close` : "Cold floor",
-              <WidgetBoundary label="Hot Leads">
-                <HotLeads items={data?.hot_leads || []} />
-              </WidgetBoundary>,
-              OPS_TRIAGE_ACCENTS.hotLeads,
-            )}
-          </div>
-
-          {/* Column 2, Row 1: Open Tasks */}
-          <div>
-            {bucketPanel(
-              "Open Tasks",
-              ListTodo,
-              counts.pending_tasks ? `${counts.pending_tasks} open` : "Queue clear",
-              <WidgetBoundary label="Open Tasks">
-                <OpenTasks
-                  items={data?.pending_tasks || []}
-                  onCompleted={removeTask}
-                  onFetchFailed={fetchData}
-                />
-              </WidgetBoundary>,
-              OPS_TRIAGE_ACCENTS.openTasks,
-            )}
-          </div>
-
-          {/* Column 3, Row 1 & 2: Escalations */}
-          <div className="lg:row-span-2">
-            {bucketPanel(
-              "Escalations",
-              AlertOctagon,
-              counts.escalations ? `${counts.escalations} pending` : "All clear",
-              <WidgetBoundary label="Escalations">
-                <Escalations items={data?.escalations || []} />
-              </WidgetBoundary>,
-              OPS_TRIAGE_ACCENTS.escalations,
-            )}
-          </div>
-
-          {/* Column 1, Row 2: Compliance */}
-          <div>
-            {bucketPanel(
-              "Compliance",
-              ShieldAlert,
-              counts.compliance ? `${counts.compliance} flags` : "Clean",
-              <WidgetBoundary label="Compliance">
-                <ComplianceList items={data?.compliance || []} />
-              </WidgetBoundary>,
-              OPS_TRIAGE_ACCENTS.compliance,
-            )}
-          </div>
-
-          {/* Column 2, Row 2: Knowledge Gaps */}
-          <div className="md:col-span-2 lg:col-span-1">
-            {bucketPanel(
-              "Knowledge Gaps",
-              BookOpen,
-              counts.knowledge_gaps ? `${counts.knowledge_gaps} to capture` : "Up to date",
-              <WidgetBoundary label="Knowledge Gaps">
-                <KnowledgeGaps
-                  items={data?.knowledge_gaps || []}
-                  onPromoted={fetchData}
-                  onDiscard={removeGap}
-                />
-              </WidgetBoundary>,
-              OPS_TRIAGE_ACCENTS.knowledgeGaps,
-            )}
-          </div>
-        </div>
+        {allClearBanner}
+        {triageGrid}
       </PageShell>
     </ClientRouteViewport>
   );
+}
+
+export default function TriageInbox() {
+  return <TriagePanel />;
 }
 
 /* ────────────────────────  Hot leads  ─────────────────────────── */
@@ -427,7 +458,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
             </div>
 
             <div className="min-w-0 flex-1 relative z-10 pointer-events-none text-left">
-              <span className="font-display italic text-base text-ink leading-tight block truncate group-hover:text-brand transition-colors font-normal">
+              <span className="text-sm font-semibold text-ink leading-tight block truncate group-hover:text-brand transition-colors">
                 {c.customer_number || "Unknown caller"}
               </span>
               {c.summary && (
@@ -444,12 +475,12 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   </Tooltip>
                 </TooltipProvider>
               )}
-              <div className="flex items-center gap-2 mt-1.5 text-[10px] uppercase tracking-[0.26em] text-muted/70">
+              <div className="flex items-center gap-2 mt-1.5 wl-label text-muted/70">
                 <span>{formatDate(c.created_at)}</span>
                 <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                 <Badge
                   variant="secondary"
-                  className="text-[10px] uppercase tracking-[0.26em] text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
+                  className="wl-label text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
                 >
                   {c.intent_label} intent
                 </Badge>
@@ -537,14 +568,14 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
                 {t.priority === "high" && (
                   <Badge
                     variant="destructive"
-                    className="text-[10px] font-bold uppercase tracking-widest animate-pulse leading-none py-0.5 px-1.5 rounded"
+                    className="wl-label font-bold animate-pulse leading-none py-0.5 px-1.5 rounded"
                   >
                     URGENT
                   </Badge>
                 )}
               </div>
               <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+              <div className="wl-label text-muted mt-1.5 flex items-center gap-2">
                 <span>{formatDateTime(t.created_at)}</span>
               </div>
             </div>
@@ -640,9 +671,7 @@ const KnowledgeGapRow: React.FC<{
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
-            <div className="text-[10px] uppercase tracking-[0.28em] text-brand mb-0.5">
-              Captured gap
-            </div>
+            <div className="wl-label text-brand mb-0.5">Captured gap</div>
             {editing ? (
               <textarea
                 value={content}
@@ -653,7 +682,7 @@ const KnowledgeGapRow: React.FC<{
             ) : (
               <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
             )}
-            <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5">
+            <div className="wl-label text-muted mt-1.5">
               Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
               {formatDate(gap.created_at)}
             </div>
@@ -692,7 +721,7 @@ const KnowledgeGapRow: React.FC<{
               size="sm"
               onClick={promote}
               disabled={busy || discarding}
-              className="h-7 rounded-md bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 text-[10px] uppercase tracking-[0.28em] font-normal transition-all flex items-center gap-1"
+              className="h-7 rounded-md bg-brand/20 hover:bg-brand/35 border border-brand/40 text-brand px-3 wl-label font-normal transition-all flex items-center gap-1"
             >
               {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               Promote
@@ -799,7 +828,7 @@ const OpenTaskRow: React.FC<{
                     : "outline"
               }
               className={cn(
-                "text-[10px] uppercase tracking-[0.28em] font-normal px-2 py-0.5 rounded leading-none",
+                "wl-label font-normal px-2 py-0.5 rounded leading-none",
                 task.priority === "high" &&
                   "bg-destructive/12 text-destructive border-destructive/30 hover:bg-destructive/18",
                 task.priority === "medium" &&
@@ -812,7 +841,7 @@ const OpenTaskRow: React.FC<{
             </Badge>
           </div>
           <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
-          <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+          <div className="wl-label text-muted mt-1.5 flex items-center gap-2">
             <span>{task.target_channel || "manual"}</span>
             <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
             <span>{formatDateTime(task.created_at)}</span>
@@ -842,11 +871,11 @@ function Escalations({ items }: { items: EscalationCall[] }) {
 
             <AlertOctagon className="w-4 h-4 text-destructive shrink-0 mt-0.5 relative z-10 pointer-events-none" />
             <div className="flex-1 min-w-0 relative z-10 pointer-events-none text-left">
-              <span className="font-display italic text-base text-ink block truncate group-hover:text-brand transition-colors">
+              <span className="text-sm font-semibold text-ink block truncate group-hover:text-brand transition-colors">
                 {c.customer_number || "Unknown caller"}
               </span>
               <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted mt-1.5 flex items-center gap-2">
+              <div className="wl-label text-muted mt-1.5 flex items-center gap-2">
                 <span>{formatDateTime(c.created_at)}</span>
                 {c.lead_score !== null && c.lead_score !== undefined && (
                   <>

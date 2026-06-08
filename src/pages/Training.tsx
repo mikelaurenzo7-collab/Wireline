@@ -129,7 +129,7 @@ export default function Training() {
           <p
             className={cn(
               "truncate leading-tight",
-              compact ? "text-[12px] font-medium" : "font-display italic text-base text-ink",
+              compact ? "text-[12px] font-medium" : "text-base font-semibold text-ink",
               selected && !compact && "text-ink",
             )}
           >

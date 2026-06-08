@@ -1,6 +1,5 @@
 import {
   MessagesSquare,
-  Inbox,
   BarChart3,
   LayoutGrid,
   Kanban,
@@ -63,7 +62,7 @@ const WORKSPACE_NAV: NavItem[] = [
     path: "/ops",
     icon: LayoutGrid,
     dataTour: "dashboard",
-    matches: ["/dashboard", "/command", "/live", "/cockpit"],
+    matches: ["/dashboard", "/command", "/live", "/cockpit", "/triage"],
   },
   {
     label: "Chat",
@@ -79,7 +78,6 @@ const WORKSPACE_NAV: NavItem[] = [
     dataTour: "training",
     matches: ["/knowledge"],
   },
-  { label: "Triage", path: "/triage", icon: Inbox },
   { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
 ];
 
@@ -158,7 +156,6 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 
 export const PAGE_TITLES: Record<string, string> = {
   "/ops": "Live Ops",
-  "/triage": "Triage",
   "/appointments": "Appointments",
   "/logs": "Call Logs",
   "/phone": "Phone",
@@ -186,7 +183,7 @@ export const PAGE_TITLES: Record<string, string> = {
 /** g+key shortcuts — keep in sync with AppShell and Sidebar hints. */
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   D: "/ops",
-  T: "/triage",
+  T: "/ops?tab=triage",
   I: "/insights",
   A: "/agents",
   R: "/chat",
@@ -199,7 +196,6 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/ops": "g d",
-  "/triage": "g t",
   "/insights": "g i",
   "/agents": "g a",
   "/chat": "g r",
@@ -222,6 +218,7 @@ export function getRouteAccentFromLocation(pathname: string, search = ""): Brand
   if (pathname === "/ops") {
     const tab = params.get("tab");
     if (tab === "intel") return ROUTE_ACCENT_VARIANTS.cream;
+    if (tab === "triage") return ROUTE_ACCENT_VARIANTS.warm;
     if (tab === "analytics") return ROUTE_ACCENT_VARIANTS.light;
     return ROUTE_ACCENTS["/ops"];
   }

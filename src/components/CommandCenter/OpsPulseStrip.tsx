@@ -2,11 +2,15 @@ import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { WL_OPS_CLASSES, OPS_PULSE_METRICS } from "../../lib/wireline-ops-design";
 
+type OpsTabId = "floor" | "intel" | "triage" | "analytics";
+
 type OpsPulseStripProps = {
   liveCalls: number;
   pendingActions: number;
   fleetAgents: number;
   escalations: number;
+  activeTab?: OpsTabId;
+  onMetricNavigate?: (tab: Exclude<OpsTabId, "analytics">) => void;
   /** Core ops metrics (live calls, actions, escalations) */
   loading?: boolean;
   /** Fleet roster count — can load after presence without blocking other metrics */
@@ -19,16 +23,22 @@ function PulseMetric({
   mono,
   alert,
   loading,
+  active,
+  onClick,
+  ariaLabel,
 }: {
   label: string;
   value: number;
   mono?: boolean;
   alert?: boolean;
   loading?: boolean;
+  active?: boolean;
+  onClick?: () => void;
+  ariaLabel?: string;
 }) {
   const display = loading ? "…" : String(value);
-  return (
-    <div className={WL_OPS_CLASSES.metric}>
+  const body = (
+    <>
       <span className={WL_OPS_CLASSES.metricLabel}>{label}</span>
       <motion.span
         key={loading ? "loading" : value}
@@ -45,8 +55,25 @@ function PulseMetric({
       >
         {display}
       </motion.span>
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={cn(WL_OPS_CLASSES.metricInteractive, "touch-press motion-snappy")}
+        data-active={active ? "true" : undefined}
+        onClick={onClick}
+        aria-label={ariaLabel ?? `${label}: ${display}`}
+        aria-current={active ? "true" : undefined}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return <div className={WL_OPS_CLASSES.metric}>{body}</div>;
 }
 
 export function OpsPulseStrip({
@@ -54,10 +81,14 @@ export function OpsPulseStrip({
   pendingActions,
   fleetAgents,
   escalations,
+  activeTab,
+  onMetricNavigate,
   loading,
   fleetLoading,
 }: OpsPulseStripProps) {
   const fleetBusy = fleetLoading ?? loading;
+  const nav = onMetricNavigate;
+
   return (
     <div
       className={WL_OPS_CLASSES.pulseStrip}
@@ -66,12 +97,31 @@ export function OpsPulseStrip({
       aria-busy={loading || fleetBusy}
       aria-label="Live Ops fleet pulse"
     >
-      <PulseMetric label={OPS_PULSE_METRICS.live.label} value={liveCalls} mono loading={loading} />
+      <PulseMetric
+        label={OPS_PULSE_METRICS.live.label}
+        value={liveCalls}
+        mono
+        loading={loading}
+        active={activeTab === "floor"}
+        onClick={nav ? () => nav("floor") : undefined}
+        ariaLabel={
+          nav
+            ? `${liveCalls} live caller${liveCalls === 1 ? "" : "s"} — open live floor`
+            : undefined
+        }
+      />
       <PulseMetric
         label={OPS_PULSE_METRICS.pending.label}
         value={pendingActions}
         mono
         loading={loading}
+        active={activeTab === "intel"}
+        onClick={nav ? () => nav("intel") : undefined}
+        ariaLabel={
+          nav
+            ? `${pendingActions} pending action${pendingActions === 1 ? "" : "s"} — open action queue`
+            : undefined
+        }
       />
       <PulseMetric
         label={OPS_PULSE_METRICS.fleet.label}
@@ -85,6 +135,13 @@ export function OpsPulseStrip({
         mono
         alert
         loading={loading}
+        active={activeTab === "triage"}
+        onClick={nav ? () => nav("triage") : undefined}
+        ariaLabel={
+          nav
+            ? `${escalations} live escalation${escalations === 1 ? "" : "s"} — open triage queue`
+            : undefined
+        }
       />
     </div>
   );

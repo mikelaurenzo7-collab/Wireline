@@ -4648,6 +4648,46 @@ html, body, .marketing-surface, .app-surface {
   border-color: rgba(155, 92, 224, 0.14);
 }
 
+button.wl-ops-metric--interactive {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+button.wl-ops-metric--interactive:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f0e6));
+}
+button.wl-ops-metric--interactive:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
+  outline-offset: 2px;
+}
+button.wl-ops-metric--interactive[data-active="true"] {
+  border-color: color-mix(in srgb, var(--color-brand) 32%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--paper, #f5f0e6));
+  box-shadow: 0 1px 0 color-mix(in srgb, white 65%, transparent) inset;
+}
+.dark button.wl-ops-metric--interactive:hover {
+  background: rgba(155, 92, 224, 0.1);
+}
+.dark button.wl-ops-metric--interactive[data-active="true"] {
+  background: rgba(155, 92, 224, 0.14);
+  border-color: rgba(155, 92, 224, 0.35);
+}
+
+.wl-ops-triage-grid {
+  min-height: min(100%, 28rem);
+}
+@media (min-width: 1024px) {
+  .wl-ops-triage-grid {
+    min-height: 0;
+    height: 100%;
+  }
+}
+
 .wl-ops-metric-label {
   display: block;
   font-size: 0.5625rem;

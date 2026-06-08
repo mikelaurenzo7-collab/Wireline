@@ -15,7 +15,6 @@ describe("Top-bar navigation IA", () => {
       "/ops",
       "/chat",
       "/training",
-      "/triage",
       "/insights",
       "/phone",
       "/email",
@@ -28,7 +27,6 @@ describe("Top-bar navigation IA", () => {
       "Workspace",
       "Workspace",
       "Workspace",
-      "Workspace",
       "Channels",
       "Channels",
       "Channels",
@@ -37,15 +35,9 @@ describe("Top-bar navigation IA", () => {
     ]);
   });
 
-  it("Workspace group: Live Ops first, then Chat, Training, Triage, Insights", () => {
+  it("Workspace group: Live Ops first, then Chat, Training, Insights (Triage is an Ops tab)", () => {
     const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual([
-      "/ops",
-      "/chat",
-      "/training",
-      "/triage",
-      "/insights",
-    ]);
+    expect(ws.items.map((i) => i.path)).toEqual(["/ops", "/chat", "/training", "/insights"]);
   });
 
   it("Channels group has Phone, Email, SMS", () => {
@@ -65,11 +57,16 @@ describe("Top-bar navigation IA", () => {
     expect(paths).not.toContain("/activity");
   });
 
-  it("Live Ops matches legacy dashboard and cockpit routes", () => {
+  it("Live Ops matches legacy dashboard, cockpit, and triage routes", () => {
     const ops = SIDEBAR_NAV_ITEMS.find((i) => i.path === "/ops")!;
     expect(ops.matches).toEqual(
-      expect.arrayContaining(["/dashboard", "/command", "/live", "/cockpit"]),
+      expect.arrayContaining(["/dashboard", "/command", "/live", "/cockpit", "/triage"]),
     );
+  });
+
+  it("Triage is not a separate sidebar item (merged into Live Ops)", () => {
+    const paths = SIDEBAR_NAV_ITEMS.map((i) => i.path);
+    expect(paths).not.toContain("/triage");
   });
 
   it("Training matches legacy /knowledge route", () => {
@@ -84,6 +81,7 @@ describe("Top-bar navigation IA", () => {
 
   it("keyboard shortcuts align with primary nav paths", () => {
     expect(APP_KEYBOARD_SHORTCUTS.D).toBe("/ops");
+    expect(APP_KEYBOARD_SHORTCUTS.T).toBe("/ops?tab=triage");
     expect(APP_KEYBOARD_SHORTCUTS.N).toBe("/training");
     expect(APP_KEYBOARD_SHORTCUTS.P).toBe("/phone");
   });
