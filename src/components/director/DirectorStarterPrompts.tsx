@@ -63,7 +63,7 @@ export function DirectorStarterPrompts({
           disableAnimations
           aria-expanded={expanded}
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2.5 h-auto gap-1.5 px-2 py-1.5 wl-label text-muted-foreground hover:text-brand"
+          className="mt-2.5 h-auto gap-1.5 px-2 py-1.5 wl-label text-muted-foreground hover:text-brand touch-press hover:scale-[1.02]"
         >
           {expanded ? DIRECTOR_EMPTY_HERO.fewerPromptsLabel : DIRECTOR_EMPTY_HERO.morePromptsLabel}
           <span className="font-mono tabular-nums text-muted-foreground/70">({rest.length})</span>

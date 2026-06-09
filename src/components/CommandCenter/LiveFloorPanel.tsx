@@ -346,7 +346,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               size="sm"
                               disableAnimations
                               onClick={stopListening}
-                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label border-brand/30 text-brand hover:bg-brand/10"
+                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label border-brand/30 text-brand hover:bg-brand/10 hover:scale-[1.02]"
                             >
                               <Radio className="w-3.5 h-3.5" />
                               Stop
@@ -358,7 +358,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               size="sm"
                               disableAnimations
                               onClick={() => startListening(call.id)}
-                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5"
+                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5 hover:scale-[1.02]"
                             >
                               <Headphones className="w-3.5 h-3.5" />
                               Listen
@@ -371,7 +371,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               size="sm"
                               disableAnimations
                               onClick={stopWhispering}
-                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label border-brand/30 text-brand hover:bg-brand/10"
+                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label border-brand/30 text-brand hover:bg-brand/10 hover:scale-[1.02]"
                             >
                               Close coach
                             </ShadButton>
@@ -382,7 +382,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               size="sm"
                               disableAnimations
                               onClick={() => startWhispering(call.id)}
-                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5"
+                              className="touch-press min-h-[36px] sm:min-h-[40px] rounded-md wl-label transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5 hover:scale-[1.02]"
                             >
                               <Activity className="w-3.5 h-3.5" />
                               Coach

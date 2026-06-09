@@ -266,7 +266,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             variant="ghost"
             disableAnimations
             onClick={() => signOut()}
-            className="w-full group h-8 justify-start gap-2 px-2 rounded-md text-white/60 hover:text-rose-300 hover:bg-rose-500/15 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8"
+            className="w-full group h-8 justify-start gap-2 px-2 rounded-md text-white/60 hover:text-rose-300 hover:bg-rose-500/15 dark:text-white/50 dark:hover:text-white/90 dark:hover:bg-white/8 touch-press hover:scale-[1.02]"
             aria-label="Sign out"
           >
             <LogOut className="w-4 h-4 shrink-0" strokeWidth={1.75} />
@@ -278,7 +278,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             variant="ghost"
             disableAnimations
             onClick={() => setUserOverride(!expanded)}
-            className="w-full h-7 mt-0.5 justify-center gap-2 px-2 rounded-md text-white/40 hover:text-white/80 hover:bg-white/[0.08] dark:text-white/30 dark:hover:text-white/70 dark:hover:bg-white/6"
+            className="w-full h-7 mt-0.5 justify-center gap-2 px-2 rounded-md text-white/40 hover:text-white/80 hover:bg-white/[0.08] dark:text-white/30 dark:hover:text-white/70 dark:hover:bg-white/6 touch-press hover:scale-[1.05]"
             aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
             aria-pressed={expanded}
           >
@@ -317,7 +317,7 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
       aria-label={expanded ? undefined : item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "touch-press group relative flex items-center gap-2 h-8 px-2 rounded-md transition-all duration-150",
+        "touch-press hover:scale-[1.02] group relative flex items-center gap-2 h-8 px-2 rounded-md transition-all duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
         active
           ? cn(
@@ -463,7 +463,7 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
       {...(dataTour ? { "data-tour": dataTour } : {})}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "touch-press group relative h-8 flex items-center gap-2 px-2 rounded-md transition-all",
+        "touch-press hover:scale-[1.02] group relative h-8 flex items-center gap-2 px-2 rounded-md transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
         active
           ? cn(
