@@ -11,6 +11,7 @@ import ClientToolbar from "./layout/ClientToolbar";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
+import { formatDate } from "../lib/safe-date";
 import { useToast } from "../contexts/ToastContext";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
@@ -92,20 +93,22 @@ export default function Pipeline() {
   const [board, setBoard] = useState<Record<Stage, Lead[]>>({} as any);
   const [counts, setCounts] = useState<Record<Stage, number>>({} as any);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<Stage | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadErr(null);
     try {
       const r = await authFetch("/api/pipeline");
-      if (r.ok) {
-        const d = await r.json();
-        setBoard(d.board || {});
-        setCounts(d.counts || {});
-      }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      setBoard(d.board || {});
+      setCounts(d.counts || {});
     } catch (e) {
       logFetchError("Failed to load pipeline", e);
+      setLoadErr(e instanceof Error ? e.message : "Could not load pipeline");
     } finally {
       setLoading(false);
     }
@@ -118,6 +121,35 @@ export default function Pipeline() {
   const moveLead = useCallback(
     async (leadId: string | number, target: Stage) => {
       const idStr = String(leadId);
+      // Optimistic move: relocate the card instantly so drag-and-drop feels
+      // native, then confirm with the API. Rolled back on failure.
+      const prevBoard = board;
+      const prevCounts = counts;
+      let moved: Lead | undefined;
+      let source: Stage | null = null;
+      const nextBoard = {} as Record<Stage, Lead[]>;
+      for (const stage of Object.keys(board) as Stage[]) {
+        const hit = (board[stage] || []).find((l) => String(l.id) === idStr);
+        if (hit) {
+          moved = hit;
+          source = stage;
+          nextBoard[stage] = board[stage].filter((l) => String(l.id) !== idStr);
+        } else {
+          nextBoard[stage] = board[stage];
+        }
+      }
+      if (!moved || !source || source === target) {
+        setDraggingId(null);
+        setDragOverStage(null);
+        return;
+      }
+      nextBoard[target] = [{ ...moved, pipelineStage: target }, ...(nextBoard[target] || [])];
+      setBoard(nextBoard);
+      setCounts({
+        ...counts,
+        [source]: Math.max(0, (counts[source] || 1) - 1),
+        [target]: (counts[target] || 0) + 1,
+      });
       try {
         const r = await authFetch(`/api/pipeline/lead/${idStr}`, {
           method: "PATCH",
@@ -126,15 +158,16 @@ export default function Pipeline() {
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         toastSuccess("Lead moved", `Pipeline stage set to ${target}.`);
-        load();
       } catch (e: any) {
+        setBoard(prevBoard);
+        setCounts(prevCounts);
         toastError("Move failed", e?.message || "Try again.");
       } finally {
         setDraggingId(null);
         setDragOverStage(null);
       }
     },
-    [load, toastSuccess, toastError],
+    [board, counts, toastSuccess, toastError],
   );
 
   const totalLeads = Object.values(counts).reduce((s, n) => s + (n || 0), 0);
@@ -186,7 +219,20 @@ export default function Pipeline() {
         />
       ) : (
         <PageShell title="" eyebrow="" subtitle="" bodyClassName="flex flex-col min-h-0 min-w-0">
-          {totalLeads === 0 && !loading && (
+          {totalLeads === 0 && !loading && loadErr && (
+            <EmptyState
+              icon={Kanban}
+              eyebrow="Pipeline unavailable"
+              title="Couldn't load your pipeline"
+              description={loadErr}
+              actions={[{ label: "Retry", onClick: load, primary: true }]}
+              density="compact"
+              withHalo={false}
+              fill
+              className="py-10"
+            />
+          )}
+          {totalLeads === 0 && !loading && !loadErr && (
             <EmptyState
               icon={Kanban}
               eyebrow={OPS_CHANNEL_EMPTY.pipeline.eyebrow}
@@ -344,6 +390,9 @@ export default function Pipeline() {
                                     <span className="wl-micro-meta">
                                       {lead.attempts ?? 0} attempt
                                       {(lead.attempts ?? 0) === 1 ? "" : "s"}
+                                      {lead.lastCalledAt && (
+                                        <> · last {formatDate(lead.lastCalledAt)}</>
+                                      )}
                                     </span>
                                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
                                       {STAGES.filter((s) => s.id !== stage.id)

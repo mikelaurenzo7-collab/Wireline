@@ -1,13 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MessageSquare, Send, Loader2, RefreshCw, Inbox, Phone, ArrowLeft } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  Loader2,
+  RefreshCw,
+  Inbox,
+  Phone,
+  ArrowLeft,
+  Search,
+  Copy,
+  Check,
+} from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDate } from "../lib/safe-date";
 import PageShell, { Panel } from "./PageShell";
 import ClientToolbar from "./layout/ClientToolbar";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
+import { PanelSkeleton } from "./Skeleton";
 import {
   ChannelInboxGrid,
   ChannelInboxListPane,
@@ -58,6 +70,9 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<SmsMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchErr, setFetchErr] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [copied, setCopied] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
@@ -73,9 +88,11 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   }, []);
 
   const fetchThreads = async () => {
+    setFetchErr(null);
     try {
       const r = await authFetch("/api/sms/threads");
       const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       if (mountedRef.current) {
         const rows = (d.threads || []) as Record<string, unknown>[];
         setThreads(
@@ -91,7 +108,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         );
       }
     } catch (e: any) {
-      if (mountedRef.current) toastError("Failed to load SMS inbox", e?.message);
+      if (mountedRef.current) {
+        setFetchErr(e?.message || "Could not load SMS threads");
+        toastError("Failed to load SMS inbox", e?.message);
+      }
     } finally {
       if (mountedRef.current) setLoading(false);
     }
@@ -135,8 +155,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   }, [loading, threads]);
 
   useEffect(() => {
+    // Clear immediately so the previous thread's bubbles never render under
+    // the new thread's header while messages are in flight.
+    setMessages([]);
     if (activeId) fetchMessages(activeId);
-    else setMessages([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally re-keyed on active thread id
   }, [activeId]);
 
@@ -152,20 +174,34 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
 
   const handleSend = async () => {
     if (!activeId || !reply.trim() || sending) return;
+    const threadId = activeId;
+    const body = reply.trim();
+    // Optimistic insert: show the outbound bubble immediately, then confirm
+    // with a refetch. Rolled back (and the draft restored) if the send fails.
+    const optimistic: SmsMessage = {
+      id: `optimistic-${Date.now()}`,
+      direction: "out",
+      body,
+      created_at: new Date().toISOString(),
+      twilio_sid: null,
+    };
     setSending(true);
+    setReply("");
+    setMessages((prev) => [...prev, optimistic]);
     try {
-      const r = await authFetch(`/api/sms/threads/${activeId}/reply`, {
+      const r = await authFetch(`/api/sms/threads/${threadId}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: reply.trim() }),
+        body: JSON.stringify({ body }),
       });
       const d = await r.json();
       if (!d.ok) throw new Error(d.reason || "Send failed");
-      setReply("");
       success("SMS sent", "Message delivered to customer.");
-      await fetchMessages(activeId);
+      await fetchMessages(threadId);
       await fetchThreads();
     } catch (e: any) {
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+      setReply(body);
       toastError("SMS send failed", e?.message || "Try again.");
     } finally {
       setSending(false);
@@ -173,6 +209,24 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   };
 
   const activeThread = threads.find((t) => t.id === activeId);
+  const query = search.trim().toLowerCase();
+  const visibleThreads = query
+    ? threads.filter(
+        (t) =>
+          t.customer_number.toLowerCase().includes(query) ||
+          (t.summary || "").toLowerCase().includes(query),
+      )
+    : threads;
+
+  const copyNumber = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      toastError("Copy failed", "Clipboard is unavailable in this browser.");
+    }
+  };
 
   const refreshAction = (
     <ShadButton
@@ -205,11 +259,37 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
         <Panel title="Inbox" hint="SMS · THREADS & REPLIES" icon={Inbox} flush className="h-full">
           <ChannelInboxGrid>
             <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
+              {!loading && !fetchErr && threads.length > 0 && (
+                <div className="sticky top-0 z-10 px-1 pb-2 bg-gradient-to-b from-paper/95 to-paper/60 backdrop-blur-sm">
+                  <div className="relative">
+                    <Search
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/35 pointer-events-none"
+                      aria-hidden
+                    />
+                    <Input
+                      type="search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search number or summary…"
+                      aria-label="Search SMS threads"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-black/10 rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all"
+                    />
+                  </div>
+                </div>
+              )}
               {loading ? (
-                <ClientRouteLoading
-                  icon={<MessageSquare className="w-5 h-5" />}
-                  label={OPS_CHANNEL_TOOLBAR.sms.loading}
-                  className="py-8"
+                <PanelSkeleton rows={6} />
+              ) : fetchErr ? (
+                <EmptyState
+                  icon={MessageSquare}
+                  eyebrow="Inbox unavailable"
+                  title="Couldn't load threads"
+                  description={fetchErr}
+                  actions={[{ label: "Retry", onClick: fetchThreads, primary: true }]}
+                  density="compact"
+                  withHalo={false}
+                  fill
+                  className="py-10"
                 />
               ) : threads.length === 0 ? (
                 <EmptyState
@@ -223,10 +303,22 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   fill
                   className="py-10"
                 />
+              ) : visibleThreads.length === 0 ? (
+                <EmptyState
+                  icon={Search}
+                  eyebrow="No matches"
+                  title="No threads match your search"
+                  description={`Nothing matched “${search.trim()}”. Try a different number or keyword.`}
+                  actions={[{ label: "Clear search", onClick: () => setSearch("") }]}
+                  density="compact"
+                  withHalo={false}
+                  fill
+                  className="py-10"
+                />
               ) : (
                 <div className="space-y-1.5">
                   <AnimatePresence>
-                    {threads.map((t) => (
+                    {visibleThreads.map((t) => (
                       <motion.button
                         key={t.id}
                         type="button"
@@ -291,12 +383,31 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   className="py-12"
                 />
               ) : (
-                <motion.div layoutId={`sms-thread-${activeThread.id}`} className="h-full flex flex-col min-h-0 p-3 bg-gradient-to-br from-white/40 to-transparent">
+                <motion.div
+                  layoutId={`sms-thread-${activeThread.id}`}
+                  className="h-full flex flex-col min-h-0 p-3 bg-gradient-to-br from-white/40 to-transparent"
+                >
                   <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
                     <span className="font-mono text-sm text-ink truncate">
                       {activeThread.customer_number}
                     </span>
+                    <ShadButton
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disableAnimations
+                      onClick={() => copyNumber(activeThread.customer_number)}
+                      aria-label={copied ? "Number copied" : "Copy customer number"}
+                      title="Copy number"
+                      className="shrink-0 h-7 w-7 rounded-md text-muted hover:text-brand"
+                    >
+                      {copied ? (
+                        <Check className="w-3.5 h-3.5 text-brand" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </ShadButton>
                     <span className="text-eyebrow opacity-70 ml-auto">Two-way</span>
                   </div>
                   <ShadButton
@@ -311,10 +422,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     <ArrowLeft className="w-2.5 h-2.5" /> Back
                   </ShadButton>
                   <div className="flex-1 min-h-0 scroll-viewport space-y-2 pb-3">
-                    {messagesLoading ? (
-                      <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted" />
-                      </div>
+                    {messagesLoading && messages.length === 0 ? (
+                      <PanelSkeleton rows={4} />
                     ) : (
                       messages.map((m) => (
                         <div

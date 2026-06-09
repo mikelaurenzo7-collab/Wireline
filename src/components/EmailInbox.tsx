@@ -12,6 +12,7 @@ import {
   Phone,
   Terminal,
   Zap,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../lib/utils";
@@ -32,6 +33,7 @@ import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR, WL_OPS_CLASSES } from "../lib/w
 import { useToast } from "../contexts/ToastContext";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Input } from "./ui/shadcn/Input";
 import { clientLog, getClientErrorMessage } from "../lib/client-log";
 
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
@@ -39,6 +41,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   const [threads, setThreads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [selectedThread, setSelectedThread] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -345,6 +348,16 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   const showInitialLoad = loading && threads.length === 0;
 
+  const threadQuery = search.trim().toLowerCase();
+  const visibleThreads = threadQuery
+    ? threads.filter(
+        (thread) =>
+          (thread.customer_email || "").toLowerCase().includes(threadQuery) ||
+          (thread.subject || "").toLowerCase().includes(threadQuery) ||
+          (thread.summary || "").toLowerCase().includes(threadQuery),
+      )
+    : threads;
+
   const inboxBody = (
     <div className="flex-1 min-h-0">
       <PageShell
@@ -359,6 +372,24 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
         <Panel title="Inbox" hint="THREADS & REPLIES" icon={Inbox} flush className="h-full">
           <ChannelInboxGrid>
             <ChannelInboxListPane label="All conversations" detailOpen={!!selectedThread}>
+              {!loading && !fetchErr && threads.length > 0 && (
+                <div className="sticky top-0 z-10 px-3 pt-2 pb-2 bg-gradient-to-b from-paper/95 to-paper/60 backdrop-blur-sm">
+                  <div className="relative">
+                    <Search
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/35 pointer-events-none"
+                      aria-hidden
+                    />
+                    <Input
+                      type="search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search sender, subject or summary…"
+                      aria-label="Search email threads"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-black/10 rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all"
+                    />
+                  </div>
+                </div>
+              )}
               <AnimatePresence mode="sync">
                 {loading ? (
                   <PanelSkeleton rows={6} />
@@ -386,9 +417,21 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     fill
                     className="py-10"
                   />
+                ) : visibleThreads.length === 0 ? (
+                  <EmptyState
+                    icon={Search}
+                    eyebrow="No matches"
+                    title="No threads match your search"
+                    description={`Nothing matched “${search.trim()}”. Try a different sender or keyword.`}
+                    actions={[{ label: "Clear search", onClick: () => setSearch("") }]}
+                    density="compact"
+                    withHalo={false}
+                    fill
+                    className="py-10"
+                  />
                 ) : (
                   <div className="divide-y divide-black/6">
-                    {threads.map((thread) => {
+                    {visibleThreads.map((thread) => {
                       const score = thread.lead_score || 0;
                       const active = selectedThread?.id === thread.id;
                       const scoreTone =
@@ -401,7 +444,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <motion.button
                           type="button"
                           aria-label={`Email thread: ${thread.subject || thread.customer_email}`}
-          layoutId={`email-thread-${thread.id}`}
+                          layoutId={`email-thread-${thread.id}`}
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
                           key={thread.id}
@@ -597,9 +640,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Zap className="w-3 h-3 text-brand" />
-                            <span className="wl-label text-ink/55">
-                              Quick replies
-                            </span>
+                            <span className="wl-label text-ink/55">Quick replies</span>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {isLoadingQuickReplies
@@ -630,9 +671,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       <div className="rounded-md wl-panel focus-within:border-brand/50 focus-within:shadow-[0_0_15px_rgba(var(--brand-rgb),0.1)] transition-all duration-300 overflow-hidden bg-white/50 backdrop-blur-sm">
                         <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/55">
                           <Terminal className="w-3 h-3" />
-                          <span className="wl-label">
-                            Compose reply
-                          </span>
+                          <span className="wl-label">Compose reply</span>
                         </div>
                         <textarea
                           value={replyText}
