@@ -343,7 +343,7 @@ export default function CommandBar() {
             </div>
 
             {/* Search input */}
-            <div className="relative z-10 wl-panel-elevated rounded-t-md px-5 py-4 flex items-center gap-3 border-b border-white/8">
+            <div className="relative z-10 wl-panel-elevated rounded-t-md px-5 py-4 flex items-center gap-3 border-b border-black/8 dark:border-white/8">
               <Search className="w-4 h-4 text-brand/80 shrink-0" />
               <Input
                 autoFocus
@@ -354,7 +354,7 @@ export default function CommandBar() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
               />
-              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md wl-panel border border-white/15 wl-micro-meta uppercase tracking-[0.2em] leading-none shrink-0">
+              <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md wl-panel border border-black/10 dark:border-white/15 wl-micro-meta uppercase tracking-[0.2em] leading-none shrink-0">
                 ESC
               </kbd>
             </div>
@@ -370,9 +370,9 @@ export default function CommandBar() {
                       return (
                         <div key={category} className="mb-1 last:mb-0">
                           <div className="px-5 pt-3 pb-1.5 wl-label text-ink/40 flex items-center gap-2">
-                            <span className="h-px flex-1 bg-white/8" />
+                            <span className="h-px flex-1 bg-black/8 dark:bg-white/8" />
                             {category}
-                            <span className="h-px flex-1 bg-white/8" />
+                            <span className="h-px flex-1 bg-black/8 dark:bg-white/8" />
                           </div>
                           <div className="px-2 space-y-0.5">
                             {catCmds.map((cmd) => {
@@ -389,8 +389,8 @@ export default function CommandBar() {
                                   className={cn(
                                     "group w-full h-auto rounded-md px-3 py-2.5 flex items-center gap-3 text-left justify-start",
                                     isSelected
-                                      ? "bg-white/8 border border-brand/25"
-                                      : "border border-transparent hover:bg-white/5",
+                                      ? "bg-black/[0.04] dark:bg-white/8 border border-brand/25"
+                                      : "border border-transparent hover:bg-black/[0.02] dark:hover:bg-white/5",
                                   )}
                                 >
                                   {/* Icon */}
@@ -399,7 +399,7 @@ export default function CommandBar() {
                                       "w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-all",
                                       isSelected
                                         ? "bg-brand/15 border border-brand/30 text-brand"
-                                        : "wl-panel border border-white/10 text-muted",
+                                        : "wl-panel border border-black/10 dark:border-white/10 text-muted",
                                     )}
                                   >
                                     <cmd.icon className="w-3.5 h-3.5" />
@@ -428,7 +428,7 @@ export default function CommandBar() {
                                           "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border wl-label leading-none transition-all",
                                           isSelected
                                             ? "bg-brand/15 border-brand/30 text-brand"
-                                            : "wl-panel border-white/15 text-ink/40",
+                                            : "wl-panel border-black/15 dark:border-white/15 text-ink/40",
                                         )}
                                       >
                                         {cmd.shortcut}
@@ -463,11 +463,11 @@ export default function CommandBar() {
               </ScrollArea>
 
               {/* Footer */}
-              <div className="shrink-0 px-5 py-2.5 border-t border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
+              <div className="shrink-0 px-5 py-2.5 border-t border-black/8 dark:border-white/8 flex items-center justify-between bg-paper/60 backdrop-blur-sm">
                 <div className="flex items-center gap-3 wl-label text-ink/40">
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1.5 py-0.5 rounded wl-panel border border-white/12 wl-micro-badge font-mono leading-none"
+                      className="px-1.5 py-0.5 rounded wl-panel border border-black/12 dark:border-white/12 wl-micro-badge font-mono leading-none"
                       aria-label="Arrow keys to navigate"
                     >
                       ↑↓
@@ -476,7 +476,7 @@ export default function CommandBar() {
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1.5 py-0.5 rounded wl-panel border border-white/12 wl-micro-badge font-mono leading-none"
+                      className="px-1.5 py-0.5 rounded wl-panel border border-black/12 dark:border-white/12 wl-micro-badge font-mono leading-none"
                       aria-label="Enter key to execute"
                     >
                       ↵
@@ -485,7 +485,7 @@ export default function CommandBar() {
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd
-                      className="px-1.5 py-0.5 rounded wl-panel border border-white/12 wl-micro-badge font-mono leading-none"
+                      className="px-1.5 py-0.5 rounded wl-panel border border-black/12 dark:border-white/12 wl-micro-badge font-mono leading-none"
                       aria-label="Escape key to close"
                     >
                       ESC

@@ -375,13 +375,13 @@ export default function DncManager() {
                   }
                 />
               ) : (
-                <div className="divide-y divide-white/5">
+                <div className="divide-y divide-black/5 dark:divide-white/5">
                   {filtered.map((entry) => (
                     <motion.div
                       key={entry.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-md touch-press hover:scale-[1.02]"
+                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-black/[0.02] dark:hover:bg-white/3 transition-all rounded-md touch-press hover:scale-[1.02]"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
@@ -395,7 +395,7 @@ export default function DncManager() {
                             <span className="wl-micro-meta">
                               {formatDate(entry.created_at)}
                             </span>
-                            <span className="w-1 h-1 rounded-full bg-white/15" />
+                            <span className="w-1 h-1 rounded-full bg-black/15 dark:bg-white/15" />
                             <span className="wl-micro-meta">
                               {reasonLabel(entry.reason)}
                             </span>
@@ -466,8 +466,8 @@ export default function DncManager() {
 
         {/* Add number modal */}
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogContent className="sm:max-w-md border border-white/10 shadow-2xl p-6 wl-modal-surface rounded-md">
-            <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-white/5">
+          <DialogContent className="sm:max-w-md border border-black/10 dark:border-white/10 shadow-2xl p-6 wl-modal-surface rounded-md">
+            <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-black/5 dark:border-white/5">
               <div className="w-9 h-9 rounded-md bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
                 <Shield className="w-4.5 h-4.5 text-rose-500" />
               </div>
@@ -496,7 +496,7 @@ export default function DncManager() {
                     value={addPhone}
                     onChange={(e) => setAddPhone(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                    className="pl-9 bg-black/10 border-white/10 text-sm text-ink placeholder:text-ink/40 focus-visible:ring-rose-500/50"
+                    className="pl-9 bg-black/10 border-input text-sm text-ink placeholder:text-ink/40 focus-visible:ring-rose-500/50"
                   />
                 </div>
               </div>
@@ -536,7 +536,7 @@ export default function DncManager() {
               <ShadButton
                 variant="outline"
                 onClick={() => setShowAdd(false)}
-                className="flex-1 rounded-md h-10 border-white/10 hover:bg-white/5 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink"
+                className="flex-1 rounded-md h-10 border-black/10 hover:bg-black/[0.04] dark:border-white/10 dark:hover:bg-white/5 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink"
               >
                 Cancel
               </ShadButton>

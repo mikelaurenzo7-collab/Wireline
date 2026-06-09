@@ -8,6 +8,9 @@ interface KeyboardShortcutsProps {
   onClose: () => void;
 }
 
+const IS_APPLE = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+const CMD_KEY = IS_APPLE ? "⌘" : "Ctrl";
+
 const SHORTCUTS = [
   {
     category: "Navigation",
@@ -27,7 +30,7 @@ const SHORTCUTS = [
   {
     category: "Actions",
     items: [
-      { keys: ["⌘", "K"], description: "Open command bar" },
+      { keys: [CMD_KEY, "K"], description: "Open command bar" },
       { keys: ["?"], description: "Show keyboard shortcuts" },
       { keys: ["Esc"], description: "Close modal / panel" },
     ],
@@ -35,8 +38,8 @@ const SHORTCUTS = [
   {
     category: "Call Logs",
     items: [
-      { keys: ["⌘", "F"], description: "Focus search" },
-      { keys: ["⌘", "E"], description: "Export to CSV" },
+      { keys: [CMD_KEY, "F"], description: "Focus search" },
+      { keys: [CMD_KEY, "E"], description: "Export to CSV" },
     ],
   },
 ];

@@ -66,7 +66,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           ) : (
             <>
               The page may have moved.{" "}
-              <span className="hidden sm:inline">Use ⌘K to jump anywhere, or pick</span>
+              <span className="hidden sm:inline">Use the search bar to jump anywhere, or pick</span>
               <span className="sm:hidden">Pick</span> a starting point below.
             </>
           )}

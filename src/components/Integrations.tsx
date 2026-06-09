@@ -257,7 +257,7 @@ export default function Integrations() {
             className="flex-1 min-h-0"
           />
         ) : (
-          <PageShell title="" eyebrow="" subtitle="" scrollable>
+          <PageShell scrollable>
             <div className="flex flex-col gap-3">
               <CertifiedIntegrationsStrip />
               <Panel

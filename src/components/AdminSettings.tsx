@@ -369,7 +369,7 @@ export default function AdminSettings() {
             </span>
           }
         />
-        <PageShell title="" eyebrow="" subtitle="">
+        <PageShell>
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner
               health={integrationHealth}

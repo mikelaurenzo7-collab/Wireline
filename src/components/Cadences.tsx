@@ -330,7 +330,7 @@ export default function Cadences() {
                       Active
                     </span>
                   ) : (
-                    <span className="wl-label px-1.5 py-0.5 rounded bg-white/5 text-muted border border-white/15">
+                    <span className="wl-label px-1.5 py-0.5 rounded bg-black/[0.04] text-muted border border-black/10">
                       Paused
                     </span>
                   )}
@@ -340,7 +340,7 @@ export default function Cadences() {
                     </span>
                   )}
                 </div>
-                {c.description && <p className="text-[11px] text-ink/40 mb-2">{c.description}</p>}
+                {c.description && <p className="text-[11px] text-muted mb-2">{c.description}</p>}
                 <div className="flex items-center gap-1 flex-wrap">
                   {c.steps.map((s, i) => (
                     <span
@@ -422,7 +422,7 @@ export default function Cadences() {
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
-                  className="w-full px-3 py-2 rounded-md bg-white/5 border border-white/10 text-ink text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-ink text-[12px] focus:outline-none focus:border-brand/50"
                 />
               </div>
               <div>
@@ -433,7 +433,7 @@ export default function Cadences() {
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
-                  className="w-full px-3 py-2 rounded-md bg-white/5 border border-white/10 text-ink text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-ink text-[12px] focus:outline-none focus:border-brand/50"
                 />
               </div>
             </div>
@@ -442,7 +442,7 @@ export default function Cadences() {
               {draftSteps.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2 rounded-md bg-white/3 border border-white/8 p-3"
+                  className="flex items-start gap-2 rounded-md bg-black/[0.02] border border-black/8 p-3"
                 >
                   <span
                     className={cn(
@@ -460,7 +460,7 @@ export default function Cadences() {
                       >
                         <SelectTrigger
                           aria-label="Step type"
-                          className="w-full pl-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px] h-auto"
+                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-ink text-[11px] h-auto"
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -479,7 +479,7 @@ export default function Cadences() {
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
-                        className="w-20 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
+                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-ink text-[11px]"
                       />
                       <span className="wl-micro-meta">hours delay</span>
                     </div>
@@ -492,7 +492,7 @@ export default function Cadences() {
                             ? "Hi {{name}}, ..."
                             : "Subject + body — vars: {{name}}, {{email}}"
                         }
-                        className="px-2 py-1.5 rounded-md bg-white/5 border border-white/10 text-ink text-[11px]"
+                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-ink text-[11px]"
                       />
                     )}
                   </div>
@@ -522,7 +522,7 @@ export default function Cadences() {
               </ShadButton>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/8">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black/8">
               <ShadButton
                 type="button"
                 variant="ghost"

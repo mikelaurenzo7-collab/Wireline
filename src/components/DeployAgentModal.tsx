@@ -253,7 +253,7 @@ export default function DeployAgentModal({
             className="relative z-10 w-full sm:w-[min(540px,calc(100vw-32px))] max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain rounded-t-md sm:rounded-md"
           >
             <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
-              <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-white/8">
+              <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-black/8 dark:border-white/8">
                 <div className="space-y-1.5 min-w-0">
                   <p className="wl-micro-meta">
                     Deploy · {template.category}
@@ -408,7 +408,7 @@ export default function DeployAgentModal({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
+                  <div className="rounded-md border border-black/10 dark:border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
                     Email agent — no voice picker. The agent's writing tone is configured in{" "}
                     <span className="text-ink/80">/agents → Personality</span> after deploy.
                   </div>
@@ -416,7 +416,7 @@ export default function DeployAgentModal({
               </div>
 
               {/* Footer */}
-              <div className="relative z-10 px-7 pb-6 pt-2 flex items-center justify-between gap-3 border-t border-white/8">
+              <div className="relative z-10 px-7 pb-6 pt-2 flex items-center justify-between gap-3 border-t border-black/8 dark:border-white/8">
                 <ShadButton
                   type="button"
                   variant="ghost"
