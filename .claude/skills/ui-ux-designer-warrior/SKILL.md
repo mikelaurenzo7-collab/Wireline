@@ -62,6 +62,12 @@ Wireline uses a dynamic accent system driven by the CSS variable `--wl-accent`. 
 ### 4. Orbital Activity Rings (`.wl-orbit`)
 - Wrap active status items in `.wl-orbit`. When `data-active="true"`, it triggers a premium keyframe animation `orbit-pulse` with an automated pulse border.
 
+### 5. Flawless TypeScript & Code Quality
+- **Type Safety Over Placeholders**: Never introduce TypeScript compilation or linting errors. Ensure all properties on API payloads and UI states are explicitly and safely typed.
+- **Narrowing Invariant**: If TypeScript fails to narrow union types (e.g. `readApiJson` responses or conditional payloads), perform clean typecasts (e.g., `(parsed as { error: string }).error`) rather than falling back to `any`.
+- **Zero Waste**: Remove unused imports, variables, and handler arguments before finalizing work.
+- **Hook Dependencies**: Maintain correct dependency arrays inside all `useCallback`, `useMemo`, and `useEffect` hooks to prevent React rendering cycle leaks.
+
 ---
 
 ## Visual Feedback Loop & E2E Validation 🌐
