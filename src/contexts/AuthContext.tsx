@@ -128,6 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   }, []);
 
+  // Memoized context value to prevent unnecessary re-renders in consumers
+  // when the provider re-renders but these specific values haven't changed.
   const value = useMemo(
     () => ({ user, session, loading, signOut, signIn }),
     [user, session, loading, signOut, signIn]

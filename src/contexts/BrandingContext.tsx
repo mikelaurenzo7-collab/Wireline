@@ -73,10 +73,13 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, [user]);
 
+  // Memoize the callback to maintain a stable reference
   const updateBranding = useCallback((newSettings: Partial<BrandingSettings>) => {
     setBranding((prev) => ({ ...prev, ...newSettings }));
   }, []);
 
+  // Memoized context value to prevent unnecessary re-renders in consumers
+  // when the provider re-renders but these specific values haven't changed.
   const value = useMemo(
     () => ({ branding, updateBranding, isLoading }),
     [branding, updateBranding, isLoading]

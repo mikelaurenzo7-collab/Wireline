@@ -40,10 +40,6 @@ vi.mock("./sentry-events", () => ({
   },
 }));
 
-vi.mock("./webhook-validators", () => ({
-  resolveWebhookDeliveryHostname: vi.fn().mockResolvedValue({ status: "public" }),
-}));
-
 describe("Webhook Delivery & Retry Logic", () => {
   beforeEach(() => {
     vi.clearAllMocks();

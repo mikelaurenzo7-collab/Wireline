@@ -95,6 +95,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [toast],
   );
 
+  // Memoized context value to prevent unnecessary re-renders in consumers
+  // when the provider re-renders but these specific values haven't changed.
   const value = useMemo(
     () => ({ toasts, toast, dismiss, success, error, warning, info }),
     [toasts, toast, dismiss, success, error, warning, info]
