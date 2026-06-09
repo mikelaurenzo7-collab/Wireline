@@ -206,7 +206,7 @@ export default function AgentConfigPanel({
           disableAnimations
           onClick={() => setSelectedAgent(null)}
           aria-label="Back to agent list"
-          className="md:hidden mb-3 h-10 rounded-full wl-label text-ink/80"
+          className="md:hidden mb-3 h-10 rounded-full wl-label text-ink/80 touch-press hover:scale-[1.02]"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Back to fleet
         </ShadButton>
@@ -318,7 +318,7 @@ export default function AgentConfigPanel({
                               applyRoleTemplate(selectedAgent.role || "customer_service")
                             }
                             disabled={isApplyingTemplate}
-                            className="self-start rounded-full wl-label text-ink/80"
+                            className="self-start rounded-full wl-label text-ink/80 touch-press hover:scale-[1.02]"
                           >
                             {isApplyingTemplate ? (
                               <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -386,7 +386,7 @@ export default function AgentConfigPanel({
                                   disableAnimations
                                   onClick={() => fetchAgentPerformance(selectedAgent.id, true)}
                                   title="Refresh stats"
-                                  className="absolute top-2 right-2 w-5 h-5 text-ink/40 hover:text-brand"
+                                  className="absolute top-2 right-2 w-5 h-5 text-ink/40 hover:text-brand touch-press hover:scale-[1.05]"
                                   aria-label="Refresh stats"
                                 >
                                   <RefreshCw className="w-2.5 h-2.5" />
@@ -600,7 +600,7 @@ export default function AgentConfigPanel({
                                     disableAnimations
                                     onClick={() => updateAgentMeta({ personality_vibe: v })}
                                     className={cn(
-                                      "h-auto px-2 py-1.5 rounded-md wl-label font-medium",
+                                      "h-auto px-2 py-1.5 rounded-md wl-label font-medium touch-press hover:scale-[1.02]",
                                       isActive
                                         ? "bg-brand/15 border-brand/40 text-brand"
                                         : "text-muted hover:text-ink hover:border-brand/20",
@@ -706,7 +706,7 @@ export default function AgentConfigPanel({
                             size="sm"
                             disableAnimations
                             asChild
-                            className="shrink-0 rounded-full wl-label"
+                            className="shrink-0 rounded-full wl-label touch-press hover:scale-[1.02]"
                           >
                             <Link
                               to={`/training?agent=${encodeURIComponent(selectedAgent.id)}&tab=flow`}
@@ -751,7 +751,7 @@ export default function AgentConfigPanel({
                                   })
                                 }
                                 className={cn(
-                                  "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10",
+                                  "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10 touch-press",
                                   selectedAgent.email_auto_respond
                                     ? "bg-brand/30 border-brand/50"
                                     : "bg-muted/10 border-border",
@@ -847,7 +847,7 @@ export default function AgentConfigPanel({
                                 void updateAgentMeta({ system_prompt_override: null });
                               }}
                               disabled={usingAutoComposed}
-                              className="shrink-0 rounded-full wl-label text-ink/80"
+                              className="shrink-0 rounded-full wl-label text-ink/80 touch-press hover:scale-[1.02]"
                             >
                               <RefreshCw className="w-2.5 h-2.5" />
                               Use auto-composed prompt
@@ -950,7 +950,7 @@ export default function AgentConfigPanel({
                         size="sm"
                         disableAnimations
                         onClick={() => updatePersonality(agentConfig.personality)}
-                        className="rounded-full wl-label text-brand"
+                        className="rounded-full wl-label text-brand touch-press-deep hover:scale-[1.02] hover:shadow-sm"
                       >
                         <Save className="w-3.5 h-3.5" />
                         Save
@@ -1041,7 +1041,7 @@ export default function AgentConfigPanel({
                                       size="sm"
                                       disableAnimations
                                       onClick={() => setEditingDirective(null)}
-                                      className="rounded-full wl-label text-muted"
+                                      className="rounded-full wl-label text-muted touch-press hover:scale-[1.02]"
                                     >
                                       Cancel
                                     </ShadButton>
@@ -1058,7 +1058,7 @@ export default function AgentConfigPanel({
                                         )
                                       }
                                       disabled={isSavingEntry}
-                                      className="rounded-full wl-label text-brand"
+                                      className="rounded-full wl-label text-brand touch-press hover:scale-[1.02]"
                                     >
                                       {isSavingEntry ? "Saving…" : "Save"}
                                     </ShadButton>
@@ -1083,7 +1083,7 @@ export default function AgentConfigPanel({
                                       }
                                       aria-label="Edit directive"
                                       title="Edit directive"
-                                      className="w-6 h-6 text-muted hover:text-ink"
+                                      className="w-6 h-6 text-muted hover:text-ink touch-press hover:scale-[1.05]"
                                     >
                                       <Pencil className="w-3 h-3" />
                                     </ShadButton>
@@ -1095,7 +1095,7 @@ export default function AgentConfigPanel({
                                       onClick={() => deleteRule("directive", d.id)}
                                       aria-label="Delete directive"
                                       title="Delete directive"
-                                      className="w-6 h-6 text-muted hover:text-destructive"
+                                      className="w-6 h-6 text-muted hover:text-destructive touch-press hover:scale-[1.05]"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </ShadButton>
@@ -1130,7 +1130,7 @@ export default function AgentConfigPanel({
                           onClick={() => saveManualEntry("directive", newDirective)}
                           disabled={!newDirective || isSavingEntry}
                           aria-label="Add directive"
-                          className="w-9 h-9 rounded-full"
+                          className="w-9 h-9 rounded-full touch-press hover:scale-[1.05]"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </ShadButton>
@@ -1185,7 +1185,7 @@ export default function AgentConfigPanel({
                                       size="sm"
                                       disableAnimations
                                       onClick={() => setEditingKnowledge(null)}
-                                      className="rounded-full wl-label text-muted"
+                                      className="rounded-full wl-label text-muted touch-press hover:scale-[1.02]"
                                     >
                                       Cancel
                                     </ShadButton>
@@ -1202,7 +1202,7 @@ export default function AgentConfigPanel({
                                         )
                                       }
                                       disabled={isSavingEntry}
-                                      className="rounded-full wl-label text-brand"
+                                      className="rounded-full wl-label text-brand touch-press hover:scale-[1.02]"
                                     >
                                       {isSavingEntry ? "Saving…" : "Save"}
                                     </ShadButton>
@@ -1227,7 +1227,7 @@ export default function AgentConfigPanel({
                                       }
                                       aria-label="Edit knowledge fact"
                                       title="Edit knowledge fact"
-                                      className="w-6 h-6 text-muted hover:text-ink"
+                                      className="w-6 h-6 text-muted hover:text-ink touch-press hover:scale-[1.05]"
                                     >
                                       <Pencil className="w-3 h-3" />
                                     </ShadButton>
@@ -1239,7 +1239,7 @@ export default function AgentConfigPanel({
                                       onClick={() => deleteRule("knowledge", k.id)}
                                       aria-label="Delete knowledge fact"
                                       title="Delete knowledge fact"
-                                      className="w-6 h-6 text-muted hover:text-brand"
+                                      className="w-6 h-6 text-muted hover:text-brand touch-press hover:scale-[1.05]"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </ShadButton>
@@ -1274,7 +1274,7 @@ export default function AgentConfigPanel({
                           onClick={() => saveManualEntry("knowledge", newKnowledge)}
                           disabled={!newKnowledge || isSavingEntry}
                           aria-label="Add knowledge fact"
-                          className="w-9 h-9 rounded-full text-brand"
+                          className="w-9 h-9 rounded-full text-brand touch-press hover:scale-[1.05]"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </ShadButton>

@@ -37,7 +37,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
                   updateAgentMeta({ channels: next });
                 }}
                 className={cn(
-                  "rounded-full wl-micro-meta font-medium capitalize",
+                  "rounded-full wl-micro-meta font-medium capitalize touch-press hover:scale-[1.02]",
                   active
                     ? "bg-brand/15 border-brand/40 text-brand"
                     : "text-muted hover:border-brand/20",
@@ -71,7 +71,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
                 disableAnimations
                 onClick={() => updateAgentMeta({ autonomy_level: val })}
                 className={cn(
-                  "rounded-full wl-micro-meta font-medium",
+                  "rounded-full wl-micro-meta font-medium touch-press hover:scale-[1.02]",
                   current === val
                     ? "bg-brand/15 border-brand/40 text-brand"
                     : "text-muted hover:border-brand/20",
@@ -120,7 +120,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
                 })
               }
               className={cn(
-                "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10",
+                "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10 touch-press",
                 selectedAgent.auto_zoom_link
                   ? "bg-brand/30 border-brand/50"
                   : "bg-muted/10 border-border",

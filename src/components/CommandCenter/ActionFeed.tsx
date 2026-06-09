@@ -234,7 +234,7 @@ export function ActionFeed({
                                 size="icon"
                                 disableAnimations
                                 onClick={(e) => handleReject(action.id, e)}
-                                className="hit-area-44 min-h-7 w-7 rounded-md text-destructive hover:bg-destructive/10"
+                                className="hit-area-44 min-h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 touch-press hover:scale-[1.02]"
                                 title="Reject"
                               >
                                 <X className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export function ActionFeed({
                                 size="icon"
                                 disableAnimations
                                 onClick={(e) => handleApprove(action.id, e)}
-                                className="hit-area-44 min-h-7 w-7 rounded-md text-brand hover:bg-brand/10"
+                                className="hit-area-44 min-h-7 w-7 rounded-md text-brand hover:bg-brand/10 touch-press hover:scale-[1.02]"
                                 title="Approve"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -407,7 +407,7 @@ export function ActionFeed({
                               disabled={isProcessing}
                               onClick={(e) => handleApprove(action.id, e)}
                               className={clsx(
-                                "hit-area-44 touch-press flex-[2] min-h-9 rounded-md",
+                                "hit-area-44 touch-press-deep flex-[2] min-h-9 rounded-md hover:scale-[1.01] hover:shadow-md hover:shadow-brand/10",
                                 WL_OPS_CLASSES.filterChip,
                               )}
                             >

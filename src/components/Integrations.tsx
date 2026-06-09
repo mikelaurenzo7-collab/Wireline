@@ -434,7 +434,7 @@ export default function Integrations() {
                               <ShadButton
                                 onClick={() => handleDisconnect(acc.id)}
                                 variant="outline"
-                                className="w-8 h-8 rounded-md wl-panel border border-input text-muted hover:text-destructive hover:border-destructive/30 transition-all flex items-center justify-center p-0"
+                                className="w-8 h-8 rounded-md wl-panel border border-input text-muted hover:text-destructive hover:border-destructive/30 transition-all flex items-center justify-center p-0 touch-press hover:scale-[1.05]"
                                 title="Disconnect"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
