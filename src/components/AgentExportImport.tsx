@@ -97,7 +97,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
         disableAnimations
         onClick={handleExport}
         disabled={isExporting}
-        className="h-8 rounded-full border-white/10 px-3 wl-micro-meta hover:border-brand/30 hover:text-brand disabled:opacity-40"
+        className="h-8 rounded-full border-white/10 px-3 wl-micro-meta hover:border-brand/30 hover:text-brand disabled:opacity-40 touch-press hover:scale-[1.05]"
         title="Export agent config as JSON"
       >
         {isExporting ? (
@@ -117,7 +117,7 @@ export default function AgentExportImport({ agentId, agentName }: Props) {
         disableAnimations
         onClick={() => fileRef.current?.click()}
         disabled={isImporting}
-        className="h-8 rounded-full border-white/10 px-3 wl-micro-meta hover:border-brand/30 hover:text-brand disabled:opacity-40"
+        className="h-8 rounded-full border-white/10 px-3 wl-micro-meta hover:border-brand/30 hover:text-brand disabled:opacity-40 touch-press hover:scale-[1.05]"
         title="Import agent config from JSON"
       >
         {isImporting ? (

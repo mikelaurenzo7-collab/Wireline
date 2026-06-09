@@ -317,7 +317,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   }
                   aria-pressed={!closed}
                   className={cn(
-                    "h-7 px-2.5 rounded-full wl-label",
+                    "h-7 px-2.5 rounded-full wl-label touch-press hover:scale-[1.05]",
                     closed
                       ? "border-rose-500/30 text-rose-500 bg-rose-500/8 shadow-none"
                       : "border-brand/30 text-brand bg-brand/8",
@@ -657,7 +657,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             disableAnimations
             onClick={commitDraftVar}
             disabled={!draftVarKey.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]{0,40}$/.test(draftVarKey)}
-            className="h-9 px-3 rounded-md bg-brand/15 border-brand/35 text-brand wl-label hover:bg-brand/25"
+            className="h-9 px-3 rounded-md bg-brand/15 border-brand/35 text-brand wl-label hover:bg-brand/25 touch-press hover:scale-[1.02]"
           >
             <Plus className="w-3 h-3" /> Add
           </ShadButton>
@@ -709,7 +709,7 @@ function PresetButton({ onClick, label }: { onClick: () => void; label: string }
       size="sm"
       disableAnimations
       onClick={onClick}
-      className="h-7 px-2.5 rounded-full wl-label-muted opacity-80"
+      className="h-7 px-2.5 rounded-full wl-label-muted opacity-80 touch-press hover:scale-[1.02]"
     >
       {label}
     </ShadButton>
