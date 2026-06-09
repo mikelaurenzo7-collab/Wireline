@@ -5,9 +5,8 @@ import React, { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { LayoutTemplate, Loader2, Paintbrush, Trash2 } from "lucide-react";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
-import DirectorWorkspace, {
-  type PainterStudioBridge,
-} from "../components/DirectorWorkspace";
+import PainterWorkspace from "../components/PainterWorkspace";
+import type { PainterStudioBridge } from "../components/DirectorWorkspace";
 import DirectorStitchPreviewStudio from "../components/director/DirectorStitchPreviewStudio";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import { ROUTE_ACCENTS } from "../constants/brand-colors";
@@ -130,8 +129,7 @@ export default function Design() {
             )}
             aria-label="Painter chat"
           >
-            <DirectorWorkspace
-              surface="painter"
+            <PainterWorkspace
               initialPrompt={initialPrompt}
               onActiveStitchPreview={handleActiveStitchPreview}
               onPainterStudioBridge={setStudioBridge}

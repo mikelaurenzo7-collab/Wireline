@@ -38,16 +38,11 @@ import {
   Paintbrush,
   CheckCheck,
 } from "lucide-react";
-import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson } from "../lib/api";
+import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson, AUTH_SESSION_EXPIRED_MESSAGE, isAuthHttpStatus } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { AUTH_SESSION_EXPIRED_MESSAGE, isAuthHttpStatus } from "../lib/api";
 import { useBranding } from "../contexts/BrandingContext";
-import {
-  hasConfiguredTenantBranding,
-  stitchBrandingFromSnake,
-} from "../lib/director-stitch-branding";
 import { cn } from "../lib/utils";
 import FleetSetupNudge from "./FleetSetupNudge";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
@@ -89,26 +84,7 @@ import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
-import { DirectorStitchPreviewVariantGrid } from "./director/DirectorStitchPreviewTeaser";
-import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
-import { findLatestStitchPreview, isStitchPreview } from "../lib/director-stitch-preview";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
-import {
-  PAINTER_EMPTY_COPY,
-  PAINTER_LOADING_COPY,
-  PAINTER_STARTER_PROMPTS,
-  PAINTER_STARTER_PROMPTS_FEATURED_COUNT,
-  WIRELINE_PAINTER_UI,
-} from "../lib/wireline-painter-design";
-import {
-  buildStitchPreviewPageUrl,
-  stitchPreviewPageUrlIsValid,
-} from "../lib/director-stitch-preview-route";
-import {
-  hasPendingStitchClarifyInHistory,
-  shouldRouteDirectorMessageToStitch,
-} from "../lib/director-stitch-intent";
-import type { StitchBriefOptions } from "../lib/director-stitch-branding";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
@@ -118,10 +94,9 @@ import {
   DIRECTOR_LOADING_COPY,
   DIRECTOR_COMPOSER_HINTS,
   DIRECTOR_COMPOSER_CONTEXT,
-  LIVE_FEED_LABELS,
   DIRECTOR_SESSION_COPY,
+  LIVE_FEED_LABELS,
   WL_APP_CLASSES,
-  WIRELINE_STITCH_UI,
   WL_DIRECTOR_CLASSES,
   type ComposerAccessoryKind,
 } from "../lib/wireline-director-design";
@@ -276,15 +251,10 @@ function filterMessagesForCoachFocus(
 export default function DirectorWorkspace({
   focusAgentId = null,
   onFocusAgentChange,
-  surface = "director",
   initialPrompt,
-  onActiveStitchPreview,
-  onPainterStudioBridge,
 }: DirectorWorkspaceProps) {
-  const isPainterSurface = surface === "painter";
-  const directorMessagesPath = isPainterSurface
-    ? "/api/director/messages?thread=painter"
-    : "/api/director/messages";
+  const isPainterSurface = false;
+  const directorMessagesPath = "/api/director/messages";
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const reduceMotion = useReducedMotion();
@@ -330,98 +300,13 @@ export default function DirectorWorkspace({
     designStudio: true,
     stitchMedia: true,
   });
-  const [designRendering, setDesignRendering] = useState(false);
-  const [designPrompt, setDesignPrompt] = useState("");
-  const [useStitchAccountBranding, setUseStitchAccountBranding] = useState(true);
-  const [designMode, setDesignMode] = useState(false);
-  const [designProfileConfigured, setDesignProfileConfigured] = useState(false);
-  const stitchBrandingAvailable = hasConfiguredTenantBranding(stitchBrandingFromSnake(branding));
-  const stitchClarifyPending = useMemo(
-    () =>
-      hasPendingStitchClarifyInHistory(
-        messages
-          .filter((m) => m.role === "operator" || m.role === "director")
-          .map((m) => ({ role: m.role, content: m.content })),
-      ),
-    [messages],
-  );
-
-  useEffect(() => {
-    if (!isPainterSurface && stitchClarifyPending && !designMode) {
-      setDesignMode(true);
-    }
-  }, [isPainterSurface, stitchClarifyPending, designMode]);
-
-  useEffect(() => {
-    if (!(isPainterSurface || designMode) || !featureFlags.designStudio) return;
-    let cancelled = false;
-    void authFetch("/api/design/profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { profile?: { configured?: boolean } } | null) => {
-        if (!cancelled && data?.profile) {
-          setDesignProfileConfigured(Boolean(data.profile.configured));
-        }
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [designMode, featureFlags.designStudio, isPainterSurface]);
-
-  const stitchThreadHistory = useMemo(
-    () =>
-      messages
-        .filter((m) => m.role === "operator" || m.role === "director")
-        .map((m) => ({ role: m.role, content: m.content })),
-    [messages],
-  );
-
-  const designModeEffective = isPainterSurface || designMode;
-
-  const buildStitchComposerOptions = useCallback(
-    (trimmed: string): StitchBriefOptions | undefined => {
-      if (!featureFlags.designStudio) return undefined;
-      if (isPainterSurface) {
-        return {
-          designMode: true,
-          useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
-        };
-      }
-      const stitchOptionsProbe: StitchBriefOptions | undefined = designModeEffective
-        ? { designMode: true }
-        : undefined;
-      const route = shouldRouteDirectorMessageToStitch(trimmed, {
-        stitchOptions: stitchOptionsProbe,
-        history: stitchThreadHistory,
-      });
-      if (!route) return undefined;
-      return {
-        ...(designModeEffective || stitchClarifyPending ? { designMode: true } : {}),
-        useAccountBranding: stitchBrandingAvailable && useStitchAccountBranding,
-      };
-    },
-    [
-      isPainterSurface,
-      designModeEffective,
-      featureFlags.designStudio,
-      stitchBrandingAvailable,
-      stitchClarifyPending,
-      stitchThreadHistory,
-      useStitchAccountBranding,
-    ],
-  );
-
-  const shouldUseDesignComposer = useCallback(
-    (trimmed: string) =>
-      isPainterSurface
-        ? featureFlags.designStudio && trimmed.length > 0
-        : featureFlags.designStudio &&
-          shouldRouteDirectorMessageToStitch(trimmed, {
-            stitchOptions: designModeEffective ? { designMode: true } : undefined,
-            history: stitchThreadHistory,
-          }),
-    [isPainterSurface, designModeEffective, featureFlags.designStudio, stitchThreadHistory],
-  );
+  const designModeEffective = false;
+  const buildStitchComposerOptions = () => undefined;
+  const shouldUseDesignComposer = () => false;
+  const designProfileConfigured = false;
+  const useStitchAccountBranding = false;
+  const stitchBrandingAvailable = false;
+  const setDesignProfileConfigured = () => {};
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -715,13 +600,9 @@ export default function DirectorWorkspace({
           timeoutMs: opts?.timeoutMs,
           body: JSON.stringify({
             content: trimmed,
-            ...(isPainterSurface ? { threadKey: "painter" } : {}),
-            ...(focusAgentId && !isPainterSurface ? { focusAgentId } : {}),
+            ...(focusAgentId ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
-            ...(stitchOptions ? { stitchOptions } : {}),
-            ...(!isPainterSurface &&
-            !focusAgentId &&
-            !designModeEffective &&
+            ...(!focusAgentId &&
             chatModelSelection.provider === "wireline" &&
             forceDeep
               ? { forceDeep: true }
@@ -771,11 +652,8 @@ export default function DirectorWorkspace({
       toastError,
       focusAgentId,
       forceDeep,
-      designModeEffective,
       directorMessagesPath,
-      isPainterSurface,
       chatModelSelection,
-      buildStitchComposerOptions,
     ],
   );
   sendNonStreamingRef.current = sendNonStreaming;
@@ -909,7 +787,6 @@ export default function DirectorWorkspace({
   }, [isSending, input, reduceMotion]);
 
   useEffect(() => {
-    if (isPainterSurface) return;
     const prompt = searchParams.get("prompt")?.trim();
     if (!prompt) return;
     setInput(prompt);
@@ -922,7 +799,7 @@ export default function DirectorWorkspace({
       },
       { replace: true },
     );
-  }, [isPainterSurface, searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams]);
 
   const initialPromptSentRef = useRef(false);
 
@@ -996,44 +873,18 @@ export default function DirectorWorkspace({
       setIsSending(true);
       setComposerAccessory(null);
 
-      const stitchOptions = buildStitchComposerOptions(trimmed);
-
       const payload = {
         content: trimmed,
         ...(focusAgentId ? { focusAgentId } : {}),
         ...(opts?.approval ? { approval: opts.approval } : {}),
         ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
-        ...(stitchOptions ? { stitchOptions } : {}),
-        ...(isPainterSurface ? { threadKey: "painter" } : {}),
-        ...(focusAgentId && !isPainterSurface ? { focusAgentId } : {}),
-        ...(!isPainterSurface &&
-        !focusAgentId &&
-        !designModeEffective &&
+        ...(!focusAgentId &&
         chatModelSelection.provider === "wireline" &&
         forceDeep
           ? { forceDeep: true }
           : {}),
         modelSelection: chatModelSelection,
       };
-
-      const useDesignPost = !opts?.approval && trimmed && shouldUseDesignComposer(trimmed);
-
-      if (useDesignPost) {
-        pendingSendRef.current = { trimmed, optimisticId: optimistic?.id };
-        setDesignPrompt(trimmed);
-        setDesignRendering(true);
-        try {
-          await sendNonStreaming(trimmed, optimistic?.id, {
-            timeoutMs: DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS,
-            recoverPersistedReply: true,
-            requireDesignReply: true,
-          });
-        } finally {
-          setDesignRendering(false);
-          setDesignPrompt("");
-        }
-        return;
-      }
 
       // Use streaming for regular messages (no approvals — those stay non-streaming)
       if (!opts?.approval) {
@@ -1089,26 +940,11 @@ export default function DirectorWorkspace({
       focusAgentId,
       forceDeep,
       chatModelSelection,
-      buildStitchComposerOptions,
-      designModeEffective,
       directorMessagesPath,
-      isPainterSurface,
-      shouldUseDesignComposer,
     ],
   );
 
-  useEffect(() => {
-    if (!onActiveStitchPreview) return;
-    const preview = findLatestStitchPreview(messages);
-    onActiveStitchPreview(preview?.preview ?? null);
-  }, [messages, onActiveStitchPreview]);
 
-  useEffect(() => {
-    if (!isPainterSurface || !initialPrompt?.trim() || initialPromptSentRef.current) return;
-    if (authLoading || isLoading || isSending) return;
-    initialPromptSentRef.current = true;
-    void send(initialPrompt.trim());
-  }, [authLoading, initialPrompt, isLoading, isPainterSurface, isSending, send]);
 
   const markResolved = useCallback((key: string, state: DirectorProposalResolution) => {
     setResolved((prev) => ({ ...prev, [key]: state }));
@@ -1364,7 +1200,6 @@ export default function DirectorWorkspace({
       setResolved({});
       setComposerAccessory(null);
       setForceDeep(false);
-      if (!isPainterSurface) setDesignMode(false);
       setInput("");
       toastSuccess(DIRECTOR_SESSION_COPY.clearSuccess, DIRECTOR_SESSION_COPY.clearSuccessDetail);
     } catch {
@@ -1375,39 +1210,9 @@ export default function DirectorWorkspace({
   }, [
     directorMessagesPath,
     isClearing,
-    isPainterSurface,
     pendingApprovalCount,
     toastError,
     toastSuccess,
-  ]);
-
-  const queuePrompt = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || isSending) return;
-      setInput(trimmed);
-      inputRef.current?.focus();
-      void send(trimmed);
-    },
-    [isSending, send],
-  );
-
-  useEffect(() => {
-    if (!isPainterSurface || !onPainterStudioBridge) return;
-    onPainterStudioBridge({
-      messageCount: messages.length,
-      isClearing,
-      clearThread: () => void clearThread(),
-      queuePrompt,
-    });
-    return () => onPainterStudioBridge(null);
-  }, [
-    clearThread,
-    isClearing,
-    isPainterSurface,
-    messages.length,
-    onPainterStudioBridge,
-    queuePrompt,
   ]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1492,15 +1297,14 @@ export default function DirectorWorkspace({
   };
 
   const lastDirectorMessageId = [...messages].reverse().find((m) => m.role === "director")?.id;
-  const latestStitchPreview = findLatestStitchPreview(messages);
 
   return (
     <div
-      data-testid={isPainterSurface ? "painter-workspace" : "director-workspace"}
+      data-testid="director-workspace"
       className={cn("flex flex-col h-full min-h-0", WL_APP_CLASSES.missionCanvas)}
     >
       {/* Minimal header - just identity (Design page supplies its own studio chrome) */}
-      {messages.length > 0 && !isPainterSurface && (
+      {messages.length > 0 && (
         <div
           className={cn(
             "shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 sm:py-3 border-b border-brand/6",
@@ -1539,29 +1343,8 @@ export default function DirectorWorkspace({
               </p>
             </div>
           </div>
+
           <div className="flex items-center gap-1.5">
-            {latestStitchPreview &&
-              stitchPreviewPageUrlIsValid(latestStitchPreview.preview) &&
-              !messages.some((m) => m.stitchAssetsPending) &&
-              !isSending && (
-                <ShadButton
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  disableAnimations
-                  className="touch-press shrink-0 wl-label text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
-                >
-                  <Link
-                    to={buildStitchPreviewPageUrl(latestStitchPreview.preview)}
-                    aria-label={WIRELINE_STITCH_UI.previewSideEntryLabel}
-                  >
-                    <LayoutTemplate className="w-3 h-3" />
-                    <span className="hidden sm:inline">
-                      {WIRELINE_STITCH_UI.previewSideEntryLabel}
-                    </span>
-                  </Link>
-                </ShadButton>
-              )}
             {bulkConfigPlan.keys.length > 1 ? (
               <ShadButton
                 type="button"
@@ -1623,7 +1406,7 @@ export default function DirectorWorkspace({
               retry.
             </p>
           )}
-          {!isLoading && visibleMessages.length > 0 && !isPainterSurface && (
+          {!isLoading && visibleMessages.length > 0 && (
             <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
               {DIRECTOR_SESSION_COPY.sessionHint}
               {pendingApprovalCount > 0 ? (
@@ -1644,10 +1427,10 @@ export default function DirectorWorkspace({
                 </div>
               </SignalOrbFrame>
               <p className="text-eyebrow font-semibold tracking-[0.18em] text-ink/80">
-                {isPainterSurface ? PAINTER_LOADING_COPY.headline : DIRECTOR_LOADING_COPY.headline}
+                {DIRECTOR_LOADING_COPY.headline}
               </p>
               <p className="wl-micro-meta--muted">
-                {isPainterSurface ? PAINTER_LOADING_COPY.sub : DIRECTOR_LOADING_COPY.sub}
+                {DIRECTOR_LOADING_COPY.sub}
               </p>
             </div>
           ) : visibleMessages.length === 0 ? (
@@ -1657,31 +1440,24 @@ export default function DirectorWorkspace({
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
                 "flex flex-col items-center text-center pb-4",
-                isPainterSurface ? "pt-3 sm:pt-4" : "pt-6 sm:pt-8",
+                "pt-6 sm:pt-8",
                 WL_DIRECTOR_CLASSES.emptyHero,
               )}
             >
               {/* Hero identity */}
               <SignalOrbFrame
-                className={cn(isPainterSurface ? "mb-4" : "mb-6", WL_DIRECTOR_CLASSES.heroOrb)}
-                size={isPainterSurface ? "md" : "lg"}
+                className={cn("mb-6", WL_DIRECTOR_CLASSES.heroOrb)}
+                size="lg"
                 withBloom
                 refined
               >
                 <span
                   className={cn(
                     "flex items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-[0_8px_28px_-10px_rgba(59,21,76,0.35)] ring-1 ring-white/15 relative overflow-hidden",
-                    isPainterSurface ? "w-12 h-12" : "w-16 h-16",
+                    "w-16 h-16",
                   )}
                 >
-                  {isPainterSurface ? (
-                    <Paintbrush
-                      className={cn("relative z-10", isPainterSurface ? "w-6 h-6" : "w-8 h-8")}
-                      strokeWidth={1.75}
-                    />
-                  ) : (
-                    <Compass className="w-8 h-8 relative z-10" strokeWidth={1.75} />
-                  )}
+                  <Compass className="w-8 h-8 relative z-10" strokeWidth={1.75} />
                   <span
                     aria-hidden
                     className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"
@@ -1689,29 +1465,6 @@ export default function DirectorWorkspace({
                 </span>
               </SignalOrbFrame>
 
-              {isPainterSurface ? (
-                <>
-                  <h2
-                    className={cn(
-                      WL_APP_CLASSES.proTitle,
-                      "text-[1.2rem] sm:text-[1.45rem] mb-2 max-w-md text-balance",
-                    )}
-                  >
-                    {WIRELINE_PAINTER_UI.emptyTitle}
-                  </h2>
-                  <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                    {WIRELINE_PAINTER_UI.emptyBody}
-                  </p>
-                  <DirectorStarterPrompts
-                    onSelect={(label) => void send(label)}
-                    prompts={PAINTER_STARTER_PROMPTS}
-                    starterEyebrow={PAINTER_EMPTY_COPY.starterEyebrow}
-                    featuredCount={PAINTER_STARTER_PROMPTS_FEATURED_COUNT}
-                    className="mb-2 max-w-lg"
-                  />
-                </>
-              ) : (
-                <>
                   <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
                     {DIRECTOR_EMPTY_HERO.eyebrow}
                   </p>
@@ -1777,8 +1530,6 @@ export default function DirectorWorkspace({
                   {agents.length > 0 ? (
                     <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
                   ) : null}
-                </>
-              )}
             </motion.div>
           ) : (
             <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}>
@@ -1813,14 +1564,10 @@ export default function DirectorWorkspace({
                       {m.role === "director" && (
                         <div className="flex items-center gap-1.5 mb-1 ml-0.5">
                           <span className="shrink-0 flex w-6 h-6 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/15">
-                            {isPainterSurface ? (
-                              <Paintbrush className="w-3 h-3" aria-hidden />
-                            ) : (
-                              <Compass className="w-3 h-3" aria-hidden />
-                            )}
+                            <Compass className="w-3 h-3" aria-hidden />
                           </span>
                           <span className="wl-micro-meta--muted uppercase tracking-[0.12em] font-medium">
-                            {isPainterSurface ? WIRELINE_PAINTER_UI.personaName : "Director"}
+                            Director
                             {m.coachAgentName ? (
                               <span className="text-brand/70 normal-case tracking-normal">
                                 {" "}
@@ -1875,16 +1622,7 @@ export default function DirectorWorkspace({
 
                         {m.role === "director" ? (
                           <>
-                            {!isPainterSurface &&
-                              m.previews &&
-                              m.previews.length > 0 &&
-                              isStitchPreview(m.previews[0]) && (
-                                <div className="mb-3 -mx-0.5">
-                                  <DirectorStitchPreviewVariantGrid
-                                    previews={m.previews.filter((p) => isStitchPreview(p))}
-                                  />
-                                </div>
-                              )}
+
                             <DirectorMessageBody content={m.content} />
                             {m.deliverableArtifact?.downloadUrl && (
                               <DirectorDeliverableDownload artifact={m.deliverableArtifact} />
@@ -2183,7 +1921,7 @@ export default function DirectorWorkspace({
                         </div>
                       )}
 
-                      {m.previews && m.previews.length > 0 && !isStitchPreview(m.previews[0]) && (
+                      {m.previews && m.previews.length > 0 && (
                         <div className="w-full">
                           {/* Gallery header */}
                           <div className="flex items-center gap-2 mb-2">
@@ -2354,15 +2092,8 @@ export default function DirectorWorkspace({
             </div>
           )}
 
-          {/* Wireline Design render — dedicated live panel (non-streaming POST) */}
-          {isSending && designRendering && (
-            <div className={WL_DIRECTOR_CLASSES.threadColumn}>
-              <DirectorStitchLiveSession operatorPrompt={designPrompt} />
-            </div>
-          )}
-
           {/* Live streaming — mission control panel */}
-          {isSending && !designRendering && streamState.phase !== "error" && (
+          {isSending && streamState.phase !== "error" && (
             <div className={WL_DIRECTOR_CLASSES.threadColumn}>
               <DirectorLiveSession
                 phase={streamState.phase === "idle" ? "connecting" : streamState.phase}
@@ -2426,8 +2157,8 @@ export default function DirectorWorkspace({
             )}
 
             <DirectorComposerContextStrip
-              focusAgentName={isPainterSurface ? undefined : focusedAgent?.name}
-              onClearCoach={!isPainterSurface && focusAgentId ? clearCoachFocus : undefined}
+              focusAgentName={focusedAgent?.name}
+              onClearCoach={focusAgentId ? clearCoachFocus : undefined}
               designProfileConfigured={designProfileConfigured}
             />
 
@@ -2443,16 +2174,10 @@ export default function DirectorWorkspace({
               title={DIRECTOR_COMPOSER_CONTEXT.sendHint}
               placeholder={
                 isSending
-                  ? isPainterSurface
-                    ? WIRELINE_PAINTER_UI.workingStatus
-                    : "Director is working…"
-                  : isPainterSurface
-                    ? WIRELINE_PAINTER_UI.composerPlaceholder
-                    : designModeEffective && featureFlags.designStudio
-                      ? WIRELINE_STITCH_UI.designModePlaceholder
-                      : focusedAgent
-                        ? `Coach ${focusedAgent.name} via Director…`
-                        : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
+                  ? "Director is working…"
+                  : focusedAgent
+                    ? `Coach ${focusedAgent.name} via Director…`
+                    : DIRECTOR_COMPOSER_HINTS[composerHintIndex]
               }
               className={cn(
                 WL_DIRECTOR_CLASSES.composerInput,
@@ -2497,10 +2222,10 @@ export default function DirectorWorkspace({
 
             <div className={cn("px-3 pb-3", WL_DIRECTOR_CLASSES.composerSendRow)}>
               <DirectorComposerToolbar
-                surface={surface}
+                surface="director"
                 activeAccessory={composerAccessory}
                 onToggle={toggleComposerAccessory}
-                focusAgentId={isPainterSurface ? null : (focusAgentId ?? null)}
+                focusAgentId={focusAgentId ?? null}
                 focusedAgentName={focusedAgent?.name}
                 enabledToolsCount={enabledTools.length}
                 isUploading={isUploading}
@@ -2510,11 +2235,11 @@ export default function DirectorWorkspace({
                 chatModelSelection={chatModelSelection}
                 onChatModelChange={setChatModelSelection}
                 designStudioEnabled={featureFlags.designStudio}
-                designMode={designModeEffective}
-                useStitchAccountBranding={useStitchAccountBranding}
-                onToggleStitchAccountBranding={() => setUseStitchAccountBranding((v) => !v)}
-                stitchBrandingAvailable={stitchBrandingAvailable}
-                designProfileConfigured={designProfileConfigured}
+                designMode={false}
+                useStitchAccountBranding={false}
+                onToggleStitchAccountBranding={() => {}}
+                stitchBrandingAvailable={false}
+                designProfileConfigured={false}
               />
 
               <Input

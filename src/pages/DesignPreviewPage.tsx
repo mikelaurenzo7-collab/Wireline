@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, LayoutTemplate } from "lucide-react";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import DirectorStitchPreviewStudio from "../components/director/DirectorStitchPreviewStudio";
-import { parseStitchPreviewPageSearch } from "../lib/director-stitch-preview-route";
+import { parseStitchPreviewPageSearch } from "../lib/design-preview-route";
 import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import { useVisualViewportVar } from "../lib/use-visual-viewport";

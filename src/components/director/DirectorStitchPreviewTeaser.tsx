@@ -13,7 +13,7 @@ import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import {
   buildStitchPreviewPageUrl,
   stitchPreviewPageUrlIsValid,
-} from "../../lib/director-stitch-preview-route";
+} from "../../lib/design-preview-route";
 import { useStitchPreviewReady } from "../../hooks/useStitchPreviewReady";
 import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-director-design";
 import { cn } from "../../lib/utils";
