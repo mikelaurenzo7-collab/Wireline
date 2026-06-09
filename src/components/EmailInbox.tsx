@@ -514,10 +514,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                 {selectedThread ? (
                   <motion.div
                     key={selectedThread.id}
-                    layoutId={`email-thread-${selectedThread.id}`}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     className="h-full flex flex-col min-h-0 bg-gradient-to-br from-white/40 to-transparent"
                   >
                     {/* Subject header */}

@@ -1805,7 +1805,24 @@ router.get(
       );
       if (inline && loaded.artifact.mimeType.startsWith("text/html")) {
         res.setHeader("X-Frame-Options", "SAMEORIGIN");
-        res.setHeader("Content-Security-Policy", "frame-ancestors 'self'");
+        // Own CSP for generated prototypes: only embeddable by the app,
+        // permissive enough for inline styles + Google Fonts that the
+        // design model emits, but no plugins/objects and no form posts.
+        res.setHeader(
+          "Content-Security-Policy",
+          [
+            "frame-ancestors 'self'",
+            "default-src 'none'",
+            "style-src 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src https://fonts.gstatic.com data:",
+            "img-src https: data: blob:",
+            "script-src 'unsafe-inline'",
+            "connect-src 'none'",
+            "object-src 'none'",
+            "form-action 'none'",
+            "base-uri 'none'",
+          ].join("; "),
+        );
       }
       streamBase64ToResponse(loaded.base64Data, res);
     } catch (e) {

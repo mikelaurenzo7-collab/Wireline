@@ -70,14 +70,21 @@ function pruneExpiredSignedBlobCache() {
  *
  * Blob URL revocation is deferred across renders to avoid invalidating
  * currently-displayed images in React Strict Mode double-mount scenarios.
+ *
+ * `asBlob: false` skips the fetch→blob conversion and exposes the signed
+ * same-origin URL directly. Required for HTML previews: a blob: iframe
+ * inherits the app's strict CSP (style-src-elem 'self'), which strips the
+ * generated page's inline <style> and Google Fonts. The signed /download
+ * route serves its own headers, so a direct URL renders with full fidelity.
  */
 export function useDirectorArtifactBlobSrc(
   artifactId: string | undefined,
-  options?: { inline?: boolean; enabled?: boolean; refreshKey?: string | number },
+  options?: { inline?: boolean; enabled?: boolean; refreshKey?: string | number; asBlob?: boolean },
 ): DirectorArtifactInlineSrc {
   const inline = options?.inline ?? true;
   const enabled = options?.enabled ?? true;
   const refreshKey = options?.refreshKey ?? 0;
+  const asBlob = options?.asBlob ?? true;
   const [src, setSrc] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -103,6 +110,36 @@ export function useDirectorArtifactBlobSrc(
       setError(false);
       setAttempted(false);
       return;
+    }
+
+    // Direct-URL mode — mint the signed URL and hand it straight to the
+    // consumer. No blob lifecycle to manage; signature TTL handles expiry.
+    if (!asBlob) {
+      let cancelled = false;
+      setLoading(true);
+      setError(false);
+      setAttempted(false);
+      void (async () => {
+        try {
+          const signed = await fetchDirectorArtifactSignedUrl(artifactId, inline);
+          if (cancelled) return;
+          if (!signed) {
+            setError(true);
+            return;
+          }
+          setSrc(signed);
+        } catch {
+          if (!cancelled) setError(true);
+        } finally {
+          if (!cancelled) {
+            setAttempted(true);
+            setLoading(false);
+          }
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
 
     pruneExpiredSignedBlobCache();
@@ -183,7 +220,7 @@ export function useDirectorArtifactBlobSrc(
     return () => {
       cancelled = true;
     };
-  }, [artifactId, inline, enabled, refreshKey]);
+  }, [artifactId, inline, enabled, refreshKey, asBlob]);
 
   useEffect(() => {
     return () => {

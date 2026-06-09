@@ -314,7 +314,7 @@ function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) 
           >
             <div
               className="w-auto inline-flex items-center"
-              style={{ height: px }}
+              data-height={`${px}px`}
               data-logo-height={height}
             >
               {React.cloneElement(logo.svg as React.ReactElement<any>, {

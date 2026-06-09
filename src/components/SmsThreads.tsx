@@ -384,7 +384,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                 />
               ) : (
                 <motion.div
-                  layoutId={`sms-thread-${activeThread.id}`}
+                  key={activeThread.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full flex flex-col min-h-0 p-3 bg-gradient-to-br from-white/40 to-transparent"
                 >
                   <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">

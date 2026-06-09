@@ -31,10 +31,7 @@ export default function HeroCallPreview() {
       aria-label="Live call preview: a Wireline agent answering an inbound call and booking an appointment"
     >
       {/* soft brand halo */}
-      <span
-        aria-hidden="true"
-        className="absolute -inset-6 -z-10 bg-brand/15 blur-2xl scale-105"
-      />
+      <span aria-hidden="true" className="absolute -inset-6 -z-10 bg-brand/15 blur-2xl scale-105" />
 
       <div className="relative border border-ink/10 bg-gradient-to-b from-white/85 to-paper shadow-[0_1px_0_rgba(255,255,255,0.7)_inset,0_30px_60px_-30px_rgba(26,22,20,0.45)]">
         {/* ── Header: agent identity + live status ── */}
@@ -79,7 +76,7 @@ export default function HeroCallPreview() {
             <motion.span
               key={i}
               className="w-[3px] bg-gradient-to-b from-brand to-brand-deep/90"
-              style={{ height: reduce ? PEAK(i) * 0.6 : REST(i) }}
+              initial={{ height: reduce ? PEAK(i) * 0.6 : REST(i) }}
               animate={reduce ? undefined : { height: [REST(i), PEAK(i), REST(i)] }}
               transition={
                 reduce

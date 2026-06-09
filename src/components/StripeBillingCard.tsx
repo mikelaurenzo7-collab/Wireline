@@ -385,9 +385,7 @@ function PlanPicker({
                       <span className="font-display italic text-4xl text-ink">
                         ${plan.price_usd_monthly.toLocaleString()}
                       </span>
-                      <span className="wl-label-muted/70">
-                        /mo
-                      </span>
+                      <span className="wl-label-muted/70">/mo</span>
                     </>
                   ) : (
                     <span className="font-display italic text-4xl text-ink">Custom</span>
@@ -478,7 +476,7 @@ function ActiveSubCard({
       className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden"
       data-accent={accent}
     >
-      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-glow" />
+      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
         <div className="flex items-center gap-5">
           <div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
@@ -486,9 +484,7 @@ function ActiveSubCard({
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="wl-label-muted opacity-70">
-                Current plan
-              </span>
+              <span className="wl-label-muted opacity-70">Current plan</span>
               <span
                 className={cn(
                   "inline-flex items-center px-2 py-0.5 rounded-full wl-label border",

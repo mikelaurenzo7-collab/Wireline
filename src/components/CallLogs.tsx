@@ -363,7 +363,13 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           )}
         >
           {selectedCall ? (
-            <motion.div layoutId={`call-${selectedCall.id}`} className="h-full flex flex-col min-h-0">
+            <motion.div
+              key={selectedCall.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full flex flex-col min-h-0"
+            >
               <CallDetail
                 call={selectedCall}
                 formatDuration={formatDuration}
@@ -692,9 +698,7 @@ function CallDetail({
                         const val = qaBreakdown[key] ?? 0;
                         return (
                           <div key={key} className="flex items-center gap-2">
-                            <span className="wl-label-muted w-20 shrink-0">
-                              {label}
-                            </span>
+                            <span className="wl-label-muted w-20 shrink-0">{label}</span>
                             <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
@@ -758,9 +762,7 @@ function CallDetail({
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-2"
               >
                 {transcriptLines.length === 0 ? (
-                  <p className="text-ink/40 wl-label text-center py-12">
-                    No transcript available
-                  </p>
+                  <p className="text-ink/40 wl-label text-center py-12">No transcript available</p>
                 ) : (
                   transcriptLines.map((line: string, i: number) => {
                     // Parse "Speaker: content" — real Vapi transcripts use the

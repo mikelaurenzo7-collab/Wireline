@@ -752,7 +752,7 @@ export default function BehavioralRegressionTests({
             <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
               <div
                 className={`h-full transition-all duration-500 ${scorePercent >= 80 ? "bg-emerald-500" : "bg-amber-500"}`}
-                style={{ width: `${scorePercent}%` }}
+                data-pct={`${scorePercent}%`}
               />
             </div>
           </div>

@@ -321,6 +321,10 @@ describe("agent routes integration", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       flowConfig: { nodes: [{ id: "start" }] },
+      // Training dashboard reads role + archetype alongside the config; the
+      // route defaults them when the agent row predates the columns.
+      role: "customer_service",
+      archetype: "Receptionist",
       personality: "Warm and concise",
       directives: [{ id: 2, content: "Always confirm the phone number", priority: 8 }],
       knowledge: [{ id: 7, content: "Open weekdays" }],

@@ -381,7 +381,7 @@ function TemplateCard({
       onMouseLeave={() => setHovered(false)}
     >
       {/* Accent glow on hover — desktop only */}
-      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-glow hidden md:block" />
+      <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none wl-accent-halo hidden md:block" />
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         {/* Header row */}

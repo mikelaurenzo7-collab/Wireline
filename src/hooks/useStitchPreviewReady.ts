@@ -147,10 +147,14 @@ export function useStitchPreviewReady(
     enabled: hasSources && !embeddedImage && Boolean(imageArtifactId),
     refreshKey: options?.refreshKey,
   });
+  // HTML must render from the signed same-origin URL, NOT a blob: URL —
+  // blob iframes inherit the app's strict CSP and strip the generated
+  // page's inline styles + web fonts (visible as console CSP violations).
   const htmlBlob = useDirectorArtifactBlobSrc(htmlArtifactId, {
     inline: true,
     enabled: hasSources && Boolean(htmlArtifactId),
     refreshKey: options?.refreshKey,
+    asBlob: false,
   });
 
   const { isLoading, isReady, failed, imageSrc, htmlSrc } = resolveStitchPreviewReadyState({

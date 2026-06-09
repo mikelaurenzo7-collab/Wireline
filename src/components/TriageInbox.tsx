@@ -475,14 +475,14 @@ function HotLeads({ items }: { items: HotLead[] }) {
                   </Tooltip>
                 </TooltipProvider>
               )}
-              <div className="flex items-center gap-2 mt-1.5 wl-label text-muted/70">
-                <span>{formatDate(c.created_at)}</span>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 wl-label text-muted/70 pr-2">
+                <span className="whitespace-nowrap">{formatDate(c.created_at)}</span>
                 <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                 <Badge
                   variant="secondary"
-                  className="wl-label text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded"
+                  className="wl-label text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded whitespace-nowrap"
                 >
-                  {c.intent_label} intent
+                  {(c.intent_label || "").replace(/_/g, " ")} intent
                 </Badge>
                 {c.sentiment && (
                   <Badge

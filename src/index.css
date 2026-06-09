@@ -136,7 +136,15 @@
   box-shadow: 0 0 14px color-mix(in srgb, var(--wl-accent) 53%, transparent);
 }
 .wl-accent-halo {
-  background: radial-gradient(circle, var(--wl-accent), transparent);
+  /* Whisper of accent warmth — center is pre-mixed down so the blurred
+     disc never reads as an ink bleed on cream. Falloff ends early (72%)
+     to keep the glow pinned to the corner instead of smearing the panel. */
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--wl-accent) 34%, transparent) 0%,
+    color-mix(in srgb, var(--wl-accent) 12%, transparent) 40%,
+    transparent 72%
+  );
 }
 .wl-accent-fill {
   background: var(--wl-accent);
@@ -488,7 +496,13 @@
 }
 
 .wl-recipe-halo {
-  background: radial-gradient(circle, var(--recipe-accent), transparent);
+  /* Same soft falloff as .wl-accent-halo — never full-strength at center. */
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--recipe-accent) 34%, transparent) 0%,
+    color-mix(in srgb, var(--recipe-accent) 12%, transparent) 40%,
+    transparent 72%
+  );
 }
 
 .wl-recipe-icon {
@@ -796,24 +810,51 @@
   );
 }
 .wl-route-ambience-a {
+  /* Route tint mixed INTO the cream (opaque center) so the wash reads as
+     warm paper with a breath of tone — purple-over-cream at higher
+     strengths smeared like an ink bleed near panel headers. */
   background: radial-gradient(
     circle at 30% 30%,
-    color-mix(in srgb, var(--wl-route-from) 15.7%, transparent),
-    transparent 68%
+    color-mix(
+      in srgb,
+      var(--wl-route-from) 6.5%,
+      var(--wl-cream, #f5f0e6)
+    ),
+    transparent 58%
   );
 }
 .wl-route-ambience-b {
   background: radial-gradient(
     circle at 60% 60%,
-    color-mix(in srgb, var(--wl-route-to) 13.3%, transparent),
-    transparent 70%
+    color-mix(
+      in srgb,
+      var(--wl-route-to) 5.5%,
+      var(--wl-cream, #f5f0e6)
+    ),
+    transparent 60%
   );
 }
 .wl-route-ambience-top {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--wl-route-from) 6%, transparent),
+    color-mix(in srgb, var(--wl-route-from) 3.5%, transparent),
     transparent
+  );
+}
+/* Dark mode — mix into the velvet base instead of cream so the ambience
+   stays a subtle tonal shift, never a glowing cream disc. */
+.dark .wl-route-ambience-a {
+  background: radial-gradient(
+    circle at 30% 30%,
+    color-mix(in srgb, var(--wl-route-from) 9%, #2d1a3e),
+    transparent 58%
+  );
+}
+.dark .wl-route-ambience-b {
+  background: radial-gradient(
+    circle at 60% 60%,
+    color-mix(in srgb, var(--wl-route-to) 7%, #2d1a3e),
+    transparent 60%
   );
 }
 .wl-cookie-card {
@@ -9796,27 +9837,45 @@ html {
   background: radial-gradient(circle, rgba(139, 63, 214, 0.04), transparent 78%);
 }
 
-/* Authenticated canvas — corner dormant nodes (very low contrast) */
+/* Authenticated canvas — corner dormant nodes (very low contrast).
+   Warm-mixed with the paper and masked hard to the corners so the field
+   reads as tactility, never as specks or bleed on the rich cream. */
 .wl-canvas-constellation {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.32;
+  opacity: 0.14;
   background-image:
-    radial-gradient(circle at 12% 14%, rgba(139, 63, 214, 0.09) 0 1.25px, transparent 1.5px),
-    radial-gradient(circle at 88% 18%, rgba(139, 63, 214, 0.07) 0 1px, transparent 1.25px),
-    radial-gradient(circle at 90% 82%, rgba(139, 63, 214, 0.08) 0 1.25px, transparent 1.5px),
-    radial-gradient(circle at 10% 78%, rgba(139, 63, 214, 0.06) 0 1px, transparent 1.25px);
+    radial-gradient(
+      circle at 8% 8%,
+      color-mix(in srgb, rgba(139, 63, 214, 0.07) 60%, var(--color-paper)) 0 1px,
+      transparent 1.25px
+    ),
+    radial-gradient(
+      circle at 93% 10%,
+      color-mix(in srgb, rgba(139, 63, 214, 0.05) 60%, var(--color-paper)) 0 1px,
+      transparent 1.25px
+    ),
+    radial-gradient(
+      circle at 94% 91%,
+      color-mix(in srgb, rgba(139, 63, 214, 0.06) 60%, var(--color-paper)) 0 1px,
+      transparent 1.25px
+    ),
+    radial-gradient(
+      circle at 6% 88%,
+      color-mix(in srgb, rgba(139, 63, 214, 0.05) 60%, var(--color-paper)) 0 1px,
+      transparent 1.25px
+    );
   background-size: 100% 100%;
-  mask-image: radial-gradient(ellipse 85% 75% at 50% 50%, transparent 42%, black 100%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 58%, black 100%);
 }
 .dark .wl-canvas-constellation {
-  opacity: 0.22;
+  opacity: 0.12;
   background-image:
-    radial-gradient(circle at 12% 14%, rgba(155, 92, 224, 0.14) 0 1.25px, transparent 1.5px),
-    radial-gradient(circle at 88% 18%, rgba(155, 92, 224, 0.1) 0 1px, transparent 1.25px),
-    radial-gradient(circle at 90% 82%, rgba(155, 92, 224, 0.12) 0 1.25px, transparent 1.5px),
-    radial-gradient(circle at 10% 78%, rgba(155, 92, 224, 0.09) 0 1px, transparent 1.25px);
+    radial-gradient(circle at 8% 8%, rgba(155, 92, 224, 0.12) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 93% 10%, rgba(155, 92, 224, 0.08) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 94% 91%, rgba(155, 92, 224, 0.1) 0 1px, transparent 1.25px),
+    radial-gradient(circle at 6% 88%, rgba(155, 92, 224, 0.08) 0 1px, transparent 1.25px);
 }
 
 /* ── NOTIFICATION BADGE PULSE ── */
