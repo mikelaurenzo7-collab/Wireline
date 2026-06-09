@@ -327,11 +327,13 @@ function RailItem({ item, active, badge, expanded, shortcut }: RailItemProps) {
           : "text-white/70 hover:text-white hover:bg-white/[0.08] dark:text-white/55 dark:hover:text-white/85 dark:hover:bg-white/[0.06]",
       )}
     >
-      {/* Active accent stripe */}
+      {/* Active accent stripe — layoutId so it glides between items */}
       {active && (
-        <span
+        <motion.span
+          layoutId="rail-active-stripe"
           aria-hidden="true"
           className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       )}
       <Icon
@@ -472,9 +474,11 @@ function FooterItem({ to, icon: Icon, label, expanded, active, dataTour }: Foote
       )}
     >
       {active && (
-        <span
+        <motion.span
+          layoutId="rail-footer-stripe"
           aria-hidden="true"
           className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       )}
       <Icon className="w-4 h-4 shrink-0 relative z-10" strokeWidth={active ? 2.5 : 1.75} />

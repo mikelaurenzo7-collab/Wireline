@@ -130,7 +130,7 @@ function StaffRow({
       className={cn(
         WL_FLEET_CLASSES.agentRow,
         WL_FLEET_CLASSES.agentRowList,
-        "group h-auto whitespace-normal justify-start px-3 py-3 hover:bg-transparent",
+        "group h-auto whitespace-normal justify-start px-3 py-3 hover:bg-transparent wl-row-hover",
         !exists && "opacity-50 cursor-not-allowed",
       )}
     >
@@ -303,7 +303,7 @@ export default function FounderDashboard() {
         {stats && (
           <div className="mb-5">
             <p className="app-section-title mb-2">Platform · live</p>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-2.5 stagger-children">
               <MetricStatTile label="Paying" value={stats.users.paying} tone="brand" />
               <MetricStatTile label="Trialing" value={stats.users.trialing} tone="brand" />
               <MetricStatTile label="Total users" value={stats.users.total} tone="ink" />
@@ -392,7 +392,7 @@ export default function FounderDashboard() {
           </p>
         </div>
 
-        <div className="wl-panel border border-input rounded-md overflow-hidden divide-y divide-border">
+        <div className="wl-panel border border-input rounded-md overflow-hidden divide-y divide-border stagger-children">
           {STAFF.map((s) => {
             const exists = provisionedIds === null || provisionedIds.has(s.agentId);
             return (
@@ -401,7 +401,7 @@ export default function FounderDashboard() {
           })}
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2 stagger-children">
           {[
             { label: "Call logs + analytics", href: "/phone", icon: Phone },
             { label: "Live Ops floor", href: "/ops?tab=floor", icon: Headphones },
@@ -410,7 +410,7 @@ export default function FounderDashboard() {
             <Link
               key={l.href}
               to={l.href}
-              className="touch-press inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors min-h-10"
+              className="touch-press wl-card-lift inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors min-h-10"
             >
               <l.icon className="w-3.5 h-3.5 text-brand" />
               {l.label}

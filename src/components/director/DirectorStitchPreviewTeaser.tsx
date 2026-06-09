@@ -90,7 +90,7 @@ function DeviceFrame({
               title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
               src={ready.htmlSrc}
               className="wl-stitch-live-iframe"
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               referrerPolicy="no-referrer"
               loading="lazy"
               allow="fullscreen"

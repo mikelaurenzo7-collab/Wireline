@@ -193,6 +193,7 @@ export default function DirectorStitchPreviewStudio({
   const [selectedRepo, setSelectedRepo] = useState("");
   const [connectBusy, setConnectBusy] = useState<DesignIntegrationProvider | null>(null);
   const [iframeFailed, setIframeFailed] = useState(false);
+  const iframeFailTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { error: toastError, success: toastSuccess, warning: toastWarning } = useToast();
   const reduceMotion = useReducedMotion();
 
@@ -436,10 +437,13 @@ export default function DirectorStitchPreviewStudio({
   useEffect(() => {
     if (!ready.htmlSrc || !hasRenderableHtml) return;
     setIframeFailed(false);
-    const timer = setTimeout(() => {
+    if (iframeFailTimerRef.current) clearTimeout(iframeFailTimerRef.current);
+    iframeFailTimerRef.current = setTimeout(() => {
       setIframeFailed(true);
-    }, 12_000);
-    return () => clearTimeout(timer);
+    }, 25_000);
+    return () => {
+      if (iframeFailTimerRef.current) clearTimeout(iframeFailTimerRef.current);
+    };
   }, [ready.htmlSrc, hasRenderableHtml]);
 
   const openArtifactDownload = useCallback(
@@ -617,9 +621,15 @@ export default function DirectorStitchPreviewStudio({
                     "wl-stitch-live-iframe wl-stitch-live-iframe--studio",
                     immersive && "wl-stitch-live-iframe--immersive",
                   )}
-                  sandbox="allow-scripts allow-same-origin"
+                  sandbox="allow-scripts allow-same-origin allow-popups"
                   referrerPolicy="no-referrer"
                   allow="fullscreen"
+                  onLoad={() => {
+                    if (iframeFailTimerRef.current) {
+                      clearTimeout(iframeFailTimerRef.current);
+                      iframeFailTimerRef.current = null;
+                    }
+                  }}
                 />
               )}
             </DeviceChrome>

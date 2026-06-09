@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { WL_OPS_CLASSES, OPS_PULSE_METRICS } from "../../lib/wireline-ops-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { AnimatedCounter } from "../ui/AnimatedCounter";
 
 type OpsTabId = "floor" | "intel" | "triage" | "analytics";
 
@@ -37,7 +38,6 @@ function PulseMetric({
   onClick?: () => void;
   ariaLabel?: string;
 }) {
-  const display = loading ? "…" : String(value);
   const body = (
     <>
       <span className={WL_OPS_CLASSES.metricLabel}>{label}</span>
@@ -54,7 +54,7 @@ function PulseMetric({
           loading && "text-muted-foreground",
         )}
       >
-        {display}
+        {loading ? "…" : <AnimatedCounter value={value} />}
       </motion.span>
     </>
   );
@@ -68,7 +68,7 @@ function PulseMetric({
         className={cn(WL_OPS_CLASSES.metricInteractive, "h-auto touch-press motion-snappy")}
         data-active={active ? "true" : undefined}
         onClick={onClick}
-        aria-label={ariaLabel ?? `${label}: ${display}`}
+        aria-label={ariaLabel ?? `${label}: ${loading ? "loading" : value}`}
         aria-current={active ? "true" : undefined}
       >
         {body}

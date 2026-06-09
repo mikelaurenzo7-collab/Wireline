@@ -2428,12 +2428,6 @@ export default function DirectorWorkspace({
             <DirectorComposerContextStrip
               focusAgentName={isPainterSurface ? undefined : focusedAgent?.name}
               onClearCoach={!isPainterSurface && focusAgentId ? clearCoachFocus : undefined}
-              designModeActive={
-                !isPainterSurface && designModeEffective && featureFlags.designStudio
-              }
-              onClearDesignMode={
-                !isPainterSurface && designMode ? () => setDesignMode(false) : undefined
-              }
               designProfileConfigured={designProfileConfigured}
             />
 
@@ -2517,17 +2511,6 @@ export default function DirectorWorkspace({
                 onChatModelChange={setChatModelSelection}
                 designStudioEnabled={featureFlags.designStudio}
                 designMode={designModeEffective}
-                onToggleDesignMode={
-                  isPainterSurface
-                    ? undefined
-                    : () => {
-                        setDesignMode((on) => {
-                          const next = !on;
-                          if (next) setForceDeep(false);
-                          return next;
-                        });
-                      }
-                }
                 useStitchAccountBranding={useStitchAccountBranding}
                 onToggleStitchAccountBranding={() => setUseStitchAccountBranding((v) => !v)}
                 stitchBrandingAvailable={stitchBrandingAvailable}

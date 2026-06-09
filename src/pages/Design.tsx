@@ -138,6 +138,14 @@ export default function Design() {
             />
           </section>
 
+          {/* Glassmorphic resize divider — desktop only */}
+          <div
+            className="wl-painter-divider hidden lg:flex items-center justify-center shrink-0 cursor-col-resize select-none group"
+            aria-hidden="true"
+          >
+            <div className="wl-painter-divider-handle" />
+          </div>
+
           <section
             className={cn(
               "wl-painter-studio-preview flex-1 min-h-0 min-w-0 flex flex-col",
@@ -145,9 +153,9 @@ export default function Design() {
             )}
             aria-label="Live design preview"
           >
-            <div className="shrink-0 px-4 sm:px-6 py-3 border-b border-brand/8 flex items-center gap-2 min-w-0">
+            <div className="shrink-0 px-4 sm:px-6 py-3 border-b border-brand/8 flex items-center gap-2 min-w-0 wl-painter-preview-header">
               <LayoutTemplate className="w-4 h-4 text-brand shrink-0" aria-hidden />
-              <h2 className="text-[13px] font-semibold text-ink truncate">{previewTitle}</h2>
+              <h2 className="text-[13px] font-semibold text-ink truncate flex-1">{previewTitle}</h2>
               {activePreview?.deviceType && activePreview.deviceType !== "AGNOSTIC" && (
                 <span className="wl-label text-muted capitalize ml-auto shrink-0">
                   {activePreview.deviceType.toLowerCase()}

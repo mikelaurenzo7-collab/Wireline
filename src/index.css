@@ -4626,7 +4626,16 @@ html, body, .marketing-surface, .app-surface {
   background: color-mix(in srgb, var(--paper) 98%, transparent);
 }
 .wl-painter-studio-preview {
-  background: color-mix(in srgb, var(--paper) 92%, var(--color-brand) 3%);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--color-ink) 5%, transparent) 0.8px, transparent 0.8px),
+    color-mix(in srgb, var(--paper) 92%, var(--color-brand) 3%);
+  background-size: 20px 20px;
+}
+.dark .wl-painter-studio-preview {
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.04) 0.8px, transparent 0.8px),
+    rgba(8, 6, 14, 0.92);
+  background-size: 20px 20px;
 }
 .wl-painter-preview-empty {
   border-radius: 0.875rem;
@@ -4638,10 +4647,64 @@ html, body, .marketing-surface, .app-surface {
       transparent 70%
     ),
     color-mix(in srgb, var(--paper) 88%, var(--color-brand) 4%);
+  animation: wl-painter-empty-pulse 3s ease-in-out infinite;
+}
+@keyframes wl-painter-empty-pulse {
+  0%, 100% { border-color: color-mix(in srgb, var(--color-brand) 15%, transparent); }
+  50% { border-color: color-mix(in srgb, var(--color-brand) 30%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-painter-preview-empty { animation: none; }
 }
 .wl-painter-pane-toggle {
   border: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
   background: color-mix(in srgb, var(--paper) 82%, var(--color-brand) 3%);
+}
+/* ── Split-pane divider ── */
+.wl-painter-divider {
+  width: 12px;
+  position: relative;
+  z-index: 10;
+  transition: background-color 200ms ease;
+}
+.wl-painter-divider:hover {
+  background-color: color-mix(in srgb, var(--color-brand) 4%, transparent);
+}
+.wl-painter-divider-handle {
+  width: 2px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  transition: all 200ms ease;
+}
+.wl-painter-divider:hover .wl-painter-divider-handle {
+  width: 3px;
+  height: 40px;
+  background: color-mix(in srgb, var(--color-brand) 50%, transparent);
+}
+.wl-painter-divider:active .wl-painter-divider-handle {
+  width: 3px;
+  height: 48px;
+  background: var(--color-brand);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+.dark .wl-painter-divider-handle {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dark .wl-painter-divider:hover .wl-painter-divider-handle {
+  background: rgba(139, 63, 214, 0.45);
+}
+.dark .wl-painter-divider:active .wl-painter-divider-handle {
+  background: rgba(139, 63, 214, 0.7);
+}
+/* ── Preview header bar ── */
+.wl-painter-preview-header {
+  background: color-mix(in srgb, var(--paper) 85%, white);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.dark .wl-painter-preview-header {
+  background: rgba(12, 10, 20, 0.7);
 }
 .wl-painter-preview-starter {
   border-color: color-mix(in srgb, var(--color-brand) 16%, transparent);
@@ -4659,22 +4722,24 @@ html, body, .marketing-surface, .app-surface {
 .wl-stitch-device-chrome {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.45rem 0.65rem;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--paper) 92%, white),
-    color-mix(in srgb, var(--paper) 78%, var(--color-brand) 4%)
+    color-mix(in srgb, var(--paper) 94%, white),
+    color-mix(in srgb, var(--paper) 82%, var(--color-brand) 3%)
   );
-  border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-brand) 4%, transparent);
 }
 .dark .wl-stitch-device-chrome {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-ink) 12%, transparent),
-    color-mix(in srgb, var(--color-ink) 6%, transparent)
+    color-mix(in srgb, var(--color-brand) 8%, rgba(18, 14, 28, 0.95)),
+    color-mix(in srgb, var(--color-brand) 4%, rgba(12, 10, 20, 0.92))
   );
-  border-bottom-color: color-mix(in srgb, var(--color-brand) 18%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  box-shadow: inset 0 -1px 0 rgba(139, 63, 214, 0.06);
 }
 .wl-stitch-device-dot {
   width: 0.45rem;
@@ -4739,8 +4804,7 @@ html, body, .marketing-surface, .app-surface {
   min-height: 100%;
   border: 0;
   background: var(--paper, white);
-  contain: strict;
-  content-visibility: auto;
+  contain: layout paint;
 }
 .wl-stitch-device--desktop .wl-stitch-live-iframe {
   min-height: min(58vh, 640px);
@@ -8262,6 +8326,43 @@ select:focus {
 .stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
 .stagger-children > *:nth-child(7) { animation-delay: 0.28s; }
 .stagger-children > *:nth-child(8) { animation-delay: 0.32s; }
+
+/* ── CARD HOVER LIFT — specular shadow deepening + subtle float ── */
+.wl-card-lift {
+  transition: transform 220ms var(--ease-editorial),
+              box-shadow 220ms var(--ease-editorial);
+}
+.wl-card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 28px rgba(26, 22, 20, 0.07),
+    0 2px 8px rgba(107, 43, 153, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.dark .wl-card-lift:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.25),
+    0 2px 8px rgba(139, 63, 214, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* ── ROW HOVER — brand-tinted left stripe for data rows ── */
+.wl-row-hover {
+  transition: background-color 150ms var(--ease-snappy),
+              box-shadow 150ms var(--ease-snappy);
+}
+.wl-row-hover:hover {
+  background-color: color-mix(in srgb, var(--color-brand) 4%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-brand);
+}
+.dark .wl-row-hover:hover {
+  background-color: rgba(139, 63, 214, 0.06);
+  box-shadow: inset 3px 0 0 rgba(139, 63, 214, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-card-lift:hover { transform: none; }
+}
 
 /* ── AUTH PORTAL — solid rich cream canvas (no purple aurora wash) ── */
 .auth-portal-canvas {

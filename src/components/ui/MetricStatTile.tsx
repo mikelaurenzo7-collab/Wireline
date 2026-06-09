@@ -1,5 +1,6 @@
 import { cn } from "../../lib/utils";
 import { WL_STAT_CLASSES } from "../../lib/wireline-ops-design";
+import { AnimatedCounter } from "./AnimatedCounter";
 
 export type MetricStatTone = "brand" | "ink" | "rose" | "muted";
 
@@ -27,9 +28,10 @@ type MetricStatTileProps = {
 /** Compact KPI tile — founder dashboard, insights grids, ops summaries. */
 export function MetricStatTile({ label, value, tone = "brand", className }: MetricStatTileProps) {
   return (
-    <div className={cn(TILE[tone], className)}>
-      <div className={VALUE[tone]}>{value.toLocaleString()}</div>
+    <div className={cn(TILE[tone], "wl-card-lift", className)}>
+      <AnimatedCounter value={value} className={VALUE[tone]} />
       <div className={WL_STAT_CLASSES.label}>{label}</div>
     </div>
   );
 }
+

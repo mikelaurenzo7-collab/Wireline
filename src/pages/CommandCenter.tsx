@@ -540,7 +540,7 @@ export default function LiveOps() {
                     <div
                       className={clsx(
                         WL_OPS_CLASSES.railCard,
-                        "hover:border-brand/35 transition-colors duration-200",
+                        "wl-card-lift hover:border-brand/35 transition-colors duration-200",
                       )}
                     >
                       <div className="flex items-center justify-between mb-4">
@@ -578,7 +578,7 @@ export default function LiveOps() {
                     <div
                       className={clsx(
                         WL_OPS_CLASSES.railCard,
-                        "hover:border-brand/35 transition-colors duration-200",
+                        "wl-card-lift hover:border-brand/35 transition-colors duration-200",
                       )}
                     >
                       <div className="flex items-center justify-between mb-3">

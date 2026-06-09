@@ -12,7 +12,6 @@ import {
   Brain,
   Bot,
   ChevronDown,
-  LayoutTemplate,
   Loader2,
   Palette,
   Paperclip,
@@ -161,7 +160,6 @@ export function DirectorComposerToolbar({
     !designMode &&
     onToggleForceDeep &&
     chatModelSelection?.provider !== "openrouter";
-  const showDesignToggle = !isPainterSurface && designStudioOn && onToggleDesignMode;
   const showStitchBrandingToggle =
     designMode && designStudioOn && onToggleStitchAccountBranding && stitchBrandingAvailable;
 
@@ -223,36 +221,7 @@ export function DirectorComposerToolbar({
                   ) : null
                 }
               />
-            ) : null}
-            {showDesignToggle ? (
-              <ShadButton
-                type="button"
-                variant="ghost"
-                size="sm"
-                disableAnimations
-                disabled={isSending}
-                onClick={onToggleDesignMode}
-                aria-pressed={designMode}
-                title={WIRELINE_STITCH_UI.designModeToggleHint}
-                className={cn(
-                  WL_DIRECTOR_CLASSES.composerDesignToolChip,
-                  "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200",
-                  designMode &&
-                    cn(
-                      WL_DIRECTOR_CLASSES.composerDesignToolChipActive,
-                      "shadow-md ring-1 ring-brand/35 bg-brand/12 scale-[1.03]",
-                    ),
-                  "h-auto touch-press rounded-full shadow-none",
-                )}
-              >
-                <LayoutTemplate className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">{WIRELINE_STITCH_UI.designModeToggleLabel}</span>
-                <span className="sm:hidden">Design</span>
-                <span className="wl-composer-design-beta" aria-hidden>
-                  {WIRELINE_STITCH_UI.designModeBetaLabel}
-                </span>
-              </ShadButton>
-            ) : null}
+          ) : null}
           </>
         ) : null}
         {(isPainterSurface || designMode) && designStudioOn && (
