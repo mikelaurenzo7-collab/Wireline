@@ -203,7 +203,9 @@ export default function DirectorStitchPreviewStudio({
   const [selectedRepo, setSelectedRepo] = useState("");
   const [connectBusy, setConnectBusy] = useState<DesignIntegrationProvider | null>(null);
   const [iframeFailed, setIframeFailed] = useState(false);
-  const [deviceOverride, setDeviceOverride] = useState<DirectorPreviewMeta["deviceType"] | "AUTO">("AUTO");
+  const [deviceOverride, setDeviceOverride] = useState<DirectorPreviewMeta["deviceType"] | "AUTO">(
+    "AUTO",
+  );
   const [wireframeMode, setWireframeMode] = useState(false);
 
   const effectiveDeviceType = useMemo(() => {
@@ -590,12 +592,14 @@ export default function DirectorStitchPreviewStudio({
           <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10 self-start sm:self-auto">
             {/* Viewport override buttons */}
             <div className="flex items-center gap-0.5">
-              {([
-                { id: "AUTO", label: "Auto", icon: Layers },
-                { id: "DESKTOP", label: "Desktop", icon: Monitor },
-                { id: "TABLET", label: "Tablet", icon: Tablet },
-                { id: "MOBILE", label: "Mobile", icon: Smartphone },
-              ] as const).map((d) => {
+              {(
+                [
+                  { id: "AUTO", label: "Auto", icon: Layers },
+                  { id: "DESKTOP", label: "Desktop", icon: Monitor },
+                  { id: "TABLET", label: "Tablet", icon: Tablet },
+                  { id: "MOBILE", label: "Mobile", icon: Smartphone },
+                ] as const
+              ).map((d) => {
                 const Icon = d.icon;
                 const selected = deviceOverride === d.id;
                 return (
@@ -627,7 +631,11 @@ export default function DirectorStitchPreviewStudio({
               type="button"
               variant="ghost"
               onClick={() => setWireframeMode(!wireframeMode)}
-              title={wireframeMode ? "Switch to Interactive Prototype Mode" : "Switch to Low-Fidelity Wireframe Mode"}
+              title={
+                wireframeMode
+                  ? "Switch to Interactive Prototype Mode"
+                  : "Switch to Low-Fidelity Wireframe Mode"
+              }
               className={cn(
                 "h-7 px-2 shrink-0 flex items-center gap-1.5 rounded-md transition-all wl-micro-meta font-semibold",
                 wireframeMode
@@ -664,9 +672,8 @@ export default function DirectorStitchPreviewStudio({
                   alt={preview.title}
                   className={cn(
                     "max-h-[min(70vh,640px)] w-full object-contain object-top transition-all duration-300",
-                    wireframeMode && "grayscale contrast-[1.1] brightness-[1.05]"
+                    wireframeMode && "grayscale contrast-[1.1] brightness-[1.05]",
                   )}
-                  style={wireframeMode ? { filter: "grayscale(1) contrast(1.1) brightness(1.05)" } : undefined}
                   loading="lazy"
                   decoding="async"
                   onError={() => {
@@ -701,9 +708,8 @@ export default function DirectorStitchPreviewStudio({
                   className={cn(
                     "wl-stitch-live-iframe wl-stitch-live-iframe--studio transition-all duration-300",
                     immersive && "wl-stitch-live-iframe--immersive",
-                    wireframeMode && "grayscale contrast-[1.1] brightness-[1.05]"
+                    wireframeMode && "grayscale contrast-[1.1] brightness-[1.05]",
                   )}
-                  style={wireframeMode ? { filter: "grayscale(1) contrast(1.1) brightness(1.05)" } : undefined}
                   sandbox="allow-scripts allow-same-origin allow-popups"
                   referrerPolicy="no-referrer"
                   allow="fullscreen"

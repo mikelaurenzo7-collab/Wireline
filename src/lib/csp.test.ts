@@ -33,26 +33,33 @@ describe("buildConnectSrcs", () => {
 });
 
 describe("buildCSP", () => {
-  it("uses 'self' only on script-src in production with no nonce", () => {
+  it("starts script-src with 'self' + inline hashes (no unsafe-inline) in prod with no nonce", () => {
     const csp = buildCSP(false);
-    expect(csp).toContain("script-src 'self' https://plausible.io");
-    // script-src must never carry 'unsafe-inline' / 'unsafe-eval' in prod.
     const scriptDirective = csp
       .split(";")
       .map((d) => d.trim())
       .find((d) => d.startsWith("script-src"))!;
+    // 'self' first, then the three static inline-script hashes, then marketing origins.
+    expect(scriptDirective.startsWith("script-src 'self' 'sha256-")).toBe(true);
+    expect(scriptDirective).toContain("'sha256-SX5Oce7MqKqZrv+KX1uSJDriRWzqlnlmu11LcJ5U8aM='");
+    expect(scriptDirective).toContain("https://plausible.io");
+    expect(scriptDirective).toContain("https://connect.facebook.net");
+    expect(scriptDirective).toContain("https://www.googletagmanager.com");
+    // script-src must never carry 'unsafe-inline' / 'unsafe-eval' in prod.
     expect(scriptDirective).not.toContain("'unsafe-inline'");
     expect(scriptDirective).not.toContain("'unsafe-eval'");
   });
 
   it("injects a nonce into script-src when one is provided in prod mode", () => {
     const csp = buildCSP(false, "abc123");
-    expect(csp).toContain("script-src 'self' 'nonce-abc123' https://plausible.io");
     const scriptDirective = csp
       .split(";")
       .map((d) => d.trim())
       .find((d) => d.startsWith("script-src"))!;
+    expect(scriptDirective.startsWith("script-src 'self' 'nonce-abc123' 'sha256-")).toBe(true);
+    expect(scriptDirective).toContain("https://plausible.io");
     expect(scriptDirective).not.toContain("'unsafe-inline'");
+    expect(scriptDirective).not.toContain("'unsafe-eval'");
   });
 
   it("allows 'unsafe-inline' and 'unsafe-eval' only in dev mode (for Vite HMR)", () => {
