@@ -14,11 +14,14 @@ Use this skill when auditing, designing, and polishing Wireline UI pages, intera
 Align all custom code with the established design tokens in [index.css](file:///c:/Users/MichaelLaurenzo/Downloads/Wireline-2/src/index.css):
 
 ### Tactility & Paper foundations
+
 - **Root Background**: The page body background is always `--color-paper` (`#efe9dc` / `#f5f0e6`).
 - **Tactile Depth**: Apply `.paper-texture` to primary cards and drawers to add rich organic depth.
 
 ### Depth & Elevation Levels
+
 Use explicit elevation utilities instead of ad-hoc shadow variables:
+
 - `.elev-0` — Flat, structural boundary (box-shadow: `var(--shadow-0)`).
 - `.elev-1` — Low elevation, cards and lists (box-shadow: `var(--shadow-1)`).
 - `.elev-2` — Medium elevation, dropdown triggers and overlays (box-shadow: `var(--shadow-2)`).
@@ -26,15 +29,19 @@ Use explicit elevation utilities instead of ad-hoc shadow variables:
 - `.elev-glow` — Specular halo effect (box-shadow: `var(--shadow-glow)`).
 
 ### Glassmorphism Surfaces
+
 - **`.glass-1`**: Backdrop-blur 12px, saturate 140%. Use on navigation bars, header chrome, and small popovers.
 - **`.glass-2`**: Backdrop-blur 18px, saturate 160%. Use on modals, overlays, and large dashboard dialogs.
 
 ### Zero-Latency Touch Feedback
+
 - **`.touch-press`**: Instant physical response on click/tap, scales down to `scale(0.97)`. Apply to standard buttons and inputs.
 - **`.touch-press-deep`**: Deeper response scaling down to `scale(0.95)`. Use on primary CTA buttons and larger clickable cards.
 
 ### Dynamic Accent Theming
+
 Wireline drives theme coloring using `--wl-accent`. Set `data-accent` on a parent container and colorize children using semantic accent classes:
+
 - `.wl-accent-surface` — Translucent background and border blended with the accent color.
 - `.wl-accent-text` — Text colorized with the accent color.
 - `.wl-accent-glow` — Solid background using the accent color.
@@ -47,12 +54,15 @@ Wireline drives theme coloring using `--wl-accent`. Set `data-accent` on a paren
 ## 2. Spacing, Grid & Alignment Integrity
 
 ### The Spacing Grid
+
 - Ensure all margins, paddings, and gaps align to a clean spacing scale (multiples of 4px / 8px). Do not introduce arbitrary numbers (like `p-[13px]` or `gap-3.5`).
 
 ### Baseline Alignment
+
 - Elements (text, icons, buttons) within lines must align precisely. Use flex alignment (`items-center`, `items-baseline`) and avoid hardcoded offsets (e.g. `mt-[1px]`) which break across viewports or fonts.
 
 ### Defensive Spacing & Wrapping
+
 - Use `truncate`, `line-clamp`, or proper min-widths to prevent text strings from wrapping awkwardly or overlapping with buttons/icons.
 
 ---
@@ -60,6 +70,7 @@ Wireline drives theme coloring using `--wl-accent`. Set `data-accent` on a paren
 ## 3. Interactive State Checklist
 
 Every interactive control must support 5 clear states:
+
 1. **Idle**: Clean typography, semantic colors, clear purpose.
 2. **Hover**: Smooth tactile translation or lift (e.g. `hover:-translate-y-0.5` or `hover:scale-[1.02]`) accompanied by shadow/border color transitions.
 3. **Press**: GPU-accelerated Zero-latency press scale-downs using `.touch-press` or `.touch-press-deep`.
@@ -71,6 +82,7 @@ Every interactive control must support 5 clear states:
 ## 4. Breakpoint & Responsive Integrity
 
 Verify all layouts across 3 major breakpoints:
+
 - **Mobile (390px / iPhone)**: Check that text sizes scale down (`text-[clamp(...)]`), padding is compact (typically `p-4` maximum), and columns collapse cleanly into rows. Ensure **zero** horizontal scroll overflow.
 - **Tablet (768px - 834px)**: Check for flex wrapping or grid template column wrapping so content doesn't get squished.
 - **Desktop (1440px / 1920px)**: Check that text columns have set max-widths (typically max-w-xl to max-w-3xl) to keep reading lines comfortable.

@@ -24,6 +24,15 @@ if (typeof window !== "undefined") {
   };
 
   window.addEventListener("error", (event) => {
+    const message = event.message || (event.error instanceof Error ? event.error.message : "");
+    if (message && (
+      message.includes("Failed to fetch dynamically imported module") ||
+      message.includes("error loading dynamically imported module")
+    )) {
+      console.warn("[wireline:preload] Dynamic import failed, reloading page to get new version...");
+      window.location.reload();
+      return;
+    }
     report("window-error", event.error || event.message, {
       filename: event.filename,
       lineno: event.lineno,
@@ -32,7 +41,23 @@ if (typeof window !== "undefined") {
   });
 
   window.addEventListener("unhandledrejection", (event) => {
-    report("unhandled-rejection", event.reason);
+    const reason = event.reason;
+    const msg = reason instanceof Error ? reason.message : String(reason);
+    if (msg && (
+      msg.includes("Failed to fetch dynamically imported module") ||
+      msg.includes("error loading dynamically imported module")
+    )) {
+      console.warn("[wireline:preload] Dynamic import rejection, reloading page to get new version...");
+      window.location.reload();
+      return;
+    }
+    report("unhandled-rejection", reason);
+  });
+
+  // Handle Vite's custom preload error event
+  window.addEventListener("vite:preloadError", () => {
+    console.warn("[wireline:preload] Vite preload error, reloading page...");
+    window.location.reload();
   });
 }
 
