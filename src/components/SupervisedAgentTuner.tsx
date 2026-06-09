@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { formatDate, formatDateTime } from "../lib/safe-date";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 
 type Lesson = {
   id: string;
@@ -19,6 +20,12 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPromoting, setIsPromoting] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkPromoting, setIsBulkPromoting] = useState(false);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [agentId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +60,11 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
       });
       if (resp.ok) {
         setLessons((prev) => prev.filter((l) => l.id !== lesson.id));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(lesson.id);
+          return next;
+        });
         toastSuccess("Promoted to directive", "Observation is now a hard constraint.");
       } else {
         toastError("Promotion failed", "Could not promote this observation.");
@@ -64,12 +76,57 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     }
   };
 
+  const promoteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkPromoting(true);
+    const idsToPromote = Array.from(selectedIds);
+    let successCount = 0;
+
+    for (const id of idsToPromote) {
+      const lesson = lessons.find((l) => l.id === id);
+      if (!lesson) continue;
+      setIsPromoting(id);
+      try {
+        const resp = await authFetch(`/api/agents/${agentId}/promote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lessonId: lesson.id, content: lesson.lesson }),
+        });
+        if (resp.ok) {
+          setLessons((prev) => prev.filter((l) => l.id !== lesson.id));
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(lesson.id);
+            return next;
+          });
+          successCount++;
+        } else {
+          toastError("Promotion failed", `Could not promote observation: ${lesson.lesson.slice(0, 30)}...`);
+        }
+      } catch {
+        toastError("Promotion failed", "Network error during bulk promotion.");
+      } finally {
+        setIsPromoting(null);
+      }
+    }
+
+    if (successCount > 0) {
+      toastSuccess("Bulk promotion complete", `Successfully promoted ${successCount} observations.`);
+    }
+    setIsBulkPromoting(false);
+  };
+
   const deleteLesson = async (id: string) => {
     setIsDeleting(id);
     try {
       const resp = await authFetch(`/api/agents/${agentId}/lessons/${id}`, { method: "DELETE" });
       if (resp.ok) {
         setLessons((prev) => prev.filter((l) => l.id !== id));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       } else {
         toastError("Delete failed", "Could not discard this observation.");
       }
@@ -78,6 +135,26 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     } finally {
       setIsDeleting(null);
     }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === lessons.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(lessons.map((l) => l.id)));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   if (isLoading) {
@@ -91,8 +168,16 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
 
   return (
     <div className="relative rounded-md wl-panel-elevated border border-border overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
+          {lessons.length > 0 && (
+            <Checkbox
+              checked={selectedIds.size === lessons.length}
+              onChange={handleSelectAll}
+              title={selectedIds.size === lessons.length ? "Deselect all" : "Select all"}
+              aria-label="Select all observations"
+            />
+          )}
           <div className="w-9 h-9 rounded-md wl-panel border border-brand/30 flex items-center justify-center text-brand">
             <Brain className="w-4 h-4" />
           </div>
@@ -103,12 +188,42 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
             <p className="wl-label-muted">Promote observations to directives</p>
           </div>
         </div>
-        {lessons.length > 0 && (
-          <span className="wl-label flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 border border-brand/25 text-brand">
-            <Zap className="w-2.5 h-2.5" />
-            {lessons.length} new
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-ink/70 uppercase tracking-wider">
+                {selectedIds.size} selected
+              </span>
+              <ShadButton
+                type="button"
+                variant="default"
+                size="sm"
+                disableAnimations
+                onClick={promoteSelected}
+                disabled={isBulkPromoting}
+                className="h-8 px-3 rounded-md wl-label touch-press bg-brand hover:bg-brand/95 text-white"
+              >
+                {isBulkPromoting ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                    Promoting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpCircle className="w-3 h-3 mr-1.5" />
+                    Promote Selected
+                  </>
+                )}
+              </ShadButton>
+            </div>
+          )}
+          {lessons.length > 0 && (
+            <span className="wl-label flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/10 border border-brand/25 text-brand">
+              <Zap className="w-2.5 h-2.5" />
+              {lessons.length} new
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="divide-y divide-border">
@@ -135,6 +250,13 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                 className="p-4 group hover:bg-black/[0.02] transition-colors"
               >
                 <div className="flex gap-3 items-start">
+                  <div className="flex items-center mt-2 shrink-0">
+                    <Checkbox
+                      checked={selectedIds.has(lesson.id)}
+                      onChange={() => handleToggleSelect(lesson.id)}
+                      aria-label={`Select observation ${lesson.id}`}
+                    />
+                  </div>
                   <div className="w-8 h-8 rounded-md wl-panel border border-border flex items-center justify-center shrink-0 mt-0.5 group-hover:border-brand/30 transition-colors">
                     <Terminal className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors" />
                   </div>

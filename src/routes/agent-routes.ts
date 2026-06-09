@@ -335,7 +335,11 @@ router.get(
 
       const [agentRow, personalityRow, directivesList, knowledgeList] = await Promise.all([
         drizzle
-          .select({ flowConfig: schema.agents.flowConfig })
+          .select({
+            flowConfig: schema.agents.flowConfig,
+            role: schema.agents.role,
+            archetype: schema.agents.archetype,
+          })
           .from(schema.agents)
           .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
           .limit(1),
@@ -360,6 +364,8 @@ router.get(
 
       res.json({
         flowConfig: agentRow[0]?.flowConfig || null,
+        role: agentRow[0]?.role || "customer_service",
+        archetype: agentRow[0]?.archetype || "Receptionist",
         personality: personalityRow[0]?.content || "",
         directives: directivesList || [],
         knowledge: knowledgeList || [],
@@ -1536,6 +1542,139 @@ router.post(
       claudeErr(res, e);
     }
   },
+);
+
+// POST /api/agents/:id/chat — Simulator roleplay endpoint
+router.post(
+  "/api/agents/:id/chat",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const agentId = req.params.id;
+      const userId = req.user.id;
+      const { message, history, persona } = req.body;
+
+      if (!message) {
+        throw AppError.fromHttpStatus(400, "message is required");
+      }
+
+      if (!(await findOwnedAgentId(agentId, userId))) {
+        throw AppError.fromHttpStatus(404, "Agent not found.");
+      }
+
+      // Fetch agent details
+      const [agent] = await drizzle
+        .select()
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+        .limit(1);
+
+      if (!agent) {
+        throw AppError.fromHttpStatus(404, "Agent not found.");
+      }
+
+      // Fetch directives and knowledge
+      const directivesData = await drizzle
+        .select()
+        .from(schema.directives)
+        .where(eq(schema.directives.agentId, agentId))
+        .orderBy(desc(schema.directives.priority))
+        .limit(50);
+
+      const knowledgeData = await drizzle
+        .select()
+        .from(schema.knowledge)
+        .where(eq(schema.knowledge.agentId, agentId))
+        .orderBy(desc(schema.knowledge.createdAt))
+        .limit(50);
+
+      const [personalityRow] = await drizzle
+        .select()
+        .from(schema.personality)
+        .where(eq(schema.personality.agentId, agentId))
+        .limit(1);
+
+      // Build system prompt mimicking buildVapiAssistant but simplified for chat
+      const directivesBlock = directivesData.length > 0
+        ? `\n## OPERATOR DIRECTIVES (priority order)\n${directivesData.map(d => `- ${d.content}`).join("\n")}\n`
+        : "";
+
+      const knowledgeBlock = knowledgeData.length > 0
+        ? `\n## KNOWLEDGE BASE\n${knowledgeData.map(k => `- ${k.content}`).join("\n")}\n`
+        : "";
+
+      const personalityBlock = personalityRow?.content?.trim()
+        ? `\n## PERSONALITY\n${personalityRow.content}\n`
+        : "";
+
+      const currentDateTime = new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      // Include a special persona instruction if one is selected
+      let personaInstruction = "";
+      if (persona) {
+        personaInstruction = `\n## ROLEPLAY PERSONA DETECTED
+The user you are chatting with is simulating a customer with the following persona: [${persona}].
+Adapt your responses to handle their behavior according to your instructions. Do not break character. Do not mention that this is a simulation. Be professional and stick to your role.`;
+      }
+
+      const systemPrompt = `
+## IDENTITY & MISSION
+You are ${agent.name || "Wireline Agent"}, a ${agent.role?.replace(/_/g, " ") || "customer service"} specialist.
+
+## VOICE DELIVERY RULES
+- Keep your answers concise, conversational, and direct.
+- Ask one question per turn when feasible.
+- Maintain a helpful, professional tone.
+
+${personalityBlock}
+${directivesBlock}
+${knowledgeBlock}
+${personaInstruction}
+
+Today is ${currentDateTime}.
+`;
+
+      // Format history for Claude
+      let historyPrompt = "";
+      if (history && Array.isArray(history)) {
+        for (const turn of history) {
+          const prefix = turn.role === "user" ? "Customer" : "Agent";
+          historyPrompt += `${prefix}: ${turn.content}\n`;
+        }
+      }
+
+      // Add the final user message
+      const personaPrefixedMessage = persona
+        ? `[Roleplaying as ${persona}] ${message}`
+        : message;
+      historyPrompt += `Customer: ${personaPrefixedMessage}\nAgent:`;
+
+      // Call LLM
+      const response = await claudeBrain.runCompletionResilient({
+        system: systemPrompt,
+        user: historyPrompt,
+        complexity: "medium", // Use sonnet tier for good quality simulation
+      });
+
+      let reply = response.text.trim();
+      if (reply.startsWith("Agent:")) {
+        reply = reply.substring(6).trim();
+      }
+
+      res.json({ reply });
+    } catch (e) {
+      if (e instanceof AppError) throw e;
+      claudeErr(res, e);
+    }
+  }
 );
 
 export default router;

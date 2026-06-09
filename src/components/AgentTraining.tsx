@@ -36,6 +36,9 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
 import { InlineEmpty } from "./ui/InlineEmpty";
 import { OPS_TRAINING_PANEL } from "../lib/wireline-ops-design";
+import RoleplaySandbox from "./RoleplaySandbox";
+import IntegrationDirectivePresets from "./IntegrationDirectivePresets";
+import BehavioralRegressionTests from "./BehavioralRegressionTests";
 
 type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
@@ -103,6 +106,8 @@ export default function AgentTraining({
   const [directives, setDirectives] = useState<any[]>([]);
   const [personality, setPersonality] = useState("");
   const [lessons, setLessons] = useState<any[]>([]);
+  const [agentRole, setAgentRole] = useState("customer_service");
+  const [agentArchetype, setAgentArchetype] = useState("Receptionist");
 
   const [editingDirective, setEditingDirective] = useState<{ id: string; content: string } | null>(
     null,
@@ -196,6 +201,8 @@ export default function AgentTraining({
       setPersonality(data.personality || "");
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
+      if (data.role) setAgentRole(data.role);
+      if (data.archetype) setAgentArchetype(data.archetype);
     } catch {
       /* training fetch failures are non-fatal — UI shows empty state */
     }
@@ -495,6 +502,13 @@ export default function AgentTraining({
                   </motion.div>
                 )}
               </section>
+
+              {/* Integration Directive Presets */}
+              <IntegrationDirectivePresets
+                agentId={selectedAgentId}
+                directives={directives}
+                onUpdate={fetchKnowledge}
+              />
 
               {/* Neural Identity */}
               <section className="rounded-md wl-panel-elevated border border-border p-4">
@@ -914,6 +928,13 @@ export default function AgentTraining({
                   </div>
                 </motion.div>
               )}
+
+              {/* Behavioral Regression Tests */}
+              <BehavioralRegressionTests
+                agentId={selectedAgentId}
+                agentRole={agentRole}
+                onAddDirective={(dir) => saveManualEntry("directive", dir)}
+              />
             </motion.div>
           )}
 
@@ -973,7 +994,7 @@ export default function AgentTraining({
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="h-full overflow-y-auto"
             >
-              <div className="min-h-full flex items-center justify-center p-6">
+              <div className="min-h-full max-w-[1200px] mx-auto p-6 space-y-8 flex flex-col items-center">
                 <div className="max-w-[560px] w-full text-center space-y-6">
                   <div className="relative w-20 h-20 rounded-md wl-panel-elevated border border-border flex items-center justify-center mx-auto">
                     <PlayCircle className="w-10 h-10 text-brand" strokeWidth={1.25} />
@@ -1030,6 +1051,12 @@ export default function AgentTraining({
                       </div>
                     )}
                   </div>
+                </div>
+
+                <hr className="w-full border-border my-6" />
+
+                <div className="w-full max-w-[1000px]">
+                  <RoleplaySandbox agentId={selectedAgentId} />
                 </div>
               </div>
             </motion.div>
