@@ -2114,9 +2114,10 @@ export default function DirectorWorkspace({
           <DirectorUsageIndicator className="absolute -top-1 right-0 z-40" />
           <div
             className={cn(
-              "relative transition-all duration-300",
+              "relative transition-all duration-500",
               WL_DIRECTOR_CLASSES.composerDock,
-              isSending && "ring-1 ring-brand/20",
+              "bg-white/70 backdrop-blur-xl border border-brand/20 shadow-[0_4px_24px_rgba(0,0,0,0.04)] focus-within:shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] focus-within:border-brand/40",
+              isSending && "ring-2 ring-brand/30 shadow-[0_0_20px_rgba(var(--brand-rgb),0.25)] animate-pulse",
               composerAccessory && "wl-composer-dock--accessory-open",
             )}
           >
@@ -2229,15 +2230,16 @@ export default function DirectorWorkspace({
                   aria-label="Send message"
                   className={cn(
                     WL_DIRECTOR_CLASSES.composerSendBtn,
-                    "touch-press app-primary-action gap-2 px-4 shadow-md shadow-brand/25",
+                    "touch-press app-primary-action gap-2 px-4 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)] transition-all duration-300 hover:shadow-[0_0_20px_rgba(var(--brand-rgb),0.4)] hover:-translate-y-0.5 relative overflow-hidden group",
                   )}
                 >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
                   {isSending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin relative z-10" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Send className="w-4 h-4 relative z-10" />
                   )}
-                  <span className="hidden sm:inline">Send</span>
+                  <span className="hidden sm:inline relative z-10">Send</span>
                 </ShadButton>
               </div>
             </div>

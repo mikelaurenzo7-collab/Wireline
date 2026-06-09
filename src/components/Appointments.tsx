@@ -190,7 +190,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg rounded-md wl-panel-elevated border border-border shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg rounded-xl wl-panel-elevated border border-brand/20 shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] overflow-hidden bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl"
       >
         <header className="px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div>
@@ -849,10 +849,10 @@ function AppointmentRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 8 }}
       transition={{ duration: 0.18 }}
-      className="px-4 py-3.5 hover:bg-black/3 transition-colors group touch-press"
+      className="px-4 py-3.5 hover:bg-black/[0.04] hover:shadow-sm transition-all duration-300 group touch-press relative"
     >
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-md wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5">
+      <div className="flex items-start gap-3 relative">
+        <div className="w-9 h-9 rounded-md wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5 shadow-[0_0_8px_rgba(var(--brand-rgb),0.15)] bg-brand/10 border border-brand/30 group-hover:scale-110 transition-all duration-300">
           <User className="w-4 h-4" />
         </div>
 

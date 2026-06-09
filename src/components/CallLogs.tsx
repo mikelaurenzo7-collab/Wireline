@@ -254,7 +254,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                   {filteredCalls.map((call) => {
                     const outcomeLabel = resolveCallOutcomeLabel(call);
                     return (
-                      <li key={call.id}>
+                      <motion.li layoutId={`call-${call.id}`} key={call.id}>
                         <ShadButton
                           type="button"
                           variant="ghost"
@@ -262,10 +262,10 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           onClick={() => setSelectedCall(call)}
                           aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                           className={cn(
-                            "group touch-press w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none",
+                            "group touch-press w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none transition-all duration-300",
                             selectedCall?.id === call.id
-                              ? "bg-brand/8 hover:bg-brand/8"
-                              : "hover:bg-black/3",
+                              ? "bg-brand/10 hover:bg-brand/15"
+                              : "hover:bg-black/[0.04] hover:shadow-sm",
                           )}
                         >
                           {/* Active indicator bar */}
@@ -279,11 +279,11 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           {/* Direction icon */}
                           <div
                             className={cn(
-                              "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all",
+                              "w-9 h-9 rounded-md flex items-center justify-center shrink-0 border transition-all duration-300",
                               call.direction === "inbound"
-                                ? "bg-brand/8 border-brand/25 text-brand"
-                                : "bg-brand-2/8 border-brand-2/25 text-brand-2",
-                              selectedCall?.id === call.id && "scale-105",
+                                ? "bg-brand/10 border-brand/30 text-brand shadow-[0_0_8px_rgba(var(--brand-rgb),0.15)]"
+                                : "bg-brand-2/10 border-brand-2/30 text-brand-2 shadow-[0_0_8px_rgba(var(--brand-2-rgb),0.15)]",
+                              selectedCall?.id === call.id && "scale-110 shadow-md",
                             )}
                           >
                             {call.direction === "inbound" ? (
@@ -345,7 +345,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                             </div>
                           </div>
                         </ShadButton>
-                      </li>
+                      </motion.li>
                     );
                   })}
                 </ul>
@@ -363,11 +363,13 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           )}
         >
           {selectedCall ? (
-            <CallDetail
-              call={selectedCall}
-              formatDuration={formatDuration}
-              onBack={() => setSelectedCall(null)}
-            />
+            <motion.div layoutId={`call-${selectedCall.id}`} className="h-full flex flex-col min-h-0">
+              <CallDetail
+                call={selectedCall}
+                formatDuration={formatDuration}
+                onBack={() => setSelectedCall(null)}
+              />
+            </motion.div>
           ) : (
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
@@ -625,7 +627,7 @@ function CallDetail({
                 transition={{ duration: 0.18 }}
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-3"
               >
-                <div className="rounded-md wl-panel p-4">
+                <div className="rounded-xl wl-panel border border-brand/10 p-5 shadow-sm bg-gradient-to-br from-white/60 to-transparent backdrop-blur-md">
                   <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
@@ -669,7 +671,7 @@ function CallDetail({
                 )}
                 {/* QA Scorecard */}
                 {qaScore !== null && qaBreakdown ? (
-                  <div className="rounded-md wl-panel p-4">
+                  <div className="rounded-xl wl-panel p-5 bg-gradient-to-br from-white/40 to-transparent border border-black/[0.04] shadow-sm backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-3">
                       <div
                         className="wl-label flex items-center gap-1.5 wl-qa-text"
@@ -722,7 +724,7 @@ function CallDetail({
                     disableAnimations
                     onClick={handleScoreQa}
                     disabled={scoring}
-                    className="w-full h-auto rounded-md border border-brand/20 hover:border-brand/40 p-3 justify-start gap-3"
+                    className="w-full h-auto rounded-xl border border-brand/20 hover:border-brand/40 p-4 justify-start gap-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-gradient-to-br from-white/30 to-transparent"
                   >
                     <div className="w-8 h-8 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                       {scoring ? (

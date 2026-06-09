@@ -222,7 +222,7 @@ export default function DispatchTab({
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums",
+                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums transition-all focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] focus:bg-white/50",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-brand/50"
@@ -317,8 +317,10 @@ export default function DispatchTab({
                           !!quotaExhausted ||
                           isDncBlocked
                         }
-                        className="w-full rounded-md !py-3 text-[11px] tracking-[0.3em]"
+                        className="w-full rounded-md !py-3 text-[11px] tracking-[0.3em] transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5 relative overflow-hidden group"
                       >
+                        {/* Glow effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
                         {isDialing ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" /> Dispatching

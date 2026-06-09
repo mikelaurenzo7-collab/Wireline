@@ -231,11 +231,13 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         key={t.id}
                         type="button"
                         aria-label={`SMS thread with ${t.customer_number}`}
+                        layoutId={`sms-thread-${t.id}`}
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={() => setActiveId(t.id)}
                         className={cn(
                           WL_CHANNEL_CLASSES.threadRow,
+                          "transition-all duration-300 hover:shadow-sm hover:bg-black/[0.04]",
                           activeId === t.id && WL_CHANNEL_CLASSES.threadRowActive,
                         )}
                       >
@@ -289,7 +291,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   className="py-12"
                 />
               ) : (
-                <div className="h-full flex flex-col min-h-0 p-3">
+                <motion.div layoutId={`sms-thread-${activeThread.id}`} className="h-full flex flex-col min-h-0 p-3 bg-gradient-to-br from-white/40 to-transparent">
                   <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
                     <span className="font-mono text-sm text-ink truncate">
@@ -318,10 +320,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         <div
                           key={m.id}
                           className={cn(
-                            "max-w-[78%] rounded-md px-3.5 py-2.5 border",
+                            "max-w-[78%] rounded-xl px-3.5 py-2.5 border transition-all duration-300 hover:shadow-sm",
                             m.direction === "out"
                               ? "ml-auto bg-brand/12 border-brand/30 text-ink"
-                              : "mr-auto bg-paper/80 border-black/10 text-ink",
+                              : "mr-auto bg-white/80 backdrop-blur-sm border-black/10 text-ink",
                           )}
                         >
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
@@ -356,7 +358,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         }}
                         placeholder="Type a reply…"
                         disabled={sending}
-                        className="flex-1 text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 disabled:opacity-50"
+                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-ink placeholder:text-ink/40 disabled:opacity-50 transition-all duration-300"
                       />
                       <ShadButton
                         type="button"
@@ -366,7 +368,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         onClick={handleSend}
                         disabled={sending || !reply.trim()}
                         aria-label="Send SMS reply"
-                        className="touch-press shrink-0 min-h-11 w-11 rounded-md"
+                        className="touch-press shrink-0 min-h-11 w-11 rounded-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5 group"
                       >
                         {sending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -380,7 +382,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                       auto-honored.
                     </p>
                   </div>
-                </div>
+                </motion.div>
               )}
             </ChannelInboxDetailPane>
           </ChannelInboxGrid>

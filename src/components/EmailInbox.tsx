@@ -401,14 +401,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <motion.button
                           type="button"
                           aria-label={`Email thread: ${thread.subject || thread.customer_email}`}
-                          layout
+          layoutId={`email-thread-${thread.id}`}
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
                           key={thread.id}
                           onClick={() => setSelectedThread(thread)}
                           className={cn(
-                            "group w-full px-4 py-3.5 text-left transition-all flex gap-3 items-start relative touch-press",
-                            active ? "bg-brand/6" : "hover:bg-black/3",
+                            "group w-full px-4 py-3.5 text-left transition-all duration-300 flex gap-3 items-start relative touch-press",
+                            active ? "bg-brand/6" : "hover:bg-black/[0.04] hover:shadow-sm",
                           )}
                         >
                           {/* Active bar */}
@@ -422,10 +422,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           {/* Avatar */}
                           <div
                             className={cn(
-                              "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all",
+                              "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all duration-300",
                               active
-                                ? "border-brand/30 bg-brand/10 text-brand"
-                                : "border-black/10 bg-paper/80 text-ink/70 group-hover:text-ink",
+                                ? "border-brand/30 bg-brand/10 text-brand shadow-[0_0_8px_rgba(var(--brand-rgb),0.15)] scale-110"
+                                : "border-black/10 bg-paper/80 text-ink/70 group-hover:text-ink group-hover:shadow-sm",
                             )}
                           >
                             {thread.customer_email?.[0]?.toUpperCase() || "?"}
@@ -471,10 +471,11 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                 {selectedThread ? (
                   <motion.div
                     key={selectedThread.id}
+                    layoutId={`email-thread-${selectedThread.id}`}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="h-full flex flex-col min-h-0"
+                    className="h-full flex flex-col min-h-0 bg-gradient-to-br from-white/40 to-transparent"
                   >
                     {/* Subject header */}
                     <div className="shrink-0 px-3 sm:px-4 py-3 border-b border-black/8 flex items-center justify-between gap-2 sm:gap-3">
@@ -626,7 +627,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         </div>
                       )}
 
-                      <div className="rounded-md wl-panel focus-within:border-brand/35 transition-colors overflow-hidden">
+                      <div className="rounded-md wl-panel focus-within:border-brand/50 focus-within:shadow-[0_0_15px_rgba(var(--brand-rgb),0.1)] transition-all duration-300 overflow-hidden bg-white/50 backdrop-blur-sm">
                         <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/55">
                           <Terminal className="w-3 h-3" />
                           <span className="wl-label">
@@ -685,7 +686,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             size="sm"
                             disableAnimations
                             onClick={sendReply}
-                            className="rounded-full wl-label touch-press"
+                            className="rounded-full wl-label touch-press transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5"
                           >
                             <Send className="w-3 h-3" /> Send
                           </ShadButton>
