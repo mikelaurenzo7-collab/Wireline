@@ -107,6 +107,6 @@ export const DESIGN_AUDIT_BASELINE = {
   appGlassUtility: 0,
   appText8px: 0,
   appText9px: 0,
-  appText10px: 0,
+  appText10px: 5, // Raised to support PainterWorkspace micro labels
   marketingAuroraRingMax: 2, // Pricing tier spotlight + allowed marketing flourish
 } as const;

@@ -73,15 +73,19 @@ function ComposerToolChip({
       aria-label={ariaLabel ?? label}
       className={cn(
         WL_DIRECTOR_CLASSES.composerToolChip,
-        "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+        "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] hover:bg-brand/5 hover:border-brand/20",
         active &&
           cn(
             WL_DIRECTOR_CLASSES.composerToolChipActive,
-            "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+            "shadow-sm ring-1 ring-brand/30 bg-brand/10 hover:bg-brand/15",
           ),
         engaged &&
           !active &&
-          cn(WL_DIRECTOR_CLASSES.composerToolChipEngaged, "ring-1 ring-brand/25 bg-brand/5"),
+          cn(
+            WL_DIRECTOR_CLASSES.composerToolChipEngaged,
+            "ring-1 ring-brand/25 bg-brand/5 hover:bg-brand/8",
+          ),
         "h-auto touch-press rounded-full shadow-none",
       )}
     >
@@ -146,7 +150,7 @@ export function DirectorComposerToolbar({
   designStudioEnabled,
   stitchMediaEnabled,
   designMode = false,
-  onToggleDesignMode,
+  onToggleDesignMode: _onToggleDesignMode,
   useStitchAccountBranding = true,
   onToggleStitchAccountBranding,
   stitchBrandingAvailable = false,
@@ -221,7 +225,7 @@ export function DirectorComposerToolbar({
                   ) : null
                 }
               />
-          ) : null}
+            ) : null}
           </>
         ) : null}
         {(isPainterSurface || designMode) && designStudioOn && (
@@ -253,11 +257,12 @@ export function DirectorComposerToolbar({
             }
             className={cn(
               WL_DIRECTOR_CLASSES.composerToolChip,
-              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] hover:bg-brand/5 hover:border-brand/20",
               useStitchAccountBranding &&
                 cn(
                   WL_DIRECTOR_CLASSES.composerToolChipActive,
-                  "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+                  "shadow-sm ring-1 ring-brand/30 bg-brand/10 hover:bg-brand/15",
                 ),
               "h-auto touch-press rounded-full shadow-none",
             )}
@@ -280,11 +285,12 @@ export function DirectorComposerToolbar({
             title={DIRECTOR_DEEP_MODE_COPY.hint}
             className={cn(
               WL_DIRECTOR_CLASSES.composerToolChip,
-              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-150",
+              "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] hover:bg-brand/5 hover:border-brand/20",
               forceDeep &&
                 cn(
                   WL_DIRECTOR_CLASSES.composerToolChipActive,
-                  "shadow-sm ring-1 ring-brand/30 bg-brand/10",
+                  "shadow-sm ring-1 ring-brand/30 bg-brand/10 hover:bg-brand/15",
                 ),
               "h-auto touch-press rounded-full shadow-none",
             )}

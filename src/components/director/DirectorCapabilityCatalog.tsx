@@ -60,7 +60,7 @@ function CapabilityRow({
       disableAnimations
       onClick={() => onPick(item.example)}
       className={cn(
-        "group w-full h-auto justify-start text-left rounded-md border border-transparent hover:border-brand/20 hover:bg-brand/[0.04] px-2.5 py-2 gap-2 touch-press",
+        "group w-full h-auto justify-start text-left rounded-md border border-transparent hover:border-brand/25 hover:bg-brand/[0.04] px-2.5 py-2 gap-2 touch-press transition-all duration-150 hover:scale-[1.01] active:scale-[0.99]",
         compact && "py-1.5",
       )}
     >
@@ -77,7 +77,7 @@ function CapabilityRow({
           </p>
         )}
       </div>
-      <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/40 group-hover:text-brand transition-colors" />
+      <ArrowUpRight className="w-3 h-3 shrink-0 text-brand/40 group-hover:text-brand group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
     </ShadButton>
   );
 }
@@ -205,11 +205,11 @@ export function DirectorCapabilityCatalog({
               onClick={() => onPickExample(item.example)}
               title={item.description}
               className={cn(
-                "group h-auto text-left items-start gap-2 px-3 py-2.5 rounded-md border-border/80",
-                "hover:border-brand/25 hover:bg-brand/[0.03]",
+                "group h-auto text-left items-start gap-2 px-3 py-2.5 rounded-md border border-border/80 bg-paper/50 dark:bg-velvet/40 backdrop-blur-sm",
+                "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm hover:shadow-brand/5 hover:border-brand/25 hover:bg-brand/[0.03]",
               )}
             >
-              <span className="flex w-7 h-7 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
+              <span className="flex w-7 h-7 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand group-hover:bg-brand group-hover:text-white transition-all duration-200">
                 <Icon className="w-3.5 h-3.5" />
               </span>
               <span className="min-w-0 flex-1">

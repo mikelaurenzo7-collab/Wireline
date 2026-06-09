@@ -65,11 +65,11 @@ function OpenRouterModelRow({
       variant="ghost"
       disableAnimations
       className={cn(
-        "w-full h-auto justify-start text-left rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-brand/60",
+        "w-full h-auto justify-start text-left rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-brand/60 hover:scale-[1.01] active:scale-[0.99]",
         compact ? "px-2.5 py-1.5 wl-micro-meta" : "px-2.5 py-2 text-[12px]",
         active
-          ? "bg-brand/20 text-foreground ring-1 ring-brand/40 font-medium"
-          : "hover:bg-muted/70 text-foreground",
+          ? "bg-brand/15 text-foreground ring-1 ring-brand/35 font-medium shadow-sm"
+          : "hover:bg-brand/[0.04] hover:text-brand hover:border-brand/10 border border-transparent text-foreground",
       )}
       onClick={onPick}
     >
@@ -204,7 +204,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
           aria-label={DIRECTOR_MODEL_PICKER_COPY.hint}
           className={cn(
             WL_DIRECTOR_CLASSES.composerToolChip,
-            "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            "focus-visible:ring-2 focus-visible:ring-brand/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] hover:bg-brand/5 hover:border-brand/20",
             selection.provider === "openrouter" && WL_DIRECTOR_CLASSES.composerToolChipEngaged,
             // Cap width so the chip stays compact where the toolbar is tight
             // (mobile shows the short "Model" label; tablet keeps 140px), but
@@ -226,7 +226,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
       <PopoverContent
         align="start"
         side="top"
-        className="w-[min(100vw-2rem,24rem)] p-0 border-border/60 bg-card/95 backdrop-blur-md"
+        className="w-[min(100vw-2rem,24rem)] p-0 border border-brand/10 bg-card/95 backdrop-blur-md shadow-[0_12px_40px_-12px_rgba(107,43,153,0.12)] rounded-lg"
         role="listbox"
         aria-label="Model selection"
       >
@@ -271,10 +271,10 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
                     variant="ghost"
                     disableAnimations
                     className={cn(
-                      "w-full h-auto justify-start text-left rounded-md px-2.5 py-2 text-[12px] transition-colors focus-visible:ring-2 focus-visible:ring-brand/60",
+                      "w-full h-auto justify-start text-left rounded-md px-2.5 py-2 text-[12px] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-brand/60 hover:scale-[1.01] active:scale-[0.99]",
                       active
-                        ? "bg-brand/20 text-foreground ring-1 ring-brand/40 font-medium"
-                        : "hover:bg-muted/70 text-foreground",
+                        ? "bg-brand/15 text-foreground ring-1 ring-brand/35 font-medium shadow-sm"
+                        : "hover:bg-brand/[0.04] hover:text-brand hover:border-brand/10 border border-transparent text-foreground",
                     )}
                     onClick={() => void persist({ provider: "wireline", tier: tier.id })}
                   >

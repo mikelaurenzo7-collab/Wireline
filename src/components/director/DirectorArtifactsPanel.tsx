@@ -50,7 +50,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
       <div
         className={cn(
           WL_DIRECTOR_CLASSES.composerColumn,
-          "rounded-md border backdrop-blur-sm p-3 space-y-3",
+          "rounded-lg border border-brand/10 bg-paper/75 dark:bg-velvet/45 backdrop-blur-md p-3 space-y-3 shadow-sm shadow-brand/[0.02] transition-all duration-300 hover:shadow-md hover:shadow-brand/[0.04]",
           WL_DIRECTOR_CLASSES.artifactsPanel,
         )}
       >
@@ -82,12 +82,12 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
               {imageArts.slice(0, 12).map((a) => (
                 <div
                   key={a.id}
-                  className="group relative rounded-md border border-brand/10 overflow-hidden wl-checkerboard aspect-square"
+                  className="group relative rounded-md border border-brand/10 overflow-hidden wl-checkerboard aspect-square transition-all duration-300 hover:border-brand/30 hover:scale-[1.01] hover:shadow-sm"
                 >
                   <img
                     src={a.downloadUrl}
                     alt={a.name}
-                    className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-contain p-2 transition-transform duration-500 ease-out group-hover:scale-105"
                     loading="lazy"
                   />
                   {/* Hover overlay with download */}

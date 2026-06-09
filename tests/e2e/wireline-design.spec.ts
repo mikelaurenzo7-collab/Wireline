@@ -78,7 +78,7 @@ test.describe("Wireline design — authenticated app surfaces", () => {
   });
 
   for (const route of AUTHENTICATED_ROUTES) {
-    test(`${route.path} renders app surface without aurora-ring", async ({ page }) => {
+    test(`${route.path} renders app surface without aurora-ring`, async ({ page }) => {
       await gotoAuthenticated(page, route.path);
       await assertAuthenticatedShell(page);
       await assertNoAuroraRingInApp(page);
@@ -95,7 +95,7 @@ test.describe("Wireline design — authenticated mobile shell", () => {
   });
 
   for (const path of ["/chat", "/phone", "/agents", "/integrations"] as const) {
-    test(`${path} mobile layout stays in brand shell", async ({ page }) => {
+    test(`${path} mobile layout stays in brand shell`, async ({ page }) => {
       await page.goto(path, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({
         timeout: 25_000,
@@ -116,9 +116,13 @@ test.describe("Wireline design — Director artifacts panel visual regression", 
   test("Director artifacts panel renders consistently (visual regression)", async ({ page }) => {
     await gotoAuthenticated(page, "/director");
 
-    await expect(page.getByRole("heading", { name: /Director|artifacts/i }).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /Director|artifacts/i }).first()).toBeVisible({
+      timeout: 15000,
+    });
 
-    const artifactsPanel = page.locator(".wl-director-artifacts, [data-testid*='artifact'], .director-artifacts-panel").first();
+    const artifactsPanel = page
+      .locator(".wl-director-artifacts, [data-testid*='artifact'], .director-artifacts-panel")
+      .first();
 
     await expect(artifactsPanel).toHaveScreenshot({
       name: "director-artifacts-panel.png",
@@ -138,10 +142,14 @@ test.describe("Wireline design — Director composer visual regression", () => {
     await gotoAuthenticated(page, "/director");
 
     // Wait for Director to load
-    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({
+      timeout: 15000,
+    });
 
     // Target the composer toolbar area (contains model picker + tool chips)
-    const composerToolbar = page.locator(".director-composer-toolbar, [data-testid*='composer'], .wl-director-composer").first();
+    const composerToolbar = page
+      .locator(".director-composer-toolbar, [data-testid*='composer'], .wl-director-composer")
+      .first();
 
     await expect(composerToolbar).toHaveScreenshot({
       name: "director-composer-toolbar.png",
@@ -161,9 +169,13 @@ test.describe("Wireline design — Director empty state visual regression", () =
     await gotoAuthenticated(page, "/director");
 
     // Wait for empty state to appear (no messages)
-    await expect(page.getByText(/Always-on fleet manager|Mission control/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/Always-on fleet manager|Mission control/i)).toBeVisible({
+      timeout: 15000,
+    });
 
-    const emptyHero = page.locator(".wl-director-empty-section, [data-testid*='empty'], .director-empty-hero").first();
+    const emptyHero = page
+      .locator(".wl-director-empty-section, [data-testid*='empty'], .director-empty-hero")
+      .first();
 
     await expect(emptyHero).toHaveScreenshot({
       name: "director-empty-state.png",
@@ -183,10 +195,14 @@ test.describe("Wireline design — Director live session visual regression", () 
     await gotoAuthenticated(page, "/director");
 
     // Wait for Director workspace to load
-    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({
+      timeout: 15000,
+    });
 
     // The live session panel appears during streaming. We test the container structure.
-    const liveSession = page.locator(".wl-panel, [data-testid*='live-session'], .director-live-session").first();
+    const liveSession = page
+      .locator(".wl-panel, [data-testid*='live-session'], .director-live-session")
+      .first();
 
     if (await liveSession.isVisible().catch(() => false)) {
       await expect(liveSession).toHaveScreenshot({
@@ -207,10 +223,14 @@ test.describe("Wireline design — Director starter prompts and capabilities vis
   test("Director starter prompts and capability catalog render consistently", async ({ page }) => {
     await gotoAuthenticated(page, "/director");
 
-    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({
+      timeout: 15000,
+    });
 
     // Target the starter prompts and capability catalog area in empty state
-    const starterSection = page.locator(".wl-director-empty-section, [data-testid*='starter'], .director-capability-catalog").first();
+    const starterSection = page
+      .locator(".wl-director-empty-section, [data-testid*='starter'], .director-capability-catalog")
+      .first();
 
     if (await starterSection.isVisible().catch(() => false)) {
       await expect(starterSection).toHaveScreenshot({
@@ -232,9 +252,15 @@ test.describe("Wireline design — Director thread header visual regression", ()
     await gotoAuthenticated(page, "/director");
 
     // Wait for Director to have messages (so header appears)
-    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: /Director/i }).first()).toBeVisible({
+      timeout: 15000,
+    });
 
-    const threadHeader = page.locator(".wl-director-thread-header, [data-testid*='thread-header'], .border-b.border-brand\/6").first();
+    const threadHeader = page
+      .locator(
+        ".wl-director-thread-header, [data-testid*='thread-header'], .border-b.border-brand\\/6",
+      )
+      .first();
 
     if (await threadHeader.isVisible().catch(() => false)) {
       await expect(threadHeader).toHaveScreenshot({

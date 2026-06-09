@@ -5836,12 +5836,14 @@ select:focus {
 }
 
 /* Auth form input â€” tall, light, branded */
-/* Auth form input — unified: light, tall, branded */
 .auth-input {
   @apply w-full px-5 bg-white/60 border border-ink/[0.08] outline-none
          text-ink text-sm placeholder:text-ink/40 focus:border-brand/50
-         focus:bg-white/80 transition-all;
+         focus:bg-white/80 transition-all duration-300 rounded-lg shadow-sm;
   height: 52px;
+}
+.auth-input:focus {
+  box-shadow: 0 0 0 3px rgba(107, 43, 153, 0.1);
 }
 
 /* Empty state helper */
@@ -8380,21 +8382,41 @@ select:focus {
 
 /* Centered sign-in / sign-up card — single source for auth + reset-password */
 .wl-auth-card {
-  border: 1px solid color-mix(in srgb, var(--color-ink, #1a1614) 6%, transparent);
-  background-color: var(--paper, var(--wl-cream));
+  border: 1px solid color-mix(in srgb, var(--color-ink, #1a1614) 8%, transparent);
+  background-color: color-mix(in srgb, var(--paper, var(--wl-cream)) 95%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
     0 24px 64px -24px rgba(26, 22, 20, 0.12),
-    0 8px 24px -12px rgba(107, 43, 153, 0.08);
+    0 8px 32px -12px rgba(107, 43, 153, 0.08);
   overflow: hidden;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wl-auth-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 32px 72px -20px rgba(26, 22, 20, 0.16),
+    0 12px 40px -10px rgba(107, 43, 153, 0.12);
 }
 .dark .wl-auth-card {
-  border-color: rgba(255, 255, 255, 0.08);
-  background-color: color-mix(in srgb, var(--card) 92%, #0f0c17);
+  border-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(15, 12, 23, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 24px 64px -24px rgba(0, 0, 0, 0.45),
-    0 8px 24px -12px rgba(139, 63, 214, 0.12);
+    0 8px 32px -12px rgba(139, 63, 214, 0.15);
+}
+.dark .wl-auth-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 32px 72px -20px rgba(0, 0, 0, 0.55),
+    0 12px 40px -10px rgba(139, 63, 214, 0.2);
 }
 .wl-auth-card-header {
   display: flex;
