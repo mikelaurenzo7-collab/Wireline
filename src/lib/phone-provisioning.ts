@@ -208,11 +208,25 @@ export async function provisionTenantNumber(
 
     const twilioPurchased = await purchaseTwilioLocalNumber(userId, opts.areaCode);
     if (twilioPurchased) {
-      const imported = await importTwilioNumberToVapi({
-        number: twilioPurchased.phoneNumber,
-        name: `Wireline · ${userId.slice(0, 8)}${opts.agentId ? ` · ${opts.agentId.slice(0, 8)}` : ""}`,
-        smsEnabled: false,
-      });
+      // If the Vapi import throws (timeout, 5xx), release the just-purchased
+      // Twilio number — otherwise it orphans as a silent ~$1.15/mo billing
+      // leak that neither the DB nor Vapi knows about.
+      let imported;
+      try {
+        imported = await importTwilioNumberToVapi({
+          number: twilioPurchased.phoneNumber,
+          name: `Wireline · ${userId.slice(0, 8)}${opts.agentId ? ` · ${opts.agentId.slice(0, 8)}` : ""}`,
+          smsEnabled: false,
+        });
+      } catch (importErr) {
+        await removeTwilioNumberByE164(twilioPurchased.phoneNumber);
+        log.error("Vapi import failed after Twilio purchase — number released", {
+          userId,
+          phoneNumber: twilioPurchased.phoneNumber,
+          error: getErrorMessage(importErr),
+        });
+        return { ok: false, error: "Voice import failed — number released. Try again." };
+      }
       if (!imported.id || !imported.number) {
         await removeTwilioNumberByE164(twilioPurchased.phoneNumber);
         return { ok: false, error: "Vapi import succeeded but returned no number id." };
