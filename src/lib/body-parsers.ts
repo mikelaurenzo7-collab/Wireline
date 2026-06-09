@@ -50,10 +50,16 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
   // xi-webhook-signature header.
   app.use("/api/webhooks/elevenlabs", express.raw({ type: "*/*" }));
 
-  // Twilio inbound SMS + voice fallback — application/x-www-form-urlencoded.
-  // We need the parsed fields (From / To / Body / MessageSid …) but we also
-  // need to feed Twilio.validateRequest the raw param object, which
-  // urlencoded() produces. Twilio signs the URL+sorted-params, not the raw
-  // bytes, so urlencoded (not raw) is the correct parser here.
   app.use("/api/twilio-webhook", express.urlencoded({ extended: false }));
+
+  // Vapi webhook — JSON parser with verify callback to populate req.rawBody for signature verification.
+  app.use(
+    "/api/vapi-webhook",
+    express.json({
+      limit: "2mb",
+      verify: (req: any, res: any, buf: any) => {
+        req.rawBody = buf;
+      },
+    })
+  );
 }
