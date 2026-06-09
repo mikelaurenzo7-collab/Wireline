@@ -204,7 +204,7 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="oauth-btn min-h-[52px] py-2.5 h-auto flex-col gap-1.5 border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] hover:border-brand/30 hover:bg-paper/90 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand/40"
+            className="oauth-btn min-h-[52px] py-2.5 h-auto flex-col gap-1.5 border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold touch-press hover:scale-[1.02] hover:border-brand/30 hover:bg-paper/90 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand/40"
           >
             {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
             <span>{p.label}</span>
@@ -663,7 +663,7 @@ export default function AuthPortal() {
                         variant="editorial"
                         disableAnimations
                         disabled={loading || (isSignUp && !agreedToTerms)}
-                        className="w-full min-h-[48px] py-3.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.01] hover:shadow-md hover:shadow-brand/10 active:scale-[0.99]"
+                        className="w-full min-h-[48px] py-3.5 text-sm font-semibold touch-press-deep hover:scale-[1.01] hover:shadow-md hover:shadow-brand/10"
                       >
                         {loading ? (
                           <>

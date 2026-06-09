@@ -52,7 +52,7 @@ export default function CreateAgentSection({
             size="sm"
             disableAnimations
             onClick={onSeedFleet}
-            className="rounded-full wl-label normal-case tracking-[0.18em]"
+            className="rounded-full wl-label normal-case tracking-[0.18em] touch-press hover:scale-[1.02]"
           >
             <Sparkles className="w-3 h-3" /> Seed
           </ShadButton>
@@ -134,7 +134,7 @@ export default function CreateAgentSection({
         disableAnimations
         onClick={handleCreate}
         disabled={isCreating || !newAgentId || !newAgentName}
-        className="w-full min-h-10 py-2.5 text-[11px] tracking-[0.3em] uppercase"
+        className="w-full min-h-10 py-2.5 text-[11px] tracking-[0.3em] uppercase touch-press-deep hover:scale-[1.01] hover:shadow-md hover:shadow-brand/10"
       >
         {isCreating ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />

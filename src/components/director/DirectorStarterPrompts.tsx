@@ -96,7 +96,7 @@ function StarterChip({
       onClick={onSelect}
       className={cn(
         "touch-press group h-auto w-full justify-between items-start text-left wl-micro-meta text-ink/80 px-3 py-2.5 gap-2 whitespace-normal",
-        "border border-ink/[0.05] bg-paper/50 backdrop-blur-sm dark:bg-velvet/40 dark:border-white/5",
+        "glass-1",
         "hover:shadow-sm hover:shadow-brand/5 hover:border-brand/35 hover:bg-paper/85 dark:hover:bg-velvet/60",
         "transition-all duration-300 hover:-translate-y-0.5",
         WL_DIRECTOR_CLASSES.starterChip,
