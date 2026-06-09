@@ -808,12 +808,15 @@ export function buildShowcaseAssistantPayload(
       similarityBoost: tuning.similarityBoost ?? 0.88,
       style: tuning.style ?? 0.05,
       useSpeakerBoost: true,
-      // Nudge the rate of speech just below the 1.0 default for a more
-      // controlled, measured cadence. 0.95 is a subtle slow-down — the
-      // voice still sounds natural, not sluggish. ElevenLabs accepts
-      // 0.7–1.2; Vapi forwards this as voice.eleven_labs.speed.
-      // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
-      speed: tuning.speed ?? 0.95,
+      // ElevenLabs speech speed. Individual agents override via
+      // voiceSettings.speed in contact-agents.ts; this default sits at
+      // the neutral 1.0 — no artificial slowdown. The old 0.95 nudge
+      // added perceptible dead-air without a cadence benefit large
+      // enough to justify ~50ms per TTS chunk. Per-agent speed tuning
+      // (Marcus calm at 0.95, Jake energetic at 1.06) lives in the
+      // contact-agents roster, not here.
+      // ElevenLabs accepts 0.7–1.2; Vapi forwards as voice.eleven_labs.speed.
+      speed: tuning.speed ?? 1.0,
       fallbackPlan: {
         voices: [
           {

@@ -96,8 +96,8 @@ export const VAPI_START_SPEAKING_PLAN_FLUX = {
  */
 export const VAPI_OUTBOUND_FIRST_MESSAGE_MODE = "assistant-waits-for-user" as const;
 
-/** Slight pace reduction when the operator left ElevenLabs speed at the 1.0 default. */
-export const VAPI_OUTBOUND_VOICE_SPEED_NUDGE = 0.94;
+/** Slight pace nudge when the operator left ElevenLabs speed at the 1.0 default — 0.97 is barely perceptible but gives outbound a calmer open. */
+export const VAPI_OUTBOUND_VOICE_SPEED_NUDGE = 0.97;
 
 /** Clamp ElevenLabs speed; outbound nudges untouched 1.0 → 0.94 for a calmer phone cadence. */
 export function resolveElevenLabsSpeed(raw: unknown, opts?: { outbound?: boolean }): number {

@@ -132,12 +132,19 @@ export const WIRELINE_INTEGRATIONS = [
   "Salesforce",
   "Apollo",
   "Slack",
+  "Microsoft Teams",
   "DocuSign",
   "Google Calendar",
   "Google Sheets",
-  "Microsoft 365",
+  "Microsoft 365 (Outlook + Excel)",
+  "Shopify",
+  "Square",
+  "Zoom",
+  "Meta (Facebook + Instagram Ads)",
+  "X (Twitter)",
   "Stripe",
   "Twilio (BYO carrier)",
+  "ElevenLabs (voice cloning)",
 ] as const;
 
 /**

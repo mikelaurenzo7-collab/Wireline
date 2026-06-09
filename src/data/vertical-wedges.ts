@@ -81,7 +81,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Always answers — including the 6pm pipe-burst that books a $500 emergency job your competitor missed.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("home-services") },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    secondaryCta: { label: "Call inbound CS demo", href: "tel:+16306425927" },
     trustLine:
       "Built on enterprise-grade carrier infrastructure. White-labeled — customers hear your business name, not ours.",
     faqs: [
@@ -258,7 +258,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Pre-qualified buyers get a same-day showing slot. Cold leads get nurtured via text until they're warm — your top agents only see the ready ones.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("real-estate") },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    secondaryCta: { label: "Call real estate demo", href: "tel:+19733638874" },
     trustLine:
       "Connects to HubSpot, Salesforce, Google Calendar, Outlook. White-labeled — buyers hear your brokerage name.",
     faqs: [
@@ -318,7 +318,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Your AI, calling on your behalf. You text it what you need; it dials, talks, and reports back. You stay off the call.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("personal") },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    secondaryCta: { label: "Call our demo line", href: "tel:+15642389455" },
     trustLine:
       "Your agent only does what you authorize. Every call is recorded, transcribed, and visible to you in your dashboard before, during, and after. You can hang it up, override mid-call, or take over yourself at any time.",
     faqs: [
@@ -381,7 +381,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Renewal cadence catches the customer who would have lapsed to a competitor — before they even shopped around.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("insurance") },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    secondaryCta: { label: "Call insurance demo", href: "tel:+19044601596" },
     trustLine:
       "White-labeled — your insureds hear your agency name, not ours. Recordings + transcripts archived for audit compliance.",
     faqs: [
@@ -440,7 +440,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "The hour your phone rings off the hook + your hostess can't get to it. Agent fields every call — books the booking, takes the takeout, sends you the events lead.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("restaurants") },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    secondaryCta: { label: "Call demo concierge", href: "tel:+15642389455" },
     trustLine:
       "Caller hears your restaurant's name + brand voice. We can clone your hostess's actual voice with consent — 60 seconds of sample audio.",
     faqs: [
@@ -499,7 +499,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Calls one AI agent can make in a 9-hour workday. Run 5 in parallel = 1,000 dials. No bathroom breaks, no Mondays.",
     primaryCta: { label: "Start 14-day free trial", href: signupHrefForWedge("sales") },
-    secondaryCta: { label: "Call our demo line", href: "tel:+16305811834" },
+    secondaryCta: { label: "Call outbound sales demo", href: "tel:+14692571581" },
     trustLine:
       "Integrates with Salesforce, HubSpot, Pipedrive, Apollo. Outbound list management + CRM activity logging out of the box.",
     faqs: [
