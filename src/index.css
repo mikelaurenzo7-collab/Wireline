@@ -4905,6 +4905,63 @@ body,
 .wl-stitch-live-iframe--immersive {
   min-height: min(78vh, 920px);
 }
+/* Code view — read-only HTML source inspector (Claude-artifact parity) */
+.wl-stitch-code {
+  background: color-mix(in srgb, var(--paper) 92%, var(--color-brand) 3%);
+}
+.dark .wl-stitch-code {
+  background: color-mix(in srgb, var(--velvet) 88%, black 6%);
+}
+.wl-stitch-code-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+.wl-stitch-code-pre {
+  margin: 0;
+  padding: 0.75rem 0;
+  list-style: none;
+  width: max-content;
+  min-width: 100%;
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+  line-height: 1.65;
+  tab-size: 2;
+  color: color-mix(in srgb, var(--ink) 88%, var(--color-brand) 12%);
+}
+.dark .wl-stitch-code-pre {
+  color: color-mix(in srgb, white 82%, var(--color-brand) 18%);
+}
+.wl-stitch-code-line {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  align-items: baseline;
+}
+.wl-stitch-code-line:hover .wl-stitch-code-text {
+  background: color-mix(in srgb, var(--color-brand) 6%, transparent);
+}
+.wl-stitch-code-ln {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding-right: 0.75rem;
+  text-align: right;
+  user-select: none;
+  color: color-mix(in srgb, var(--color-muted) 65%, transparent);
+  /* Opaque so horizontally-scrolled source slides behind the gutter cleanly. */
+  background: color-mix(in srgb, var(--paper) 86%, var(--color-brand) 8%);
+  border-right: 1px solid color-mix(in srgb, var(--color-brand) 14%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.dark .wl-stitch-code-ln {
+  background: color-mix(in srgb, var(--velvet) 82%, black 10%);
+}
+.wl-stitch-code-text {
+  font: inherit;
+  color: inherit;
+  background: none;
+  padding-left: 1rem;
+  padding-right: 1.125rem;
+  white-space: pre;
+}
 .wl-painter-studio {
   background: color-mix(in srgb, var(--paper) 96%, var(--color-brand) 2%);
 }

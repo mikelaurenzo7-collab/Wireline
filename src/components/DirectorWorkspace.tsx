@@ -384,7 +384,9 @@ export default function DirectorWorkspace({
           if (r.status === 401 || r.status === 403) return;
           if (!r.ok) {
             const parsed = await readApiJson(r);
-            throw new Error(!parsed.ok ? (parsed as { error: string }).error : "Failed to load messages");
+            throw new Error(
+              !parsed.ok ? (parsed as { error: string }).error : "Failed to load messages",
+            );
           }
           const data = await r.json();
           setLoadDegraded(data.degraded === true);
@@ -568,7 +570,6 @@ export default function DirectorWorkspace({
       },
     ) => {
       try {
-
         const r = await authFetch(directorMessagesPath, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -577,9 +578,7 @@ export default function DirectorWorkspace({
             content: trimmed,
             ...(focusAgentId ? { focusAgentId } : {}),
             ...(opts?.skipOperatorPersist ? { skipOperatorPersist: true } : {}),
-            ...(!focusAgentId &&
-            chatModelSelection.provider === "wireline" &&
-            forceDeep
+            ...(!focusAgentId && chatModelSelection.provider === "wireline" && forceDeep
               ? { forceDeep: true }
               : {}),
             modelSelection: chatModelSelection,
@@ -852,9 +851,7 @@ export default function DirectorWorkspace({
         ...(focusAgentId ? { focusAgentId } : {}),
         ...(opts?.approval ? { approval: opts.approval } : {}),
         ...(opts?.isRetry ? { skipOperatorPersist: true } : {}),
-        ...(!focusAgentId &&
-        chatModelSelection.provider === "wireline" &&
-        forceDeep
+        ...(!focusAgentId && chatModelSelection.provider === "wireline" && forceDeep
           ? { forceDeep: true }
           : {}),
         modelSelection: chatModelSelection,
@@ -916,8 +913,6 @@ export default function DirectorWorkspace({
       directorMessagesPath,
     ],
   );
-
-
 
   const markResolved = useCallback((key: string, state: DirectorProposalResolution) => {
     setResolved((prev) => ({ ...prev, [key]: state }));
@@ -1180,13 +1175,7 @@ export default function DirectorWorkspace({
     } finally {
       setIsClearing(false);
     }
-  }, [
-    directorMessagesPath,
-    isClearing,
-    pendingApprovalCount,
-    toastError,
-    toastSuccess,
-  ]);
+  }, [directorMessagesPath, isClearing, pendingApprovalCount, toastError, toastSuccess]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1402,9 +1391,7 @@ export default function DirectorWorkspace({
               <p className="text-eyebrow font-semibold tracking-[0.18em] text-ink/80">
                 {DIRECTOR_LOADING_COPY.headline}
               </p>
-              <p className="wl-micro-meta--muted">
-                {DIRECTOR_LOADING_COPY.sub}
-              </p>
+              <p className="wl-micro-meta--muted">{DIRECTOR_LOADING_COPY.sub}</p>
             </div>
           ) : visibleMessages.length === 0 ? (
             <motion.div
@@ -1438,71 +1425,71 @@ export default function DirectorWorkspace({
                 </span>
               </SignalOrbFrame>
 
-                  <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
-                    {DIRECTOR_EMPTY_HERO.eyebrow}
-                  </p>
-                  <h2
-                    className={cn(
-                      WL_APP_CLASSES.proTitle,
-                      "text-[1.35rem] sm:text-[1.65rem] mb-2 max-w-md text-balance",
-                    )}
+              <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/75 mb-2")}>
+                {DIRECTOR_EMPTY_HERO.eyebrow}
+              </p>
+              <h2
+                className={cn(
+                  WL_APP_CLASSES.proTitle,
+                  "text-[1.35rem] sm:text-[1.65rem] mb-2 max-w-md text-balance",
+                )}
+              >
+                {DIRECTOR_EMPTY_HERO.title}{" "}
+                <span className="text-brand">{DIRECTOR_EMPTY_HERO.titleAccent}</span>
+              </h2>
+
+              {agents.length > 0 ? (
+                <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                  {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
+                </p>
+              ) : (
+                <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
+                  {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
+                </p>
+              )}
+
+              <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
+                {DIRECTOR_EMPTY_HERO.capabilityEyebrow}
+              </p>
+              <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
+                {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
+                  <motion.span
+                    key={pill.id}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{
+                      delay: 0.35 + i * 0.05,
+                      duration: 0.35,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                    className="wl-capability-pill"
                   >
-                    {DIRECTOR_EMPTY_HERO.title}{" "}
-                    <span className="text-brand">{DIRECTOR_EMPTY_HERO.titleAccent}</span>
-                  </h2>
+                    {pill.label}
+                  </motion.span>
+                ))}
+              </div>
 
-                  {agents.length > 0 ? (
-                    <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                      {DIRECTOR_EMPTY_HERO.subtitleWithFleet(agents.length)}
-                    </p>
-                  ) : (
-                    <p className="text-[13px] text-muted mb-5 leading-relaxed max-w-md">
-                      {DIRECTOR_EMPTY_HERO.subtitleNoFleet}
-                    </p>
-                  )}
+              {agents.length === 0 ? (
+                <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
+              ) : null}
 
-                  <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
-                    {DIRECTOR_EMPTY_HERO.capabilityEyebrow}
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-1.5 mb-6 max-w-md">
-                    {DIRECTOR_CAPABILITY_PILLS.map((pill, i) => (
-                      <motion.span
-                        key={pill.id}
-                        initial={{ opacity: 0, scale: 0.92 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{
-                          delay: 0.35 + i * 0.05,
-                          duration: 0.35,
-                          ease: [0.16, 1, 0.3, 1],
-                        }}
-                        className="wl-capability-pill"
-                      >
-                        {pill.label}
-                      </motion.span>
-                    ))}
-                  </div>
+              <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
 
-                  {agents.length === 0 ? (
-                    <FleetSetupNudge className="wl-director-empty-section mb-6 max-w-md w-full" />
-                  ) : null}
+              <div className="wl-director-empty-section w-full mb-6">
+                <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
+                  {DIRECTOR_EMPTY_HERO.discoverEyebrow}
+                </p>
+                <DirectorCapabilityCatalog
+                  variant="empty"
+                  onPickExample={(text) => {
+                    pickCapabilityExample(text);
+                  }}
+                />
+              </div>
 
-                  <DirectorStarterPrompts onSelect={(label) => void send(label)} className="mb-6" />
-
-                  <div className="wl-director-empty-section w-full mb-6">
-                    <p className={cn(WL_APP_CLASSES.proEyebrow, "text-brand/65 mb-2.5")}>
-                      {DIRECTOR_EMPTY_HERO.discoverEyebrow}
-                    </p>
-                    <DirectorCapabilityCatalog
-                      variant="empty"
-                      onPickExample={(text) => {
-                        pickCapabilityExample(text);
-                      }}
-                    />
-                  </div>
-
-                  {agents.length > 0 ? (
-                    <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
-                  ) : null}
+              {agents.length > 0 ? (
+                <FleetSetupNudge className="wl-director-empty-section max-w-md w-full" />
+              ) : null}
             </motion.div>
           ) : (
             <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}>
@@ -1553,12 +1540,12 @@ export default function DirectorWorkspace({
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
                               className={cn(
-                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[7px] uppercase tracking-[0.12em] font-bold transition-colors wl-scene-pulse",
+                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border wl-micro-badge uppercase tracking-[0.1em] font-bold transition-colors wl-scene-pulse",
                                 sceneBadge.bg,
                                 sceneBadge.color,
                               )}
                             >
-                              <SceneIcon className="w-2 h-2" />
+                              <SceneIcon className="w-2.5 h-2.5" />
                               {sceneBadge.label}
                             </motion.span>
                           )}
@@ -1595,7 +1582,6 @@ export default function DirectorWorkspace({
 
                         {m.role === "director" ? (
                           <>
-
                             <DirectorMessageBody content={m.content} />
                             {m.deliverableArtifact?.downloadUrl && (
                               <DirectorDeliverableDownload artifact={m.deliverableArtifact} />
@@ -2114,8 +2100,11 @@ export default function DirectorWorkspace({
             className={cn(
               "relative transition-all duration-500",
               WL_DIRECTOR_CLASSES.composerDock,
-              "bg-white/70 backdrop-blur-xl border border-brand/20 shadow-[0_4px_24px_rgba(0,0,0,0.04)] focus-within:shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] focus-within:border-brand/40",
-              isSending && "ring-2 ring-brand/30 shadow-[0_0_20px_rgba(var(--brand-rgb),0.25)] animate-pulse",
+              // Background + dark surface come from wl-panel-elevated; the hardcoded
+              // bg-white/70 used to override it and glare white in dark mode.
+              "backdrop-blur-xl border border-brand/20 shadow-[0_4px_24px_rgba(0,0,0,0.04)] focus-within:shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] focus-within:border-brand/40",
+              isSending &&
+                "ring-2 ring-brand/30 shadow-[0_0_20px_rgba(var(--brand-rgb),0.25)] animate-pulse",
               composerAccessory && "wl-composer-dock--accessory-open",
             )}
           >

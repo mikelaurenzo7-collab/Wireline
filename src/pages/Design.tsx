@@ -48,6 +48,16 @@ export default function Design() {
     [studioBridge],
   );
 
+  // Iterate-on-the-artifact loop: the preview's quick-edit chips feed the chat
+  // composer and re-render in place — the core Painter design loop.
+  const handleSuggestEdit = useCallback(
+    (prompt: string) => {
+      studioBridge?.queuePrompt(prompt);
+      setMobilePane("chat");
+    },
+    [studioBridge],
+  );
+
   return (
     <ClientRouteViewport className="bg-paper dark:bg-velvet">
       <div
@@ -166,6 +176,8 @@ export default function Design() {
                   preview={activePreview}
                   layout="immersive"
                   defaultTab="preview"
+                  onSuggestEdit={handleSuggestEdit}
+                  disabled={Boolean(studioBridge?.isClearing)}
                   className="h-full"
                 />
               ) : (
@@ -184,7 +196,9 @@ export default function Design() {
                     </p>
                   </div>
                   <div className="w-full max-w-md space-y-2">
-                    <p className="wl-label text-brand/60">{PAINTER_EMPTY_COPY.previewStarterEyebrow}</p>
+                    <p className="wl-label text-brand/60">
+                      {PAINTER_EMPTY_COPY.previewStarterEyebrow}
+                    </p>
                     <div className="flex flex-col gap-2">
                       {PREVIEW_STARTER_PROMPTS.map((prompt) => (
                         <ShadButton

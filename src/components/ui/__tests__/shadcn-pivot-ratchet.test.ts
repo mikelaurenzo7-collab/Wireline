@@ -69,7 +69,7 @@ function countOccurrences(pattern: RegExp): number {
  *   Legacy .glass CSS remains in index.css for backwards compat only.
  */
 const BASELINE = {
-  rawButton: 3, // Raising for PainterWorkspace raw buttons
+  rawButton: 2, // PainterWorkspace starter prompts migrated to ShadButton; 2 chip-strip buttons remain
   rawInput: 0,
   rawSelect: 0,
   rawDialog: 0,

@@ -21,16 +21,19 @@ export const WIRELINE_DIRECTOR_BRAND = {
 /** Tailwind/CSS utility bundles — referenced in components + tests */
 export const WL_DIRECTOR_CLASSES = {
   missionPanel: "wl-mission-panel director-live-panel transition-all duration-300 ease-in-out",
-  composerDock: "wl-composer-dock wl-panel-elevated transition-all duration-200 ease-out focus-within:ring-2 focus-within:ring-brand/30",
+  composerDock:
+    "wl-composer-dock wl-panel-elevated transition-all duration-200 ease-out focus-within:ring-2 focus-within:ring-brand/30",
   directorBubble: "wl-director-bubble transition-all duration-200 hover:shadow-md",
   operatorBubble: "wl-operator-bubble transition-all duration-200 hover:shadow-md",
-  proposalCard: "wl-proposal-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
+  proposalCard:
+    "wl-proposal-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
   proposalRail: "wl-proposal-rail",
   docBody: "wl-director-doc",
   liveFeedHeader: "wl-live-feed-header",
   heroOrb: "wl-director-hero-orb animate-pulse",
   fleetConstellation: WL_SIGNAL_CLASSES.fleetConstellation,
-  starterChip: "wl-starter-chip transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:border-brand/40",
+  starterChip:
+    "wl-starter-chip transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:border-brand/40",
   orchestrationStep: "wl-orchestration-step transition-all duration-200",
   liveOutput: "wl-live-output font-mono",
   threadHeader: "wl-director-thread-header",
@@ -58,7 +61,8 @@ export const WL_DIRECTOR_CLASSES = {
   assistantMessage: "wl-director-message--assistant",
   messageMeta: "wl-director-message-meta",
   capabilityCatPill: "wl-director-cap-pill transition-all duration-150 hover:bg-brand/10",
-  scrollToBottom: "wl-scroll-to-bottom-btn transition-all duration-200 active:scale-95 hover:shadow-md",
+  scrollToBottom:
+    "wl-scroll-to-bottom-btn transition-all duration-200 active:scale-95 hover:shadow-md",
   artifactsPanel: "wl-director-artifacts-panel",
   researchSources: "wl-director-research-sources",
   opusBadge: "wl-director-opus-badge animate-pulse",
@@ -517,6 +521,14 @@ export const WIRELINE_DESIGN_UI = {
   previewPageBackLabel: "Back to chat",
   previewTabLabel: "Preview",
   screenshotTabLabel: "Screenshot",
+  codeTabLabel: "Code",
+  codeSourceFileName: "index.html",
+  copyCodeLabel: "Copy code",
+  copiedLabel: "Copied",
+  codeLoadingLabel: "Loading source…",
+  codeErrorLabel: "Couldn't load source — download the HTML from Export instead.",
+  codeRetryLabel: "Retry",
+  expandLabel: "Open full screen",
   previewTeaserTitle: "Design ready",
   previewTeaserBody:
     "Open the full-screen preview to inspect layout, export HTML, or iterate in chat.",
@@ -549,19 +561,24 @@ export const WL_APP_CLASSES = {
   pageContext: "wl-page-context font-serif tracking-tight",
   /** Editorial left rail on workspace / route headers */
   pageContextAccent: "wl-page-context-accent",
-  workspaceEyebrow: "wl-workspace-eyebrow tracking-widest uppercase text-[9px] text-muted-foreground",
+  workspaceEyebrow:
+    "wl-workspace-eyebrow tracking-widest uppercase text-[9px] text-muted-foreground",
   workspaceTitle: "wl-workspace-title font-bold tracking-tight text-3xl",
   /** 11px supporting copy — blurbs, hints, secondary lines */
   bodyCaption: "wl-body-caption text-xs text-muted-foreground",
   inlineEmpty: "wl-inline-empty",
   inlineEmptyLabel: "wl-inline-empty__label",
   /** Director / chat primary surface */
-  missionCanvas: "wl-mission-canvas bg-gradient-to-b from-paper/40 to-paper/85 dark:from-velvet/20 dark:to-velvet/45",
-  settingsPanel: "wl-panel-elevated border border-border/80 rounded-lg p-6 space-y-6 mt-8 shadow-sm transition-all duration-300 focus-within:shadow-md",
+  missionCanvas:
+    "wl-mission-canvas bg-gradient-to-b from-paper/40 to-paper/85 dark:from-velvet/20 dark:to-velvet/45",
+  settingsPanel:
+    "wl-panel-elevated border border-border/80 rounded-lg p-6 space-y-6 mt-8 shadow-sm transition-all duration-300 focus-within:shadow-md",
   settingsIcon:
     "w-10 h-10 rounded-md bg-brand flex items-center justify-center text-primary-foreground shrink-0 shadow-sm shadow-brand/20",
-  settingsRow: "wl-panel border border-border/70 rounded-md p-4 transition-all duration-200 hover:border-brand/30 hover:bg-brand/5 hover:translate-x-0.5",
-  successReveal: "rounded-md bg-brand/10 border border-brand/35 p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
+  settingsRow:
+    "wl-panel border border-border/70 rounded-md p-4 transition-all duration-200 hover:border-brand/30 hover:bg-brand/5 hover:translate-x-0.5",
+  successReveal:
+    "rounded-md bg-brand/10 border border-brand/35 p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
   statusActive: "bg-brand/15 text-brand border-brand/30",
   statusOk: "bg-brand/10 text-brand border-brand/20",
   statusPending: "bg-brand/8 text-brand/90 border-brand/25",
@@ -572,13 +589,15 @@ export const WL_APP_CLASSES = {
   pulseLive: "wl-pulse-live",
   modalSurface: "wl-modal-surface transition-all duration-300 ease-out",
   /** Framed empty / insight stat — elevated panel without aurora chrome */
-  panelFrame: "relative rounded-md wl-panel-elevated border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:border-border-hover",
+  panelFrame:
+    "relative rounded-md wl-panel-elevated border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:border-border-hover",
   signalOrbFrame: WL_SIGNAL_CLASSES.signalOrbFrame,
   signalOrbRefined: WL_SIGNAL_CLASSES.signalOrbRefined,
   emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
   proTitle: "wl-pro-title font-bold tracking-tight",
   proEyebrow: "wl-pro-eyebrow uppercase tracking-widest text-[9px]",
-  insightStatCard: "relative rounded-md wl-panel border border-black/8 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
+  insightStatCard:
+    "relative rounded-md wl-panel border border-black/8 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
   /** Grouped icon controls (theme, shortcuts) on cream workspace header */
   chromeToolbar: "wl-chrome-toolbar",
   /** Compact mobile route strip under TopBar */

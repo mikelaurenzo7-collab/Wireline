@@ -15,7 +15,12 @@ import {
   Paintbrush,
   Layers,
 } from "lucide-react";
-import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson, isAuthHttpStatus } from "../lib/api";
+import {
+  authFetch,
+  DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS,
+  readApiJson,
+  isAuthHttpStatus,
+} from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
@@ -27,7 +32,12 @@ import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorStitchPreviewVariantGrid } from "./director/DirectorStitchPreviewTeaser";
 import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
-import { findLatestStitchPreview, isStitchPreview } from "../lib/design-preview";
+import {
+  findLatestStitchPreview,
+  isStitchPreview,
+  assignStitchPreviewVersions,
+  stitchPreviewKey,
+} from "../lib/design-preview";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import {
   PAINTER_EMPTY_COPY,
@@ -66,12 +76,30 @@ export interface PainterWorkspaceProps {
 }
 
 const STYLE_PRESETS = [
-  { label: "Glassmorphism", text: "with a glassmorphic aesthetic, subtle backdrop blurs, and translucent panels" },
-  { label: "Neobrutalism", text: "styled with high-contrast neobrutalist layout, thick borders, and stark shadows" },
-  { label: "Dark Luxury", text: "designed as a premium dark mode dashboard with gold accents and high-end typography" },
-  { label: "Minimalist SaaS", text: "in a clean, modern SaaS aesthetic, ample whitespace, and thin neutral dividers" },
-  { label: "Figma-esque Grid", text: "with dot-grid canvas, clean sidebars, and crisp developer-oriented tabs" },
-  { label: "Wireframe Mode", text: "rendered as a low-fidelity wireframe using placeholder boxes, grayscale, and dashed borders" },
+  {
+    label: "Glassmorphism",
+    text: "with a glassmorphic aesthetic, subtle backdrop blurs, and translucent panels",
+  },
+  {
+    label: "Neobrutalism",
+    text: "styled with high-contrast neobrutalist layout, thick borders, and stark shadows",
+  },
+  {
+    label: "Dark Luxury",
+    text: "designed as a premium dark mode dashboard with gold accents and high-end typography",
+  },
+  {
+    label: "Minimalist SaaS",
+    text: "in a clean, modern SaaS aesthetic, ample whitespace, and thin neutral dividers",
+  },
+  {
+    label: "Figma-esque Grid",
+    text: "with dot-grid canvas, clean sidebars, and crisp developer-oriented tabs",
+  },
+  {
+    label: "Wireframe Mode",
+    text: "rendered as a low-fidelity wireframe using placeholder boxes, grayscale, and dashed borders",
+  },
 ];
 
 export default function PainterWorkspace({
@@ -142,7 +170,11 @@ export default function PainterWorkspace({
   // Clear design thread
   const clearThread = useCallback(async () => {
     if (isClearing) return;
-    if (!confirm("Are you sure you want to clear this design studio thread? This will reset all current progress.")) {
+    if (
+      !confirm(
+        "Are you sure you want to clear this design studio thread? This will reset all current progress.",
+      )
+    ) {
       return;
     }
     setIsClearing(true);
@@ -177,7 +209,7 @@ export default function PainterWorkspace({
       }
       return false;
     },
-    [directorMessagesPath]
+    [directorMessagesPath],
   );
 
   // Send design message (always non-streaming for design cards)
@@ -236,8 +268,9 @@ export default function PainterWorkspace({
             createdAt: new Date().toISOString(),
             previews: Array.isArray(data.previews) ? data.previews : undefined,
             reasoning: typeof data.reasoning === "string" ? data.reasoning : undefined,
-            thinkingDurationMs: typeof data.thinkingDurationMs === "number" ? data.thinkingDurationMs : undefined,
-            model: (data.model === "sonnet" || data.model === "opus") ? data.model : undefined,
+            thinkingDurationMs:
+              typeof data.thinkingDurationMs === "number" ? data.thinkingDurationMs : undefined,
+            model: data.model === "sonnet" || data.model === "opus" ? data.model : undefined,
           };
           setMessages((prev) => [...prev, reply]);
         }
@@ -246,7 +279,10 @@ export default function PainterWorkspace({
         if (!recovered) {
           setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
           setInput(trimmed);
-          toastError("Design didn't finish in time", "Spectrum Desk may still be rendering in the background.");
+          toastError(
+            "Design didn't finish in time",
+            "Spectrum Desk may still be rendering in the background.",
+          );
         }
       } finally {
         setIsSending(false);
@@ -255,7 +291,7 @@ export default function PainterWorkspace({
         inputRef.current?.focus();
       }
     },
-    [isSending, recoverPersistedReply, toastError, directorMessagesPath]
+    [isSending, recoverPersistedReply, toastError, directorMessagesPath],
   );
 
   // Sync bridge with parent shell page
@@ -263,7 +299,7 @@ export default function PainterWorkspace({
     (text: string) => {
       void send(text);
     },
-    [send]
+    [send],
   );
 
   useEffect(() => {
@@ -309,6 +345,12 @@ export default function PainterWorkspace({
     inputRef.current?.focus();
   };
 
+  // Stable key for a render across the thread (renderId preferred, conceptId fallback).
+  const previewKey = useCallback((p: DirectorPreviewMeta) => stitchPreviewKey(p), []);
+
+  // Version numbers across the whole thread, assigned chronologically (v1 = first render).
+  const versionByKey = useMemo(() => assignStitchPreviewVersions(messages), [messages]);
+
   // Iteration Strip — gather last 3 previews with visual assets
   const iterations = useMemo(() => {
     const list: DirectorPreviewMeta[] = [];
@@ -317,7 +359,12 @@ export default function PainterWorkspace({
       if (m.previews) {
         for (const p of m.previews) {
           if (isStitchPreview(p) && (p.htmlDownloadUrl || p.imageDownloadUrl)) {
-            if (!list.some((existing) => existing.conceptId === p.conceptId || existing.renderId === p.renderId)) {
+            if (
+              !list.some(
+                (existing) =>
+                  existing.conceptId === p.conceptId || existing.renderId === p.renderId,
+              )
+            ) {
               list.push(p);
             }
           }
@@ -327,6 +374,21 @@ export default function PainterWorkspace({
     }
     return list;
   }, [messages]);
+
+  // Track which render is mirrored in the preview pane so the strip can mark it.
+  const [selectedPreviewKey, setSelectedPreviewKey] = useState<string | null>(null);
+  useEffect(() => {
+    const latest = findLatestStitchPreview(messages);
+    setSelectedPreviewKey(latest ? previewKey(latest.preview) : null);
+  }, [messages, previewKey]);
+
+  const selectIteration = useCallback(
+    (p: DirectorPreviewMeta) => {
+      setSelectedPreviewKey(previewKey(p));
+      onActiveStitchPreview?.(p);
+    },
+    [onActiveStitchPreview, previewKey],
+  );
 
   // File pick ingestion
   const onFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -382,7 +444,7 @@ export default function PainterWorkspace({
       }
       toastSuccess(
         "Context uploaded",
-        `Ingested design details from ${file.name}. Painter has processed the design prompt rules.`
+        `Ingested design details from ${file.name}. Painter has processed the design prompt rules.`,
       );
     } catch (err) {
       toastError("Upload failed", err instanceof Error ? err.message : "Try again");
@@ -411,7 +473,9 @@ export default function PainterWorkspace({
               </span>
             </SignalOrbFrame>
             <div className="space-y-1.5 max-w-sm">
-              <h2 className="text-[14px] font-semibold text-ink">{WIRELINE_PAINTER_UI.emptyTitle}</h2>
+              <h2 className="text-[14px] font-semibold text-ink">
+                {WIRELINE_PAINTER_UI.emptyTitle}
+              </h2>
               <p className="wl-micro-meta--muted-foreground leading-relaxed">
                 {WIRELINE_PAINTER_UI.emptyBody}
               </p>
@@ -421,15 +485,17 @@ export default function PainterWorkspace({
                 {PAINTER_EMPTY_COPY.starterEyebrow}
               </p>
               {PAINTER_STARTER_PROMPTS.map((prompt) => (
-                <button
+                <ShadButton
                   key={prompt.id}
                   type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() => void send(prompt.label)}
-                  className="w-full text-left touch-press hover:scale-[1.02] text-[12px] font-medium leading-snug px-3 py-2.5 rounded-md border border-brand/8 bg-paper/60 hover:bg-brand/4 dark:bg-velvet/40 dark:hover:bg-brand/8 flex items-center justify-between group"
+                  className="group h-auto w-full justify-between text-left touch-press hover:scale-[1.02] text-[12px] font-medium leading-snug px-3 py-2.5 rounded-md border border-brand/8 bg-paper/60 hover:bg-brand/4 dark:bg-velvet/40 dark:hover:bg-brand/8 [&_svg]:!size-3.5"
                 >
                   <span className="truncate pr-4">{prompt.label}</span>
-                  <Sparkles className="w-3.5 h-3.5 text-brand opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
+                  <Sparkles className="text-brand opacity-0 group-hover:opacity-100 transition-opacity" />
+                </ShadButton>
               ))}
             </div>
           </div>
@@ -441,7 +507,10 @@ export default function PainterWorkspace({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className={cn("flex flex-col w-full", m.role === "operator" ? "items-end" : "items-start")}
+                className={cn(
+                  "flex flex-col w-full",
+                  m.role === "operator" ? "items-end" : "items-start",
+                )}
               >
                 {m.role === "director" && (
                   <div className="flex items-center gap-1.5 mb-1 ml-0.5">
@@ -460,7 +529,7 @@ export default function PainterWorkspace({
                     "rounded-md whitespace-pre-wrap break-words relative max-w-[85%] sm:max-w-[75%]",
                     m.role === "operator"
                       ? "bg-brand text-white rounded-br-sm px-3.5 py-2.5 text-[13px]"
-                      : "bg-paper border border-brand/8 dark:bg-velvet/40 text-ink rounded-bl-sm px-4 py-3.5 text-[13px]"
+                      : "bg-paper border border-brand/8 dark:bg-velvet/40 text-ink rounded-bl-sm px-4 py-3.5 text-[13px]",
                   )}
                 >
                   {m.role === "director" && m.reasoning && (
@@ -495,26 +564,40 @@ export default function PainterWorkspace({
         )}
       </div>
 
-      {/* Iteration strip - preview thumbnails */}
+      {/* Version strip — click any render to mirror it in the live preview pane */}
       {iterations.length > 0 && (
         <div className="px-4 py-2 border-t border-brand/6 bg-paper/30 flex items-center gap-2 overflow-x-auto shrink-0">
           <Layers className="w-3.5 h-3.5 text-muted shrink-0" />
           <span className="text-[10px] font-bold text-muted uppercase tracking-wider shrink-0 mr-1">
-            Iterations:
+            Versions
           </span>
-          <div className="flex gap-2 min-w-0">
-            {iterations.map((p, idx) => (
-              <button
-                key={p.conceptId + idx}
-                type="button"
-                onClick={() => onActiveStitchPreview?.(p)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded bg-brand/5 border border-brand/12 hover:bg-brand/10 transition-colors text-[10px] text-brand font-medium truncate touch-press hover:scale-[1.05]"
-                title={p.title}
-              >
-                <LayoutTemplate className="w-3 h-3" />
-                <span className="truncate max-w-[100px]">{p.title}</span>
-              </button>
-            ))}
+          <div className="flex gap-2 min-w-0" role="group" aria-label="Design versions">
+            {iterations.map((p, idx) => {
+              const key = previewKey(p);
+              const version = versionByKey.get(key);
+              const isActive = selectedPreviewKey === key;
+              return (
+                <button
+                  key={key + idx}
+                  type="button"
+                  onClick={() => selectIteration(p)}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-medium truncate touch-press hover:scale-[1.05] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1",
+                    isActive
+                      ? "bg-brand text-white border-brand shadow-sm"
+                      : "bg-brand/5 text-brand border-brand/12 hover:bg-brand/10",
+                  )}
+                  title={p.title}
+                >
+                  <span className="font-bold tabular-nums shrink-0">
+                    {version ? `v${version}` : <LayoutTemplate className="w-3 h-3" aria-hidden />}
+                  </span>
+                  <span className="truncate max-w-[100px]">{p.title}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -528,7 +611,7 @@ export default function PainterWorkspace({
               key={preset.label}
               type="button"
               onClick={() => handlePresetSelect(preset.text)}
-              className="px-2 py-1 text-[10px] font-medium rounded-full bg-brand/5 hover:bg-brand/10 border border-brand/8 text-ink hover:text-brand transition-colors shrink-0 touch-press hover:scale-[1.05]"
+              className="px-2 py-1 text-[10px] font-medium rounded-full bg-brand/5 hover:bg-brand/10 border border-brand/8 text-ink hover:text-brand transition-colors shrink-0 touch-press hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1"
             >
               {preset.label}
             </button>
