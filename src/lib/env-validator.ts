@@ -86,7 +86,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
   {
     name: "ANTHROPIC_API_KEY",
     group: "ai",
-    required: true,
+    required: false,
     description: "Anthropic API key for Claude reasoning layer",
     validate: (v) => v.startsWith("sk-ant-"),
     formatHint: "sk-ant-api03-...",
