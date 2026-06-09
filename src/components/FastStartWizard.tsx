@@ -32,6 +32,7 @@ import { useToast } from "../contexts/ToastContext";
 import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { cn } from "../lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
