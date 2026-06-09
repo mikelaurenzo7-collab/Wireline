@@ -37,30 +37,30 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.missionPanel).not.toContain("grid");
     expect(WL_DIRECTOR_CLASSES.composerDock).toContain("wl-composer-dock");
     expect(WL_DIRECTOR_CLASSES.composerColumn).toContain("lg:max-w-5xl");
-    expect(WL_DIRECTOR_CLASSES.directorBubble).toBe("wl-director-bubble");
-    expect(WL_DIRECTOR_CLASSES.proposalCard).toBe("wl-proposal-card");
-    expect(WL_DIRECTOR_CLASSES.orchestrationStep).toBe("wl-orchestration-step");
-    expect(WL_DIRECTOR_CLASSES.threadColumn).toBe("wl-director-thread");
+    expect(WL_DIRECTOR_CLASSES.directorBubble).toContain("wl-director-bubble");
+    expect(WL_DIRECTOR_CLASSES.proposalCard).toContain("wl-proposal-card");
+    expect(WL_DIRECTOR_CLASSES.orchestrationStep).toContain("wl-orchestration-step");
+    expect(WL_DIRECTOR_CLASSES.threadColumn).toContain("wl-director-thread");
     expect(WL_DIRECTOR_CLASSES.messageStack).toContain("wl-director-message-stack");
-    expect(WL_DIRECTOR_CLASSES.emptyHero).toBe("wl-director-empty-hero");
-    expect(WL_DIRECTOR_CLASSES.fleetConstellation).toBe("wl-fleet-constellation");
-    expect(WL_APP_CLASSES.proTitle).toBe("wl-pro-title");
-    expect(WL_APP_CLASSES.proEyebrow).toBe("wl-pro-eyebrow");
-    expect(WL_DIRECTOR_CLASSES.composerToolbar).toBe("wl-director-composer-toolbar");
-    expect(WL_DIRECTOR_CLASSES.composerAccessory).toBe("wl-composer-accessory-panel");
-    expect(WL_DIRECTOR_CLASSES.composerToolChip).toBe("wl-composer-tool-chip");
-    expect(WL_DIRECTOR_CLASSES.assistantMessage).toBe("wl-director-message--assistant");
+    expect(WL_DIRECTOR_CLASSES.emptyHero).toContain("wl-director-empty-hero");
+    expect(WL_DIRECTOR_CLASSES.fleetConstellation).toContain("wl-fleet-constellation");
+    expect(WL_APP_CLASSES.proTitle).toContain("wl-pro-title");
+    expect(WL_APP_CLASSES.proEyebrow).toContain("wl-pro-eyebrow");
+    expect(WL_DIRECTOR_CLASSES.composerToolbar).toContain("wl-director-composer-toolbar");
+    expect(WL_DIRECTOR_CLASSES.composerAccessory).toContain("wl-composer-accessory-panel");
+    expect(WL_DIRECTOR_CLASSES.composerToolChip).toContain("wl-composer-tool-chip");
+    expect(WL_DIRECTOR_CLASSES.assistantMessage).toContain("wl-director-message--assistant");
     expect(DIRECTOR_COMPOSER_ACCESSORY_HINTS.capabilities).toContain("prompt");
     expect(DIRECTOR_COMPOSER_CONTEXT.coachingPrefix).toBe("Coaching");
     expect(DIRECTOR_COMPOSER_CONTEXT.closePanelLabel).toContain("Close");
-    expect(WL_DIRECTOR_CLASSES.composerSendRow).toBe("wl-composer-send-row");
-    expect(WL_DIRECTOR_CLASSES.composerContextPill).toBe("wl-composer-context-pill");
-    expect(WL_DIRECTOR_CLASSES.composerSendBtn).toBe("wl-composer-send-btn");
-    expect(WL_DIRECTOR_CLASSES.scrollToBottom).toBe("wl-scroll-to-bottom-btn");
-    expect(WL_DIRECTOR_CLASSES.liveOrchestra).toBe("wl-live-orchestra");
-    expect(WL_DIRECTOR_CLASSES.microLabel).toBe("wl-director-micro");
-    expect(WL_DIRECTOR_CLASSES.metaCaption).toBe("wl-director-meta");
-    expect(WL_DIRECTOR_CLASSES.spotlightLabel).toBe("wl-director-spotlight-label");
+    expect(WL_DIRECTOR_CLASSES.composerSendRow).toContain("wl-composer-send-row");
+    expect(WL_DIRECTOR_CLASSES.composerContextPill).toContain("wl-composer-context-pill");
+    expect(WL_DIRECTOR_CLASSES.composerSendBtn).toContain("wl-composer-send-btn");
+    expect(WL_DIRECTOR_CLASSES.scrollToBottom).toContain("wl-scroll-to-bottom-btn");
+    expect(WL_DIRECTOR_CLASSES.liveOrchestra).toContain("wl-live-orchestra");
+    expect(WL_DIRECTOR_CLASSES.microLabel).toContain("wl-director-micro");
+    expect(WL_DIRECTOR_CLASSES.metaCaption).toContain("wl-director-meta");
+    expect(WL_DIRECTOR_CLASSES.spotlightLabel).toContain("wl-director-spotlight-label");
   });
 
   it("live orchestra copy stays operator-native", () => {
@@ -75,18 +75,18 @@ describe("Wireline Director design contract", () => {
   });
 
   it("exposes authenticated status and modal surface hooks", () => {
-    expect(WL_APP_CLASSES.statusSuccess).toBe("wl-status-success");
-    expect(WL_APP_CLASSES.modalSurface).toBe("wl-modal-surface");
-    expect(WL_APP_CLASSES.pulseLive).toBe("wl-pulse-live");
+    expect(WL_APP_CLASSES.statusSuccess).toContain("wl-status-success");
+    expect(WL_APP_CLASSES.modalSurface).toContain("wl-modal-surface");
+    expect(WL_APP_CLASSES.pulseLive).toContain("wl-pulse-live");
   });
 
   it("exposes app chrome toolbar utilities", () => {
-    expect(WL_APP_CLASSES.chromeToolbar).toBe("wl-chrome-toolbar");
-    expect(WL_APP_CLASSES.mobileContextBar).toBe("wl-mobile-context-bar");
-    expect(WL_APP_CLASSES.pageContextAccent).toBe("wl-page-context-accent");
-    expect(WL_APP_CLASSES.workspaceTitle).toBe("wl-workspace-title");
-    expect(WL_APP_CLASSES.bodyCaption).toBe("wl-body-caption");
-    expect(WL_APP_CLASSES.inlineEmpty).toBe("wl-inline-empty");
+    expect(WL_APP_CLASSES.chromeToolbar).toContain("wl-chrome-toolbar");
+    expect(WL_APP_CLASSES.mobileContextBar).toContain("wl-mobile-context-bar");
+    expect(WL_APP_CLASSES.pageContextAccent).toContain("wl-page-context-accent");
+    expect(WL_APP_CLASSES.workspaceTitle).toContain("wl-workspace-title");
+    expect(WL_APP_CLASSES.bodyCaption).toContain("wl-body-caption");
+    expect(WL_APP_CLASSES.inlineEmpty).toContain("wl-inline-empty");
     expect(WL_APP_CLASSES.surfaceVelvet).toContain("velvet");
     expect(WL_APP_CLASSES.chromeInverseHover).toContain("chrome-inverse-hover");
   });

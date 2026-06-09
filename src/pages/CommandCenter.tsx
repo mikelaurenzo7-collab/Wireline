@@ -494,7 +494,13 @@ export default function LiveOps() {
               className={clsx(mainColSpan, "flex flex-col min-h-0 min-w-0 gap-3 overflow-hidden")}
             >
               {activeTab === "floor" && (
-                <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <motion.section
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                >
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
@@ -508,11 +514,17 @@ export default function LiveOps() {
                       agentsLoading={!agentsHydrated}
                     />
                   </div>
-                </section>
+                </motion.section>
               )}
 
               {activeTab === "intel" && (
-                <section className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <motion.section
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                >
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
@@ -521,20 +533,34 @@ export default function LiveOps() {
                   >
                     <ActionFeed actions={actions} onRefresh={refresh} />
                   </div>
-                </section>
+                </motion.section>
               )}
 
               {activeTab === "triage" && (
-                <TriagePanel
-                  embedded
-                  refreshRef={triageRefreshRef}
-                  onAttentionChange={setTriageAttention}
-                  onLoadingChange={setTriageLoading}
-                />
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                >
+                  <TriagePanel
+                    embedded
+                    refreshRef={triageRefreshRef}
+                    onAttentionChange={setTriageAttention}
+                    onLoadingChange={setTriageLoading}
+                  />
+                </motion.div>
               )}
 
               {activeTab === "analytics" && (
-                <section className="flex-1 min-h-0 overflow-y-auto scroll-viewport scroll-pb-safe space-y-4">
+                <motion.section
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex-1 min-h-0 overflow-y-auto scroll-viewport scroll-pb-safe space-y-4"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
                     {/* Analytics: Sentiment */}
                     <div
@@ -631,7 +657,7 @@ export default function LiveOps() {
                       </div>
                     </div>
                   </div>
-                </section>
+                </motion.section>
               )}
             </div>
 
