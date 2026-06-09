@@ -133,13 +133,13 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
     expect(payload.transcriber.model).toBe("flux-general-en");
     expect(payload.metadata.wireline_transcriber_mode).toBe("flux-eot");
     expect(payload.firstMessage).toMatch(/Wireline inbound demo/i);
-    expect(payload.voice?.voiceId).toBe("EXAVITQu4vr4xnSDxMaL");
+    expect(payload.voice?.voiceId).toBe("mhJNZGgdePh7HbwWYwN2");
   });
 
-  it("Sarah uses Charlotte voice with expressive ElevenLabs tuning", () => {
+  it("Sarah uses her configured support voice with expressive ElevenLabs tuning", () => {
     const payload = buildShowcaseAssistantPayload(sarah, "cs");
     expect(payload.name).toBe("Sarah — Wireline Customer Support");
-    expect(payload.voice?.voiceId).toBe("XB0fDUnXU5powFXDhCwa");
+    expect(payload.voice?.voiceId).toBe("onwK4e9ZLuTAKqWW03F9");
     expect(payload.voice?.stability).toBe(0.52);
     expect(payload.voice?.style).toBe(0.24);
     expect(payload.voice?.similarityBoost).toBe(0.86);
@@ -147,15 +147,15 @@ describe("buildShowcaseAssistantPayload — Flux transcriber", () => {
 
   it("Liam uses energetic Liam voice tuning", () => {
     const payload = buildShowcaseAssistantPayload(liam, "cs");
-    expect(payload.voice?.voiceId).toBe("TX3LPaxmHKxFdv7VOQHJ");
+    expect(payload.voice?.voiceId).toBe("iP95p4xoKVk53GoZ742B");
     expect(payload.voice?.style).toBe(0.22);
     expect(payload.firstMessage).toMatch(/Liam with Wireline/i);
   });
 
-  it("Diana uses discreet Rachel voice (distinct from Sarah's Charlotte)", () => {
+  it("Diana uses a discreet voice distinct from Sarah's", () => {
     const diana = WIRELINE_DEMO_AGENTS.find((a) => a.name === "Diana")!;
     const payload = buildShowcaseAssistantPayload(diana, "demo");
-    expect(payload.voice?.voiceId).toBe("bIHbv24MWmeRgasZH58o");
+    expect(payload.voice?.voiceId).toBe("I1T6PEfqPxl45yKRN4aS");
     expect(payload.voice?.voiceId).not.toBe(sarah.voiceId);
   });
 });
