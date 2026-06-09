@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 
@@ -128,8 +128,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   }, []);
 
+  const value = useMemo(
+    () => ({ user, session, loading, signOut, signIn }),
+    [user, session, loading, signOut, signIn]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut, signIn }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
