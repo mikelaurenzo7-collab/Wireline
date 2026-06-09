@@ -3,6 +3,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+// Authenticated-surface contrast hardening — must load AFTER index.css so its
+// theme-aware --color-brand-ink override and ghost-button rules win the cascade.
+import "./styles/auth-contrast.css";
 // Open‑space preference – removed compact overrides
 
 // Global error + rejection safety net for voice + async surfaces.
