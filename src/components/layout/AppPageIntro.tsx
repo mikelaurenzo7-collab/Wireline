@@ -71,7 +71,7 @@ export default function AppPageIntro({
               size="icon"
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="touch-press md:hidden rounded-md text-muted wl-panel after:hidden"
+              className="touch-press hover:scale-[1.05] md:hidden rounded-md text-muted wl-panel after:hidden"
             >
               <MoreHorizontal className="w-5 h-5" />
             </ShadButton>
@@ -113,7 +113,7 @@ export default function AppPageIntro({
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 rounded-md text-ink/70 hover:text-ink hover:bg-black/5 after:hidden"
+                  className="touch-press hover:scale-[1.05] w-11 h-11 rounded-md text-ink/70 hover:text-ink hover:bg-black/5 after:hidden"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />

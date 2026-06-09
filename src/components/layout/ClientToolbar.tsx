@@ -45,7 +45,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
               disableAnimations
               onClick={() => setOpen(true)}
               aria-label="Page actions"
-              className="touch-press md:hidden w-9 h-9 wl-panel"
+              className="touch-press hover:scale-[1.05] md:hidden w-9 h-9 wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </ShadButton>
@@ -76,6 +76,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
                 disableAnimations
                 onClick={() => setOpen(false)}
                 aria-label="Close"
+                className="touch-press hover:scale-[1.05]"
               >
                 <X className="w-5 h-5 text-muted" />
               </ShadButton>

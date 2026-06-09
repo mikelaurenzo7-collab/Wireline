@@ -138,7 +138,7 @@ export default function TopBar({
         aria-label={`Go to ${item.label}`}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-md transition-all text-[11px] sm:text-[12px] font-medium shrink-0",
+          "group relative flex items-center gap-1.5 px-2.5 lg:px-3 rounded-md transition-all text-[11px] sm:text-[12px] font-medium shrink-0 touch-press hover:scale-[1.02]",
           isDrawer ? "min-h-11 w-full" : "h-8",
           isDrawer
             ? active
@@ -312,7 +312,7 @@ export default function TopBar({
               onClick={() => {
                 window.dispatchEvent(new CustomEvent("wireline:open-command-bar"));
               }}
-              className="md:w-auto md:h-7 md:px-2 rounded-md chrome-muted chrome-inverse-hover touch-press"
+              className="md:w-auto md:h-7 md:px-2 rounded-md chrome-muted chrome-inverse-hover touch-press hover:scale-[1.02]"
               aria-label="Open command bar"
               title="Search ( / )"
             >
@@ -332,7 +332,7 @@ export default function TopBar({
                 variant="chrome"
                 disableAnimations
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="touch-press flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-1.5 py-2.5 md:py-1 min-h-[44px] h-auto"
+                className="touch-press flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-1.5 py-2.5 md:py-1 min-h-[44px] h-auto hover:scale-[1.02]"
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
@@ -452,7 +452,7 @@ export default function TopBar({
               size="icon"
               disableAnimations
               onClick={() => onDrawerChange(true)}
-              className="touch-press flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5"
+              className="touch-press flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5 hover:scale-[1.05]"
               aria-label="Open navigation"
             >
               <Menu className="w-5 h-5 text-brand dark:text-paper-warm" />
@@ -501,7 +501,7 @@ export default function TopBar({
                   size="icon"
                   disableAnimations
                   onClick={() => onDrawerChange(false)}
-                  className="touch-press w-11 h-11 rounded-md text-ink/70 hover:text-ink"
+                  className="touch-press w-11 h-11 rounded-md text-ink/70 hover:text-ink hover:scale-[1.05]"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
@@ -575,7 +575,7 @@ export default function TopBar({
                     disableAnimations
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="touch-press w-11 h-11 rounded-md text-ink/65 hover:text-rose-600 hover:bg-rose-500/8"
+                    className="touch-press w-11 h-11 rounded-md text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 hover:scale-[1.05]"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </ShadButton>

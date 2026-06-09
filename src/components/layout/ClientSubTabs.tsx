@@ -105,7 +105,7 @@ export default function ClientSubTabs({
               tabIndex={active ? 0 : -1}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "touch-press relative shrink-0 inline-flex h-auto items-center gap-1 transition-colors uppercase font-medium whitespace-nowrap rounded-none",
+                "touch-press hover:scale-[1.02] relative shrink-0 inline-flex h-auto items-center gap-1 transition-colors uppercase font-medium whitespace-nowrap rounded-none",
                 "wl-label",
                 density === "compact"
                   ? "min-h-7 px-1.5 py-0.5 tracking-[0.06em]"

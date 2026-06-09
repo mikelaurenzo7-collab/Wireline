@@ -150,7 +150,7 @@ export default function EmailVerifyBanner() {
         onClick={resend}
         disabled={buttonDisabled}
         className={cn(
-          "touch-press shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none",
+          "touch-press hover:scale-[1.02] shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none",
           outcome === "sent" && "opacity-70",
         )}
       >

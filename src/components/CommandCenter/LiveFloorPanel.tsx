@@ -407,7 +407,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                 size="sm"
                                 disableAnimations
                                 onClick={sendWhisper}
-                                className="shrink-0 min-h-[40px] rounded-md text-[11px] uppercase tracking-wider"
+                                className="touch-press hover:scale-[1.02] shrink-0 min-h-[40px] rounded-md text-[11px] uppercase tracking-wider"
                               >
                                 Send
                               </ShadButton>

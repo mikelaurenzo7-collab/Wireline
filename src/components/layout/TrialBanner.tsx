@@ -123,7 +123,7 @@ export default function TrialBanner() {
         variant="outline"
         size="sm"
         onClick={openUpgrade}
-        className="touch-press shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none"
+        className="touch-press hover:scale-[1.02] shrink-0 app-micro-cta h-auto after:hidden border-0 shadow-none"
       >
         Upgrade now
       </ShadButton>

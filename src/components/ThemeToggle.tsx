@@ -48,8 +48,8 @@ export default function ThemeToggle({ className, variant = "inverse", compact = 
       disableAnimations
       className={cn(
         compact
-          ? "h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
-          : "md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
+          ? "touch-press hover:scale-[1.05] h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
+          : "touch-press hover:scale-[1.05] md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
         variant === "inverse"
           ? "chrome-muted chrome-inverse-hover focus-visible:ring-offset-transparent"
           : "text-muted-foreground hover:text-foreground hover:bg-accent",

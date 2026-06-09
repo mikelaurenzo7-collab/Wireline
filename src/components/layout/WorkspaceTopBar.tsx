@@ -81,7 +81,7 @@ export default function WorkspaceTopBar({
                 size="icon"
                 disableAnimations
                 onClick={onShowShortcuts}
-                className="h-8 w-8 rounded-md text-muted hover:text-ink hover:bg-black/[0.04] touch-press"
+                className="h-8 w-8 rounded-md text-muted hover:text-ink hover:bg-black/[0.04] touch-press hover:scale-[1.05]"
                 aria-label="Keyboard shortcuts"
                 title="Keyboard shortcuts (?)"
               >
