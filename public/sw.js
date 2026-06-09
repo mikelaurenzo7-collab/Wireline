@@ -13,7 +13,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("[wireline:sw] Pre-caching app shell");
+      console.error("[wireline:sw] Pre-caching app shell");
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -27,7 +27,7 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log("[wireline:sw] Deleting obsolete cache:", cache);
+            console.error("[wireline:sw] Deleting obsolete cache:", cache);
             return caches.delete(cache);
           }
         })
@@ -55,7 +55,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() => {
-        console.log("[wireline:sw] Serving cached app shell for navigation:", url.pathname);
+        console.error("[wireline:sw] Serving cached app shell for navigation:", url.pathname);
         return caches.match("/");
       })
     );

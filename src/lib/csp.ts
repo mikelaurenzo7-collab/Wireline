@@ -78,7 +78,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     `img-src 'self' data: blob: https:`,
     `font-src 'self' data:`,
     `connect-src ${connectSrcs}`,
-    `media-src 'self' blob:`,
+    `media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io`,
     `worker-src 'self' blob:`,
     // Director Stitch live HTML previews load artifact HTML via blob: iframes.
     `frame-src 'self' blob:`,

@@ -11,6 +11,34 @@ import "./index.css";
 // This prevents silent white screens or broken agent states for SMB operators
 // who expect the console to "just work" even when the network hiccups.
 if (typeof window !== "undefined") {
+  // Clear preload reload loop state flags on successful initialization
+  try {
+    sessionStorage.removeItem("wireline:preload-reload-count");
+    sessionStorage.removeItem("wireline:last-preload-reload");
+  } catch (e) {
+    // sessionStorage might be disabled or blocked
+  }
+
+  const safeReload = (reason: string) => {
+    try {
+      const now = Date.now();
+      const lastReload = sessionStorage.getItem("wireline:last-preload-reload");
+      const reloadCount = Number(sessionStorage.getItem("wireline:preload-reload-count") || "0");
+
+      if (lastReload && now - Number(lastReload) < 10000 && reloadCount >= 2) {
+        console.error(`[wireline:preload] Preload failed repeatedly (${reason}). Preventing infinite reload loop.`);
+        return;
+      }
+
+      sessionStorage.setItem("wireline:last-preload-reload", String(now));
+      sessionStorage.setItem("wireline:preload-reload-count", String(reloadCount + 1));
+      window.location.reload();
+    } catch (e) {
+      console.error("[wireline:preload] Failed to perform safe reload:", e);
+      window.location.reload();
+    }
+  };
+
   const report = (kind: string, err: unknown, extra?: Record<string, unknown>) => {
     // Always surface in console for local debugging
     console.error(`[wireline:${kind}]`, err, extra);
@@ -29,8 +57,8 @@ if (typeof window !== "undefined") {
       message.includes("Failed to fetch dynamically imported module") ||
       message.includes("error loading dynamically imported module")
     )) {
-      console.error("[wireline:preload] Dynamic import failed, reloading page to get new version...");
-      window.location.reload();
+      console.error("[wireline:preload] Dynamic import failed, initiating safe reload...");
+      safeReload("error event");
       return;
     }
     report("window-error", event.error || event.message, {
@@ -47,8 +75,8 @@ if (typeof window !== "undefined") {
       msg.includes("Failed to fetch dynamically imported module") ||
       msg.includes("error loading dynamically imported module")
     )) {
-      console.error("[wireline:preload] Dynamic import rejection, reloading page to get new version...");
-      window.location.reload();
+      console.error("[wireline:preload] Dynamic import rejection, initiating safe reload...");
+      safeReload("unhandledrejection");
       return;
     }
     report("unhandled-rejection", reason);
@@ -56,8 +84,8 @@ if (typeof window !== "undefined") {
 
   // Handle Vite's custom preload error event
   window.addEventListener("vite:preloadError", () => {
-    console.error("[wireline:preload] Vite preload error, reloading page...");
-    window.location.reload();
+    console.error("[wireline:preload] Vite preload error, initiating safe reload...");
+    safeReload("preloadError");
   });
 }
 

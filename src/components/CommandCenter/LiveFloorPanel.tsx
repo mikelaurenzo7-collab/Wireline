@@ -9,7 +9,7 @@ import { Radio, Users, ShieldAlert, Activity, Headphones, Phone, Sparkles } from
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { refreshSessionIfNeeded } from "../../lib/api";
+import { refreshSessionIfNeeded, authFetch } from "../../lib/api";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { EmptyState } from "../ui/EmptyState";
@@ -74,6 +74,16 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
     try {
       const ok = await refreshSessionIfNeeded();
       if (!ok) return;
+
+      // Capture subscription intent for compliance/audit
+      authFetch("/api/supervisor/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callId, mode: "listen" }),
+      }).catch((e) => {
+        console.error("[wireline:supervisor] Failed to record listen subscription:", e);
+      });
+
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioCtx();
       audioContextRef.current = ctx;
@@ -135,6 +145,16 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
     stopWhispering();
     const ok = await refreshSessionIfNeeded();
     if (!ok) return;
+
+    // Capture subscription intent for compliance/audit
+    authFetch("/api/supervisor/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ callId, mode: "whisper" }),
+    }).catch((e) => {
+      console.error("[wireline:supervisor] Failed to record whisper subscription:", e);
+    });
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
       `${protocol}//${window.location.host}/api/supervisor/stream?callId=${callId}&mode=whisper`,
