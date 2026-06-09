@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { MessageSquare, User, Bot, Sparkles, Send, RefreshCw, Loader2, Award } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
@@ -30,35 +30,40 @@ const PERSONAS: Persona[] = [
     id: "angry_customer",
     name: "Angry Customer",
     emoji: "😠",
-    modifier: "Angry, frustrated, and complaining about pricing or slow service. Demands quick answers.",
+    modifier:
+      "Angry, frustrated, and complaining about pricing or slow service. Demands quick answers.",
     description: "Tests empathy, tone control, and escalations.",
   },
   {
     id: "skeptical_buyer",
     name: "Skeptical Buyer",
     emoji: "🤨",
-    modifier: "Highly skeptical, questioning product value, asking for proof, and looking for discounts.",
+    modifier:
+      "Highly skeptical, questioning product value, asking for proof, and looking for discounts.",
     description: "Tests value propositions and objection handling.",
   },
   {
     id: "rude_caller",
     name: "Rude Caller",
     emoji: "😤",
-    modifier: "Interrupting, speaking bluntly, dismissive of automated responses, and testing agent boundaries.",
+    modifier:
+      "Interrupting, speaking bluntly, dismissive of automated responses, and testing agent boundaries.",
     description: "Tests professional boundary-setting and poise.",
   },
   {
     id: "confused_senior",
     name: "Confused Senior",
     emoji: "👴",
-    modifier: "Speaks slowly, asks basic questions repeatedly, gets confused easily, and needs simple terms.",
+    modifier:
+      "Speaks slowly, asks basic questions repeatedly, gets confused easily, and needs simple terms.",
     description: "Tests patience, clarity, and simplicity.",
   },
   {
     id: "impatient_exec",
     name: "Impatient Executive",
     emoji: "💼",
-    modifier: "Extremely busy, wants bottom-line numbers immediately, and has zero tolerance for filler words.",
+    modifier:
+      "Extremely busy, wants bottom-line numbers immediately, and has zero tolerance for filler words.",
     description: "Tests speed, conciseness, and directness.",
   },
   {
@@ -74,7 +79,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
   const { error: toastError } = useToast();
   const [selectedPersona, setSelectedPersona] = useState<Persona>(PERSONAS[0]);
   const [customModifier, setCustomModifier] = useState(
-    "A polite customer looking for help with HubSpot CRM integration setup instructions."
+    "A polite customer looking for help with HubSpot CRM integration setup instructions.",
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -99,20 +104,28 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
     const hasEmpathy = /sorry|apolog|understand|hear|absolutely|completely|truly|right/i.test(text);
     if (!hasEmpathy) {
       score -= 15;
-      suggestions.push("Acknowledge the customer's frustration or situation with clear validation words.");
+      suggestions.push(
+        "Acknowledge the customer's frustration or situation with clear validation words.",
+      );
     }
 
     // Call closing check
-    const hasClose = /schedule|book|calendar|appointment|time|date|number|email|contact/i.test(text);
+    const hasClose = /schedule|book|calendar|appointment|time|date|number|email|contact/i.test(
+      text,
+    );
     if (!hasClose) {
       score -= 10;
-      suggestions.push("End with a call-to-action or next step, like booking a call or confirming a detail.");
+      suggestions.push(
+        "End with a call-to-action or next step, like booking a call or confirming a detail.",
+      );
     }
 
     // Response length check
     if (reply.length > 250) {
       score -= 10;
-      suggestions.push("Keep responses concise. High verbosity on calls can make the agent feel robotic or dominant.");
+      suggestions.push(
+        "Keep responses concise. High verbosity on calls can make the agent feel robotic or dominant.",
+      );
     }
 
     // Positive indicators
@@ -124,7 +137,8 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
 
     let feedback = "Excellent handling! Friendly, clear, and action-oriented.";
     if (finalScore < 70) {
-      feedback = "Needs improvement. Prioritize active listening and guiding the customer to the next steps.";
+      feedback =
+        "Needs improvement. Prioritize active listening and guiding the customer to the next steps.";
     } else if (finalScore < 90) {
       feedback = "Good response, but could be tuned to be slightly more concise and clear.";
     }
@@ -208,21 +222,29 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
             const active = selectedPersona.id === p.id;
             return (
               <div key={p.id} className="space-y-2">
-                <button
+                <ShadButton
                   type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() => setSelectedPersona(p)}
-                  className={`w-full text-left p-3 rounded-md border transition-all ${
+                  className={`w-full text-left p-3 rounded-md border transition-all h-auto ${
                     active
                       ? "bg-brand/10 border-brand/50 text-brand"
                       : "wl-panel border-border text-ink hover:border-brand/30 hover:bg-black/20"
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">{p.emoji}</span>
-                    <span className="text-xs font-semibold uppercase tracking-wider">{p.name}</span>
+                  <div className="w-full">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{p.emoji}</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider">
+                        {p.name}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted leading-relaxed whitespace-normal">
+                      {p.description}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-muted leading-relaxed">{p.description}</p>
-                </button>
+                </ShadButton>
                 {active && p.id === "custom" && (
                   <div className="p-2 rounded bg-black/20 border border-border space-y-1">
                     <label className="text-[9px] uppercase tracking-wider text-muted font-medium">
@@ -279,7 +301,9 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
               <div>
                 <h5 className="text-sm font-semibold text-ink">Start a coaching session</h5>
                 <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed mt-1">
-                  Type a message below to roleplay as the <strong className="text-ink">{selectedPersona.name}</strong>. See how your agent responds and receive real-time coaching suggestions.
+                  Type a message below to roleplay as the{" "}
+                  <strong className="text-ink">{selectedPersona.name}</strong>. See how your agent
+                  responds and receive real-time coaching suggestions.
                 </p>
               </div>
             </div>
@@ -299,7 +323,11 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                       : "bg-paper border-border text-ink"
                   }`}
                 >
-                  {m.role === "user" ? <User className="w-4.5 h-4.5" /> : <Bot className="w-4.5 h-4.5" />}
+                  {m.role === "user" ? (
+                    <User className="w-4.5 h-4.5" />
+                  ) : (
+                    <Bot className="w-4.5 h-4.5" />
+                  )}
                 </div>
 
                 {/* Message Bubble + Coaching */}
@@ -331,13 +359,15 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                           <Award className="w-3.5 h-3.5" />
                           <span>AI Coach Analysis</span>
                         </div>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                          m.coaching.score >= 90
-                            ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/20"
-                            : m.coaching.score >= 70
-                              ? "bg-amber-500/15 text-amber-500 border border-amber-500/20"
-                              : "bg-rose-500/15 text-rose-500 border border-rose-500/20"
-                        }`}>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                            m.coaching.score >= 90
+                              ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/20"
+                              : m.coaching.score >= 70
+                                ? "bg-amber-500/15 text-amber-500 border border-amber-500/20"
+                                : "bg-rose-500/15 text-rose-500 border border-rose-500/20"
+                          }`}
+                        >
                           Score: {m.coaching.score}/100
                         </span>
                       </div>

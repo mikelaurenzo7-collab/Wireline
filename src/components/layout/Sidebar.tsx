@@ -36,7 +36,7 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const RAIL_COLLAPSED = 56;
 const RAIL_EXPANDED = 216;
-const AUTO_EXPAND_WIDTH = 1680;
+const AUTO_EXPAND_WIDTH = 1280;
 
 const SHORTCUTS = NAV_SHORTCUT_HINTS;
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PlayCircle, CheckCircle2, XCircle, Loader2, Sparkles, Plus } from "lucide-react";
+import { PlayCircle, CheckCircle2, XCircle, Loader2, Plus } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -31,13 +31,15 @@ const ROLE_SCENARIOS: Record<string, Scenario[]> = {
       id: "sales_pricing",
       name: "Pricing Inquiry Guidance",
       prompt: "How much does your service cost?",
-      expected: "Agent should offer to book a discovery call or collect information, rather than inventing prices.",
+      expected:
+        "Agent should offer to book a discovery call or collect information, rather than inventing prices.",
     },
     {
       id: "sales_competitor",
       name: "Handling Competitors",
       prompt: "Why should I pick you over standard options?",
-      expected: "Agent should deliver a strong value proposition or differentiator without badmouthing.",
+      expected:
+        "Agent should deliver a strong value proposition or differentiator without badmouthing.",
     },
     {
       id: "sales_dnc",
@@ -49,7 +51,8 @@ const ROLE_SCENARIOS: Record<string, Scenario[]> = {
       id: "sales_close",
       name: "Sales Close attempt",
       prompt: "Okay, looks good, how do we start?",
-      expected: "Agent should suggest scheduling an onboarding call or taking down contact details to start.",
+      expected:
+        "Agent should suggest scheduling an onboarding call or taking down contact details to start.",
     },
   ],
   appointment_scheduler: [
@@ -278,7 +281,10 @@ const ROLE_SCENARIOS: Record<string, Scenario[]> = {
   ],
 };
 
-const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; suggestion: string } => {
+const evaluateTest = (
+  scenarioId: string,
+  reply: string,
+): { passed: boolean; suggestion: string } => {
   const text = reply.toLowerCase();
   switch (scenarioId) {
     // Sales role scenarios
@@ -286,49 +292,82 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/hello|hi|assistant|agent|representative|wireline/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent greets the caller and states their identity." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent greets the caller and states their identity.",
+      };
     case "sales_pricing":
       if (/schedule|book|call|appointment|price|cost|quote|details/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive telling the agent to offer booking a call to discuss pricing." };
+      return {
+        passed: false,
+        suggestion: "Add a directive telling the agent to offer booking a call to discuss pricing.",
+      };
     case "sales_competitor":
-      if (/why|us|offering|quality|service|special|differentiator|focus/i.test(text) || text.length > 20) {
+      if (
+        /why|us|offering|quality|service|special|differentiator|focus/i.test(text) ||
+        text.length > 20
+      ) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive describing the agent's key differentiators or value proposition." };
+      return {
+        passed: false,
+        suggestion:
+          "Add a directive describing the agent's key differentiators or value proposition.",
+      };
     case "sales_dnc":
       if (/dnc|remove|stop|confirm|apologize|number|calling|do not call/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a DNC preset or directive to immediately respect DNC requests." };
+      return {
+        passed: false,
+        suggestion: "Add a DNC preset or directive to immediately respect DNC requests.",
+      };
     case "sales_close":
       if (/book|schedule|appointment|next|start|calendar|details|time/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive forcing the agent to proactively close the sale and suggest booking." };
+      return {
+        passed: false,
+        suggestion:
+          "Add a directive forcing the agent to proactively close the sale and suggest booking.",
+      };
 
     // Scheduler scenarios
     case "sched_greet":
       if (/schedule|scheduler|book|appointment|calendar|assistant/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent introduces themselves as a scheduling assistant." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent introduces themselves as a scheduling assistant.",
+      };
     case "sched_book":
       if (/book|schedule|time|date|slot|calendar|tomorrow|available/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to check calendar availability or propose specific slots." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to check calendar availability or propose specific slots.",
+      };
     case "sched_resched":
       if (/reschedule|change|move|look|check|availability|time/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure the agent has directives on how to reschedule or cancel existing slots." };
+      return {
+        passed: false,
+        suggestion:
+          "Ensure the agent has directives on how to reschedule or cancel existing slots.",
+      };
     case "sched_text":
       if (/text|sms|link|message|send|number/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to offer sending booking links via text/SMS." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to offer sending booking links via text/SMS.",
+      };
     case "sched_duration":
       if (/hour|minute|time|duration|take|long/i.test(text) || text.length > 15) {
         return { passed: true, suggestion: "" };
@@ -340,22 +379,34 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/support|technical|diagnostic|scope|symptom|issue|problem|happen|changed/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to begin troubleshooting by scoping symptoms." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to begin troubleshooting by scoping symptoms.",
+      };
     case "tech_credentials":
       if (/settings|credentials|integration|never|api|key|token|decline/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to refuse receiving API secrets/passwords over calls." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to refuse receiving API secrets/passwords over calls.",
+      };
     case "tech_escalate":
       if (/escalate|transfer|human|security|manager|representative/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure security/data-loss claims route directly to human escalation." };
+      return {
+        passed: false,
+        suggestion: "Ensure security/data-loss claims route directly to human escalation.",
+      };
     case "tech_log":
       if (/ticket|create|log|file|support/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Instruct the agent to log tickets with full diagnostics." };
+      return {
+        passed: false,
+        suggestion: "Instruct the agent to log tickets with full diagnostics.",
+      };
     case "tech_verify":
       if (/verify|check|test|confirm|work|run/i.test(text)) {
         return { passed: true, suggestion: "" };
@@ -367,7 +418,10 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/hello|hi|assistant|agent|intake|qualif|help/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent greets and states they handle intake/qualification." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent greets and states they handle intake/qualification.",
+      };
     case "lq_volume":
       if (/volume|call|lead|many|week|day|screening/i.test(text) || text.length > 15) {
         return { passed: true, suggestion: "" };
@@ -382,34 +436,52 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/boss|decision|authority|maker|owner|green-light/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to verify if caller is the decision-maker." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to verify if caller is the decision-maker.",
+      };
     case "lq_close":
       if (/book|schedule|call|callback|appointment|demo|trial/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Instruct agent to route qualified leads to demo booking." };
+      return {
+        passed: false,
+        suggestion: "Instruct agent to route qualified leads to demo booking.",
+      };
 
     // Collections scenarios
     case "coll_greet":
       if (/billing|collections|verify|identity|account|name/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent verifies identity before discussing account balances." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent verifies identity before discussing account balances.",
+      };
     case "coll_dispute":
       if (/dispute|check|record|receipt|verify|log/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to acknowledge disputes and verify records." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to acknowledge disputes and verify records.",
+      };
     case "coll_payment":
       if (/pay|portal|credit|card|online|method/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Describe online balance clearance instructions in knowledge." };
+      return {
+        passed: false,
+        suggestion: "Describe online balance clearance instructions in knowledge.",
+      };
     case "coll_hardship":
       if (/hardship|plan|installments|extension|help|apologize/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Instruct agent to offer structured payment plans for hardships." };
+      return {
+        passed: false,
+        suggestion: "Instruct agent to offer structured payment plans for hardships.",
+      };
     case "coll_confirm":
       if (/promise|confirm|tomorrow|date|pay|log/i.test(text)) {
         return { passed: true, suggestion: "" };
@@ -421,7 +493,10 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/marketing|campaign|promo|options|help/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent greets and introduces campaign/promo services." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent greets and introduces campaign/promo services.",
+      };
     case "mkt_lead":
       if (/lead|customer|prospect|reach|gtm|conversion/i.test(text)) {
         return { passed: true, suggestion: "" };
@@ -431,24 +506,36 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/email|sms|voice|channel|phone/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent mentions voice, SMS, and email marketing channels." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent mentions voice, SMS, and email marketing channels.",
+      };
     case "mkt_copy":
       if (/draft|write|copy|sequence|subject|email|plumbing/i.test(text) || text.length > 25) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent can draft compelling email/marketing copy templates." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent can draft compelling email/marketing copy templates.",
+      };
     case "mkt_brief":
       if (/brief|outline|information|detail|target/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to collect campaign parameters/details." };
+      return {
+        passed: false,
+        suggestion: "Add a directive to collect campaign parameters/details.",
+      };
 
     // Personal Assistant scenarios
     case "pa_greet":
       if (/assistant|gatekeeper|mike|laurenzo|available|greet|speak/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent greets and scopes the caller and call purpose." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent greets and scopes the caller and call purpose.",
+      };
     case "pa_schedule":
       if (/schedule|book|calendar|time|slot|appointment/i.test(text)) {
         return { passed: true, suggestion: "" };
@@ -458,12 +545,18 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/urgent|emergency|priority|critical|escalate/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Instruct agent to route critical system emergencies immediately." };
+      return {
+        passed: false,
+        suggestion: "Instruct agent to route critical system emergencies immediately.",
+      };
     case "pa_gatekeep":
       if (/number|cell|phone|private|decline|email|message/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Refuse sharing Mike's private cell, offering routing alternatives." };
+      return {
+        passed: false,
+        suggestion: "Refuse sharing Mike's private cell, offering routing alternatives.",
+      };
     case "pa_message":
       if (/message|take|pass|note|confirm|relay/i.test(text)) {
         return { passed: true, suggestion: "" };
@@ -480,22 +573,35 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       if (/sorry|understand|cancel|membership|account|escalate|manager/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add a directive to empathize first before explaining cancellation instructions." };
+      return {
+        passed: false,
+        suggestion:
+          "Add a directive to empathize first before explaining cancellation instructions.",
+      };
     case "cs_escalate":
       if (/escalate|transfer|human|manager|representative|connect|person/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Add the escalation trigger directive to route immediately to a human." };
+      return {
+        passed: false,
+        suggestion: "Add the escalation trigger directive to route immediately to a human.",
+      };
     case "cs_location":
       if (/hour|open|location|address|street|time|close|find/i.test(text) || text.length > 20) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure business hours and location are documented in the knowledge base." };
+      return {
+        passed: false,
+        suggestion: "Ensure business hours and location are documented in the knowledge base.",
+      };
     case "cs_close":
       if (/bye|goodbye|day|welcome|thank|help/i.test(text)) {
         return { passed: true, suggestion: "" };
       }
-      return { passed: false, suggestion: "Ensure agent closes with a friendly, helpful sign-off." };
+      return {
+        passed: false,
+        suggestion: "Ensure agent closes with a friendly, helpful sign-off.",
+      };
 
     default:
       return { passed: true, suggestion: "" };
@@ -634,8 +740,12 @@ export default function BehavioralRegressionTests({
           {/* Overall score */}
           <div className="rounded-md bg-black/20 border border-white/8 p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-ink/75 uppercase tracking-wider">Suite Performance</span>
-              <span className={`text-xs font-bold uppercase ${scorePercent >= 80 ? "text-emerald-500" : "text-amber-500"}`}>
+              <span className="text-xs text-ink/75 uppercase tracking-wider">
+                Suite Performance
+              </span>
+              <span
+                className={`text-xs font-bold uppercase ${scorePercent >= 80 ? "text-emerald-500" : "text-amber-500"}`}
+              >
                 {passCount} / {results.length} Scenarios Passed
               </span>
             </div>
@@ -652,17 +762,26 @@ export default function BehavioralRegressionTests({
             {results.map((r) => {
               const isExpanded = expandedResults[r.scenarioId];
               return (
-                <div key={r.scenarioId} className="rounded-md wl-panel border border-border p-3 space-y-2">
+                <div
+                  key={r.scenarioId}
+                  className="rounded-md wl-panel border border-border p-3 space-y-2"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h4 className="text-xs font-semibold text-ink uppercase tracking-wider">{r.name}</h4>
-                      <p className="text-[11px] text-muted mt-0.5">Prompt: <strong className="text-ink/80">"{r.prompt}"</strong></p>
+                      <h4 className="text-xs font-semibold text-ink uppercase tracking-wider">
+                        {r.name}
+                      </h4>
+                      <p className="text-[11px] text-muted mt-0.5">
+                        Prompt: <strong className="text-ink/80">"{r.prompt}"</strong>
+                      </p>
                     </div>
-                    <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold border ${
-                      r.passed
-                        ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
-                        : "bg-rose-500/15 border-rose-500/30 text-rose-500"
-                    }`}>
+                    <span
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold border ${
+                        r.passed
+                          ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
+                          : "bg-rose-500/15 border-rose-500/30 text-rose-500"
+                      }`}
+                    >
                       {r.passed ? (
                         <>
                           <CheckCircle2 className="w-3 h-3" />
@@ -678,20 +797,27 @@ export default function BehavioralRegressionTests({
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[10px] text-ink/40 uppercase tracking-widest">Agent Response:</span>
-                    <p className={`text-xs font-mono leading-relaxed bg-black/25 rounded p-2.5 border border-border truncate-2-lines cursor-pointer ${
-                      isExpanded ? "whitespace-normal break-words" : "truncate"
-                    }`} onClick={() => toggleExpand(r.scenarioId)}>
+                    <span className="text-[10px] text-ink/40 uppercase tracking-widest">
+                      Agent Response:
+                    </span>
+                    <p
+                      className={`text-xs font-mono leading-relaxed bg-black/25 rounded p-2.5 border border-border truncate-2-lines cursor-pointer ${
+                        isExpanded ? "whitespace-normal break-words" : "truncate"
+                      }`}
+                      onClick={() => toggleExpand(r.scenarioId)}
+                    >
                       {r.reply}
                     </p>
                     {r.reply.length > 120 && (
-                      <button
+                      <ShadButton
                         type="button"
+                        variant="ghost"
+                        disableAnimations
                         onClick={() => toggleExpand(r.scenarioId)}
-                        className="text-[9px] text-brand hover:underline block uppercase tracking-wider"
+                        className="text-[9px] text-brand hover:underline p-0 h-auto hover:bg-transparent font-medium block uppercase tracking-wider"
                       >
                         {isExpanded ? "Collapse" : "Expand response"}
-                      </button>
+                      </ShadButton>
                     )}
                   </div>
 
