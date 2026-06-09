@@ -46,3 +46,10 @@ stitch-sdk.tgz
 
 # Bundle visualizer output
 stats.html
+
+# AI agent, scratch scripts, and local logs
+.cursor/skills/
+scratch/
+terminals/
+vapi_logs.jsonl.gz
+*.jsonl.gz
