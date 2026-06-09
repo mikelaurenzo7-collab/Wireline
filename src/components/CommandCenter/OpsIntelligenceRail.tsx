@@ -187,7 +187,7 @@ export function OpsIntelligenceRail({
               }
             }}
             disabled={activatingGrowth}
-            className="touch-press w-full gap-2 rounded-md bg-gradient-to-br from-brand to-brand-deep py-2.5 text-on-brand shadow-sm shadow-brand/20 disabled:cursor-wait"
+            className="touch-press hover:scale-[1.02] w-full gap-2 rounded-md bg-gradient-to-br from-brand to-brand-deep py-2.5 text-on-brand shadow-sm shadow-brand/20 disabled:cursor-wait"
           >
             <Zap
               className={clsx("w-3.5 h-3.5 fill-current", activatingGrowth && "animate-pulse")}
@@ -203,7 +203,7 @@ export function OpsIntelligenceRail({
             disableAnimations
             onClick={() => navigate("/agents")}
             title="Create an agent first"
-            className="touch-press w-full gap-2 rounded-md border-brand/20 bg-brand/[0.02] py-2.5 text-brand hover:border-brand/45"
+            className="touch-press hover:scale-[1.02] w-full gap-2 rounded-md border-brand/20 bg-brand/[0.02] py-2.5 text-brand hover:border-brand/45"
           >
             <Zap className="w-3.5 h-3.5" />
             <span className="text-[11px] font-semibold uppercase tracking-wider">

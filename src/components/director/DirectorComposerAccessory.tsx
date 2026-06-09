@@ -159,8 +159,7 @@ export function DirectorComposerAccessory({
                 size="sm"
                 disableAnimations
                 onClick={onClose}
-                aria-label={DIRECTOR_COMPOSER_CONTEXT.closePanelLabel}
-                className="h-8 min-w-[44px] px-2 wl-ops-chip text-muted shrink-0 touch-press"
+                className="h-8 min-w-[44px] px-2 wl-ops-chip text-muted shrink-0 touch-press hover:scale-[1.05]"
               >
                 Close
               </ShadButton>
@@ -174,8 +173,7 @@ export function DirectorComposerAccessory({
                       key={c.id}
                       to="/integrations"
                       onClick={onClose}
-                      aria-label={`${c.label} — ${c.desc}`}
-                      className="wl-composer-accessory-connector touch-press"
+                      className="wl-composer-accessory-connector touch-press hover:scale-[1.02]"
                     >
                       <span className="w-6 h-6 rounded-md bg-brand/12 flex items-center justify-center shrink-0">
                         <c.icon className="w-3 h-3 text-brand" aria-hidden />
@@ -217,7 +215,7 @@ export function DirectorComposerAccessory({
                   onClick={() => onSelectCoach(null)}
                   aria-pressed={!focusAgentId}
                   className={cn(
-                    "w-full justify-start gap-2 px-2.5 py-2.5 h-auto wl-micro-meta rounded-md touch-press",
+                    "w-full justify-start gap-2 px-2.5 py-2.5 h-auto wl-micro-meta rounded-md touch-press hover:scale-[1.02]",
                     !focusAgentId && "bg-brand/8 text-brand font-medium border border-brand/15",
                   )}
                 >
@@ -232,7 +230,7 @@ export function DirectorComposerAccessory({
                     onClick={() => onSelectCoach(a.id)}
                     aria-pressed={focusAgentId === a.id}
                     className={cn(
-                      "w-full justify-start gap-2 px-2.5 py-2.5 h-auto rounded-md touch-press",
+                      "w-full justify-start gap-2 px-2.5 py-2.5 h-auto rounded-md touch-press hover:scale-[1.02]",
                       focusAgentId === a.id && "bg-brand/8 border border-brand/15",
                     )}
                   >
@@ -300,8 +298,7 @@ export function DirectorComposerAccessory({
                   variant="ghost"
                   disableAnimations
                   disabled={isUploading}
-                  onClick={onPickDocument}
-                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press"
+                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press hover:scale-[1.02]"
                 >
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 text-brand animate-spin" />
@@ -319,8 +316,7 @@ export function DirectorComposerAccessory({
                   type="button"
                   variant="ghost"
                   disableAnimations
-                  onClick={onPickContextRule}
-                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press"
+                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press hover:scale-[1.02]"
                 >
                   <Brain className="w-4 h-4 text-brand" />
                   <span className="text-left">
@@ -332,8 +328,7 @@ export function DirectorComposerAccessory({
                   type="button"
                   variant="ghost"
                   disableAnimations
-                  onClick={onPickPlaybookInstruction}
-                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press"
+                  className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press hover:scale-[1.02]"
                 >
                   <GraduationCap className="w-4 h-4 text-brand" />
                   <span className="text-left">

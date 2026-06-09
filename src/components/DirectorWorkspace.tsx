@@ -1326,7 +1326,7 @@ export default function DirectorWorkspace({
                 disableAnimations
                 onClick={approveAllConfig}
                 disabled={isApprovingAll || isClearing || !!busyKey}
-                className="touch-press shrink-0 wl-label text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
+                className="touch-press hover:scale-[1.05] shrink-0 wl-label text-brand hover:text-brand-deep hover:bg-brand/8 h-auto px-2.5 py-1.5 border border-brand/15"
                 aria-label={DIRECTOR_SESSION_COPY.applyAllLabel}
               >
                 {isApprovingAll ? (
@@ -1348,7 +1348,7 @@ export default function DirectorWorkspace({
               disableAnimations
               onClick={clearThread}
               disabled={isClearing || isApprovingAll}
-              className="touch-press shrink-0 wl-label-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
+              className="touch-press hover:scale-[1.05] shrink-0 wl-label-muted hover:text-rose-600 hover:bg-rose-500/8 h-auto px-2.5 py-1.5"
               aria-label="Clear thread"
             >
               {isClearing ? (
@@ -2092,7 +2092,7 @@ export default function DirectorWorkspace({
             size="sm"
             disableAnimations
             onClick={scrollToLatest}
-            className={cn(WL_DIRECTOR_CLASSES.scrollToBottom, "touch-press")}
+            className={cn(WL_DIRECTOR_CLASSES.scrollToBottom, "touch-press hover:scale-[1.05]")}
             aria-label="Jump to composer and latest messages"
           >
             <ChevronDown className="w-3.5 h-3.5" aria-hidden />
@@ -2228,7 +2228,7 @@ export default function DirectorWorkspace({
                   aria-label="Send message"
                   className={cn(
                     WL_DIRECTOR_CLASSES.composerSendBtn,
-                    "touch-press app-primary-action gap-2 px-4 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)] transition-all duration-300 hover:shadow-[0_0_20px_rgba(var(--brand-rgb),0.4)] hover:-translate-y-0.5 relative overflow-hidden group",
+                    "touch-press hover:scale-[1.02] app-primary-action gap-2 px-4 shadow-[0_0_15px_rgba(var(--brand-rgb),0.2)] transition-all duration-300 hover:shadow-[0_0_20px_rgba(var(--brand-rgb),0.4)] hover:-translate-y-0.5 relative overflow-hidden group",
                   )}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />

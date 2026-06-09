@@ -472,7 +472,7 @@ export default function LiveOps() {
                   disableAnimations
                   onClick={refresh}
                   disabled={isRefreshing || (activeTab === "triage" ? triageLoading : loading)}
-                  className="touch-press shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
+                  className="touch-press hover:scale-[1.05] shrink-0 w-9 rounded-md text-muted hover:text-ink wl-panel disabled:cursor-not-allowed"
                   aria-label="Refresh"
                   title="Refresh"
                 >

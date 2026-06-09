@@ -249,7 +249,7 @@ export default function DncManager() {
                   onClick={refresh}
                   disabled={loading}
                   className={cn(
-                    "h-9 rounded-full text-muted touch-press",
+                    "h-9 rounded-full text-muted touch-press hover:scale-[1.05]",
                     WL_OPS_CLASSES.filterChip,
                   )}
                 >
@@ -268,7 +268,7 @@ export default function DncManager() {
                   onClick={() => fileRef.current?.click()}
                   disabled={importing}
                   className={cn(
-                    "h-9 rounded-full text-muted touch-press",
+                    "h-9 rounded-full text-muted touch-press hover:scale-[1.05]",
                     WL_OPS_CLASSES.filterChip,
                   )}
                 >
@@ -285,7 +285,7 @@ export default function DncManager() {
                   size="sm"
                   disableAnimations
                   onClick={() => setShowAdd(true)}
-                  className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 wl-label hover:bg-rose-500/25 shadow-none touch-press"
+                  className="h-9 rounded-full bg-rose-500/15 border-rose-500/40 text-rose-500 wl-label hover:bg-rose-500/25 shadow-none touch-press hover:scale-[1.05]"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   {OPS_CHANNEL_TOOLBAR.dnc.add}
@@ -381,7 +381,7 @@ export default function DncManager() {
                       key={entry.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-md touch-press"
+                      className="group flex items-center justify-between py-3 px-2 gap-3 hover:bg-white/3 transition-all rounded-md touch-press hover:scale-[1.02]"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">

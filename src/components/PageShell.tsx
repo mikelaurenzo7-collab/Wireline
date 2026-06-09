@@ -168,7 +168,7 @@ export default function PageShell({
                   disableAnimations
                   onClick={() => setMobileActionsOpen(true)}
                   aria-label="Page actions"
-                  className="touch-press md:hidden w-9 h-9 text-muted wl-panel"
+                  className="touch-press hover:scale-[1.05] md:hidden w-9 h-9 text-muted wl-panel"
                 >
                   <MoreHorizontal className="w-5 h-5" />
                 </ShadButton>
@@ -190,7 +190,7 @@ export default function PageShell({
               disableAnimations
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
-              className="touch-press md:hidden w-9 h-9 text-muted wl-panel"
+              className="touch-press hover:scale-[1.05] md:hidden w-9 h-9 text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </ShadButton>
@@ -229,7 +229,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "touch-press relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium rounded-none",
+                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium rounded-none",
                     active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
                   )}
                 >
@@ -290,7 +290,7 @@ export default function PageShell({
                     else if (e.key === "End") setActiveId(tabs[tabs.length - 1].id);
                   }}
                   className={cn(
-                    "touch-press relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-all wl-label font-medium whitespace-nowrap rounded-none",
+                    "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-all wl-label font-medium whitespace-nowrap rounded-none",
                     active ? "app-tab-active" : "text-muted",
                   )}
                 >
@@ -328,7 +328,7 @@ export default function PageShell({
               onClick={() => setMobileActionsOpen(true)}
               aria-label="Page actions"
               data-no-min-touch
-              className="touch-press shrink-0 w-9 h-9 rounded-md text-muted wl-panel"
+              className="touch-press hover:scale-[1.05] shrink-0 w-9 h-9 rounded-md text-muted wl-panel"
             >
               <MoreHorizontal className="w-5 h-5" />
             </ShadButton>

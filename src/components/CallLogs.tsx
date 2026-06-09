@@ -262,7 +262,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           onClick={() => setSelectedCall(call)}
                           aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
                           className={cn(
-                            "group touch-press w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none transition-all duration-300",
+                            "group touch-press hover:scale-[1.01] w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none transition-all duration-300",
                             selectedCall?.id === call.id
                               ? "bg-brand/10 hover:bg-brand/15"
                               : "hover:bg-black/[0.04] hover:shadow-sm",

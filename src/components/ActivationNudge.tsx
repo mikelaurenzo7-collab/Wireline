@@ -102,7 +102,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
         {phoneNumber ? (
           <a
             href={formatTel(phoneNumber)}
-            className="touch-press inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand text-on-brand wl-label min-h-[36px] hover:opacity-95 transition-opacity"
+            className="touch-press hover:scale-[1.05] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand text-on-brand wl-label min-h-[36px] hover:opacity-95 transition-opacity"
           >
             <Phone className="w-3.5 h-3.5" />
             {ACTIVATION_NUDGE_COPY.cta}
@@ -115,7 +115,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
           disableAnimations
           onClick={dismiss}
           aria-label="Dismiss activation reminder"
-          className="touch-press h-9 w-9 rounded-full text-muted hover:text-ink"
+          className="touch-press hover:scale-[1.05] h-9 w-9 rounded-full text-muted hover:text-ink"
         >
           <X className="w-3.5 h-3.5" />
         </ShadButton>

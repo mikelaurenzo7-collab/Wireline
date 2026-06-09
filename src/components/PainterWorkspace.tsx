@@ -425,7 +425,7 @@ export default function PainterWorkspace({
                   key={prompt.id}
                   type="button"
                   onClick={() => void send(prompt.label)}
-                  className="w-full text-left touch-press text-[12px] font-medium leading-snug px-3 py-2.5 rounded-md border border-brand/8 bg-paper/60 hover:bg-brand/4 dark:bg-velvet/40 dark:hover:bg-brand/8 flex items-center justify-between group"
+                  className="w-full text-left touch-press hover:scale-[1.02] text-[12px] font-medium leading-snug px-3 py-2.5 rounded-md border border-brand/8 bg-paper/60 hover:bg-brand/4 dark:bg-velvet/40 dark:hover:bg-brand/8 flex items-center justify-between group"
                 >
                   <span className="truncate pr-4">{prompt.label}</span>
                   <Sparkles className="w-3.5 h-3.5 text-brand opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -508,7 +508,7 @@ export default function PainterWorkspace({
                 key={p.conceptId + idx}
                 type="button"
                 onClick={() => onActiveStitchPreview?.(p)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded bg-brand/5 border border-brand/12 hover:bg-brand/10 transition-colors text-[10px] text-brand font-medium truncate touch-press"
+                className="flex items-center gap-1.5 px-2 py-1 rounded bg-brand/5 border border-brand/12 hover:bg-brand/10 transition-colors text-[10px] text-brand font-medium truncate touch-press hover:scale-[1.05]"
                 title={p.title}
               >
                 <LayoutTemplate className="w-3 h-3" />
@@ -528,7 +528,7 @@ export default function PainterWorkspace({
               key={preset.label}
               type="button"
               onClick={() => handlePresetSelect(preset.text)}
-              className="px-2 py-1 text-[10px] font-medium rounded-full bg-brand/5 hover:bg-brand/10 border border-brand/8 text-ink hover:text-brand transition-colors shrink-0 touch-press"
+              className="px-2 py-1 text-[10px] font-medium rounded-full bg-brand/5 hover:bg-brand/10 border border-brand/8 text-ink hover:text-brand transition-colors shrink-0 touch-press hover:scale-[1.05]"
             >
               {preset.label}
             </button>
@@ -564,7 +564,7 @@ export default function PainterWorkspace({
                 disableAnimations
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSending || isUploading}
-                className="h-8 w-8 p-0 text-muted hover:text-brand touch-press"
+                className="h-8 w-8 p-0 text-muted hover:text-brand touch-press hover:scale-[1.05]"
                 title="Upload PDF spec or Image"
               >
                 {isUploading ? (
@@ -590,7 +590,7 @@ export default function PainterWorkspace({
               onClick={() => void send(input)}
               disabled={isSending || !input.trim()}
               disableAnimations
-              className="h-8 px-3.5 bg-brand text-white hover:bg-brand-deep rounded-md flex items-center gap-1.5 touch-press shadow-sm"
+              className="h-8 px-3.5 bg-brand text-white hover:bg-brand-deep rounded-md flex items-center gap-1.5 touch-press hover:scale-[1.05] shadow-sm"
             >
               {isSending ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

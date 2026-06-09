@@ -145,7 +145,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-ink/40 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press"
+                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-ink/40 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press hover:scale-[1.05]"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

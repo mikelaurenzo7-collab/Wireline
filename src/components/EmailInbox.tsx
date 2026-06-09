@@ -330,7 +330,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
       onClick={syncInbox}
       disabled={syncing}
       className={cn(
-        "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40 touch-press",
+        "h-9 rounded-full text-muted hover:text-brand hover:border-brand/40 touch-press hover:scale-[1.05]",
         WL_OPS_CLASSES.filterChip,
       )}
     >
@@ -407,7 +407,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           key={thread.id}
                           onClick={() => setSelectedThread(thread)}
                           className={cn(
-                            "group w-full px-4 py-3.5 text-left transition-all duration-300 flex gap-3 items-start relative touch-press",
+                            "group w-full px-4 py-3.5 text-left transition-all duration-300 flex gap-3 items-start relative touch-press hover:scale-[1.02]",
                             active ? "bg-brand/6" : "hover:bg-black/[0.04] hover:shadow-sm",
                           )}
                         >
@@ -686,7 +686,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             size="sm"
                             disableAnimations
                             onClick={sendReply}
-                            className="rounded-full wl-label touch-press transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5"
+                            className="rounded-full wl-label touch-press hover:scale-[1.05] transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5"
                           >
                             <Send className="w-3 h-3" /> Send
                           </ShadButton>

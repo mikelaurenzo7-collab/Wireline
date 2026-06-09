@@ -144,7 +144,7 @@ export default function ProposalCard({
               onClick={onApprove}
               disabled={approveDisabled}
               disableAnimations
-              className="touch-press h-8 text-[11px] gap-1.5"
+              className="touch-press hover:scale-[1.02] h-8 text-[11px] gap-1.5"
             >
               {busy ? (
                 <>
@@ -165,7 +165,7 @@ export default function ProposalCard({
               onClick={onDismiss}
               disabled={busy}
               disableAnimations
-              className="touch-press h-8 text-[11px] text-muted"
+              className="touch-press hover:scale-[1.02] h-8 text-[11px] text-muted"
             >
               <X className="w-3 h-3" />
               Dismiss

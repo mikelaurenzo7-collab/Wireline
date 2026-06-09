@@ -262,7 +262,7 @@ export default function Cadences() {
           variant="editorial"
           disableAnimations
           onClick={() => setShowBuilder(true)}
-          className="touch-press rounded-full text-[11px] uppercase tracking-[0.28em]"
+          className="touch-press hover:scale-[1.05] rounded-full text-[11px] uppercase tracking-[0.28em]"
         >
           <Plus className="w-3.5 h-3.5" />
           New sequence
@@ -291,7 +291,7 @@ export default function Cadences() {
                   variant="outline"
                   disableAnimations
                   onClick={() => loadTemplate(t)}
-                  className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press"
+                  className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press hover:scale-[1.02]"
                 >
                   <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
                   <p className="wl-micro-meta mb-3">{t.description}</p>
@@ -320,7 +320,7 @@ export default function Cadences() {
           {cadences.map((c) => (
             <div
               key={c.id}
-              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap touch-press"
+              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap touch-press hover:scale-[1.02]"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -539,7 +539,7 @@ export default function Cadences() {
                 disableAnimations
                 onClick={save}
                 disabled={saving}
-                className="touch-press rounded-md text-[11px] uppercase tracking-[0.28em]"
+                className="touch-press hover:scale-[1.05] rounded-md text-[11px] uppercase tracking-[0.28em]"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

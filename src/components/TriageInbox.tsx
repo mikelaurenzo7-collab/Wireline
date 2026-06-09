@@ -241,7 +241,7 @@ export function TriagePanel({
             <p className="text-xs text-muted mt-0.5">{OPS_TRIAGE_COPY.allClearBannerBody}</p>
           </div>
         </div>
-        <Link to="/ops?tab=floor" className="app-micro-cta touch-press shrink-0">
+        <Link to="/ops?tab=floor" className="app-micro-cta touch-press hover:scale-[1.02] shrink-0">
           {OPS_TRIAGE_COPY.allClearBannerCta}
         </Link>
       </div>
@@ -409,7 +409,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
     <ul className="p-2 space-y-2 list-none stagger-children">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-center gap-3 rounded-md relative touch-press">
+          <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-center gap-3 rounded-md relative touch-press hover:scale-[1.02]">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
@@ -512,7 +512,7 @@ function HotLeads({ items }: { items: HotLead[] }) {
               <ShadButton
                 variant="outline"
                 size="icon"
-                className="w-8 h-8 rounded-md bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0 touch-press"
+                className="w-8 h-8 rounded-md bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0 touch-press hover:scale-[1.05]"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </ShadButton>
@@ -535,7 +535,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
         <li key={t.id} className="relative list-none">
           <Card
             className={cn(
-              "p-3 flex items-start gap-3 rounded-md transition-all wl-panel touch-press",
+              "p-3 flex items-start gap-3 rounded-md transition-all wl-panel touch-press hover:scale-[1.02]",
               t.priority === "high"
                 ? "bg-destructive/8 border-destructive/25 hover:border-destructive/40"
                 : t.priority === "medium"
@@ -667,7 +667,7 @@ const KnowledgeGapRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press">
+      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press hover:scale-[1.02]">
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
@@ -795,7 +795,7 @@ const OpenTaskRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press">
+      <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press hover:scale-[1.02]">
         <ShadButton
           variant="outline"
           size="icon"
@@ -861,7 +861,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
     <ul className="p-2 space-y-2 list-none">
       {items.map((c) => (
         <li key={c.id} className="relative list-none group">
-          <Card className="bg-destructive/6 border-destructive/15 hover:border-destructive/30 transition-all p-3 flex items-start gap-3 rounded-md relative wl-panel touch-press">
+          <Card className="bg-destructive/6 border-destructive/15 hover:border-destructive/30 transition-all p-3 flex items-start gap-3 rounded-md relative wl-panel touch-press hover:scale-[1.02]">
             {/* Absolute overlay link covering the entire row target */}
             <Link
               to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}

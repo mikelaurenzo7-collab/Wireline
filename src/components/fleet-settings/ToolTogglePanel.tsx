@@ -120,7 +120,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
                 })
               }
               className={cn(
-                "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10 touch-press",
+                "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10 touch-press hover:scale-[1.05]",
                 selectedAgent.auto_zoom_link
                   ? "bg-brand/30 border-brand/50"
                   : "bg-muted/10 border-border",

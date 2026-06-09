@@ -182,7 +182,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
       disableAnimations
       onClick={fetchThreads}
       disabled={loading}
-      className="h-9 rounded-full wl-label text-muted hover:text-brand hover:border-brand/40 touch-press"
+      className="h-9 rounded-full wl-label text-muted hover:text-brand hover:border-brand/40 touch-press hover:scale-[1.05]"
     >
       {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
       {OPS_CHANNEL_TOOLBAR.sms.refresh}
@@ -368,7 +368,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         onClick={handleSend}
                         disabled={sending || !reply.trim()}
                         aria-label="Send SMS reply"
-                        className="touch-press shrink-0 min-h-11 w-11 rounded-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5 group"
+                        className="touch-press hover:scale-[1.05] shrink-0 min-h-11 w-11 rounded-md transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)] hover:-translate-y-0.5 group"
                       >
                         {sending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

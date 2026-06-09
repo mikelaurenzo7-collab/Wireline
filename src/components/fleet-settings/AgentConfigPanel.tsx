@@ -751,7 +751,7 @@ export default function AgentConfigPanel({
                                   })
                                 }
                                 className={cn(
-                                  "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10 touch-press",
+                                  "shrink-0 w-10 h-5 rounded-full border p-0 min-w-10 touch-press hover:scale-[1.05]",
                                   selectedAgent.email_auto_respond
                                     ? "bg-brand/30 border-brand/50"
                                     : "bg-muted/10 border-border",
@@ -1020,7 +1020,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: -6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={d.id}
-                              className="rounded-md bg-destructive/8 border border-destructive/20 p-3 group touch-press"
+                              className="rounded-md bg-destructive/8 border border-destructive/20 p-3 group touch-press hover:scale-[1.02]"
                             >
                               {editingDirective && editingDirective.id === d.id ? (
                                 <div className="space-y-2">
@@ -1164,7 +1164,7 @@ export default function AgentConfigPanel({
                               initial={{ opacity: 0, x: 6 }}
                               animate={{ opacity: 1, x: 0 }}
                               key={k.id}
-                              className="rounded-md bg-brand/8 border border-brand/20 p-3 group touch-press"
+                              className="rounded-md bg-brand/8 border border-brand/20 p-3 group touch-press hover:scale-[1.02]"
                             >
                               {editingKnowledge && editingKnowledge.id === k.id ? (
                                 <div className="space-y-2">

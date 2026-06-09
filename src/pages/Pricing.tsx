@@ -362,7 +362,7 @@ export default function Pricing() {
             variant={billingInterval === "month" ? "default" : "outline"}
             size="sm"
             onClick={() => setBillingInterval("month")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium ${
+            className={`touch-press hover:scale-[1.05] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium ${
               billingInterval === "month" ? "billing-toggle-active border" : ""
             }`}
           >
@@ -374,7 +374,7 @@ export default function Pricing() {
             variant={billingInterval === "year" ? "default" : "outline"}
             size="sm"
             onClick={() => setBillingInterval("year")}
-            className={`px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium relative ${
+            className={`touch-press hover:scale-[1.05] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.28em] font-medium relative ${
               billingInterval === "year" ? "billing-toggle-active border" : ""
             }`}
           >

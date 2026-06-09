@@ -77,7 +77,7 @@ export default function Design() {
                 disableAnimations
                 onClick={() => studioBridge?.clearThread()}
                 disabled={studioBridge?.isClearing}
-                className="touch-press inline-flex h-8 wl-label text-muted-foreground hover:text-rose-600 hover:bg-rose-500/8 px-2 sm:px-2.5"
+                className="touch-press hover:scale-[1.05] inline-flex h-8 wl-label text-muted-foreground hover:text-rose-600 hover:bg-rose-500/8 px-2 sm:px-2.5"
                 aria-label={WIRELINE_PAINTER_UI.clearThreadLabel}
               >
                 {studioBridge?.isClearing ? (
@@ -100,7 +100,7 @@ export default function Design() {
                 variant={mobilePane === "chat" ? "default" : "ghost"}
                 role="tab"
                 aria-selected={mobilePane === "chat"}
-                className="h-8 rounded-full px-3 text-[11px] font-semibold touch-press"
+                className="h-8 rounded-full px-3 text-[11px] font-semibold touch-press hover:scale-[1.05]"
                 onClick={() => setMobilePane("chat")}
               >
                 {WIRELINE_PAINTER_UI.mobileChatTab}
@@ -111,7 +111,7 @@ export default function Design() {
                 variant={mobilePane === "preview" ? "default" : "ghost"}
                 role="tab"
                 aria-selected={mobilePane === "preview"}
-                className="h-8 rounded-full px-3 text-[11px] font-semibold touch-press"
+                className="h-8 rounded-full px-3 text-[11px] font-semibold touch-press hover:scale-[1.05]"
                 onClick={() => setMobilePane("preview")}
               >
                 {WIRELINE_PAINTER_UI.mobilePreviewTab}
@@ -194,7 +194,7 @@ export default function Design() {
                           size="sm"
                           disableAnimations
                           onClick={() => handlePreviewPrompt(prompt.label)}
-                          className="wl-painter-preview-starter touch-press h-auto min-h-10 justify-between gap-2 px-3 py-2.5 text-left text-[12px] font-medium leading-snug"
+                          className="wl-painter-preview-starter touch-press hover:scale-[1.02] h-auto min-h-10 justify-between gap-2 px-3 py-2.5 text-left text-[12px] font-medium leading-snug"
                         >
                           <span className="line-clamp-2">{prompt.label}</span>
                         </ShadButton>
