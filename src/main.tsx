@@ -15,7 +15,7 @@ if (typeof window !== "undefined") {
   try {
     sessionStorage.removeItem("wireline:preload-reload-count");
     sessionStorage.removeItem("wireline:last-preload-reload");
-  } catch (e) {
+  } catch (_e) {
     // sessionStorage might be disabled or blocked
   }
 

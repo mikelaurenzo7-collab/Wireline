@@ -37,7 +37,6 @@ import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
 import {
   WL_DIRECTOR_CLASSES,
   DIRECTOR_COMPOSER_ACCESSORY_HINTS,
-  DIRECTOR_COMPOSER_CONTEXT,
   DIRECTOR_CAPABILITY_CATALOG,
   WIRELINE_STITCH_UI,
   type ComposerAccessoryKind,
@@ -298,6 +297,7 @@ export function DirectorComposerAccessory({
                   variant="ghost"
                   disableAnimations
                   disabled={isUploading}
+                  onClick={onPickDocument}
                   className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press hover:scale-[1.02]"
                 >
                   {isUploading ? (
@@ -316,6 +316,7 @@ export function DirectorComposerAccessory({
                   type="button"
                   variant="ghost"
                   disableAnimations
+                  onClick={onPickContextRule}
                   className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press hover:scale-[1.02]"
                 >
                   <Brain className="w-4 h-4 text-brand" />
@@ -328,6 +329,7 @@ export function DirectorComposerAccessory({
                   type="button"
                   variant="ghost"
                   disableAnimations
+                  onClick={onPickPlaybookInstruction}
                   className="h-auto justify-start gap-2 px-2.5 py-2.5 rounded-md touch-press hover:scale-[1.02]"
                 >
                   <GraduationCap className="w-4 h-4 text-brand" />
