@@ -26,6 +26,7 @@ import {
   ScrollText,
   Ban,
   LifeBuoy,
+  Paintbrush,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -111,7 +112,7 @@ export default function CommandBar() {
       icon: History,
       category: "Navigation",
       shortcut: "L",
-      action: () => navigate("/logs"),
+      action: () => navigate("/phone"),
     },
     {
       id: "inbox",
@@ -120,7 +121,7 @@ export default function CommandBar() {
       icon: Mail,
       category: "Navigation",
       shortcut: "E",
-      action: () => navigate("/inbox"),
+      action: () => navigate("/email"),
     },
     {
       id: "sms",
@@ -137,7 +138,7 @@ export default function CommandBar() {
       icon: PhoneOutgoing,
       category: "Navigation",
       shortcut: "O",
-      action: () => navigate("/outbound"),
+      action: () => navigate("/phone?tab=outbound"),
     },
     {
       id: "pipeline",
@@ -170,7 +171,7 @@ export default function CommandBar() {
       description: "Cross-agent fact manager",
       icon: Database,
       category: "Navigation",
-      action: () => navigate("/knowledge"),
+      action: () => navigate("/training?tab=database"),
     },
     {
       id: "agents",
@@ -180,6 +181,14 @@ export default function CommandBar() {
       category: "Navigation",
       shortcut: "A",
       action: () => navigate("/agents"),
+    },
+    {
+      id: "design",
+      label: "Design",
+      description: "Painter — visual workspace builder (Beta)",
+      icon: Paintbrush,
+      category: "Navigation",
+      action: () => navigate("/design"),
     },
     {
       id: "integrations",
@@ -308,6 +317,12 @@ export default function CommandBar() {
       setSelectedIndex(
         (prev) => (prev - 1 + filteredCommands.length) % Math.max(1, filteredCommands.length),
       );
+    } else if (e.key === "Tab") {
+      // Standard command-palette behavior: Tab cycles results instead of
+      // moving focus out of the dialog (keyboard trap fix).
+      e.preventDefault();
+      const len = Math.max(1, filteredCommands.length);
+      setSelectedIndex((prev) => (e.shiftKey ? (prev - 1 + len) % len : (prev + 1) % len));
     } else if (e.key === "Enter" && filteredCommands[selectedIndex]) {
       handleAction(filteredCommands[selectedIndex]);
     }
