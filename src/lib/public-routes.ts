@@ -8,6 +8,7 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/compare",
   "/about",
   "/support",
+  "/contact",
   "/showcase",
   "/developers",
   "/blog",

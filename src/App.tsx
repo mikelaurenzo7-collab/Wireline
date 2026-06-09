@@ -32,6 +32,9 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Status = lazy(() => import("./components/Status"));
 const PublicChangelog = lazy(() => import("./components/PublicChangelog"));
 const Security = lazy(() => import("./components/Security"));
+const Contact = lazy(() =>
+  import("./components/ContactPage").then((m) => ({ default: m.ContactPage })),
+);
 
 const PrivacyPolicy = lazy(() =>
   import("./components/LegalPage").then((m) => ({ default: m.PrivacyPolicy })),
@@ -120,6 +123,18 @@ function AppContent() {
     return (
       <Suspense fallback={<MarketingRouteFallback />}>
         <SupportPage />
+      </Suspense>
+    );
+  }
+  // Public contact surface — sales / partnership / press / general. Renders
+  // BEFORE the auth guard so signed-out prospects (and inbound marketing/sales
+  // links) get a real page instead of being bounced to the sign-in form. The
+  // authenticated /contact/:number CRM profile route lives in AppRoutes.tsx and
+  // is unaffected (different path).
+  if (location.pathname === "/contact") {
+    return (
+      <Suspense fallback={<MarketingRouteFallback />}>
+        <Contact />
       </Suspense>
     );
   }
@@ -354,6 +369,12 @@ function AppContent() {
           <AuthPortal />
         </ErrorBoundary>
       );
+    }
+    // /help is an authenticated, in-app surface (HelpCenter). For signed-out
+    // visitors, the public help equivalent is /support — send them there
+    // instead of bouncing to the sign-in form.
+    if (path === "/help") {
+      return <Navigate to="/support" replace />;
     }
     const redirect = encodeURIComponent(path + location.search);
     return <Navigate to={`/signin?redirect=${redirect}`} replace />;
