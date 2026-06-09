@@ -145,7 +145,14 @@ async function runHtmlBuilderDraft(input: {
     log.warn("design studio Opus build failed — retrying on Claude Sonnet", {
       error: getErrorMessage(e),
     });
-    html = await buildWith(CLAUDE_MODELS.SONNET);
+    try {
+      html = await buildWith(CLAUDE_MODELS.SONNET);
+    } catch (e2) {
+      // TEMP DIAGNOSTIC: surface the real builder error in the preview HTML.
+      const m1 = getErrorMessage(e);
+      const m2 = getErrorMessage(e2);
+      return `<!doctype html><html><head><meta charset="utf-8"></head><body><pre id="wl-build-error">OPUS_ERR: ${m1}\nSONNET_ERR: ${m2}\nopusModel=${opusModel} sonnetModel=${CLAUDE_MODELS.SONNET} maxTokens=${maxTokens}</pre></body></html>`;
+    }
   }
 
   if (!html.trim()) {
