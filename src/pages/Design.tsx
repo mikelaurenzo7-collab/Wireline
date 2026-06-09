@@ -6,7 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import { LayoutTemplate, Loader2, Paintbrush, Trash2 } from "lucide-react";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import PainterWorkspace from "../components/PainterWorkspace";
-import type { PainterStudioBridge } from "../components/DirectorWorkspace";
+import type { PainterStudioBridge } from "../components/PainterWorkspace";
 import DirectorStitchPreviewStudio from "../components/director/DirectorStitchPreviewStudio";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import { ROUTE_ACCENTS } from "../constants/brand-colors";

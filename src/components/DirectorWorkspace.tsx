@@ -9,7 +9,7 @@
  * helps plan the fleet, decide what agents to hire, and coach them.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import {
   Send,
@@ -35,14 +35,13 @@ import {
   Download,
   Sparkles,
   LayoutTemplate,
-  Paintbrush,
   CheckCheck,
 } from "lucide-react";
-import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson, AUTH_SESSION_EXPIRED_MESSAGE, isAuthHttpStatus } from "../lib/api";
+import { authFetch, readApiJson, AUTH_SESSION_EXPIRED_MESSAGE, isAuthHttpStatus } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { useBranding } from "../contexts/BrandingContext";
+
 import { cn } from "../lib/utils";
 import FleetSetupNudge from "./FleetSetupNudge";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
@@ -84,7 +83,6 @@ import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
 import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
-import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
@@ -186,24 +184,9 @@ interface DirectorMessage {
   resolved?: Record<string, DirectorProposalResolution>;
 }
 
-export type DirectorWorkspaceSurface = "director" | "painter";
-
-export interface PainterStudioBridge {
-  messageCount: number;
-  isClearing: boolean;
-  clearThread: () => void;
-  queuePrompt: (text: string) => void;
-}
-
 export interface DirectorWorkspaceProps {
   focusAgentId?: string | null;
   onFocusAgentChange?: (agentId: string | null) => void;
-  /** director = /chat fleet wingman; painter = /design Wireline Design studio */
-  surface?: DirectorWorkspaceSurface;
-  initialPrompt?: string;
-  onActiveStitchPreview?: (preview: DirectorPreviewMeta | null) => void;
-  /** Painter studio chrome on /design — clear thread + prompt queue for preview panel */
-  onPainterStudioBridge?: (bridge: PainterStudioBridge | null) => void;
 }
 
 const SUGGESTION_ICON: Record<SuggestionKind, React.ElementType> = {
@@ -251,15 +234,13 @@ function filterMessagesForCoachFocus(
 export default function DirectorWorkspace({
   focusAgentId = null,
   onFocusAgentChange,
-  initialPrompt,
 }: DirectorWorkspaceProps) {
-  const isPainterSurface = false;
   const directorMessagesPath = "/api/director/messages";
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const reduceMotion = useReducedMotion();
   const { user, loading: authLoading } = useAuth();
-  const { branding } = useBranding();
+
   const { agents } = useAgents();
   const focusedAgent = focusAgentId ? agents.find((a) => a.id === focusAgentId) : undefined;
   const { error: toastError, success: toastSuccess } = useToast();
@@ -300,13 +281,7 @@ export default function DirectorWorkspace({
     designStudio: true,
     stitchMedia: true,
   });
-  const designModeEffective = false;
-  const buildStitchComposerOptions = () => undefined;
-  const shouldUseDesignComposer = () => false;
-  const designProfileConfigured = false;
-  const useStitchAccountBranding = false;
-  const stitchBrandingAvailable = false;
-  const setDesignProfileConfigured = () => {};
+
   const [loadDegraded, setLoadDegraded] = useState(false);
   const [pinnedToBottom, setPinnedToBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -593,7 +568,7 @@ export default function DirectorWorkspace({
       },
     ) => {
       try {
-        const stitchOptions = buildStitchComposerOptions(trimmed);
+
         const r = await authFetch(directorMessagesPath, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2159,7 +2134,6 @@ export default function DirectorWorkspace({
             <DirectorComposerContextStrip
               focusAgentName={focusedAgent?.name}
               onClearCoach={focusAgentId ? clearCoachFocus : undefined}
-              designProfileConfigured={designProfileConfigured}
             />
 
             <Textarea
@@ -2191,7 +2165,6 @@ export default function DirectorWorkspace({
             <DirectorComposerAccessory
               active={composerAccessory}
               onClose={() => setComposerAccessory(null)}
-              onDesignProfileConfiguredChange={setDesignProfileConfigured}
               agents={agents}
               focusAgentId={focusAgentId ?? null}
               focusedAgentName={focusedAgent?.name}
@@ -2235,11 +2208,6 @@ export default function DirectorWorkspace({
                 chatModelSelection={chatModelSelection}
                 onChatModelChange={setChatModelSelection}
                 designStudioEnabled={featureFlags.designStudio}
-                designMode={false}
-                useStitchAccountBranding={false}
-                onToggleStitchAccountBranding={() => {}}
-                stitchBrandingAvailable={false}
-                designProfileConfigured={false}
               />
 
               <Input

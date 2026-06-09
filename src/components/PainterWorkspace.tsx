@@ -3,7 +3,7 @@
  * Purpose-built, premium split chat with preset chips, iterations, and attachments.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+
 import { motion, useReducedMotion } from "motion/react";
 import {
   Send,
@@ -14,15 +14,10 @@ import {
   LayoutTemplate,
   Paintbrush,
   Layers,
-  Monitor,
-  Smartphone,
-  Tablet,
-  CheckCircle2,
 } from "lucide-react";
-import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson } from "../lib/api";
+import { authFetch, DIRECTOR_DESIGN_STUDIO_REQUEST_TIMEOUT_MS, readApiJson, isAuthHttpStatus } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
-import { AUTH_SESSION_EXPIRED_MESSAGE, isAuthHttpStatus } from "../lib/api";
 import { cn } from "../lib/utils";
 import { ThinkingDisplay } from "./ui/ThinkingDisplay";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -36,7 +31,6 @@ import { findLatestStitchPreview, isStitchPreview } from "../lib/design-preview"
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import {
   PAINTER_EMPTY_COPY,
-  PAINTER_LOADING_COPY,
   PAINTER_STARTER_PROMPTS,
   WIRELINE_PAINTER_UI,
 } from "../lib/wireline-painter-design";
@@ -58,10 +52,17 @@ export interface PainterMessage {
   modelId?: string;
 }
 
+export interface PainterStudioBridge {
+  messageCount: number;
+  isClearing: boolean;
+  clearThread: () => void;
+  queuePrompt: (text: string) => void;
+}
+
 export interface PainterWorkspaceProps {
   initialPrompt?: string;
   onActiveStitchPreview?: (preview: DirectorPreviewMeta | null) => void;
-  onPainterStudioBridge?: (bridge: import("./DirectorWorkspace").PainterStudioBridge | null) => void;
+  onPainterStudioBridge?: (bridge: PainterStudioBridge | null) => void;
 }
 
 const STYLE_PRESETS = [
