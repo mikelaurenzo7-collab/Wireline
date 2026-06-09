@@ -31,9 +31,9 @@ export async function fetchFleetSetupProgress(): Promise<FleetSetupProgress> {
       .then((r) => r.json())
       .then((d) => d.agents?.length ?? 0)
       .catch(() => 0),
-    authFetch("/api/agent-config/default-agent")
+    authFetch("/api/knowledge")
       .then((r) => r.json())
-      .then((d) => d.knowledge?.length ?? 0)
+      .then((d) => d.total ?? d.knowledge?.length ?? 0)
       .catch(() => 0),
     authFetch("/api/phone-numbers")
       .then((r) => r.json())

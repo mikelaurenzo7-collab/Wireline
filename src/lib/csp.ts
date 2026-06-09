@@ -7,6 +7,39 @@
 import { randomBytes } from "node:crypto";
 
 /**
+ * SHA-256 hashes of the three static inline <script> blocks in index.html.
+ * Production CSP is nonce-less for the static SPA shell (Vercel serves a
+ * static index.html — there is no per-request SSR to inject a nonce), so the
+ * inline boot scripts are allowlisted by content hash instead. If you edit any
+ * of these inline scripts, recompute the hash (the browser console prints the
+ * expected `sha256-…` on mismatch) and update it here — `csp.test.ts` and the
+ * `csp-inventory` baseline guard against silent drift.
+ *
+ *   1. Plausible custom-event helper (`window.plausible` queue shim)
+ *   2. Meta Pixel + Google Tag Manager production loader
+ *   3. Theme anti-flash checker (adds `.dark` before first paint → no FOUC)
+ */
+export const INLINE_SCRIPT_HASHES = [
+  "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
+  "'sha256-kL8ItXVCZUMxClmT83CWl7fbMgHsJ50yiZrOHmp/ys8='",
+  "'sha256-SX5Oce7MqKqZrv+KX1uSJDriRWzqlnlmu11LcJ5U8aM='",
+] as const;
+
+/**
+ * Marketing/analytics script origins the Meta Pixel + GTM loader injects.
+ * Required on script-src so the tags GTM/Meta append at runtime are not
+ * blocked (the inline loader itself is covered by INLINE_SCRIPT_HASHES).
+ */
+export const MARKETING_SCRIPT_SRCS = [
+  "https://plausible.io",
+  "https://connect.facebook.net",
+  "https://www.googletagmanager.com",
+  "https://*.googletagmanager.com",
+  "https://www.google-analytics.com",
+  "https://*.google-analytics.com",
+] as const;
+
+/**
  * Build the CSP connect-src origins for the runtime.
  * fetch() is allowed to reach Anthropic, Vapi, Google, Microsoft Graph, and Stripe.
  *
@@ -30,6 +63,15 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     // (see index.html) POSTs pageview/event data back to this origin.
     // Without it every page logs a blocked-request CSP error.
     "https://plausible.io",
+    // Meta Pixel + Google Tag Manager / GA4 telemetry beacons. The pixel
+    // POSTs events to facebook.com; GA4 sends to *.google-analytics.com and
+    // *.analytics.google.com. img-src https: already covers tracking pixels.
+    "https://connect.facebook.net",
+    "https://www.facebook.com",
+    "https://www.googletagmanager.com",
+    "https://*.google-analytics.com",
+    "https://*.analytics.google.com",
+    "https://stats.g.doubleclick.net",
   ];
   if (isDev) {
     // Vite HMR opens a WebSocket on a port it picks at startup. Allow the
@@ -58,11 +100,16 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   // inline postMessage script is allowed without 'unsafe-inline' being global.
   // plausible.io is allowlisted in both modes so the analytics script in
   // index.html loads instead of being blocked with a CSP console error.
+  // Inline boot-script hashes + marketing tag origins are allowed in every
+  // production branch so the static SPA shell, OAuth callback pages, and
+  // marketing pages all execute the same index.html inline scripts cleanly.
+  const inlineHashes = INLINE_SCRIPT_HASHES.join(" ");
+  const marketingSrcs = MARKETING_SCRIPT_SRCS.join(" ");
   const scriptSrc = isDev
     ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io"
     : nonce
-      ? `'self' 'nonce-${nonce}' https://plausible.io`
-      : "'self' https://plausible.io";
+      ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}`
+      : `'self' ${inlineHashes} ${marketingSrcs}`;
 
   // style-src-elem blocks injected <style> tags (XSS). style-src-attr allows
   // library-generated style="" attributes (Framer Motion, Recharts) without

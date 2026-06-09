@@ -202,9 +202,9 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
   const escalations = calls.filter((c) => c.status === "escalated");
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 h-full min-h-0 items-stretch">
+    <div className="flex flex-col xl:grid xl:grid-cols-12 gap-3 h-full min-h-0 items-stretch min-w-0">
       {/* Active callers — hero column */}
-      <section className="xl:col-span-8 min-h-0 flex flex-col h-full">
+      <section className="xl:col-span-8 min-h-0 min-w-0 flex flex-col h-full">
         <div
           className={cn(WL_OPS_CLASSES.railCard, "flex-1 min-h-0 flex flex-col overflow-hidden")}
         >
@@ -459,7 +459,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
       </section>
 
       {/* Agent rail — stacks below on mobile/tablet, sidebar on xl+ */}
-      <aside className="xl:col-span-4 flex flex-col gap-3 min-h-0 h-full">
+      <aside className="xl:col-span-4 flex flex-col gap-3 min-h-0 min-w-0 h-full">
         <div
           className={cn(WL_OPS_CLASSES.railCard, "flex flex-col flex-1 min-h-0 overflow-hidden")}
         >
