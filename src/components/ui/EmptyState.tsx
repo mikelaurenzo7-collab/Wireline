@@ -156,7 +156,7 @@ export function EmptyState({
                 onClick={action.onClick}
                 variant={isPrimary ? "default" : "outline"}
                 className={cn(
-                  "rounded-full touch-press",
+                  "rounded-full touch-press w-full sm:w-auto justify-center",
                   isPrimary && "app-primary-action",
                   isPrimary &&
                     compact &&
