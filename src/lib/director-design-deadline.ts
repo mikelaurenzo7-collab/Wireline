@@ -106,16 +106,16 @@ export function maxTokensForPass(
   stage: "build" | "critic" | "finisher",
 ): number {
   if (pass === 1) {
+    if (stage === "build") return 20_480;
+    if (stage === "critic") return 2_048;
+    return 20_480;
+  }
+  if (pass === 2) {
     if (stage === "build") return 14_336;
     if (stage === "critic") return 1_536;
     return 12_288;
   }
-  if (pass === 2) {
-    if (stage === "build") return 10_240;
-    if (stage === "critic") return 1_024;
-    return 8_192;
-  }
-  if (stage === "build") return 8_192;
-  if (stage === "critic") return 768;
-  return 6_144;
+  if (stage === "build") return 10_240;
+  if (stage === "critic") return 1_024;
+  return 8_192;
 }

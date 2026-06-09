@@ -13,13 +13,13 @@ import {
 } from "./director-design-team";
 
 describe("WIRELINE_DESIGN_TEAM Spectrum Desk", () => {
-  it("uses Kimi K2.6 as primary HTML builder with DeepSeek fallback", () => {
+  it("uses Claude Sonnet 4 as primary HTML builder with DeepSeek fallback", () => {
     expect(WIRELINE_DESIGN_TEAM.id).toBe("spectrum");
     expect(WIRELINE_DESIGN_TEAM_SPECTRUM.htmlBuilder.openRouterModelId).toBe(SPECTRUM_KIMI_MODEL);
     expect(WIRELINE_DESIGN_TEAM_SPECTRUM.htmlBuilder.fallbackOpenRouterModelId).toBe(
       SPECTRUM_DEEPSEEK_MODEL,
     );
-    expect(WIRELINE_DESIGN_TEAM_SPECTRUM.htmlBuilder.openRouterModelId).not.toMatch(/anthropic/i);
+    expect(WIRELINE_DESIGN_TEAM_SPECTRUM.htmlBuilder.openRouterModelId).toMatch(/sonnet/i);
   });
 
   it("uses Claude Opus via Anthropic wireline for preparer roles", () => {
@@ -47,15 +47,15 @@ describe("WIRELINE_DESIGN_TEAM Spectrum Desk", () => {
     expect(WIRELINE_DESIGN_TEAM.altImageReference?.enabled).toBe(false);
   });
 
-  it("runs a single Kimi draft before Opus finish", () => {
+  it("runs a single Sonnet draft before Opus finish", () => {
     expect(WIRELINE_DESIGN_TEAM.enableOptionalChallenger).toBe(false);
     expect(WIRELINE_DESIGN_TEAM.minRefinementPasses).toBe(1);
     expect(WIRELINE_DESIGN_TEAM.maxRefinementPasses).toBe(1);
   });
 
-  it("documents Opus prep, Kimi draft, and Opus finish in studio reasoning", () => {
+  it("documents Opus prep, Sonnet draft, and Opus finish in studio reasoning", () => {
     expect(WIRELINE_DESIGN_STUDIO_REASONING).toMatch(/Opus prep/i);
-    expect(WIRELINE_DESIGN_STUDIO_REASONING).toMatch(/Kimi draft/i);
+    expect(WIRELINE_DESIGN_STUDIO_REASONING).toMatch(/Sonnet draft/i);
     expect(WIRELINE_DESIGN_STUDIO_REASONING).toMatch(/Opus finish/i);
   });
 });

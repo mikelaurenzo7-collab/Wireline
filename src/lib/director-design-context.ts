@@ -63,7 +63,7 @@ export function buildDesignStageContext(input: DesignStageContextInput): string 
     parts.push("", "## Opus creative vision", input.opusVisionNotes.trim());
   }
   if (input.researchNotes?.trim()) {
-    parts.push("", "## Kimi research synthesis", input.researchNotes.trim());
+    parts.push("", "## Research synthesis", input.researchNotes.trim());
   }
   if (input.layoutScoutNotes?.trim()) {
     parts.push("", "## Layout scout archetypes", input.layoutScoutNotes.trim());

@@ -486,7 +486,7 @@ export const WIRELINE_DESIGN_UI = {
   studioLoadingPhases: [
     "Opus — envisioning your tailored design…",
     "Opus — writing your design brief…",
-    "Kimi — drafting your page structure…",
+    "Sonnet — drafting your page structure…",
     "Opus — critiquing and polishing your page…",
     "Opus — writing your preview summary…",
     "Packaging your live preview…",
@@ -495,7 +495,7 @@ export const WIRELINE_DESIGN_UI = {
   studioLoadingPhaseIntervalMs: 30_000,
   studioLoadingHint:
     "Full first preview usually finishes in 2–3 minutes. Refine anything in chat after that.",
-  designStudioReasoning: "Spectrum Desk — Opus prep, Kimi draft, Opus finish",
+  designStudioReasoning: "Spectrum Desk — Opus prep, Sonnet draft, Opus finish",
   loadingHint:
     "Wireline Design typically takes 3–5 minutes end-to-end (compose + package). Stay on this tab.",
   exportBlurb:

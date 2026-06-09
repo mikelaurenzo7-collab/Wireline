@@ -88,7 +88,7 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     vi.mocked(runOpenRouterCompletion).mockResolvedValue(builderDraftHtml);
   }
 
-  it("runs Opus vision, Kimi build, Opus implement via completion, sign-off, and packages preview", async () => {
+  it("runs Opus vision, Sonnet build, Opus implement via completion, sign-off, and packages preview", async () => {
     mockPipeline();
 
     const turn = await runDirectorDesignStudio(baseInput);
@@ -99,7 +99,7 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
     expect(turn.previews).toHaveLength(1);
     expect(turn.reply).toContain("Summit Landscaping");
     expect(turn.thinkingSummary).toMatch(/Opus vision/i);
-    expect(turn.thinkingSummary).toMatch(/Kimi build/i);
+    expect(turn.thinkingSummary).toMatch(/Sonnet build/i);
     expect(turn.designBriefMarkdown).toMatch(/Opus creative vision/i);
   });
 

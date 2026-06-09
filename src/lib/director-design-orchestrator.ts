@@ -1,5 +1,5 @@
 /**
- * Wireline Design Studio — Opus prep (Anthropic) → Kimi/DeepSeek draft (OR) → Opus finish.
+ * Wireline Design Studio — Opus prep (Anthropic) → Sonnet/DeepSeek draft (OR) → Opus finish.
  */
 import {
   DESIGN_BRIEF_OPUS_INPUT_CHARS,
@@ -224,7 +224,7 @@ async function runOpusImplementHtml(input: {
       model: preparer.wirelineModel,
       system: DESIGN_OPUS_IMPLEMENT_SYSTEM,
       user: buildOpusImplementUserPrompt(input),
-      maxTokens: 16_384,
+      maxTokens: 24_576,
     });
     const html = stripHtmlFences(text);
     if (!html.trim()) return input.draftHtml;
@@ -265,7 +265,7 @@ function buildFallbackOperatorReply(pageTitle: string): string {
   return [
     `Your **${pageTitle}** is ready — open the live preview to see it on your phone or desktop.`,
     "",
-    "- Opus tailored the concept; Kimi drafted the page; Opus polished it for production",
+    "- Opus tailored the concept; Sonnet drafted the page; Opus polished it for production",
     "- Hero, headline, and primary call-to-action are in place",
     "- Ask me to tweak colors, copy, or sections in chat",
   ].join("\n");
@@ -303,7 +303,7 @@ export async function runDirectorDesignStudio(
   });
 
   onProgress?.(nextStudioPhase());
-  phases.push("Kimi build");
+  phases.push("Sonnet build");
   let html = ensureDesignKitInHtml(
     await runHtmlBuilderDraft({
       operatorMessage: input.operatorMessage,

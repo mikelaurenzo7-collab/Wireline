@@ -4,8 +4,8 @@
  * Painter preparer (Anthropic SDK) — Opus 4.8 strict prep + finish:
  *   creative vision, design.md enrichment, HTML critique/polish, operator sign-off.
  *
- * Build desk (OpenRouter only — Kimi + DeepSeek, no Anthropic-via-OR):
- *   Kimi K2.6 primary HTML draft; DeepSeek V4 Pro fallback when Kimi fails.
+ * Build desk (OpenRouter only — Sonnet + DeepSeek, no Anthropic-via-OR):
+ *   Claude Sonnet 4 primary HTML draft; DeepSeek V4 Pro fallback when Sonnet fails.
  */
 import { CLAUDE_MODELS, GEMINI_MODELS } from "./claude-models";
 
@@ -152,8 +152,8 @@ export const WIRELINE_DESIGN_TEAM_PACIFIC = {
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,
 } as const;
 
-/** Kimi K2.6 — primary HTML builder on OpenRouter. */
-export const SPECTRUM_KIMI_MODEL = "moonshotai/kimi-k2.6";
+/** Claude Sonnet 4 — primary HTML builder on OpenRouter (best-in-class design aesthetics). */
+export const SPECTRUM_KIMI_MODEL = "anthropic/claude-sonnet-4";
 
 /** DeepSeek V4 Pro — HTML builder fallback on OpenRouter. */
 export const SPECTRUM_DEEPSEEK_MODEL = "deepseek/deepseek-v4-pro";
@@ -170,13 +170,13 @@ export const SPECTRUM_MINIMAX_M3_MODEL = "minimax/minimax-m3";
 /** Painter preparer model — Anthropic direct (not OpenRouter). */
 export const SPECTRUM_PAINTER_OPUS_MODEL = CLAUDE_MODELS.OPUS;
 
-/** Spectrum Desk — Opus preparer (Anthropic) + Kimi/DeepSeek build desk (OpenRouter). */
+/** Spectrum Desk — Opus preparer (Anthropic) + Sonnet/DeepSeek build desk (OpenRouter). */
 export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
   id: "spectrum" as const,
   htmlBuilder: {
     provider: "openrouter" as const,
     openRouterModelId: SPECTRUM_KIMI_MODEL,
-    label: "Kimi K2.6",
+    label: "Claude Sonnet 4",
     fallbackOpenRouterModelId: SPECTRUM_DEEPSEEK_MODEL,
     fallbackLabel: "DeepSeek V4 Pro",
   },
@@ -203,7 +203,7 @@ export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
     label: "Grok Imagine Image Quality",
   },
   enableOptionalChallenger: false,
-  /** Single Kimi draft — Opus finishes in one critique-and-implement pass. */
+  /** Single Sonnet draft — Opus finishes in one critique-and-implement pass. */
   minRefinementPasses: 1 as DesignPassNumber,
   maxRefinementPasses: 1 as DesignPassNumber,
   passScore: DESIGN_CODE_REVIEW_PASS_SCORE,
@@ -231,7 +231,7 @@ export function assertWirelineDesignRole(
 }
 
 export const WIRELINE_DESIGN_STUDIO_REASONING =
-  "Spectrum Desk — Opus prep, Kimi draft, Opus finish";
+  "Spectrum Desk — Opus prep, Sonnet draft, Opus finish";
 
 export function designTeamThinkingSummary(phases: string[]): string {
   return phases.filter(Boolean).join(" · ");
@@ -244,7 +244,7 @@ export function designStudioProgressLabel(
   stage: DesignStudioStage,
 ): string {
   const labels: Record<DesignStudioStage, string> = {
-    build: "Kimi — drafting your page structure…",
+    build: "Sonnet — drafting your page structure…",
     finish: "Opus — critiquing and polishing your page…",
     vision: "Opus — envisioning your tailored design…",
   };

@@ -39,6 +39,9 @@ export interface DesignStudioQualityReport {
   hasPrimaryButton: boolean;
   hasHeadline: boolean;
   hasKitMarker: boolean;
+  customPalette: boolean;
+  hasResponsiveQuery: boolean;
+  hasVisualRichness: boolean;
   issues: string[];
 }
 
@@ -89,6 +92,22 @@ export function assessDesignStudioHtmlQuality(html: string): DesignStudioQuality
     issues.push("Missing hero headline (h1 or .wl-headline).");
   }
 
+  // New strict checks for Sonnet
+  const customPalette = !/--wl-primary:\s*#1e3a5f/i.test(text) && !/--wl-bg:\s*#f7f3eb/i.test(text);
+  if (!customPalette) {
+    issues.push("Palette not customized — still using default navy/beige. Override :root variables based on the brief.");
+  }
+
+  const hasResponsiveQuery = /@media/i.test(text);
+  if (!hasResponsiveQuery) {
+    issues.push("Missing responsive behavior — add at least one @media query.");
+  }
+
+  const hasVisualRichness = /box-shadow:.*rgba/i.test(text) || /gradient/i.test(text) || /backdrop-filter/i.test(text);
+  if (!hasVisualRichness) {
+    issues.push("Design is too flat — add box-shadow, linear-gradient, or other visual richness.");
+  }
+
   return {
     polished,
     byteLength: buf.byteLength,
@@ -98,6 +117,9 @@ export function assessDesignStudioHtmlQuality(html: string): DesignStudioQuality
     hasPrimaryButton,
     hasHeadline,
     hasKitMarker,
+    customPalette,
+    hasResponsiveQuery,
+    hasVisualRichness,
     issues,
   };
 }
@@ -108,7 +130,10 @@ export function designQualityPasses(report: DesignStudioQualityReport): boolean 
     report.hasStyleBlock &&
     report.usesDesignKit &&
     report.hasPrimaryButton &&
-    report.hasHeadline
+    report.hasHeadline &&
+    report.customPalette &&
+    report.hasResponsiveQuery &&
+    report.hasVisualRichness
   );
 }
 

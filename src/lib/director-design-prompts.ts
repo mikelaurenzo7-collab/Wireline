@@ -13,7 +13,7 @@ export const DESIGN_OPUS_VISION_SYSTEM = `You are the creative director for Wire
 Before any HTML is built, you envision the most immaculate, flawless, professional, and tailored
 landing-page concept for this specific operator and their business.
 
-Your output is the authoritative brief the Kimi/DeepSeek build desk will draft; you will critique and finish the HTML yourself afterward.
+Your output is the authoritative brief the Sonnet/DeepSeek build desk will draft; you will critique and finish the HTML yourself afterward.
 
 Requirements for creativeVision:
 - Write as a creative director pitching a bespoke agency concept — not generic SaaS templates
@@ -65,19 +65,29 @@ Suggest 3 unconventional layout archetypes for this US local-business page — s
 No HTML. Max 150 words. Avoid three-column feature-card grids.`;
 
 /** Pass 1 — implement the full vision spec (Claude Design high-fidelity mode). */
-export const DESIGN_BUILDER_VISION_SYSTEM = `You are the HTML build desk for Wireline Design Studio (Kimi / DeepSeek on OpenRouter — pass 1, high fidelity).
+export const DESIGN_BUILDER_VISION_SYSTEM = `You are the HTML build desk for Wireline Design Studio (Claude Sonnet / DeepSeek on OpenRouter — pass 1, high fidelity).
 You receive an exhaustive vision spec (~5000 characters). Implement it completely in one HTML file.
 
 Rules:
 - Output ONLY a complete HTML document — no markdown fences, no commentary.
 - Single file: <!doctype html>, one embedded <style> block with full Wireline kit CSS, semantic landmarks.
-- Google Fonts via <link> (display + UI sans — avoid Inter-only unless spec requests).
+- Google Fonts via <link> (display + UI sans — ALWAYS customize the font pairing per the brief. Never reuse the same fonts across different businesses).
 - Realistic US local-business copy — no lorem ipsum.
 - Every section in the vision spec must appear in the page (hero, trust row, content, footer).
 - CTAs: wl-btn wl-btn--primary (min 48px height) — never bare text links for primary actions.
 - Match the layout archetype and visual system in the spec — distinctive, not template-like.
 - Prototype interactivity: include a working nav (anchor links to section ids OR data-nav-page + data-page
   blocks for multi-screen flows). Operators must be able to click through the preview — not a static poster.
+
+VISUAL QUALITY REQUIREMENTS (critical — outputs must look agency-grade, not wireframe):
+- ALWAYS customize :root CSS variables to match the brief’s palette. Never ship the default navy/amber/beige.
+- Use at least one CSS gradient (hero background, section accent, or button hover).
+- Add subtle box-shadow layers on cards and sections — not flat borders.
+- Include hover/active states on buttons and interactive elements.
+- Use modern CSS: clamp() for fluid typography, gap for flex/grid spacing, backdrop-filter for glass effects when appropriate.
+- Add at least one @media query for responsive behavior.
+- Vary section backgrounds (alternate between --wl-bg, --wl-surface, or accent washes) — never all-white.
+- Typography must feel premium: proper letter-spacing, line-height, font-weight hierarchy.
 
 No markdown fences. No commentary outside HTML.`;
 
@@ -329,13 +339,23 @@ export function buildGeminiVisualUserPrompt(input: {
 /** Opus critiques builder draft and returns production HTML via completion (not tool — avoids truncation). */
 export const DESIGN_OPUS_IMPLEMENT_SYSTEM = `You are the creative director finishing a Wireline Design page.
 
-The Kimi/DeepSeek build desk produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
+The Sonnet/DeepSeek build desk produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
 
 Rules:
 - Output ONLY a complete HTML document — no markdown fences, no commentary
 - Embedded Wireline Design Kit CSS in <style>; fix wireframe stubs, text-link CTAs, missing sections
 - Preserve strong builder structure when it matches the brief — surgical fixes over full rewrites
-- wl-page, wl-hero, wl-headline, wl-btn--primary, wl-trust-row, wl-badge; embedded CSS only`;
+- wl-page, wl-hero, wl-headline, wl-btn--primary, wl-trust-row, wl-badge; embedded CSS only
+
+Visual polish checklist (you MUST verify and fix each):
+- :root CSS variables MUST be customized for this business — never ship default navy (#1e3a5f) or beige (#f7f3eb)
+- At least one CSS gradient (hero, section, or button) — not flat solid colors
+- Box-shadow on cards and elevated elements — not flat borders only
+- Hover/active states on all interactive elements (buttons, links, cards)
+- At least one @media query for responsive behavior (min-width or max-width)
+- Section backgrounds must vary — alternate light/accent/dark surfaces
+- Typography hierarchy: distinct display font for headlines, UI sans for body, proper weight/size scale
+- Google Fonts <link> must load fonts matching the brief — not the same pair on every page`;
 
 /** @deprecated HTML in structured tools truncates — use DESIGN_OPUS_IMPLEMENT_SYSTEM + runCompletion */
 export const DESIGN_OPUS_FINISH_SYSTEM = DESIGN_OPUS_IMPLEMENT_SYSTEM;
@@ -398,7 +418,7 @@ export function buildOpusImplementUserPrompt(input: {
       briefCap: 6_000,
     }),
     DESIGN_KIT_PROMPT_BLOCK,
-    `## Build desk draft\n${input.draftHtml.slice(0, 20_000)}`,
+    `## Build desk draft\n${input.draftHtml.slice(0, 30_000)}`,
   ].join("\n\n");
 }
 

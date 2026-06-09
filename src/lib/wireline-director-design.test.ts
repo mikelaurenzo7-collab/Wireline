@@ -234,7 +234,7 @@ describe("Wireline Director design contract", () => {
     expect(WIRELINE_STITCH_UI.loadingPhases.join(" ")).not.toMatch(/google/i);
     expect(WIRELINE_STITCH_UI.studioLoadingPhases.length).toBeGreaterThanOrEqual(4);
     expect(WIRELINE_STITCH_UI.studioLoadingPhases.join(" ")).toMatch(/Opus/i);
-    expect(WIRELINE_STITCH_UI.studioLoadingPhases.join(" ")).toMatch(/Kimi/i);
+    expect(WIRELINE_STITCH_UI.studioLoadingPhases.join(" ")).toMatch(/Sonnet/i);
     expect(WIRELINE_STITCH_UI.studioLoadingHint).toMatch(/2–3 minutes/i);
     expect(WIRELINE_STITCH_UI.studioLoadingPhaseIntervalMs).toBeGreaterThanOrEqual(20_000);
     expect(WIRELINE_STITCH_UI.designStudioReasoning).toMatch(/Spectrum Desk/i);
