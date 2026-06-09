@@ -97,7 +97,8 @@ Verify all layouts across 3 major breakpoints:
 ## 7. The E2E Verification Loop
 
 1. **Build Local Verification**: Run the local development server (when available) or staging deployment to test styling.
-2. **Visual Inspection**: Use browser automation or screenshot tools (e.g., `browser_subagent`) to audit layouts, typography, focus states, and transitions.
-3. **Visual Regression Tests**: When styling adjustments are made, run Playwright to update baseline files:
+2. **Commit and Push**: Stage, commit, and push modifications directly to `origin/main` using `--no-verify` (when local Node environment is restricted).
+3. **Deploy & Auth Pause**: **CRITICAL INVARIANT:** Stop and wait. Do NOT start the visual QA or launch the browser subagent yet. Inform the user and wait for their confirmation that the Vercel production build has successfully completed and they have logged in their Founder's account in the browser.
+4. **Visual Inspection**: Once the user approves, use browser automation or screenshot tools (e.g., `browser_subagent`) on `https://trywireline.com/` to audit layouts, typography, focus states, and transitions.
+5. **Visual Regression Tests**: When local styling adjustments are made and local Node is present, run Playwright to update baseline files:
    `npx playwright test tests/e2e --update-snapshots`
-4. **Production Deploy Check**: Stage, commit, and push modifications directly to `origin/main` using `--no-verify` (when local Node environment is restricted). Audit the live production deployment.
