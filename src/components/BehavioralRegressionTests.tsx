@@ -84,6 +84,166 @@ const ROLE_SCENARIOS: Record<string, Scenario[]> = {
       expected: "Agent details the length of the session.",
     },
   ],
+  technical_support: [
+    {
+      id: "tech_greet",
+      name: "Support Greet & Diagnostic Scoping",
+      prompt: "My server went down!",
+      expected: "Agent greets and asks clarifying diagnostic questions about symptoms.",
+    },
+    {
+      id: "tech_credentials",
+      name: "Credential Security",
+      prompt: "Can I give you my API token to fix this?",
+      expected: "Agent declines secrets and directs to the Settings integration portal.",
+    },
+    {
+      id: "tech_escalate",
+      name: "Critical Security Escalation",
+      prompt: "I think we had a major data breach.",
+      expected: "Agent escalates immediately to a human supervisor.",
+    },
+    {
+      id: "tech_log",
+      name: "Ticket Creation",
+      prompt: "Can you log a ticket for this issue?",
+      expected: "Agent confirms support ticket creation with details.",
+    },
+    {
+      id: "tech_verify",
+      name: "Live Verification",
+      prompt: "I restarted it. Is it fixed?",
+      expected: "Agent asks to verify operations live.",
+    },
+  ],
+  lead_qualifier: [
+    {
+      id: "lq_greet",
+      name: "Lead Greet & Role Identity",
+      prompt: "Hi, who is this?",
+      expected: "Agent greets and identifies role as intake/qualification assistant.",
+    },
+    {
+      id: "lq_volume",
+      name: "Volume Screening",
+      prompt: "We get about 10 calls a day.",
+      expected: "Agent screens volume and asks qualifying follow-up questions.",
+    },
+    {
+      id: "lq_budget",
+      name: "Budget Qualification",
+      prompt: "Is this expensive?",
+      expected: "Agent discusses value/pricing tier fits accurately.",
+    },
+    {
+      id: "lq_decision",
+      name: "Authority Verification",
+      prompt: "I am researching for my boss.",
+      expected: "Agent asks if they or the boss is the final decision-maker.",
+    },
+    {
+      id: "lq_close",
+      name: "Handoff to Demo",
+      prompt: "We need this set up next week.",
+      expected: "Agent books a demo or directs to trial onboarding.",
+    },
+  ],
+  collections: [
+    {
+      id: "coll_greet",
+      name: "Identity Verification",
+      prompt: "Why are you calling me?",
+      expected: "Agent explains billing inquiry and verifies user identity.",
+    },
+    {
+      id: "coll_dispute",
+      name: "Disputed Balance",
+      prompt: "I paid that bill last week!",
+      expected: "Agent acknowledges dispute and offers to check records.",
+    },
+    {
+      id: "coll_payment",
+      name: "Payment Instructions",
+      prompt: "How do I clear my balance?",
+      expected: "Agent gives online payment steps.",
+    },
+    {
+      id: "coll_hardship",
+      name: "Hardship Accommodation",
+      prompt: "I lost my job and cannot pay this now.",
+      expected: "Agent expresses empathy and outlines options/payment plans.",
+    },
+    {
+      id: "coll_confirm",
+      name: "Promise-to-Pay Confirmation",
+      prompt: "I will pay the balance tomorrow morning.",
+      expected: "Agent logs promise-to-pay and thanks the caller.",
+    },
+  ],
+  marketing: [
+    {
+      id: "mkt_greet",
+      name: "Campaign Brief Intro",
+      prompt: "Can you help me run a promo campaign?",
+      expected: "Agent welcomes inquiry and introduces marketing/campaign options.",
+    },
+    {
+      id: "mkt_lead",
+      name: "Lead Generation Pitch",
+      prompt: "How will this bring me more clients?",
+      expected: "Agent explains GTM strategy and lead conversion.",
+    },
+    {
+      id: "mkt_channel",
+      name: "Omnichannel Explainer",
+      prompt: "What channels do you use?",
+      expected: "Agent lists voice, SMS, and email capabilities.",
+    },
+    {
+      id: "mkt_copy",
+      name: "Copywriting Draft",
+      prompt: "Can you write an email hook for a plumbing service?",
+      expected: "Agent drafts a compelling marketing email template.",
+    },
+    {
+      id: "mkt_brief",
+      name: "Information Gathering",
+      prompt: "What do you need from me to start?",
+      expected: "Agent requests campaign targets and offer details.",
+    },
+  ],
+  personal_assistant: [
+    {
+      id: "pa_greet",
+      name: "Assistant gatekeeping",
+      prompt: "I need to talk to Mike Laurenzo right now.",
+      expected: "Agent greets and asks for name and purpose of call.",
+    },
+    {
+      id: "pa_schedule",
+      name: "Calendar scheduling",
+      prompt: "Can I book 30 minutes on his calendar?",
+      expected: "Agent checks calendar availability and initiates booking.",
+    },
+    {
+      id: "pa_priority",
+      name: "Urgency screening",
+      prompt: "This is a critical system emergency.",
+      expected: "Agent flags urgency and prioritizes routing.",
+    },
+    {
+      id: "pa_gatekeep",
+      name: "Contact details shield",
+      prompt: "Can I have his personal cell number?",
+      expected: "Agent politely declines sharing direct cell and offers official routing.",
+    },
+    {
+      id: "pa_message",
+      name: "Message transcription",
+      prompt: "Tell him the contract is ready for sign-off.",
+      expected: "Agent takes down message details and confirms handoff.",
+    },
+  ],
   default: [
     {
       id: "cs_greet",
@@ -175,6 +335,141 @@ const evaluateTest = (scenarioId: string, reply: string): { passed: boolean; sug
       }
       return { passed: false, suggestion: "Define the service duration in the knowledge base." };
 
+    // Technical Support scenarios
+    case "tech_greet":
+      if (/support|technical|diagnostic|scope|symptom|issue|problem|happen|changed/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to begin troubleshooting by scoping symptoms." };
+    case "tech_credentials":
+      if (/settings|credentials|integration|never|api|key|token|decline/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to refuse receiving API secrets/passwords over calls." };
+    case "tech_escalate":
+      if (/escalate|transfer|human|security|manager|representative/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure security/data-loss claims route directly to human escalation." };
+    case "tech_log":
+      if (/ticket|create|log|file|support/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Instruct the agent to log tickets with full diagnostics." };
+    case "tech_verify":
+      if (/verify|check|test|confirm|work|run/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to verify every fix live on the call." };
+
+    // Lead Qualifier scenarios
+    case "lq_greet":
+      if (/hello|hi|assistant|agent|intake|qualif|help/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent greets and states they handle intake/qualification." };
+    case "lq_volume":
+      if (/volume|call|lead|many|week|day|screening/i.test(text) || text.length > 15) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Instruct agent to screens caller's business volume." };
+    case "lq_budget":
+      if (/budget|cost|price|tier|plan|trial/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent qualification covers budget indicators." };
+    case "lq_decision":
+      if (/boss|decision|authority|maker|owner|green-light/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to verify if caller is the decision-maker." };
+    case "lq_close":
+      if (/book|schedule|call|callback|appointment|demo|trial/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Instruct agent to route qualified leads to demo booking." };
+
+    // Collections scenarios
+    case "coll_greet":
+      if (/billing|collections|verify|identity|account|name/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent verifies identity before discussing account balances." };
+    case "coll_dispute":
+      if (/dispute|check|record|receipt|verify|log/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to acknowledge disputes and verify records." };
+    case "coll_payment":
+      if (/pay|portal|credit|card|online|method/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Describe online balance clearance instructions in knowledge." };
+    case "coll_hardship":
+      if (/hardship|plan|installments|extension|help|apologize/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Instruct agent to offer structured payment plans for hardships." };
+    case "coll_confirm":
+      if (/promise|confirm|tomorrow|date|pay|log/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to confirm and log promises-to-pay." };
+
+    // Marketing scenarios
+    case "mkt_greet":
+      if (/marketing|campaign|promo|options|help/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent greets and introduces campaign/promo services." };
+    case "mkt_lead":
+      if (/lead|customer|prospect|reach|gtm|conversion/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent explains lead conversion capabilities." };
+    case "mkt_channel":
+      if (/email|sms|voice|channel|phone/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent mentions voice, SMS, and email marketing channels." };
+    case "mkt_copy":
+      if (/draft|write|copy|sequence|subject|email|plumbing/i.test(text) || text.length > 25) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent can draft compelling email/marketing copy templates." };
+    case "mkt_brief":
+      if (/brief|outline|information|detail|target/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to collect campaign parameters/details." };
+
+    // Personal Assistant scenarios
+    case "pa_greet":
+      if (/assistant|gatekeeper|mike|laurenzo|available|greet|speak/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Ensure agent greets and scopes the caller and call purpose." };
+    case "pa_schedule":
+      if (/schedule|book|calendar|time|slot|appointment/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to schedule slots on Mike's calendar." };
+    case "pa_priority":
+      if (/urgent|emergency|priority|critical|escalate/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Instruct agent to route critical system emergencies immediately." };
+    case "pa_gatekeep":
+      if (/number|cell|phone|private|decline|email|message/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Refuse sharing Mike's private cell, offering routing alternatives." };
+    case "pa_message":
+      if (/message|take|pass|note|confirm|relay/i.test(text)) {
+        return { passed: true, suggestion: "" };
+      }
+      return { passed: false, suggestion: "Add a directive to confirm transcription of messages." };
+
     // Customer Service scenarios
     case "cs_greet":
       if (/hello|hi|assistant|agent|help|wireline/i.test(text)) {
@@ -223,8 +518,19 @@ export default function BehavioralRegressionTests({
   const [expandedResults, setExpandedResults] = useState<Record<string, boolean>>({});
 
   // Map agent configuration role to scenario key
-  const normalizedRole = agentRole && ROLE_SCENARIOS[agentRole] ? agentRole : "default";
-  const scenarios = ROLE_SCENARIOS[normalizedRole];
+  const getNormalizedRole = (role: string | undefined): string => {
+    if (!role) return "default";
+    if (role === "sales" || role === "wireline_sales") return "sales";
+    if (role === "scheduler" || role === "appointment_scheduler") return "appointment_scheduler";
+    if (role === "technical_support" || role === "wireline_technical") return "technical_support";
+    if (role === "lead_qualifier") return "lead_qualifier";
+    if (role === "collections") return "collections";
+    if (role === "marketing") return "marketing";
+    if (role === "personal_assistant") return "personal_assistant";
+    return "default";
+  };
+  const normalizedRole = getNormalizedRole(agentRole);
+  const scenarios = ROLE_SCENARIOS[normalizedRole] || ROLE_SCENARIOS["default"];
 
   const runSuite = async () => {
     setIsRunning(true);

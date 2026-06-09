@@ -61,11 +61,21 @@ const PERSONAS: Persona[] = [
     modifier: "Extremely busy, wants bottom-line numbers immediately, and has zero tolerance for filler words.",
     description: "Tests speed, conciseness, and directness.",
   },
+  {
+    id: "custom",
+    name: "Custom Persona",
+    emoji: "⚙️",
+    modifier: "",
+    description: "Define your own custom customer behavior and details.",
+  },
 ];
 
 export default function RoleplaySandbox({ agentId }: { agentId: string }) {
   const { error: toastError } = useToast();
   const [selectedPersona, setSelectedPersona] = useState<Persona>(PERSONAS[0]);
+  const [customModifier, setCustomModifier] = useState(
+    "A polite customer looking for help with HubSpot CRM integration setup instructions."
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -154,7 +164,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
         body: JSON.stringify({
           message: userMessageContent,
           history: historyPayload,
-          persona: selectedPersona.modifier,
+          persona: selectedPersona.id === "custom" ? customModifier : selectedPersona.modifier,
         }),
       });
 
@@ -197,22 +207,36 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
           {PERSONAS.map((p) => {
             const active = selectedPersona.id === p.id;
             return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setSelectedPersona(p)}
-                className={`w-full text-left p-3 rounded-md border transition-all ${
-                  active
-                    ? "bg-brand/10 border-brand/50 text-brand"
-                    : "wl-panel border-border text-ink hover:border-brand/30 hover:bg-black/20"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{p.emoji}</span>
-                  <span className="text-xs font-semibold uppercase tracking-wider">{p.name}</span>
-                </div>
-                <p className="text-[11px] text-muted leading-relaxed">{p.description}</p>
-              </button>
+              <div key={p.id} className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPersona(p)}
+                  className={`w-full text-left p-3 rounded-md border transition-all ${
+                    active
+                      ? "bg-brand/10 border-brand/50 text-brand"
+                      : "wl-panel border-border text-ink hover:border-brand/30 hover:bg-black/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">{p.emoji}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider">{p.name}</span>
+                  </div>
+                  <p className="text-[11px] text-muted leading-relaxed">{p.description}</p>
+                </button>
+                {active && p.id === "custom" && (
+                  <div className="p-2 rounded bg-black/20 border border-border space-y-1">
+                    <label className="text-[9px] uppercase tracking-wider text-muted font-medium">
+                      Define Behavior:
+                    </label>
+                    <textarea
+                      value={customModifier}
+                      onChange={(e) => setCustomModifier(e.target.value)}
+                      placeholder="Describe custom customer behavior..."
+                      className="w-full text-[11px] p-2 bg-black/30 border border-border rounded text-ink outline-none focus:border-brand/50 min-h-[60px] resize-none leading-relaxed"
+                    />
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
