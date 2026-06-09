@@ -190,6 +190,59 @@ export async function runStructuredWithThinking<T = any>(
     }
   }
 
+  // Attempt fallbacks if Claude failed
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const { GoogleGenerativeAI } = await import("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const geminiModel = genAI.getGenerativeModel({
+        model: "gemini-3.5-flash",
+        systemInstruction: opts.system,
+      });
+      const prompt = `${opts.user}\n\nPlease generate a JSON object matching this schema:\n${JSON.stringify(opts.tool.input_schema)}`;
+      const result = await geminiModel.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+        }
+      });
+      const text = result.response.text();
+      const parsed = JSON.parse(text) as T;
+      return {
+        result: parsed,
+        thinking: "Structured response served via Gemini 3.5 Flash fallback.",
+      };
+    } catch (geminiErr) {
+      try {
+        const { log } = await import("./server-context");
+        log.warn("Gemini structured fallback failed, trying next fallback", {
+          error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
+        });
+      } catch {}
+    }
+  }
+
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      const { runOpenRouterStructured } = await import("./openrouter-structured");
+      return await runOpenRouterStructured<T>({
+        model: "deepseek/deepseek-chat",
+        system: opts.system,
+        user: opts.user,
+        tool: opts.tool,
+        maxTokens: opts.maxTokens,
+        signal: opts.signal,
+      });
+    } catch (openRouterErr) {
+      try {
+        const { log } = await import("./server-context");
+        log.warn("OpenRouter structured fallback failed", {
+          error: openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr),
+        });
+      } catch {}
+    }
+  }
+
   throw lastErr;
 }
 
@@ -310,6 +363,64 @@ export async function runStructuredStream<T = any>(
       thinkingDurationMs: thinking ? totalMs : undefined,
     };
   } catch (err) {
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const geminiModel = genAI.getGenerativeModel({
+          model: "gemini-3.5-flash",
+          systemInstruction: opts.system,
+        });
+        
+        callbacks.onThinkingStart?.();
+        callbacks.onThinkingChunk?.("Thinking via Gemini 3.5 Flash fallback...");
+        callbacks.onThinkingEnd?.("Thinking via Gemini 3.5 Flash fallback...", 100);
+        
+        const prompt = `${opts.user}\n\nPlease generate a JSON object matching this schema:\n${JSON.stringify(opts.tool.input_schema)}`;
+        const result = await geminiModel.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+          }
+        });
+        const text = result.response.text();
+        const parsed = JSON.parse(text) as T;
+        callbacks.onResult?.(parsed);
+        return {
+          result: parsed,
+          thinking: "Serving streaming fallback via Gemini 3.5 Flash.",
+        };
+      } catch (geminiErr) {
+        try {
+          const { log } = await import("./server-context");
+          log.warn("Gemini structured stream fallback failed, trying OpenRouter", {
+            error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
+          });
+        } catch {}
+      }
+    }
+
+    if (process.env.OPENROUTER_API_KEY) {
+      try {
+        const { runOpenRouterStructuredStream } = await import("./openrouter-structured");
+        return await runOpenRouterStructuredStream<T>({
+          model: "deepseek/deepseek-chat",
+          system: opts.system,
+          user: opts.user,
+          tool: opts.tool,
+          maxTokens: opts.maxTokens,
+          signal: opts.signal,
+        }, callbacks);
+      } catch (openRouterErr) {
+        try {
+          const { log } = await import("./server-context");
+          log.warn("OpenRouter structured stream fallback failed", {
+            error: openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr),
+          });
+        } catch {}
+      }
+    }
+
     callbacks.onError?.(err as Error);
     throw err;
   }
@@ -400,7 +511,7 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
   text: string;
   cacheRead: number;
   cacheCreate: number;
-  provider: "claude" | "openai";
+  provider: "claude" | "openai" | "gemini" | "openrouter";
 }> {
   const isTransient = (err: unknown): boolean => {
     const e = err as { status?: number; message?: string };
@@ -422,6 +533,71 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
         const jitter = 250 + Math.random() * 250;
         await new Promise((r) => setTimeout(r, jitter));
         continue;
+      }
+    }
+  }
+
+  // Gemini fallback path
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const { GoogleGenerativeAI } = await import("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const geminiModel = genAI.getGenerativeModel({
+        model: "gemini-3.5-flash",
+        systemInstruction: opts.system,
+      });
+      const result = await geminiModel.generateContent({
+        contents: [{ role: "user", parts: [{ text: opts.user }] }]
+      });
+      const text = result.response.text();
+      try {
+        const { log } = await import("./server-context");
+        log.warn("Claude unavailable, served via Gemini fallback", {
+          claude_error: (claudeErr as { message?: string })?.message,
+        });
+      } catch {
+        /* ignore */
+      }
+      return { text, cacheRead: 0, cacheCreate: 0, provider: "gemini" };
+    } catch (geminiErr) {
+      try {
+        const { log } = await import("./server-context");
+        log.warn("Gemini completion fallback failed", {
+          error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
+        });
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  // OpenRouter fallback path (prefers DeepSeek chat / V4)
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      const { runOpenRouterCompletion } = await import("./openrouter-structured");
+      const text = await runOpenRouterCompletion({
+        model: "deepseek/deepseek-chat",
+        system: opts.system,
+        user: opts.user,
+        maxTokens: opts.maxTokens,
+      });
+      try {
+        const { log } = await import("./server-context");
+        log.warn("Claude unavailable, served via OpenRouter fallback", {
+          claude_error: (claudeErr as { message?: string })?.message,
+        });
+      } catch {
+        /* ignore */
+      }
+      return { text, cacheRead: 0, cacheCreate: 0, provider: "openrouter" };
+    } catch (openRouterErr) {
+      try {
+        const { log } = await import("./server-context");
+        log.warn("OpenRouter completion fallback failed", {
+          error: openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr),
+        });
+      } catch {
+        /* ignore */
       }
     }
   }
