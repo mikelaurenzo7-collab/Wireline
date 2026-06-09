@@ -384,7 +384,7 @@ export default function DirectorWorkspace({
           if (r.status === 401 || r.status === 403) return;
           if (!r.ok) {
             const parsed = await readApiJson(r);
-            throw new Error(!parsed.ok ? parsed.error : "Failed to load messages");
+            throw new Error(!parsed.ok ? (parsed as { error: string }).error : "Failed to load messages");
           }
           const data = await r.json();
           setLoadDegraded(data.degraded === true);
@@ -587,12 +587,13 @@ export default function DirectorWorkspace({
         });
         const parsed = await readApiJson<Record<string, unknown>>(r);
         if (!parsed.ok) {
-          if (isAuthHttpStatus(parsed.status)) {
+          const errParsed = parsed as { status: number; error: string };
+          if (isAuthHttpStatus(errParsed.status)) {
             setInput(trimmed);
             toastError("Session expired", "Sign in again to keep using the Director.");
             return;
           }
-          throw new Error(parsed.error);
+          throw new Error(errParsed.error);
         }
         appendDirectorReply(parsed.data);
       } catch {
@@ -776,8 +777,6 @@ export default function DirectorWorkspace({
     );
   }, [searchParams, setSearchParams]);
 
-  const initialPromptSentRef = useRef(false);
-
   const pickCapabilityExample = useCallback((text: string) => {
     setInput(text);
     setComposerAccessory(null);
@@ -911,7 +910,6 @@ export default function DirectorWorkspace({
       isSending,
       toastError,
       streamSend,
-      sendNonStreaming,
       focusAgentId,
       forceDeep,
       chatModelSelection,
@@ -1112,7 +1110,7 @@ export default function DirectorWorkspace({
           }),
         });
         const parsed = await readApiJson<{ output?: string; error?: string }>(r);
-        if (!parsed.ok) throw new Error(parsed.error);
+        if (!parsed.ok) throw new Error((parsed as { error: string }).error);
         markResolved(key, "done");
         toastSuccess("Done", parsed.data.output || action.label);
       } catch (err) {
@@ -1138,7 +1136,7 @@ export default function DirectorWorkspace({
           }),
         });
         const parsed = await readApiJson<{ output?: string; error?: string }>(r);
-        if (!parsed.ok) throw new Error(parsed.error);
+        if (!parsed.ok) throw new Error((parsed as { error: string }).error);
         markResolved(key, "done");
         if (parsed.data.output) {
           setMessages((prev) => [
@@ -1233,7 +1231,7 @@ export default function DirectorWorkspace({
         body: JSON.stringify({ pdfBase64: base64, fileName: file.name }),
       });
       const parsed = await readApiJson<{ reply?: string; inserted?: number; error?: string }>(r);
-      if (!parsed.ok) throw new Error(parsed.error);
+      if (!parsed.ok) throw new Error((parsed as { error: string }).error);
 
       if (parsed.data.reply) {
         setMessages((prev) => [

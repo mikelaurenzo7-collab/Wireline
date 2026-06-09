@@ -590,12 +590,12 @@ export default function DirectorStitchPreviewStudio({
           <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10 self-start sm:self-auto">
             {/* Viewport override buttons */}
             <div className="flex items-center gap-0.5">
-              {[
+              {([
                 { id: "AUTO", label: "Auto", icon: Layers },
                 { id: "DESKTOP", label: "Desktop", icon: Monitor },
                 { id: "TABLET", label: "Tablet", icon: Tablet },
                 { id: "MOBILE", label: "Mobile", icon: Smartphone },
-              ].map((d) => {
+              ] as const).map((d) => {
                 const Icon = d.icon;
                 const selected = deviceOverride === d.id;
                 return (
@@ -603,7 +603,7 @@ export default function DirectorStitchPreviewStudio({
                     key={d.id}
                     type="button"
                     variant="ghost"
-                    onClick={() => setDeviceOverride(d.id as any)}
+                    onClick={() => setDeviceOverride(d.id)}
                     title={`View as ${d.label}`}
                     className={cn(
                       "h-7 w-7 p-0 shrink-0 flex items-center justify-center rounded-md transition-all",

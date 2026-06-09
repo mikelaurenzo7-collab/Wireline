@@ -57,7 +57,8 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
     "/api/vapi-webhook",
     express.json({
       limit: "2mb",
-      verify: (req: any, res: any, buf: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      verify: (req: any, _res: any, buf: any) => {
         req.rawBody = buf;
       },
     })

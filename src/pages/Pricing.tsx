@@ -586,7 +586,7 @@ export default function Pricing() {
                       You save
                     </span>
                     <span className="font-display italic text-2xl wl-text-success tabular-nums">
-                      <AnimatedCounter value={savings} prefix="$" />
+                      $<AnimatedCounter value={savings} />
                       <span className="text-[11px] text-brand/70 ml-1">/yr ({pct}%)</span>
                     </span>
                   </div>

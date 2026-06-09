@@ -726,9 +726,10 @@ router.patch(
       email: req.user.email,
     });
     if (!validated.ok) {
-      return res.status(validated.status).json({
+      const errValidated = validated as { status: number; error: string };
+      return res.status(errValidated.status).json({
         code: "ERROR",
-        error: validated.error,
+        error: errValidated.error,
       });
     }
     try {
@@ -909,8 +910,9 @@ router.post(
             req.user.email,
           );
           if (!resolved.ok) {
+            const errResolved = resolved as { status: number };
             reply =
-              resolved.status === 503
+              errResolved.status === 503
                 ? "The selected model isn't available on this workspace yet. Your message is saved — try Wireline Auto or contact your admin."
                 : "That model isn't available. Your message is saved — pick another model from the composer.";
           } else if (!directorLlmConfigured(resolved.selection)) {
@@ -1140,7 +1142,8 @@ router.post(
         req.user.email,
       );
       if (!resolved.ok) {
-        sse.write("error", { message: resolved.error });
+        const errResolved = resolved as { error: string };
+        sse.write("error", { message: errResolved.error });
         sse.end();
         return;
       }
@@ -1201,6 +1204,44 @@ router.post(
       );
 
       const featureFlags = loadDirectorFeatureFlags();
+
+      if (
+        threadKey === DIRECTOR_THREAD_KEY &&
+        featureFlags.designStudio &&
+        wantsStitchMediaRequest(operatorMessage) &&
+        !isStitchDesignModeActive(req.body?.stitchOptions) &&
+        !hasPendingStitchClarifyInHistory(history)
+      ) {
+        const reply = WIRELINE_PAINTER_UI.buildHandoffReply(operatorMessage);
+        const metadata = packDirectorMetadata(
+          buildDirectorMetadataFromTurn({
+            reply,
+          }),
+        );
+        sse.write("meta", {
+          model: "sonnet",
+          modelLabel: "Director",
+          modelProvider: "wireline",
+          deep: false,
+          mode: "fleet",
+        });
+        sse.write("thinking_end", { thinking: "", durationMs: 0 });
+        sse.write("done", { reply });
+        sse.end();
+        void insertDirectorReplyIfAbsent({
+          userId: req.user.id,
+          operatorMessage,
+          reply,
+          threadKey,
+          metadata,
+        }).catch((err) =>
+          log.error("director design handoff stream persist failed", {
+            error: getErrorMessage(err),
+            userId: req.user.id,
+          }),
+        );
+        return;
+      }
 
       if (
         featureFlags.toolExecution &&

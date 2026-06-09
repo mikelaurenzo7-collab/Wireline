@@ -2,7 +2,6 @@ import { and, eq, inArray } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
-import { classifyCallOutcome } from "./post-call-digest";
 import { LEAD_STATUS } from "./outbound-status";
 
 /** Summary written when Vapi accepts an outbound dial — replaced by end-of-call report. */
@@ -76,6 +75,7 @@ export async function updateLeadStatusOnCallEnd(
   vapiCallId?: string | null,
 ): Promise<void> {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let lead: any = null;
 
     // First try by vapiCallId
@@ -167,7 +167,7 @@ export async function updateLeadStatusOnCallEnd(
       newStatus,
       attempts: currentAttempts,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error("Failed to update lead status on call end", {
       error: getErrorMessage(err),
       userId,

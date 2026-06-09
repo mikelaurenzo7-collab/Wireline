@@ -4,7 +4,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
 import {
   Send,
   Loader2,
@@ -80,7 +80,6 @@ export default function PainterWorkspace({
   onPainterStudioBridge,
 }: PainterWorkspaceProps) {
   const directorMessagesPath = "/api/director/messages?thread=painter";
-  const reduceMotion = useReducedMotion();
   const { user, loading: authLoading } = useAuth();
   const { error: toastError, success: toastSuccess } = useToast();
 
@@ -236,9 +235,9 @@ export default function PainterWorkspace({
             content: (data.reply as string) || "(empty design reply)",
             createdAt: new Date().toISOString(),
             previews: Array.isArray(data.previews) ? data.previews : undefined,
-            reasoning: data.reasoning,
-            thinkingDurationMs: data.thinkingDurationMs,
-            model: data.model,
+            reasoning: typeof data.reasoning === "string" ? data.reasoning : undefined,
+            thinkingDurationMs: typeof data.thinkingDurationMs === "number" ? data.thinkingDurationMs : undefined,
+            model: (data.model === "sonnet" || data.model === "opus") ? data.model : undefined,
           };
           setMessages((prev) => [...prev, reply]);
         }
