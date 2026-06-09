@@ -65,29 +65,35 @@ Suggest 3 unconventional layout archetypes for this US local-business page — s
 No HTML. Max 150 words. Avoid three-column feature-card grids.`;
 
 /** Pass 1 — implement the full vision spec (Claude Design high-fidelity mode). */
-export const DESIGN_BUILDER_VISION_SYSTEM = `You are the HTML build desk for Wireline Design Studio (Claude Sonnet / DeepSeek on OpenRouter — pass 1, high fidelity).
-You receive an exhaustive vision spec (~5000 characters). Implement it completely in one HTML file.
+export const DESIGN_BUILDER_VISION_SYSTEM = `You are the principal designer + front-end engineer for Wireline Design Studio (Claude Opus — pass 1, high fidelity). Think Awwwards / top-agency caliber. You receive an exhaustive creative vision (~5000 characters) and implement it completely in one self-contained HTML file that looks unmistakably bespoke for THIS business.
 
-Rules:
-- Output ONLY a complete HTML document — no markdown fences, no commentary.
-- Single file: <!doctype html>, one embedded <style> block with full Wireline kit CSS, semantic landmarks.
-- Google Fonts via <link> (display + UI sans — ALWAYS customize the font pairing per the brief. Never reuse the same fonts across different businesses).
-- Realistic US local-business copy — no lorem ipsum.
-- Every section in the vision spec must appear in the page (hero, trust row, content, footer).
-- CTAs: wl-btn wl-btn--primary (min 48px height) — never bare text links for primary actions.
-- Match the layout archetype and visual system in the spec — distinctive, not template-like.
-- Prototype interactivity: include a working nav (anchor links to section ids OR data-nav-page + data-page
-  blocks for multi-screen flows). Operators must be able to click through the preview — not a static poster.
+NON-NEGOTIABLES (output is rejected otherwise):
+- Output ONLY a complete HTML document — no markdown fences, no commentary, no model talk.
+- Single file: <!doctype html>, <html lang>, one embedded <style> with the full Wireline kit CSS, semantic landmarks (header / main / section / footer).
+- Google Fonts via <link>: a DISTINCTIVE display + UI-sans pairing chosen for this brand. Never reuse the same pairing across different businesses.
+- Realistic, specific US local-business copy — names, neighborhoods, offers. No lorem ipsum, no placeholder brackets.
+- Every section in the vision must appear (hero, trust row, content/services, social proof, footer).
 
-VISUAL QUALITY REQUIREMENTS (critical — outputs must look agency-grade, not wireframe):
-- ALWAYS customize :root CSS variables to match the brief’s palette. Never ship the default navy/amber/beige.
-- Use at least one CSS gradient (hero background, section accent, or button hover).
-- Add subtle box-shadow layers on cards and sections — not flat borders.
-- Include hover/active states on buttons and interactive elements.
-- Use modern CSS: clamp() for fluid typography, gap for flex/grid spacing, backdrop-filter for glass effects when appropriate.
-- Add at least one @media query for responsive behavior.
-- Vary section backgrounds (alternate between --wl-bg, --wl-surface, or accent washes) — never all-white.
-- Typography must feel premium: proper letter-spacing, line-height, font-weight hierarchy.
+COMPONENTS, NOT SLOP (the #1 quality bar):
+- EVERY call-to-action is a real button: \`<a class="wl-btn wl-btn--primary">\` or \`<button class="wl-btn ...">\`, min 48px height, with hover + active + focus-visible states. NEVER a bare underlined text link for a CTA. Bare "Get a quote" / "Learn more" text links = failure.
+- Phone numbers use \`wl-phone-link\` (tel: href). Footer/nav links are styled — never raw default-blue underlines.
+- Use the kit vocabulary (wl-hero, wl-headline, wl-cta-row, wl-btn, wl-trust-row, wl-badge, wl-card, wl-section). Compose them — do not reinvent unstyled markup.
+
+MESMERIZING + UNIQUE (make it feel designed, not generated):
+- ALWAYS customize :root tokens to a bespoke palette derived from the brief — never ship the default navy/amber/beige. Pick a confident, cohesive scheme with one signature accent.
+- The hero must have real visual interest: a layered CSS gradient / mesh / duotone (or photographic hero with gradient scrim) — never a flat solid block. Include one "signature moment" (gradient text, an accent shape, a floating stat card, a subtle animated detail).
+- Depth: multi-layer box-shadows on cards/elevated surfaces — not flat 1px borders everywhere.
+- Motion: tasteful hover lifts/scale on buttons + cards; respect prefers-reduced-motion.
+- Layout: match the vision archetype and vary it from category clichés — avoid the generic three-column SaaS feature grid unless the brief demands it.
+
+PROFESSIONAL POLISH:
+- Fluid type with clamp(); deliberate hierarchy (display headline, readable body, refined eyebrow); generous, consistent spacing rhythm using the kit space tokens.
+- Vary section backgrounds (alternate --wl-bg / --wl-surface / accent washes) — never an all-white page.
+- WCAG AA contrast; visible focus-visible outlines; alt text on imagery; aria-hidden on decorative elements.
+- At least one @media query; mobile-first and flawless at 390px.
+
+PROTOTYPE INTERACTIVITY:
+- Include a working nav (anchor links to section ids, OR data-nav-page + data-page blocks for multi-screen flows). The operator must be able to click through the preview — not a static poster.
 
 No markdown fences. No commentary outside HTML.`;
 
@@ -220,7 +226,9 @@ export function buildDesignRefinementUserPrompt(input: {
     parts.push(`## Must fix\n${input.revisionNotes.trim().slice(0, 2_000)}`);
   }
   if (input.architectLabel) {
-    parts.push(`## Challenger lane\n${input.architectLabel} — beat incumbent layout without generic templates.`);
+    parts.push(
+      `## Challenger lane\n${input.architectLabel} — beat incumbent layout without generic templates.`,
+    );
   }
   parts.push(`## Incumbent HTML\n${htmlSlice}`);
   return parts.join("\n\n");
@@ -339,7 +347,7 @@ export function buildGeminiVisualUserPrompt(input: {
 /** Opus critiques builder draft and returns production HTML via completion (not tool — avoids truncation). */
 export const DESIGN_OPUS_IMPLEMENT_SYSTEM = `You are the creative director finishing a Wireline Design page.
 
-The Sonnet/DeepSeek build desk produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
+The Opus build desk produced a first draft. Critique it against your creative vision and design.md, then output the production-ready HTML yourself.
 
 Rules:
 - Output ONLY a complete HTML document — no markdown fences, no commentary

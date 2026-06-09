@@ -79,49 +79,60 @@ describe("runDirectorDesignStudio Spectrum Desk", () => {
       };
     });
 
-    vi.mocked(runCompletion).mockResolvedValue({
-      text: opusFinishedHtml,
-      cacheRead: 0,
-      cacheCreate: 0,
+    // All-Opus pipeline: runCompletion handles BOTH the build pass and the
+    // implement/finish pass. Build returns the draft; implement returns the
+    // polished HTML.
+    let completionCall = 0;
+    vi.mocked(runCompletion).mockImplementation(async () => {
+      completionCall += 1;
+      return {
+        text: completionCall === 1 ? builderDraftHtml : opusFinishedHtml,
+        cacheRead: 0,
+        cacheCreate: 0,
+      };
     });
 
     vi.mocked(runOpenRouterCompletion).mockResolvedValue(builderDraftHtml);
   }
 
-  it("runs Opus vision, Sonnet build, Opus implement via completion, sign-off, and packages preview", async () => {
+  it("runs Opus vision, Opus build, Opus implement, sign-off, and packages preview (no OpenRouter)", async () => {
     mockPipeline();
 
     const turn = await runDirectorDesignStudio(baseInput);
 
     expect(runStructured).toHaveBeenCalledTimes(2);
-    expect(runCompletion).toHaveBeenCalledTimes(1);
-    expect(runOpenRouterCompletion).toHaveBeenCalledTimes(1);
+    // build pass + implement/finish pass — both Claude via runCompletion
+    expect(runCompletion).toHaveBeenCalledTimes(2);
+    expect(runOpenRouterCompletion).not.toHaveBeenCalled();
     expect(turn.previews).toHaveLength(1);
     expect(turn.reply).toContain("Summit Landscaping");
     expect(turn.thinkingSummary).toMatch(/Opus vision/i);
-    expect(turn.thinkingSummary).toMatch(/Sonnet build/i);
+    expect(turn.thinkingSummary).toMatch(/Opus build/i);
     expect(turn.designBriefMarkdown).toMatch(/Opus creative vision/i);
   });
 
-  it("does not run research, critique loops, or second builder passes", async () => {
+  it("does not run research, critique loops, or OpenRouter builders", async () => {
     mockPipeline();
 
     await runDirectorDesignStudio(baseInput);
 
-    const users = vi.mocked(runOpenRouterCompletion).mock.calls.map((c) => c[0].user);
-    const systems = vi.mocked(runOpenRouterCompletion).mock.calls.map((c) => c[0].system ?? "");
+    const systems = vi.mocked(runCompletion).mock.calls.map((c) => c[0].system ?? "");
 
-    expect(runOpenRouterCompletion).toHaveBeenCalledTimes(1);
+    expect(runOpenRouterCompletion).not.toHaveBeenCalled();
     expect(systems.some((s) => /layout scout/i.test(s))).toBe(false);
-    expect(users.some((u) => /critique/i.test(u))).toBe(false);
   });
 
   it("keeps builder draft when Opus implement returns thin HTML", async () => {
     mockPipeline();
-    vi.mocked(runCompletion).mockResolvedValue({
-      text: "<html><body>stub</body></html>",
-      cacheRead: 0,
-      cacheCreate: 0,
+    // build pass returns a real page; implement pass returns a thin stub.
+    let completionCall = 0;
+    vi.mocked(runCompletion).mockImplementation(async () => {
+      completionCall += 1;
+      return {
+        text: completionCall === 1 ? opusFinishedHtml : "<html><body>stub</body></html>",
+        cacheRead: 0,
+        cacheCreate: 0,
+      };
     });
 
     await runDirectorDesignStudio(baseInput);

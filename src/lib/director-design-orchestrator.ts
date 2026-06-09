@@ -1,5 +1,8 @@
 /**
- * Wireline Design Studio — Opus prep (Anthropic) → Sonnet/DeepSeek draft (OR) → Opus finish.
+ * Wireline Design Studio — all-Opus pipeline (Anthropic end to end):
+ * Opus creative vision → Opus HTML build → Opus implement/finish → Opus sign-off.
+ * Claude Sonnet (Anthropic, direct) is the resilience fallback for the build pass.
+ * The OpenRouter LLM picker is a Director-chat feature only and is not used here.
  */
 import {
   DESIGN_BRIEF_OPUS_INPUT_CHARS,
@@ -27,7 +30,6 @@ import {
   designTeamThinkingSummary,
   type DesignPassNumber,
   assertWirelineDesignRole,
-  type DesignTeamOpenRouterRole,
   isSpectrumDesignTeam,
   WIRELINE_DESIGN_STUDIO_REASONING,
   WIRELINE_DESIGN_TEAM,
@@ -45,7 +47,7 @@ import type {
   DesignProgressCallback,
 } from "./director-design-turn";
 import { runCompletion, runStructured } from "./claude-structured";
-import { isOpenRouterConfigured, runOpenRouterCompletion } from "./openrouter-structured";
+import { CLAUDE_MODELS } from "./claude-models";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { WIRELINE_STITCH_UI } from "./wireline-director-design";
@@ -66,43 +68,6 @@ function stripHtmlFences(raw: string): string {
 
 function spectrumTeam() {
   return isSpectrumDesignTeam(WIRELINE_DESIGN_TEAM) ? WIRELINE_DESIGN_TEAM_SPECTRUM : null;
-}
-
-async function runOpenRouterRole(
-  role: DesignTeamOpenRouterRole,
-  system: string,
-  user: string,
-  maxTokens: number,
-  signal?: AbortSignal,
-): Promise<string> {
-  if (!isOpenRouterConfigured()) {
-    throw new Error("OPENROUTER_API_KEY not configured");
-  }
-  try {
-    return await runOpenRouterCompletion({
-      model: role.openRouterModelId,
-      system,
-      user,
-      maxTokens,
-      signal,
-    });
-  } catch (e) {
-    if (role.fallbackOpenRouterModelId) {
-      log.warn("design studio openrouter fallback", {
-        from: role.openRouterModelId,
-        to: role.fallbackOpenRouterModelId,
-        error: getErrorMessage(e),
-      });
-      return runOpenRouterCompletion({
-        model: role.fallbackOpenRouterModelId,
-        system,
-        user,
-        maxTokens,
-        signal,
-      });
-    }
-    throw e;
-  }
 }
 
 async function runOpusCreativeVision(input: {
@@ -157,15 +122,32 @@ async function runHtmlBuilderDraft(input: {
     passNumber,
   });
 
-  const raw = await runOpenRouterRole(
-    team.htmlBuilder,
-    DESIGN_BUILDER_VISION_SYSTEM,
-    user,
-    maxTokensForPass(passNumber, "build"),
-    designStageAbortSignal("build", input.signal),
-  );
+  // The Painter build desk is Claude Opus (Anthropic, direct) — best-in-class
+  // design aesthetics and instruction-following. Claude Sonnet (also Anthropic,
+  // direct) is the resilience fallback so a transient Opus error never degrades
+  // to a non-Claude model or a slop fallback. OpenRouter is intentionally unused.
+  const opusModel = assertWirelineDesignRole(team.reviewer, "reviewer").wirelineModel;
+  const maxTokens = maxTokensForPass(passNumber, "build");
+  const buildWith = async (model: string): Promise<string> => {
+    const { text } = await runCompletion({
+      model,
+      system: DESIGN_BUILDER_VISION_SYSTEM,
+      user,
+      maxTokens,
+    });
+    return stripHtmlFences(text);
+  };
 
-  const html = stripHtmlFences(raw);
+  let html: string;
+  try {
+    html = await buildWith(opusModel);
+  } catch (e) {
+    log.warn("design studio Opus build failed — retrying on Claude Sonnet", {
+      error: getErrorMessage(e),
+    });
+    html = await buildWith(CLAUDE_MODELS.SONNET);
+  }
+
   if (!html.trim()) {
     throw new Error("HTML builder: empty response");
   }
@@ -265,7 +247,7 @@ function buildFallbackOperatorReply(pageTitle: string): string {
   return [
     `Your **${pageTitle}** is ready — open the live preview to see it on your phone or desktop.`,
     "",
-    "- Opus tailored the concept; Sonnet drafted the page; Opus polished it for production",
+    "- Opus tailored the concept, built the page, and polished it for production",
     "- Hero, headline, and primary call-to-action are in place",
     "- Ask me to tweak colors, copy, or sections in chat",
   ].join("\n");
@@ -303,7 +285,7 @@ export async function runDirectorDesignStudio(
   });
 
   onProgress?.(nextStudioPhase());
-  phases.push("Sonnet build");
+  phases.push("Opus build");
   let html = ensureDesignKitInHtml(
     await runHtmlBuilderDraft({
       operatorMessage: input.operatorMessage,
