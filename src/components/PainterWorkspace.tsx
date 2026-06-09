@@ -32,7 +32,12 @@ import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorStitchPreviewVariantGrid } from "./director/DirectorStitchPreviewTeaser";
 import DirectorStitchLiveSession from "./director/DirectorStitchLiveSession";
-import { findLatestStitchPreview, isStitchPreview } from "../lib/design-preview";
+import {
+  findLatestStitchPreview,
+  isStitchPreview,
+  assignStitchPreviewVersions,
+  stitchPreviewKey,
+} from "../lib/design-preview";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import {
   PAINTER_EMPTY_COPY,
@@ -341,25 +346,10 @@ export default function PainterWorkspace({
   };
 
   // Stable key for a render across the thread (renderId preferred, conceptId fallback).
-  const previewKey = useCallback((p: DirectorPreviewMeta) => p.renderId || p.conceptId, []);
+  const previewKey = useCallback((p: DirectorPreviewMeta) => stitchPreviewKey(p), []);
 
   // Version numbers across the whole thread, assigned chronologically (v1 = first render).
-  const versionByKey = useMemo(() => {
-    const map = new Map<string, number>();
-    let version = 0;
-    for (const m of messages) {
-      if (m.role !== "director" || !m.previews) continue;
-      for (const p of m.previews) {
-        if (!isStitchPreview(p)) continue;
-        const key = previewKey(p);
-        if (!map.has(key)) {
-          version += 1;
-          map.set(key, version);
-        }
-      }
-    }
-    return map;
-  }, [messages, previewKey]);
+  const versionByKey = useMemo(() => assignStitchPreviewVersions(messages), [messages]);
 
   // Iteration Strip — gather last 3 previews with visual assets
   const iterations = useMemo(() => {

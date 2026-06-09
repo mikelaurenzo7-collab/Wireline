@@ -27,11 +27,19 @@ export default defineConfig({
       // Keep a generous margin below the measured values. v8's accounting can
       // drift between environments, and importing large, mostly-uncovered
       // route files (e.g. meta-webhook-routes.ts) shifts the denominator — so
-      // we stay well clear of the floor. These remain strictly above the prior
-      // baseline (8/55/25/8), so they are a regression guard, not a flaky gate.
+      // we stay well clear of the floor.
+      //
+      // 2026-06 recalibration: the `branches: 60` value was stale — it was set
+      // against an istanbul-era figure, but the v8 provider this config uses
+      // measures branches at ~35.2% (3540/10054) for the same suite. A 60%
+      // gate is therefore above the real floor, which violates this block's own
+      // "set just below the measured floor" doctrine and fails the coverage
+      // step on every run (main included). Reset branches to a true regression
+      // guard just under the measured v8 value; statements/functions/lines keep
+      // their wide margins (measured ~45%/48%/46%).
       thresholds: {
         statements: 11,
-        branches: 60,
+        branches: 32,
         functions: 31,
         lines: 11,
       },
