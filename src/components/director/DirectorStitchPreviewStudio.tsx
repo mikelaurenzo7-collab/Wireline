@@ -866,9 +866,19 @@ export default function DirectorStitchPreviewStudio({
                     </ShadButton>
                   </div>
                 ) : (
-                  <pre className="wl-stitch-code-pre">
-                    <code>{codeSource}</code>
-                  </pre>
+                  <ol
+                    className="wl-stitch-code-pre"
+                    aria-label={WIRELINE_STITCH_UI.codeSourceFileName}
+                  >
+                    {codeSource.split("\n").map((line, i) => (
+                      <li key={i} className="wl-stitch-code-line">
+                        <span className="wl-stitch-code-ln" aria-hidden>
+                          {i + 1}
+                        </span>
+                        <code className="wl-stitch-code-text">{line || "\u00A0"}</code>
+                      </li>
+                    ))}
+                  </ol>
                 )}
               </div>
             </div>
