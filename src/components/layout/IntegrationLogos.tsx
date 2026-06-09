@@ -296,21 +296,34 @@ const POWERED_BY: LogoDef[] = [
 function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) {
   return (
     <div className="flex items-center justify-center flex-wrap gap-x-8 gap-y-4 opacity-75 hover:opacity-100 transition-opacity duration-300">
-      {logos.map((logo) => (
-        <div
-          key={logo.name}
-          className="text-ink/70 hover:text-ink transition-colors duration-200"
-          title={logo.name}
-          data-logo-height={height}
-          data-logo-scale={logo.scale}
-        >
-          <div className="w-auto inline-flex items-center" data-logo-height={height}>
-            {React.cloneElement(logo.svg as React.ReactElement<any>, {
-              className: "wl-integration-logo-svg",
-            })}
+      {logos.map((logo) => {
+        // Height is the single source of truth for logo size. The SVGs render
+        // at `height:100%; width:auto` (see `.wl-integration-logo-svg`), so the
+        // wrapper MUST carry a concrete pixel height — otherwise `100%` resolves
+        // against a zero-height box and every logo collapses to 0×0 (invisible).
+        // `scale` lets individually light/heavy marks (Salesforce, Zoom) match
+        // optical weight without disturbing the flex row's baseline.
+        const px = Math.round(height * (logo.scale ?? 1));
+        return (
+          <div
+            key={logo.name}
+            className="text-ink/70 hover:text-ink transition-colors duration-200"
+            title={logo.name}
+            data-logo-height={height}
+            data-logo-scale={logo.scale}
+          >
+            <div
+              className="w-auto inline-flex items-center"
+              style={{ height: px }}
+              data-logo-height={height}
+            >
+              {React.cloneElement(logo.svg as React.ReactElement<any>, {
+                className: "wl-integration-logo-svg",
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
