@@ -405,7 +405,7 @@ export default function FastStartWizard({
               disableAnimations
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-full"
+              className="rounded-full touch-press hover:scale-[1.05]"
             >
               <X className="w-5 h-5" />
             </ShadButton>
@@ -504,7 +504,7 @@ export default function FastStartWizard({
                           size="sm"
                           disableAnimations
                           onClick={() => setBusinessDescription(`I'm a ${example} that...`)}
-                          className="rounded-full wl-label px-2 py-1 h-auto min-h-0"
+                          className="rounded-full wl-label px-2 py-1 h-auto min-h-0 touch-press hover:scale-[1.02]"
                         >
                           {example}
                         </ShadButton>
@@ -548,11 +548,12 @@ export default function FastStartWizard({
                           variant="ghost"
                           disableAnimations
                           onClick={() => setSelectedVoiceId(voice.id)}
-                          className={`p-4 h-auto rounded-md border text-left transition-all w-full justify-start flex-col items-start ${
+                          className={cn(
+                            "p-4 h-auto rounded-md border text-left transition-all w-full justify-start flex-col items-start touch-press-deep hover:scale-[1.01]",
                             selectedVoiceId === voice.id
                               ? "border-brand bg-brand/5"
                               : "border-black/10 hover:border-black/20"
-                          }`}
+                          )}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-ink">{voice.name}</span>
@@ -656,7 +657,7 @@ export default function FastStartWizard({
                   disableAnimations
                   onClick={handleBack}
                   disabled={isSubmitting}
-                  className="rounded-full text-[11px] uppercase tracking-[0.24em]"
+                  className="rounded-full text-[11px] uppercase tracking-[0.24em] touch-press hover:scale-[1.02]"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back
@@ -669,7 +670,7 @@ export default function FastStartWizard({
                   disableAnimations
                   onClick={handleSkip}
                   disabled={isSubmitting}
-                  className="rounded-full text-[11px] uppercase tracking-[0.24em]"
+                  className="rounded-full text-[11px] uppercase tracking-[0.24em] touch-press hover:scale-[1.02]"
                 >
                   Skip
                 </ShadButton>
@@ -682,7 +683,7 @@ export default function FastStartWizard({
               disableAnimations
               onClick={handleNext}
               disabled={isSubmitting}
-              className="rounded-full text-[11px] uppercase tracking-[0.24em]"
+              className="rounded-full text-[11px] uppercase tracking-[0.24em] touch-press-deep hover:scale-[1.02]"
             >
               {isSubmitting ? (
                 <>

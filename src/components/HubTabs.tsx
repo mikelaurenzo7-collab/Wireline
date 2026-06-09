@@ -50,7 +50,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
               to={t.path}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-colors text-[11px] uppercase tracking-[0.1em] font-medium",
+                "group relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium touch-press hover:scale-[1.02]",
                 active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
               )}
             >

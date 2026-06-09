@@ -170,7 +170,7 @@ export default function PostSignupOnboarding() {
               size="icon"
               disableAnimations
               onClick={handleExploreFirst}
-              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted hover:text-ink"
+              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted hover:text-ink touch-press hover:scale-[1.05]"
               aria-label="Close and explore"
             >
               <X className="w-4 h-4" />
@@ -225,7 +225,7 @@ export default function PostSignupOnboarding() {
               variant="editorial"
               disableAnimations
               onClick={handleStartWizard}
-              className="touch-press flex-1 rounded-full wl-label gap-2"
+              className="touch-press hover:scale-[1.02] flex-1 rounded-full wl-label gap-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
               {ONBOARDING_WELCOME.ctaPrimary}
@@ -238,7 +238,7 @@ export default function PostSignupOnboarding() {
               variant="outline"
               disableAnimations
               onClick={handleExploreFirst}
-              className="touch-press flex-1 rounded-full wl-label gap-1.5"
+              className="touch-press hover:scale-[1.02] flex-1 rounded-full wl-label gap-1.5"
             >
               <Compass className="w-3.5 h-3.5" />
               {ONBOARDING_WELCOME.ctaSecondary}

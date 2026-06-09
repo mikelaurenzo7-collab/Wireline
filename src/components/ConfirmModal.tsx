@@ -76,7 +76,7 @@ export default function ConfirmModal({
                 variant="ghost"
                 size="icon"
                 aria-label="Close dialog"
-                className="ml-auto w-11 h-11 sm:w-8 sm:h-8 -m-1.5 sm:m-0 rounded-full shrink-0"
+                className="ml-auto w-11 h-11 sm:w-8 sm:h-8 -m-1.5 sm:m-0 rounded-full shrink-0 touch-press hover:scale-[1.05]"
               >
                 <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
               </ShadButton>
@@ -88,7 +88,7 @@ export default function ConfirmModal({
               <ShadButton
                 variant="outline"
                 disableAnimations
-                className="flex-1 h-11 rounded-md text-[11px] uppercase tracking-[0.25em]"
+                className="flex-1 h-11 rounded-md text-[11px] uppercase tracking-[0.25em] touch-press hover:scale-[1.02]"
               >
                 {cancelLabel}
               </ShadButton>
@@ -105,7 +105,7 @@ export default function ConfirmModal({
                 variant={danger ? "destructive" : "editorial"}
                 disableAnimations
                 className={cn(
-                  "flex-1 h-11 rounded-md text-[11px] uppercase tracking-[0.25em]",
+                  "flex-1 h-11 rounded-md text-[11px] uppercase tracking-[0.25em] touch-press-deep hover:scale-[1.02]",
                   !danger && "!py-0",
                 )}
               >

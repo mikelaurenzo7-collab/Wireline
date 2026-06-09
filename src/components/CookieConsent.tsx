@@ -116,7 +116,7 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-ink"
+              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-ink touch-press hover:scale-[1.05]"
             >
               <X className="w-4 h-4" />
             </ShadButton>

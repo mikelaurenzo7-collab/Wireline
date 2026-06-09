@@ -186,7 +186,7 @@ function NextStepCard({
       transition={{ delay: 0.3 + delay * 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       onClick={onClick}
       className={cn(
-        "group touch-press w-full text-left p-4 rounded-md border transition-all duration-300",
+        "group touch-press hover:scale-[1.02] w-full text-left p-4 rounded-md border transition-all duration-300",
         primary
           ? "bg-gradient-to-br from-brand/10 to-brand/5 border-brand/30 hover:border-brand/50 hover:shadow-lg hover:shadow-brand/10"
           : "wl-panel border-border hover:border-brand/25",
@@ -495,7 +495,7 @@ export default function YoureLiveModal({
                   type="button"
                   variant="ghost"
                   disableAnimations
-                  className="wl-console-map-item touch-press flex h-auto w-full items-start justify-start gap-2.5 px-[0.65rem] py-[0.55rem] text-left font-normal"
+                  className="wl-console-map-item touch-press hover:scale-[1.02] flex h-auto w-full items-start justify-start gap-2.5 px-[0.65rem] py-[0.55rem] text-left font-normal"
                   onClick={() => {
                     onClose();
                     navigate(item.path);
@@ -524,7 +524,7 @@ export default function YoureLiveModal({
             variant="outline"
             disableAnimations
             onClick={handleShare}
-            className="touch-press rounded-full wl-label gap-1.5"
+            className="touch-press hover:scale-[1.02] rounded-full wl-label gap-1.5"
           >
             {copied ? (
               <>
@@ -548,7 +548,7 @@ export default function YoureLiveModal({
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="touch-press rounded-full wl-label gap-1.5 font-mono"
+              className="touch-press hover:scale-[1.02] rounded-full wl-label gap-1.5 font-mono"
             >
               <Copy className="w-3.5 h-3.5" />
               {phoneNumber}
