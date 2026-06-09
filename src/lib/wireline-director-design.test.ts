@@ -241,4 +241,13 @@ describe("Wireline Director design contract", () => {
     expect(WIRELINE_STITCH_UI.previewTeaserAction).toMatch(/preview/i);
     expect(WIRELINE_STITCH_UI.previewPageTitle).toBeTruthy();
   });
+
+  it("exposes Code-view + expand contract for the preview studio", () => {
+    expect(WIRELINE_STITCH_UI.codeTabLabel).toBe("Code");
+    expect(WIRELINE_STITCH_UI.codeSourceFileName).toMatch(/\.html$/);
+    expect(WIRELINE_STITCH_UI.copyCodeLabel).toMatch(/copy/i);
+    expect(WIRELINE_STITCH_UI.copiedLabel).toMatch(/copied/i);
+    expect(WIRELINE_STITCH_UI.codeErrorLabel).toMatch(/export/i);
+    expect(WIRELINE_STITCH_UI.expandLabel).toMatch(/full screen/i);
+  });
 });

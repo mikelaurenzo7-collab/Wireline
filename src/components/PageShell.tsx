@@ -43,7 +43,12 @@ export type PageShellTab = {
 };
 
 interface PageShellProps {
-  title: string;
+  /**
+   * Page title. Optional — pages whose title is owned by an upstream
+   * ClientToolbar / DesktopContextBar render PageShell headerless (the
+   * component already guards every header branch on `showPageHeader`).
+   */
+  title?: string;
   subtitle?: string;
   eyebrow?: string;
   actions?: ReactNode;

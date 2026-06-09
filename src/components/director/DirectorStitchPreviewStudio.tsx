@@ -5,7 +5,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
+  Check,
+  Code2,
+  Copy,
   Download,
+  Expand,
   ExternalLink,
   Github,
   LayoutTemplate,
@@ -41,7 +45,7 @@ export interface DirectorStitchPreviewStudioProps {
   className?: string;
 }
 
-type StitchTab = "preview" | "screenshot" | "export";
+type StitchTab = "preview" | "screenshot" | "code" | "export";
 
 type DesignIntegrationProvider = "figma" | "canva" | "github";
 
@@ -207,6 +211,10 @@ export default function DirectorStitchPreviewStudio({
     "AUTO",
   );
   const [wireframeMode, setWireframeMode] = useState(false);
+  const [codeSource, setCodeSource] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeError, setCodeError] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const effectiveDeviceType = useMemo(() => {
     if (deviceOverride === "AUTO") {
@@ -491,6 +499,62 @@ export default function DirectorStitchPreviewStudio({
     [toastError],
   );
 
+  // Reset cached source when the underlying render changes.
+  useEffect(() => {
+    setCodeSource(null);
+    setCodeError(false);
+    setCodeCopied(false);
+  }, [preview.conceptId, ready.htmlSrc]);
+
+  // Lazily fetch HTML source the first time the Code tab is opened.
+  useEffect(() => {
+    if (tab !== "code") return;
+    if (codeSource !== null || codeLoading) return;
+    const src = ready.htmlSrc;
+    if (!src) return;
+    let cancelled = false;
+    setCodeLoading(true);
+    setCodeError(false);
+    void (async () => {
+      try {
+        // Only attach cookies for first-party URLs; blob:/data:/cross-origin
+        // signed URLs must not send credentials (avoids CORS credential errors).
+        const sameOrigin =
+          src.startsWith("/") ||
+          (typeof window !== "undefined" && src.startsWith(window.location.origin));
+        const res = await fetch(src, sameOrigin ? { credentials: "include" } : {});
+        if (!res.ok) throw new Error(`Source fetch failed (${res.status})`);
+        const text = await res.text();
+        if (!cancelled) setCodeSource(text);
+      } catch {
+        if (!cancelled) setCodeError(true);
+      } finally {
+        if (!cancelled) setCodeLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, codeSource, codeLoading, ready.htmlSrc]);
+
+  const copyCode = useCallback(async () => {
+    if (!codeSource) return;
+    try {
+      await navigator.clipboard.writeText(codeSource);
+      setCodeCopied(true);
+      toastSuccess("Code copied", "HTML source is on your clipboard.");
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      toastError("Copy failed", "Select the code and copy manually.");
+    }
+  }, [codeSource, toastError, toastSuccess]);
+
+  const openFullScreen = useCallback(() => {
+    const src = tab === "screenshot" ? ready.imageSrc : ready.htmlSrc;
+    if (!src) return;
+    window.open(src, "_blank", "noopener,noreferrer");
+  }, [ready.htmlSrc, ready.imageSrc, tab]);
+
   const tabs = useMemo(() => {
     const list: { id: StitchTab; label: string; icon: React.ElementType }[] = [];
     if (hasRenderableImage) {
@@ -502,10 +566,15 @@ export default function DirectorStitchPreviewStudio({
     }
     if (hasRenderableHtml) {
       list.push({ id: "preview", label: WIRELINE_STITCH_UI.previewTabLabel, icon: Monitor });
+      list.push({ id: "code", label: WIRELINE_STITCH_UI.codeTabLabel, icon: Code2 });
     }
     list.push({ id: "export", label: "Export", icon: Download });
     return list;
   }, [hasRenderableHtml, hasRenderableImage]);
+
+  const canExpand =
+    (tab === "preview" && Boolean(ready.htmlSrc)) ||
+    (tab === "screenshot" && Boolean(ready.imageSrc));
 
   if (!ready.hasSources || (!ready.isReady && !ready.isLoading)) {
     return (
@@ -646,6 +715,23 @@ export default function DirectorStitchPreviewStudio({
               {wireframeMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               <span>{wireframeMode ? "Wireframe" : "Prototype"}</span>
             </ShadButton>
+
+            {/* Separator */}
+            <div className="w-[1px] h-4 bg-brand/20" />
+
+            {/* Expand to full screen */}
+            <ShadButton
+              type="button"
+              variant="ghost"
+              disableAnimations
+              onClick={openFullScreen}
+              disabled={!canExpand}
+              title={WIRELINE_STITCH_UI.expandLabel}
+              className="h-7 w-7 p-0 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-ink hover:bg-paper/60 transition-all disabled:opacity-40"
+            >
+              <Expand className="w-3.5 h-3.5" />
+              <span className="sr-only">{WIRELINE_STITCH_UI.expandLabel}</span>
+            </ShadButton>
           </div>
         )}
       </div>
@@ -722,6 +808,70 @@ export default function DirectorStitchPreviewStudio({
                 />
               )}
             </DeviceChrome>
+          )}
+
+          {tab === "code" && hasRenderableHtml && (
+            <div className="wl-stitch-code">
+              <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-brand/12 bg-black/[0.03] dark:bg-white/[0.04]">
+                <span className="inline-flex items-center gap-1.5 wl-micro-meta--muted font-mono">
+                  <Code2 className="w-3.5 h-3.5 text-brand/70" aria-hidden />
+                  {WIRELINE_STITCH_UI.codeSourceFileName}
+                </span>
+                <ShadButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disableAnimations
+                  onClick={() => void copyCode()}
+                  disabled={!codeSource}
+                  className="h-7 px-2.5 gap-1.5 wl-micro-meta font-semibold text-brand hover:text-brand-deep hover:bg-brand/8 disabled:opacity-40"
+                >
+                  {codeCopied ? (
+                    <Check className="w-3.5 h-3.5" aria-hidden />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" aria-hidden />
+                  )}
+                  {codeCopied ? WIRELINE_STITCH_UI.copiedLabel : WIRELINE_STITCH_UI.copyCodeLabel}
+                </ShadButton>
+              </div>
+              <div
+                className={cn(
+                  "wl-stitch-code-scroll overflow-auto",
+                  immersive ? "max-h-[min(78vh,920px)]" : "max-h-[min(70vh,640px)]",
+                )}
+              >
+                {codeLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-16 text-muted">
+                    <Loader2 className="w-4 h-4 animate-spin text-brand/60" aria-hidden />
+                    <span className="text-[12px]">{WIRELINE_STITCH_UI.codeLoadingLabel}</span>
+                  </div>
+                ) : codeError || !codeSource ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+                    <p className="text-[12px] text-muted max-w-xs leading-relaxed">
+                      {WIRELINE_STITCH_UI.codeErrorLabel}
+                    </p>
+                    <ShadButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disableAnimations
+                      onClick={() => {
+                        setCodeSource(null);
+                        setCodeError(false);
+                      }}
+                      className="h-auto px-2.5 py-1 wl-label text-brand hover:text-brand-deep"
+                    >
+                      <RefreshCw className="w-3 h-3" aria-hidden />
+                      {WIRELINE_STITCH_UI.codeRetryLabel}
+                    </ShadButton>
+                  </div>
+                ) : (
+                  <pre className="wl-stitch-code-pre">
+                    <code>{codeSource}</code>
+                  </pre>
+                )}
+              </div>
+            </div>
           )}
 
           {tab === "export" && (
