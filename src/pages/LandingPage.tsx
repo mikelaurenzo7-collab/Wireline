@@ -5,6 +5,7 @@ import { ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import HeroCallPreview from "../components/marketing/HeroCallPreview";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
@@ -152,6 +153,8 @@ export default function LandingPage() {
                 Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
                 and email follow-ups. Trained on your playbook, improving with every call.
               </motion.p>
+
+              <HeroCallPreview />
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
