@@ -4819,6 +4819,9 @@ html, body, .marketing-surface, .app-surface {
 .wl-stitch-device--mobile.wl-stitch-device--studio {
   max-width: min(100%, 24rem);
 }
+.wl-stitch-device--tablet.wl-stitch-device--studio {
+  max-width: min(100%, 48rem);
+}
 .wl-stitch-device-screen--studio {
   min-height: min(72vh, 720px);
 }

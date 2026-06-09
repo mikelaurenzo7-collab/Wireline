@@ -14,6 +14,11 @@ import {
   Monitor,
   RefreshCw,
   Sparkles,
+  Smartphone,
+  Tablet,
+  Layers,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import type { DirectorPreviewMeta } from "../../lib/director-message-metadata";
 import { fetchDirectorArtifactSignedUrl } from "../../hooks/useDirectorArtifactInlineSrc";
@@ -99,12 +104,17 @@ function DeviceChrome({
   fullHeight?: boolean;
   immersive?: boolean;
 }) {
-  const mobile = !immersive && (device === "MOBILE" || device === "TABLET");
+  const isMobile = !immersive && device === "MOBILE";
+  const isTablet = !immersive && device === "TABLET";
+  const isDesktop = !immersive && device === "DESKTOP";
   return (
     <div
       className={cn(
-        "wl-stitch-device mx-auto",
-        mobile ? "wl-stitch-device--mobile" : "wl-stitch-device--desktop",
+        "wl-stitch-device mx-auto transition-all duration-300",
+        isMobile && "wl-stitch-device--mobile",
+        isTablet && "wl-stitch-device--tablet",
+        isDesktop && "wl-stitch-device--desktop",
+        !isMobile && !isTablet && !isDesktop && !immersive && "wl-stitch-device--desktop",
         fullHeight && "wl-stitch-device--studio",
         immersive && "wl-stitch-device--immersive",
       )}
@@ -193,6 +203,15 @@ export default function DirectorStitchPreviewStudio({
   const [selectedRepo, setSelectedRepo] = useState("");
   const [connectBusy, setConnectBusy] = useState<DesignIntegrationProvider | null>(null);
   const [iframeFailed, setIframeFailed] = useState(false);
+  const [deviceOverride, setDeviceOverride] = useState<DirectorPreviewMeta["deviceType"] | "AUTO">("AUTO");
+  const [wireframeMode, setWireframeMode] = useState(false);
+
+  const effectiveDeviceType = useMemo(() => {
+    if (deviceOverride === "AUTO") {
+      return preview.deviceType;
+    }
+    return deviceOverride;
+  }, [deviceOverride, preview.deviceType]);
   const iframeFailTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { error: toastError, success: toastSuccess, warning: toastWarning } = useToast();
   const reduceMotion = useReducedMotion();
@@ -541,28 +560,86 @@ export default function DirectorStitchPreviewStudio({
         </p>
       </div>
 
-      <div className="flex flex-nowrap gap-1 mb-3 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10 overflow-x-auto">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          const selected = tab === t.id;
-          return (
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+        <div className="flex flex-nowrap gap-1 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10 overflow-x-auto">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            const selected = tab === t.id;
+            return (
+              <ShadButton
+                key={t.id}
+                type="button"
+                variant="ghost"
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  "h-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md wl-micro-meta font-semibold transition-all",
+                  selected
+                    ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
+                    : "text-muted hover:text-ink hover:bg-paper/60",
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {t.label}
+              </ShadButton>
+            );
+          })}
+        </div>
+
+        {/* Viewport & Wireframe Toolbar */}
+        {(tab === "preview" || tab === "screenshot") && (
+          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-md bg-black/[0.03] dark:bg-white/[0.04] border border-brand/10 self-start sm:self-auto">
+            {/* Viewport override buttons */}
+            <div className="flex items-center gap-0.5">
+              {[
+                { id: "AUTO", label: "Auto", icon: Layers },
+                { id: "DESKTOP", label: "Desktop", icon: Monitor },
+                { id: "TABLET", label: "Tablet", icon: Tablet },
+                { id: "MOBILE", label: "Mobile", icon: Smartphone },
+              ].map((d) => {
+                const Icon = d.icon;
+                const selected = deviceOverride === d.id;
+                return (
+                  <ShadButton
+                    key={d.id}
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setDeviceOverride(d.id as any)}
+                    title={`View as ${d.label}`}
+                    className={cn(
+                      "h-7 w-7 p-0 shrink-0 flex items-center justify-center rounded-md transition-all",
+                      selected
+                        ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
+                        : "text-muted hover:text-ink hover:bg-paper/60",
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="sr-only">{d.label}</span>
+                  </ShadButton>
+                );
+              })}
+            </div>
+
+            {/* Separator */}
+            <div className="w-[1px] h-4 bg-brand/20" />
+
+            {/* Wireframe toggle */}
             <ShadButton
-              key={t.id}
               type="button"
               variant="ghost"
-              onClick={() => setTab(t.id)}
+              onClick={() => setWireframeMode(!wireframeMode)}
+              title={wireframeMode ? "Switch to Interactive Prototype Mode" : "Switch to Low-Fidelity Wireframe Mode"}
               className={cn(
-                "h-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md wl-micro-meta font-semibold transition-all",
-                selected
-                  ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
+                "h-7 px-2 shrink-0 flex items-center gap-1.5 rounded-md transition-all wl-micro-meta font-semibold",
+                wireframeMode
+                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                   : "text-muted hover:text-ink hover:bg-paper/60",
               )}
             >
-              <Icon className="w-3.5 h-3.5" />
-              {t.label}
+              {wireframeMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{wireframeMode ? "Wireframe" : "Prototype"}</span>
             </ShadButton>
-          );
-        })}
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -575,7 +652,7 @@ export default function DirectorStitchPreviewStudio({
           className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
         >
           {tab === "screenshot" && hasRenderableImage && (
-            <DeviceChrome device={preview.deviceType} fullHeight immersive={immersive}>
+            <DeviceChrome device={effectiveDeviceType} fullHeight immersive={immersive}>
               <div
                 className={cn(
                   "relative flex items-center justify-center p-2",
@@ -585,7 +662,11 @@ export default function DirectorStitchPreviewStudio({
                 <img
                   src={ready.imageSrc}
                   alt={preview.title}
-                  className="max-h-[min(70vh,640px)] w-full object-contain object-top"
+                  className={cn(
+                    "max-h-[min(70vh,640px)] w-full object-contain object-top transition-all duration-300",
+                    wireframeMode && "grayscale contrast-[1.1] brightness-[1.05]"
+                  )}
+                  style={wireframeMode ? { filter: "grayscale(1) contrast(1.1) brightness(1.05)" } : undefined}
                   loading="lazy"
                   decoding="async"
                   onError={() => {
@@ -597,7 +678,7 @@ export default function DirectorStitchPreviewStudio({
           )}
 
           {tab === "preview" && hasRenderableHtml && (
-            <DeviceChrome device={preview.deviceType} fullHeight immersive={immersive}>
+            <DeviceChrome device={effectiveDeviceType} fullHeight immersive={immersive}>
               {iframeFailed && hasRenderableImage ? (
                 <div className="min-h-[min(70vh,640px)] flex flex-col items-center justify-center gap-2 p-6 text-center">
                   <p className="text-[12px] text-muted">
@@ -618,9 +699,11 @@ export default function DirectorStitchPreviewStudio({
                   title={`${WIRELINE_STITCH_UI.previewTabLabel} — ${preview.title}`}
                   src={ready.htmlSrc}
                   className={cn(
-                    "wl-stitch-live-iframe wl-stitch-live-iframe--studio",
+                    "wl-stitch-live-iframe wl-stitch-live-iframe--studio transition-all duration-300",
                     immersive && "wl-stitch-live-iframe--immersive",
+                    wireframeMode && "grayscale contrast-[1.1] brightness-[1.05]"
                   )}
+                  style={wireframeMode ? { filter: "grayscale(1) contrast(1.1) brightness(1.05)" } : undefined}
                   sandbox="allow-scripts allow-same-origin allow-popups"
                   referrerPolicy="no-referrer"
                   allow="fullscreen"
