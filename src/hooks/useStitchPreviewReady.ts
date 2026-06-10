@@ -20,18 +20,31 @@ function hasEmbeddedImageData(preview: DirectorPreviewMeta): boolean {
 function directRenderableUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
   if (url.startsWith("data:") || url.startsWith("blob:")) return url;
-  if (url.startsWith("/api/director/artifacts/")) return url;
+  if (url.startsWith("/api/director/artifacts/")) return ensureInlineRender(url);
   try {
     const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost";
     const parsed = new URL(url, origin);
     if (parsed.origin === origin && parsed.pathname.includes("/api/director/artifacts/")) {
-      return `${parsed.pathname}${parsed.search}`;
+      return ensureInlineRender(`${parsed.pathname}${parsed.search}`);
     }
     if (parsed.protocol === "https:") return url;
   } catch {
     return undefined;
   }
   return undefined;
+}
+
+/**
+ * Legacy persisted download URLs predate `inline=1`. Without it the artifact
+ * endpoint serves Content-Disposition: attachment under the strict app CSP
+ * (no relaxed prototype CSP), so the iframe downloads or strips the generated
+ * page's inline styles + Google Fonts. The signature only covers
+ * artifactId.userId.exp, so appending inline=1 keeps the URL valid.
+ */
+function ensureInlineRender(pathAndQuery: string): string {
+  if (!pathAndQuery.includes("/download")) return pathAndQuery;
+  if (/[?&]inline=1\b/.test(pathAndQuery)) return pathAndQuery;
+  return `${pathAndQuery}${pathAndQuery.includes("?") ? "&" : "?"}inline=1`;
 }
 
 export function previewHasAssetSources(preview: DirectorPreviewMeta): boolean {

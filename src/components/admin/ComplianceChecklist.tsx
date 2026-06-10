@@ -46,7 +46,7 @@ export default function ComplianceChecklist() {
       try {
         const [dncRes, intRes] = await Promise.all([
           authFetch("/api/dnc").then((r) => (r.ok ? r.json() : null)),
-          authFetch("/api/integrations/health").then((r) => (r.ok ? r.json() : null)),
+          authFetch("/api/oauth/integration-health").then((r) => (r.ok ? r.json() : null)),
         ]);
         if (cancelled) return;
         const dncLen = Array.isArray(dncRes?.entries) ? dncRes.entries.length : 0;

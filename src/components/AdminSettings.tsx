@@ -91,15 +91,7 @@ export default function AdminSettings() {
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  type AdminTab =
-    | "branding"
-    | "carrier"
-    | "subscription"
-    | "team"
-    | "flywheel"
-    | "activity"
-    | "dnc"
-    | "audit";
+  type AdminTab = "branding" | "carrier" | "subscription" | "team" | "flywheel" | "activity";
   const VALID_TABS: AdminTab[] = [
     "branding",
     "carrier",
@@ -107,8 +99,6 @@ export default function AdminSettings() {
     "team",
     "flywheel",
     "activity",
-    "dnc",
-    "audit",
   ];
   // Honor ?tab=<name> in the URL so deep links (e.g. the TrialBanner
   // "Upgrade now" CTA pointing at /admin?tab=subscription) land on
@@ -126,6 +116,13 @@ export default function AdminSettings() {
       // a stable callback and we run it once per matching render. The
       // redirect happens synchronously on the next tick.
       queueMicrotask(() => navigate("/chat", { replace: true }));
+      return "branding";
+    }
+    // DNC + Audit are standalone pages (DncManager / AuditLog) — the tab
+    // strip navigates to /dnc and /audit directly, so ?tab= deep links
+    // must redirect there instead of rendering an empty Settings body.
+    if (qsRaw === "dnc" || qsRaw === "audit") {
+      queueMicrotask(() => navigate(`/${qsRaw}`, { replace: true }));
       return "branding";
     }
     // Legacy / mistaken deep link — system health moved to Founder dashboard.

@@ -19,7 +19,7 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
   if (!health) return null;
 
   // Defensively coerce — the payload comes from an external API endpoint
-  // (`/api/integrations/health`), so fields may legitimately be missing
+  // (`/api/oauth/integration-health`), so fields may legitimately be missing
   // on older deployments or partial responses.
   const reasons = Array.isArray(health.reasons) ? health.reasons : [];
   const needsAttention =
