@@ -110,3 +110,59 @@ export const DESIGN_AUDIT_BASELINE = {
   appText10px: 8, // Raised to support PainterWorkspace / sandbox micro labels
   marketingAuroraRingMax: 2, // Pricing tier spotlight + allowed marketing flourish
 } as const;
+
+/* ═══════════════════════════════════════════════════════════════════
+   EQUAL-VIEWPORT CONTRACT (Wireline philosophy, locked by #356)
+   Wireline treats mobile, laptop, and desktop as equally important.
+   Full-width operator *data* surfaces must escalate their layout past
+   `lg:` into `xl:`/`2xl:` (more columns, wider split panes / measure)
+   so a 1440px+ screen reads as a true desktop tool — never a stretched
+   tablet. This ratchet pins that promise to the exact surfaces that
+   carry repeating operator data, so the philosophy can't silently
+   regress to mobile-first defaults.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/**
+ * A *layout* escalation at the `xl:`/`2xl:` breakpoints — column counts,
+ * column spans, flex bases, min/max widths, grid templates, or gaps.
+ * Deliberately excludes non-layout escalations (e.g. `xl:text-`) so the
+ * contract proves the surface genuinely re-flows on wide desktops.
+ */
+export const WIDE_VIEWPORT_LAYOUT_PATTERN =
+  /\b(?:xl|2xl):(?:grid-cols|col-span|row-span|grid-rows|basis|min-w|max-w|w-|gap)/;
+
+/**
+ * Curated full-width operator data surfaces (relative to `src/`) that must
+ * earn their width on laptop/desktop. Each entry is verified to carry
+ * repeating operator data or split panes — not form-field pairs or
+ * two-panel comparisons, which legitimately stay at 1–2 columns.
+ */
+export const EQUAL_VIEWPORT_SURFACES = [
+  "components/CallLogs.tsx",
+  "components/EmailInbox.tsx",
+  "components/SmsThreads.tsx",
+  "components/GoalsView.tsx",
+  "components/AgentTraining.tsx",
+  "components/AgentMemoryPanel.tsx",
+  "components/AgentTemplates.tsx",
+  "components/Pipeline.tsx",
+  "components/Integrations.tsx",
+  "components/WebhooksManager.tsx",
+  "components/HelpCenter.tsx",
+  "components/TriageInbox.tsx",
+  "components/CommandCenter/LiveFloorPanel.tsx",
+  "components/insights/TopicsView.tsx",
+  "lib/wireline-ops-design.ts",
+] as const;
+
+/** True when a curated surface contains at least one wide-viewport layout escalation. */
+export function surfaceEscalatesViewport(relPath: string): boolean {
+  const full = path.join(SRC, relPath);
+  if (!fs.existsSync(full)) return false;
+  return WIDE_VIEWPORT_LAYOUT_PATTERN.test(fs.readFileSync(full, "utf8"));
+}
+
+/** Curated surfaces that fail the equal-viewport escalation contract. */
+export function findViewportRegressions(): string[] {
+  return EQUAL_VIEWPORT_SURFACES.filter((rel) => !surfaceEscalatesViewport(rel));
+}

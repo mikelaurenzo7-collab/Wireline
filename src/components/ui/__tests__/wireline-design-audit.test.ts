@@ -10,6 +10,10 @@ import {
   APP_MICRO_TEXT_10_PATTERN,
   OFF_BRAND_GRADIENT_PATTERN,
   OFF_BRAND_HEX_PATTERN,
+  EQUAL_VIEWPORT_SURFACES,
+  WIDE_VIEWPORT_LAYOUT_PATTERN,
+  surfaceEscalatesViewport,
+  findViewportRegressions,
 } from "../../../lib/wireline-design-audit";
 
 function assertMax(actual: number, max: number, metric: string) {
@@ -98,5 +102,37 @@ describe("wireline design audit — marketing surfaces", () => {
 
   it("keeps marketing free of brutal-btn", () => {
     expect(countPatternInScope(/\bbrutal-btn\b/g, "marketing")).toBe(0);
+  });
+});
+
+describe("wireline design audit — equal-viewport contract (#356)", () => {
+  it("curates a non-empty set of full-width operator data surfaces", () => {
+    expect(EQUAL_VIEWPORT_SURFACES.length).toBeGreaterThanOrEqual(12);
+    // No duplicate entries — each surface is pinned exactly once.
+    expect(new Set(EQUAL_VIEWPORT_SURFACES).size).toBe(EQUAL_VIEWPORT_SURFACES.length);
+  });
+
+  it("every curated operator surface escalates layout past lg: into xl:/2xl:", () => {
+    const regressions = findViewportRegressions();
+    if (regressions.length > 0) {
+      throw new Error(
+        `These operator surfaces no longer escalate into xl:/2xl: (equal-viewport regression — ` +
+          `add wide-desktop columns/spans/widths so 1440px+ doesn't render like a tablet): ` +
+          regressions.join(", "),
+      );
+    }
+    expect(regressions).toEqual([]);
+  });
+
+  it.each(EQUAL_VIEWPORT_SURFACES)("%s carries a wide-viewport layout escalation", (rel) => {
+    expect(surfaceEscalatesViewport(rel)).toBe(true);
+  });
+
+  it("matches genuine layout escalations but not incidental xl: utilities", () => {
+    expect(WIDE_VIEWPORT_LAYOUT_PATTERN.test("xl:grid-cols-4")).toBe(true);
+    expect(WIDE_VIEWPORT_LAYOUT_PATTERN.test("2xl:col-span-3")).toBe(true);
+    expect(WIDE_VIEWPORT_LAYOUT_PATTERN.test("xl:max-w-[60rem]")).toBe(true);
+    expect(WIDE_VIEWPORT_LAYOUT_PATTERN.test("xl:text-lg")).toBe(false);
+    expect(WIDE_VIEWPORT_LAYOUT_PATTERN.test("md:grid-cols-2")).toBe(false);
   });
 });
