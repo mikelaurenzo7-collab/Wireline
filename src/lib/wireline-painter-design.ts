@@ -8,7 +8,7 @@ import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 export const PAINTER_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
     id: "landing",
-    label: "Mobile-first landing page for a local service business",
+    label: "High-fidelity responsive landing page for a local service business",
     intent: "Marketing site with hero, proof, and CTA",
   },
   {

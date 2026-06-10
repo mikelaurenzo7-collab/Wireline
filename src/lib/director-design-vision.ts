@@ -21,13 +21,13 @@ export interface DesignVisionSpecInput {
 function deviceLabel(device: ReturnType<typeof resolveDesignPreviewDeviceType>): string {
   switch (device) {
     case "MOBILE":
-      return "Mobile-first (390px primary canvas; scale up gracefully)";
+      return "Mobile optimized, with a dual viewport layout ensuring desktop+laptop is equally elegant at full resolution (all viewports equally important)";
     case "TABLET":
-      return "Tablet-first with responsive breakpoints";
+      return "Tablet optimized layout, with seamless transition to both mobile and desktop screens (all viewports equally important)";
     case "DESKTOP":
-      return "Desktop web (max content ~1200px centered; hero can be full-bleed)";
+      return "Desktop web optimized (max content ~1200px centered), ensuring mobile viewports are equally elegant and functional (all viewports equally important)";
     default:
-      return "Responsive mobile-first with desktop enhancement";
+      return "All viewports equally important (balanced dual-focus across mobile & desktop+laptop views)";
   }
 }
 
@@ -43,7 +43,7 @@ function sectionBlueprint(device: string): string {
     "  • Photo hero: wl-hero--photo with scrim overlay",
     "  • Gradient hero: vivid multi-stop gradient with overlaid text",
     "- Trust signals: wl-trust-row with wl-badge pills (Licensed, Insured, Reviews, etc.)",
-    "- Primary CTA: wl-btn wl-btn--primary (min 48px) — visible without scrolling on mobile",
+    "- Primary CTA: wl-btn wl-btn--primary (min 48px) — visible without scrolling on mobile and prominently presented on desktop/laptop",
     "- At least 2 content sections (services, process, testimonials, FAQ, about, etc.)",
     "- Footer with business info, contact, hours",
     "",
@@ -75,7 +75,7 @@ function successCriteria(): string {
     "## Success criteria (pass 1 must satisfy)",
     "- Single complete HTML document with embedded Wireline kit CSS",
     "- Hero + trust row + at least one content section + footer",
-    "- Primary CTA visible without scrolling on mobile",
+    "- Primary CTA visible without scrolling on mobile, and prominently positioned on desktop/laptop views",
     "- WCAG AA contrast on text and buttons",
     "- Copy reads American English, local-business idioms (call now, free estimate, licensed & insured)",
     "- Distinctive typography pairing — not a template clone",

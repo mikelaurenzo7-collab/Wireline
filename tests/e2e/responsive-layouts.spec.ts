@@ -193,7 +193,7 @@ test.describe("Responsive — signup form adapts", () => {
  * These tests protect the exact rules we are actively enforcing in AgentChat,
  * AgentWorkspace, composer, pricing CTAs, and all future operator surfaces.
  */
-test.describe("Design system — mobile-first flawless + desktop refined", () => {
+test.describe("Design system — all viewports equally important (mobile flawless + desktop refined)", () => {
   test("primary CTAs on pricing meet 36px+ mobile tap target and scale elegantly on desktop", async ({
     page,
   }) => {

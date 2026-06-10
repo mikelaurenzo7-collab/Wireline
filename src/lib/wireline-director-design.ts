@@ -364,7 +364,7 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
     description: "Sitemap, page copy, and HTML/CSS prototype in chat",
     category: "create",
     example:
-      "Design a new website for my business — sitemap, section copy, and a mobile-first HTML prototype I can hand to a developer",
+      "Design a new website for my business — sitemap, section copy, and a high-fidelity responsive HTML prototype I can hand to a developer",
   },
   {
     id: "code-snippet",

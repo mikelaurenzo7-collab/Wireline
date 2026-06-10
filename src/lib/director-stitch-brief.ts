@@ -368,7 +368,7 @@ export function buildStitchDesignMarkdown(input: {
     `- Components: pill or softly rounded CTAs (8–12px radius) with high-contrast text; cards with subtle radius, light shadow or 1px border, 24–32px internal padding; forms with 44px+ touch targets and visible focus rings`,
     `- Imagery: realistic photography or custom abstract shapes; if no images described, use bold typography and geometric accent shapes instead of generic stock layouts`,
     `- Mood: ${brief.tone || "infer from industry and operator request — be bold and bespoke, never template-like"}`,
-    `- Responsive: mobile-first unless desktop/web is explicitly requested`,
+    `- Responsive: All viewports equally important (balanced dual-focus across mobile & desktop+laptop views)`,
     "",
     "## Design tokens",
     formatDesignTokensMarkdown(clientDesignSystem),

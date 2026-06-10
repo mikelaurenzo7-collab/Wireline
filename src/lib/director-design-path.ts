@@ -3,10 +3,7 @@
  */
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
 import { runDirectorDesignStudio } from "./director-design-orchestrator";
-import {
-  prepareDirectorDesignTurn,
-  type DirectorDesignTurnResult,
-} from "./director-design-turn";
+import { prepareDirectorDesignTurn, type DirectorDesignTurnResult } from "./director-design-turn";
 import {
   buildStitchDesignBriefArtifact,
   buildStitchDesignMarkdown,
@@ -54,7 +51,7 @@ Then structure the rest of \`reply\` as:
 1. **Goals & audience** (2–4 bullets)
 2. **Sitemap / screen scope** — pages or key sections and primary CTA
 3. **Visual direction** — typography, color, spacing (honor design.md when provided)
-4. **Starter prototype** — you MUST include exactly one \`\`\`html\`\`\` fenced block (mobile-first, semantic landmarks, accessible labels, single \`<style>\` block, realistic industry copy). Keep it under ~150 lines.
+4. **Starter prototype** — you MUST include exactly one \`\`\`html\`\`\` fenced block (responsive with dual-viewport focus on mobile and desktop/laptop equally, semantic landmarks, accessible labels, single \`<style>\` block, realistic industry copy). Keep it under ~150 lines.
 5. **Handoff** — what to tweak next in chat (hero, palette, extra pages)
 
 Do not refuse as out-of-scope. Do not route to logo tools unless they explicitly asked for a logo.`;
