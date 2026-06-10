@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "motion/react";
 import { Phone, Mail, ChevronRight, Loader2, RefreshCw, Kanban, GripVertical } from "lucide-react";
 import PageShell, { Panel } from "./PageShell";
@@ -89,7 +89,7 @@ interface Lead {
 }
 
 export default function Pipeline() {
-  const { error: toastError, success: toastSuccess } = useToast();
+  const { error: toastError, toast } = useToast();
   const [board, setBoard] = useState<Record<Stage, Lead[]>>({} as any);
   const [counts, setCounts] = useState<Record<Stage, number>>({} as any);
   const [loading, setLoading] = useState(true);
@@ -157,7 +157,17 @@ export default function Pipeline() {
           body: JSON.stringify({ pipelineStage: target }),
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        toastSuccess("Lead moved", `Pipeline stage set to ${target}.`);
+        const undoSource = source;
+        toast({
+          type: "success",
+          title: "Lead moved",
+          message: `Pipeline stage set to ${target}.`,
+          duration: 6000,
+          action: {
+            label: "Undo",
+            onClick: () => void moveLeadRef.current?.(idStr, undoSource),
+          },
+        });
       } catch (e: any) {
         setBoard(prevBoard);
         setCounts(prevCounts);
@@ -167,8 +177,14 @@ export default function Pipeline() {
         setDragOverStage(null);
       }
     },
-    [board, counts, toastSuccess, toastError],
+    [board, counts, toast, toastError],
   );
+  // Self-reference so the Undo toast action can replay a move after this
+  // callback identity has been replaced by a board state update.
+  const moveLeadRef = useRef(moveLead);
+  useEffect(() => {
+    moveLeadRef.current = moveLead;
+  }, [moveLead]);
 
   const totalLeads = Object.values(counts).reduce((s, n) => s + (n || 0), 0);
   const wonCount = counts.won || 0;

@@ -67,7 +67,7 @@ function sourceColor(source: string) {
 }
 
 export default function DncManager() {
-  const { success: toastSuccess, error: toastError } = useToast();
+  const { success: toastSuccess, error: toastError, toast } = useToast();
   const [entries, setEntries] = useState<DncEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -136,12 +136,51 @@ export default function DncManager() {
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
+    const removed = entries.find((e) => e.id === id);
     try {
       const r = await authFetch(`/api/dnc/${id}`, { method: "DELETE" });
       const out = await readApiJson<{ error?: string }>(r);
       if (out.ok === false) throw new Error(out.error);
       setEntries((prev) => prev.filter((e) => e.id !== id));
-      toastSuccess("Entry removed", "Number has been removed from the DNC list.");
+      const phone = removed?.phone_raw || removed?.phone;
+      toast({
+        type: "success",
+        title: "Entry removed",
+        message: "Number has been removed from the DNC list.",
+        duration: 6000,
+        action: phone
+          ? {
+              label: "Undo",
+              onClick: () =>
+                void (async () => {
+                  try {
+                    const res = await authFetch("/api/dnc", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        entries: [
+                          {
+                            phone,
+                            reason: removed?.reason || "opt-out",
+                            source: removed?.source || "manual",
+                          },
+                        ],
+                      }),
+                    });
+                    const undone = await readApiJson<{ error?: string }>(res);
+                    if (undone.ok === false) throw new Error(undone.error);
+                    toastSuccess("Restored", `${phone} is back on the DNC list.`);
+                    await refresh();
+                  } catch (err: unknown) {
+                    toastError(
+                      "Undo failed",
+                      err instanceof Error ? err.message : "Re-add the number manually.",
+                    );
+                  }
+                })(),
+            }
+          : undefined,
+      });
     } catch (e: any) {
       toastError("Delete failed", e.message);
     } finally {

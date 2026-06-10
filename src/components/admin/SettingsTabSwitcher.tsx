@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useCallback, useRef, type KeyboardEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 
@@ -48,6 +48,11 @@ export default function SettingsTabSwitcher({
   density?: "default" | "compact";
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  // Flat tab order (ignoring visual group dividers) for arrow-key roving.
+  const flatTabs = TAB_GROUPS.flatMap((g) => g.tabs);
 
   const getActiveTab = (): AdminTab => {
     const pathname = location.pathname;
@@ -69,8 +74,43 @@ export default function SettingsTabSwitcher({
 
   const activeTab = getActiveTab();
 
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      const currentIndex = flatTabs.findIndex((t) => t.id === activeTab);
+      if (currentIndex < 0) return;
+      let nextIndex: number | null = null;
+      switch (e.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          nextIndex = (currentIndex + 1) % flatTabs.length;
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          nextIndex = (currentIndex - 1 + flatTabs.length) % flatTabs.length;
+          break;
+        case "Home":
+          nextIndex = 0;
+          break;
+        case "End":
+          nextIndex = flatTabs.length - 1;
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+      const next = flatTabs[nextIndex];
+      if (!next) return;
+      navigate(next.path);
+      stripRef.current
+        ?.querySelector<HTMLAnchorElement>(`[data-testid="admin-tab-${next.id}"]`)
+        ?.focus();
+    },
+    [flatTabs, activeTab, navigate],
+  );
+
   return (
     <div
+      ref={stripRef}
       className={cn(
         "shrink-0 flex items-center justify-start gap-1 min-w-0 max-w-full overflow-x-auto tab-strip-scroll max-lg:tab-strip-scroll--fade",
         density === "compact" ? "mb-0" : "mb-2 md:mb-3",
@@ -78,6 +118,7 @@ export default function SettingsTabSwitcher({
       )}
       role="tablist"
       aria-label="Settings sub-navigation"
+      onKeyDown={handleKeyDown}
     >
       <div
         className={cn(
@@ -102,6 +143,7 @@ export default function SettingsTabSwitcher({
                   role="tab"
                   data-testid={`admin-tab-${t.id}`}
                   aria-selected={active}
+                  tabIndex={active ? 0 : -1}
                   className={cn(
                     "touch-press relative shrink-0 inline-flex items-center gap-1.5 transition-colors uppercase font-semibold whitespace-nowrap rounded-none",
                     density === "compact"

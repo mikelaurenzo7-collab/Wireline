@@ -2,12 +2,19 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface Toast {
   id: string;
   type: ToastType;
   title: string;
   message?: string;
   duration?: number; // ms; 0 = persist until dismissed
+  /** Optional inline action (e.g. Undo) — dismisses the toast when clicked. */
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
