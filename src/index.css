@@ -3416,6 +3416,30 @@ body,
     padding-right: 0.6rem !important;
   }
 
+  /* Leading-icon inputs/selects: pl-* utilities must survive the px-*
+     density overrides above, or icons overlap their text. */
+  .app-surface .pl-7 {
+    padding-left: 1.75rem !important;
+  }
+  .app-surface .pl-8 {
+    padding-left: 2rem !important;
+  }
+  .app-surface .pl-9 {
+    padding-left: 2.25rem !important;
+  }
+  .app-surface .pl-10 {
+    padding-left: 2.5rem !important;
+  }
+  .app-surface .pr-8 {
+    padding-right: 2rem !important;
+  }
+  .app-surface .pr-9 {
+    padding-right: 2.25rem !important;
+  }
+  .app-surface .pr-10 {
+    padding-right: 2.5rem !important;
+  }
+
   .app-surface .py-10,
   .app-surface .py-8 {
     padding-top: 1.35rem !important;

@@ -286,7 +286,7 @@ export default function AgentTraining({
         {/* Director assists — deep-links that prefill Director chat with this
             agent focused. Replaces the old recipe pop-out modals (mobile-safe,
             nothing to fail loading). */}
-        <div className="max-w-[1400px] mx-auto w-full flex items-center gap-1.5 overflow-x-auto tab-strip-scroll scrollbar-hide py-0.5">
+        <div className="max-w-[1400px] mx-auto w-full flex items-center gap-1.5 overflow-x-auto tab-strip-scroll tab-strip-scroll--fade scrollbar-hide py-0.5">
           <span className="shrink-0 inline-flex items-center gap-1.5 pr-1">
             <span className="w-6 h-6 rounded-md bg-brand flex items-center justify-center shrink-0">
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
@@ -401,9 +401,7 @@ export default function AgentTraining({
                       <Zap className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-display italic lowercase text-xl text-ink">
-                        analysis engine
-                      </h3>
+                      <h3 className="font-display italic text-xl text-ink">Analysis engine</h3>
                       <p className="wl-label text-ink/40">
                         Find improvement opportunities from your calls
                       </p>
@@ -487,9 +485,7 @@ export default function AgentTraining({
                       <Target className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-display italic lowercase text-xl text-ink">
-                        personality
-                      </h3>
+                      <h3 className="font-display italic text-xl text-ink">Personality</h3>
                       <p className="wl-label text-ink/40">Base behavioral heuristics and tone</p>
                     </div>
                   </div>
@@ -563,9 +559,7 @@ export default function AgentTraining({
                 <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
-                      <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                        rules
-                      </h3>
+                      <h3 className="font-display italic text-lg text-ink leading-none">Rules</h3>
                       <p className="wl-label text-ink/40 mt-0.5">Lines your agent never crosses</p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 wl-label leading-none">
@@ -715,8 +709,8 @@ export default function AgentTraining({
                 <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
-                      <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                        fact archive
+                      <h3 className="font-display italic text-lg text-ink leading-none">
+                        Fact archive
                       </h3>
                       <p className="wl-label text-ink/40 mt-0.5">Knowledge base</p>
                     </div>
@@ -858,8 +852,8 @@ export default function AgentTraining({
                       <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                     </div>
                     <div>
-                      <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                        ai auto-calibration
+                      <h3 className="font-display italic text-lg text-ink leading-none">
+                        AI auto-calibration
                       </h3>
                       <p className="wl-label text-brand">Synthetic learning engine active</p>
                     </div>
@@ -957,9 +951,7 @@ export default function AgentTraining({
                     <PlayCircle className="w-10 h-10 text-brand" strokeWidth={1.25} />
                   </div>
                   <div>
-                    <h2 className="font-display italic lowercase text-4xl text-ink mb-2">
-                      test call
-                    </h2>
+                    <h2 className="font-display italic text-4xl text-ink mb-2">Test call</h2>
                     <p className="text-ink/40 text-sm leading-relaxed max-w-md mx-auto">
                       Test how your agent responds in a safe practice run before it takes real
                       calls.
@@ -968,9 +960,7 @@ export default function AgentTraining({
                   <div className="rounded-md wl-panel border border-border p-5 text-left space-y-4 max-w-sm mx-auto w-full">
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-brand" />
-                      <h4 className="font-display italic lowercase text-base text-ink">
-                        voice call
-                      </h4>
+                      <h4 className="font-display italic text-base text-ink">Voice call</h4>
                     </div>
                     <p className="text-[11px] text-ink/40 leading-relaxed">
                       Speak directly with your agent through your browser microphone. Tests the

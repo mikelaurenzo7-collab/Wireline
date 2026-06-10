@@ -222,7 +222,7 @@ export default function AgentConfigPanel({
               <Target className="w-7 h-7" />
             </div>
             <div className="space-y-1.5">
-              <h3 className="font-display italic lowercase text-2xl text-ink">pick an agent</h3>
+              <h3 className="font-display italic text-2xl text-ink">pick an agent</h3>
               <p className="text-caption max-w-sm leading-relaxed">
                 Choose an agent on the left to view its calls, edit its personality, or update what
                 it knows.
@@ -277,9 +277,7 @@ export default function AgentConfigPanel({
                       <div className="rounded-md wl-panel border border-border p-3 flex flex-wrap items-center gap-3">
                         <Briefcase className="w-3.5 h-3.5 text-brand shrink-0" />
                         <div className="flex-1 min-w-[180px] space-y-1">
-                          <label className="wl-label text-ink/40">
-                            Agent role
-                          </label>
+                          <label className="wl-label text-ink/40">Agent role</label>
                           <div className="relative">
                             <Select
                               value={selectedAgent.role || "customer_service"}
@@ -454,8 +452,8 @@ export default function AgentConfigPanel({
                       <div className="rounded-md wl-panel border border-border p-3 space-y-3">
                         <div className="flex items-center gap-2 pb-2 border-b border-black/8">
                           <Radio className="w-3.5 h-3.5 text-brand" />
-                          <h3 className="font-display italic lowercase text-base text-ink">
-                            carrier signal parameters
+                          <h3 className="font-display italic text-base text-ink">
+                            Carrier signal parameters
                           </h3>
                         </div>
 
@@ -518,9 +516,7 @@ export default function AgentConfigPanel({
                           />
 
                           <div className="space-y-1.5">
-                            <label className="wl-label text-ink/40">
-                              Silence timeout
-                            </label>
+                            <label className="wl-label text-ink/40">Silence timeout</label>
                             <Select
                               value={
                                 selectedAgent.silence_timeout_seconds == null
@@ -552,9 +548,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="wl-label text-ink/40">
-                              Archetype
-                            </label>
+                            <label className="wl-label text-ink/40">Archetype</label>
                             <div className="relative">
                               <Select
                                 value={selectedAgent.archetype || "Receptionist"}
@@ -579,9 +573,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="wl-label text-ink/40">
-                              Personality vibe
-                            </label>
+                            <label className="wl-label text-ink/40">Personality vibe</label>
                             <div className="grid grid-cols-3 gap-1.5">
                               {(["warm", "playful", "authoritative"] as const).map((v) => {
                                 const current = (selectedAgent as any).personality_vibe || "warm";
@@ -618,9 +610,7 @@ export default function AgentConfigPanel({
                           </div>
 
                           <div className="space-y-1.5">
-                            <label className="wl-label text-ink/40">
-                              Ambient atmosphere
-                            </label>
+                            <label className="wl-label text-ink/40">Ambient atmosphere</label>
                             <div className="relative">
                               <Select
                                 value={selectedAgent.ambient_noise || "off"}
@@ -642,9 +632,7 @@ export default function AgentConfigPanel({
 
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                              <label className="wl-label text-ink/40">
-                                Speaking rate
-                              </label>
+                              <label className="wl-label text-ink/40">Speaking rate</label>
                               <span className="wl-micro-badge font-medium text-ink">
                                 {Number((selectedAgent as any).voice_speed ?? 1.0).toFixed(2)}×
                               </span>
@@ -726,8 +714,8 @@ export default function AgentConfigPanel({
                       <div className="rounded-md wl-panel border border-border p-3 space-y-3">
                         <div className="flex items-center gap-2 pb-2 border-b border-black/8">
                           <Mail className="w-3.5 h-3.5 text-brand" />
-                          <h3 className="font-display italic lowercase text-base text-ink">
-                            email relay heuristics
+                          <h3 className="font-display italic text-base text-ink">
+                            Email relay heuristics
                           </h3>
                         </div>
 
@@ -773,9 +761,7 @@ export default function AgentConfigPanel({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                              <label className="wl-label text-ink/40">
-                                Relay tone
-                              </label>
+                              <label className="wl-label text-ink/40">Relay tone</label>
                               <div className="relative">
                                 <Select
                                   value={selectedAgent.email_agent_tone || "Professional"}
@@ -797,9 +783,7 @@ export default function AgentConfigPanel({
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="wl-label text-ink/40">
-                                Signature
-                              </label>
+                              <label className="wl-label text-ink/40">Signature</label>
                               <Input
                                 type="text"
                                 value={selectedAgent.email_signature || ""}
@@ -830,8 +814,8 @@ export default function AgentConfigPanel({
                           <div className="flex items-center justify-between gap-2 pb-2 border-b border-black/8">
                             <div className="flex items-center gap-2">
                               <FileText className="w-3.5 h-3.5 text-brand" />
-                              <h3 className="font-display italic lowercase text-base text-ink">
-                                system prompt
+                              <h3 className="font-display italic text-base text-ink">
+                                System prompt
                               </h3>
                             </div>
                             <ShadButton
@@ -931,12 +915,10 @@ export default function AgentConfigPanel({
                     <div className="flex items-center gap-2">
                       <Settings2 className="w-4 h-4 text-brand" />
                       <div>
-                        <h3 className="font-display italic lowercase text-xl text-ink leading-none">
-                          behavioral engine
+                        <h3 className="font-display italic text-xl text-ink leading-none">
+                          Behavioral engine
                         </h3>
-                        <p className="wl-label text-ink/40 mt-1">
-                          Base heuristic instructions
-                        </p>
+                        <p className="wl-label text-ink/40 mt-1">Base heuristic instructions</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -998,12 +980,10 @@ export default function AgentConfigPanel({
                   <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-black/8">
                       <div>
-                        <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                          tactical logic
+                        <h3 className="font-display italic text-lg text-ink leading-none">
+                          Tactical logic
                         </h3>
-                        <p className="wl-label text-ink/40 mt-0.5">
-                          Hard constraints
-                        </p>
+                        <p className="wl-label text-ink/40 mt-0.5">Hard constraints</p>
                       </div>
                       <span className="px-1.5 py-0.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive wl-label leading-none">
                         Inviolable
@@ -1108,9 +1088,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
-                      <label className="wl-label text-ink/40">
-                        Add directive
-                      </label>
+                      <label className="wl-label text-ink/40">Add directive</label>
                       <div className="flex gap-1.5">
                         <Input
                           type="text"
@@ -1142,12 +1120,10 @@ export default function AgentConfigPanel({
                   <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-black/8">
                       <div>
-                        <h3 className="font-display italic lowercase text-lg text-ink leading-none">
-                          knowledge base
-                        </h3>
-                        <p className="wl-label text-ink/40 mt-0.5">
+                        <h3 className="font-display italic text-lg text-ink leading-none">
                           Knowledge base
-                        </p>
+                        </h3>
+                        <p className="wl-label text-ink/40 mt-0.5">Knowledge base</p>
                       </div>
                       <span className="px-1.5 py-0.5 rounded-full bg-brand/15 border border-brand/30 text-brand wl-label leading-none">
                         Factual
@@ -1252,9 +1228,7 @@ export default function AgentConfigPanel({
                       </AnimatePresence>
                     </div>
                     <div className="mt-3 pt-3 border-t border-black/8 space-y-1.5">
-                      <label className="wl-label text-ink/40">
-                        Add fact
-                      </label>
+                      <label className="wl-label text-ink/40">Add fact</label>
                       <div className="flex gap-1.5">
                         <Input
                           type="text"

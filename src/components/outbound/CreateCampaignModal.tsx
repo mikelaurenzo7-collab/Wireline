@@ -83,8 +83,8 @@ export default function CreateCampaignModal({
           <DialogDescription className="wl-label text-brand mb-0.5 font-bold">
             Signal · Campaigns
           </DialogDescription>
-          <DialogTitle className="font-display italic lowercase text-2xl text-ink dark:text-foreground leading-none">
-            new campaign
+          <DialogTitle className="font-display italic text-2xl text-ink dark:text-foreground leading-none">
+            New campaign
           </DialogTitle>
         </DialogHeader>
 

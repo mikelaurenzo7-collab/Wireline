@@ -126,8 +126,8 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display italic lowercase text-2xl text-ink leading-none">
-            {title || "pick a phone number"}
+          <h3 className="font-display italic text-2xl text-ink leading-none">
+            {title || "Pick a phone number"}
           </h3>
           <p className="text-[11px] text-muted/70 mt-1.5">
             Each agent gets its own number so callers can reach it directly.
@@ -184,9 +184,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   )}
                 </div>
                 {claiming === n.phone_number && (
-                  <span className="wl-label text-brand">
-                    Claiming…
-                  </span>
+                  <span className="wl-label text-brand">Claiming…</span>
                 )}
               </motion.button>
             ))}

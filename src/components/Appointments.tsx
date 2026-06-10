@@ -435,7 +435,7 @@ function CalendarGrid({
         >
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </ShadButton>
-        <span className="font-display italic lowercase text-xl text-ink">
+        <span className="font-display italic text-xl text-ink">
           {monthNames[month.month]} {month.year}
         </span>
         <ShadButton
@@ -702,7 +702,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                   />
                 </motion.div>
               ) : (
-                <>
+                <motion.div key="upcoming-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <ChannelListColHeader
                     columns={[
                       { label: "Customer" },
@@ -727,7 +727,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
                       />
                     ))}
                   </div>
-                </>
+                </motion.div>
               )}
             </AnimatePresence>
           </Panel>
