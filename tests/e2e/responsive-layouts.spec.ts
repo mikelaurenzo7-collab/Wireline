@@ -181,9 +181,9 @@ test.describe("Responsive — signup form adapts", () => {
 });
 
 /**
- * Owner-grade design system enforcement for the two viewports that matter most:
- * - Mobile (Pixel 5 / iPhone 12 in the Playwright projects): the first impression
- *   for the majority of future paying SMB and everyday users. Must feel flawless
+ * Owner-grade design system enforcement across the viewports we treat as
+ * equally important:
+ * - Mobile (Pixel 5 / iPhone 12 in the Playwright projects): must feel flawless
  *   — 36px+ thumb-friendly tap targets, appropriately smaller typography (user
  *   preference for density on phones), no overflow, generous but not sloppy spacing.
  * - Desktop / Laptop (1440×900+): refined, breathable, premium tool feel. Slightly
@@ -193,11 +193,11 @@ test.describe("Responsive — signup form adapts", () => {
  * These tests protect the exact rules we are actively enforcing in AgentChat,
  * AgentWorkspace, composer, pricing CTAs, and all future operator surfaces.
  */
-test.describe("Design system — mobile-first flawless + desktop refined", () => {
+test.describe("Design system — every viewport flawless (mobile + desktop refined)", () => {
   test("primary CTAs on pricing meet 36px+ mobile tap target and scale elegantly on desktop", async ({
     page,
   }) => {
-    // Mobile phone viewport (first impression surface)
+    // Mobile phone viewport
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoHydrated(page, "/pricing");
 
@@ -270,7 +270,7 @@ test.describe("Design system — mobile-first flawless + desktop refined", () =>
  * composer, proposal cards, etc.).
  *
  * These tests are written first (TDD) to define the non-negotiable owner standards:
- * - Mobile (most users' first experience): 36px+ thumb-friendly targets, 9-11px
+ * - Mobile: 36px+ thumb-friendly targets, 9-11px
  *   secondary text, tight-but-usable density, no cramped or unreachable controls.
  * - Desktop/laptop: Refined, breathable, premium tool aesthetic — slightly larger
  *   elegant targets and typography, proper visual hierarchy, generous but not wasteful

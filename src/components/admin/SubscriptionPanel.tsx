@@ -1,4 +1,3 @@
- 
 import React from "react";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { Panel } from "../PageShell";
@@ -32,7 +31,7 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
 
       <Panel title="Danger Zone" hint="Irreversible actions" icon={AlertTriangle} scroll>
         <div className="space-y-5">
-          <div className="rounded-md border border-rose-500/20 bg-rose-500/5 p-4 space-y-3">
+          <div className="max-w-xl rounded-md border border-rose-500/20 bg-rose-500/5 p-4 space-y-3">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div className="space-y-1">

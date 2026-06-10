@@ -342,7 +342,7 @@ export default function Integrations() {
                   <>
                     <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
                       <p className="wl-label text-brand mb-2">When email arrives</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                         {EMAIL_INBOUND_TASKS.map((task) => (
                           <div
                             key={task.id}

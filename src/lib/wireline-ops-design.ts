@@ -582,7 +582,7 @@ export const WL_CHROME_CLASSES = {
 /** Channel inbox + list table class hooks (phone, email, SMS). */
 export const WL_CHANNEL_CLASSES = {
   inboxGrid:
-    "wl-channel-inbox-grid h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr]",
+    "wl-channel-inbox-grid h-full min-h-[360px] grid grid-cols-1 lg:grid-cols-[minmax(280px,320px)_1fr] xl:grid-cols-[minmax(340px,380px)_1fr] 2xl:grid-cols-[minmax(380px,440px)_1fr]",
   inboxList:
     "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border wl-panel rounded-none lg:rounded-l-md",
   inboxListHeader:

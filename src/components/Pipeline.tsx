@@ -290,7 +290,7 @@ export default function Pipeline() {
                         if (id) moveLead(id, stage.id);
                       }}
                       className={cn(
-                        "w-full md:w-auto md:flex-1 md:basis-[220px] md:min-w-[220px] md:shrink-0 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none transition-[outline] duration-150",
+                        "w-full md:w-auto md:flex-1 md:basis-[220px] md:min-w-[220px] xl:basis-[260px] xl:min-w-[260px] 2xl:basis-[300px] 2xl:min-w-[300px] md:shrink-0 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none transition-[outline] duration-150",
                         dragOverStage === stage.id &&
                           draggingId &&
                           "wl-pipeline-column--drop-target",

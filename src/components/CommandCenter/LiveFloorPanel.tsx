@@ -251,7 +251,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
               aria-live="polite"
               aria-label="Active callers"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pb-0.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-3 pb-0.5">
                 <AnimatePresence mode="popLayout">
                   {calls.map((call) => {
                     const agent = agents.find((a) => a.id === call.agent_id);

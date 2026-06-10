@@ -921,7 +921,7 @@ body,
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   WIRELINE IDENTITY — Premium Mobile-First Architecture
+   WIRELINE IDENTITY — Premium Equal-Viewport Architecture
    Zero-latency touch, specular depth, orbital motion language.
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -6705,9 +6705,9 @@ select:focus {
   }
 }
 
-/* ─── Mobile-first polish (signed-in shell + auth) ───────────────────────
- * Purposeful touch refinements: readable type, native-feeling tabs, panels
- * that read as one surface with the tab bar, and no hover-lift on phones. */
+/* ─── Signed-in shell + auth polish (all viewports) ──────────────────────
+ * Purposeful refinements: readable type, native-feeling tabs, panels
+ * that read as one surface with the tab bar, and no hover-lift on touch. */
 
 @media (min-width: 1024px) {
   .mobile-page-canvas {

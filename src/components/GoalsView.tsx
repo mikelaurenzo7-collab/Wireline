@@ -138,9 +138,7 @@ function GoalEditor({
       <p className="text-caption leading-relaxed">{metric.description}</p>
 
       <label className="block">
-        <span className="wl-label-muted">
-          Monthly target ({metric.unit})
-        </span>
+        <span className="wl-label-muted">Monthly target ({metric.unit})</span>
         <Input
           type="number"
           min={1}
@@ -234,11 +232,7 @@ function GoalCard({
           <h3 className="font-display italic text-lg text-ink leading-tight truncate">
             {goal.metric_label}
           </h3>
-          {goal.label && (
-            <p className="wl-label-muted opacity-80 truncate mt-0.5">
-              {goal.label}
-            </p>
-          )}
+          {goal.label && <p className="wl-label-muted opacity-80 truncate mt-0.5">{goal.label}</p>}
         </div>
         <span
           className="shrink-0 px-2 py-1 rounded-full wl-label font-medium wl-status-chip"
@@ -499,7 +493,7 @@ export default function GoalsView() {
       </div>
 
       {/* Metric grid — one card per metric */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
         <AnimatePresence mode="popLayout">
           {data.metrics.map((metric) => {
             const goal = goalByMetric.get(metric.id);
