@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { X, Keyboard } from "lucide-react";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -8,7 +8,8 @@ interface KeyboardShortcutsProps {
   onClose: () => void;
 }
 
-const IS_APPLE = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+const IS_APPLE =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 const CMD_KEY = IS_APPLE ? "⌘" : "Ctrl";
 
 const SHORTCUTS = [
@@ -55,9 +56,13 @@ function Kbd({ children }: { children: React.ReactNode }) {
 export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // Move focus to close button when modal opens
     closeRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
@@ -88,7 +93,12 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
       }
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      if (restoreFocusRef.current && document.contains(restoreFocusRef.current)) {
+        restoreFocusRef.current.focus();
+      }
+    };
   }, [open, onClose]);
 
   return (
@@ -97,38 +107,44 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { opacity: 0 }}
+            transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2 }}
             className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-md"
             onClick={onClose}
           />
 
           {/* Panel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            exit={
+              reduceMotion
+                ? { opacity: 0, transition: { duration: 0.01 } }
+                : { opacity: 0, scale: 0.96, y: 12 }
+            }
+            transition={
+              reduceMotion ? { duration: 0.01 } : { duration: 0.25, ease: [0.16, 1, 0.3, 1] }
+            }
             className="fixed inset-x-3 sm:inset-x-4 bottom-0 sm:bottom-auto sm:top-[10%] z-[91] mx-auto max-w-2xl pb-[env(safe-area-inset-bottom,0)]"
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Keyboard shortcuts"
+            aria-labelledby="keyboard-shortcuts-title"
           >
             <div className="wl-panel-elevated rounded-t-md sm:rounded-md border border-white/12 overflow-hidden max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1rem)] overflow-y-auto overscroll-contain">
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-md flex items-center justify-center wl-shortcuts-icon">
-                    <Keyboard className="w-4 h-4 text-brand" />
+                    <Keyboard aria-hidden="true" className="w-4 h-4 text-brand" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-medium text-ink">Keyboard shortcuts</h2>
-                    <p className="wl-label-muted">
-                      Quick navigation & actions
-                    </p>
+                    <h2 id="keyboard-shortcuts-title" className="text-sm font-medium text-ink">
+                      Keyboard shortcuts
+                    </h2>
+                    <p className="wl-label-muted">Quick navigation & actions</p>
                   </div>
                 </div>
                 <ShadButton
@@ -141,7 +157,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                   aria-label="Close keyboard shortcuts"
                   className="w-11 h-11 sm:w-8 sm:h-8 border border-white/8 hover:border-white/20"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X aria-hidden="true" className="w-3.5 h-3.5" />
                 </ShadButton>
               </div>
 
