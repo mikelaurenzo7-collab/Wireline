@@ -107,7 +107,6 @@ export default function AgentTraining({
   const [personality, setPersonality] = useState("");
   const [lessons, setLessons] = useState<any[]>([]);
   const [agentRole, setAgentRole] = useState("customer_service");
-  const [agentArchetype, setAgentArchetype] = useState("Receptionist");
 
   const [editingDirective, setEditingDirective] = useState<{ id: string; content: string } | null>(
     null,
@@ -202,7 +201,6 @@ export default function AgentTraining({
       setPersonalityDraft(data.personality || "");
       setLessons(data.lessons || []);
       if (data.role) setAgentRole(data.role);
-      if (data.archetype) setAgentArchetype(data.archetype);
     } catch {
       /* training fetch failures are non-fatal — UI shows empty state */
     }
@@ -463,9 +461,7 @@ export default function AgentTraining({
                     className="space-y-3"
                   >
                     <div className="rounded-md bg-black/20 border border-white/8 p-4">
-                      <h4 className="wl-label text-ink/40 mb-2">
-                        Analysis
-                      </h4>
+                      <h4 className="wl-label text-ink/40 mb-2">Analysis</h4>
                       <p className="font-display italic text-lg text-ink leading-snug">
                         "{optSuggestions.analysis}"
                       </p>
@@ -521,9 +517,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-xl text-ink">
                         personality
                       </h3>
-                      <p className="wl-label text-ink/40">
-                        Base behavioral heuristics and tone
-                      </p>
+                      <p className="wl-label text-ink/40">Base behavioral heuristics and tone</p>
                     </div>
                   </div>
                   {editingPersonality ? (
@@ -599,9 +593,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         rules
                       </h3>
-                      <p className="wl-label text-ink/40 mt-0.5">
-                        Lines your agent never crosses
-                      </p>
+                      <p className="wl-label text-ink/40 mt-0.5">Lines your agent never crosses</p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 wl-label leading-none">
                       Always-on
@@ -719,9 +711,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="wl-label text-ink/40">
-                      Add directive
-                    </label>
+                    <label className="wl-label text-ink/40">Add directive</label>
                     <div className="flex gap-1.5">
                       <Input
                         type="text"
@@ -755,9 +745,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         fact archive
                       </h3>
-                      <p className="wl-label text-ink/40 mt-0.5">
-                        Knowledge base
-                      </p>
+                      <p className="wl-label text-ink/40 mt-0.5">Knowledge base</p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand wl-label leading-none">
                       Factual
@@ -857,9 +845,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="wl-label text-ink/40">
-                      Add fact
-                    </label>
+                    <label className="wl-label text-ink/40">Add fact</label>
                     <div className="flex gap-1.5">
                       <Input
                         type="text"
@@ -902,9 +888,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic lowercase text-lg text-ink leading-none">
                         ai auto-calibration
                       </h3>
-                      <p className="wl-label text-brand">
-                        Synthetic learning engine active
-                      </p>
+                      <p className="wl-label text-brand">Synthetic learning engine active</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -51,5 +51,9 @@ stats.html
 .cursor/skills/
 scratch/
 terminals/
+mcps/
 vapi_logs.jsonl.gz
 *.jsonl.gz
+
+# TypeScript incremental build state
+*.tsbuildinfo

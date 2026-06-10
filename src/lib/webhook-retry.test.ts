@@ -40,6 +40,12 @@ vi.mock("./sentry-events", () => ({
   },
 }));
 
+// The delivery path performs a real DNS lookup (SSRF guard) — stub it so the
+// test stays hermetic and doesn't depend on network/DNS availability.
+vi.mock("./webhook-validators", () => ({
+  resolveWebhookDeliveryHostname: vi.fn(async () => ({ status: "public" })),
+}));
+
 describe("Webhook Delivery & Retry Logic", () => {
   beforeEach(() => {
     vi.clearAllMocks();
