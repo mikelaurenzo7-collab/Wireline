@@ -8153,6 +8153,263 @@ select:focus {
   }
 }
 
+/* ── HERO WIRELINES — switchboard layer behind the landing hero ──────────
+   Wires draw in from the gutter robots to a central exchange, then signal
+   comets stream left → exchange → right. All paths use pathLength=1 so
+   dash values are normalized fractions of each wire. */
+.wl-wireline-layer {
+  /* Dim (not hide) the wires directly behind the headline for legibility. */
+  -webkit-mask-image: radial-gradient(
+    ellipse 52% 42% at 50% 32%,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.72) 55%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 52% 42% at 50% 32%,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.72) 55%,
+    #000 100%
+  );
+}
+
+.wl-wire-ambient {
+  stroke: var(--color-brand, #8b3fd6);
+  stroke-width: 1;
+  opacity: 0;
+  animation:
+    wl-wire-ambient-in 1.8s ease-out forwards,
+    wl-wire-ambient-drift 14s ease-in-out 1.8s infinite;
+}
+.wl-wire-ambient[data-index="1"] {
+  animation-delay: 0.5s, 4s;
+  animation-duration: 1.8s, 17s;
+}
+
+.wl-wire {
+  stroke: var(--color-brand, #8b3fd6);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: wl-wire-draw 1.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+.wl-wire[data-index="0"] {
+  animation-delay: 0.25s;
+}
+.wl-wire[data-index="1"] {
+  animation-delay: 0.45s;
+}
+.wl-wire[data-index="2"] {
+  animation-delay: 0.65s;
+}
+.wl-wire[data-index="3"] {
+  animation-delay: 0.85s;
+}
+
+.wl-wire-signal {
+  stroke: var(--color-brand, #8b3fd6);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.055 0.945;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation:
+    wl-wire-signal-in 0.8s ease 2s forwards,
+    wl-wire-signal-travel 3.2s linear infinite;
+}
+.wl-wire-signal[data-index="1"] {
+  animation-delay: 2.2s, 0.8s;
+}
+.wl-wire-signal[data-index="2"] {
+  animation-delay: 2.4s, 1.6s;
+}
+.wl-wire-signal[data-index="3"] {
+  animation-delay: 2.6s, 2.4s;
+}
+
+.wl-wire-node {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  background-color: var(--color-brand, #8b3fd6);
+  opacity: 0;
+  animation: wl-wire-node-blink 3.2s ease-in-out 1.9s infinite;
+}
+.wl-wire-node[data-index="1"] {
+  animation-delay: 2.7s;
+}
+.wl-wire-node[data-index="2"] {
+  animation-delay: 3.5s;
+}
+.wl-wire-node[data-index="3"] {
+  animation-delay: 4.3s;
+}
+
+.wl-exchange {
+  position: absolute;
+  /* Hub core sits at (32, 38) inside the 64×64 beacon SVG. */
+  margin-left: -32px;
+  margin-top: -38px;
+}
+.wl-exchange-core {
+  fill: var(--color-brand, #8b3fd6);
+  opacity: 0;
+  animation: wl-exchange-in 0.9s cubic-bezier(0.23, 1, 0.32, 1) 1.5s forwards;
+}
+.wl-exchange-mast {
+  stroke: var(--color-brand, #8b3fd6);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: wl-exchange-in 0.9s ease 1.7s forwards;
+}
+.wl-exchange-beacon {
+  fill: var(--color-brand, #8b3fd6);
+  opacity: 0;
+  animation: wl-exchange-beacon-pulse 3.2s ease-in-out 1.9s infinite;
+}
+.wl-exchange-ring {
+  stroke: var(--color-brand, #8b3fd6);
+  stroke-width: 1.25;
+  fill: none;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wl-exchange-ring-pulse 3.2s ease-in-out 2s infinite;
+}
+.wl-exchange-ring--outer {
+  stroke-width: 1;
+  animation-delay: 2.4s;
+}
+
+@keyframes wl-wire-draw {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0.32;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 0.32;
+  }
+}
+@keyframes wl-wire-signal-in {
+  to {
+    opacity: 0.8;
+  }
+}
+@keyframes wl-wire-signal-travel {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes wl-wire-ambient-in {
+  to {
+    opacity: 0.1;
+  }
+}
+@keyframes wl-wire-ambient-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(7px);
+  }
+}
+@keyframes wl-wire-node-blink {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  12% {
+    opacity: 0.85;
+  }
+}
+@keyframes wl-exchange-in {
+  to {
+    opacity: 0.62;
+  }
+}
+@keyframes wl-exchange-beacon-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  12% {
+    opacity: 0.95;
+  }
+}
+@keyframes wl-exchange-ring-pulse {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.06);
+  }
+}
+
+.dark .wl-wire,
+.dark .wl-wire-ambient,
+.dark .wl-wire-signal,
+.dark .wl-exchange-mast,
+.dark .wl-exchange-ring {
+  stroke: var(--primary, #9b5ce0);
+}
+.dark .wl-wire-node {
+  background-color: var(--primary, #9b5ce0);
+}
+.dark .wl-exchange-core,
+.dark .wl-exchange-beacon {
+  fill: var(--primary, #9b5ce0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-wire,
+  .wl-wire-ambient,
+  .wl-wire-signal,
+  .wl-wire-node,
+  .wl-exchange-core,
+  .wl-exchange-mast,
+  .wl-exchange-beacon,
+  .wl-exchange-ring {
+    animation: none !important;
+  }
+  /* Render the finished still: wires drawn, exchange lit, no motion. */
+  .wl-wire {
+    stroke-dashoffset: 0;
+    opacity: 0.32;
+  }
+  .wl-wire-ambient {
+    opacity: 0.1;
+  }
+  .wl-wire-signal {
+    opacity: 0;
+  }
+  .wl-wire-node {
+    opacity: 0.4;
+  }
+  .wl-exchange-core,
+  .wl-exchange-mast {
+    opacity: 0.55;
+  }
+  .wl-exchange-beacon {
+    opacity: 0.55;
+  }
+  .wl-exchange-ring {
+    opacity: 0.2;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    GOOGLE DESIGN SYSTEM BOOST (MATERIAL DESIGN 3 & DYNAMIC COLOR)
    Translucent Material You elevations, tactile CSS ripple effects,
