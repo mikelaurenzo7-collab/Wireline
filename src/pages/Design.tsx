@@ -54,12 +54,16 @@ export default function Design() {
     studioRef.current?.style.setProperty("--wl-painter-chat-w", `${chatWidth}px`);
   }, [chatWidth]);
 
+  // Persist the width, debounced so pointer-drag doesn't write localStorage per pixel.
   useEffect(() => {
-    try {
-      window.localStorage.setItem(PAINTER_CHAT_WIDTH_STORAGE, String(chatWidth));
-    } catch {
-      /* storage may be unavailable (private mode) — width stays in-session */
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(PAINTER_CHAT_WIDTH_STORAGE, String(chatWidth));
+      } catch {
+        /* storage may be unavailable (private mode) — width stays in-session */
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
   }, [chatWidth]);
 
   // Safety net: never leave the global resize cursor lock applied after unmount.

@@ -41,9 +41,11 @@ import {
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import {
   PAINTER_EMPTY_COPY,
+  PAINTER_LOAD_FAILED_COPY,
   PAINTER_STARTER_PROMPTS,
   WIRELINE_PAINTER_UI,
 } from "../lib/wireline-painter-design";
+import { EmptyState } from "./ui/EmptyState";
 import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../lib/wireline-director-design";
 import { operatorTurnHasDirectorReply } from "../lib/director-reply-utils";
 
@@ -133,6 +135,7 @@ export default function PainterWorkspace({
   const [isSending, setIsSending] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Studio state mapping
   const [designRendering, setDesignRendering] = useState(false);
@@ -166,6 +169,7 @@ export default function PainterWorkspace({
       return;
     }
     setIsLoading(true);
+    setLoadError(null);
     try {
       const r = await authFetch(directorMessagesPath);
       if (r.status === 401 || r.status === 403) return;
@@ -173,6 +177,7 @@ export default function PainterWorkspace({
       const data = await r.json();
       setMessages(Array.isArray(data.messages) ? data.messages : []);
     } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Try again");
       toastError("Load failed", err instanceof Error ? err.message : "Try again");
     } finally {
       setIsLoading(false);
@@ -488,6 +493,21 @@ export default function PainterWorkspace({
           <div className="h-full flex items-center justify-center">
             <Loader2 className="w-6 h-6 text-brand animate-spin" />
           </div>
+        ) : loadError && messages.length === 0 ? (
+          <EmptyState
+            icon={Paintbrush}
+            eyebrow={PAINTER_LOAD_FAILED_COPY.eyebrow}
+            title={PAINTER_LOAD_FAILED_COPY.title}
+            description={PAINTER_LOAD_FAILED_COPY.body}
+            actions={[
+              {
+                label: PAINTER_LOAD_FAILED_COPY.retryLabel,
+                onClick: () => void loadMessages(),
+                primary: true,
+              },
+            ]}
+            fill
+          />
         ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center gap-4 py-8">
             <SignalOrbFrame size="md" withBloom className="wl-painter-preview-orb mb-2">
@@ -660,7 +680,7 @@ export default function PainterWorkspace({
             placeholder={
               isSending
                 ? WIRELINE_PAINTER_UI.workingStatus
-                : "Describe your custom design (e.g. brutalist dashboard, neobrutalist signup form...)"
+                : WIRELINE_PAINTER_UI.composerPlaceholder
             }
             className="w-full resize-none border-0 bg-transparent shadow-none text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none px-4 py-3 leading-normal disabled:opacity-60 focus-visible:ring-0"
           />
