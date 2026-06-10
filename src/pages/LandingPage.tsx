@@ -5,6 +5,7 @@ import { ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import HeroWirelines from "../components/marketing/HeroWirelines";
 import HeroCallPreview from "../components/marketing/HeroCallPreview";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
@@ -118,6 +119,7 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
+          <HeroWirelines />
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
             <motion.div
