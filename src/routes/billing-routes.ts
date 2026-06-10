@@ -117,7 +117,12 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   amountCents: typeof inv.amount_due === "number" ? inv.amount_due : undefined,
                   metadata: { invoice_id: inv.id, attempt_count: inv.attempt_count },
                 })
-                .catch(() => {});
+                .catch((err) =>
+                  log.warn("billing audit log failed", {
+                    event: "payment_failed",
+                    error: getErrorMessage(err),
+                  }),
+                );
 
               // Dunning email — look up user email and notify so they can
               // update their card before the account suspends.
@@ -148,7 +153,12 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                         error: r.error,
                       });
                   })
-                  .catch(() => {});
+                  .catch((err) =>
+                    log.warn("payment_failed dunning email send threw", {
+                      userId: row.userId,
+                      error: getErrorMessage(err),
+                    }),
+                  );
               }
             }
           }
@@ -176,7 +186,12 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
                   amountCents: typeof inv.amount_paid === "number" ? inv.amount_paid : undefined,
                   metadata: { invoice_id: inv.id },
                 })
-                .catch(() => {});
+                .catch((err) =>
+                  log.warn("billing audit log failed", {
+                    event: "payment_succeeded",
+                    error: getErrorMessage(err),
+                  }),
+                );
             }
           }
         } catch {
@@ -708,7 +723,12 @@ router.post(
           customerId,
           ip: req.ip,
         })
-        .catch(() => {});
+        .catch((err) =>
+          log.warn("billing audit log failed", {
+            event: "checkout_started",
+            error: getErrorMessage(err),
+          }),
+        );
     } catch (e: any) {
       log.error("Checkout creation failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Checkout failed");
@@ -750,7 +770,12 @@ router.post(
           customerId: sub.stripeCustomerId,
           ip: req.ip,
         })
-        .catch(() => {});
+        .catch((err) =>
+          log.warn("billing audit log failed", {
+            event: "portal_opened",
+            error: getErrorMessage(err),
+          }),
+        );
     } catch (e: any) {
       // Stripe SDK errors carry rich diagnostic context that the old
       // `getErrorMessage(e)` collapsed to a single message string —
@@ -957,7 +982,12 @@ router.post(
           userId: req.user!.id,
           metadata: { reason: "extra_agents_changed", target, plan_id: plan.id },
         })
-        .catch(() => {});
+        .catch((err) =>
+          log.warn("billing audit log failed", {
+            event: "subscription_updated",
+            error: getErrorMessage(err),
+          }),
+        );
 
       res.json({
         ok: true,

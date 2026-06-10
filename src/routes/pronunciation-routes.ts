@@ -27,6 +27,7 @@ import { Router, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
+import { createRateLimiter } from "../middleware/api-rate-limits";
 import { log, drizzle } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import * as schema from "../db/schema";
@@ -38,6 +39,18 @@ import {
 } from "../lib/elevenlabs-client";
 
 const router = Router();
+
+// Reads are cheap; mutations fan out to ElevenLabs, so keep them tighter.
+const readLimiter = createRateLimiter({
+  bucket: "api:pronunciation-read",
+  windowMs: 60_000,
+  max: 120,
+});
+const mutateLimiter = createRateLimiter({
+  bucket: "api:pronunciation-mutate",
+  windowMs: 60_000,
+  max: 30,
+});
 
 interface DictEntry {
   from: string;
@@ -96,6 +109,7 @@ function toElevenLabsRules(entries: DictEntry[]): PronunciationRule[] {
 router.get(
   "/api/pronunciation-dicts",
   authenticateUser,
+  readLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const rows = await drizzle
@@ -123,6 +137,7 @@ router.get(
 router.post(
   "/api/pronunciation-dicts",
   authenticateUser,
+  mutateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const name = (req.body?.name || "").toString().trim();
@@ -203,6 +218,7 @@ router.post(
 router.patch(
   "/api/pronunciation-dicts/:id",
   authenticateUser,
+  mutateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = req.params.id;
@@ -308,6 +324,7 @@ router.patch(
 router.delete(
   "/api/pronunciation-dicts/:id",
   authenticateUser,
+  mutateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const id = req.params.id;
