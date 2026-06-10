@@ -583,11 +583,11 @@ export default function PainterWorkspace({
                   onClick={() => selectIteration(p)}
                   aria-pressed={isActive}
                   className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-medium truncate touch-press hover:scale-[1.05] transition-colors",
+                    "flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-medium truncate touch-press hover:scale-[1.05] transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1",
                     isActive
-                      ? "bg-brand text-white border-brand shadow-sm"
-                      : "bg-brand/5 text-brand border-brand/12 hover:bg-brand/10",
+                      ? "bg-brand text-white border-brand shadow-sm shadow-brand/20"
+                      : "bg-brand/5 text-brand border-brand/12 hover:bg-brand/10 hover:border-brand/25",
                   )}
                   title={p.title}
                 >

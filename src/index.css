@@ -5081,7 +5081,14 @@ body,
   min-height: 0;
 }
 .wl-painter-studio-chat {
+  width: 100%;
   background: color-mix(in srgb, var(--paper) 98%, transparent);
+}
+@media (min-width: 1024px) {
+  .wl-painter-studio-chat {
+    width: var(--wl-painter-chat-w, 30rem);
+    flex: 0 0 var(--wl-painter-chat-w, 30rem);
+  }
 }
 .wl-painter-studio-preview {
   background:
@@ -5139,6 +5146,12 @@ body,
 .wl-painter-divider:hover {
   background-color: color-mix(in srgb, var(--color-brand) 4%, transparent);
 }
+/* Global cursor + selection lock while dragging the divider. */
+body.wl-col-resizing,
+body.wl-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
 .wl-painter-divider-handle {
   width: 2px;
   height: 32px;
@@ -5156,6 +5169,12 @@ body,
   height: 48px;
   background: var(--color-brand);
   box-shadow: 0 0 8px color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+.wl-painter-divider:focus-visible .wl-painter-divider-handle {
+  width: 3px;
+  height: 44px;
+  background: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 22%, transparent);
 }
 .dark .wl-painter-divider-handle {
   background: rgba(255, 255, 255, 0.08);

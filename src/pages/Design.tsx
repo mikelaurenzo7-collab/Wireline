@@ -1,7 +1,7 @@
 /**
  * Wireline Design — Painter studio with split chat + immersive live preview.
  */
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { LayoutTemplate, Loader2, Paintbrush, Trash2 } from "lucide-react";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
@@ -22,6 +22,16 @@ import { SignalOrbFrame } from "../components/ui/SignalOrbFrame";
 
 const PREVIEW_STARTER_PROMPTS = PAINTER_STARTER_PROMPTS.slice(0, 3);
 
+// Split-pane chat width (desktop). Drag/keyboard adjustable, persisted per-browser.
+const PAINTER_CHAT_MIN_PX = 360;
+const PAINTER_CHAT_MAX_PX = 640;
+const PAINTER_CHAT_DEFAULT_PX = 480;
+const PAINTER_CHAT_WIDTH_STORAGE = "wl_painter_chat_w";
+
+function clampChatWidth(px: number): number {
+  return Math.min(PAINTER_CHAT_MAX_PX, Math.max(PAINTER_CHAT_MIN_PX, Math.round(px)));
+}
+
 export default function Design() {
   const [searchParams] = useSearchParams();
   const initialPrompt = searchParams.get("prompt")?.trim() || undefined;
@@ -29,6 +39,78 @@ export default function Design() {
   const [mobilePane, setMobilePane] = useState<"chat" | "preview">("chat");
   const [studioBridge, setStudioBridge] = useState<PainterStudioBridge | null>(null);
   useVisualViewportVar();
+
+  const studioRef = useRef<HTMLDivElement>(null);
+  const dragOriginRef = useRef<{ x: number; w: number } | null>(null);
+  const [chatWidth, setChatWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return PAINTER_CHAT_DEFAULT_PX;
+    const stored = Number(window.localStorage.getItem(PAINTER_CHAT_WIDTH_STORAGE));
+    return Number.isFinite(stored) && stored > 0 ? clampChatWidth(stored) : PAINTER_CHAT_DEFAULT_PX;
+  });
+
+  // Publish the chat-pane width as a CSS variable (CSP-safe — no inline style prop).
+  useEffect(() => {
+    studioRef.current?.style.setProperty("--wl-painter-chat-w", `${chatWidth}px`);
+  }, [chatWidth]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PAINTER_CHAT_WIDTH_STORAGE, String(chatWidth));
+    } catch {
+      /* storage may be unavailable (private mode) — width stays in-session */
+    }
+  }, [chatWidth]);
+
+  // Safety net: never leave the global resize cursor lock applied after unmount.
+  useEffect(() => () => document.body.classList.remove("wl-col-resizing"), []);
+
+  const handleDividerPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      dragOriginRef.current = { x: e.clientX, w: chatWidth };
+      e.currentTarget.setPointerCapture(e.pointerId);
+      document.body.classList.add("wl-col-resizing");
+    },
+    [chatWidth],
+  );
+
+  const handleDividerPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const origin = dragOriginRef.current;
+    if (!origin) return;
+    setChatWidth(clampChatWidth(origin.w + (e.clientX - origin.x)));
+  }, []);
+
+  const endDividerDrag = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragOriginRef.current) return;
+    dragOriginRef.current = null;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    document.body.classList.remove("wl-col-resizing");
+  }, []);
+
+  const handleDividerKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 48 : 16;
+    switch (e.key) {
+      case "ArrowLeft":
+        setChatWidth((w) => clampChatWidth(w - step));
+        break;
+      case "ArrowRight":
+        setChatWidth((w) => clampChatWidth(w + step));
+        break;
+      case "Home":
+        setChatWidth(PAINTER_CHAT_MIN_PX);
+        break;
+      case "End":
+        setChatWidth(PAINTER_CHAT_MAX_PX);
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+  }, []);
+
+  const resetChatWidth = useCallback(() => setChatWidth(PAINTER_CHAT_DEFAULT_PX), []);
 
   const previewTitle = useMemo(
     () => activePreview?.title || WIRELINE_PAINTER_UI.previewEmptyTitle,
@@ -61,6 +143,7 @@ export default function Design() {
   return (
     <ClientRouteViewport className="bg-paper dark:bg-velvet">
       <div
+        ref={studioRef}
         className="wl-painter-studio flex flex-col h-full min-h-0"
         data-accent={ROUTE_ACCENTS["/design"][0]}
       >
@@ -134,7 +217,6 @@ export default function Design() {
           <section
             className={cn(
               "wl-painter-studio-chat flex flex-col min-h-0 min-w-0 border-r border-brand/8",
-              "w-full lg:w-[min(100%,26rem)] xl:w-[min(100%,30rem)]",
               mobilePane !== "chat" && "hidden lg:flex",
             )}
             aria-label="Painter chat"
@@ -146,10 +228,23 @@ export default function Design() {
             />
           </section>
 
-          {/* Glassmorphic resize divider — desktop only */}
+          {/* Functional split-pane resizer — desktop only */}
           <div
-            className="wl-painter-divider hidden lg:flex items-center justify-center shrink-0 cursor-col-resize select-none group"
-            aria-hidden="true"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize chat and preview panes"
+            aria-valuemin={PAINTER_CHAT_MIN_PX}
+            aria-valuemax={PAINTER_CHAT_MAX_PX}
+            aria-valuenow={chatWidth}
+            tabIndex={0}
+            onPointerDown={handleDividerPointerDown}
+            onPointerMove={handleDividerPointerMove}
+            onPointerUp={endDividerDrag}
+            onPointerCancel={endDividerDrag}
+            onKeyDown={handleDividerKeyDown}
+            onDoubleClick={resetChatWidth}
+            title="Drag to resize · double-click to reset"
+            className="wl-painter-divider hidden lg:flex items-center justify-center shrink-0 cursor-col-resize select-none group touch-none focus-visible:outline-none"
           >
             <div className="wl-painter-divider-handle" />
           </div>
