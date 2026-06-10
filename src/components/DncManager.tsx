@@ -431,13 +431,9 @@ export default function DncManager() {
                             {entry.phone_raw || entry.phone}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="wl-micro-meta">
-                              {formatDate(entry.created_at)}
-                            </span>
+                            <span className="wl-micro-meta">{formatDate(entry.created_at)}</span>
                             <span className="w-1 h-1 rounded-full bg-black/15 dark:bg-white/15" />
-                            <span className="wl-micro-meta">
-                              {reasonLabel(entry.reason)}
-                            </span>
+                            <span className="wl-micro-meta">{reasonLabel(entry.reason)}</span>
                           </div>
                         </div>
                       </div>
@@ -522,9 +518,7 @@ export default function DncManager() {
 
             <div className="space-y-4 py-4">
               <div>
-                <label className="block wl-label-muted mb-2">
-                  Phone Number
-                </label>
+                <label className="block wl-label-muted mb-2">Phone Number</label>
                 <div className="relative">
                   <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
                   <Input
@@ -541,9 +535,7 @@ export default function DncManager() {
               </div>
 
               <div>
-                <label className="block wl-label-muted mb-2">
-                  Reason
-                </label>
+                <label className="block wl-label-muted mb-2">Reason</label>
                 <div className="relative">
                   <Select value={addReason} onValueChange={setAddReason}>
                     <SelectTrigger
