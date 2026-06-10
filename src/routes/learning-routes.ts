@@ -11,7 +11,9 @@ const router = Router();
 const limiter = createRateLimiter({ bucket: "api:agent-learning", windowMs: 60_000, max: 120 });
 
 const reviewSchema = z.object({
-  lesson_id: z.string(),
+  // BigInt(...) throws on non-numeric strings, which would surface as a 500.
+  // Validate the shape here so bad input is rejected with a 400 instead.
+  lesson_id: z.string().regex(/^\d+$/, "lesson_id must be a numeric string"),
   action: z.enum(["approve", "reject"]),
 });
 

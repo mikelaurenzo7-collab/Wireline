@@ -128,13 +128,13 @@ router.post(
       throw AppError.fromHttpStatus(503, "Claude is not configured.");
     }
     try {
+      const rawLimit = parseInt(String(req.body.limit || "20"), 10);
       const limit = Math.min(
         MAX_BATCH_SCORE_LIMIT,
-        Math.max(1, parseInt(String(req.body.limit || "20"), 10)),
+        Math.max(1, Number.isFinite(rawLimit) ? rawLimit : 20),
       );
-      const days = req.body.days
-        ? Math.min(90, Math.max(1, parseInt(String(req.body.days), 10)))
-        : undefined;
+      const rawDays = req.body.days ? parseInt(String(req.body.days), 10) : NaN;
+      const days = Number.isFinite(rawDays) ? Math.min(90, Math.max(1, rawDays)) : undefined;
       const since = days ? new Date(Date.now() - days * 86_400_000).toISOString() : undefined;
 
       const whereClauses = [

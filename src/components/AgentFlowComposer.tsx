@@ -595,9 +595,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 <Workflow className="w-5 h-5 text-brand" />
                 Conversation Flow
               </h3>
-              <p className="wl-label text-ink/40 mt-1">
-                Linear stage progression
-              </p>
+              <p className="wl-label text-ink/40 mt-1">Linear stage progression</p>
             </div>
             <ShadButton
               type="button"
@@ -660,9 +658,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {Array.from(new Set(FLOW_SNIPPETS.map((s) => s.category))).map((cat) => (
                   <div key={cat} className="space-y-1">
-                    <div className="wl-label text-brand/70">
-                      {cat}
-                    </div>
+                    <div className="wl-label text-brand/70">{cat}</div>
                     {FLOW_SNIPPETS.filter((s) => s.category === cat).map((snip) => (
                       <ShadButton
                         key={snip.id}
@@ -767,9 +763,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {step.name || "Unnamed Stage"}
                         </div>
                         {step.isEndNode && (
-                          <div className="wl-label text-rose-400 mt-0.5">
-                            Terminal Node
-                          </div>
+                          <div className="wl-label text-rose-400 mt-0.5">Terminal Node</div>
                         )}
                       </div>
 
@@ -781,7 +775,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleDuplicateStep(step.id, e)}
                         aria-label="Duplicate stage"
                         title="Duplicate stage"
-                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-ink/40 hover:text-brand hover:bg-brand/10"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-ink/40 hover:text-brand hover:bg-brand/10"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </ShadButton>
@@ -793,7 +787,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleRemoveStep(step.id, e)}
                         aria-label="Delete stage"
                         title="Delete stage"
-                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 text-ink/40 hover:text-rose-500 hover:bg-rose-500/10"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-ink/40 hover:text-rose-500 hover:bg-rose-500/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </ShadButton>
@@ -830,9 +824,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       placeholder="Stage Name"
                       className="bg-transparent text-xl font-display italic text-ink outline-none placeholder:text-ink/40 w-full"
                     />
-                    <div className="wl-label text-ink/40 mt-0.5">
-                      Stage definition
-                    </div>
+                    <div className="wl-label text-ink/40 mt-0.5">Stage definition</div>
                   </div>
                 </div>
 

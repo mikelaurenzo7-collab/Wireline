@@ -70,6 +70,7 @@ export default function DncManager() {
   const { success: toastSuccess, error: toastError, toast } = useToast();
   const [entries, setEntries] = useState<DncEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -86,12 +87,14 @@ export default function DncManager() {
 
   const refresh = async () => {
     setLoading(true);
+    setLoadErr(null);
     try {
       const r = await authFetch("/api/dnc");
       const out = await readApiJson<{ entries?: DncEntry[] }>(r);
       if (out.ok === false) throw new Error(out.error);
       setEntries(out.data.entries ?? []);
     } catch (e: unknown) {
+      setLoadErr(e instanceof Error ? e.message : "Could not load the DNC list.");
       toastError("Failed to load DNC list", e instanceof Error ? e.message : "Please try again.");
       setEntries([]);
     } finally {
@@ -380,6 +383,17 @@ export default function DncManager() {
                   icon={<Shield className="w-6 h-6" />}
                   label={OPS_CHANNEL_TOOLBAR.dnc.loading}
                 />
+              ) : loadErr ? (
+                <EmptyState
+                  icon={Shield}
+                  eyebrow="DNC list unavailable"
+                  title="Couldn't load the suppression list"
+                  description={loadErr}
+                  actions={[{ label: "Retry", onClick: refresh, primary: true }]}
+                  density="compact"
+                  withHalo={false}
+                  className="py-10"
+                />
               ) : filtered.length === 0 ? (
                 <EmptyState
                   icon={Shield}
@@ -437,7 +451,7 @@ export default function DncManager() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
                         <span
                           className={cn(
                             "wl-label px-2 py-0.5 rounded-full border",

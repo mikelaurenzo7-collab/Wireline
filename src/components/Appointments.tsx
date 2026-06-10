@@ -535,6 +535,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchErr, setFetchErr] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [showModal, setShowModal] = useState(false);
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
@@ -542,6 +543,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
 
   const fetchAll = async () => {
     setIsLoading(true);
+    setFetchErr(null);
     try {
       const [apptRes, agentRes] = await Promise.all([
         authFetch("/api/appointments").then((r) => r.json()),
@@ -551,6 +553,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
       setAgents(agentRes.agents || []);
     } catch (e) {
       logFetchError("Failed to fetch appointments:", e);
+      setFetchErr("Could not load appointments. Check your connection and retry.");
       toastError("Appointments unavailable", "Could not load appointments. Please refresh.");
     }
     setIsLoading(false);
@@ -586,7 +589,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
           setAppointments((prev) => prev.filter((a) => a.id !== id));
           setConfirmState(CLOSED_CONFIRM);
         } catch (e) {
-          console.error("Delete failed:", e);
+          logFetchError("Delete failed:", e);
           toastError("Delete failed", "Could not remove this appointment. Please try again.");
         } finally {
           setDeletingId(null);
@@ -607,7 +610,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
         setAppointments((prev) => prev.map((a) => (a.id === id ? data.appointment : a)));
       }
     } catch (e) {
-      console.error("Status update failed:", e);
+      logFetchError("Status update failed:", e);
       toastError("Status update failed", "Could not update appointment status.");
     }
   };
@@ -653,6 +656,19 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
           label={OPS_CHANNEL_TOOLBAR.appointments.loading}
           className="h-full min-h-[280px]"
         />
+      ) : fetchErr ? (
+        <div className="h-full min-h-[280px] flex items-center justify-center">
+          <EmptyState
+            icon={CalendarIcon}
+            eyebrow="Appointments unavailable"
+            title="Couldn't load appointments"
+            description={fetchErr}
+            actions={[{ label: "Retry", onClick: fetchAll, primary: true }]}
+            density="compact"
+            withHalo={false}
+            className="py-10"
+          />
+        </div>
       ) : viewMode === "calendar" ? (
         <Panel title="Calendar" hint="Monthly view" icon={CalendarIcon} flush>
           <CalendarGrid
