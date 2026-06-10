@@ -604,7 +604,7 @@ export default function OutboundDialer({ embedded: _embedded = false }: { embedd
         );
       case "sequences":
         return (
-          <Panel icon={Repeat} hint="Multi-touch cadences" title="" scroll>
+          <Panel icon={Repeat} title="" scroll>
             <Cadences />
           </Panel>
         );
