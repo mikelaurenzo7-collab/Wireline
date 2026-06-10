@@ -73,6 +73,20 @@ export const WL_DIRECTOR_CLASSES = {
   metaCaption: "wl-director-meta",
   /** Spotlight section label in live orchestra */
   spotlightLabel: "wl-director-spotlight-label",
+  /** Turn Ledger — collapsible strata inside a Director message */
+  turnStratum:
+    "wl-turn-stratum rounded-md border border-brand/10 bg-black/[0.02] dark:bg-white/[0.03] overflow-hidden",
+  turnStratumDeep: "border-l-2 border-l-[var(--wl-opus,#d97706)]",
+  turnStratumHeader:
+    "w-full h-auto justify-start gap-2 rounded-md px-2 py-1.5 hover:bg-brand/5 active:bg-brand/8",
+  turnSummaryStrip: "wl-turn-summary-strip flex flex-wrap items-center gap-1.5 mb-2",
+  turnSummaryChip:
+    "h-auto rounded-md border border-brand/15 bg-brand/[0.05] px-2 py-0.5 wl-micro-meta font-mono tabular-nums text-brand/80 hover:bg-brand/10 hover:border-brand/30",
+  actionLog: "wl-turn-action-log space-y-0.5 px-2 pb-2",
+  actionRow: "relative flex items-start gap-2 py-1 pl-4",
+  actionRowFailed: "text-rose-600 dark:text-rose-400",
+  actionDetail:
+    "mt-1 rounded-md border border-black/5 bg-black/[0.03] dark:bg-white/[0.04] px-2 py-1.5 font-mono text-[10px] leading-relaxed text-muted whitespace-pre-wrap break-words",
 } as const;
 
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
@@ -808,6 +822,29 @@ export const LIVE_FEED_LABELS = {
   proposalCount: (n: number) =>
     n === 1 ? "1 action awaiting approval" : `${n} actions awaiting approval`,
   researchEyebrow: "Grounded web sources",
+} as const;
+
+/** Turn Ledger — per-message activity summary + stratum copy */
+export const DIRECTOR_TURN_LEDGER_COPY = {
+  reasoningEyebrow: "Reasoning",
+  deepReasoningEyebrow: "Deep analysis",
+  actionsEyebrow: "Mission log",
+  sourcesEyebrow: "Grounded web sources",
+  summaryReasoned: (seconds: string) => `Reasoned ${seconds}`,
+  summaryActions: (n: number) => (n === 1 ? "1 action" : `${n} actions`),
+  summarySources: (n: number) => (n === 1 ? "1 source" : `${n} sources`),
+  summaryProposals: (n: number) => (n === 1 ? "1 proposal" : `${n} proposals`),
+  actionFailedPrefix: "Failed —",
+  actionDetailToggle: "Show detail",
+  actionDetailHide: "Hide detail",
+  actionKindLabels: {
+    research: "Research",
+    tool: "Tool",
+    deep: "Deep analysis",
+    design: "Design",
+    retry: "Recovery",
+    compose: "Compose",
+  },
 } as const;
 
 /** Director thread / session management copy */

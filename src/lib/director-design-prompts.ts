@@ -19,6 +19,7 @@ Requirements for creativeVision:
 - Write as a creative director pitching a bespoke agency concept — not generic SaaS templates
 - Name the business, audience, geography, and conversion goal explicitly
 - Specify palette (hex), typography pairing (Google Fonts), layout archetype, hero structure, section order
+- Compose horizontally: split heroes, multi-column bands, zig-zag media rows — never a tall centered single-column scroll
 - Call out trust signals, CTA hierarchy, and copy tone (American English)
 - Describe what makes this design unmistakably for THIS business — not a category cliché
 - 600–1200 words of dense, actionable art direction
@@ -62,6 +63,7 @@ Max 400 words. Be specific to the industry.`;
 
 export const DESIGN_LAYOUT_SCOUT_SYSTEM = `You are a layout scout for Wireline Spectrum Desk.
 Suggest 3 unconventional layout archetypes for this US local-business page — spatial rhythm, hero shape, section order.
+Favor horizontal composition: split heroes, multi-column bands, zig-zag media rows, side-scrolling rails — not tall single-column stacks.
 No HTML. Max 150 words. Avoid three-column feature-card grids.`;
 
 /** Pass 1 — implement the full vision spec (Claude Design high-fidelity mode). */
@@ -89,6 +91,21 @@ VISUAL QUALITY REQUIREMENTS (critical — outputs must look agency-grade, not wi
 - Vary section backgrounds (alternate between --wl-bg, --wl-surface, or accent washes) — never all-white.
 - Typography must feel premium: proper letter-spacing, line-height, font-weight hierarchy.
 
+PRODUCTION WEBSITE REQUIREMENTS (the render must be deployable as a real site, not a mock):
+- <head> must include <meta charset>, <meta name="viewport">, a real <title>, and a <meta name="description"> written for this business.
+- Sticky header nav with a text/SVG logo mark and working anchor links; collapses gracefully on mobile (CSS-only).
+- Complete footer: nav columns, contact info (phone as tel: link), service area, and copyright line — never a one-line stub.
+- At least 6 distinct sections between hero and footer (e.g. trust row, services, process, testimonials, FAQ, final CTA band).
+- Imagery via CSS only: layered gradients, patterns, or inline SVG — never external <img> URLs that can 404 in the sandbox.
+- CSS-only micro-interactions (transitions, transform on hover, focus-visible rings) wrapped in @media (prefers-reduced-motion: no-preference) where animated.
+- Color contrast meets WCAG AA; every interactive target ≥44px tall.
+
+HORIZONTAL COMPOSITION (strict — avoid the long vertical single-column scroll):
+- Default to landscape-oriented section design: split heroes (copy beside visual), 2–4 column bands, wide asymmetric grids.
+- On desktop widths, no section's content column may be a lone centered stack when its content can sit side-by-side — pair text with visuals, stats, or cards horizontally.
+- Use horizontal rhythm devices: edge-to-edge marquee/trust strips, side-scrolling card rails (overflow-x with scroll-snap), zig-zag alternating media/text rows.
+- Keep total page height tight — prefer wider, denser sections over stacking more rows; collapse to single column only under the mobile breakpoint.
+
 No markdown fences. No commentary outside HTML.`;
 
 /** Pass 2+ — surgical refinement on incumbent HTML. */
@@ -113,7 +130,7 @@ Format:
 ## Must fix (max 6 bullets, actionable)
 ## Polish (max 3 bullets)
 
-Be harsh on text-link CTAs, flat wireframes, missing trust row, weak hero hierarchy.`;
+Be harsh on text-link CTAs, flat wireframes, missing trust row, weak hero hierarchy, and vertical single-column stacking where content should sit side-by-side on desktop.`;
 
 export const DESIGN_PRODUCTION_FINISHER_SYSTEM = `You are the production finisher on Wireline Spectrum Desk (MiniMax M3).
 Apply critic notes, Opus vision, and pass focus. Output ONLY the complete polished HTML document.
@@ -220,7 +237,9 @@ export function buildDesignRefinementUserPrompt(input: {
     parts.push(`## Must fix\n${input.revisionNotes.trim().slice(0, 2_000)}`);
   }
   if (input.architectLabel) {
-    parts.push(`## Challenger lane\n${input.architectLabel} — beat incumbent layout without generic templates.`);
+    parts.push(
+      `## Challenger lane\n${input.architectLabel} — beat incumbent layout without generic templates.`,
+    );
   }
   parts.push(`## Incumbent HTML\n${htmlSlice}`);
   return parts.join("\n\n");
@@ -355,7 +374,10 @@ Visual polish checklist (you MUST verify and fix each):
 - At least one @media query for responsive behavior (min-width or max-width)
 - Section backgrounds must vary — alternate light/accent/dark surfaces
 - Typography hierarchy: distinct display font for headlines, UI sans for body, proper weight/size scale
-- Google Fonts <link> must load fonts matching the brief — not the same pair on every page`;
+- Google Fonts <link> must load fonts matching the brief — not the same pair on every page
+- Production completeness: real <title> + meta description, sticky nav with logo, full footer (nav columns, tel: contact, copyright), ≥6 sections hero-to-footer
+- No external <img> URLs — imagery is layered CSS gradients, patterns, or inline SVG only
+- Horizontal composition on desktop: split hero, multi-column section bands, zig-zag media/text rows — fix any section that stacks as a lone centered column when it could sit side-by-side`;
 
 /** @deprecated HTML in structured tools truncates — use DESIGN_OPUS_IMPLEMENT_SYSTEM + runCompletion */
 export const DESIGN_OPUS_FINISH_SYSTEM = DESIGN_OPUS_IMPLEMENT_SYSTEM;

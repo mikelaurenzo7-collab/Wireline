@@ -7,6 +7,7 @@ import { LayoutTemplate, Loader2, Paintbrush, Trash2 } from "lucide-react";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import PainterWorkspace from "../components/PainterWorkspace";
 import type { PainterStudioBridge } from "../components/PainterWorkspace";
+import PainterIntegrationRail from "../components/PainterIntegrationRail";
 import DirectorStitchPreviewStudio from "../components/director/DirectorStitchPreviewStudio";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 import { ROUTE_ACCENTS } from "../constants/brand-colors";
@@ -162,6 +163,7 @@ export default function Design() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <PainterIntegrationRail className="hidden sm:flex" />
             {(studioBridge?.messageCount ?? 0) > 0 && (
               <ShadButton
                 type="button"
@@ -293,7 +295,7 @@ export default function Design() {
                   <div className="w-full max-w-md space-y-2">
                     <p className="wl-label text-brand/60">
                       {PAINTER_EMPTY_COPY.previewStarterEyebrow}
-                    </p>
+                    </p>{" "}
                     <div className="flex flex-col gap-2">
                       {PREVIEW_STARTER_PROMPTS.map((prompt) => (
                         <ShadButton
@@ -310,6 +312,7 @@ export default function Design() {
                       ))}
                     </div>
                   </div>
+                  <PainterIntegrationRail className="sm:hidden mt-2" />
                 </div>
               )}
             </div>

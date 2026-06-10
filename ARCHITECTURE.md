@@ -18,6 +18,7 @@ Claude tiers for different jobs, picked by where the user is waiting:
 |-------|----------|-------|---------|----------------|
 | **Voice Runtime** | Anthropic | **Claude Sonnet 4.6** | Live inbound + outbound calls | Smartest model in the latency class voice can tolerate. TTFT ~300–500 ms against an 18 KB system prompt; perceived dead air after STT + TTS lands at ~700–900 ms — under the "did they hang up?" threshold. |
 | **Voice Fallback** | Google | Gemini 3.5 Flash | Availability backup when Anthropic is degraded | Sub-250 ms latency; speed-only, not depth. |
+| **Last-Resort Fallback** | OpenRouter | DeepSeek Chat | Tertiary backup when both Anthropic and Gemini fail or are unconfigured (`claude-client.ts` proxy) | Keeps reasoning paths alive during multi-provider outages; quality floor, not a steady-state tier. |
 | **Reasoning Layer** | Anthropic | **Claude Opus 4.7** | Pre-call briefs, post-call coaching + analysis, daily brief, structured intent extraction, integration orchestration | Deepest adaptive reasoning available. These paths run *before* or *after* the call — the user never waits on Opus, so its 800–1500 ms TTFT is invisible and its depth pays off on every artefact. |
 | **Simple Tasks** | Anthropic | Claude Haiku 4.5 | Sentiment, classification, extraction stubs, label fan-out | Cheap + fast; selected via `selectModelForTask("simple")`. |
 | **Grounded Search** | Google | Gemini 2.5 Flash | `gemini_ground` tool (web lookup with citations) | Native `googleSearchRetrieval` tool with source grounding. |
@@ -170,6 +171,7 @@ production requirements:
 - `POSTGRES_URL` — Supabase pooler (transaction mode)
 - `ANTHROPIC_API_KEY` — Sonnet 4.6 + Opus 4.7
 - `GEMINI_API_KEY` — Gemini Flash (voice fallback) + grounded search
+- `OPENROUTER_API_KEY` — optional last-resort LLM fallback (DeepSeek Chat)
 - `VAPI_PRIVATE_KEY` + `VAPI_WEBHOOK_SECRET` — voice runtime
 - `INTERNAL_JWT_SECRET` — session JWTs
 - `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` — billing

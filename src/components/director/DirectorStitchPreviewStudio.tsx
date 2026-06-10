@@ -33,6 +33,10 @@ import { WL_DIRECTOR_CLASSES, WIRELINE_STITCH_UI } from "../../lib/wireline-dire
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Input } from "../ui/shadcn/Input";
 import { useToast } from "../../contexts/ToastContext";
+import {
+  useDesignIntegrations,
+  type DesignIntegrationProvider,
+} from "../../hooks/useDesignIntegrations";
 
 export interface DirectorStitchPreviewStudioProps {
   preview: DirectorPreviewMeta;
@@ -47,24 +51,10 @@ export interface DirectorStitchPreviewStudioProps {
 
 type StitchTab = "preview" | "screenshot" | "code" | "export";
 
-type DesignIntegrationProvider = "figma" | "canva" | "github";
-
-interface DesignIntegrationStatus {
-  provider: DesignIntegrationProvider;
-  connected: boolean;
-  connectedAccount?: string;
-}
-
 interface GithubRepoSummary {
   fullName: string;
   defaultBranch: string;
 }
-
-const OAUTH_URL_BY_PROVIDER: Record<DesignIntegrationProvider, string> = {
-  figma: "/api/oauth/figma/url",
-  canva: "/api/oauth/canva/url",
-  github: "/api/oauth/github/url",
-};
 
 const CONNECT_LABEL_BY_PROVIDER: Record<DesignIntegrationProvider, string> = {
   figma: WIRELINE_STITCH_UI.connectFigmaLabel,
@@ -202,10 +192,8 @@ export default function DirectorStitchPreviewStudio({
   const loadStartRef = useRef<number>(Date.now());
   const [elapsedMs, setElapsedMs] = useState(0);
   const [exportBusy, setExportBusy] = useState<Record<string, true>>({});
-  const [integrations, setIntegrations] = useState<DesignIntegrationStatus[]>([]);
   const [githubRepos, setGithubRepos] = useState<GithubRepoSummary[]>([]);
   const [selectedRepo, setSelectedRepo] = useState("");
-  const [connectBusy, setConnectBusy] = useState<DesignIntegrationProvider | null>(null);
   const [iframeFailed, setIframeFailed] = useState(false);
   const [deviceOverride, setDeviceOverride] = useState<DirectorPreviewMeta["deviceType"] | "AUTO">(
     "AUTO",
@@ -227,18 +215,32 @@ export default function DirectorStitchPreviewStudio({
   const reduceMotion = useReducedMotion();
 
   const hasExportableArtifact = Boolean(ready.htmlArtifactId || ready.imageArtifactId);
-  const githubConnected = integrations.some((i) => i.provider === "github" && i.connected);
 
-  const refreshIntegrations = useCallback(async () => {
-    try {
-      const r = await authFetch("/api/design/integrations");
-      const out = await readApiJson<{ integrations?: DesignIntegrationStatus[] }>(r);
-      if (out.ok === false) return;
-      setIntegrations(out.data.integrations ?? []);
-    } catch {
-      // Non-blocking — export downloads still work without integrations.
-    }
-  }, []);
+  const handleIntegrationConnected = useCallback(
+    (provider: DesignIntegrationProvider) => {
+      toastSuccess(
+        "Connected",
+        `${CONNECT_LABEL_BY_PROVIDER[provider] ?? provider} is ready for export.`,
+      );
+    },
+    [toastSuccess],
+  );
+  const handleConnectError = useCallback(
+    (_provider: DesignIntegrationProvider, message: string) => {
+      toastError("Connection failed", message);
+    },
+    [toastError],
+  );
+  const handlePopupBlocked = useCallback(() => {
+    toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
+  }, [toastWarning]);
+
+  const { integrations, connectBusy, connectIntegration } = useDesignIntegrations({
+    onConnected: handleIntegrationConnected,
+    onConnectError: handleConnectError,
+    onPopupBlocked: handlePopupBlocked,
+  });
+  const githubConnected = integrations.some((i) => i.provider === "github" && i.connected);
 
   const refreshGithubRepos = useCallback(async () => {
     try {
@@ -254,27 +256,6 @@ export default function DirectorStitchPreviewStudio({
   }, []);
 
   useEffect(() => {
-    void refreshIntegrations();
-  }, [refreshIntegrations]);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type !== "DESIGN_OAUTH_SUCCESS") return;
-      const provider = event.data.provider as DesignIntegrationProvider | undefined;
-      void refreshIntegrations();
-      if (provider) {
-        toastSuccess(
-          "Connected",
-          `${CONNECT_LABEL_BY_PROVIDER[provider] ?? provider} is ready for export.`,
-        );
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [refreshIntegrations, toastSuccess]);
-
-  useEffect(() => {
     if (!githubConnected) {
       setGithubRepos([]);
       setSelectedRepo("");
@@ -282,47 +263,6 @@ export default function DirectorStitchPreviewStudio({
     }
     void refreshGithubRepos();
   }, [githubConnected, refreshGithubRepos]);
-
-  const openOAuthPopup = useCallback(
-    (url: string) => {
-      const width = Math.min(600, window.innerWidth * 0.9);
-      const height = Math.min(700, window.innerHeight * 0.8);
-      const left = (window.innerWidth - width) / 2;
-      const top = (window.innerHeight - height) / 2;
-      const win = window.open(
-        url,
-        "design_oauth_popup",
-        `width=${width},height=${height},left=${left},top=${top}`,
-      );
-      if (!win) {
-        toastWarning("Popup blocked", "Allow popups for this site to connect your account.");
-      }
-    },
-    [toastWarning],
-  );
-
-  const connectIntegration = useCallback(
-    async (provider: DesignIntegrationProvider) => {
-      setConnectBusy(provider);
-      try {
-        const r = await authFetch(OAUTH_URL_BY_PROVIDER[provider]);
-        const out = await readApiJson<{ url?: string; error?: string }>(r);
-        if (out.ok === false) throw new Error(out.error);
-        if (out.data.error) throw new Error(out.data.error);
-        const url = out.data.url;
-        if (!url) throw new Error("OAuth URL missing");
-        openOAuthPopup(url);
-      } catch (e) {
-        toastError(
-          "Connection failed",
-          e instanceof Error ? e.message : `Could not start ${provider} OAuth.`,
-        );
-      } finally {
-        setConnectBusy(null);
-      }
-    },
-    [openOAuthPopup, toastError],
-  );
 
   const buildExportPayload = useCallback(() => {
     return {

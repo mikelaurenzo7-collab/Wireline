@@ -28,32 +28,39 @@ export function DirectorResearchSources({ sources }: { sources: ResearchSource[]
           {sources.length} source{sources.length !== 1 ? "s" : ""}
         </span>
       </div>
-      <ul className="flex flex-col gap-1.5">
-        {sources.map((s, i) => {
-          const href = safeExternalHref(s.uri);
-          return (
-            <li key={`${s.uri || s.title}-${i}`}>
-              {href ? (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-2 wl-micro-meta text-brand hover:text-brand/80 transition-colors"
-                >
-                  <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
-                  <span className="underline-offset-2 group-hover:underline line-clamp-2">
-                    {s.title || href}
-                  </span>
-                </a>
-              ) : (
-                <span className="wl-micro-meta--muted line-clamp-2">
-                  {s.title || s.uri || "Source"}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <ResearchSourceList sources={sources} />
     </div>
+  );
+}
+
+/** Bare citation list — reused inside the Turn Ledger sources stratum. */
+export function ResearchSourceList({ sources }: { sources: ResearchSource[] }) {
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {sources.map((s, i) => {
+        const href = safeExternalHref(s.uri);
+        return (
+          <li key={`${s.uri || s.title}-${i}`}>
+            {href ? (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-start gap-2 wl-micro-meta text-brand hover:text-brand/80 transition-colors"
+              >
+                <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100" />
+                <span className="underline-offset-2 group-hover:underline line-clamp-2">
+                  {s.title || href}
+                </span>
+              </a>
+            ) : (
+              <span className="wl-micro-meta--muted line-clamp-2">
+                {s.title || s.uri || "Source"}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

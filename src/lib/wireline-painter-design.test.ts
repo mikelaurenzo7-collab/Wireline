@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  PAINTER_INTEGRATION_RAIL,
   PAINTER_STARTER_PROMPTS,
   PAINTER_STARTER_PROMPTS_FEATURED_COUNT,
   WIRELINE_PAINTER_UI,
@@ -11,6 +12,12 @@ describe("WIRELINE_PAINTER_UI", () => {
       PAINTER_STARTER_PROMPTS_FEATURED_COUNT,
     );
     expect(PAINTER_STARTER_PROMPTS.every((p) => p.label.length > 10)).toBe(true);
+  });
+
+  it("ships export-lane rail copy", () => {
+    expect(PAINTER_INTEGRATION_RAIL.ariaLabel.length).toBeGreaterThan(5);
+    expect(PAINTER_INTEGRATION_RAIL.connectPrefix).toMatch(/connect/i);
+    expect(PAINTER_INTEGRATION_RAIL.connectedHint).toMatch(/connected/i);
   });
 
   it("builds handoff link with encoded prompt", () => {
