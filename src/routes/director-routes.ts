@@ -65,7 +65,10 @@ import {
   buildDirectorMetadataFromTurn,
   packDirectorMetadata,
   parseDirectorMetadata,
+  type DirectorTurnActionKind,
+  type DirectorTurnActionMeta,
 } from "../lib/director-message-metadata";
+import { wantsDirectorWebResearch } from "../lib/director-web-research";
 import {
   buildSignedDownloadUrl,
   buildSignedPreviewUrl,
@@ -183,6 +186,48 @@ function directorTurnToStreamDone(turn: DirectorTurnResult) {
 }
 
 /** Emit `done` immediately, then persist in the background — avoids proxy drops during artifact DB work. */
+/** Per-turn mission log — tracks Director actions and mirrors them onto the SSE stream. */
+function createTurnActionTracker(sse?: SseStreamHandle) {
+  const actions: DirectorTurnActionMeta[] = [];
+  const startedAt = new Map<string, number>();
+  let seq = 0;
+
+  const start = (kind: DirectorTurnActionKind, label: string, detail?: string): string => {
+    const id = `ta-${++seq}`;
+    const action: DirectorTurnActionMeta = { id, kind, label, detail, status: "running" };
+    actions.push(action);
+    startedAt.set(id, Date.now());
+    sse?.write("action_start", action as unknown as Record<string, unknown>);
+    return id;
+  };
+
+  const end = (
+    id: string,
+    status: Exclude<DirectorTurnActionMeta["status"], "running">,
+    patch?: { detail?: string; durationMs?: number },
+  ): void => {
+    const action = actions.find((a) => a.id === id);
+    if (!action) return;
+    action.status = status;
+    const began = startedAt.get(id);
+    action.durationMs = patch?.durationMs ?? (began ? Date.now() - began : undefined);
+    if (patch?.detail) action.detail = patch.detail;
+    sse?.write("action_end", action as unknown as Record<string, unknown>);
+  };
+
+  const record = (
+    kind: DirectorTurnActionKind,
+    label: string,
+    status: Exclude<DirectorTurnActionMeta["status"], "running">,
+    patch?: { detail?: string; durationMs?: number },
+  ): void => {
+    const id = start(kind, label, patch?.detail);
+    end(id, status, patch);
+  };
+
+  return { actions, start, end, record };
+}
+
 async function finalizeDirectorStreamTurn(
   sse: SseStreamHandle,
   userId: string,
@@ -311,6 +356,7 @@ function jsonFromPersistedDirectorTurn(
     focusAgentName: meta.coachAgentName,
     mode: meta.mode,
     researchSources: meta.researchSources,
+    turnActions: meta.turnActions,
     deliverableArtifact: meta.deliverableArtifact,
     artifacts: meta.deliverableArtifact ? [meta.deliverableArtifact] : undefined,
     stitchSession: meta.stitchSession,
@@ -832,6 +878,8 @@ router.post(
         | undefined;
       let stitchAssetsPending = false;
 
+      const turnLog = createTurnActionTracker();
+
       if (approval && featureFlags.toolExecution) {
         if (!approval.approved) {
           reply =
@@ -842,6 +890,12 @@ router.post(
           previews = executed.previews ?? [];
           artifacts = executed.artifacts ?? [];
           toolTelemetry = executed.telemetry;
+          turnLog.record(
+            "tool",
+            `Ran ${executed.telemetry.tool}`,
+            executed.telemetry.success ? "done" : "failed",
+            { durationMs: executed.telemetry.latencyMs },
+          );
           log.info("director tool call", {
             userId: req.user.id,
             tool: executed.telemetry.tool,
@@ -1029,6 +1083,7 @@ router.post(
           focusAgentName: coachAgentName,
           mode,
           researchSources,
+          turnActions: turnLog.actions.length > 0 ? turnLog.actions : undefined,
           artifacts,
           stitchSession,
           stitchAssetsPending,
@@ -1100,6 +1155,7 @@ router.post(
         reasoning,
         thinkingDurationMs,
         researchSources,
+        turnActions: turnLog.actions.length > 0 ? turnLog.actions : undefined,
         deliverableArtifact: turnPayload.deliverableArtifact,
         stitchSession,
         stitchAssetsPending,
@@ -1189,6 +1245,8 @@ router.post(
         focusAgentId: routingPreview.focusAgentId,
         focusAgentName: routingPreview.focusAgentName,
       });
+
+      const turnLog = createTurnActionTracker(sse);
 
       const history = priorMessages.messages.reverse().map((m) => ({
         role: m.role === "operator" ? ("operator" as const) : ("director" as const),
@@ -1281,6 +1339,7 @@ router.post(
       }
 
       let stitchMetaSent = false;
+      let designActionId: string | undefined;
       const sendStitchMeta = () => {
         if (!stitchMetaSent) {
           stitchMetaSent = true;
@@ -1292,6 +1351,7 @@ router.post(
             mode: "fleet",
           });
           sse.write("thinking_start", {});
+          designActionId = turnLog.start("design", "Design studio render");
         }
       };
 
@@ -1314,6 +1374,9 @@ router.post(
       if (stitchPath.kind === "design") {
         const stitchTurn = stitchPath.turn;
         sendStitchMeta();
+        if (designActionId) {
+          turnLog.end(designActionId, "done", { durationMs: stitchTurn.durationMs });
+        }
         sse.write("thinking_end", {
           thinking: stitchTurn.thinkingSummary,
           durationMs: stitchTurn.durationMs,
@@ -1329,6 +1392,7 @@ router.post(
           mode: "fleet",
           thinkingDurationMs: stitchTurn.durationMs,
           reasoning: stitchTurn.thinkingSummary,
+          turnActions: turnLog.actions,
         };
         await finalizeDirectorStreamTurn(
           sse,
@@ -1345,6 +1409,10 @@ router.post(
 
       if (stitchPath.kind === "llm-fallback") {
         stitchDesignFallback = stitchPath.fallback;
+        if (designActionId) {
+          turnLog.end(designActionId, "failed", { detail: "Falling back to deliverable LLM" });
+          designActionId = undefined;
+        }
         sse.write("thinking_start", {});
         sse.write("thinking_chunk", { text: DESIGN_LLM_REASONING });
         sse.write("thinking_end", {
@@ -1352,6 +1420,11 @@ router.post(
           durationMs: 0,
         });
       }
+
+      const researchExpected = wantsDirectorWebResearch(operatorMessage);
+      const researchActionId = researchExpected
+        ? turnLog.start("research", "Grounded web research", operatorMessage.slice(0, 140))
+        : undefined;
 
       const streamCtx = await buildDirectorStreamContext({
         userId: req.user.id,
@@ -1365,7 +1438,26 @@ router.post(
         designRenderFallback: Boolean(stitchDesignFallback),
       });
 
+      if (researchActionId) {
+        const sourceCount = streamCtx.researchSources?.length ?? 0;
+        turnLog.end(researchActionId, sourceCount > 0 ? "done" : "failed", {
+          detail:
+            sourceCount > 0
+              ? `${sourceCount} source${sourceCount === 1 ? "" : "s"} grounded`
+              : "No grounded sources returned",
+        });
+        if (sourceCount > 0) {
+          sse.write("sources", { sources: streamCtx.researchSources });
+        }
+      }
+
       const streamMeta = directorStreamMetaModel(streamCtx);
+      if (streamMeta.deep) {
+        turnLog.record("deep", "Deep analysis engaged", "done", {
+          detail: "Routed to extended reasoning for this turn",
+          durationMs: 0,
+        });
+      }
       sse.write("meta", {
         model: streamMeta.model,
         modelLabel: stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : streamCtx.modelLabel,
@@ -1380,30 +1472,56 @@ router.post(
       let streamFinalized = false;
       try {
         const streamWireline = streamCtx.llmProvider === "wireline";
-        const { result, thinking, thinkingDurationMs } = await runDirectorStreamLlm(
-          streamCtx,
-          {
-            onThinkingStart: streamWireline ? () => sse.write("thinking_start", {}) : undefined,
-            onThinkingChunk: streamWireline
-              ? (text) => sse.write("thinking_chunk", { text })
-              : undefined,
-            onThinkingEnd: streamWireline
-              ? (fullText, durationMs) =>
-                  sse.write("thinking_end", { thinking: fullText, durationMs })
-              : undefined,
-            onResult: (r) => {
-              const rec = r as Record<string, unknown>;
-              const preview =
-                typeof rec.reply === "string"
-                  ? { reply: rec.reply }
-                  : { reply: typeof r === "string" ? r : "" };
-              sse.write("reply", preview);
-            },
-          },
-          { signal: streamAbort.signal },
+        const composeActionId = turnLog.start(
+          "compose",
+          stitchDesignFallback ? "Composing design deliverable" : "Composing reply",
+          streamCtx.modelLabel,
         );
+        let composeEnded = false;
+        const endCompose = (
+          status: "done" | "failed",
+          patch?: { detail?: string; durationMs?: number },
+        ) => {
+          if (composeEnded) return;
+          composeEnded = true;
+          turnLog.end(composeActionId, status, patch);
+        };
+        let result: Record<string, unknown> | undefined;
+        let thinking: string | null | undefined;
+        let thinkingDurationMs: number | undefined;
+        try {
+          const llmRun = await runDirectorStreamLlm(
+            streamCtx,
+            {
+              onThinkingStart: streamWireline ? () => sse.write("thinking_start", {}) : undefined,
+              onThinkingChunk: streamWireline
+                ? (text) => sse.write("thinking_chunk", { text })
+                : undefined,
+              onThinkingEnd: streamWireline
+                ? (fullText, durationMs) =>
+                    sse.write("thinking_end", { thinking: fullText, durationMs })
+                : undefined,
+              onResult: (r) => {
+                const rec = r as Record<string, unknown>;
+                const preview =
+                  typeof rec.reply === "string"
+                    ? { reply: rec.reply }
+                    : { reply: typeof r === "string" ? r : "" };
+                sse.write("reply", preview);
+              },
+            },
+            { signal: streamAbort.signal },
+          );
+          result = (llmRun.result || {}) as Record<string, unknown>;
+          thinking = llmRun.thinking;
+          thinkingDurationMs = llmRun.thinkingDurationMs;
+          endCompose("done");
+        } catch (llmErr) {
+          endCompose("failed", { detail: getErrorMessage(llmErr) });
+          throw llmErr;
+        }
 
-        let normalized = streamCtx.normalize((result || {}) as Record<string, unknown>);
+        let normalized = streamCtx.normalize(result);
         let reply = normalized.reply || "";
 
         if (
@@ -1415,6 +1533,11 @@ router.post(
           log.warn("director stream deliverable stub — retrying on sonnet", {
             userId: req.user.id,
           });
+          const retryActionId = turnLog.start(
+            "retry",
+            "Retrying deliverable on Sonnet",
+            "First pass returned a stub reply",
+          );
           const retry = await planDirectorTurnResilient({
             userId: req.user.id,
             operatorMessage,
@@ -1445,6 +1568,9 @@ router.post(
               modelId: retry.modelId,
             };
             reply = retry.reply;
+            turnLog.end(retryActionId, "done", { detail: "Recovered full deliverable" });
+          } else {
+            turnLog.end(retryActionId, "failed", { detail: "Retry still returned a stub" });
           }
         }
 
@@ -1496,6 +1622,7 @@ router.post(
           reasoning: stitchDesignFallback ? DESIGN_LLM_REASONING : thinking,
           thinkingDurationMs,
           researchSources: streamCtx.researchSources,
+          turnActions: turnLog.actions,
           ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
         };
 
@@ -1537,6 +1664,11 @@ router.post(
         }
         log.error("director stream failed", { error: getErrorMessage(e) });
         const deliverableTurn = wantsLongDeliverable(operatorMessage) && !stitchDesignFallback;
+        const fallbackActionId = turnLog.start(
+          "retry",
+          "Recovering with non-streaming fallback",
+          getErrorMessage(e),
+        );
         try {
           const turn = await planDirectorTurnResilient({
             userId: req.user.id,
@@ -1565,18 +1697,20 @@ router.post(
             thinking: turn.reasoning ?? "",
             durationMs: turn.thinkingDurationMs ?? 0,
           });
+          turnLog.end(fallbackActionId, "done");
           await finalizeDirectorStreamTurn(
             sse,
             req.user.id,
             operatorMessage,
             turn.reply,
-            directorTurnToStreamDone(turn),
+            { ...directorTurnToStreamDone(turn), turnActions: turnLog.actions },
             turn.reasoning,
             featureFlags,
             threadKey,
           );
         } catch (fallbackErr) {
           if (fallbackErr instanceof AppError) throw fallbackErr;
+          turnLog.end(fallbackActionId, "failed", { detail: getErrorMessage(fallbackErr) });
           log.error("director stream fallback failed", {
             error: getErrorMessage(fallbackErr),
           });

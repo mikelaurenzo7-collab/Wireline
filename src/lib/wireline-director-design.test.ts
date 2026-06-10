@@ -18,6 +18,7 @@ import {
   WIRELINE_DESIGN_UI,
   WIRELINE_STITCH_UI,
   LIVE_FEED_LABELS,
+  DIRECTOR_TURN_LEDGER_COPY,
   DIRECTOR_SESSION_COPY,
   LIVE_ORCHESTRA_COPY,
   DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
@@ -61,6 +62,28 @@ describe("Wireline Director design contract", () => {
     expect(WL_DIRECTOR_CLASSES.microLabel).toContain("wl-director-micro");
     expect(WL_DIRECTOR_CLASSES.metaCaption).toContain("wl-director-meta");
     expect(WL_DIRECTOR_CLASSES.spotlightLabel).toContain("wl-director-spotlight-label");
+  });
+
+  it("exposes Turn Ledger stratum + mission log class hooks", () => {
+    expect(WL_DIRECTOR_CLASSES.turnStratum).toContain("wl-turn-stratum");
+    expect(WL_DIRECTOR_CLASSES.turnStratum).toContain("rounded-md");
+    expect(WL_DIRECTOR_CLASSES.turnStratumDeep).toContain("border-l-2");
+    expect(WL_DIRECTOR_CLASSES.turnSummaryStrip).toContain("wl-turn-summary-strip");
+    expect(WL_DIRECTOR_CLASSES.turnSummaryChip).toContain("font-mono");
+    expect(WL_DIRECTOR_CLASSES.actionLog).toContain("wl-turn-action-log");
+    expect(WL_DIRECTOR_CLASSES.actionRowFailed).toContain("rose");
+    expect(WL_DIRECTOR_CLASSES.actionDetail).toContain("font-mono");
+  });
+
+  it("Turn Ledger copy is specific and operator-facing", () => {
+    expect(DIRECTOR_TURN_LEDGER_COPY.actionsEyebrow).toBe("Mission log");
+    expect(DIRECTOR_TURN_LEDGER_COPY.summaryReasoned("4.2s")).toBe("Reasoned 4.2s");
+    expect(DIRECTOR_TURN_LEDGER_COPY.summaryActions(1)).toBe("1 action");
+    expect(DIRECTOR_TURN_LEDGER_COPY.summaryActions(3)).toBe("3 actions");
+    expect(DIRECTOR_TURN_LEDGER_COPY.summarySources(2)).toBe("2 sources");
+    expect(DIRECTOR_TURN_LEDGER_COPY.summaryProposals(1)).toBe("1 proposal");
+    expect(DIRECTOR_TURN_LEDGER_COPY.actionKindLabels.research).toBe("Research");
+    expect(DIRECTOR_TURN_LEDGER_COPY.actionKindLabels.retry).toBe("Recovery");
   });
 
   it("live orchestra copy stays operator-native", () => {

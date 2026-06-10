@@ -7,9 +7,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { Compass, Sparkles, Zap } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { WL_DIRECTOR_CLASSES, directorPhaseCopy } from "../../lib/wireline-director-design";
-import type { StreamPhase } from "../../hooks/useStreamingChat";
+import type { StreamPhase, StreamTurnAction } from "../../hooks/useStreamingChat";
 import { LiveTaskPipeline, type PipelineStep } from "../ui/LiveTaskPipeline";
 import { LiveThinkingIndicator } from "../ui/ThinkingDisplay";
+import { DirectorTurnActions } from "./DirectorTurnActions";
 
 export interface DirectorLiveSessionProps {
   phase: StreamPhase;
@@ -21,6 +22,8 @@ export interface DirectorLiveSessionProps {
   thinkingDurationMs?: number;
   replyPreview?: string;
   pipelineSteps: PipelineStep[];
+  /** Live mission log mirrored from action_start / action_end SSE events. */
+  actions?: StreamTurnAction[];
   className?: string;
 }
 
@@ -124,6 +127,7 @@ export default function DirectorLiveSession({
   thinkingDurationMs,
   replyPreview,
   pipelineSteps,
+  actions = [],
   className,
   modelDisplayLabel,
 }: DirectorLiveSessionProps) {
@@ -230,6 +234,12 @@ export default function DirectorLiveSession({
         {pipelineSteps.length > 0 && (
           <div className="relative rounded-md border border-brand/8 bg-white/50 dark:bg-black/20 px-3 py-2.5">
             <LiveTaskPipeline steps={pipelineSteps} variant="timeline" />
+          </div>
+        )}
+
+        {actions.length > 0 && (
+          <div className="relative rounded-md border border-brand/8 bg-white/50 dark:bg-black/20 px-3 py-2">
+            <DirectorTurnActions actions={actions} />
           </div>
         )}
 

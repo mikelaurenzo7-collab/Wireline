@@ -52,6 +52,20 @@ export interface DirectorProposalsMeta {
   integrationJobs: DirectorIntegrationJob[];
 }
 
+export type DirectorTurnActionKind = "research" | "tool" | "deep" | "design" | "retry" | "compose";
+
+export type DirectorTurnActionStatus = "running" | "done" | "failed";
+
+/** One entry in the per-turn mission log — what the Director actually did. */
+export interface DirectorTurnActionMeta {
+  id: string;
+  kind: DirectorTurnActionKind;
+  label: string;
+  detail?: string;
+  durationMs?: number;
+  status: DirectorTurnActionStatus;
+}
+
 export interface DirectorDeliverableArtifactMeta {
   id: string;
   name: string;
@@ -82,6 +96,7 @@ export interface DirectorMessageMetadata {
   previews?: DirectorPreviewMeta[];
   clarifyingQuestions?: string[];
   researchSources?: { title?: string; uri?: string }[];
+  turnActions?: DirectorTurnActionMeta[];
   deliverableArtifact?: DirectorDeliverableArtifactMeta;
   stitchSession?: DirectorStitchSessionMeta;
   stitchAssetsPending?: boolean;
@@ -106,6 +121,7 @@ export function packDirectorMetadata(
     (meta.previews?.length ?? 0) > 0 ||
     (meta.clarifyingQuestions?.length ?? 0) > 0 ||
     (meta.researchSources?.length ?? 0) > 0 ||
+    (meta.turnActions?.length ?? 0) > 0 ||
     Boolean(meta.deliverableArtifact?.id) ||
     Boolean(meta.stitchSession?.projectId) ||
     meta.stitchAssetsPending === true ||
@@ -165,6 +181,9 @@ export function buildDirectorMetadataFromTurn(
       : undefined,
     researchSources: Array.isArray(data.researchSources)
       ? (data.researchSources as { title?: string; uri?: string }[])
+      : undefined,
+    turnActions: Array.isArray(data.turnActions)
+      ? (data.turnActions as DirectorTurnActionMeta[])
       : undefined,
     deliverableArtifact:
       data.deliverableArtifact && typeof data.deliverableArtifact === "object"

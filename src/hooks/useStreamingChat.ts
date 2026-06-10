@@ -32,6 +32,16 @@ export type StreamPhase =
   | "done"
   | "error";
 
+/** One live mission-log entry mirrored from server `action_start` / `action_end` events. */
+export interface StreamTurnAction {
+  id: string;
+  kind: string;
+  label: string;
+  detail?: string;
+  durationMs?: number;
+  status: "running" | "done" | "failed";
+}
+
 export interface StreamingState {
   /** Current phase of the streaming lifecycle. */
   phase: StreamPhase;
@@ -41,6 +51,10 @@ export interface StreamingState {
   isDeep: boolean;
   /** True once the server has started the SSE stream (meta or later). */
   streamEstablished: boolean;
+  /** Live mission log — what the Director is doing right now. */
+  actions: StreamTurnAction[];
+  /** Grounded research citations as they resolve (before `done`). */
+  sources: { title?: string; uri?: string }[];
   /** Duration of thinking in ms (set when thinking_end fires). */
   thinkingDurationMs?: number;
   /** The final reply payload (set when reply or done fires). */
@@ -58,6 +72,8 @@ const INITIAL_STATE: StreamingState = {
   thinkingText: "",
   isDeep: false,
   streamEstablished: false,
+  actions: [],
+  sources: [],
 };
 
 interface UseStreamingChatOptions {
@@ -242,7 +258,14 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       latestReplyRef.current = undefined;
       streamEstablishedRef.current = false;
       terminalReplyRef.current = false;
-      setState({ phase: "connecting", thinkingText: "", isDeep: false, streamEstablished: false });
+      setState({
+        phase: "connecting",
+        thinkingText: "",
+        isDeep: false,
+        streamEstablished: false,
+        actions: [],
+        sources: [],
+      });
 
       const sessionFresh = await refreshSessionIfNeeded();
       if (!sessionFresh) {
@@ -354,6 +377,38 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
               }));
               break;
 
+            case "action_start":
+            case "action_end": {
+              streamEstablishedRef.current = true;
+              if (typeof data.id !== "string" || typeof data.label !== "string") break;
+              const incoming: StreamTurnAction = {
+                id: data.id,
+                kind: typeof data.kind === "string" ? data.kind : "tool",
+                label: data.label,
+                detail: typeof data.detail === "string" ? data.detail : undefined,
+                durationMs: typeof data.durationMs === "number" ? data.durationMs : undefined,
+                status:
+                  data.status === "done" || data.status === "failed" ? data.status : "running",
+              };
+              setState((s) => {
+                const existing = s.actions.findIndex((a) => a.id === incoming.id);
+                const actions =
+                  existing >= 0
+                    ? s.actions.map((a, i) => (i === existing ? incoming : a))
+                    : [...s.actions, incoming];
+                return { ...s, actions, streamEstablished: true };
+              });
+              break;
+            }
+
+            case "sources":
+              streamEstablishedRef.current = true;
+              if (Array.isArray(data.sources)) {
+                const sources = data.sources as { title?: string; uri?: string }[];
+                setState((s) => ({ ...s, sources, streamEstablished: true }));
+              }
+              break;
+
             case "reply":
               streamEstablishedRef.current = true;
               latestReplyRef.current = data;
@@ -378,6 +433,12 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
                 reply: data,
                 thinkingText: (data.reasoning as string) || s.thinkingText,
                 thinkingDurationMs: (data.thinkingDurationMs as number) || s.thinkingDurationMs,
+                actions: Array.isArray(data.turnActions)
+                  ? (data.turnActions as StreamTurnAction[])
+                  : s.actions,
+                sources: Array.isArray(data.researchSources)
+                  ? (data.researchSources as { title?: string; uri?: string }[])
+                  : s.sources,
                 streamEstablished: true,
               }));
               finalizeComplete(data);

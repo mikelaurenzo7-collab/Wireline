@@ -23,7 +23,7 @@ export interface ThinkingDisplayProps {
 }
 
 /** Parse reasoning into logical steps (numbered items, paragraphs, or bullet points). */
-function parseReasoningSteps(text: string): string[] {
+export function parseReasoningSteps(text: string): string[] {
   // Try numbered list first
   const numbered = text.split(/\n(?=\d+[.)]\s)/);
   if (numbered.length > 1) return numbered.map((s) => s.trim()).filter(Boolean);
@@ -41,7 +41,7 @@ function parseReasoningSteps(text: string): string[] {
 }
 
 /** Generate a brief summary line from the full reasoning. */
-function summarizeReasoning(text: string): string {
+export function summarizeReasoning(text: string): string {
   const firstLine = text.split("\n")[0]?.trim() || "";
   if (firstLine.length <= 80) return firstLine;
   return firstLine.slice(0, 77) + "…";
@@ -123,9 +123,7 @@ export function ThinkingDisplay({
 
         {/* Summary (when collapsed) */}
         {!isExpanded && (
-          <span className="flex-1 text-left wl-micro-meta--muted truncate ml-1">
-            {summary}
-          </span>
+          <span className="flex-1 text-left wl-micro-meta--muted truncate ml-1">{summary}</span>
         )}
 
         {/* Expand/collapse chevron */}

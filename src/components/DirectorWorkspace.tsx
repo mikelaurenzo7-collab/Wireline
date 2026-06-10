@@ -44,7 +44,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 import { cn } from "../lib/utils";
 import FleetSetupNudge from "./FleetSetupNudge";
-import { ThinkingDisplay } from "./ui/ThinkingDisplay";
 import type { PipelineStep } from "./ui/LiveTaskPipeline";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
@@ -73,14 +72,17 @@ import type { DirectorIntegrationJob, DirectorProposedAction } from "../lib/dire
 import DirectorLiveSession from "./director/DirectorLiveSession";
 import { DirectorMessageBody } from "./director/DirectorMessageBody";
 import { DirectorDeliverableDownload } from "./director/DirectorDeliverableDownload";
-import type { DirectorDeliverableArtifactMeta } from "../lib/director-message-metadata";
+import type {
+  DirectorDeliverableArtifactMeta,
+  DirectorTurnActionMeta,
+} from "../lib/director-message-metadata";
+import { DirectorTurnLedger } from "./director/DirectorTurnLedger";
 import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
 import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorComposerAccessory } from "./director/DirectorComposerAccessory";
 import { DirectorComposerContextStrip } from "./director/DirectorComposerContextStrip";
 import { DirectorComposerToolbar } from "./director/DirectorComposerToolbar";
 import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
-import { DirectorResearchSources } from "./director/DirectorResearchSources";
 import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
@@ -164,6 +166,7 @@ interface DirectorMessage {
   previews?: DirectorPreview[];
   clarifyingQuestions?: string[];
   researchSources?: { title?: string; uri?: string }[];
+  turnActions?: DirectorTurnActionMeta[];
   deliverableArtifact?: DirectorDeliverableArtifactMeta;
   reasoning?: string;
   thinkingDurationMs?: number;
@@ -339,6 +342,9 @@ export default function DirectorWorkspace({
           : undefined,
         researchSources: Array.isArray(data.researchSources)
           ? (data.researchSources as { title?: string; uri?: string }[])
+          : undefined,
+        turnActions: Array.isArray(data.turnActions)
+          ? (data.turnActions as DirectorTurnActionMeta[])
           : undefined,
         deliverableArtifact:
           data.deliverableArtifact && typeof data.deliverableArtifact === "object"
@@ -1576,13 +1582,15 @@ export default function DirectorWorkspace({
                               ),
                         )}
                       >
-                        {/* Reasoning display - Claude style */}
-                        {m.role === "director" && m.reasoning && (
-                          <ThinkingDisplay
+                        {/* Turn Ledger — reasoning, mission log, and sources strata */}
+                        {m.role === "director" && (
+                          <DirectorTurnLedger
                             reasoning={m.reasoning}
                             thinkingDurationMs={m.thinkingDurationMs}
                             isDeep={m.model === "opus" && m.modelProvider !== "openrouter"}
-                            animate={false}
+                            actions={m.turnActions ?? []}
+                            sources={m.researchSources ?? []}
+                            proposalCount={countPendingDirectorProposalsForMessage(m, resolved)}
                           />
                         )}
 
@@ -1827,10 +1835,6 @@ export default function DirectorWorkspace({
                         </div>
                       )}
 
-                      {m.researchSources && m.researchSources.length > 0 && (
-                        <DirectorResearchSources sources={m.researchSources} />
-                      )}
-
                       {m.role === "director" &&
                         m.id === lastDirectorMessageId &&
                         m.clarifyingQuestions &&
@@ -2072,6 +2076,7 @@ export default function DirectorWorkspace({
                   typeof streamState.reply?.reply === "string" ? streamState.reply.reply : undefined
                 }
                 pipelineSteps={streamPipeline}
+                actions={streamState.actions}
               />
             </div>
           )}

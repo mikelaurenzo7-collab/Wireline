@@ -2,11 +2,7 @@
  * useStreamingChat — unit tests for SSE streaming hook logic.
  */
 import { describe, it, expect } from "vitest";
-import {
-  isDirectorBootstrapMeta,
-  parseSseEvents,
-  type SseParserState,
-} from "./useStreamingChat";
+import { isDirectorBootstrapMeta, parseSseEvents, type SseParserState } from "./useStreamingChat";
 
 describe("useStreamingChat module", () => {
   it("exports the hook and expected types", async () => {
@@ -85,6 +81,34 @@ describe("useStreamingChat module", () => {
     expect(isDirectorBootstrapMeta({ status: "connecting", model: "sonnet", deep: false })).toBe(
       false,
     );
+  });
+
+  it("parseSseEvents parses action_start / action_end / sources frames in order", () => {
+    const events: Array<{ event: string; data: Record<string, unknown> }> = [];
+    const state: SseParserState = { dataLines: [] };
+
+    parseSseEvents(
+      [
+        "event: action_start",
+        'data: {"id":"ta-1","kind":"research","label":"Grounded web research","status":"running"}',
+        "",
+        "event: action_end",
+        'data: {"id":"ta-1","kind":"research","label":"Grounded web research","status":"done","durationMs":850}',
+        "",
+        "event: sources",
+        'data: {"sources":[{"title":"Doc","uri":"https://example.com"}]}',
+        "",
+      ],
+      (event, data) => {
+        events.push({ event, data });
+      },
+      state,
+    );
+
+    expect(events.map((e) => e.event)).toEqual(["action_start", "action_end", "sources"]);
+    expect(events[1].data.status).toBe("done");
+    expect(events[1].data.durationMs).toBe(850);
+    expect((events[2].data.sources as Array<{ uri: string }>)[0].uri).toBe("https://example.com");
   });
 
   it("parseSseEvents handles CRLF-framed SSE blocks", () => {

@@ -52,6 +52,32 @@ describe("director message metadata", () => {
     expect(packDirectorMetadata({})).toBeNull();
   });
 
+  it("round-trips turn actions (mission log) through pack/parse/build", () => {
+    const packed = packDirectorMetadata({
+      turnActions: [
+        { id: "ta-1", kind: "research", label: "Grounded web research", status: "done" },
+      ],
+    });
+    expect(packed).toBeTruthy();
+    const parsed = parseDirectorMetadata(packed);
+    expect(parsed.turnActions?.[0]?.kind).toBe("research");
+
+    const meta = buildDirectorMetadataFromTurn({
+      reply: "hi",
+      turnActions: [
+        {
+          id: "ta-2",
+          kind: "tool",
+          label: "Ran generate_logo",
+          status: "failed",
+          durationMs: 1200,
+        },
+      ],
+    });
+    expect(meta.turnActions).toHaveLength(1);
+    expect(meta.turnActions?.[0]?.status).toBe("failed");
+  });
+
   it("packs proposal resolution state for reload", () => {
     const packed = packDirectorMetadata({
       proposals: { changes: [], toolToggles: [], actions: [], integrationJobs: [] },
