@@ -10,7 +10,6 @@ import {
   Plus,
   Pencil,
   Sparkles,
-  ChevronDown,
   Zap,
   Target,
   Clock,
@@ -21,11 +20,11 @@ import {
   BookOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
-import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import { HelpTooltip } from "./HelpTooltip";
 import { useToast } from "../contexts/ToastContext";
 import AgentFlowComposer from "./AgentFlowComposer";
@@ -35,7 +34,12 @@ import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
 import { InlineEmpty } from "./ui/InlineEmpty";
-import { OPS_TRAINING_PANEL } from "../lib/wireline-ops-design";
+import {
+  OPS_TRAINING_PANEL,
+  OPS_TRAINING_ASSISTS,
+  OPS_TRAINING_ASSISTS_COPY,
+  directorAssistHref,
+} from "../lib/wireline-ops-design";
 import RoleplaySandbox from "./RoleplaySandbox";
 import IntegrationDirectivePresets from "./IntegrationDirectivePresets";
 import BehavioralRegressionTests from "./BehavioralRegressionTests";
@@ -279,62 +283,31 @@ export default function AgentTraining({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b-0">
-        {/* AI assists — collapsed by default to declutter; expand to see recipe
-            shortcuts. Each is scoped to this agent. */}
-        <details className="max-w-[1400px] mx-auto w-full group">
-          <summary className="cursor-pointer list-none flex items-center gap-2 px-3 py-1.5 rounded-md wl-panel border border-border hover:border-brand/30 transition-colors">
-            <div className="w-6 h-6 rounded-md bg-brand flex items-center justify-center shrink-0">
+        {/* Director assists — deep-links that prefill Director chat with this
+            agent focused. Replaces the old recipe pop-out modals (mobile-safe,
+            nothing to fail loading). */}
+        <div className="max-w-[1400px] mx-auto w-full flex items-center gap-1.5 overflow-x-auto tab-strip-scroll scrollbar-hide py-0.5">
+          <span className="shrink-0 inline-flex items-center gap-1.5 pr-1">
+            <span className="w-6 h-6 rounded-md bg-brand flex items-center justify-center shrink-0">
               <Sparkles className="w-3 h-3 text-on-brand" strokeWidth={2.5} />
-            </div>
-            <span className="wl-label text-brand">AI assists</span>
-            <span className="text-[11px] text-ink/70">— one-click recipes</span>
-            <ChevronDown className="ml-auto w-3.5 h-3.5 text-muted transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="mt-2 p-3 rounded-md wl-panel border border-border flex flex-wrap items-center gap-1.5">
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="agent-review"
-              agentId={selectedAgentId}
-              label="Performance Review"
-            />
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="persona-clone"
-              agentId={selectedAgentId}
-              label="Clone Persona"
-            />
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="knowledge-from-url"
-              agentId={selectedAgentId}
-              label="Ingest URL"
-            />
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="knowledge-from-document"
-              agentId={selectedAgentId}
-              label="Ingest PDF"
-            />
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="objection-drill"
-              agentId={selectedAgentId}
-              label="Objection Drills"
-            />
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="call-playbook"
-              agentId={selectedAgentId}
-              label="Call Playbook"
-            />
-            <ClaudeRecipeButton
-              variant="ghost"
-              recipe="brief"
-              agentId={selectedAgentId}
-              label="Pre-Call Brief"
-            />
-          </div>
-        </details>
+            </span>
+            <span className="wl-label text-brand whitespace-nowrap">
+              {OPS_TRAINING_ASSISTS_COPY.eyebrow}
+            </span>
+            <span className="hidden sm:inline text-[11px] text-ink/60 whitespace-nowrap">
+              — {OPS_TRAINING_ASSISTS_COPY.hint}
+            </span>
+          </span>
+          {OPS_TRAINING_ASSISTS.map((assist) => (
+            <Link
+              key={assist.label}
+              to={directorAssistHref(selectedAgentId, assist.prompt)}
+              className="shrink-0 inline-flex items-center px-2.5 py-1.5 rounded-md wl-panel border border-border hover:border-brand/30 wl-label text-muted hover:text-brand transition-colors touch-press hit-area-44"
+            >
+              {assist.label}
+            </Link>
+          ))}
+        </div>
 
         {!onSubTabChange && (
           <nav

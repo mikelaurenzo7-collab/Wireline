@@ -326,9 +326,67 @@ export const OPS_TRIAGE_COPY = {
   allClearStat: "All clear",
   allClearBannerTitle: "Nothing needs attention",
   allClearBannerBody:
-    "Hot leads, tasks, compliance flags, and escalations will surface here as your fleet runs.",
+    "Tasks, compliance flags, and escalations will surface here as your fleet runs. Hot leads are worked autonomously by your agents.",
   allClearBannerCta: "Monitor live floor",
+  /** Slim hot-lead signal strip — replaces the old full-height Hot Leads panel. */
+  hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
+  hotStripHint: "Agents are following up autonomously",
+  hotStripCta: "Brief Director",
+  hotStripPrompt: (n: number) =>
+    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now — who they are, why they're hot, and what the fleet is doing to close them.`,
+  escalationCoachPrompt: (number: string, summary: string) =>
+    `Coach me through the escalated call from ${number}. Context: ${summary.slice(0, 400)}`,
 } as const;
+
+/**
+ * Training "Director assists" — replaces the old recipe pop-out modals with
+ * deep-links that prefill Director chat (mobile-safe, no modal to fail).
+ */
+export const OPS_TRAINING_ASSISTS = [
+  {
+    label: "Performance review",
+    prompt:
+      "Review this agent's recent calls and give me a performance read: wins, misses, and the top 3 coaching directives to add.",
+  },
+  {
+    label: "Clone persona",
+    prompt:
+      "Clone this agent's persona into a new agent — keep the voice and tone, and summarize what carries over.",
+  },
+  {
+    label: "Ingest a URL",
+    prompt: "Ingest this URL into the agent's knowledge base: ",
+  },
+  {
+    label: "Objection drills",
+    prompt:
+      "Run objection drills against this agent: throw the 5 most common objections for its vertical and grade the responses.",
+  },
+  {
+    label: "Call playbook",
+    prompt:
+      "Draft a call playbook for this agent: opening, discovery, objection handling, and close.",
+  },
+  {
+    label: "Pre-call brief",
+    prompt: "Prepare a pre-call brief for this agent's next outbound call.",
+  },
+] as const;
+
+export const OPS_TRAINING_ASSISTS_COPY = {
+  eyebrow: "Director assists",
+  hint: "Runs in Director chat",
+} as const;
+
+/** Deep-link into Director chat with an agent focused and the composer prefilled. */
+export function directorAssistHref(agentId: string, prompt: string): string {
+  return `/chat?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
+}
+
+/** Deep-link into Director chat with only a prefilled prompt. */
+export function directorPromptHref(prompt: string): string {
+  return `/chat?prompt=${encodeURIComponent(prompt)}`;
+}
 
 /** In-app help route — quick paths + page chrome */
 export const OPS_HELP = {

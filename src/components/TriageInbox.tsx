@@ -7,12 +7,12 @@ import {
   BookOpen,
   ListTodo,
   AlertOctagon,
-  ChevronRight,
   Compass,
   Loader2,
   Plus,
   RefreshCw,
   Pencil,
+  Sparkles,
   X,
   Check,
   Trash2,
@@ -24,7 +24,6 @@ import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDate, formatDateTime } from "../lib/safe-date";
-import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
 import WidgetBoundary from "./WidgetBoundary";
@@ -32,18 +31,17 @@ import ClientRouteViewport from "./layout/ClientRouteViewport";
 import ClientToolbar from "./layout/ClientToolbar";
 import { Card } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/shadcn/Tooltip";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
-import { WL_DIRECTOR_CLASSES, WL_APP_CLASSES } from "../lib/wireline-director-design";
+import { WL_APP_CLASSES } from "../lib/wireline-director-design";
 import {
   OPS_TRIAGE_EMPTY,
   OPS_TRIAGE_ACCENTS,
   OPS_CHANNEL_TOOLBAR,
   OPS_TRIAGE_COPY,
   WL_OPS_CLASSES,
+  directorPromptHref,
 } from "../lib/wireline-ops-design";
-import { BRAND } from "../constants/brand-colors";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 
 interface HotLead {
@@ -129,7 +127,12 @@ export function TriagePanel({
   }, []);
 
   const counts = data?.counts || ({} as Record<string, number>);
-  const totalAttention = Object.values(counts).reduce((s, n) => s + n, 0);
+  // Hot leads are worked autonomously by the fleet — they're a signal, not
+  // operator work, so they don't inflate the "needs attention" count.
+  const totalAttention = Object.entries(counts).reduce(
+    (s, [k, n]) => (k === "hot_leads" ? s : s + n),
+    0,
+  );
 
   useEffect(() => {
     fetchData();
@@ -247,29 +250,23 @@ export function TriagePanel({
       </div>
     ) : null;
 
+  const hotLeadStrip =
+    !loading && data && !fetchErr && (data.hot_leads?.length ?? 0) > 0 ? (
+      <WidgetBoundary label="Hot Leads">
+        <HotLeadStrip items={data.hot_leads} />
+      </WidgetBoundary>
+    ) : null;
+
   const triageGrid = (
     <div
       className={cn(
         "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
         WL_OPS_CLASSES.triageGrid,
-        "grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-        "lg:[grid-template-rows:minmax(0,1.15fr)_minmax(0,1fr)]",
-        "auto-rows-fr lg:grid-flow-row-dense",
+        "grid gap-3 grid-cols-1 md:grid-cols-2",
+        "auto-rows-fr lg:grid-rows-2",
       )}
       data-testid="triage-grid"
     >
-      <div className="lg:col-span-1">
-        {bucketPanel(
-          "Hot Leads",
-          Flame,
-          counts.hot_leads ? `${counts.hot_leads} ready to close` : "Cold floor",
-          <WidgetBoundary label="Hot Leads">
-            <HotLeads items={data?.hot_leads || []} />
-          </WidgetBoundary>,
-          OPS_TRIAGE_ACCENTS.hotLeads,
-        )}
-      </div>
-
       <div>
         {bucketPanel(
           "Open Tasks",
@@ -286,7 +283,7 @@ export function TriagePanel({
         )}
       </div>
 
-      <div className="lg:row-span-2">
+      <div>
         {bucketPanel(
           "Escalations",
           AlertOctagon,
@@ -310,7 +307,7 @@ export function TriagePanel({
         )}
       </div>
 
-      <div className="md:col-span-2 lg:col-span-1">
+      <div>
         {bucketPanel(
           "Knowledge Gaps",
           BookOpen,
@@ -338,6 +335,7 @@ export function TriagePanel({
           )}
         >
           {allClearBanner}
+          {hotLeadStrip}
           {triageGrid}
         </div>
       </section>
@@ -390,6 +388,7 @@ export function TriagePanel({
       />
       <PageShell title="" eyebrow="" subtitle="">
         {allClearBanner}
+        {hotLeadStrip}
         {triageGrid}
       </PageShell>
     </ClientRouteViewport>
@@ -400,127 +399,51 @@ export default function TriageInbox() {
   return <TriagePanel />;
 }
 
-/* ────────────────────────  Hot leads  ─────────────────────────── */
+/* ──────────────────  Hot leads — signal strip  ─────────────────── */
+/* Agents work hot leads autonomously; the operator only needs a slim
+   signal strip — count, compact lead chips, and a one-tap Director
+   handoff — instead of a full-height panel. */
 
-function HotLeads({ items }: { items: HotLead[] }) {
-  if (items.length === 0)
-    return <TriagePanelEmpty icon={Flame} config={OPS_TRIAGE_EMPTY.hotLeads} />;
+function HotLeadStrip({ items }: { items: HotLead[] }) {
   return (
-    <ul className="p-2 space-y-2 list-none stagger-children">
-      {items.map((c) => (
-        <li key={c.id} className="relative list-none group">
-          <Card className="wl-panel border-black/8 hover:border-brand/25 transition-all p-3 flex items-center gap-3 rounded-md relative touch-press hover:scale-[1.02]">
-            {/* Absolute overlay link covering the entire row target */}
-            <Link
-              to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-              className="absolute inset-0 z-0"
-              aria-label={`View contact profile for ${c.customer_number || "unknown caller"}`}
-            />
-
-            <div className="shrink-0 w-11 h-11 flex items-center justify-center text-ink relative z-10 pointer-events-none">
-              <svg width="44" height="44" viewBox="0 0 44 44">
-                <circle
-                  r="16"
-                  cx="22"
-                  cy="22"
-                  fill="none"
-                  stroke="rgba(26,22,20,0.08)"
-                  strokeWidth="4"
-                />
-                <circle
-                  r="16"
-                  cx="22"
-                  cy="22"
-                  fill="none"
-                  stroke={
-                    c.lead_score >= 80
-                      ? BRAND.purple
-                      : c.lead_score >= 60
-                        ? BRAND.purpleMuted
-                        : BRAND.purpleMuted
-                  }
-                  strokeWidth="4"
-                  strokeDasharray={`${(c.lead_score / 100) * 100.53} 100.53`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 22 22)"
-                />
-                <text
-                  x="22"
-                  y="26"
-                  textAnchor="middle"
-                  fontSize="11"
-                  fontWeight="700"
-                  fill="currentColor"
-                >
-                  {c.lead_score}
-                </text>
-              </svg>
-            </div>
-
-            <div className="min-w-0 flex-1 relative z-10 pointer-events-none text-left">
-              <span className="text-sm font-semibold text-ink leading-tight block truncate group-hover:text-brand transition-colors">
-                {c.customer_number || "Unknown caller"}
+    <div
+      role="status"
+      className="mb-3 rounded-md border border-brand/20 bg-brand/[0.05] px-3 py-2 flex items-center gap-3 min-w-0"
+    >
+      <div className="flex items-center gap-2 shrink-0">
+        <Flame className="w-4 h-4 text-brand" aria-hidden />
+        <span className="wl-label text-brand whitespace-nowrap">
+          {OPS_TRIAGE_COPY.hotStripLabel(items.length)}
+        </span>
+        <span className="hidden sm:inline text-[11px] text-muted whitespace-nowrap">
+          {OPS_TRIAGE_COPY.hotStripHint}
+        </span>
+      </div>
+      <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+        {items.map((c) => (
+          <Link
+            key={c.id}
+            to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
+            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md wl-panel border border-border hover:border-brand/30 text-[11px] text-ink/85 hover:text-brand transition-colors touch-press hit-area-44"
+            aria-label={`View contact profile for ${c.customer_number || "unknown caller"} (lead score ${c.lead_score})`}
+          >
+            <span className="font-mono font-bold text-brand tabular-nums">{c.lead_score}</span>
+            <span className="truncate max-w-[9rem]">{c.customer_number || "Unknown caller"}</span>
+            {c.intent_label && (
+              <span className="hidden md:inline wl-label text-muted/70 whitespace-nowrap">
+                {c.intent_label.replace(/_/g, " ")}
               </span>
-              {c.summary && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="text-[11px] text-muted/70 truncate cursor-help text-left max-w-full">
-                        {c.summary}
-                      </p>
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-md shadow-xl">
-                      {c.summary}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 wl-label text-muted/70 pr-2">
-                <span className="whitespace-nowrap">{formatDate(c.created_at)}</span>
-                <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
-                <Badge
-                  variant="secondary"
-                  className="wl-label text-brand border-brand/20 bg-brand/10 hover:bg-brand/15 leading-none px-1.5 py-0.5 rounded whitespace-nowrap"
-                >
-                  {(c.intent_label || "").replace(/_/g, " ")} intent
-                </Badge>
-                {c.sentiment && (
-                  <Badge
-                    variant="outline"
-                    className="px-1.5 py-0.5 text-[7px] tracking-normal border-input rounded text-muted-foreground"
-                  >
-                    {c.sentiment}
-                  </Badge>
-                )}
-              </div>
-              {c.coaching_note && (
-                <p className={cn(WL_DIRECTOR_CLASSES.metaCaption, "mt-1.5 line-clamp-1 pr-2")}>
-                  {c.coaching_note}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0 relative z-20">
-              <ClaudeRecipeButton
-                recipe="enrich-lead"
-                initial={{
-                  customerNumber: c.customer_number,
-                  context: `High-intent (${c.lead_score}) lead from prior call. Summary: ${c.summary}`,
-                }}
-                label="Enrich"
-              />
-              <ShadButton
-                variant="outline"
-                size="icon"
-                className="w-8 h-8 rounded-md bg-background/50 border border-input flex items-center justify-center text-ink/70 transition-all hover:border-brand/25 hover:text-brand p-0 touch-press hover:scale-[1.05]"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </ShadButton>
-            </div>
-          </Card>
-        </li>
-      ))}
-    </ul>
+            )}
+          </Link>
+        ))}
+      </div>
+      <Link
+        to={directorPromptHref(OPS_TRIAGE_COPY.hotStripPrompt(items.length))}
+        className="app-micro-cta touch-press hover:scale-[1.02] shrink-0"
+      >
+        {OPS_TRIAGE_COPY.hotStripCta}
+      </Link>
+    </div>
   );
 }
 
@@ -896,7 +819,19 @@ function Escalations({ items }: { items: EscalationCall[] }) {
               )}
             </div>
             <div className="relative z-20 shrink-0">
-              <ClaudeRecipeButton recipe="coach" callId={c.id} label="Coach" variant="compact" />
+              <Link
+                to={directorPromptHref(
+                  OPS_TRIAGE_COPY.escalationCoachPrompt(
+                    c.customer_number || "an unknown caller",
+                    c.summary || "No summary captured.",
+                  ),
+                )}
+                className="w-9 h-9 rounded-full border border-brand/30 text-brand hover:bg-brand/10 flex items-center justify-center transition-colors touch-press hit-area-44"
+                title="Coach in Director"
+                aria-label="Coach this escalation in Director chat"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </Card>
         </li>

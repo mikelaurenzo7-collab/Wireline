@@ -7,6 +7,10 @@ import {
   OPS_CHANNEL_EMPTY,
   OPS_TRAINING_PANEL,
   OPS_TRIAGE_EMPTY,
+  OPS_TRIAGE_COPY,
+  OPS_TRAINING_ASSISTS,
+  directorAssistHref,
+  directorPromptHref,
   OPS_HELP,
   OPS_SUPPORT_EMPTY,
   OPS_INSIGHTS_EMPTY,
@@ -73,6 +77,18 @@ describe("Wireline Live Ops design contract", () => {
   it("defines triage panel empty copy with route CTAs", () => {
     expect(OPS_TRIAGE_EMPTY.hotLeads.actions?.some((a) => a.to.includes("outbound"))).toBe(true);
     expect(OPS_TRIAGE_EMPTY.openTasks.actions?.some((a) => a.to.includes("intel"))).toBe(true);
+  });
+
+  it("defines the hot-lead strip and Director handoff contract", () => {
+    expect(OPS_TRIAGE_COPY.hotStripLabel(1)).toBe("1 hot lead");
+    expect(OPS_TRIAGE_COPY.hotStripLabel(3)).toBe("3 hot leads");
+    expect(OPS_TRIAGE_COPY.hotStripHint.toLowerCase()).toContain("autonomous");
+    expect(OPS_TRIAGE_COPY.hotStripPrompt(2).toLowerCase()).toContain("lead");
+    expect(OPS_TRIAGE_COPY.escalationCoachPrompt("+1555", "summary")).toContain("+1555");
+    expect(directorPromptHref("hi there")).toBe("/chat?prompt=hi%20there");
+    expect(directorAssistHref("a/1", "go")).toBe("/chat?agent=a%2F1&prompt=go");
+    expect(OPS_TRAINING_ASSISTS.length).toBeGreaterThanOrEqual(5);
+    expect(OPS_TRAINING_ASSISTS.every((a) => a.label && a.prompt)).toBe(true);
   });
 
   it("defines training panel nested empty copy", () => {
