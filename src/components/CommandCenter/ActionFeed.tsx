@@ -224,7 +224,7 @@ export function ActionFeed({
                           {isProcessing ? (
                             <Clock className="w-4 h-4 text-brand animate-spin" />
                           ) : (
-                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 lg:opacity-100 transition-opacity">
                               <ShadButton
                                 type="button"
                                 variant="ghost"

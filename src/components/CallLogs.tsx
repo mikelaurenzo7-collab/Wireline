@@ -135,7 +135,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-full sm:w-44 lg:w-60 pl-8 pr-3 rounded-full wl-panel text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -174,7 +174,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             clears selectedCall to bring the list back. */}
         <div
           className={cn(
-            "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 h-full min-h-0 flex flex-col overflow-hidden",
+            "col-span-12 md:col-span-6 lg:col-span-5 xl:col-span-4 2xl:col-span-3 h-full min-h-0 flex flex-col overflow-hidden",
             selectedCall && "hidden md:block",
           )}
         >
@@ -358,7 +358,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             list takes the full viewport. */}
         <div
           className={cn(
-            "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 h-full min-h-0 flex flex-col overflow-hidden",
+            "col-span-12 md:col-span-6 lg:col-span-7 xl:col-span-8 2xl:col-span-9 h-full min-h-0 flex flex-col overflow-hidden",
             !selectedCall && "hidden md:block",
           )}
         >

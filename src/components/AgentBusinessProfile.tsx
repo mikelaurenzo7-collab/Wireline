@@ -379,7 +379,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
         title="Compliance preset"
         hint="Auto-injects required disclosures into the agent's system prompt. Pick the regime your business is regulated under."
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {COMPLIANCE_OPTIONS.map((opt) => {
             const active = (value.compliance_mode ?? "none") === opt.value;
             return (
@@ -398,11 +398,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
-                  {active && (
-                    <span className="wl-label text-brand">
-                      Active
-                    </span>
-                  )}
+                  {active && <span className="wl-label text-brand">Active</span>}
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
               </ShadButton>
@@ -436,11 +432,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-ink text-[12px]">{opt.label}</span>
-                  {active && (
-                    <span className="wl-label text-brand">
-                      Active
-                    </span>
-                  )}
+                  {active && <span className="wl-label text-brand">Active</span>}
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
               </ShadButton>
