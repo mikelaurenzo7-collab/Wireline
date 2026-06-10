@@ -26,6 +26,7 @@ import {
   ChannelInboxGrid,
   ChannelInboxListPane,
   ChannelInboxDetailPane,
+  resolveChannelListNavigationIndex,
 } from "./layout/ChannelInbox";
 import { PanelSkeleton } from "./Skeleton";
 import { EmptyState } from "./ui/EmptyState";
@@ -59,6 +60,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   const selectedThreadIdRef = useRef<string | null>(null);
   const autoSelectedDesktopRef = useRef(false);
   const mountedRef = useRef(true);
+  const threadButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -359,6 +361,9 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           (thread.summary || "").toLowerCase().includes(threadQuery),
       )
     : threads;
+  const selectedThreadIndex = visibleThreads.findIndex(
+    (thread) => thread.id === selectedThread?.id,
+  );
 
   const inboxBody = (
     <div className="flex-1 min-h-0">
@@ -432,10 +437,15 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     className="py-10"
                   />
                 ) : (
-                  <div className="divide-y divide-black/6">
-                    {visibleThreads.map((thread) => {
+                  <div
+                    className="divide-y divide-black/6"
+                    role="listbox"
+                    aria-label="Email threads"
+                  >
+                    {visibleThreads.map((thread, index) => {
                       const score = thread.lead_score || 0;
                       const active = selectedThread?.id === thread.id;
+                      const fallbackFocusable = !selectedThread && index === 0;
                       const scoreTone =
                         score >= 80
                           ? "bg-destructive/12 text-destructive border-destructive/25"
@@ -446,11 +456,33 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <motion.button
                           type="button"
                           aria-label={`Email thread: ${thread.subject || thread.customer_email}`}
+                          aria-selected={active}
+                          aria-controls="email-thread-detail"
+                          role="option"
                           layoutId={`email-thread-${thread.id}`}
                           initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
                           key={thread.id}
+                          ref={(node) => {
+                            threadButtonRefs.current[index] = node;
+                          }}
                           onClick={() => setSelectedThread(thread)}
+                          onKeyDown={(event) => {
+                            const currentIndex =
+                              selectedThreadIndex >= 0 ? selectedThreadIndex : index;
+                            const nextIndex = resolveChannelListNavigationIndex(
+                              currentIndex,
+                              event.key,
+                              visibleThreads.length,
+                            );
+                            if (nextIndex == null) return;
+                            event.preventDefault();
+                            const nextThread = visibleThreads[nextIndex];
+                            if (!nextThread) return;
+                            setSelectedThread(nextThread);
+                            threadButtonRefs.current[nextIndex]?.focus();
+                          }}
+                          tabIndex={active || fallbackFocusable ? 0 : -1}
                           className={cn(
                             "group w-full px-4 py-3.5 text-left transition-all duration-300 flex gap-3 items-start relative touch-press hover:scale-[1.02]",
                             active ? "bg-brand/6" : "hover:bg-black/[0.04] hover:shadow-sm",
@@ -515,6 +547,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               <AnimatePresence mode="wait">
                 {selectedThread ? (
                   <motion.div
+                    id="email-thread-detail"
                     key={selectedThread.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}

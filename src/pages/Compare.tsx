@@ -449,29 +449,6 @@ export default function Compare() {
         </section>
 
         {/* Footer */}
-        <footer className="relative z-10 border-t border-black/8 py-8 px-4 sm:px-6 lg:px-10 xl:px-14 max-w-6xl mx-auto">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] text-muted/70">
-            <Link to="/" className="hover:text-ink transition-colors">
-              Wireline
-            </Link>
-            <span aria-hidden="true">·</span>
-            <Link to="/pricing" className="hover:text-ink transition-colors">
-              Pricing
-            </Link>
-            <span aria-hidden="true">·</span>
-            <Link to="/about" className="hover:text-ink transition-colors">
-              About
-            </Link>
-            <span aria-hidden="true">·</span>
-            <Link to="/privacy" className="hover:text-ink transition-colors">
-              Privacy
-            </Link>
-            <span aria-hidden="true">·</span>
-            <Link to="/terms" className="hover:text-ink transition-colors">
-              Terms
-            </Link>
-          </div>
-        </footer>
       </MarketingPageFrame>
     </>
   );

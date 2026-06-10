@@ -24,6 +24,7 @@ import {
   ChannelInboxGrid,
   ChannelInboxListPane,
   ChannelInboxDetailPane,
+  resolveChannelListNavigationIndex,
 } from "./layout/ChannelInbox";
 import { EmptyState } from "./ui/EmptyState";
 import {
@@ -79,6 +80,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const autoSelectedDesktopRef = useRef(false);
   const mountedRef = useRef(true);
+  const threadButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -217,6 +219,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
           (t.summary || "").toLowerCase().includes(query),
       )
     : threads;
+  const activeThreadIndex = visibleThreads.findIndex((thread) => thread.id === activeId);
 
   const copyNumber = async (value: string) => {
     try {
@@ -316,17 +319,38 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   className="py-10"
                 />
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-1.5" role="listbox" aria-label="SMS threads">
                   <AnimatePresence>
-                    {visibleThreads.map((t) => (
+                    {visibleThreads.map((t, index) => (
                       <motion.button
                         key={t.id}
                         type="button"
                         aria-label={`SMS thread with ${t.customer_number}`}
+                        aria-selected={activeId === t.id}
+                        aria-controls="sms-thread-detail"
+                        role="option"
                         layoutId={`sms-thread-${t.id}`}
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
+                        ref={(node) => {
+                          threadButtonRefs.current[index] = node;
+                        }}
                         onClick={() => setActiveId(t.id)}
+                        onKeyDown={(event) => {
+                          const currentIndex = activeThreadIndex >= 0 ? activeThreadIndex : index;
+                          const nextIndex = resolveChannelListNavigationIndex(
+                            currentIndex,
+                            event.key,
+                            visibleThreads.length,
+                          );
+                          if (nextIndex == null) return;
+                          event.preventDefault();
+                          const nextThread = visibleThreads[nextIndex];
+                          if (!nextThread) return;
+                          setActiveId(nextThread.id);
+                          threadButtonRefs.current[nextIndex]?.focus();
+                        }}
+                        tabIndex={activeId === t.id || (!activeId && index === 0) ? 0 : -1}
                         className={cn(
                           WL_CHANNEL_CLASSES.threadRow,
                           "transition-all duration-300 hover:shadow-sm hover:bg-black/[0.04]",
@@ -384,6 +408,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                 />
               ) : (
                 <motion.div
+                  id="sms-thread-detail"
                   key={activeThread.id}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
