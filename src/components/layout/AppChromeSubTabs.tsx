@@ -32,7 +32,7 @@ export default function AppChromeSubTabs({
   return (
     <div
       role="group"
-      aria-label={secondary ? "Page section navigation" : undefined}
+      aria-label="Page section navigation"
       className={cn(
         "shrink-0 flex items-center gap-1.5 min-w-0 max-w-full overflow-x-auto tab-strip-scroll max-lg:tab-strip-scroll--fade",
         density === "compact" ? "mb-0" : "",

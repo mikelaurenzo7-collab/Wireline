@@ -460,7 +460,14 @@ export default function PainterWorkspace({
       className={cn("flex flex-col h-full min-h-0 relative", WL_APP_CLASSES.missionCanvas)}
     >
       {/* Scrollable chat body */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Design conversation"
+        className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-4"
+      >
         {isLoading && messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <Loader2 className="w-6 h-6 text-brand animate-spin" />
@@ -577,17 +584,19 @@ export default function PainterWorkspace({
               const version = versionByKey.get(key);
               const isActive = selectedPreviewKey === key;
               return (
-                <button
+                <ShadButton
                   key={key + idx}
                   type="button"
+                  variant="ghost"
+                  disableAnimations
                   onClick={() => selectIteration(p)}
                   aria-pressed={isActive}
                   className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-medium truncate touch-press hover:scale-[1.05] transition-colors",
+                    "h-auto flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-medium truncate touch-press hover:scale-[1.05] transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1",
                     isActive
-                      ? "bg-brand text-white border-brand shadow-sm shadow-brand/20"
-                      : "bg-brand/5 text-brand border-brand/12 hover:bg-brand/10 hover:border-brand/25",
+                      ? "bg-brand text-white border-brand shadow-sm shadow-brand/20 hover:bg-brand hover:text-white"
+                      : "bg-brand/5 text-brand border-brand/12 hover:bg-brand/10 hover:border-brand/25 hover:text-brand",
                   )}
                   title={p.title}
                 >
@@ -595,7 +604,7 @@ export default function PainterWorkspace({
                     {version ? `v${version}` : <LayoutTemplate className="w-3 h-3" aria-hidden />}
                   </span>
                   <span className="truncate max-w-[100px]">{p.title}</span>
-                </button>
+                </ShadButton>
               );
             })}
           </div>
@@ -605,16 +614,18 @@ export default function PainterWorkspace({
       {/* Style quick pick chips */}
       <div className="px-4 py-2 border-t border-brand/6 bg-paper/20 flex gap-2 overflow-x-auto shrink-0 scrollbar-none">
         <Palette className="w-3.5 h-3.5 text-muted shrink-0 self-center" />
-        <div className="flex gap-1.5 shrink-0">
+        <div className="flex gap-1.5 shrink-0" role="group" aria-label="Style presets">
           {STYLE_PRESETS.map((preset) => (
-            <button
+            <ShadButton
               key={preset.label}
               type="button"
+              variant="ghost"
+              disableAnimations
               onClick={() => handlePresetSelect(preset.text)}
-              className="px-2 py-1 text-[10px] font-medium rounded-full bg-brand/5 hover:bg-brand/10 border border-brand/8 text-ink hover:text-brand transition-colors shrink-0 touch-press hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1"
+              className="h-auto px-2 py-1 text-[10px] font-medium rounded-full bg-brand/5 hover:bg-brand/10 border border-brand/8 text-ink hover:text-brand transition-colors shrink-0 touch-press hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1"
             >
               {preset.label}
-            </button>
+            </ShadButton>
           ))}
         </div>
       </div>
@@ -664,7 +675,9 @@ export default function PainterWorkspace({
                 className="hidden"
               />
               {isUploading && (
-                <span className="text-[10px] text-muted animate-pulse">Uploading...</span>
+                <span role="status" className="text-[10px] text-muted animate-pulse">
+                  Uploading spec…
+                </span>
               )}
             </div>
 

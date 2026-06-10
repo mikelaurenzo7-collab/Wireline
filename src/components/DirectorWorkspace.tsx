@@ -1492,7 +1492,13 @@ export default function DirectorWorkspace({
               ) : null}
             </motion.div>
           ) : (
-            <div className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}>
+            <div
+              role="log"
+              aria-live="polite"
+              aria-atomic="false"
+              aria-label="Director conversation"
+              className={cn(WL_DIRECTOR_CLASSES.threadColumn, "space-y-2.5")}
+            >
               {visibleMessages.map((m) => {
                 const scene =
                   m.role === "director"

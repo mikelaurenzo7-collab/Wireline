@@ -33,6 +33,7 @@ import { SegmentStrip } from "./ui/SegmentStrip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
+import { Textarea } from "./ui/shadcn/Textarea";
 
 const APPT_AGENT_UNSET = "__unset__";
 
@@ -218,6 +219,8 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
                 placeholder="Jordan Pike"
                 value={form.customer_name}
                 onChange={(e) => set("customer_name", e.target.value)}
+                aria-required
+                aria-invalid={!!err && !form.customer_name.trim()}
               />
             </Field>
             <Field label="Phone Number" icon={Phone}>
@@ -244,6 +247,8 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
                   placeholder="Oct 15"
                   value={form.date}
                   onChange={(e) => set("date", e.target.value)}
+                  aria-required
+                  aria-invalid={!!err && !form.date.trim()}
                 />
               </Field>
               <Field label="Time" icon={Clock}>
@@ -252,6 +257,8 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
                   placeholder="2:00 PM"
                   value={form.time}
                   onChange={(e) => set("time", e.target.value)}
+                  aria-required
+                  aria-invalid={!!err && !form.time.trim()}
                 />
               </Field>
             </div>
@@ -292,7 +299,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
               </Field>
             )}
             <Field label="Notes" icon={StickyNote}>
-              <textarea
+              <Textarea
                 className={cn(inputCls, "resize-none min-h-[72px]")}
                 placeholder="Any notes or follow-up details…"
                 value={form.notes}

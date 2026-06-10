@@ -48,8 +48,12 @@ function LiveReplyPreview({ text }: { text: string }) {
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-brand/8 bg-brand/[0.04]">
         <span className={cn(WL_DIRECTOR_CLASSES.microLabel, "text-brand/70")}>Live output</span>
-        <span className="inline-flex items-center gap-1 wl-micro-meta--muted font-mono tabular-nums">
-          <span className="relative flex h-1.5 w-1.5">
+        <span
+          role="status"
+          aria-label="Director is streaming a reply"
+          className="inline-flex items-center gap-1 wl-micro-meta--muted font-mono tabular-nums"
+        >
+          <span aria-hidden className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
           </span>
@@ -60,7 +64,10 @@ function LiveReplyPreview({ text }: { text: string }) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/95 dark:from-velvet/95 to-transparent z-10" />
         <pre className="px-3 py-2.5 text-[12px] leading-relaxed text-ink/85 whitespace-pre-wrap font-sans">
           {lines.join("\n")}
-          <span className="inline-block w-[2px] h-[1em] ml-0.5 align-text-bottom bg-brand animate-pulse" />
+          <span
+            aria-hidden
+            className="inline-block w-[2px] h-[1em] ml-0.5 align-text-bottom bg-brand animate-pulse"
+          />
         </pre>
       </div>
     </motion.div>

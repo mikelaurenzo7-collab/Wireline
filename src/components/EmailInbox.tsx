@@ -34,6 +34,8 @@ import { useToast } from "../contexts/ToastContext";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
+import { Textarea } from "./ui/shadcn/Textarea";
+import { Skeleton } from "./ui/shadcn/Skeleton";
 import { clientLog, getClientErrorMessage } from "../lib/client-log";
 
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
@@ -637,18 +639,17 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                     <div className="shrink-0 px-4 py-3 border-t border-black/7 space-y-3">
                       {/* Quick reply chips */}
                       {(quickReplies.length > 0 || isLoadingQuickReplies) && (
-                        <div className="space-y-2">
+                        <div className="space-y-2" role="status" aria-live="polite">
                           <div className="flex items-center gap-2">
-                            <Zap className="w-3 h-3 text-brand" />
-                            <span className="wl-label text-ink/55">Quick replies</span>
+                            <Zap className="w-3 h-3 text-brand" aria-hidden />
+                            <span className="wl-label text-ink/55">
+                              {isLoadingQuickReplies ? "Drafting quick replies…" : "Quick replies"}
+                            </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {isLoadingQuickReplies
                               ? Array.from({ length: 3 }).map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className="h-7 w-28 rounded-full bg-black/5 animate-pulse"
-                                  />
+                                  <Skeleton key={i} className="h-7 w-28 rounded-full" />
                                 ))
                               : quickReplies.map((r, i) => (
                                   <ShadButton
@@ -673,11 +674,12 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           <Terminal className="w-3 h-3" />
                           <span className="wl-label">Compose reply</span>
                         </div>
-                        <textarea
+                        <Textarea
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
+                          aria-label="Reply message"
                           placeholder="Type a reply or ask the agent to draft one…"
-                          className="w-full px-3 pb-3 min-h-[100px] outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/55"
+                          className="w-full px-3 pb-3 min-h-[100px] border-0 shadow-none outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/55 focus-visible:ring-0"
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">

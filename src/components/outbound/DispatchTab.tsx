@@ -128,10 +128,10 @@ export default function DispatchTab({
   return (
     <>
       {isLoading ? (
-        <div className="h-full flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-brand" />
+        <div role="status" className="h-full flex flex-col items-center justify-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-brand" aria-hidden />
           <span className="app-section-title/70 font-display italic text-sm">
-            Loading dispatcher
+            Preparing dispatch console…
           </span>
         </div>
       ) : (
