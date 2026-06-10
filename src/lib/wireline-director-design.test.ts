@@ -218,6 +218,12 @@ describe("Wireline Director design contract", () => {
     expect(DIRECTOR_SESSION_COPY.pendingApprovals(2)).toContain("2");
   });
 
+  it("degraded-load notice pairs with an inline retry affordance", () => {
+    expect(DIRECTOR_SESSION_COPY.degradedNotice).toMatch(/could not be loaded/i);
+    expect(DIRECTOR_SESSION_COPY.degradedNotice).not.toMatch(/refresh/i);
+    expect(DIRECTOR_SESSION_COPY.degradedRetryLabel).toMatch(/retry/i);
+  });
+
   it("composer hints rotate through capability areas", () => {
     expect(DIRECTOR_COMPOSER_HINTS.length).toBeGreaterThanOrEqual(4);
     expect(DIRECTOR_COMPOSER_HINTS.some((h) => h.toLowerCase().includes("research"))).toBe(true);

@@ -861,6 +861,8 @@ export const DIRECTOR_SESSION_COPY = {
   pendingApprovals: (n: number) => (n === 1 ? "1 approval pending" : `${n} approvals pending`),
   sessionHint:
     "Applied agent settings persist on each agent. Unapproved cards and chat history are removed when you clear.",
+  degradedNotice: "Some Director data could not be loaded. Your thread may be incomplete.",
+  degradedRetryLabel: "Retry",
 } as const;
 
 /** Copy for DirectorLiveOrchestra — fleet channel / runway / spotlight */

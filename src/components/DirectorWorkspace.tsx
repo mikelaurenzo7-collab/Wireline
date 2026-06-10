@@ -33,7 +33,6 @@ import {
   Search as SearchIcon,
   Palette,
   Download,
-  Sparkles,
   LayoutTemplate,
   CheckCheck,
 } from "lucide-react";
@@ -1369,10 +1368,21 @@ export default function DirectorWorkspace({
           className="flex-1 min-h-0 scroll-viewport wl-scroll-edge wl-director-thread-scroll px-3 sm:px-4 py-5"
         >
           {loadDegraded && !isLoading && (
-            <p className="rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2 wl-micro-meta text-ink/80 dark:text-foreground/85">
-              Some Director data could not be loaded. Your thread may be incomplete — refresh to
-              retry.
-            </p>
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2">
+              <p className="wl-micro-meta text-ink/80 dark:text-foreground/85">
+                {DIRECTOR_SESSION_COPY.degradedNotice}
+              </p>
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disableAnimations
+                onClick={() => void loadMessages()}
+                className="h-7 shrink-0 px-2.5 wl-label touch-press hover:scale-[1.05]"
+              >
+                {DIRECTOR_SESSION_COPY.degradedRetryLabel}
+              </ShadButton>
+            </div>
           )}
           {!isLoading && visibleMessages.length > 0 && (
             <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
@@ -1894,8 +1904,7 @@ export default function DirectorWorkspace({
                         <div className="w-full">
                           {/* Gallery header */}
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
-                              <Sparkles className="w-3 h-3 text-brand" />
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
                               <span className="wl-label font-bold text-brand">
                                 {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""}{" "}
                                 generated
@@ -1999,7 +2008,6 @@ export default function DirectorWorkspace({
                                         }
                                         className="px-2.5 py-1 rounded-md wl-label font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
                                       >
-                                        <Sparkles className="w-2.5 h-2.5" />
                                         Vectorize
                                       </ShadButton>
                                     )}

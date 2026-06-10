@@ -16,7 +16,7 @@ import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientToolbar from "../components/layout/ClientToolbar";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
-import { Zap, Globe, Activity } from "lucide-react";
+import { Activity } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import { EmptyState } from "../components/ui/EmptyState";
 import {
@@ -570,10 +570,7 @@ export default function LiveOps() {
                       )}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="wl-label flex items-center gap-2">
-                          <Globe className="w-3.5 h-3.5 text-brand" />
-                          Market Sentiment
-                        </h3>
+                        <h3 className="wl-label">Market Sentiment</h3>
                       </div>
 
                       {sentimentData.length === 0 ? (
@@ -608,10 +605,7 @@ export default function LiveOps() {
                       )}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="wl-label flex items-center gap-2">
-                          <Zap className="w-3.5 h-3.5 text-brand" />
-                          Unit Economics
-                        </h3>
+                        <h3 className="wl-label">Unit Economics</h3>
                         <span className={WL_OPS_CLASSES.scoreBadge}>
                           {OPS_COPY.roiLabel}: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                         </span>

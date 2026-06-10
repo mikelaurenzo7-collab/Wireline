@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Radio, Users, ShieldAlert, Activity, Headphones, Phone, Sparkles } from "lucide-react";
+import { Radio, Users, ShieldAlert, Activity, Headphones, Phone } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -307,8 +307,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
 
                         {call.thought && (
                           <div className="mb-2 sm:mb-3 p-2.5 sm:p-3 rounded-md wl-panel">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Sparkles className="w-3 h-3 text-brand" />
+                            <div className="mb-1">
                               <span className="wl-label text-muted">Live reasoning</span>
                             </div>
                             <p
@@ -464,10 +463,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
           className={cn(WL_OPS_CLASSES.railCard, "flex flex-col flex-1 min-h-0 overflow-hidden")}
         >
           <div className="flex items-center justify-between mb-3 shrink-0">
-            <h3 className="wl-label flex items-center gap-2">
-              <Users className="w-3.5 h-3.5 text-brand" />
-              Fleet
-            </h3>
+            <h3 className="wl-label">Fleet</h3>
             <span className="chrome-subtle tabular-nums">
               {agentsLoading ? "…" : `${agents.length} agent${agents.length === 1 ? "" : "s"}`}
             </span>

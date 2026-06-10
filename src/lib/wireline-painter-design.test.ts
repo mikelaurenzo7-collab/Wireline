@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   PAINTER_INTEGRATION_RAIL,
+  PAINTER_LOAD_FAILED_COPY,
   PAINTER_STARTER_PROMPTS,
   PAINTER_STARTER_PROMPTS_FEATURED_COUNT,
   WIRELINE_PAINTER_UI,
@@ -18,6 +19,17 @@ describe("WIRELINE_PAINTER_UI", () => {
     expect(PAINTER_INTEGRATION_RAIL.ariaLabel.length).toBeGreaterThan(5);
     expect(PAINTER_INTEGRATION_RAIL.connectPrefix).toMatch(/connect/i);
     expect(PAINTER_INTEGRATION_RAIL.connectedHint).toMatch(/connected/i);
+  });
+
+  it("ships an actionable load-failure state with a retry affordance", () => {
+    expect(PAINTER_LOAD_FAILED_COPY.title).toMatch(/couldn't load/i);
+    expect(PAINTER_LOAD_FAILED_COPY.body.length).toBeGreaterThan(20);
+    expect(PAINTER_LOAD_FAILED_COPY.retryLabel).toMatch(/retry/i);
+  });
+
+  it("ships a design-specific composer placeholder", () => {
+    expect(WIRELINE_PAINTER_UI.composerPlaceholder).toMatch(/describe/i);
+    expect(WIRELINE_PAINTER_UI.composerPlaceholder.length).toBeGreaterThan(30);
   });
 
   it("builds handoff link with encoded prompt", () => {

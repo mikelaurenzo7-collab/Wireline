@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { TrendingUp, TrendingDown, Loader2, Target, Sparkles, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Target, AlertTriangle } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatPercent, safeFixed, formatInt } from "../lib/safe-number";
@@ -122,8 +122,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
           <h3 className="font-display italic text-lg text-ink leading-tight">
             {title ?? `Performance · ${data.window_days}d`}
           </h3>
-          <p className="wl-micro-meta leading-relaxed mt-0.5 inline-flex items-center gap-1.5">
-            <Sparkles className="w-2.5 h-2.5 text-brand" />
+          <p className="wl-micro-meta leading-relaxed mt-0.5">
             Optimizing for <span className="text-ink/80 font-medium">{data.kpi_focus}</span>
             {" · "}
             <span className="text-brand font-semibold">{formatInt(data.sample_size)}</span>{" "}
@@ -134,9 +133,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
       <div className="relative grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4 sm:items-end">
         <div className="min-w-0">
-          <div className="wl-label text-brand mb-1 font-semibold">
-            {data.primary.label}
-          </div>
+          <div className="wl-label text-brand mb-1 font-semibold">{data.primary.label}</div>
           <div className="flex items-center gap-2.5">
             <span className="font-display italic text-3.5xl md:text-4xl text-ink leading-none tabular-nums font-bold">
               {formatMetricValue(data.primary.value, data.primary.format)}
@@ -152,9 +149,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
         <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-2 sm:gap-4">
           {data.secondary.map((s, i) => (
             <div key={`${s.label}-${i}`} className="min-w-0 flex flex-col gap-1">
-              <div className="wl-label font-semibold text-ink/40 truncate">
-                {s.label}
-              </div>
+              <div className="wl-label font-semibold text-ink/40 truncate">{s.label}</div>
               <div className="font-display italic text-xl font-bold text-ink leading-none tabular-nums truncate">
                 {formatMetricValue(s.value, s.format)}
               </div>
@@ -194,11 +189,7 @@ function DeltaPill({ pct }: { pct: number }) {
 function Sparkline({ values }: { values: number[] }) {
   const safe = Array.isArray(values) ? values.map((v) => (Number.isFinite(v) ? v : 0)) : [];
   if (safe.length < 2) {
-    return (
-      <div className="wl-label text-ink/40 text-right">
-        no trend yet
-      </div>
-    );
+    return <div className="wl-label text-ink/40 text-right">no trend yet</div>;
   }
   const max = Math.max(1, ...safe);
   const min = 0;

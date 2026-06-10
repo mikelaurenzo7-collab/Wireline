@@ -58,6 +58,14 @@ export const PAINTER_LOADING_COPY = {
   sub: "Thread history · brand profile · live preview",
 } as const;
 
+/** Inline load-failure state — paired with a Retry action, never toast-only */
+export const PAINTER_LOAD_FAILED_COPY = {
+  eyebrow: "Studio unavailable",
+  title: "Couldn't load your design thread",
+  body: "Your renders are safe — the thread just didn't come back. Check your connection and retry.",
+  retryLabel: "Retry",
+} as const;
+
 export const WIRELINE_PAINTER_UI = {
   navLabel: "Design",
   betaLabel: "BETA",
