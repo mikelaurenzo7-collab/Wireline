@@ -140,9 +140,11 @@ Stripe, Twilio, ElevenLabs.
 **Logging** — use the structured `log.*` logger, never `console.log`.
 
 **Styling** — Tailwind CSS 4 + shadcn primitives; no raw CSS outside
-`src/index.css`. Mobile-first (design at 390px). 44×44px touch targets via
-invisible pseudo-elements/padding, NOT inflated visual sizes. Use `clsx()` +
-`tailwind-merge`. Director/mission-control surfaces use `WL_DIRECTOR_CLASSES`
+`src/index.css`. All viewports equal — design at 390px, but escalate layouts
+into `lg:`/`xl:`/`2xl:` so 1440px+ screens never render like tablets. 44×44px
+touch targets via invisible pseudo-elements/padding, NOT inflated visual sizes.
+Use `clsx()` + `tailwind-merge`. Director/mission-control surfaces use
+`WL_DIRECTOR_CLASSES`
 and copy from `src/lib/wireline-director-design.ts`; run `npm run test:design`
 when that contract changes.
 

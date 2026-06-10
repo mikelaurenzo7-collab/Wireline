@@ -151,9 +151,13 @@ permanent. Raising a baseline is reserved for a deliberate, explained exception.
 
 ---
 
-## 3b. Mobile-First Architecture — Locked Viewport
+## 3b. Equal-Viewport Architecture — Locked Viewport
 
-The app shell uses a **strict locked viewport** pattern:
+Wireline treats mobile, laptop, and desktop as **equally important** — design
+at 390px first for correctness, then escalate layouts into `lg:`/`xl:`/`2xl:`
+(more columns, wider split panes, scaled measure) so 1440px+ screens read as a
+true desktop tool, never a stretched tablet. The app shell uses a **strict
+locked viewport** pattern at every size:
 
 - `html`, `body`, `#root` are pinned to `height: 100dvh; overflow: hidden`
 - No document-level scroll — the browser chrome stays perfectly stationary

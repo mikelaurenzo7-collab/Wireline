@@ -14,7 +14,8 @@
  * Polling: every 30s while the tab is visible. Pauses when hidden so
  * the page costs us nothing when nobody's looking.
  *
- * Mobile-first: single-column stack under sm, 3-column at md+.
+ * Equal viewports: single-column stack under sm, 3-column at md+, with
+ * comfortable spacing that scales up rather than stretching on desktop.
  */
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";

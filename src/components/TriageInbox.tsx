@@ -262,8 +262,11 @@ export function TriagePanel({
       className={cn(
         "h-full min-h-0 overflow-y-auto lg:overflow-hidden stagger-children",
         WL_OPS_CLASSES.triageGrid,
-        "grid gap-3 grid-cols-1 md:grid-cols-2",
-        "auto-rows-fr lg:grid-rows-2",
+        // Equal-viewport board: stacked on phones, 2-up on tablets, a balanced
+        // 2×2 on laptops, and a full-height 4-lane triage board on wide desktops
+        // so 1440px+ screens read as a proper command board — not two stretched tiles.
+        "grid gap-3 xl:gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4",
+        "auto-rows-fr lg:grid-rows-2 xl:grid-rows-1",
       )}
       data-testid="triage-grid"
     >

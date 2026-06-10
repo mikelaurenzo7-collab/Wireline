@@ -217,7 +217,7 @@ export default function StripeBillingCard() {
           </div>
           <h3 className="font-display italic text-2xl text-ink">Billing is finishing setup</h3>
         </div>
-        <p className="text-[12px] text-ink/75 leading-relaxed">
+        <p className="max-w-2xl text-[12px] text-ink/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
           You can keep using Wireline — we'll email you the moment self-serve plan changes are
           available, or write to{" "}
