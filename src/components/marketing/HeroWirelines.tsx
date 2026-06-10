@@ -64,6 +64,13 @@ export default function HeroWirelines() {
               data-index={i}
               vectorEffect="non-scaling-stroke"
             />
+            <path
+              d={wire.d}
+              pathLength={1}
+              className="wl-wire-pulse"
+              data-index={i}
+              vectorEffect="non-scaling-stroke"
+            />
           </g>
         ))}
       </svg>
@@ -96,6 +103,7 @@ export default function HeroWirelines() {
           xmlns="http://www.w3.org/2000/svg"
           className="overflow-visible"
         >
+          <circle cx="32" cy="38" r="32" className="wl-exchange-ring wl-exchange-ring--pulsar" />
           <circle cx="32" cy="38" r="22" className="wl-exchange-ring wl-exchange-ring--outer" />
           <circle cx="32" cy="38" r="12" className="wl-exchange-ring" />
           <line x1="32" y1="32" x2="32" y2="20" className="wl-exchange-mast" />

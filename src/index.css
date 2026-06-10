@@ -8215,6 +8215,7 @@ select:focus {
   stroke-dasharray: 0.055 0.945;
   stroke-dashoffset: 1;
   opacity: 0;
+  filter: drop-shadow(0 0 3px rgba(139, 63, 214, 0.45));
   animation:
     wl-wire-signal-in 0.8s ease 2s forwards,
     wl-wire-signal-travel 3.2s linear infinite;
@@ -8227,6 +8228,28 @@ select:focus {
 }
 .wl-wire-signal[data-index="3"] {
   animation-delay: 2.6s, 2.4s;
+}
+
+.wl-wire-pulse {
+  stroke: var(--color-brand, #8b3fd6);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.03 0.97;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  filter: drop-shadow(0 0 2px rgba(139, 63, 214, 0.6));
+  animation:
+    wl-wire-signal-in 0.8s ease 2.3s forwards,
+    wl-wire-signal-travel 1.8s linear infinite;
+}
+.wl-wire-pulse[data-index="1"] {
+  animation-delay: 2.5s, 0.45s;
+}
+.wl-wire-pulse[data-index="2"] {
+  animation-delay: 2.7s, 0.9s;
+}
+.wl-wire-pulse[data-index="3"] {
+  animation-delay: 2.9s, 1.35s;
 }
 
 .wl-wire-node {
@@ -8270,6 +8293,7 @@ select:focus {
 .wl-exchange-beacon {
   fill: var(--color-brand, #8b3fd6);
   opacity: 0;
+  filter: drop-shadow(0 0 5px var(--color-brand, #8b3fd6));
   animation: wl-exchange-beacon-pulse 3.2s ease-in-out 1.9s infinite;
 }
 .wl-exchange-ring {
@@ -8284,6 +8308,10 @@ select:focus {
 .wl-exchange-ring--outer {
   stroke-width: 1;
   animation-delay: 2.4s;
+}
+.wl-exchange-ring--pulsar {
+  stroke-width: 0.75;
+  animation: wl-exchange-pulsar 3.6s cubic-bezier(0.16, 1, 0.3, 1) 2.2s infinite;
 }
 
 @keyframes wl-wire-draw {
@@ -8357,10 +8385,21 @@ select:focus {
     transform: scale(1.06);
   }
 }
+@keyframes wl-exchange-pulsar {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
 
 .dark .wl-wire,
 .dark .wl-wire-ambient,
 .dark .wl-wire-signal,
+.dark .wl-wire-pulse,
 .dark .wl-exchange-mast,
 .dark .wl-exchange-ring {
   stroke: var(--primary, #9b5ce0);
@@ -8377,6 +8416,7 @@ select:focus {
   .wl-wire,
   .wl-wire-ambient,
   .wl-wire-signal,
+  .wl-wire-pulse,
   .wl-wire-node,
   .wl-exchange-core,
   .wl-exchange-mast,
@@ -8393,6 +8433,9 @@ select:focus {
     opacity: 0.1;
   }
   .wl-wire-signal {
+    opacity: 0;
+  }
+  .wl-wire-pulse {
     opacity: 0;
   }
   .wl-wire-node {
