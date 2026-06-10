@@ -149,13 +149,9 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">
-                        Job Titles
-                      </label>
+                      <label className="wl-label text-ink font-bold">Job Titles</label>
                     </div>
-                    <span className="wl-label text-muted">
-                      Role Density
-                    </span>
+                    <span className="wl-label text-muted">Role Density</span>
                   </div>
                   <div className="flex gap-2">
                     <Input
@@ -204,13 +200,9 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">
-                        Industries
-                      </label>
+                      <label className="wl-label text-ink font-bold">Industries</label>
                     </div>
-                    <span className="wl-label text-muted">
-                      Market Scope
-                    </span>
+                    <span className="wl-label text-muted">Market Scope</span>
                   </div>
                   <div className="flex gap-2">
                     <Input
@@ -260,13 +252,9 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">
-                        Geographic Target
-                      </label>
+                      <label className="wl-label text-ink font-bold">Geographic Target</label>
                     </div>
-                    <span className="wl-label text-muted">
-                      Legal Nexus
-                    </span>
+                    <span className="wl-label text-muted">Legal Nexus</span>
                   </div>
                   <div className="flex gap-2">
                     <Input
@@ -315,13 +303,9 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">
-                        Company Size
-                      </label>
+                      <label className="wl-label text-ink font-bold">Company Size</label>
                     </div>
-                    <span className="wl-label text-muted">
-                      Org Scale
-                    </span>
+                    <span className="wl-label text-muted">Org Scale</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1.5">
                     {[
@@ -382,9 +366,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
           <div className="space-y-4">
             <div className="p-5 rounded-md wl-panel border border-input bg-brand/5 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="wl-label font-black text-brand">
-                  ICP Efficiency
-                </span>
+                <span className="wl-label font-black text-brand">ICP Efficiency</span>
                 <Sparkles className="w-4 h-4 text-brand animate-pulse" />
               </div>
               <div className="flex items-baseline gap-2">
@@ -406,9 +388,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <span className="wl-label text-muted font-bold">
-                  ICP tags
-                </span>
+                <span className="wl-label text-muted font-bold">ICP tags</span>
                 <span className="wl-micro-badge font-mono text-muted">SAVED</span>
               </div>
               {[
@@ -421,9 +401,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   key={stat.label}
                   className="p-3 rounded-md wl-panel border border-input flex items-center justify-between"
                 >
-                  <span className="wl-label-muted">
-                    {stat.label}
-                  </span>
+                  <span className="wl-label-muted">{stat.label}</span>
                   <span
                     className={cn(
                       "text-sm font-display",
@@ -436,10 +414,8 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               ))}
             </div>
 
-            <div className="p-4 rounded-md bg-black/20 border border-white/5">
-              <p className="wl-label text-muted/70 mb-2">
-                Strategy Advice
-              </p>
+            <div className="p-4 rounded-md bg-brand/5 border border-brand/15">
+              <p className="wl-label text-brand/70 mb-2">Strategy Advice</p>
               <p className="wl-micro-meta italic text-muted leading-relaxed">"{icp.advice}"</p>
             </div>
           </div>

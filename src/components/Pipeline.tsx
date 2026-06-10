@@ -403,11 +403,16 @@ export default function Pipeline() {
                                     </TooltipProvider>
                                   )}
                                   <div className="flex items-center justify-between mt-2">
-                                    <span className="wl-micro-meta">
-                                      {lead.attempts ?? 0} attempt
-                                      {(lead.attempts ?? 0) === 1 ? "" : "s"}
+                                    <span className="wl-micro-meta min-w-0">
+                                      <span className="whitespace-nowrap">
+                                        {lead.attempts ?? 0} attempt
+                                        {(lead.attempts ?? 0) === 1 ? "" : "s"}
+                                      </span>
                                       {lead.lastCalledAt && (
-                                        <> · last {formatDate(lead.lastCalledAt)}</>
+                                        <span className="whitespace-nowrap">
+                                          {" "}
+                                          · last {formatDate(lead.lastCalledAt)}
+                                        </span>
                                       )}
                                     </span>
                                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">

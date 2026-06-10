@@ -360,12 +360,12 @@ function PlanPicker({
               data-accent={accent}
             >
               {!isSignupMatch && plan.id === "pro" && (
-                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full wl-label bg-brand text-white">
+                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
                   Most popular
                 </div>
               )}
               {isSignupMatch && (
-                <div className="absolute -top-3 left-4 px-3 py-1 rounded-full wl-label bg-brand text-white">
+                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
                   Matched from visit
                 </div>
               )}

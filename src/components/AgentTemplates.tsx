@@ -107,7 +107,7 @@ const AGENT_TEMPLATES = [
     channel: "email" as const,
     icon: Mail,
     accent: BRAND.purple,
-    badge: "Email",
+    badge: null,
     firstMessage:
       "Thank you for reaching out. I've received your message and I'm here to help resolve this for you today.",
   },
@@ -408,7 +408,7 @@ function TemplateCard({
               className={cn(
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
-                  ? "wl-status-success border wl-text-success"
+                  ? "bg-black/[0.04] dark:bg-white/8 border-black/10 dark:border-white/15 text-ink/70"
                   : "bg-brand/10 border-brand/30 text-brand",
                 alreadyDeployed && "hidden sm:inline-flex",
               )}
