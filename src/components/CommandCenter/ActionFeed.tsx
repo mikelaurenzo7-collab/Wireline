@@ -112,10 +112,7 @@ export function ActionFeed({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="wl-label flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-brand" />
-          {OPS_COPY.intelHub}
-        </h3>
+        <h3 className="wl-label">{OPS_COPY.intelHub}</h3>
         <span className="wl-ops-score-badge">
           {actions.filter((a) => a.status === "pending").length} pending
         </span>
@@ -276,9 +273,7 @@ export function ActionFeed({
                       <div className="p-5 space-y-4">
                         {action.reasoning && (
                           <div className="space-y-1.5">
-                            <h4 className="wl-label text-brand font-bold flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3" /> AI Reasoning
-                            </h4>
+                            <h4 className="wl-label text-brand font-bold">AI Reasoning</h4>
                             <p className={cn(WL_APP_CLASSES.bodyCaption, "text-ink/70 italic")}>
                               "{action.reasoning}"
                             </p>

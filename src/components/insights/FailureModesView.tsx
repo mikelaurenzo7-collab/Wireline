@@ -100,12 +100,9 @@ export default function FailureModesView() {
             <div className="font-display italic text-3xl text-aurora">{m.count}</div>
           </div>
           <p className="text-sm text-ink/75 leading-relaxed">{m.description}</p>
-          <div className="rounded-md bg-brand/10 border border-brand/30 p-4 flex items-start gap-3">
-            <Sparkles className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-            <div>
-              <div className="wl-insight-label text-brand mb-1">Recommended fix</div>
-              <p className="text-sm text-ink/90">{m.recommended_fix}</p>
-            </div>
+          <div className="rounded-md bg-brand/10 border border-brand/30 p-4">
+            <div className="wl-insight-label text-brand mb-1">Recommended fix</div>
+            <p className="text-sm text-ink/90">{m.recommended_fix}</p>
           </div>
         </motion.div>
       ))}

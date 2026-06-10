@@ -864,9 +864,7 @@ export default function AgentTraining({
                         key={lesson.id}
                         className="rounded-md bg-brand/8 border border-brand/20 p-3"
                       >
-                        <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
-                          <Sparkles className="w-3 h-3" /> Pattern learned from calls
-                        </div>
+                        <div className="wl-label text-brand mb-2">Pattern learned from calls</div>
                         <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
                           <Clock className="w-3 h-3 text-ink/40" />

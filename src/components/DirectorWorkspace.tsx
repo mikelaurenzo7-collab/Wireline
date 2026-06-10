@@ -33,7 +33,6 @@ import {
   Search as SearchIcon,
   Palette,
   Download,
-  Sparkles,
   LayoutTemplate,
   CheckCheck,
 } from "lucide-react";
@@ -1905,8 +1904,7 @@ export default function DirectorWorkspace({
                         <div className="w-full">
                           {/* Gallery header */}
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
-                              <Sparkles className="w-3 h-3 text-brand" />
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-brand/10 to-brand-deep/10 border border-brand/25">
                               <span className="wl-label font-bold text-brand">
                                 {m.previews.length} concept{m.previews.length !== 1 ? "s" : ""}{" "}
                                 generated
@@ -2010,7 +2008,6 @@ export default function DirectorWorkspace({
                                         }
                                         className="px-2.5 py-1 rounded-md wl-label font-semibold border border-brand/25 bg-brand/5 text-brand hover:bg-brand/10"
                                       >
-                                        <Sparkles className="w-2.5 h-2.5" />
                                         Vectorize
                                       </ShadButton>
                                     )}

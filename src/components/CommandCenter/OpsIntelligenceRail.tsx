@@ -1,5 +1,4 @@
 import { motion } from "motion/react";
-import { Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clsx } from "clsx";
 import { authFetch } from "../../lib/api";
@@ -67,12 +66,8 @@ export function OpsIntelligenceRail({
 
       <div className={clsx(WL_OPS_CLASSES.railCard, "space-y-2.5")}>
         <div>
-          <h4 className="text-sm font-semibold leading-tight text-ink">
-            {OPS_COPY.growthTitle}
-          </h4>
-          <p className="text-[11px] text-muted mt-0.5 leading-relaxed">
-            {OPS_COPY.growthBody}
-          </p>
+          <h4 className="text-sm font-semibold leading-tight text-ink">{OPS_COPY.growthTitle}</h4>
+          <p className="text-[11px] text-muted mt-0.5 leading-relaxed">{OPS_COPY.growthBody}</p>
         </div>
 
         {fleetAgents > 0 ? (
@@ -189,9 +184,6 @@ export function OpsIntelligenceRail({
             disabled={activatingGrowth}
             className="touch-press hover:scale-[1.02] w-full gap-2 rounded-md bg-gradient-to-br from-brand to-brand-deep py-2.5 text-on-brand shadow-sm shadow-brand/20 disabled:cursor-wait"
           >
-            <Zap
-              className={clsx("w-3.5 h-3.5 fill-current", activatingGrowth && "animate-pulse")}
-            />
             <span className="text-[11px] font-black uppercase tracking-widest">
               {activatingGrowth ? OPS_COPY.growthCtaBusy : OPS_COPY.growthCta}
             </span>
@@ -205,7 +197,6 @@ export function OpsIntelligenceRail({
             title="Create an agent first"
             className="touch-press hover:scale-[1.02] w-full gap-2 rounded-md border-brand/20 bg-brand/[0.02] py-2.5 text-brand hover:border-brand/45"
           >
-            <Zap className="w-3.5 h-3.5" />
             <span className="text-[11px] font-semibold uppercase tracking-wider">
               {OPS_COPY.growthDeployFirst}
             </span>
