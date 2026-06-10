@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useState, useEffect, useCallback, KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import {
   Search,
   Bot,
@@ -29,7 +35,7 @@ import {
   Paintbrush,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useAuth } from "../contexts/AuthContext";
@@ -48,11 +54,45 @@ interface CommandItem {
   ownerOnly?: boolean;
 }
 
+export function isTextEntryTarget(target: EventTarget | null): boolean {
+  if (!target || typeof target !== "object") return false;
+  const element = target as {
+    tagName?: string;
+    isContentEditable?: boolean;
+    getAttribute?: (name: string) => string | null;
+  };
+  const tagName = typeof element.tagName === "string" ? element.tagName.toUpperCase() : "";
+  const role = typeof element.getAttribute === "function" ? element.getAttribute("role") : null;
+  return (
+    ["INPUT", "TEXTAREA", "SELECT"].includes(tagName) ||
+    element.isContentEditable === true ||
+    role === "textbox" ||
+    role === "searchbox"
+  );
+}
+
+export function resolveCommandSelectionIndex(
+  currentIndex: number,
+  key: ReactKeyboardEvent["key"],
+  itemCount: number,
+): number {
+  if (itemCount <= 0) return 0;
+  if (key === "ArrowDown") return (currentIndex + 1) % itemCount;
+  if (key === "ArrowUp") return (currentIndex - 1 + itemCount) % itemCount;
+  if (key === "Home") return 0;
+  if (key === "End") return itemCount - 1;
+  return currentIndex;
+}
+
 export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { user } = useAuth();
+  const reduceMotion = useReducedMotion();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   // Pin the page underneath while the command palette is open so
   // arrow-key navigation doesn't scroll the page beneath it.
@@ -278,11 +318,14 @@ export default function CommandBar() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const typingTarget = isTextEntryTarget(e.target);
+
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        if (!isOpen && typingTarget) return;
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape" && isOpen) setIsOpen(false);
     };
 
     const handleOpenCommandBar = () => {
@@ -296,7 +339,7 @@ export default function CommandBar() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wireline:open-command-bar", handleOpenCommandBar);
     };
-  }, []);
+  }, [isOpen]);
 
   const handleAction = useCallback((cmd: CommandItem) => {
     cmd.action();
@@ -308,14 +351,27 @@ export default function CommandBar() {
     if (isOpen) setSelectedIndex(0);
   }, [isOpen, query]);
 
+  useEffect(() => {
+    if (isOpen) {
+      restoreFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      return;
+    }
+    if (restoreFocusRef.current && document.contains(restoreFocusRef.current)) {
+      restoreFocusRef.current.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    optionRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
+  }, [isOpen, selectedIndex]);
+
   const onKeyDown = (e: ReactKeyboardEvent) => {
-    if (e.key === "ArrowDown") {
+    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredCommands.length));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex(
-        (prev) => (prev - 1 + filteredCommands.length) % Math.max(1, filteredCommands.length),
+      setSelectedIndex((prev) =>
+        resolveCommandSelectionIndex(prev, e.key, filteredCommands.length),
       );
     } else if (e.key === "Tab") {
       // Standard command-palette behavior: Tab cycles results instead of
@@ -334,19 +390,25 @@ export default function CommandBar() {
         <div className="fixed inset-0 z-[9999] flex items-start justify-center px-4 pt-[max(1rem,calc(env(safe-area-inset-top,0px)+8dvh))]">
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { opacity: 0 }}
             className="absolute inset-0 bg-black/70 backdrop-blur-md"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Dialog */}
           <motion.div
-            initial={{ scale: 0.96, opacity: 0, y: -16 }}
+            initial={reduceMotion ? { opacity: 1 } : { scale: 0.96, opacity: 0, y: -16 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.96, opacity: 0, y: -16 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            exit={
+              reduceMotion
+                ? { opacity: 0, transition: { duration: 0.01 } }
+                : { scale: 0.96, opacity: 0, y: -16 }
+            }
+            transition={
+              reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+            }
             role="dialog"
             aria-modal="true"
             aria-label="Command bar"
@@ -361,8 +423,18 @@ export default function CommandBar() {
             <div className="relative z-10 wl-panel-elevated rounded-t-md px-5 py-4 flex items-center gap-3 border-b border-black/8 dark:border-white/8">
               <Search className="w-4 h-4 text-brand/80 shrink-0" />
               <Input
+                ref={inputRef}
                 autoFocus
                 aria-label="Command search input"
+                role="combobox"
+                aria-expanded="true"
+                aria-controls="command-bar-listbox"
+                aria-activedescendant={
+                  filteredCommands[selectedIndex]
+                    ? `command-bar-option-${filteredCommands[selectedIndex].id}`
+                    : undefined
+                }
+                aria-autocomplete="list"
                 placeholder="Jump anywhere or take an action…"
                 className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-ink/40 font-normal"
                 value={query}
@@ -378,7 +450,12 @@ export default function CommandBar() {
             <div className="relative z-10 wl-panel-elevated rounded-b-md max-h-[60dvh] sm:max-h-[420px] flex flex-col min-h-0">
               <ScrollArea className="flex-1 min-h-0 max-h-[calc(60dvh-2.75rem)] sm:max-h-[calc(420px-2.75rem)]">
                 {filteredCommands.length > 0 ? (
-                  <div className="py-2">
+                  <div
+                    className="py-2"
+                    id="command-bar-listbox"
+                    role="listbox"
+                    aria-label="Command results"
+                  >
                     {["Navigation", "Actions"].map((category) => {
                       const catCmds = filteredCommands.filter((c) => c.category === category);
                       if (catCmds.length === 0) return null;
@@ -396,11 +473,19 @@ export default function CommandBar() {
                               return (
                                 <ShadButton
                                   key={cmd.id}
+                                  id={`command-bar-option-${cmd.id}`}
                                   type="button"
                                   variant="ghost"
                                   disableAnimations
+                                  role="option"
+                                  aria-selected={isSelected}
+                                  tabIndex={-1}
+                                  ref={(node) => {
+                                    optionRefs.current[globalIndex] = node;
+                                  }}
                                   onClick={() => handleAction(cmd)}
                                   onMouseEnter={() => setSelectedIndex(globalIndex)}
+                                  onFocus={() => setSelectedIndex(globalIndex)}
                                   className={cn(
                                     "group w-full h-auto rounded-md px-3 py-2.5 flex items-center gap-3 text-left justify-start",
                                     isSelected
@@ -417,7 +502,7 @@ export default function CommandBar() {
                                         : "wl-panel border border-black/10 dark:border-white/10 text-muted",
                                     )}
                                   >
-                                    <cmd.icon className="w-3.5 h-3.5" />
+                                    <cmd.icon aria-hidden="true" className="w-3.5 h-3.5" />
                                   </div>
 
                                   {/* Label + description */}
@@ -450,6 +535,7 @@ export default function CommandBar() {
                                       </kbd>
                                     )}
                                     <ChevronRight
+                                      aria-hidden="true"
                                       className={cn(
                                         "w-3.5 h-3.5 transition-all",
                                         isSelected

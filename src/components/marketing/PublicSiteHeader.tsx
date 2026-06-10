@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ArrowRight } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -35,6 +36,10 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
+  const reduceMotion = useReducedMotion();
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const menuPanelRef = useRef<HTMLDivElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   const isAuth = active === "signin" || active === "signup";
   const signedIn = !!user && !authLoading;
   const homeTo = signedIn ? "/ops" : "/";
@@ -45,10 +50,48 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
 
   useEffect(() => {
     if (!menuOpen) return;
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !menuPanelRef.current) return;
+
+      const focusableNodes = Array.from(
+        menuPanelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.offsetParent !== null);
+
+      if (focusableNodes.length === 0) return;
+
+      const first = focusableNodes[0];
+      const last = focusableNodes[focusableNodes.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
+      window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = prev;
+      if (restoreFocusRef.current && document.contains(restoreFocusRef.current)) {
+        restoreFocusRef.current.focus();
+      }
     };
   }, [menuOpen]);
 
@@ -172,79 +215,115 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
       </header>
 
       {/* Mobile nav overlay */}
-      {menuOpen && (
-        <div
-          id="public-mobile-nav"
-          className="md:hidden fixed inset-0 z-50 flex flex-col"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Site navigation"
-        >
-          <ShadButton
-            type="button"
-            disableAnimations
-            variant="ghost"
-            className="absolute inset-0 h-full w-full rounded-none bg-ink/20 backdrop-blur-sm hover:bg-ink/20 after:hidden"
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-          />
-          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-paper border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
-            <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
-              {MOBILE_LINKS.map((link) => {
-                const isActive =
-                  location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    aria-current={isActive ? "page" : undefined}
-                    className={cn(
-                      "flex items-center min-h-[48px] px-5 text-[15px] font-medium border-l-2 transition-colors",
-                      isActive
-                        ? "text-ink border-brand bg-brand/[0.06]"
-                        : "text-ink/80 border-transparent hover:bg-ink/[0.03]",
-                    )}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="shrink-0 border-t border-ink/[0.08] p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-2.5">
-              {signedIn && !isAuth ? (
-                <Link
-                  to="/ops"
-                  data-testid="header-dashboard-mobile"
-                  className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
+      <AnimatePresence>
+        {menuOpen && (
+          <div
+            id="public-mobile-nav"
+            className="md:hidden fixed inset-0 z-50 flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="public-mobile-nav-title"
+          >
+            <motion.div
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { opacity: 0 }}
+              transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2 }}
+              className="absolute inset-0 bg-ink/20 backdrop-blur-sm"
+              onClick={() => setMenuOpen(false)}
+              aria-hidden="true"
+            />
+            <motion.div
+              ref={menuPanelRef}
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={
+                reduceMotion
+                  ? { opacity: 0, transition: { duration: 0.01 } }
+                  : { opacity: 0, y: -12 }
+              }
+              transition={
+                reduceMotion ? { duration: 0.01 } : { duration: 0.24, ease: [0.16, 1, 0.3, 1] }
+              }
+              className="relative mt-[4.5rem] mx-4 flex flex-col bg-paper border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] px-5 py-4">
+                <div>
+                  <p className="wl-label text-brand">Explore Wireline</p>
+                  <h2 id="public-mobile-nav-title" className="text-sm font-medium text-ink">
+                    Site navigation
+                  </h2>
+                </div>
+                <ShadButton
+                  ref={closeButtonRef}
+                  type="button"
+                  disableAnimations
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setMenuOpen(false)}
+                  aria-label="Close menu"
+                  className="h-10 w-10 text-ink after:hidden"
                 >
-                  Open dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              ) : (
-                <>
+                  <X aria-hidden="true" className="w-4 h-4" />
+                </ShadButton>
+              </div>
+              <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
+                {MOBILE_LINKS.map((link) => {
+                  const isActive =
+                    location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+                  return (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        "flex items-center min-h-[48px] px-5 text-[15px] font-medium border-l-2 transition-colors touch-press",
+                        isActive
+                          ? "text-ink border-brand bg-brand/[0.06]"
+                          : "text-ink/80 border-transparent hover:bg-ink/[0.03]",
+                      )}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+              <div className="shrink-0 border-t border-ink/[0.08] p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-2.5">
+                {signedIn && !isAuth ? (
                   <Link
-                    to="/signin"
-                    className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/signup"
+                    to="/ops"
+                    data-testid="header-dashboard-mobile"
                     className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Start free trial
-                    <ArrowRight className="w-4 h-4" />
+                    Open dashboard
+                    <ArrowRight aria-hidden="true" className="w-4 h-4" />
                   </Link>
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    <Link
+                      to="/signin"
+                      className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Start free trial
+                      <ArrowRight aria-hidden="true" className="w-4 h-4" />
+                    </Link>
+                  </>
+                )}
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 }

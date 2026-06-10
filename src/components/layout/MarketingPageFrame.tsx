@@ -1,9 +1,15 @@
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import PublicSiteHeader, { type PublicNavActive } from "../marketing/PublicSiteHeader";
 import MarketingFooter from "../marketing/MarketingFooter";
 import MarketingStickyCta from "../marketing/MarketingStickyCta";
 import MarketingAuroraBackdrop from "../marketing/MarketingAuroraBackdrop";
 import { cn } from "../../lib/utils";
+
+type MarketingSectionLink = {
+  id: string;
+  label: string;
+};
 
 interface MarketingPageFrameProps {
   children: ReactNode;
@@ -16,6 +22,7 @@ interface MarketingPageFrameProps {
   footer?: boolean;
   className?: string;
   mainClassName?: string;
+  sectionLinks?: MarketingSectionLink[];
 }
 
 /**
@@ -29,7 +36,11 @@ export default function MarketingPageFrame({
   footer = true,
   className,
   mainClassName,
+  sectionLinks,
 }: MarketingPageFrameProps) {
+  const location = useLocation();
+  const activeSection = location.hash.replace(/^#/, "") || sectionLinks?.[0]?.id;
+
   return (
     <div
       className={cn(
@@ -52,6 +63,34 @@ export default function MarketingPageFrame({
           mainClassName,
         )}
       >
+        {sectionLinks && sectionLinks.length > 0 && (
+          <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-black/8 bg-paper/88 px-5 py-2.5 backdrop-blur md:-mx-8 md:px-8">
+            <nav
+              aria-label="On this page"
+              className="mx-auto flex max-w-[1200px] items-center gap-2 overflow-x-auto tab-strip-scroll"
+            >
+              <span className="shrink-0 wl-label text-ink/45">On this page</span>
+              {sectionLinks.map((link) => {
+                const active = activeSection === link.id;
+                return (
+                  <a
+                    key={link.id}
+                    href={`#${link.id}`}
+                    aria-current={active ? "location" : undefined}
+                    className={cn(
+                      "touch-press shrink-0 rounded-md border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors",
+                      active
+                        ? "border-brand/25 bg-brand/10 text-brand"
+                        : "border-black/8 bg-paper/70 text-ink/60 hover:border-brand/20 hover:text-ink",
+                    )}
+                  >
+                    {link.label}
+                  </a>
+                );
+              })}
+            </nav>
+          </div>
+        )}
         <div className={cn(scroll && "max-w-[1200px] mx-auto w-full")}>{children}</div>
       </main>
 

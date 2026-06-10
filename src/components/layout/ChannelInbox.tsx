@@ -2,6 +2,19 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/utils";
 import { WL_CHANNEL_CLASSES } from "../../lib/wireline-ops-design";
 
+export function resolveChannelListNavigationIndex(
+  currentIndex: number,
+  key: string,
+  length: number,
+): number | null {
+  if (length < 1) return null;
+  if (key === "ArrowDown") return (currentIndex + 1) % length;
+  if (key === "ArrowUp") return (currentIndex - 1 + length) % length;
+  if (key === "Home") return 0;
+  if (key === "End") return length - 1;
+  return null;
+}
+
 /** Split-pane inbox grid — thread list + detail (email, SMS, call logs). */
 export function ChannelInboxGrid({
   children,

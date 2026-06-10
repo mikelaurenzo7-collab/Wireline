@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useToast, type Toast } from "../contexts/ToastContext";
@@ -26,16 +26,24 @@ function ToastItem({ toast }: { toast: Toast }) {
   const { dismiss } = useToast();
   const m = META[toast.type];
   const Icon = m.icon;
+  const reduceMotion = useReducedMotion();
 
   return (
     <motion.div
       layout
       role={toast.type === "error" ? "alert" : "status"}
       aria-live={toast.type === "error" ? "assertive" : "polite"}
-      initial={{ opacity: 0, y: 16, scale: 0.96 }}
+      aria-atomic="true"
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }}
-      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+      exit={
+        reduceMotion
+          ? { opacity: 0, transition: { duration: 0.01 } }
+          : { opacity: 0, y: -8, scale: 0.94, transition: { duration: 0.18 } }
+      }
+      transition={
+        reduceMotion ? { duration: 0.01 } : { type: "spring", stiffness: 380, damping: 32 }
+      }
       className={cn(
         "toast-item relative w-full sm:w-80 max-w-full sm:max-w-[92vw] rounded-md wl-panel elev-2 border overflow-hidden toast-enter",
         m.border,
@@ -51,7 +59,7 @@ function ToastItem({ toast }: { toast: Toast }) {
             m.bg,
           )}
         >
-          <Icon className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
+          <Icon aria-hidden="true" className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
           <p className="text-[12px] font-semibold text-ink leading-snug truncate">{toast.title}</p>
@@ -83,7 +91,7 @@ function ToastItem({ toast }: { toast: Toast }) {
           disableAnimations
           className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 text-muted hover:text-ink"
         >
-          <X className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
+          <X aria-hidden="true" className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
         </ShadButton>
       </div>
     </motion.div>
@@ -104,6 +112,7 @@ export default function ToastStack() {
       role="log"
       aria-live="polite"
       aria-atomic="false"
+      aria-relevant="additions text"
       aria-label="Notifications"
       className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
       data-marketing-sticky={marketingSticky ? "true" : undefined}

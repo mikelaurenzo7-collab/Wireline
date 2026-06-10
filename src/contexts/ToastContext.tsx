@@ -17,6 +17,38 @@ export interface Toast {
   action?: ToastAction;
 }
 
+export const MAX_VISIBLE_TOASTS = 3;
+
+export function mergeToastQueue(
+  prev: Toast[],
+  nextToast: Toast,
+  maxVisible: number = MAX_VISIBLE_TOASTS,
+): {
+  queue: Toast[];
+  duplicateId?: string;
+  evictedIds: string[];
+} {
+  const duplicate = prev.find(
+    (toast) =>
+      toast.type === nextToast.type &&
+      toast.title === nextToast.title &&
+      (toast.message ?? "") === (nextToast.message ?? ""),
+  );
+
+  if (duplicate) {
+    return { queue: prev, duplicateId: duplicate.id, evictedIds: [] };
+  }
+
+  const queue = [...prev, nextToast];
+  const evictedIds =
+    queue.length > maxVisible ? queue.slice(0, queue.length - maxVisible).map((t) => t.id) : [];
+
+  return {
+    queue: queue.slice(-maxVisible),
+    evictedIds,
+  };
+}
+
 interface ToastContextValue {
   toasts: Toast[];
   toast: (opts: Omit<Toast, "id">) => string;
@@ -53,31 +85,41 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       let resolvedId = id;
 
       setToasts((prev) => {
-        const dup = prev.find(
-          (t) =>
-            t.type === opts.type &&
-            t.title === opts.title &&
-            (t.message ?? "") === (opts.message ?? ""),
-        );
-        if (dup) {
-          resolvedId = dup.id;
-          const prevTimer = timers.current.get(dup.id);
-          if (prevTimer) clearTimeout(prevTimer);
+        const { queue, duplicateId, evictedIds } = mergeToastQueue(prev, { ...opts, id });
+
+        for (const evictedId of evictedIds) {
+          const timer = timers.current.get(evictedId);
+          if (timer) {
+            clearTimeout(timer);
+            timers.current.delete(evictedId);
+          }
+        }
+
+        if (duplicateId) {
+          resolvedId = duplicateId;
+          const prevTimer = timers.current.get(duplicateId);
+          if (prevTimer) {
+            clearTimeout(prevTimer);
+          }
           if (duration > 0) {
             timers.current.set(
-              dup.id,
-              setTimeout(() => dismiss(dup.id), duration),
+              duplicateId,
+              setTimeout(() => dismiss(duplicateId), duration),
             );
+          } else {
+            timers.current.delete(duplicateId);
           }
-          return prev;
+          return queue;
         }
+
         if (duration > 0) {
           timers.current.set(
             id,
             setTimeout(() => dismiss(id), duration),
           );
         }
-        return [...prev, { ...opts, id }];
+
+        return queue;
       });
 
       return resolvedId;
