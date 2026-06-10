@@ -53,9 +53,9 @@ export default function AgentListPanel({
       <div className="px-4 py-3 border-b border-black/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
           <p className="app-section-title mb-0.5">Fleet · Agents</p>
-          <h2 className="font-display italic lowercase text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
+          <h2 className="font-display italic text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
-            your agents
+            Your agents
           </h2>
         </div>
         <span className="wl-label-muted tabular-nums shrink-0">{agents.length}</span>

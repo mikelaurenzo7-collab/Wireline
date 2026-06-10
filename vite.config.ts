@@ -23,6 +23,10 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       include: ["buffer"],
+      // Match build.target — the dep optimizer otherwise uses Vite's es2020
+      // default and fails on modern syntax in prebundled deps (e.g.
+      // @daily-co/daily-js), which hangs every module request in dev.
+      esbuildOptions: { target: "es2022" },
     },
     build: {
       // Hidden maps: debuggable prod stacks without exposing sources to browsers.

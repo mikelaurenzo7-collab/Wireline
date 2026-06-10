@@ -88,7 +88,7 @@ export function AuditActivityPanel() {
     <div className="h-full min-h-0 flex flex-col gap-3 scroll-viewport pb-6">
       {/* Window selector */}
       <div className="flex items-center justify-between shrink-0">
-        <h3 className="text-eyebrow">AI Usage · Last</h3>
+        <h3 className="text-eyebrow">AI Usage</h3>
         <div className="flex p-0.5 rounded-full wl-panel border border-white/10">
           {windowOpts.map((d) => (
             <ShadButton

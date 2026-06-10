@@ -16,49 +16,57 @@ const PRESETS: Preset[] = [
     id: "calendar_check",
     category: "Calendar",
     label: "Enforce calendar check",
-    directive: "Always use check_calendar_availability before proposing any time slot. Never guess availability.",
+    directive:
+      "Always use check_calendar_availability before proposing any time slot. Never guess availability.",
   },
   {
     id: "zoom_link",
     category: "Calendar",
     label: "Send Zoom link",
-    directive: "When booking a virtual meeting, always use generate_zoom_link and include the link in the confirmation.",
+    directive:
+      "When booking a virtual meeting, always use generate_zoom_link and include the link in the confirmation.",
   },
   {
     id: "auto_log",
     category: "CRM",
     label: "Auto-log calls",
-    directive: "After every call, use crm_log_call to record the outcome in the CRM. Never skip logging.",
+    directive:
+      "After every call, use crm_log_call to record the outcome in the CRM. Never skip logging.",
   },
   {
     id: "enrich_leads",
     category: "CRM",
     label: "Enrich new leads",
-    directive: "When a new prospect calls, use enrich_lead to pull their LinkedIn/company data before qualifying.",
+    directive:
+      "When a new prospect calls, use enrich_lead to pull their LinkedIn/company data before qualifying.",
   },
   {
     id: "order_lookup",
     category: "E-commerce",
     label: "Order lookup protocol",
-    directive: "When a customer asks about an order, always use shopify_lookup_order or square_lookup_order before responding. Never guess order status.",
+    directive:
+      "When a customer asks about an order, always use shopify_lookup_order or square_lookup_order before responding. Never guess order status.",
   },
   {
     id: "sms_confirm",
     category: "Messaging",
     label: "SMS confirmation",
-    directive: "After booking an appointment or resolving an issue, offer to send a text confirmation using send_text_message.",
+    directive:
+      "After booking an appointment or resolving an issue, offer to send a text confirmation using send_text_message.",
   },
   {
     id: "dnc_respect",
     category: "Compliance",
     label: "DNC respect",
-    directive: "If a caller says 'stop calling' or 'remove my number', immediately use add_to_dnc and confirm removal.",
+    directive:
+      "If a caller says 'stop calling' or 'remove my number', immediately use add_to_dnc and confirm removal.",
   },
   {
     id: "escalation_trigger",
     category: "Compliance",
     label: "Escalation trigger",
-    directive: "If the caller explicitly asks for a human or manager, immediately use escalate_to_human. No friction.",
+    directive:
+      "If the caller explicitly asks for a human or manager, immediately use escalate_to_human. No friction.",
   },
 ];
 
@@ -91,9 +99,12 @@ export default function IntegrationDirectivePresets({
         // Toggle OFF: delete the existing directive
         const matchingDirective = directives.find((d) => d.content === preset.directive);
         if (matchingDirective) {
-          const resp = await authFetch(`/api/agent-config/${agentId}/directive/${matchingDirective.id}`, {
-            method: "DELETE",
-          });
+          const resp = await authFetch(
+            `/api/agent-config/${agentId}/directive/${matchingDirective.id}`,
+            {
+              method: "DELETE",
+            },
+          );
           if (resp.ok) {
             await onUpdate();
             toastSuccess("Preset deactivated", `${preset.label} directive removed.`);
@@ -133,9 +144,7 @@ export default function IntegrationDirectivePresets({
           <Link2 className="w-4 h-4" />
         </div>
         <div>
-          <h3 className="font-display italic lowercase text-xl text-ink">
-            integration directive presets
-          </h3>
+          <h3 className="font-display italic text-xl text-ink">Integration directive presets</h3>
           <p className="wl-label text-ink/40">
             One-click rules for calendar, CRM, and compliance tools
           </p>
@@ -151,7 +160,9 @@ export default function IntegrationDirectivePresets({
             <div key={cat} className="rounded-md bg-black/10 border border-border p-3 space-y-3">
               <div className="flex items-center gap-2 pb-2 border-b border-border">
                 <Icon className="w-3.5 h-3.5 text-brand" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-ink">{cat}</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink">
+                  {cat}
+                </span>
               </div>
 
               <div className="space-y-3">

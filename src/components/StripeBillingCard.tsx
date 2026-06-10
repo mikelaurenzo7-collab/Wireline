@@ -215,9 +215,7 @@ export default function StripeBillingCard() {
           <div className="w-10 h-10 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
           </div>
-          <h3 className="font-display italic lowercase text-2xl text-ink">
-            billing is finishing setup
-          </h3>
+          <h3 className="font-display italic text-2xl text-ink">Billing is finishing setup</h3>
         </div>
         <p className="text-[12px] text-ink/75 leading-relaxed">
           Your account is active. The billing portal is being provisioned and will be live shortly.
@@ -264,7 +262,7 @@ export default function StripeBillingCard() {
       {hasActive ? (
         <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
           <div className="border-b border-white/8 pb-5">
-            <h3 className="font-display italic lowercase text-2xl text-ink">Manage plan</h3>
+            <h3 className="font-display italic text-2xl text-ink">Manage plan</h3>
             <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
               Upgrade, downgrade, update payment method, or cancel through the secure Stripe
               customer portal. Changes apply to your next billing cycle unless noted otherwise.
@@ -334,7 +332,7 @@ function PlanPicker({
   return (
     <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-8">
       <div className="border-b border-white/8 pb-6">
-        <h3 className="font-display italic lowercase text-3xl text-ink">choose a plan</h3>
+        <h3 className="font-display italic text-3xl text-ink">Choose a plan</h3>
         <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
           Each agent replaces hours of human intake, follow-up, and triage work — for a fraction of
           the cost. No setup fees. Cancel anytime.
@@ -378,7 +376,7 @@ function PlanPicker({
                 </span>
               </div>
               <div>
-                <h4 className="font-display italic lowercase text-2xl text-ink">{plan.name}</h4>
+                <h4 className="font-display italic text-2xl text-ink">{plan.name}</h4>
                 <div className="mt-1.5 flex items-baseline gap-1">
                   {plan.price_usd_monthly > 0 ? (
                     <>
@@ -499,7 +497,7 @@ function ActiveSubCard({
                 </span>
               )}
             </div>
-            <h3 className="font-display italic lowercase text-3xl md:text-4xl text-ink">
+            <h3 className="font-display italic text-3xl md:text-4xl text-ink">
               {sub.plan_name || sub.plan || "—"}
             </h3>
             <p className="app-section-title/60">

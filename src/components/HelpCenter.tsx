@@ -50,7 +50,7 @@ function AgentCard({
           <Phone className="w-4 h-4 text-brand" strokeWidth={2.4} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="wl-label-muted mb-1.5 truncate">
+          <p className={cn("wl-label-muted mb-1.5 truncate", isDemo && "pr-12")}>
             {agent.name} · {agent.role}
           </p>
           <p
@@ -68,7 +68,12 @@ function AgentCard({
             </p>
           )}
         </div>
-        <ArrowRight className="w-4 h-4 text-muted group-hover:text-brand group-hover:translate-x-1 transition-all shrink-0 mt-1" />
+        <ArrowRight
+          className={cn(
+            "w-4 h-4 text-muted group-hover:text-brand group-hover:translate-x-1 transition-all shrink-0",
+            isDemo ? "self-center" : "mt-1",
+          )}
+        />
       </div>
     </a>
   );

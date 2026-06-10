@@ -48,9 +48,7 @@ export function OwnerBillingSimulator({
           <div className="rounded-md wl-panel border border-rose-500/20 p-3 space-y-3 relative">
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3 h-3 text-rose-500" />
-              <label className="wl-label text-rose-500">
-                Operational state
-              </label>
+              <label className="wl-label text-rose-500">Operational state</label>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <ShadButton
@@ -120,7 +118,7 @@ export function OwnerBillingSimulator({
         <div className="rounded-md wl-panel border border-input p-4 space-y-3">
           <div className="flex items-center gap-2 pb-2 border-b border-white/8">
             <ServerCog className="w-3.5 h-3.5 text-brand" />
-            <h4 className="font-display italic lowercase text-base text-ink">developer terminal</h4>
+            <h4 className="font-display italic text-base text-ink">Developer terminal</h4>
           </div>
           <div className="space-y-2 text-[11px] font-mono">
             <div className="flex items-center justify-between py-1 border-b border-white/5">

@@ -91,12 +91,10 @@ export default function AgentMemoryPanel({
               <Brain className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-display italic lowercase text-xl text-ink leading-tight">
-                what {agentName} remembers
+              <h3 className="font-display italic text-xl text-ink leading-tight">
+                What {agentName} remembers
               </h3>
-              <p className="wl-label text-ink/40">
-                Carried between every call
-              </p>
+              <p className="wl-label text-ink/40">Carried between every call</p>
             </div>
           </div>
         </div>
@@ -109,8 +107,8 @@ export default function AgentMemoryPanel({
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-display italic lowercase text-lg text-ink leading-none">
-                persistent thread
+              <h4 className="font-display italic text-lg text-ink leading-none">
+                Persistent thread
               </h4>
               <p className="wl-label text-ink/40 mt-0.5">
                 {messageCount} message{messageCount === 1 ? "" : "s"} · the thread is the memory
@@ -144,8 +142,8 @@ export default function AgentMemoryPanel({
             <Phone className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="font-display italic lowercase text-lg text-ink leading-none">
-              recent calls it recalls
+            <h4 className="font-display italic text-lg text-ink leading-none">
+              Recent calls it recalls
             </h4>
             <p className="wl-label text-ink/40 mt-0.5">
               Last {recentCalls.length || "few"} conversations
@@ -191,9 +189,7 @@ export default function AgentMemoryPanel({
                     </span>
                   )}
                   {c.createdAt && (
-                    <span className="wl-label-muted/60 ml-auto">
-                      {formatDate(c.createdAt)}
-                    </span>
+                    <span className="wl-label-muted/60 ml-auto">{formatDate(c.createdAt)}</span>
                   )}
                 </div>
               </motion.div>
@@ -209,12 +205,10 @@ export default function AgentMemoryPanel({
               <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2.5} />
             </div>
             <div>
-              <h4 className="font-display italic lowercase text-lg text-ink leading-none">
-                patterns learned from calls
+              <h4 className="font-display italic text-lg text-ink leading-none">
+                Patterns learned from calls
               </h4>
-              <p className="wl-label text-brand mt-0.5">
-                Auto-calibration
-              </p>
+              <p className="wl-label text-brand mt-0.5">Auto-calibration</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -234,8 +228,8 @@ export default function AgentMemoryPanel({
               <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-display italic lowercase text-lg text-ink leading-none">
-                rules, facts &amp; personality
+              <h4 className="font-display italic text-lg text-ink leading-none">
+                Rules, facts &amp; personality
               </h4>
               <p className="wl-label text-ink/40 mt-0.5">
                 {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}

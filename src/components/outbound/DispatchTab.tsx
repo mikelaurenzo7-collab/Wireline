@@ -415,8 +415,8 @@ export default function DispatchTab({
                         ) : (
                           <UploadCloud className="w-7 h-7 text-muted group-hover:text-brand transition-colors" />
                         )}
-                        <span className="font-display italic lowercase text-base text-ink">
-                          upload manifest
+                        <span className="font-display italic text-base text-ink">
+                          Upload manifest
                         </span>
                         <span className="app-section-title">Drag CSV or click to browse</span>
                       </ShadButton>
@@ -511,7 +511,7 @@ export default function DispatchTab({
                     ]}
                   />
                 ) : (
-                  <>
+                  <motion.div key="lead-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <ChannelListColHeader
                       columns={[
                         { label: "Lead" },
@@ -608,7 +608,7 @@ export default function DispatchTab({
                         </motion.div>
                       ))}
                     </div>
-                  </>
+                  </motion.div>
                 )}
               </AnimatePresence>
 

@@ -704,9 +704,7 @@ export default function BehavioralRegressionTests({
             <PlayCircle className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-display italic lowercase text-xl text-ink">
-              behavioral regression tests
-            </h3>
+            <h3 className="font-display italic text-xl text-ink">Behavioral regression tests</h3>
             <p className="wl-label text-ink/40">
               Run synthetic test suite to guard against agent drift
             </p>

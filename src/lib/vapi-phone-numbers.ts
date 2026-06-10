@@ -238,7 +238,6 @@ export const POPULAR_AREA_CODES: ReadonlyArray<{
   { code: "646", city: "New York", state: "NY" },
   { code: "718", city: "New York", state: "NY" },
   { code: "917", city: "New York", state: "NY" },
-  { code: "917", city: "New York", state: "NY" },
   { code: "202", city: "Washington", state: "DC" },
   { code: "617", city: "Boston", state: "MA" },
   { code: "857", city: "Boston", state: "MA" },
