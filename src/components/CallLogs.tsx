@@ -633,7 +633,7 @@ function CallDetail({
                 transition={{ duration: 0.18 }}
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-3"
               >
-                <div className="rounded-xl wl-panel border border-brand/10 p-5 shadow-sm bg-gradient-to-br from-white/60 to-transparent backdrop-blur-md">
+                <div className="rounded-md wl-panel border border-brand/10 p-5 shadow-sm bg-gradient-to-br from-white/60 to-transparent backdrop-blur-md">
                   <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
@@ -677,7 +677,7 @@ function CallDetail({
                 )}
                 {/* QA Scorecard */}
                 {qaScore !== null && qaBreakdown ? (
-                  <div className="rounded-xl wl-panel p-5 bg-gradient-to-br from-white/40 to-transparent border border-black/[0.04] shadow-sm backdrop-blur-sm">
+                  <div className="rounded-md wl-panel p-5 bg-gradient-to-br from-white/40 to-transparent border border-black/[0.04] shadow-sm backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-3">
                       <div
                         className="wl-label flex items-center gap-1.5 wl-qa-text"
@@ -728,7 +728,7 @@ function CallDetail({
                     disableAnimations
                     onClick={handleScoreQa}
                     disabled={scoring}
-                    className="w-full h-auto rounded-xl border border-brand/20 hover:border-brand/40 p-4 justify-start gap-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-gradient-to-br from-white/30 to-transparent"
+                    className="w-full h-auto rounded-md border border-brand/20 hover:border-brand/40 p-4 justify-start gap-3 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-gradient-to-br from-white/30 to-transparent"
                   >
                     <div className="w-8 h-8 rounded-md bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                       {scoring ? (

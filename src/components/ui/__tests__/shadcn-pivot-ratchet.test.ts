@@ -74,7 +74,7 @@ const BASELINE = {
   rawSelect: 0,
   rawDialog: 0,
   glassUtility: 0, // Full wl-panel migration — feature/page code 2026-06-03
-  largeRadius: 8, // Raising to support custom card rounded-lg/xl details
+  largeRadius: 0, // Razor-edge uniformity — all rounded-{lg,xl} migrated to rounded-md 2026-06-10
 } as const;
 
 function assertRatchet(actual: number, baseline: number, metric: string) {

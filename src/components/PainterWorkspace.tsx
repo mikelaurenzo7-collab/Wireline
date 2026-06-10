@@ -621,7 +621,7 @@ export default function PainterWorkspace({
 
       {/* Composer Input Area */}
       <div className="border-t border-brand/8 bg-paper/95 dark:bg-velvet/90 px-4 py-3 shrink-0">
-        <div className="rounded-lg border border-brand/12 bg-paper dark:bg-velvet/40 shadow-sm relative focus-within:ring-1 focus-within:ring-brand/40 transition-shadow">
+        <div className="rounded-md border border-brand/12 bg-paper dark:bg-velvet/40 shadow-sm relative focus-within:ring-1 focus-within:ring-brand/40 transition-shadow">
           <Textarea
             ref={inputRef}
             data-testid="painter-composer"

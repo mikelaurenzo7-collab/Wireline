@@ -226,7 +226,7 @@ export function DirectorModelPicker({ selection, onChange, disabled }: DirectorM
       <PopoverContent
         align="start"
         side="top"
-        className="w-[min(100vw-2rem,24rem)] p-0 border border-brand/10 bg-card/95 backdrop-blur-md shadow-[0_12px_40px_-12px_rgba(107,43,153,0.12)] rounded-lg"
+        className="w-[min(100vw-2rem,24rem)] p-0 border border-brand/10 bg-card/95 backdrop-blur-md shadow-[0_12px_40px_-12px_rgba(107,43,153,0.12)] rounded-md"
         role="listbox"
         aria-label="Model selection"
       >

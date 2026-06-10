@@ -164,7 +164,7 @@ const AGENT_TEMPLATES = [
     role: "collections",
     channel: "voice" as const,
     icon: DollarSign,
-    accent: "#C4B5A0",
+    accent: BRAND.creamDeep,
     badge: null,
     firstMessage:
       "Hi [Name], this is a friendly reminder about an outstanding balance on your account. I'd love to help you resolve this today.",
@@ -178,7 +178,7 @@ const AGENT_TEMPLATES = [
     role: "collections",
     channel: "voice" as const,
     icon: Shield,
-    accent: "#C4B5A0",
+    accent: BRAND.creamDeep,
     badge: "FDCPA compliant",
     firstMessage:
       "This is an important call regarding your account. To protect your credit, I need to speak with you or an authorized representative today.",
@@ -222,7 +222,7 @@ const AGENT_TEMPLATES = [
     role: "ecommerce",
     channel: "voice" as const,
     icon: Headphones,
-    accent: "#96BF48",
+    accent: BRAND.purpleMuted,
     badge: "Shopify · Square",
     firstMessage:
       "Thanks for calling! I can help with order status, returns, or anything about your purchase. What can I look into for you?",
@@ -236,7 +236,7 @@ const AGENT_TEMPLATES = [
     role: "ecommerce",
     channel: "voice" as const,
     icon: Receipt,
-    accent: "#96BF48",
+    accent: BRAND.purpleMuted,
     badge: "Phone sales",
     firstMessage:
       "Hi, welcome to our store! I can help you place an order right over the phone. What are you looking for today?",
@@ -255,7 +255,7 @@ const AGENT_TEMPLATES = [
     role: "personal_assistant",
     channel: "voice" as const,
     icon: User,
-    accent: "#4DFFC4",
+    accent: BRAND.chromeGlow,
     badge: "Personal · most versatile",
     firstMessage: "Hi, this is [Your Name]'s assistant. How can I help you today?",
   },
@@ -268,7 +268,7 @@ const AGENT_TEMPLATES = [
     role: "personal_assistant",
     channel: "voice" as const,
     icon: PhoneIncoming,
-    accent: "#4DFFC4",
+    accent: BRAND.chromeGlow,
     badge: "Personal · inbound",
     firstMessage:
       "Hi, you've reached [Your Name]'s line — I'm their assistant. Can I take a quick message or let them know what this is about?",
@@ -282,7 +282,7 @@ const AGENT_TEMPLATES = [
     role: "personal_assistant",
     channel: "voice" as const,
     icon: ClipboardList,
-    accent: "#4DFFC4",
+    accent: BRAND.chromeGlow,
     badge: "Personal · outbound",
     firstMessage:
       "Hi, I'm calling on behalf of [Your Name] — they asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
@@ -296,7 +296,7 @@ const AGENT_TEMPLATES = [
     role: "personal_assistant",
     channel: "voice" as const,
     icon: Receipt,
-    accent: "#4DFFC4",
+    accent: BRAND.chromeGlow,
     badge: "Personal · saves $$",
     firstMessage:
       "Hi, I'm calling on behalf of [Your Name], account [Account #] — they've asked me to discuss their current plan and pricing.",

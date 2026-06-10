@@ -50,7 +50,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
       <div
         className={cn(
           WL_DIRECTOR_CLASSES.composerColumn,
-          "rounded-lg border border-brand/10 bg-paper/75 dark:bg-velvet/45 backdrop-blur-md p-3 space-y-3 shadow-sm shadow-brand/[0.02] transition-all duration-300 hover:shadow-md hover:shadow-brand/[0.04]",
+          "rounded-md border border-brand/10 bg-paper/75 dark:bg-velvet/45 backdrop-blur-md p-3 space-y-3 shadow-sm shadow-brand/[0.02] transition-all duration-300 hover:shadow-md hover:shadow-brand/[0.04]",
           WL_DIRECTOR_CLASSES.artifactsPanel,
         )}
       >

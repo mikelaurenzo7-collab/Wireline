@@ -198,7 +198,7 @@ export default function QualityView({ days }: { days: number }) {
                 <PolarGrid stroke="rgba(0,0,0,0.06)" />
                 <PolarAngleAxis
                   dataKey="dimension"
-                  tick={{ fill: "#7C7469", fontSize: 9, fontFamily: "Geist" }}
+                  tick={{ fill: "#7C7469", fontSize: 9, fontFamily: "Plus Jakarta Sans" }}
                 />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar

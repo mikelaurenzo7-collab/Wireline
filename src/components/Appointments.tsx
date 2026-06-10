@@ -190,7 +190,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.96, opacity: 0, y: 16 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg rounded-xl wl-panel-elevated border border-brand/20 shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] overflow-hidden bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl"
+        className="relative w-full max-w-lg rounded-md wl-panel-elevated border border-brand/20 shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] overflow-hidden bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl"
       >
         <header className="px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div>
@@ -449,10 +449,7 @@ function CalendarGrid({
 
       <div className="shrink-0 grid grid-cols-7 border-b border-black/8 min-w-[21rem]">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div
-            key={d}
-            className="py-2 text-center wl-label text-ink/40"
-          >
+          <div key={d} className="py-2 text-center wl-label text-ink/40">
             {d}
           </div>
         ))}
@@ -507,9 +504,7 @@ function CalendarGrid({
                         );
                       })}
                       {dayAppts.length > 3 && (
-                        <div className="wl-micro-meta pl-1">
-                          +{dayAppts.length - 3} more
-                        </div>
+                        <div className="wl-micro-meta pl-1">+{dayAppts.length - 3} more</div>
                       )}
                     </div>
                   </>
