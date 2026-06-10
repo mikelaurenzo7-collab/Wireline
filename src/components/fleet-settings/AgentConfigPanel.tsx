@@ -1049,7 +1049,7 @@ export default function AgentConfigPanel({
                                   <div className="flex-1 text-sm text-ink/90 leading-relaxed">
                                     {d.content}
                                   </div>
-                                  <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                                  <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity flex flex-col gap-1">
                                     <ShadButton
                                       type="button"
                                       variant="ghost"
@@ -1189,7 +1189,7 @@ export default function AgentConfigPanel({
                                   <div className="flex-1 text-sm text-ink/90 leading-relaxed">
                                     {k.content}
                                   </div>
-                                  <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                                  <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity flex flex-col gap-1">
                                     <ShadButton
                                       type="button"
                                       variant="ghost"

@@ -34,7 +34,7 @@ import AdminHubViewport from "./layout/AdminHubViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import ClientToolbar from "./layout/ClientToolbar";
 import { useToast } from "../contexts/ToastContext";
-import { cn } from "../lib/utils";
+import { cn, logFetchError } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
 import type { AuditEvent, AuditSeverity } from "../types/audit";
 import { Input } from "./ui/shadcn/Input";
@@ -243,6 +243,7 @@ export default function AuditLog() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
   // Filters
@@ -257,6 +258,7 @@ export default function AuditLog() {
 
   const fetchAudit = useCallback(async () => {
     setLoading(true);
+    setLoadErr(null);
     try {
       const params = new URLSearchParams();
       params.set("days", timeRange.toString());
@@ -289,7 +291,8 @@ export default function AuditLog() {
       setEvents(eventsData.events ?? []);
       setStats(mappedStats);
     } catch (err) {
-      console.error("Failed to load audit log:", err);
+      logFetchError("Failed to load audit log:", err);
+      setLoadErr("Could not fetch audit events. Check your network connection and retry.");
       toastError(
         "Failed to load audit log",
         "Could not fetch audit events. Check your network connection and try refreshing.",
@@ -344,7 +347,7 @@ export default function AuditLog() {
 
       toastSuccess("Export complete", "Audit log downloaded successfully.");
     } catch (err) {
-      console.error("Export failed:", err);
+      logFetchError("Export failed:", err);
       toastError("Export failed", "Could not download audit log.");
     } finally {
       setExporting(false);
@@ -582,6 +585,17 @@ export default function AuditLog() {
                   icon={<Shield className="w-7 h-7" />}
                   label={OPS_CHANNEL_TOOLBAR.audit.loading}
                   className="min-h-[280px]"
+                />
+              ) : loadErr ? (
+                <EmptyState
+                  icon={Shield}
+                  eyebrow="Audit log unavailable"
+                  title="Couldn't load audit events"
+                  description={loadErr}
+                  actions={[{ label: "Retry", onClick: fetchAudit, primary: true }]}
+                  density="compact"
+                  withHalo={false}
+                  className="py-10"
                 />
               ) : filteredEvents.length === 0 ? (
                 searchQuery.trim() ? (

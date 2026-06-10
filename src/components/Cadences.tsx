@@ -115,6 +115,7 @@ export default function Cadences() {
   const [cadences, setCadences] = useState<Cadence[]>([]);
   const [runs, setRuns] = useState<CadenceRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [draftDescription, setDraftDescription] = useState("");
@@ -123,6 +124,7 @@ export default function Cadences() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadErr(null);
     try {
       const [cR, rR] = await Promise.all([
         authFetch("/api/cadences"),
@@ -138,6 +140,7 @@ export default function Cadences() {
       }
     } catch (e) {
       logFetchError("Failed to load cadences", e);
+      setLoadErr("Could not load sequences. Check your connection and retry.");
     } finally {
       setLoading(false);
     }
@@ -242,13 +245,28 @@ export default function Cadences() {
     );
   }
 
+  if (loadErr) {
+    return (
+      <div className="h-full min-h-[200px] flex items-center justify-center">
+        <EmptyState
+          icon={Repeat}
+          eyebrow="Sequences unavailable"
+          title="Couldn't load cadences"
+          description={loadErr}
+          actions={[{ label: "Retry", onClick: load, primary: true }]}
+          density="compact"
+          withHalo={false}
+          className="py-10"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto pr-1 space-y-4 pb-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="wl-label text-brand mb-1">
-            Outbound · Sequences
-          </p>
+          <p className="wl-label text-brand mb-1">Outbound · Sequences</p>
           <h3 className="font-display italic text-xl text-ink leading-none">
             Multi-touch cadences
           </h3>
@@ -415,9 +433,7 @@ export default function Cadences() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="wl-label-muted/80 mb-1.5 block">
-                  Name
-                </label>
+                <label className="wl-label-muted/80 mb-1.5 block">Name</label>
                 <Input
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
@@ -426,9 +442,7 @@ export default function Cadences() {
                 />
               </div>
               <div>
-                <label className="wl-label-muted/80 mb-1.5 block">
-                  Description (optional)
-                </label>
+                <label className="wl-label-muted/80 mb-1.5 block">Description (optional)</label>
                 <Input
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}

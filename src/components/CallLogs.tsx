@@ -525,7 +525,7 @@ function CallDetail({
           className="inline-flex items-center gap-1.5 hover:text-brand transition-colors group"
         >
           <span>{call.customer_number || "Simulator"}</span>
-          <ExternalLink className="w-3 h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" />
+          <ExternalLink className="w-3 h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity" />
         </Link>
       }
       hint={`Trace ${call.vapi_call_id?.substring(0, 12) || ""}`}
@@ -1004,7 +1004,7 @@ function RecordingPlayer({ url }: { url: string }) {
           data-progress={`${pct}%`}
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity wl-recording-thumb"
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-brand shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity wl-recording-thumb"
           data-progress={`${pct}%`}
         />
       </div>
