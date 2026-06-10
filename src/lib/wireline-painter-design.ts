@@ -45,6 +45,14 @@ export const PAINTER_EMPTY_COPY = {
   previewStarterEyebrow: "Or try a prompt",
 } as const;
 
+/** Header export-lane chips — Figma / Canva / GitHub status + one-click connect */
+export const PAINTER_INTEGRATION_RAIL = {
+  ariaLabel: "Design export lanes",
+  eyebrow: "Lanes",
+  connectedHint: "Connected — ready in Export",
+  connectPrefix: "Connect",
+} as const;
+
 export const PAINTER_LOADING_COPY = {
   headline: "Opening design studio",
   sub: "Thread history · brand profile · live preview",

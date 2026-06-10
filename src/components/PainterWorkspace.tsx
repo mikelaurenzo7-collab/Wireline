@@ -100,6 +100,22 @@ const STYLE_PRESETS = [
     label: "Wireframe Mode",
     text: "rendered as a low-fidelity wireframe using placeholder boxes, grayscale, and dashed borders",
   },
+  {
+    label: "Editorial Luxe",
+    text: "with magazine-grade editorial typography, oversized serif display headlines, and generous asymmetric whitespace",
+  },
+  {
+    label: "Bento Grid",
+    text: "organized as a bento-box grid of mixed-size cards with crisp gaps and one oversized feature tile",
+  },
+  {
+    label: "Gradient Mesh",
+    text: "with vivid layered mesh-gradient backdrops, soft glows, and luminous frosted panels",
+  },
+  {
+    label: "Split Panorama",
+    text: "composed horizontally — split-screen hero, wide multi-column bands, and zig-zag side-by-side sections instead of a vertical stack",
+  },
 ];
 
 export default function PainterWorkspace({
