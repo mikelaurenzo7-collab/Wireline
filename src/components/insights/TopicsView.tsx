@@ -60,7 +60,7 @@ export default function TopicsView() {
           <RefreshCw className="w-3 h-3" /> Refresh
         </ShadButton>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
         {topics.map((t: any, i: number) => {
           const pct = (t.count / max) * 100;
           return (

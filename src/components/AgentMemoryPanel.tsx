@@ -211,7 +211,7 @@ export default function AgentMemoryPanel({
               <p className="wl-label text-brand mt-0.5">Auto-calibration</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2.5">
             {lessons.map((lesson) => (
               <div key={lesson.id} className="rounded-md bg-brand/8 border border-brand/20 p-3">
                 <p className="text-[13px] text-ink/90 leading-relaxed">{lesson.lesson}</p>
