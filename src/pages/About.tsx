@@ -33,6 +33,12 @@ const PRINCIPLES = [
   },
 ];
 
+const ABOUT_SECTION_LINKS = [
+  { id: "about-founder", label: "Founder" },
+  { id: "about-principles", label: "Principles" },
+  { id: "about-infra", label: "Infra" },
+] as const;
+
 export default function About() {
   return (
     <>
@@ -42,7 +48,10 @@ export default function About() {
         path="/about"
       />
 
-      <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24">
+      <MarketingPageFrame
+        mainClassName="!px-0 pt-20 sm:pt-24"
+        sectionLinks={[...ABOUT_SECTION_LINKS]}
+      >
         {/* Hero */}
         <section className="relative z-10 max-w-5xl mx-auto pt-4 pb-16 sm:pt-8 sm:pb-20 text-center">
           <motion.div
@@ -66,7 +75,10 @@ export default function About() {
         </section>
 
         {/* Founder card */}
-        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
+        <section
+          id="about-founder"
+          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
+        >
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -108,7 +120,10 @@ export default function About() {
         </section>
 
         {/* Operating principles */}
-        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
+        <section
+          id="about-principles"
+          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
+        >
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
             How Wireline operates
           </h2>
@@ -138,7 +153,10 @@ export default function About() {
         </section>
 
         {/* Infra moat / backed by */}
-        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
+        <section
+          id="about-infra"
+          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
+        >
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">The infra moat</h2>
           <p className="text-sm sm:text-base text-ink/65 leading-relaxed mb-6 max-w-2xl">
             Wireline is built on the strongest infra layer money can buy. Every paying customer

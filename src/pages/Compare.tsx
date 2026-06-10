@@ -166,6 +166,12 @@ const COMPETITORS: { key: keyof Omit<Row, "feature" | "detail">; label: string; 
     { key: "retell", label: "Retell", note: "Strong voice dev UX" },
   ];
 
+const COMPARE_SECTION_LINKS = [
+  { id: "compare-matrix", label: "Matrix" },
+  { id: "compare-pricing", label: "Pricing" },
+  { id: "compare-fit", label: "Best fit" },
+] as const;
+
 export default function Compare() {
   const score = (key: keyof Omit<Row, "feature" | "detail">) =>
     ROWS.reduce((n, r) => n + (r[key] === true ? 1 : r[key] === "partial" ? 0.5 : 0), 0);
@@ -178,7 +184,10 @@ export default function Compare() {
         path="/compare"
       />
 
-      <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24">
+      <MarketingPageFrame
+        mainClassName="!px-0 pt-20 sm:pt-24"
+        sectionLinks={[...COMPARE_SECTION_LINKS]}
+      >
         {/* Hero */}
         <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16 text-center">
           <motion.div
@@ -202,7 +211,10 @@ export default function Compare() {
         </section>
 
         {/* Matrix */}
-        <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-20">
+        <section
+          id="compare-matrix"
+          className="relative z-10 max-w-7xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-20"
+        >
           {/* Mobile scroll affordance — the table is wider than 360-390px
             viewports by design (6 competitor columns need readable
             widths). Without this hint, mobile visitors think the table
@@ -322,7 +334,10 @@ export default function Compare() {
         </section>
 
         {/* Pricing Transparency */}
-        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16 text-center">
+        <section
+          id="compare-pricing"
+          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16 text-center"
+        >
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">
             Transparent, flat-rate pricing.
           </h2>
@@ -363,7 +378,10 @@ export default function Compare() {
         </section>
 
         {/* When the competitor wins */}
-        <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16">
+        <section
+          id="compare-fit"
+          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
+        >
           <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-6 text-balance">
             When a competitor is the better pick.
           </h2>

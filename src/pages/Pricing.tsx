@@ -151,6 +151,12 @@ const VALUE_BULLETS = [
   { icon: Zap, text: "Setup in under 10 minutes — no devs required" },
 ];
 
+const PRICING_SECTION_LINKS = [
+  { id: "pricing-why", label: "Why Wireline" },
+  { id: "pricing-plans", label: "Plans" },
+  { id: "pricing-economics", label: "Economics" },
+] as const;
+
 export default function Pricing() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   // FAQ schema is built from copy that already lives on this page (the
@@ -229,7 +235,10 @@ export default function Pricing() {
   };
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
+    <MarketingPageFrame
+      mainClassName="!px-0 pt-20 sm:pt-24 pb-0"
+      sectionLinks={[...PRICING_SECTION_LINKS]}
+    >
       <PageMeta
         title="Plans & Pricing"
         description="Wireline pricing plans from $49/month Personal to Enterprise custom. Every plan includes AI voice agents, real-time call logs, sentiment scoring, and the Wireline Demo Line. 14-day free trial, no credit card required."
@@ -315,7 +324,10 @@ export default function Pricing() {
           differentiator competitors don't lead with: multi-channel agents in
           one console, supervisor visibility into agent reasoning, and TCPA
           compliance as auditable code (not a black-box vendor). */}
-      <section className="relative z-10 px-4 lg:px-10 max-w-6xl mx-auto pb-10">
+      <section
+        id="pricing-why"
+        className="relative z-10 px-4 scroll-mt-28 lg:px-10 max-w-6xl mx-auto pb-10"
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
           {[
             {
@@ -387,7 +399,10 @@ export default function Pricing() {
       </section>
 
       {/* Tier grid */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16">
+      <section
+        id="pricing-plans"
+        className="relative z-10 px-4 scroll-mt-28 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16"
+      >
         {/* Tier grid scales 1 → 2 → 3 → 5. Skipping the previous
             sm:grid-cols-2 jump because 360-390px in 2-col mode forced
             ~160px tier cards that were unreadable. Now: single column
@@ -512,6 +527,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.85, duration: 0.6 }}
+          id="pricing-economics"
           className="mt-14 max-w-5xl mx-auto"
         >
           <div className="text-center mb-6">
