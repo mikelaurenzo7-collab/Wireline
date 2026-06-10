@@ -1229,6 +1229,11 @@ body,
     max-width: 56rem;
   }
 }
+@media (min-width: 1280px) {
+  .wl-director-thread {
+    max-width: 64rem;
+  }
+}
 
 .wl-director-message-stack {
   display: flex;
@@ -1240,7 +1245,14 @@ body,
 }
 @media (min-width: 1024px) {
   .wl-director-message-stack {
-    max-width: min(100%, 32rem);
+    /* Director replies are deliverables — give them a reading column,
+     * not a chat-bubble strip (was 32rem; dead space ate the laptop). */
+    max-width: min(100%, 40rem);
+  }
+}
+@media (min-width: 1280px) {
+  .wl-director-message-stack {
+    max-width: min(100%, 46rem);
   }
 }
 
@@ -1250,7 +1262,7 @@ body,
 }
 @media (min-width: 1024px) {
   .wl-director-message-stack--operator {
-    max-width: min(100%, 24rem);
+    max-width: min(100%, 26rem);
   }
 }
 
@@ -2796,6 +2808,11 @@ body,
 :root {
   --radius: 0.75rem;
   --wl-signal: #10b981;
+  /* Brand cream — consumed by the rail wordmark, ambience washes, and
+   * sticker slots. Was referenced in 6 places but never defined, so
+   * fallback-less `var(--wl-cream)` consumers (sidebar wordmark) silently
+   * inherited low-contrast purple. */
+  --wl-cream: #f5f0e6;
 
   /* Surface colors */
   --background: #f5f0e6;
@@ -3098,6 +3115,21 @@ body,
   *::after {
     -webkit-tap-highlight-color: transparent;
     border-radius: 0 !important;
+  }
+
+  /* ── UPRIGHT EDITORIAL — the slanted display face is retired. ────
+   * Only Fraunces' upright axis ships (@fontsource-variable/fraunces/wght.css),
+   * so every `italic` utility was rendering a browser-synthesized oblique —
+   * the "cursive" look. One override beats ~200 TSX edits: the utility class
+   * stays in markup but resolves upright. Fraunces' serif character carries
+   * the editorial voice on its own. em/i keep semantic emphasis via weight. */
+  .italic {
+    font-style: normal !important;
+  }
+  em,
+  i {
+    font-style: normal;
+    font-weight: 600;
   }
   /* Exceptions — elements that are inherently circular (data indicators,
      avatar initials, scrollbar thumbs, live-pulse rings). */
@@ -3867,11 +3899,12 @@ body,
     0 14px 40px -10px rgba(107, 43, 153, 0.18);
 }
 
-/* Display headline accent â€” solid brand teal on the editorial italic
- * face. Used to live as a rainbow gradient; flattened pre-launch so the
+/* Display headline accent — solid brand on the upright editorial face.
+ * Used to live as a rainbow gradient; flattened pre-launch so the
  * operator console no longer looks like every other "AI startup". */
 .text-aurora {
-  @apply font-display italic;
+  @apply font-display;
+  font-style: normal;
   color: var(--color-brand);
 }
 
@@ -4418,6 +4451,12 @@ body,
 .dark .chrome-eyebrow {
   color: color-mix(in srgb, #efe9dc 78%, transparent);
 }
+/* The rail is brand-deep purple in BOTH themes — ink-mix text vanishes on it.
+ * Scope cream regardless of light/dark so "Standing by", footer eyebrows, and
+ * collapse labels stay legible. */
+[data-rail] .chrome-eyebrow {
+  color: color-mix(in srgb, var(--wl-cream, #f5f0e6) 74%, transparent);
+}
 
 .chrome-muted {
   color: color-mix(in srgb, var(--color-ink) 82%, transparent);
@@ -4478,7 +4517,8 @@ body,
 /* Marketing long-form pages */
 .marketing-surface .marketing-hero-title {
   font-family: var(--font-display);
-  font-style: italic;
+  font-style: normal;
+  font-weight: 550;
   font-size: clamp(2rem, 3.5vw + 1rem, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -5457,7 +5497,8 @@ button.wl-ops-metric--interactive[data-active="true"] {
 
 .wl-ops-metric-value {
   font-family: var(--font-display), ui-serif, Georgia, serif;
-  font-style: italic;
+  font-style: normal;
+  font-weight: 560;
   font-size: 1.35rem;
   line-height: 1.1;
   color: var(--color-ink);
@@ -5947,7 +5988,9 @@ select:focus {
 
 /* Compact metric display */
 .metric-value {
-  @apply font-display italic text-ink leading-none tracking-tight;
+  @apply font-display text-ink leading-none tracking-tight;
+  font-style: normal;
+  font-weight: 560;
 }
 
 /* Status dot colors — brand purple family, not teal/orange */
@@ -8804,10 +8847,10 @@ select:focus {
 .hero-headline {
   font-family: var(--font-display);
   font-size: clamp(2.2rem, 7vw, 5.5rem);
-  font-weight: 500;
-  font-style: italic;
-  line-height: 1.14;
-  letter-spacing: -0.015em;
+  font-weight: 540;
+  font-style: normal;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   font-variation-settings:
     "SOFT" 100,
     "WONK" 0;

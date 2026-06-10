@@ -12,6 +12,7 @@ import {
   selectModelForTask,
   DEFAULT_MODEL,
   OPENAI_MODELS,
+  resolveAdaptiveEffort,
   type TaskComplexity,
 } from "./claude-models";
 import { recordUsage } from "./claude-audit";
@@ -113,7 +114,8 @@ function buildStructuredMessageBody(
 
   if (useAdaptiveThinking) {
     body.thinking = { type: "adaptive" };
-    body.output_config = { effort: "high" };
+    // Reasoning-speed dial: ANTHROPIC_DEEP_EFFORT=low|medium|high (default high).
+    body.output_config = { effort: resolveAdaptiveEffort() };
   }
 
   return body;
@@ -204,7 +206,7 @@ export async function runStructuredWithThinking<T = any>(
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: "application/json",
-        }
+        },
       });
       const text = result.response.text();
       const parsed = JSON.parse(text) as T;
@@ -292,7 +294,8 @@ export async function runStructuredStream<T = any>(
 
   if (useAdaptiveThinking) {
     body.thinking = { type: "adaptive" };
-    body.output_config = { effort: "high" };
+    // Reasoning-speed dial: ANTHROPIC_DEEP_EFFORT=low|medium|high (default high).
+    body.output_config = { effort: resolveAdaptiveEffort() };
   }
 
   const t0 = Date.now();
@@ -371,17 +374,17 @@ export async function runStructuredStream<T = any>(
           model: "gemini-3.5-flash",
           systemInstruction: opts.system,
         });
-        
+
         callbacks.onThinkingStart?.();
         callbacks.onThinkingChunk?.("Thinking via Gemini 3.5 Flash fallback...");
         callbacks.onThinkingEnd?.("Thinking via Gemini 3.5 Flash fallback...", 100);
-        
+
         const prompt = `${opts.user}\n\nPlease generate a JSON object matching this schema:\n${JSON.stringify(opts.tool.input_schema)}`;
         const result = await geminiModel.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
             responseMimeType: "application/json",
-          }
+          },
         });
         const text = result.response.text();
         const parsed = JSON.parse(text) as T;
@@ -403,14 +406,17 @@ export async function runStructuredStream<T = any>(
     if (process.env.OPENROUTER_API_KEY) {
       try {
         const { runOpenRouterStructuredStream } = await import("./openrouter-structured");
-        return await runOpenRouterStructuredStream<T>({
-          model: "deepseek/deepseek-chat",
-          system: opts.system,
-          user: opts.user,
-          tool: opts.tool,
-          maxTokens: opts.maxTokens,
-          signal: opts.signal,
-        }, callbacks);
+        return await runOpenRouterStructuredStream<T>(
+          {
+            model: "deepseek/deepseek-chat",
+            system: opts.system,
+            user: opts.user,
+            tool: opts.tool,
+            maxTokens: opts.maxTokens,
+            signal: opts.signal,
+          },
+          callbacks,
+        );
       } catch (openRouterErr) {
         try {
           const { log } = await import("./server-context");
@@ -547,7 +553,7 @@ export async function runCompletionResilient(opts: CompletionOptions): Promise<{
         systemInstruction: opts.system,
       });
       const result = await geminiModel.generateContent({
-        contents: [{ role: "user", parts: [{ text: opts.user }] }]
+        contents: [{ role: "user", parts: [{ text: opts.user }] }],
       });
       const text = result.response.text();
       try {

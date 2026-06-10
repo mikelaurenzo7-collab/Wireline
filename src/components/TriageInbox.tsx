@@ -921,7 +921,9 @@ function TriagePanelEmpty({
   positive?: boolean;
 }) {
   return (
-    <div className="h-full flex items-center justify-center py-4 px-2">
+    // m-auto inside a scrollable flex parent: centers when there's room,
+    // degrades to scroll instead of clipping the CTA on short laptop panels.
+    <div className="h-full min-h-0 overflow-y-auto flex py-4 px-2">
       <EmptyState
         icon={Icon}
         eyebrow={config.eyebrow}
@@ -930,7 +932,7 @@ function TriagePanelEmpty({
         actions={config.actions ? [...config.actions] : undefined}
         density="compact"
         withHalo={!positive}
-        className="py-4"
+        className="py-4 m-auto"
       />
     </div>
   );

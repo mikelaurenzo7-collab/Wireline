@@ -16,7 +16,11 @@
 ## 1. Core Tokens (Never invent new ones)
 
 ### Typography
-- **Display (Headlines):** `font-display` → Fraunces (italic, 400–700)
+- **Display (Headlines):** `font-display` → Fraunces (UPRIGHT, 400–700). The
+  slanted face is retired — only the upright weight axis ships, and a base-layer
+  override (`.italic { font-style: normal !important }`) neutralizes legacy
+  `italic` utilities so old markup renders upright without churn. Never
+  reintroduce synthesized obliques.
 - **Interface (Body/UI):** `font-sans` → Plus Jakarta Sans
 - **Mono (Labels, Code, Metrics):** `font-mono` → JetBrains Mono
 
@@ -79,7 +83,8 @@ permanent. Raising a baseline is reserved for a deliberate, explained exception.
 />
 ```
 - Always starts with a mono eyebrow.
-- Title is always `font-display italic`.
+- Title is always `font-display` (upright — the global italic override keeps
+  legacy `italic` classes rendering upright).
 - Description is `text-muted`.
 
 ### Medallion + Halo
@@ -265,7 +270,7 @@ if these counts grow.
 Higher-level patterns composed **out of** the shadcn primitives:
 
 - `Medallion.tsx` — signature halo motif for empty/idle states.
-- `SectionHeader.tsx` — mono eyebrow + italic display title + muted
+- `SectionHeader.tsx` — mono eyebrow + upright display title + muted
   description, used at the top of every major content block.
 - `EmptyState.tsx` — canonical "no data yet" surface; wraps `Medallion`
   + `ShadButton`.

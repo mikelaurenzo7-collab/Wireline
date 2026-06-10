@@ -17,7 +17,7 @@
  *   - Adaptive thinking (Deep analysis) runs only when the operator toggles Deep.
  */
 import { runStructuredWithThinking } from "./claude-structured";
-import { CLAUDE_MODELS } from "./claude-models";
+import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 import {
   DIRECTOR_FLEET_TOOL,
   buildDirectorFleetSystemPrompt,
@@ -152,7 +152,7 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     !input.shallowOnly &&
     (input.forceDeep === true || (!fleetAudit && wantsOpusModel(input.operatorMessage)));
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
-  const model = useOpus ? CLAUDE_MODELS.OPUS : CLAUDE_MODELS.SONNET;
+  const model = useOpus ? CLAUDE_DIRECTOR_MODEL : CLAUDE_MODELS.SONNET;
   const [connections, research] = await Promise.all([
     loadTenantIntegrationConnections(input.userId),
     fleetAudit

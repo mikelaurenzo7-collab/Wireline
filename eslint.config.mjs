@@ -74,6 +74,10 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
 
       // ── General quality ────────────────────────────────────────────
+      // Log-and-swallow is a deliberate pattern in our fallback chains
+      // (e.g. `try { log.warn(...) } catch {}`); a logging miss must never
+      // cascade into a user-visible failure.
+      "no-empty": ["error", { allowEmptyCatch: true }],
       "no-unused-vars": "off", // superseded by TS checker
       "@typescript-eslint/no-unused-vars": [
         "warn",

@@ -31,7 +31,7 @@ import {
   type WorkspacePlan,
 } from "./workspace-planner";
 import type { ToolSchema } from "./claude-structured";
-import { CLAUDE_MODELS } from "./claude-models";
+import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 import {
   DEFAULT_DIRECTOR_MODEL_SELECTION,
   resolveDirectorLlm,
@@ -363,8 +363,7 @@ export function previewDirectorStreamRouting(
   input: DirectorTurnInput & { focusAgentName?: string },
 ): DirectorStreamRoutingPreview {
   const focusId = input.focusAgentId?.trim();
-  const fleetAudit =
-    !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
+  const fleetAudit = !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
   const longDeliverable = wantsLongDeliverable(input.operatorMessage);
   const autoOpusEligible =
     !input.shallowOnly &&
@@ -391,7 +390,7 @@ export function previewDirectorStreamRouting(
       autoOpus: false,
       deepThink: false,
       claudeSonnet: CLAUDE_MODELS.SONNET,
-      claudeOpus: CLAUDE_MODELS.OPUS,
+      claudeOpus: CLAUDE_DIRECTOR_MODEL,
       modelLabelForOpenRouter: labelForOpenRouterModel,
     });
     const streamMeta = directorStreamMetaModel({ modelKind: coachLlm.modelKind, deepThink: false });
@@ -413,7 +412,7 @@ export function previewDirectorStreamRouting(
     deepThink: deepThinkEligible,
     longDeliverable,
     claudeSonnet: CLAUDE_MODELS.SONNET,
-    claudeOpus: CLAUDE_MODELS.OPUS,
+    claudeOpus: CLAUDE_DIRECTOR_MODEL,
     modelLabelForOpenRouter: labelForOpenRouterModel,
   });
   const effectiveDeepThink = skipAdaptiveThinking ? false : llm.deepThink;
@@ -436,8 +435,7 @@ export async function buildDirectorStreamContext(
   input: DirectorTurnInput,
 ): Promise<DirectorStreamContext> {
   const focusId = input.focusAgentId?.trim();
-  const fleetAudit =
-    !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
+  const fleetAudit = !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
   const businessPromise =
     input.business !== undefined
       ? Promise.resolve(input.business)
@@ -465,7 +463,7 @@ export async function buildDirectorStreamContext(
     deepThink: deepThinkEligible,
     longDeliverable,
     claudeSonnet: CLAUDE_MODELS.SONNET,
-    claudeOpus: CLAUDE_MODELS.OPUS,
+    claudeOpus: CLAUDE_DIRECTOR_MODEL,
     modelLabelForOpenRouter: labelForOpenRouterModel,
   });
 
@@ -506,7 +504,7 @@ export async function buildDirectorStreamContext(
         autoOpus: false,
         deepThink: false,
         claudeSonnet: CLAUDE_MODELS.SONNET,
-        claudeOpus: CLAUDE_MODELS.OPUS,
+        claudeOpus: CLAUDE_DIRECTOR_MODEL,
         modelLabelForOpenRouter: labelForOpenRouterModel,
       });
       return {

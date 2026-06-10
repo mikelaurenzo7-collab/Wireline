@@ -254,6 +254,50 @@ export const CLAUDE_REASONING_MODEL_DEFAULT: string =
   process.env.ANTHROPIC_MODEL || CLAUDE_MODELS.OPUS;
 
 /**
+ * Director chat deep tier (fleet strategy, Deep toggle, heavy deliverables).
+ *
+ * Override with ANTHROPIC_DIRECTOR_MODEL to point the Director at a custom
+ * Claude Console model/agent id (e.g. a Fable-class frontier model) without
+ * a deploy. Falls back to ANTHROPIC_MODEL, then the stock Opus tier.
+ * The fast tier (regular turns) stays on Sonnet — only the deep tier moves.
+ */
+export const CLAUDE_DIRECTOR_MODEL: string =
+  process.env.ANTHROPIC_DIRECTOR_MODEL?.trim() || CLAUDE_REASONING_MODEL_DEFAULT;
+
+/**
+ * Painter / Design Studio creative model (creative director + reviewer in
+ * the Spectrum desk). Override with ANTHROPIC_PAINTER_MODEL; falls back to
+ * the Director override chain so one env var can move both surfaces.
+ */
+export const CLAUDE_PAINTER_MODEL: string =
+  process.env.ANTHROPIC_PAINTER_MODEL?.trim() || CLAUDE_DIRECTOR_MODEL;
+
+/** Honest UI label for an env-overridden model id. */
+export function claudeModelLabel(model: string): string {
+  if (model === CLAUDE_MODELS.OPUS) return "Claude Opus 4.8";
+  if (model === CLAUDE_MODELS.SONNET) return "Claude Sonnet 4.6";
+  if (model === CLAUDE_MODELS.HAIKU) return "Claude Haiku 4.5";
+  if (model === CLAUDE_MODELS.OPUS_4_7) return "Claude Opus 4.7";
+  if (model === CLAUDE_MODELS.OPUS_4_6) return "Claude Opus 4.6";
+  return model; // custom Console model id — show it verbatim
+}
+
+export type AdaptiveEffort = "low" | "medium" | "high";
+
+/**
+ * Reasoning-speed dial for adaptive thinking (Deep mode).
+ *
+ * Regular Director turns never enable thinking — they are already on the
+ * fast path. Deep mode defaults to "high" effort; set
+ * ANTHROPIC_DEEP_EFFORT=medium (or low) to trade depth for snappier deep
+ * turns platform-wide. Invalid values fall back to "high".
+ */
+export function resolveAdaptiveEffort(): AdaptiveEffort {
+  const raw = process.env.ANTHROPIC_DEEP_EFFORT?.trim().toLowerCase();
+  return raw === "low" || raw === "medium" || raw === "high" ? raw : "high";
+}
+
+/**
  * @deprecated Prefer {@link CLAUDE_REASONING_MODEL_DEFAULT} — this name
  * sounds like the global default but only applies to the off-call reasoning
  * layer (briefs, coaching, post-call analysis). Voice runtime uses Sonnet via

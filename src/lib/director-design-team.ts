@@ -7,7 +7,12 @@
  * Build desk (OpenRouter only — Sonnet + DeepSeek, no Anthropic-via-OR):
  *   Claude Sonnet 4 primary HTML draft; DeepSeek V4 Pro fallback when Sonnet fails.
  */
-import { CLAUDE_MODELS, GEMINI_MODELS } from "./claude-models";
+import {
+  CLAUDE_MODELS,
+  CLAUDE_PAINTER_MODEL,
+  claudeModelLabel,
+  GEMINI_MODELS,
+} from "./claude-models";
 
 export type DesignTeamProvider = "wireline" | "openrouter" | "gemini";
 
@@ -167,8 +172,9 @@ export const SPECTRUM_HY3_MODEL = "tencent/hy3-preview";
 /** @deprecated Prior finisher — reference only. */
 export const SPECTRUM_MINIMAX_M3_MODEL = "minimax/minimax-m3";
 
-/** Painter preparer model — Anthropic direct (not OpenRouter). */
-export const SPECTRUM_PAINTER_OPUS_MODEL = CLAUDE_MODELS.OPUS;
+/** Painter preparer model — Anthropic direct (not OpenRouter).
+ *  Env-overridable via ANTHROPIC_PAINTER_MODEL (Claude Console custom model). */
+export const SPECTRUM_PAINTER_OPUS_MODEL = CLAUDE_PAINTER_MODEL;
 
 /** Spectrum Desk — Opus preparer (Anthropic) + Sonnet/DeepSeek build desk (OpenRouter). */
 export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
@@ -184,13 +190,13 @@ export const WIRELINE_DESIGN_TEAM_SPECTRUM = {
   creativeDirector: {
     provider: "wireline" as const,
     wirelineModel: SPECTRUM_PAINTER_OPUS_MODEL,
-    label: "Claude Opus 4.8",
+    label: claudeModelLabel(SPECTRUM_PAINTER_OPUS_MODEL),
   },
   /** Final step — critique, polish, operator sign-off (Painter / Anthropic). */
   reviewer: {
     provider: "wireline" as const,
     wirelineModel: SPECTRUM_PAINTER_OPUS_MODEL,
-    label: "Claude Opus 4.8",
+    label: claudeModelLabel(SPECTRUM_PAINTER_OPUS_MODEL),
   },
   imageReference: {
     enabled: false,
