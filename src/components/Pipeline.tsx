@@ -265,7 +265,7 @@ export default function Pipeline() {
            *  Tablet+: fixed-width kanban columns in a horizontally scrollable row. */}
           {totalLeads > 0 && (
             <div className="wl-pipeline-board pb-1">
-              <div className="flex flex-col md:flex-row md:flex-nowrap gap-3 h-auto md:h-full md:w-max md:min-h-full md:pr-3 md:snap-x md:snap-mandatory">
+              <div className="flex flex-col md:flex-row md:flex-nowrap gap-3 h-auto md:h-full md:w-full md:min-w-max md:min-h-full md:pr-3 md:snap-x md:snap-mandatory">
                 {STAGES.map((stage) => {
                   const leads = board[stage.id] || [];
                   return (
@@ -290,7 +290,7 @@ export default function Pipeline() {
                         if (id) moveLead(id, stage.id);
                       }}
                       className={cn(
-                        "w-full md:w-[220px] md:shrink-0 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none transition-[outline] duration-150",
+                        "w-full md:w-auto md:flex-1 md:basis-[220px] md:min-w-[220px] md:shrink-0 md:snap-start flex flex-col md:h-full max-h-[70vh] md:max-h-none transition-[outline] duration-150",
                         dragOverStage === stage.id &&
                           draggingId &&
                           "wl-pipeline-column--drop-target",

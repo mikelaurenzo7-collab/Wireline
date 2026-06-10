@@ -815,22 +815,14 @@
      strengths smeared like an ink bleed near panel headers. */
   background: radial-gradient(
     circle at 30% 30%,
-    color-mix(
-      in srgb,
-      var(--wl-route-from) 6.5%,
-      var(--wl-cream, #f5f0e6)
-    ),
+    color-mix(in srgb, var(--wl-route-from) 6.5%, var(--wl-cream, #f5f0e6)),
     transparent 58%
   );
 }
 .wl-route-ambience-b {
   background: radial-gradient(
     circle at 60% 60%,
-    color-mix(
-      in srgb,
-      var(--wl-route-to) 5.5%,
-      var(--wl-cream, #f5f0e6)
-    ),
+    color-mix(in srgb, var(--wl-route-to) 5.5%, var(--wl-cream, #f5f0e6)),
     transparent 60%
   );
 }
@@ -1090,6 +1082,16 @@ body,
     flex: none;
     overflow: visible;
   }
+}
+
+/* Panels on scroll routes hug their content. Grid columns stretch to equal
+ * heights by default, which made short panels draw a border around hundreds
+ * of pixels of nothing at large viewports. Panels that own an internal
+ * scroll region (.panel-scroll) keep their bounded height. */
+.route-shell-scroll
+  [data-page-shell-scrollable="true"]
+  .wl-panel-editorial:not(:has(.panel-scroll)) {
+  height: auto;
 }
 
 /* ── WIRELINE ORBITAL INDICATOR ──
@@ -5530,15 +5532,12 @@ button.wl-ops-metric--interactive[data-active="true"] {
   font-weight: 700;
 }
 
+/* Structural layout container only — wl-ops-canvas owns the page frame.
+ * Keeping this chromeless removes box-in-box nesting and lets short tab
+ * content read as open canvas instead of an empty bordered region. */
 .wl-ops-floor-frame {
   border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 8%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 92%, white);
-  padding: 1rem 1.15rem;
-}
-.dark .wl-ops-floor-frame {
-  background: rgba(18, 14, 28, 0.5);
-  border-color: rgba(155, 92, 224, 0.1);
+  padding: 0.25rem 0.15rem;
 }
 
 .wl-ops-call-card {
@@ -5590,7 +5589,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
 
 @media (max-width: 639px) {
   .wl-ops-floor-frame {
-    padding: 0.75rem 0.85rem;
+    padding: 0.15rem 0;
   }
   .wl-ops-call-card {
     padding: 0.75rem 0.85rem 0.75rem 1rem;

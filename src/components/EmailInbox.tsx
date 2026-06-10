@@ -594,7 +594,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                             animate={{ opacity: 1, x: 0 }}
                             key={msg.id || idx}
                             className={cn(
-                              "flex flex-col max-w-[88%]",
+                              "flex flex-col max-w-[min(88%,46rem)]",
                               msg.role === "ai" ? "ml-auto items-end" : "items-start",
                             )}
                           >

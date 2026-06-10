@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Brain, ArrowUpCircle, Trash2, CheckCircle2, Zap, Terminal, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
-import { formatDate, formatDateTime } from "../lib/safe-date";
+import { formatDateTime } from "../lib/safe-date";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 
@@ -101,7 +101,10 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
           });
           successCount++;
         } else {
-          toastError("Promotion failed", `Could not promote observation: ${lesson.lesson.slice(0, 30)}...`);
+          toastError(
+            "Promotion failed",
+            `Could not promote observation: ${lesson.lesson.slice(0, 30)}...`,
+          );
         }
       } catch {
         toastError("Promotion failed", "Network error during bulk promotion.");
@@ -111,7 +114,10 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
     }
 
     if (successCount > 0) {
-      toastSuccess("Bulk promotion complete", `Successfully promoted ${successCount} observations.`);
+      toastSuccess(
+        "Bulk promotion complete",
+        `Successfully promoted ${successCount} observations.`,
+      );
     }
     setIsBulkPromoting(false);
   };
@@ -240,87 +246,87 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
               <p className="wl-label text-brand/70 tracking-[0.35em]">Fully synchronized</p>
             </motion.div>
           ) : (
-            lessons.map((lesson) => (
-              <motion.div
-                key={lesson.id}
-                layout
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="p-4 group hover:bg-black/[0.02] transition-colors"
-              >
-                <div className="flex gap-3 items-start">
-                  <div className="flex items-center mt-2 shrink-0">
-                    <Checkbox
-                      checked={selectedIds.has(lesson.id)}
-                      onChange={() => handleToggleSelect(lesson.id)}
-                      aria-label={`Select observation ${lesson.id}`}
-                    />
-                  </div>
-                  <div className="w-8 h-8 rounded-md wl-panel border border-border flex items-center justify-center shrink-0 mt-0.5 group-hover:border-brand/30 transition-colors">
-                    <Terminal className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors" />
-                  </div>
-
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <span className="wl-label-muted tracking-[0.22em]">
-                        Observation · {formatDate(lesson.created_at)}
-                      </span>
-                      <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
-                        <ShadButton
-                          type="button"
-                          variant="default"
-                          size="sm"
-                          disableAnimations
-                          onClick={() => promoteToDirective(lesson)}
-                          disabled={isPromoting === lesson.id}
-                          title="Promote this observation into a hard directive on the agent"
-                          aria-label={`Promote observation to directive: ${lesson.lesson.slice(0, 80)}`}
-                          className="h-8 px-3 rounded-md wl-label touch-press shadow-sm"
-                        >
-                          {isPromoting === lesson.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <ArrowUpCircle className="w-3 h-3" />
-                          )}
-                          Promote
-                        </ShadButton>
-                        <ShadButton
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          disableAnimations
-                          onClick={() => deleteLesson(lesson.id)}
-                          disabled={isDeleting === lesson.id}
-                          title="Discard"
-                          className="h-7 w-7 rounded-md text-muted/70 hover:text-rose-500 hover:border-rose-500/30"
-                        >
-                          {isDeleting === lesson.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3 h-3" />
-                          )}
-                        </ShadButton>
-                      </div>
+            lessons.map((lesson) => {
+              const capturedAt = formatDateTime(lesson.created_at, {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              return (
+                <motion.div
+                  key={lesson.id}
+                  layout
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  className="p-4 group hover:bg-black/[0.02] transition-colors"
+                >
+                  <div className="flex gap-3 items-start">
+                    <div className="flex items-center mt-2 shrink-0">
+                      <Checkbox
+                        checked={selectedIds.has(lesson.id)}
+                        onChange={() => handleToggleSelect(lesson.id)}
+                        aria-label={`Select observation ${lesson.id}`}
+                      />
+                    </div>
+                    <div className="w-8 h-8 rounded-md wl-panel border border-border flex items-center justify-center shrink-0 mt-0.5 group-hover:border-brand/30 transition-colors">
+                      <Terminal className="w-3.5 h-3.5 text-muted/70 group-hover:text-brand transition-colors" />
                     </div>
 
-                    <p className="text-sm text-ink/90 leading-relaxed font-mono bg-black/20 rounded-md px-3 py-2.5 border border-border">
-                      {lesson.lesson}
-                    </p>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="wl-label-muted tracking-[0.22em]">Observation</span>
+                        <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                          <ShadButton
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            disableAnimations
+                            onClick={() => promoteToDirective(lesson)}
+                            disabled={isPromoting === lesson.id}
+                            title="Promote this observation into a hard directive on the agent"
+                            aria-label={`Promote observation to directive: ${lesson.lesson.slice(0, 80)}`}
+                            className="h-8 px-3 rounded-md wl-label touch-press shadow-sm"
+                          >
+                            {isPromoting === lesson.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <ArrowUpCircle className="w-3 h-3" />
+                            )}
+                            Promote
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disableAnimations
+                            onClick={() => deleteLesson(lesson.id)}
+                            disabled={isDeleting === lesson.id}
+                            title="Discard"
+                            className="h-7 w-7 rounded-md text-muted/70 hover:text-rose-500 hover:border-rose-500/30"
+                          >
+                            {isDeleting === lesson.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3 h-3" />
+                            )}
+                          </ShadButton>
+                        </div>
+                      </div>
 
-                    <p className="wl-label-muted tracking-[0.22em]">
-                      Captured{" "}
-                      {formatDateTime(lesson.created_at, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                      <p className="text-sm text-ink/90 leading-relaxed font-mono bg-brand/[0.05] rounded-md px-3 py-2.5 border border-brand/15">
+                        {lesson.lesson}
+                      </p>
+
+                      {capturedAt !== "—" && (
+                        <p className="wl-label-muted tracking-[0.22em]">Captured {capturedAt}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))
+                </motion.div>
+              );
+            })
           )}
         </AnimatePresence>
       </div>

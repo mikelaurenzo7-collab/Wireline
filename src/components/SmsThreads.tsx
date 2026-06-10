@@ -432,7 +432,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         <div
                           key={m.id}
                           className={cn(
-                            "max-w-[78%] rounded-md px-3.5 py-2.5 border transition-all duration-300 hover:shadow-sm",
+                            "max-w-[min(78%,36rem)] rounded-md px-3.5 py-2.5 border transition-all duration-300 hover:shadow-sm",
                             m.direction === "out"
                               ? "ml-auto bg-brand/12 border-brand/30 text-ink"
                               : "mr-auto bg-white/80 backdrop-blur-sm border-black/10 text-ink",
