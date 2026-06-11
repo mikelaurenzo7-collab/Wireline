@@ -176,7 +176,7 @@ export default function LandingPage() {
                   Live demo — no signup
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-2xl border border-ink/10 bg-paper/95 backdrop-blur-xl p-4 sm:p-6 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-paper/95 backdrop-blur-xl p-4 sm:p-6 shadow-sm">
                   {csDemo && (
                     <div className="flex flex-col items-center text-center p-2">
                       <p className="text-[12px] font-medium text-ink/70 mb-3">
@@ -255,7 +255,7 @@ export default function LandingPage() {
           className="landing-section landing-section--band landing-section--band-after-hero px-5 sm:px-6 lg:px-12"
         >
           <div className="landing-section-inner max-w-7xl">
-            <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] rounded-2xl overflow-hidden">
+            <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] rounded-md overflow-hidden">
               {STATS.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -281,7 +281,10 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Integrations ───────────────────────────────────────── */}
-        <section data-testid="integrations-section" className="landing-section px-5 sm:px-6 lg:px-12">
+        <section
+          data-testid="integrations-section"
+          className="landing-section px-5 sm:px-6 lg:px-12"
+        >
           <div className="landing-section-inner max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}

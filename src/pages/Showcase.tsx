@@ -84,7 +84,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
     >
       <div className="flex items-center gap-4">
         <div
-          className="w-12 h-12 flex items-center justify-center shrink-0 rounded-xl wl-showcase-badge"
+          className="w-12 h-12 flex items-center justify-center shrink-0 rounded-md wl-showcase-badge"
           data-showcase-tint={agent.tint}
         >
           <Phone className="w-5 h-5" strokeWidth={2.4} />
@@ -93,15 +93,11 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/60 mb-0.5">
             {label}
           </p>
-          <p className="font-display text-xl leading-none text-ink mb-1">
-            {agent.name}
-          </p>
+          <p className="font-display text-xl leading-none text-ink mb-1">{agent.name}</p>
           <p className="font-mono text-[15px] font-medium text-brand tracking-tight">
             {agent.display}
           </p>
-          <p className="text-sm text-ink/70 mt-1 line-clamp-1">
-            {agent.role}
-          </p>
+          <p className="text-sm text-ink/70 mt-1 line-clamp-1">{agent.role}</p>
         </div>
         <div className="shrink-0 text-right">
           <ArrowRight className="w-5 h-5 text-ink/40 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
