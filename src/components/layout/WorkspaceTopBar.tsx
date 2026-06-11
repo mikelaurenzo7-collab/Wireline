@@ -49,11 +49,10 @@ export default function WorkspaceTopBar({
             )}
           >
             {eyebrow && (
-              <p className={cn(WL_APP_CLASSES.workspaceEyebrow, "truncate")}>
-                {eyebrow}
-              </p>
+              <p className={cn(WL_APP_CLASSES.workspaceEyebrow, "truncate")}>{eyebrow}</p>
             )}
             <h1
+              id="workspace-page-title"
               className={cn(
                 WL_APP_CLASSES.workspaceTitle,
                 "truncate sm:max-w-none m-0 font-semibold",

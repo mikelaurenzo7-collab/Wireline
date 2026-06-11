@@ -51,6 +51,11 @@ export default function TopBar({
   const { branding } = useBranding();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
+  const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const drawerId = "wireline-mobile-navigation-drawer";
+  const accountMenuId = "wireline-account-menu";
 
   // Close avatar dropdown on outside click or Escape.
   useEffect(() => {
@@ -69,6 +74,57 @@ export default function TopBar({
       document.removeEventListener("keydown", onKey);
     };
   }, [userMenuOpen]);
+
+  // Treat the mobile/tablet navigation drawer as a true modal navigation surface:
+  // lock background scroll, support Escape, and move focus into/return it from the panel.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const { overflow } = document.body.style;
+    const trigger = drawerTriggerRef.current;
+    document.body.style.overflow = "hidden";
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onDrawerChange(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const panel = drawerRef.current;
+      if (!panel) return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
+      if (focusable.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKey);
+    const focusFrame = window.requestAnimationFrame(() => drawerRef.current?.focus());
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+      window.requestAnimationFrame(() => trigger?.focus());
+    };
+  }, [drawerOpen, onDrawerChange]);
 
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;
@@ -336,6 +392,7 @@ export default function TopBar({
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
+                aria-controls={accountMenuId}
                 title={user?.email || "Account"}
               >
                 <div
@@ -358,6 +415,7 @@ export default function TopBar({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.97 }}
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+                    id={accountMenuId}
                     role="menu"
                     aria-label="Account menu"
                     className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md border border-black/10 bg-paper dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[90]"
@@ -447,6 +505,7 @@ export default function TopBar({
                 top SaaS render on mobile web). On desktop (lg+) the Aurora
                 rail carries the nav instead. */}
             <ShadButton
+              ref={drawerTriggerRef}
               type="button"
               variant="ghost"
               size="icon"
@@ -454,6 +513,8 @@ export default function TopBar({
               onClick={() => onDrawerChange(true)}
               className="touch-press flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5 hover:scale-[1.05]"
               aria-label="Open navigation"
+              aria-expanded={drawerOpen}
+              aria-controls={drawerId}
             >
               <Menu className="w-5 h-5 text-brand dark:text-paper-warm" />
             </ShadButton>
@@ -474,12 +535,17 @@ export default function TopBar({
               aria-hidden="true"
             />
             <motion.aside
+              id={drawerId}
+              ref={drawerRef}
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]"
-              aria-label="Main navigation"
+              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] focus:outline-none"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="mobile-navigation-title"
+              tabIndex={-1}
             >
               <div className="flex items-center justify-between mb-4">
                 <Link
@@ -490,7 +556,10 @@ export default function TopBar({
                   <div className="w-9 h-9 rounded-md flex items-center justify-center bg-brand">
                     <WirelineMark className="w-4 h-4 chrome-paper" strokeWidth={130} />
                   </div>
-                  <span className="brand-wordmark text-[16px] leading-none">
+                  <span
+                    id="mobile-navigation-title"
+                    className="brand-wordmark text-[16px] leading-none"
+                  >
                     {branding.brand_name.toUpperCase()}
                   </span>
                 </Link>
