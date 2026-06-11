@@ -490,7 +490,7 @@ export default function LiveOps() {
             }
           />
 
-          {/* Desktop-first grid with dynamic viewport perfection */
+          {/* Desktop-first grid with dynamic viewport perfection */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch px-2 sm:px-3 pt-1 pb-3 flex-1 min-h-0 overflow-hidden">
             {/* Left Pane (Main Operations) */}
             <div
