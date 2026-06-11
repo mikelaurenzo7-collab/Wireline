@@ -7,6 +7,21 @@ import { WIRELINE_STITCH_UI } from "./wireline-director-design";
 /** Empty-state + preview panel chips — design-studio prompts only */
 export const PAINTER_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
+    id: "storefront",
+    label: "AI-native Shopify storefront for a premium DTC brand",
+    intent: "Store Generator",
+  },
+  {
+    id: "collection",
+    label: "High-converting collection page with product cards and filters",
+    intent: "Commerce UX",
+  },
+  {
+    id: "product-detail",
+    label: "Luxury product page with variants, trust badges, and sticky checkout",
+    intent: "PDP system",
+  },
+  {
     id: "landing",
     label: "Mobile-first landing page for a local service business",
     intent: "Marketing site with hero, proof, and CTA",
@@ -38,7 +53,7 @@ export const PAINTER_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   },
 ] as const;
 
-export const PAINTER_STARTER_PROMPTS_FEATURED_COUNT = 4;
+export const PAINTER_STARTER_PROMPTS_FEATURED_COUNT = 6;
 
 export const PAINTER_EMPTY_COPY = {
   starterEyebrow: "Paint from a template",
@@ -55,7 +70,7 @@ export const PAINTER_INTEGRATION_RAIL = {
 
 export const PAINTER_LOADING_COPY = {
   headline: "Opening design studio",
-  sub: "Thread history · brand profile · live preview",
+  sub: "Thread history · brand profile · live preview · storefront generator",
 } as const;
 
 /** Inline load-failure state — paired with a Retry action, never toast-only */
@@ -71,19 +86,19 @@ export const WIRELINE_PAINTER_UI = {
   betaLabel: "BETA",
   personaName: "Painter",
   personaTagline: "Wireline Design studio",
-  pageSubtitle: "Pages, flows, and live prototypes — click through your renders",
+  pageSubtitle: "Pages, flows, Shopify storefronts, and live prototypes — click through your renders",
   /** ≤390px header track — full subtitle truncates on small phones */
   pageSubtitleShort: "Studio",
   composerPlaceholder:
-    "Describe the screen or site to paint — e.g. mobile booking page for a cleaning company with terracotta accents…",
+    "Describe the screen, site, or Shopify storefront to paint — e.g. premium DTC skincare store with editorial PDP and sticky checkout…",
   workingStatus: "Painter is rendering…",
-  emptyTitle: "Paint your first screen",
+  emptyTitle: "Paint your first screen or store",
   emptyBody:
-    "Describe a landing page, onboarding flow, or app screen. Painter writes design.md, drafts HTML, and opens a live preview you can click through.",
+    "Describe a landing page, onboarding flow, app screen, or Shopify storefront. Painter writes design.md, drafts HTML, and opens a live preview you can click through.",
   sendHint: "Enter to send · Shift+Enter for new line",
   previewEmptyTitle: "Live preview",
   previewEmptyBody:
-    "Your click-through HTML prototype renders here when Painter finishes a screen.",
+    "Your click-through HTML prototype or storefront concept renders here when Painter finishes.",
   clearThreadLabel: "Clear thread",
   mobileChatTab: "Chat",
   mobilePreviewTab: "Preview",
@@ -91,8 +106,8 @@ export const WIRELINE_PAINTER_UI = {
   badgeLabel: "Wireline Design",
   reasoningLabel: WIRELINE_STITCH_UI.designStudioReasoning,
   handoffIntro:
-    "That's a **design studio** job — **Painter** owns Wireline Design pages and flows.",
-  handoffLogosNote: "Logos and brand packs stay here in Chat with Director.",
+    "That's a **design studio** job — **Painter** owns Wireline Design pages, flows, and storefronts.",
+  handoffLogosNote: "Logos, brand packs, and store operations stay connected to the same Wireline workspace.",
   handoffCta: "Open in Design",
   buildHandoffReply(prompt: string): string {
     const url = `/design?prompt=${encodeURIComponent(prompt.trim().slice(0, 2000))}`;
