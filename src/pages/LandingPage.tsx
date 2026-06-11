@@ -123,6 +123,7 @@ export default function LandingPage() {
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb" />
+            <span className="wl-aurora-orb wl-aurora-orb--mid" />
             <span className="wl-hero-spotlight" />
           </div>
           <HeroWirelines />

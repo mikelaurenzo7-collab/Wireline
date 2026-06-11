@@ -70,4 +70,5 @@ export const WIRELINE_WIRES: WirelineWire[] = [
 export const WIRELINE_AMBIENT: string[] = [
   "M -24 58 C 480 152, 960 150, 1464 66",
   "M -24 304 C 480 384, 960 364, 1464 292",
+  "M -24 182 C 480 260, 960 250, 1464 174",
 ];

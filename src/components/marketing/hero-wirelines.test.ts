@@ -49,7 +49,7 @@ describe("hero-wirelines geometry", () => {
   });
 
   it("ambient wires span the full hero width", () => {
-    expect(WIRELINE_AMBIENT).toHaveLength(2);
+    expect(WIRELINE_AMBIENT).toHaveLength(3);
     for (const d of WIRELINE_AMBIENT) {
       const xs = [...d.matchAll(/(-?\d+(?:\.\d+)?)\s+-?\d+(?:\.\d+)?/g)].map((m) =>
         parseFloat(m[1]),
