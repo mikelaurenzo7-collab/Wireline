@@ -79,14 +79,10 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ branding, updateBranding, isLoading }),
-    [branding, updateBranding, isLoading]
+    [branding, updateBranding, isLoading],
   );
 
-  return (
-    <BrandingContext.Provider value={value}>
-      {children}
-    </BrandingContext.Provider>
-  );
+  return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;
 }
 
 export function useBranding() {

@@ -20,7 +20,10 @@ function readComponent(name: string): string {
 }
 
 function readIndexCss(): string {
-  return fs.readFileSync(path.resolve(__dirname, "../../../index.css"), "utf8");
+  return fs.readFileSync(
+    path.resolve(__dirname, "../../../styles/wireline-design-system.css"),
+    "utf8",
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════
