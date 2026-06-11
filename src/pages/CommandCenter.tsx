@@ -415,7 +415,7 @@ export default function LiveOps() {
   const navigateOpsTab = (tab: Exclude<OpsTabId, "analytics">) => {
     setSearchParams(
       (prev) => {
-        const next = new URLSpecParams(prev);
+        const next = new URLSearchParams(prev);
         next.set("tab", tab);
         return next;
       },
