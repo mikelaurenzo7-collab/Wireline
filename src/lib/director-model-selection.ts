@@ -70,3 +70,19 @@ export function resolveDirectorLlm(input: {
 
 // Re-export for convenience
 export { DEFAULT_DIRECTOR_MODEL_SELECTION as originalDefault } from './director-model-selection'; // if needed for migration
+
+/**
+ * Returns true if the given ID looks like a valid OpenRouter model ID.
+ * Used by openrouter-models.ts to filter the live catalog.
+ * OpenRouter IDs are typically in "provider/model" format.
+ */
+export function isOpenRouterModelId(id: string): boolean {
+  if (typeof id !== "string" || !id) return false;
+  const lower = id.toLowerCase();
+  // Exclude our internal Wireline / xAI / Grok models
+  if (lower.startsWith("wireline/") || lower.startsWith("xai/") || lower.startsWith("grok/")) {
+    return false;
+  }
+  // Standard OpenRouter format contains a slash
+  return id.includes("/");
+}
