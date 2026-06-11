@@ -9146,3 +9146,344 @@ html {
   border-color: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.38);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MAJESTIC MARKETING LAYER — Aurora Cream, Fable-grade
+   ───────────────────────────────────────────────────────────────────────
+   Ambient aurora light-fields, luminous gradient display type, a breathing
+   hero spotlight, live eyebrow pulses, lustre cards, and animated aurora
+   hairlines for the public marketing surfaces. Purely decorative and
+   CSP-safe — every bit of motion lives here as a keyframe, never an inline
+   style — reduced-motion aware, and tuned to stay soft on warm cream so the
+   aurora reads as intentional light, never a corner smudge.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── AURORA FIELD ──
+ * Drop-in ambient backdrop. The host element supplies positioning (fixed for
+ * the page backdrop, absolute for the hero); the field only clips and holds
+ * the slowly-drifting brand orbs. */
+.wl-aurora-field {
+  overflow: hidden;
+  isolation: isolate;
+}
+.wl-aurora-orb {
+  position: absolute;
+  display: block;
+  width: 44rem;
+  height: 44rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform;
+}
+.wl-aurora-orb:nth-child(1) {
+  top: -18rem;
+  left: -14rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(139, 63, 214, 0.16) 0%,
+    rgba(139, 63, 214, 0.06) 40%,
+    transparent 68%
+  );
+  animation: wl-aurora-drift-a 32s var(--ease-soft) infinite alternate;
+}
+.wl-aurora-orb:nth-child(2) {
+  top: -12rem;
+  right: -16rem;
+  width: 40rem;
+  height: 40rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(155, 92, 224, 0.14) 0%,
+    rgba(155, 92, 224, 0.05) 44%,
+    transparent 70%
+  );
+  animation: wl-aurora-drift-b 41s var(--ease-soft) infinite alternate;
+}
+.wl-aurora-orb:nth-child(3) {
+  bottom: -22rem;
+  left: 28%;
+  width: 52rem;
+  height: 52rem;
+  background: radial-gradient(
+    circle at center,
+    rgba(107, 43, 153, 0.1) 0%,
+    rgba(107, 43, 153, 0.035) 48%,
+    transparent 72%
+  );
+  animation: wl-aurora-drift-c 49s var(--ease-soft) infinite alternate;
+}
+.dark .wl-aurora-orb:nth-child(1) {
+  background: radial-gradient(
+    circle at center,
+    rgba(155, 92, 224, 0.28) 0%,
+    rgba(155, 92, 224, 0.1) 42%,
+    transparent 70%
+  );
+}
+.dark .wl-aurora-orb:nth-child(2) {
+  background: radial-gradient(
+    circle at center,
+    rgba(199, 125, 255, 0.22) 0%,
+    rgba(199, 125, 255, 0.08) 46%,
+    transparent 72%
+  );
+}
+.dark .wl-aurora-orb:nth-child(3) {
+  background: radial-gradient(
+    circle at center,
+    rgba(139, 63, 214, 0.2) 0%,
+    rgba(139, 63, 214, 0.07) 50%,
+    transparent 74%
+  );
+}
+@keyframes wl-aurora-drift-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(5rem, 3rem, 0) scale(1.12);
+  }
+}
+@keyframes wl-aurora-drift-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-4rem, 4rem, 0) scale(0.94);
+  }
+}
+@keyframes wl-aurora-drift-c {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.96);
+  }
+  100% {
+    transform: translate3d(4rem, -3rem, 0) scale(1.1);
+  }
+}
+
+/* ── HERO SPOTLIGHT ──
+ * A soft, breathing column of brand light centered behind the headline.
+ * Pairs with the switchboard wirelines for a composed, living hero scene. */
+.wl-hero-spotlight {
+  position: absolute;
+  top: -6%;
+  left: 50%;
+  width: min(60rem, 92vw);
+  height: min(34rem, 60vh);
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 58% 60% at 50% 38%,
+    rgba(139, 63, 214, 0.14) 0%,
+    rgba(139, 63, 214, 0.05) 42%,
+    transparent 68%
+  );
+  animation: wl-aurora-breathe 9s ease-in-out infinite;
+}
+.dark .wl-hero-spotlight {
+  background: radial-gradient(
+    ellipse 58% 60% at 50% 38%,
+    rgba(155, 92, 224, 0.22) 0%,
+    rgba(155, 92, 224, 0.08) 44%,
+    transparent 70%
+  );
+}
+@keyframes wl-aurora-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+/* ── AURORA DISPLAY TYPE ──
+ * Luminous brand gradient that slowly pans across display headlines. */
+.wl-aurora-text {
+  background-image: linear-gradient(
+    100deg,
+    #3b154c 0%,
+    #6b2b99 26%,
+    #8b3fd6 50%,
+    #6b2b99 74%,
+    #3b154c 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: wl-aurora-text-pan 9s ease-in-out infinite;
+}
+.dark .wl-aurora-text {
+  background-image: linear-gradient(
+    100deg,
+    #c77dff 0%,
+    #9b5ce0 28%,
+    #f3e8ff 50%,
+    #9b5ce0 72%,
+    #c77dff 100%
+  );
+}
+@keyframes wl-aurora-text-pan {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* ── EYEBROW LIVE DOT ──
+ * A small brand pulse that signals "live" beside mono eyebrows. */
+.wl-eyebrow-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--color-brand);
+}
+.wl-eyebrow-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  animation: wl-eyebrow-ping 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes wl-eyebrow-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  70%,
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* ── LUSTRE CARD ──
+ * Specular sheen + a buoyant brand-glow lift on hover. Razor-edged. */
+.wl-lustre {
+  position: relative;
+  transition:
+    transform 0.5s var(--ease-editorial),
+    box-shadow 0.5s var(--ease-editorial),
+    border-color 0.5s var(--ease-editorial);
+}
+.wl-lustre::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, transparent 36%);
+  opacity: 0.7;
+}
+.wl-lustre:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 28px 64px -28px rgba(139, 63, 214, 0.28),
+    0 6px 18px -8px rgba(26, 22, 20, 0.08);
+}
+
+/* ── AURORA HAIRLINE ──
+ * An animated brand divider — a thread of light under section eyebrows. */
+.wl-divider-aurora {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 63, 214, 0.45) 30%,
+    rgba(155, 92, 224, 0.8) 50%,
+    rgba(139, 63, 214, 0.45) 70%,
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: wl-aurora-line-pan 6.5s ease-in-out infinite;
+}
+@keyframes wl-aurora-line-pan {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
+ * The call signals become luminous comets of light, and the central
+ * exchange gains a breathing halo so the whole switchboard reads as a
+ * living core wired to the gutter robots. Pure CSS on the existing layer. */
+.wl-wire-signal {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 3px rgba(139, 63, 214, 0.6));
+}
+.dark .wl-wire-signal {
+  filter: drop-shadow(0 0 4px rgba(199, 125, 255, 0.7));
+}
+.wl-exchange::before {
+  content: "";
+  position: absolute;
+  left: 32px;
+  top: 38px;
+  width: 13rem;
+  height: 13rem;
+  margin-left: -6.5rem;
+  margin-top: -6.5rem;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at center,
+    rgba(139, 63, 214, 0.22) 0%,
+    rgba(139, 63, 214, 0.06) 42%,
+    transparent 70%
+  );
+  animation: wl-exchange-halo 3.2s ease-in-out 2s infinite;
+}
+.dark .wl-exchange::before {
+  background: radial-gradient(
+    circle at center,
+    rgba(155, 92, 224, 0.3) 0%,
+    rgba(155, 92, 224, 0.1) 44%,
+    transparent 72%
+  );
+}
+@keyframes wl-exchange-halo {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+/* ── REDUCED MOTION — settle the majestic layer into a static still ── */
+@media (prefers-reduced-motion: reduce) {
+  .wl-aurora-orb,
+  .wl-hero-spotlight,
+  .wl-aurora-text,
+  .wl-divider-aurora,
+  .wl-exchange::before {
+    animation: none !important;
+  }
+  .wl-eyebrow-dot::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .wl-lustre {
+    transition: none !important;
+  }
+  .wl-lustre:hover {
+    transform: none;
+  }
+}

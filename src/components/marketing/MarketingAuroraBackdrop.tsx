@@ -1,16 +1,24 @@
 /**
- * Shared marketing backdrop.
+ * Shared marketing backdrop — the Aurora Cream "majestic" canvas.
  *
- * Previously rendered two soft radial "aurora" blobs (a purple one anchored
- * off the top-left edge, a terracotta one bottom-right). On the warm cream
- * paper those blobs read as an accidental purple/cream smudge in the corner
- * rather than an intentional accent — and the landing page, which builds its
- * own surface, never had them, so the public site looked inconsistent
- * page-to-page. The brand's aurora gradients were flattened to solid brand
- * ink pre-launch (see `.text-aurora` in index.css); this backdrop now matches
- * that decision with a clean, uniform paper canvas across every marketing
- * page.
+ * Renders the warm cream paper plus three large, slowly-drifting brand-violet
+ * aurora orbs (top-left, top-right, lower-center). They sit far behind content
+ * (`z-0`, `pointer-events-none`) and stay deliberately soft so the cream still
+ * dominates — the orbs read as intentional ambient light across every
+ * marketing page rather than a corner smudge. All motion is CSS keyframes in
+ * `wireline-design-system.css` (`.wl-aurora-*`), CSP-safe, and collapses to a
+ * calm static field under `prefers-reduced-motion`.
+ *
+ * Consumed by both shared shells (`MarketingChrome`, `MarketingPageFrame`), so
+ * one field unifies the entire public site. The landing page composes its own
+ * hero field on top of the switchboard.
  */
 export default function MarketingAuroraBackdrop() {
-  return <div className="pointer-events-none fixed inset-0 z-0 bg-paper" aria-hidden />;
+  return (
+    <div className="wl-aurora-field pointer-events-none fixed inset-0 z-0 bg-paper" aria-hidden>
+      <span className="wl-aurora-orb" />
+      <span className="wl-aurora-orb" />
+      <span className="wl-aurora-orb" />
+    </div>
+  );
 }
