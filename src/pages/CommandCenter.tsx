@@ -34,11 +34,11 @@ const OpsSentimentChart = lazy(() => import("../components/CommandCenter/OpsSent
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type LiveCall = {
-  id: string;
-  agent_id?: string;
-  customer_number: string;
-  sentiment_label: string;
-  urgency: number;
+  id: string,
+  agent_id?: string,
+  customer_number: string,
+  sentiment_label: string,
+  urgency: number,
   status: "active" | "escalated";
   thought?: string;
 };
@@ -48,60 +48,60 @@ const OPS_ROUTE = resolveAppPageSubTabRoute("/ops")!;
 type OpsTabId = "floor" | "intel" | "triage" | "analytics";
 
 type ActionItem = {
-  id: string;
+  id: string,
   type: "send_email" | "schedule_calendar" | "update_crm_lead" | "create_internal_task";
   priority: "high" | "medium" | "low";
   status: "pending" | "completed" | "failed";
-  description: string;
-  created_at: string;
+  description: string,
+  created_at: string,
   payload?: Record<string, unknown>;
   reasoning?: string;
 };
 
 type LeadDossier = {
-  customer_number: string;
-  full_name?: string;
-  company?: string;
-  job_title?: string;
-  bio?: string;
+  customer_number: string,
+  full_name?: string,
+  company?: string,
+  job_title?: string,
+  bio?: string,
   linked_in_url?: string;
 };
 
 type TelemetryStats = {
   sentimentBreakdown?: {
-    positive?: number;
-    neutral?: number;
-    negative?: number;
+    positive?: number,
+    neutral?: number,
+    negative?: number,
   };
   unitEconomics?: {
-    efficiencyScore?: number;
-    costPerMinute?: number | string;
-    costPerLead?: number | string;
+    efficiencyScore?: number,
+    costPerMinute?: number | string,
+    costPerLead?: number | string,
   };
   agents?: {
-    id: string;
-    name: string;
-    role?: string;
+    id: string,
+    name: string,
+    role?: string,
   }[];
 };
 
 type SignalPayload = {
-  id: string;
-  agent_id?: string | null;
-  customer_number: string;
-  label?: string;
-  urgency?: number;
-  status?: string;
+  id: string,
+  agent_id?: string | null,
+  customer_number: string,
+  label?: string,
+  urgency?: number,
+  status?: string,
   thought?: string;
 };
 
 type TaskPayload = {
-  id: string;
+  id: string,
   task_type: "send_email" | "schedule_calendar" | "update_crm_lead" | "create_internal_task";
   priority: "high" | "medium" | "low";
-  status: string;
-  description?: string;
-  created_at: string;
+  status: string,
+  description?: string,
+  created_at: string,
   payload?: Record<string, unknown>;
   resolution_notes?: string;
 };
@@ -415,7 +415,7 @@ export default function LiveOps() {
   const navigateOpsTab = (tab: Exclude<OpsTabId, "analytics">) => {
     setSearchParams(
       (prev) => {
-        const next = new URLSearchParams(prev);
+        const next = new URLSpecParams(prev);
         next.set("tab", tab);
         return next;
       },
@@ -428,7 +428,7 @@ export default function LiveOps() {
       <ClientRouteViewport>
         <div
           className={clsx(
-            "flex flex-col flex-1 min-h-0 h-full max-w-[1600px] mx-auto w-full",
+            "flex flex-col flex-1 min-h-0 h-full max-w-[1600px] mx-auto w-full bg-paper paper-texture",
             WL_OPS_CLASSES.canvas,
           )}
         >
@@ -506,7 +506,7 @@ export default function LiveOps() {
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
-                      "flex-1 min-h-0 flex flex-col overflow-hidden",
+                      "flex-1 min-h-0 flex flex-col overflow-hidden wl-panel border border-ink/10 rounded-lg shadow-sm",
                     )}
                   >
                     <LiveFloorPanel
@@ -530,7 +530,7 @@ export default function LiveOps() {
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
-                      "flex-1 min-h-0 flex flex-col overflow-hidden",
+                      "flex-1 min-h-0 flex flex-col overflow-hidden wl-panel border border-ink/10 rounded-lg shadow-sm",
                     )}
                   >
                     <ActionFeed actions={actions} onRefresh={refresh} />
@@ -568,7 +568,7 @@ export default function LiveOps() {
                     <div
                       className={clsx(
                         WL_OPS_CLASSES.railCard,
-                        "wl-card-lift hover:border-brand/35 transition-colors duration-200",
+                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-lg",
                       )}
                     >
                       <div className="flex items-center justify-between mb-4">
@@ -615,7 +615,7 @@ export default function LiveOps() {
                     <div
                       className={clsx(
                         WL_OPS_CLASSES.railCard,
-                        "wl-card-lift hover:border-brand/35 transition-colors duration-200",
+                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-lg",
                       )}
                     >
                       <div className="flex items-center justify-between mb-3">
@@ -626,7 +626,7 @@ export default function LiveOps() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 stagger-children">
-                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-ink/10">
                           <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
                           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
                           <span className="wl-label block mb-1 relative z-10">Cost / Min</span>
@@ -634,7 +634,7 @@ export default function LiveOps() {
                             ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                           </span>
                         </div>
-                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform">
+                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-ink/10">
                           <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
                           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
                           <span className="wl-label block mb-1 relative z-10">Cost / Lead</span>
