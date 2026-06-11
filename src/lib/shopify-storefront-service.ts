@@ -1,0 +1,1 @@
+export const SHOPIFY_STOREFRONT_PLACEHOLDER = true;
