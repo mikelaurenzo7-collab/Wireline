@@ -61,7 +61,8 @@
     "dogfood:director": "node scripts/dogfood-director.mjs",
     "test:design": "vitest run wireline-design-audit shadcn-pivot-ratchet wireline-director-design",
     "test:coverage": "vitest run --coverage",
-    "analyze": "VISUALIZE=1 vite build"
+    "analyze": "VISUALIZE=1 vite build",
+    "strict:coverage": "node scripts/strict-coverage.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
