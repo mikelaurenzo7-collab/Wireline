@@ -91,10 +91,17 @@ export function SectionStickers({
               data-enter-delay={`${enterDelay}ms`}
             >
               <div
-                className="wl-sticker-float"
+                className="relative wl-sticker-float"
                 data-float-ms={`${floatMs}ms`}
                 data-float-delay={`${floatDelay}ms`}
               >
+                {vivid && (
+                  <div className="wl-sticker-orbit-rings" aria-hidden="true">
+                    <span className="wl-sticker-orbit" />
+                    <span className="wl-sticker-orbit" />
+                    <span className="wl-sticker-orbit" />
+                  </div>
+                )}
                 <RobotHead
                   variant={slot.variant}
                   pose={pose}
