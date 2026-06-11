@@ -43,7 +43,7 @@ export default function HeroCallPreview() {
             <p className="mt-0.5 text-[12px] text-ink/58">Front desk · inbound support</p>
           </div>
 
-          <div className="hidden xs:flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <span className="relative flex h-2 w-2" aria-hidden="true">
               {!reduce && <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-500/45" />}
               <span className="relative inline-flex h-2 w-2 bg-emerald-500" />
