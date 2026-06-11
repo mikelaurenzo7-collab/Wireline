@@ -49,8 +49,9 @@ export interface BuildDirectorPromptInput {
 /**
  * Builds the complete system prompt + live context for Grok 4.3 Director.
  * Call this on every Director chat turn.
+ * (Made sync for compatibility with existing Director planner calls.)
  */
-export async function buildDirectorPrompt(input: BuildDirectorPromptInput): Promise<string> {
+export function buildDirectorPrompt(input: BuildDirectorPromptInput): string {
   const { fleet, stats, business, recentActivitySummary } = input;
 
   // Fleet snapshot
