@@ -543,7 +543,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
               </AnimatePresence>
             </ChannelInboxListPane>
 
-            <ChannelInboxDetailPane detailOpen={!!selectedThread}>
+            <ChannelInboxDetailPane
+              detailOpen={!!selectedThread}
+              label="Selected email conversation"
+            >
               <AnimatePresence mode="wait">
                 {selectedThread ? (
                   <motion.div

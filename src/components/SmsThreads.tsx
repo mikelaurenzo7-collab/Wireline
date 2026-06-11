@@ -394,7 +394,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
               )}
             </ChannelInboxListPane>
 
-            <ChannelInboxDetailPane detailOpen={!!activeId}>
+            <ChannelInboxDetailPane detailOpen={!!activeId} label="Selected SMS conversation">
               {!activeThread ? (
                 <EmptyState
                   icon={MessageSquare}

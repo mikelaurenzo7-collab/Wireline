@@ -42,7 +42,10 @@ export function ChannelInboxListPane({
   className?: string;
 }) {
   return (
-    <div className={cn(WL_CHANNEL_CLASSES.inboxList, detailOpen && "hidden lg:flex", className)}>
+    <section
+      className={cn(WL_CHANNEL_CLASSES.inboxList, detailOpen && "hidden lg:flex", className)}
+      aria-label={`${label} list`}
+    >
       <div className={WL_CHANNEL_CLASSES.inboxListHeader}>
         <span className="wl-label-muted">{label}</span>
         {count != null && (
@@ -50,24 +53,30 @@ export function ChannelInboxListPane({
         )}
       </div>
       <div className="flex-1 min-h-0 scroll-viewport panel-scroll p-2">{children}</div>
-    </div>
+    </section>
   );
 }
 
 /** Right detail column in a channel inbox. */
 export function ChannelInboxDetailPane({
   detailOpen,
+  label = "Selected channel detail",
   children,
   className,
 }: {
   detailOpen?: boolean;
+  /** Accessible landmark label for the selected thread/call detail region. */
+  label?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn(WL_CHANNEL_CLASSES.inboxDetail, !detailOpen && "hidden lg:flex", className)}>
+    <section
+      className={cn(WL_CHANNEL_CLASSES.inboxDetail, !detailOpen && "hidden lg:flex", className)}
+      aria-label={label}
+    >
       {children}
-    </div>
+    </section>
   );
 }
 
