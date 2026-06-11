@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Switch } from "./ui/shadcn/Switch";
 import { Link2, Calendar, ShieldCheck, Mail, ShoppingCart, Loader2 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { clientLog } from "../lib/client-log";
 import { useToast } from "../contexts/ToastContext";
 
 type Preset = {
@@ -127,7 +128,7 @@ export default function IntegrationDirectivePresets({
         }
       }
     } catch (err) {
-      console.error(err);
+      clientLog.error("integration-directive-presets:update", err);
       toastError("Action failed", "Could not update the integration directive. Please try again.");
     } finally {
       setLoadingPresetId(null);

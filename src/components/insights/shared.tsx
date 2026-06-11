@@ -8,10 +8,12 @@
  */
 import React from "react";
 import { cn } from "../../lib/utils";
-import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon } from "lucide-react";
+import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon, RotateCw } from "lucide-react";
 import { authFetch, readApiJson } from "../../lib/api";
 import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../lib/wireline-director-design";
 import { BRAND } from "../../constants/brand-colors";
+import { Skeleton } from "../ui/shadcn/Skeleton";
+import { ShadButton } from "../ui/shadcn/ShadButton";
 
 /* ── Data fetching ──────────────────────────────────────────────── */
 
@@ -36,6 +38,38 @@ export function Spinner() {
         </div>
       </div>
       <p className={cn(WL_OPS_CLASSES.insightLabel, "animate-pulse")}>Computing…</p>
+    </div>
+  );
+}
+
+/* ── Skeleton (layout-matched loading) ──────────────────────────── */
+
+/**
+ * Layout-matched loading placeholder for an insight view — a hero stat
+ * row plus two chart blocks. Replaces the centered Spinner so the panel
+ * doesn't shift when real data lands. Mirrors the shared insight grid
+ * (4 stat tiles → 2 chart panels) used by most views.
+ */
+export function InsightSkeleton() {
+  return (
+    <div className="space-y-4 pb-6" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading insights…</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-md wl-panel border border-black/8 p-4 space-y-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-7 w-16" />
+          </div>
+        ))}
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-md wl-panel border border-black/8 p-5 space-y-3">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -102,14 +136,28 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
 
 /* ── Error card ─────────────────────────────────────────────────── */
 
-export function ErrCard({ error }: { error: string }) {
+export function ErrCard({ error, onRetry }: { error: string; onRetry?: () => void }) {
   return (
     <div
       role="alert"
       className="rounded-md bg-destructive/10 border border-destructive/30 p-6 text-destructive text-sm flex items-start gap-3"
     >
       <AlertOctagon className="w-5 h-5 shrink-0 mt-0.5" aria-hidden />
-      <span>{error}</span>
+      <div className="flex-1 min-w-0 space-y-3">
+        <span className="block">{error}</span>
+        {onRetry && (
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
+            onClick={onRetry}
+            className="border-destructive/40 text-destructive hover:bg-destructive/10"
+          >
+            <RotateCw className="w-3.5 h-3.5" /> Try again
+          </ShadButton>
+        )}
+      </div>
     </div>
   );
 }

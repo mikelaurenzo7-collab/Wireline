@@ -10,7 +10,7 @@
  * data-flow + a JSX layout — no styling repetition.
  */
 
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useId, useState } from "react";
 import { AlertTriangle, ArrowRight, Check, Copy, Loader2, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Input } from "../ui/shadcn/Input";
@@ -36,27 +36,40 @@ export function Field({
   children: ReactNode;
   hint?: string;
 }) {
+  const hintId = useId();
+  // Wrapping the control in the <label> gives a programmatic association
+  // for the text inputs/textarea without threading ids through every call
+  // site; Select carries its own aria-label.
   return (
-    <div className="space-y-2">
-      <label className="app-section-title">{label}</label>
-      {children}
-      {hint && <p className="wl-micro-meta--muted leading-relaxed">{hint}</p>}
-    </div>
+    <label className="flex flex-col gap-2">
+      <span className="app-section-title">{label}</span>
+      {React.isValidElement(children) && hint
+        ? React.cloneElement(children as React.ReactElement<{ "aria-describedby"?: string }>, {
+            "aria-describedby": hintId,
+          })
+        : children}
+      {hint && (
+        <p id={hintId} className="wl-micro-meta--muted leading-relaxed">
+          {hint}
+        </p>
+      )}
+    </label>
   );
 }
 
-export function TextInput({ value, onChange, placeholder }: any) {
+export function TextInput({ value, onChange, placeholder, ...rest }: any) {
   return (
     <Input
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
+      {...rest}
     />
   );
 }
 
-export function TextArea({ value, onChange, placeholder, rows = 5 }: any) {
+export function TextArea({ value, onChange, placeholder, rows = 5, ...rest }: any) {
   return (
     <textarea
       value={value}
@@ -64,6 +77,7 @@ export function TextArea({ value, onChange, placeholder, rows = 5 }: any) {
       placeholder={placeholder}
       rows={rows}
       className="w-full px-4 py-3 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
+      {...rest}
     />
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, Loader2, Check } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { clientLog } from "../lib/client-log";
 import { cn } from "../lib/utils";
 import { useToast } from "../contexts/ToastContext";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -43,7 +44,7 @@ export default function CsvExportButton({
       setDone(true);
       setTimeout(() => setDone(false), 2000);
     } catch (err) {
-      console.error("CSV export failed:", err);
+      clientLog.error("csv-export", err);
       toastError("Export failed", "Could not generate the CSV. Please try again.");
     } finally {
       setBusy(false);
@@ -53,8 +54,7 @@ export default function CsvExportButton({
   const styles = {
     default:
       "rounded-full text-[11px] uppercase tracking-[0.3em] text-ink/80 hover:text-brand hover:border-brand/40",
-    ghost:
-      "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
+    ghost: "rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5",
   };
 
   return (

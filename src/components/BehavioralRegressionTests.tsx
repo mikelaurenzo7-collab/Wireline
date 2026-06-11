@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { PlayCircle, CheckCircle2, XCircle, Loader2, Plus } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { clientLog } from "../lib/client-log";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 type Scenario = {
@@ -680,7 +681,7 @@ export default function BehavioralRegressionTests({
       const suiteResults = await Promise.all(promises);
       setResults(suiteResults);
     } catch (e) {
-      console.error(e);
+      clientLog.error("behavioral-regression:run-suite", e);
     } finally {
       setIsRunning(false);
     }

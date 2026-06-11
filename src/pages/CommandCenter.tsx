@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
+import { clientLog } from "../lib/client-log";
 import { log } from "../lib/server-logger";
 import { authFetch, refreshSessionIfNeeded } from "../lib/api";
 import { LiveFloorPanel, type FloorAgent } from "../components/CommandCenter/LiveFloorPanel";
@@ -322,7 +323,7 @@ export default function LiveOps() {
                       setDossiers((prev) => ({ ...prev, ...dossData.dossiers }));
                     }
                   })
-                  .catch((err) => console.error("Dossier fetch failed", err));
+                  .catch((err) => clientLog.error("command-center:dossier-fetch", err));
               }
             }
           } catch {

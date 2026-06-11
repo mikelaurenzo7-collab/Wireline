@@ -2,12 +2,13 @@
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, Stat, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, Stat, InsightEmpty } from "./shared";
 
 export default function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -26,10 +27,10 @@ export default function AttributionView({ days }: { days: number }) {
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, reloadKey]);
 
-  if (loading) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
 
   const totalCalls = rows.reduce((s, r) => s + (Number(r.calls) || 0), 0);
   const totalBooked = rows.reduce((s, r) => s + (Number(r.booked) || 0), 0);

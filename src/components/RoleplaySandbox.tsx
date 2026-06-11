@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { MessageSquare, User, Bot, Sparkles, Send, RefreshCw, Loader2, Award } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { clientLog } from "../lib/client-log";
 import { useToast } from "../contexts/ToastContext";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
@@ -198,7 +199,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (e) {
-      console.error(e);
+      clientLog.error("roleplay-sandbox:simulate", e);
       toastError("Simulation Error", "Could not connect to the agent simulator. Please try again.");
     } finally {
       setIsSending(false);

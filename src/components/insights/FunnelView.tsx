@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
-import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { cn } from "../../lib/utils";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
@@ -10,6 +10,7 @@ export default function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -28,10 +29,10 @@ export default function FunnelView({ days }: { days: number }) {
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, reloadKey]);
 
-  if (loading) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
   if (!data) return null;
 
   const stages = data.stages || [];

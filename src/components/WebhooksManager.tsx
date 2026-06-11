@@ -19,6 +19,7 @@ import {
   Skull,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
 import { formatDateTime, formatTime } from "../lib/safe-date";
 import { PanelSkeleton } from "./Skeleton";
@@ -314,6 +315,7 @@ interface DeliveryRow {
 }
 
 const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, onChanged }) => {
+  const { success: toastSuccess, error: toastError } = useToast();
   const [busy, setBusy] = useState<"test" | "delete" | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showDeliveries, setShowDeliveries] = useState(false);
@@ -341,9 +343,12 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
   const retryDelivery = async (id: number) => {
     setDeliveryBusy(id);
     try {
-      await authFetch(`/api/webhooks/deliveries/${id}/retry`, { method: "POST" });
+      const res = await authFetch(`/api/webhooks/deliveries/${id}/retry`, { method: "POST" });
+      if (!res.ok) throw new Error(`Retry failed (${res.status})`);
       // Give the inline attempt a moment, then refresh.
       setTimeout(() => loadDeliveries(), 600);
+    } catch (e) {
+      toastError("Retry failed", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setDeliveryBusy(null);
     }
@@ -352,8 +357,11 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
   const discardDelivery = async (id: number) => {
     setDeliveryBusy(id);
     try {
-      await authFetch(`/api/webhooks/deliveries/${id}`, { method: "DELETE" });
+      const res = await authFetch(`/api/webhooks/deliveries/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Discard failed (${res.status})`);
       setDeliveries((prev) => (prev ? prev.filter((d) => d.id !== id) : prev));
+    } catch (e) {
+      toastError("Couldn't discard delivery", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setDeliveryBusy(null);
     }
@@ -362,9 +370,13 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
   const test = async () => {
     setBusy("test");
     try {
-      await authFetch(`/api/webhooks/${hook.id}/test`, { method: "POST" });
+      const res = await authFetch(`/api/webhooks/${hook.id}/test`, { method: "POST" });
+      if (!res.ok) throw new Error(`Test failed (${res.status})`);
+      toastSuccess("Test event sent", "Check the delivery log for the result.");
       onChanged();
       if (showDeliveries) setTimeout(() => loadDeliveries(), 600);
+    } catch (e) {
+      toastError("Test failed", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setBusy(null);
     }
@@ -372,19 +384,30 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
   const remove = async () => {
     setBusy("delete");
     try {
-      await authFetch(`/api/webhooks/${hook.id}`, { method: "DELETE" });
+      const res = await authFetch(`/api/webhooks/${hook.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+      toastSuccess("Webhook deleted", `“${hook.name}” was removed.`);
       onChanged();
+    } catch (e) {
+      toastError("Couldn't delete webhook", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setBusy(null);
     }
   };
   const toggleActive = async () => {
-    await authFetch(`/api/webhooks/${hook.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !hook.active }),
-    });
-    onChanged();
+    const next = !hook.active;
+    try {
+      const res = await authFetch(`/api/webhooks/${hook.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: next }),
+      });
+      if (!res.ok) throw new Error(`Update failed (${res.status})`);
+      toastSuccess(next ? "Webhook enabled" : "Webhook paused", `“${hook.name}” updated.`);
+      onChanged();
+    } catch (e) {
+      toastError("Couldn't update webhook", e instanceof Error ? e.message : "Please try again.");
+    }
   };
 
   return (

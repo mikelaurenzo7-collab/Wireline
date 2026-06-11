@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Activity, ServerCrash, Clock, Zap } from "lucide-react";
 import { authFetch } from "../../lib/api";
+import { clientLog } from "../../lib/client-log";
 
 interface LatencyCall {
   ttftMs?: number | null;
@@ -82,7 +83,7 @@ export default function ObservabilityDashboard() {
         });
         setLoading(false);
       } catch (err) {
-        console.error("Telemetry loading failed, falling back to targets:", err);
+        clientLog.error("observability:telemetry-load", err);
         if (active) {
           // Elegant target-baseline fallback for pre-production or demo lines
           setMetrics({

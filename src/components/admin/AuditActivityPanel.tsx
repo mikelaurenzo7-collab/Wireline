@@ -12,6 +12,7 @@ import {
 import { Loader2, DollarSign, Activity, BarChart3, Clock, Cpu } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
+import { clientLog } from "../../lib/client-log";
 import { authFetch } from "../../lib/api";
 import { formatDateTime } from "../../lib/safe-date";
 import { BRAND } from "../../constants/brand-colors";
@@ -43,7 +44,7 @@ export function AuditActivityPanel() {
         if (active) setSummary(d);
       })
       .catch((err) => {
-        if (err.name !== "AbortError") console.error("Audit summary fetch failed", err);
+        if (err.name !== "AbortError") clientLog.error("audit-panel:summary", err);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -66,7 +67,7 @@ export function AuditActivityPanel() {
         if (active) setRecent(d.logs || []);
       })
       .catch((err) => {
-        if (err.name !== "AbortError") console.error("Audit recent fetch failed", err);
+        if (err.name !== "AbortError") clientLog.error("audit-panel:recent", err);
       })
       .finally(() => {
         if (active) setRecentLoading(false);
