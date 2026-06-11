@@ -1,0 +1,3 @@
+## 2023-10-26 - [React Context Memoization]
+**Learning:** Found multiple React Context providers (AuthContext, BrandingContext, ToastContext) passing inline object literals as their `value` prop (e.g., `<Context.Provider value={{ state, fn }}>`). In React, this causes the context value to have a new reference on every render of the Provider, which bypasses context optimizations and forces all consumers to re-render, even if the underlying data hasn't changed.
+**Action:** Always wrap Context values in `useMemo` and functions in `useCallback` before passing them to the Provider to maintain reference equality and prevent unnecessary widespread re-renders.
