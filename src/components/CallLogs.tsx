@@ -197,11 +197,11 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                   className="h-auto px-0 wl-label-muted hover:text-ink"
                 >
                   {loadingMore ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
                   ) : (
-                    <Signal className="w-3 h-3" />
+                    <Signal className="w-3 h-3" aria-hidden="true" />
                   )}
-                  More
+                  <span aria-live="polite">{loadingMore ? "Loading more calls" : "More"}</span>
                 </ShadButton>
               )
             }
@@ -253,6 +253,8 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                 <ul className="divide-y divide-black/6">
                   {filteredCalls.map((call) => {
                     const outcomeLabel = resolveCallOutcomeLabel(call);
+                    const directionLabel =
+                      call.direction === "inbound" ? "Inbound call" : "Outbound call";
                     return (
                       <motion.li layoutId={`call-${call.id}`} key={call.id}>
                         <ShadButton
@@ -260,9 +262,10 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           variant="ghost"
                           disableAnimations
                           onClick={() => setSelectedCall(call)}
-                          aria-label={`Open signal from ${call.customer_number || "Sim Test"}: ${call.summary || "no summary"}`}
+                          aria-label={`${directionLabel} from ${call.customer_number || "Sim Test"} at ${formatTime(call.created_at, { hour: "2-digit", minute: "2-digit" })}: ${call.summary || "no summary"}`}
+                          aria-selected={selectedCall?.id === call.id}
                           className={cn(
-                            "group touch-press hover:scale-[1.01] w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none transition-all duration-300",
+                            "group touch-press hover:scale-[1.01] w-full h-auto justify-start text-left flex items-center gap-3 px-3 py-3 relative rounded-none transition-all duration-300 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1",
                             selectedCall?.id === call.id
                               ? "bg-brand/10 hover:bg-brand/15"
                               : "hover:bg-black/[0.04] hover:shadow-sm",
@@ -285,11 +288,13 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                                 : "bg-brand-2/10 border-brand-2/30 text-brand-2 shadow-[0_0_8px_rgba(var(--brand-2-rgb),0.15)]",
                               selectedCall?.id === call.id && "scale-110 shadow-md",
                             )}
+                            title={directionLabel}
                           >
+                            <span className="sr-only">{directionLabel}</span>
                             {call.direction === "inbound" ? (
-                              <PhoneIncoming className="w-4 h-4" />
+                              <PhoneIncoming className="w-4 h-4" aria-hidden="true" />
                             ) : (
-                              <PhoneOutgoing className="w-4 h-4" />
+                              <PhoneOutgoing className="w-4 h-4" aria-hidden="true" />
                             )}
                           </div>
 

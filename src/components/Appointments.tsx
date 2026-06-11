@@ -93,8 +93,19 @@ const STATUS_META: Record<
 
 function StatusBadge({ status }: { status: string }) {
   const m = STATUS_META[status] ?? STATUS_META["Scheduled"];
+  const Icon =
+    status === "Confirmed" || status === "Completed"
+      ? CheckCircle2
+      : status === "Cancelled"
+        ? AlertOctagon
+        : status === "Rescheduled"
+          ? CalendarIcon
+          : Clock;
+
   return (
     <span
+      aria-label={`Appointment status: ${m.label}`}
+      title={`Appointment status: ${m.label}`}
       className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border wl-label",
         m.color,
@@ -102,7 +113,8 @@ function StatusBadge({ status }: { status: string }) {
         m.border,
       )}
     >
-      <span className={cn("w-1.5 h-1.5 rounded-full", m.dot)} />
+      <Icon className="w-3 h-3" aria-hidden="true" />
+      <span className={cn("w-1.5 h-1.5 rounded-full", m.dot)} aria-hidden="true" />
       {m.label}
     </span>
   );
@@ -418,6 +430,8 @@ function CalendarGrid({
   // Pad to complete last row
   while (cells.length % 7 !== 0) cells.push({ day: null });
 
+  const monthLabel = `${monthNames[month.month]} ${month.year}`;
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
@@ -435,8 +449,12 @@ function CalendarGrid({
         >
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </ShadButton>
-        <span className="font-display italic text-xl text-ink">
-          {monthNames[month.month]} {month.year}
+        <span
+          className="font-display italic text-xl text-ink"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {monthLabel}
         </span>
         <ShadButton
           onClick={() =>
@@ -454,16 +472,20 @@ function CalendarGrid({
         </ShadButton>
       </div>
 
-      <div className="shrink-0 grid grid-cols-7 border-b border-black/8 min-w-[21rem]">
+      <div className="shrink-0 grid grid-cols-7 border-b border-black/8 min-w-[21rem]" role="row">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div key={d} className="py-2 text-center wl-label text-ink/40">
+          <div key={d} role="columnheader" className="py-2 text-center wl-label text-ink/40">
             {d}
           </div>
         ))}
       </div>
 
       <div className="flex-1 scroll-viewport scrollbar-hide overflow-x-auto">
-        <div className="grid grid-cols-7 min-w-[21rem]">
+        <div
+          className="grid grid-cols-7 min-w-[21rem]"
+          role="grid"
+          aria-label={`${monthLabel} appointment calendar`}
+        >
           {cells.map((cell, idx) => {
             const isToday =
               cell.day !== null &&
@@ -475,9 +497,15 @@ function CalendarGrid({
             return (
               <div
                 key={idx}
+                role="gridcell"
+                aria-label={
+                  cell.day
+                    ? `${monthLabel} ${cell.day}, ${dayAppts.length} appointments`
+                    : "Empty calendar cell"
+                }
                 className={cn(
                   "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-black/6 p-1.5",
-                  cell.day ? "hover:bg-black/3 cursor-pointer" : "opacity-0 pointer-events-none",
+                  cell.day ? "hover:bg-black/3" : "opacity-0 pointer-events-none",
                 )}
               >
                 {cell.day && (
@@ -500,13 +528,14 @@ function CalendarGrid({
                             variant="ghost"
                             disableAnimations
                             onClick={() => onSelect(a)}
+                            aria-label={`Edit ${a.status} appointment for ${a.customer_name} at ${a.time}`}
                             className={cn(
-                              "w-full h-auto justify-start px-1.5 py-0.5 rounded wl-micro-meta truncate touch-press",
+                              "w-full h-auto justify-start px-1.5 py-0.5 rounded wl-micro-meta truncate touch-press focus-visible:ring-2 focus-visible:ring-brand",
                               m.bg,
                               m.color,
                             )}
                           >
-                            {a.time} {a.customer_name}
+                            <time dateTime={`${a.date} ${a.time}`}>{a.time}</time> {a.customer_name}
                           </ShadButton>
                         );
                       })}
@@ -867,7 +896,9 @@ function AppointmentRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 8 }}
       transition={{ duration: 0.18 }}
-      className="px-4 py-3.5 hover:bg-black/[0.04] hover:shadow-sm transition-all duration-300 group touch-press relative"
+      role="article"
+      aria-label={`${appt.status} appointment for ${appt.customer_name} on ${appt.date} at ${appt.time}`}
+      className="px-4 py-3.5 hover:bg-black/[0.04] hover:shadow-sm transition-all duration-300 group touch-press relative focus-within:ring-2 focus-within:ring-brand/40"
     >
       <div className="flex items-start gap-3 relative">
         <div className="w-9 h-9 rounded-md wl-panel flex items-center justify-center text-brand shrink-0 mt-0.5 shadow-[0_0_8px_rgba(var(--brand-rgb),0.15)] bg-brand/10 border border-brand/30 group-hover:scale-110 transition-all duration-300">
@@ -888,12 +919,12 @@ function AppointmentRow({
               {appt.service_type}
             </span>
             <span className="inline-flex items-center gap-1">
-              <CalendarIcon className="w-3 h-3 text-brand" />
-              {appt.date}
+              <CalendarIcon className="w-3 h-3 text-brand" aria-hidden="true" />
+              <time dateTime={appt.date}>{appt.date}</time>
             </span>
             <span className="inline-flex items-center gap-1">
-              <Clock className="w-3 h-3 text-brand" />
-              {appt.time}
+              <Clock className="w-3 h-3 text-brand" aria-hidden="true" />
+              <time dateTime={`${appt.date} ${appt.time}`}>{appt.time}</time>
             </span>
             {appt.phone_number && (
               <span className="inline-flex items-center gap-1">
@@ -923,6 +954,8 @@ function AppointmentRow({
             <ShadButton
               onClick={() => setShowStatusMenu((v) => !v)}
               title="Change status"
+              aria-label={`Change status for ${appt.customer_name}`}
+              aria-expanded={showStatusMenu}
               variant="ghost"
               size="icon"
               className="w-7 h-7 hover:text-brand hover:border-brand/30"
@@ -954,6 +987,7 @@ function AppointmentRow({
                         onStatusChange(s);
                         setShowStatusMenu(false);
                       }}
+                      aria-label={`Set ${appt.customer_name} appointment status to ${s}`}
                       className="w-full h-auto justify-start rounded-none px-3 py-2 wl-micro-meta text-ink hover:bg-black/5"
                     >
                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
@@ -967,7 +1001,7 @@ function AppointmentRow({
           <ShadButton
             onClick={onEdit}
             title="Edit"
-            aria-label="Edit appointment"
+            aria-label={`Edit appointment for ${appt.customer_name}`}
             variant="ghost"
             size="icon"
             className="w-7 h-7 hover:text-ink hover:border-black/20"
@@ -978,7 +1012,7 @@ function AppointmentRow({
             onClick={onDelete}
             disabled={deleting}
             title="Remove"
-            aria-label="Remove appointment"
+            aria-label={`Remove appointment for ${appt.customer_name}`}
             variant="ghost"
             size="icon"
             className="w-7 h-7 hover:text-destructive hover:border-destructive/30"
