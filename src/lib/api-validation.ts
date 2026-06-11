@@ -583,6 +583,10 @@ export const designGithubPrSchema = designExportPreviewSchema.extend({
   prTitle: z.string().min(1).max(200).optional(),
 });
 
+export const designShopifyStorefrontExportSchema = designExportPreviewSchema.extend({
+  target: z.enum(["react-starter", "hydrogen-ready"]).default("react-starter"),
+});
+
 export const workspaceMessageSchema = z.object({
   content: z.string().min(1, "Message content required").max(4000),
 });
