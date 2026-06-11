@@ -40,7 +40,8 @@ const FAQS = [
   },
   {
     q: "What happens when the agent can't do something?",
-    a: "It tells the truth. Wireline agents run a hard rule: never claim an action they don't have a tool for. Instead of fabricating a booking or a transfer and hanging up, the agent takes a message, escalates to a human, or books a callback — and every one of those moments is visible in the live cockpit.",
+    a: "It tells the truth. Wireline agents run a hard rule: never claim an action they don't have a tool for. Instead of fabricating a booking or a transfer and hanging up, the agent takes a message, escalates to a human, or books a callback — and every one of those moments is visible in the live cockpit.
+",
   },
   {
     q: "Does it work for my industry?",
@@ -119,13 +120,29 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative px-5 sm:px-6 lg:px-12 pt-20 sm:pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
-          <div className="wl-aurora-field absolute inset-0 z-0" aria-hidden="true">
+          {/* wl-aurora-field now has an inner cream-tinted mask layer for extra insurance
+             against any residual purple bleed on rich cream. The mask is extremely
+             subtle (near-invisible) and only active where the aurora orbs live.
+             On mobile we further reduce effective intensity via the field. */}
+          <div className="wl-aurora-field absolute inset-0 z-0 lg:opacity-100 opacity-[0.92]" aria-hidden="true">
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb wl-aurora-orb--mid" />
             <span className="wl-hero-spotlight" />
+
+            {/* Ultra-subtle cream-tinted radial mask — anchors the rich cream
+               and kills any possible purple tint/bleed from the soft gradients.
+               100% CSP-safe, zero performance impact. */}
+            <div className="wl-cream-aurora-mask absolute inset-0 pointer-events-none"
+                 style={{
+                   background: `radial-gradient(ellipse 85% 70% at 50% 35%, 
+                     rgba(245,240,230,0.18) 0%, 
+                     rgba(245,240,230,0.08) 45%, 
+                     transparent 72%)`
+                 }} />
           </div>
+
           <HeroWirelines />
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
