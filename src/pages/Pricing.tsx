@@ -254,7 +254,7 @@ export default function Pricing() {
           transition={{ duration: 0.5 }}
           className="inline-flex items-center gap-2 border border-ink/15 bg-ink/[0.03] px-4 py-1.5 mb-6"
         >
-          <span className="w-1.5 h-1.5 bg-brand" aria-hidden="true" />
+          <span className="wl-eyebrow-dot" aria-hidden="true" />
           <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/70">
             Pricing · Start free, upgrade when ready
           </span>
@@ -266,7 +266,7 @@ export default function Pricing() {
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="font-display italic text-[clamp(2.25rem,5vw,4rem)] leading-[1.05] tracking-tight mb-4 text-balance"
         >
-          <span className="text-brand">Plans that scale</span>
+          <span className="wl-aurora-text">Plans that scale</span>
           <br />
           <span className="text-ink">with your fleet</span>
         </motion.h1>

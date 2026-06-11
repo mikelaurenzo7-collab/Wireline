@@ -122,7 +122,8 @@ export default function Showcase() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+          <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+            <span className="wl-eyebrow-dot" aria-hidden="true" />
             The playable showcase
           </p>
           <h1 className="marketing-hero-title text-4xl sm:text-5xl mb-6">

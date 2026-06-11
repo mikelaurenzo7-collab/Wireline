@@ -20,7 +20,18 @@ function readComponent(name: string): string {
 }
 
 function readIndexCss(): string {
-  return fs.readFileSync(path.resolve(__dirname, "../../../index.css"), "utf8");
+  // The design-system rules were split out of index.css into
+  // styles/wireline-design-system.css; the stylesheet that actually ships is
+  // the concatenation of both (index.css holds the @theme tokens, the design
+  // system file holds the primitives/keyframes). Read both so these contract
+  // assertions resolve wherever a given rule now lives.
+  const srcRoot = path.resolve(__dirname, "../../..");
+  const indexCss = fs.readFileSync(path.join(srcRoot, "index.css"), "utf8");
+  const designSystemCss = fs.readFileSync(
+    path.join(srcRoot, "styles/wireline-design-system.css"),
+    "utf8",
+  );
+  return `${indexCss}\n${designSystemCss}`;
 }
 
 // ═══════════════════════════════════════════════════════════════════

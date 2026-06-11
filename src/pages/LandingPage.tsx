@@ -119,6 +119,12 @@ export default function LandingPage() {
           data-testid="hero-section"
           className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
+          <div className="wl-aurora-field absolute inset-0 z-0" aria-hidden="true">
+            <span className="wl-aurora-orb" />
+            <span className="wl-aurora-orb" />
+            <span className="wl-aurora-orb" />
+            <span className="wl-hero-spotlight" />
+          </div>
           <HeroWirelines />
           <HeroDecorations />
           <div className="relative z-10 max-w-7xl mx-auto w-full">
@@ -132,8 +138,9 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 12, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="hero-badge inline-flex items-center border border-ink/15 bg-ink/[0.03] px-5 py-2.5 mb-7 lg:mb-9"
+                className="hero-badge inline-flex items-center gap-2.5 border border-ink/15 bg-ink/[0.03] px-5 py-2.5 mb-7 lg:mb-9"
               >
+                <span className="wl-eyebrow-dot" aria-hidden="true" />
                 <span className="font-mono text-[11px] sm:text-[13px] uppercase tracking-[0.22em] text-ink/85">
                   Phone + Email + SMS
                 </span>
@@ -141,7 +148,7 @@ export default function LandingPage() {
 
               <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto">
                 <span>Every conversation,</span>
-                <span className="text-brand hero-headline-accent">
+                <span className="wl-aurora-text hero-headline-accent">
                   answered like your best rep.
                 </span>
               </h1>
@@ -263,7 +270,7 @@ export default function LandingPage() {
                   className="wl-stat-glow bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
                 >
                   <p
-                    className="stat-value-flip font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none text-ink tracking-tight"
+                    className="stat-value-flip wl-text-gradient font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none tracking-tight"
                     data-delay={`${0.3 + i * 0.2}s`}
                   >
                     {stat.value}
@@ -287,12 +294,14 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="landing-section-head text-center"
             >
-              <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+              <p className="inline-flex items-center gap-2 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+                <span className="wl-eyebrow-dot" aria-hidden="true" />
                 Your stack
               </p>
               <h2 className="font-display italic text-[clamp(1.4rem,3.5vw,2.25rem)] leading-[1.08] text-ink">
                 Plugs into the tools you already run.
               </h2>
+              <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
             </motion.div>
             <IntegrationLogos compact />
           </div>
@@ -308,12 +317,14 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="landing-section-head text-center"
             >
-              <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+              <p className="inline-flex items-center gap-2 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
+                <span className="wl-eyebrow-dot" aria-hidden="true" />
                 Questions, answered
               </p>
               <h2 className="font-display italic text-[clamp(1.6rem,4vw,3rem)] leading-[1.05] text-ink">
                 Everything you&rsquo;d ask your best rep.
               </h2>
+              <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
             </motion.div>
 
             <div className="border-t border-ink/[0.12]">
