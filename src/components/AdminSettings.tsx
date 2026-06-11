@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
 import { motion } from "motion/react";
 import { authFetch } from "../lib/api";
+import { clientLog } from "../lib/client-log";
 import IntegrationHealthBanner, { type IntegrationHealthPayload } from "./IntegrationHealthBanner";
 import PageShell from "./PageShell";
 import { useToast } from "../contexts/ToastContext";
@@ -217,7 +218,7 @@ export default function AdminSettings() {
         setTeamMembers(teamData.members || []);
       }
     } catch (e) {
-      console.error(e);
+      clientLog.error("admin-settings:load", e);
       toastError("Settings unavailable", "Could not load settings. Please refresh.");
     }
     setIsLoading(false);
@@ -307,7 +308,7 @@ export default function AdminSettings() {
       });
       fetchData();
     } catch (e) {
-      console.error(e);
+      clientLog.error("admin-settings:assign-number", e);
       toastError("Assignment failed", "Could not update the agent for this number.");
     }
   };
@@ -327,7 +328,7 @@ export default function AdminSettings() {
           }
           setConfirmState(CLOSED_CONFIRM);
         } catch (e) {
-          console.error(e);
+          clientLog.error("admin-settings:delete-number", e);
           toastError("Delete failed", "Could not remove this carrier number. Please try again.");
         } finally {
           setIsDeletingNumber(null);

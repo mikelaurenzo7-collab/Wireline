@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
+import { clientLog } from "../lib/client-log";
 import { authFetch } from "../lib/api";
 import { formatDate } from "../lib/safe-date";
 import SupervisedAgentTuner from "./SupervisedAgentTuner";
@@ -249,7 +250,7 @@ export default function AgentTraining({
         }
       }
     } catch (e) {
-      console.error(e);
+      clientLog.error("agent-training:save-entry", e);
       toastError("Save failed", "Could not save this entry. Please try again.");
     }
     setIsSavingEntry(false);
@@ -263,7 +264,7 @@ export default function AgentTraining({
       const data = await res.json();
       setOptSuggestions(data);
     } catch (e) {
-      console.error(e);
+      clientLog.error("agent-training:optimize", e);
       toastError(
         "Optimization failed",
         "Could not generate optimization suggestions. Please try again.",

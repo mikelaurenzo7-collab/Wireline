@@ -19,7 +19,7 @@ import {
 } from "recharts";
 import { cn } from "../../lib/utils";
 import { VOICE_VARIABLE_COST_PER_MIN_USD } from "../../lib/plan-catalog";
-import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
 interface VoiceReliabilityPayload {
   summary: {
@@ -101,6 +101,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
   const [recent, setRecent] = useState<RecentCallRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -128,10 +129,10 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, reloadKey]);
 
-  if (loading) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
   if (!data || data.summary.totalCalls === 0) {
     return <InsightEmpty configKey="reliability" icon={ShieldAlert} />;
   }

@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authFetch, safeJson } from "../../lib/api";
+import { clientLog } from "../../lib/client-log";
 import { AGENTS_CHANGED_EVENT } from "../../contexts/AgentsContext";
 import ConfirmModal from "../ConfirmModal";
 import { useToast } from "../../contexts/ToastContext";
@@ -93,7 +94,7 @@ export default function FleetSettings() {
           .then((data) => {
             if (data) setIntegrationStatus(data);
           })
-          .catch((err) => console.error("CRM status refresh failed", err));
+          .catch((err) => clientLog.error("fleet-settings:crm-status", err));
       }
     };
     window.addEventListener("message", onMessage);
@@ -143,7 +144,7 @@ export default function FleetSettings() {
       // built on it reflect newly created/deleted agents without a reload.
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     } catch (e) {
-      console.error(e);
+      clientLog.error("fleet-settings:load-agents", e);
       toastError("Agent fleet unavailable", "Could not load agents. Please refresh.");
     }
     setIsLoading(false);
@@ -173,7 +174,7 @@ export default function FleetSettings() {
       if (selectedAgentIdRef.current !== id) return;
       setAgentConfig(data);
     } catch (e) {
-      console.error(e);
+      clientLog.error("fleet-settings:load-config", e);
       if (selectedAgentIdRef.current === id)
         toastError("Config unavailable", "Could not load agent configuration.");
     } finally {

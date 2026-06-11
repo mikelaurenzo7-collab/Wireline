@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
 
@@ -24,8 +24,8 @@ export default function TopicsView() {
     load();
   }, []);
 
-  if (loading && !data) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading && !data) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
   if (data.message)
     return <InsightEmpty configKey="topics" icon={RefreshCw} descriptionOverride={data.message} />;

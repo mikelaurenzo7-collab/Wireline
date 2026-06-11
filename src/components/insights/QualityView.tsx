@@ -20,7 +20,7 @@ import {
 import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
-import { fetchInsight, Spinner, ErrCard, qaColor, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, qaColor, InsightEmpty } from "./shared";
 import { WIRELINE_DIRECTOR_BRAND } from "../../lib/wireline-director-design";
 
 const QA_BRAND = WIRELINE_DIRECTOR_BRAND.violet;
@@ -87,8 +87,8 @@ export default function QualityView({ days }: { days: number }) {
     }
   };
 
-  if (loading) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={fetchStats} />;
 
   if (!data || data.count === 0) {
     return (

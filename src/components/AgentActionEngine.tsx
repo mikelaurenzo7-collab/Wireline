@@ -173,8 +173,14 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                 return (
                   <div
                     key={tool.name}
+                    role="button"
+                    tabIndex={isMissingIntegration ? -1 : 0}
+                    aria-pressed={isEnabled}
+                    aria-disabled={isMissingIntegration || undefined}
+                    aria-label={`${tool.label}${isEnabled ? " (enabled)" : ""}`}
                     className={cn(
                       "relative p-5 rounded-md border transition-all cursor-pointer overflow-hidden group",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
                       isEnabled && !isMissingIntegration
                         ? "bg-brand/5 border-brand/30 shadow-[0_4px_24px_rgba(139,63,214,0.08)] hover:-translate-y-px"
                         : "wl-panel hover:border-brand/30 hover:-translate-y-px",
@@ -182,6 +188,13 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                     )}
                     onClick={() => {
                       if (!isMissingIntegration) handleToggleTool(tool.name);
+                    }}
+                    onKeyDown={(e) => {
+                      if (isMissingIntegration) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleToggleTool(tool.name);
+                      }
                     }}
                   >
                     {/* Background glow if enabled */}

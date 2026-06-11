@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export default function FailureModesView() {
@@ -23,8 +23,8 @@ export default function FailureModesView() {
     load();
   }, []);
 
-  if (loading && !data) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading && !data) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
   if (data.message)
     return (

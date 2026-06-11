@@ -723,6 +723,10 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     )}
 
                     <div
+                      role="button"
+                      tabIndex={0}
+                      aria-current={activeStepId === step.id ? "true" : undefined}
+                      aria-label={`Edit stage ${index + 1}: ${step.name || "Unnamed Stage"}`}
                       onClick={() => {
                         setActiveStepId(step.id);
                         // On mobile, clicking a step should jump
@@ -731,10 +735,21 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         // Desktop ignores this (both panes visible).
                         setMobilePanel("editor");
                       }}
+                      onKeyDown={(e) => {
+                        // Ignore Enter/Space bubbling up from the inner
+                        // duplicate/delete buttons.
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setActiveStepId(step.id);
+                          setMobilePanel("editor");
+                        }
+                      }}
                       className={cn(
                         "relative z-10 flex items-center gap-3 p-3 rounded-md border transition-all cursor-pointer group",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                         activeStepId === step.id
-                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(107, 43, 153 ,0.1)]"
+                          ? "bg-brand/10 border-brand/40 shadow-[0_0_15px_rgba(107,43,153,0.1)]"
                           : "wl-panel border-border hover:border-brand/30",
                       )}
                     >

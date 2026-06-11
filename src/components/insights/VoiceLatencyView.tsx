@@ -7,7 +7,7 @@ import {
   VAPI_TOOL_TIMEOUT_MS,
 } from "../../lib/vapi-tool-results";
 import { cn } from "../../lib/utils";
-import { fetchInsight, Spinner, ErrCard, InsightEmpty } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
 interface VoiceTrend {
   date: string;
@@ -27,6 +27,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
   const [voiceData, setVoiceData] = useState<VoiceLatencyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -53,10 +54,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, reloadKey]);
 
-  if (loading) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
 
   const latency = actionData?.latency ?? { p50_ms: 0, p95_ms: 0, sample_count: 0 };
   const slowest = [...(actionData?.by_action ?? [])]
@@ -132,9 +133,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   <tile.icon
                     className={cn("w-3 h-3", tile.healthy ? "text-brand" : "text-brand-deep")}
                   />
-                  <p className="font-mono wl-label text-muted">
-                    {tile.label}
-                  </p>
+                  <p className="font-mono wl-label text-muted">{tile.label}</p>
                 </div>
                 <p
                   className={cn(

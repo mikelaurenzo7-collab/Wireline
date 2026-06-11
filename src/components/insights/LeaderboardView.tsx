@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { AGENT_ROLES } from "../fleet/helpers";
-import { fetchInsight, Spinner, ErrCard, InsightEmpty, Stat } from "./shared";
+import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, Stat } from "./shared";
 
 function RolePill({ role }: { role?: string }) {
   const meta =
@@ -30,6 +30,7 @@ export default function LeaderboardView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -48,10 +49,10 @@ export default function LeaderboardView({ days }: { days: number }) {
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, reloadKey]);
 
-  if (loading) return <Spinner />;
-  if (err) return <ErrCard error={err} />;
+  if (loading) return <InsightSkeleton />;
+  if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
   if (!data || !data.agents?.length) return <InsightEmpty configKey="leaderboard" icon={Trophy} />;
 
   const RANK_STYLES: Array<{
