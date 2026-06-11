@@ -32,6 +32,12 @@ import {
 import { importBrandFromFigmaFile, importBrandFromWebsite } from "../lib/design-brand-import";
 import { importAssetToCanva } from "../lib/canva-connect-service";
 import { createDesignGithubPr, listGithubRepos } from "../lib/design-github-pr";
+import {
+  addShopifyStorefrontCartLines,
+  createShopifyStorefrontCart,
+  loadShopifyStorefrontCatalog,
+  loadShopifyStorefrontStatus,
+} from "../lib/shopify-storefront-service";
 import type { DirectorPreviewMeta } from "../lib/director-message-metadata";
 
 const router = express.Router();
@@ -43,6 +49,26 @@ const designExportLimiter = createRateLimiter({
 });
 
 const PROVIDERS = new Set<DesignIntegrationProvider>(["figma", "canva", "github"]);
+
+function boundedInt(raw: unknown, fallback: number, min: number, max: number): number {
+  const parsed = typeof raw === "string" ? Number.parseInt(raw, 10) : Number(raw);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+}
+
+function normalizeCartLines(raw: unknown): Array<{ merchandiseId: string; quantity: number }> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((line) => {
+      const value = line as { merchandiseId?: unknown; quantity?: unknown };
+      return {
+        merchandiseId: typeof value.merchandiseId === "string" ? value.merchandiseId.trim() : "",
+        quantity: boundedInt(value.quantity, 1, 1, 99),
+      };
+    })
+    .filter((line) => line.merchandiseId.length > 0)
+    .slice(0, 20);
+}
 
 router.get(
   "/api/design/integrations",
@@ -79,6 +105,108 @@ router.get(
     } catch (e) {
       log.error("github repos list failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(400, getErrorMessage(e));
+    }
+  },
+);
+
+router.get(
+  "/api/design/shopify/storefront/status",
+  authenticateUser,
+  designExportLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const status = await loadShopifyStorefrontStatus(req.user.id);
+    res.json({
+      ...status,
+      requiresConnection: !status.connected,
+      message: status.connected
+        ? status.error
+          ? "Shopify is connected, but the storefront catalog is not available yet."
+          : "Shopify storefront catalog is ready."
+        : "Connect Shopify to use live catalog and cart generation.",
+    });
+  },
+);
+
+router.get(
+  "/api/design/shopify/storefront/catalog",
+  authenticateUser,
+  designExportLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const catalog = await loadShopifyStorefrontCatalog({
+        userId: req.user.id,
+        productsFirst: boundedInt(req.query.productsFirst, 12, 1, 24),
+        collectionsFirst: boundedInt(req.query.collectionsFirst, 6, 1, 12),
+      });
+      res.json({ connected: true, ...catalog });
+    } catch (e) {
+      const message = getErrorMessage(e);
+      if (/connect shopify/i.test(message)) {
+        res.json({
+          connected: false,
+          products: [],
+          collections: [],
+          requiresConnection: true,
+          message: "Connect Shopify to use live catalog generation.",
+        });
+        return;
+      }
+      log.error("shopify storefront catalog failed", { error: message });
+      throw AppError.fromHttpStatus(400, message);
+    }
+  },
+);
+
+router.post(
+  "/api/design/shopify/storefront/cart",
+  authenticateUser,
+  designExportLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const lines = normalizeCartLines(req.body?.lines);
+      if (lines.length === 0) throw new Error("At least one product variant is required.");
+      const cart = await createShopifyStorefrontCart({ userId: req.user.id, lines });
+      res.json({ connected: true, cart });
+    } catch (e) {
+      const message = getErrorMessage(e);
+      if (/connect shopify/i.test(message)) {
+        res.status(409).json({
+          connected: false,
+          requiresConnection: true,
+          error: "Connect Shopify to use live cart generation.",
+        });
+        return;
+      }
+      log.error("shopify storefront cart create failed", { error: message });
+      throw AppError.fromHttpStatus(400, message);
+    }
+  },
+);
+
+router.post(
+  "/api/design/shopify/storefront/cart/lines",
+  authenticateUser,
+  designExportLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const cartId = typeof req.body?.cartId === "string" ? req.body.cartId.trim() : "";
+      const lines = normalizeCartLines(req.body?.lines);
+      if (!cartId) throw new Error("cartId is required.");
+      if (lines.length === 0) throw new Error("At least one product variant is required.");
+      const cart = await addShopifyStorefrontCartLines({ userId: req.user.id, cartId, lines });
+      res.json({ connected: true, cart });
+    } catch (e) {
+      const message = getErrorMessage(e);
+      if (/connect shopify/i.test(message)) {
+        res.status(409).json({
+          connected: false,
+          requiresConnection: true,
+          error: "Connect Shopify to use live cart generation.",
+        });
+        return;
+      }
+      log.error("shopify storefront cart update failed", { error: message });
+      throw AppError.fromHttpStatus(400, message);
     }
   },
 );
@@ -123,7 +251,8 @@ function previewFromBody(body: {
   renderId?: string;
   conceptId?: string;
   promptSummary?: string;
-}): DirectorPreviewMeta & { promptSummary?: string } {
+  handoffContext?: string;
+}): DirectorPreviewMeta & { promptSummary?: string; handoffContext?: string } {
   return {
     conceptId: body.conceptId || "export",
     title: body.title,
@@ -135,6 +264,7 @@ function previewFromBody(body: {
     renderId: body.renderId,
     kind: "stitch",
     promptSummary: body.promptSummary,
+    handoffContext: body.handoffContext,
   };
 }
 
@@ -271,6 +401,7 @@ router.post(
           "## Wireline Design handoff",
           "",
           preview.promptSummary ? `**Prompt:** ${preview.promptSummary}` : "",
+          preview.handoffContext ? `\n## Client context\n\n${preview.handoffContext}` : "",
           "",
           "Includes React component, HTML prototype, design notes, and screenshot.",
         ]
