@@ -428,7 +428,7 @@ export default function LiveOps() {
       <ClientRouteViewport>
         <div
           className={clsx(
-            "flex flex-col flex-1 min-h-0 h-full max-w-[1600px] mx-auto w-full bg-paper paper-texture",
+            "flex flex-col flex-1 min-h-0 h-full max-w-[1680px] mx-auto w-full bg-paper paper-texture",
             WL_OPS_CLASSES.canvas,
           )}
         >
@@ -490,6 +490,7 @@ export default function LiveOps() {
             }
           />
 
+          {/* Desktop-first grid with dynamic viewport perfection */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch px-2 sm:px-3 pt-1 pb-3 flex-1 min-h-0 overflow-hidden">
             {/* Left Pane (Main Operations) */}
             <div
