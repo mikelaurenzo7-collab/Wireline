@@ -4,8 +4,6 @@
  * Solid warm paper with optional subtle grain — no purple/teal aurora washes
  * that competed with data UI. Dark mode keeps a restrained velvet base.
  */
-import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
-
 export default function AuroraBackdrop() {
   return (
     <div
@@ -23,9 +21,6 @@ export default function AuroraBackdrop() {
 
       {/* Soft top highlight — depth without color cast */}
       <div className="absolute inset-0 dark:hidden wl-aurora-top-highlight" />
-
-      {/* Corner dormant nodes — ambient fleet field, never behind dense data */}
-      <div aria-hidden className={WL_SIGNAL_CLASSES.canvasConstellation} />
     </div>
   );
 }

@@ -66,7 +66,7 @@ export default function WorkspaceTopBar({
             className="hidden lg:block w-px h-5 bg-black/10 shrink-0 self-center"
           />
           <div className="hidden lg:flex flex-1 min-w-0 self-center overflow-x-auto tab-strip-scroll">
-            <AppChromeSubTabs density="compact" />
+            <AppChromeSubTabs density="compact" instanceId="desktop" />
           </div>
           <div
             className="flex items-center gap-0.5 shrink-0 self-center"
@@ -91,7 +91,7 @@ export default function WorkspaceTopBar({
           </div>
         </div>
         <div className="lg:hidden mt-1.5 -mx-1 px-1 overflow-x-auto tab-strip-scroll tab-strip-scroll--fade">
-          <AppChromeSubTabs density="compact" />
+          <AppChromeSubTabs density="compact" instanceId="mobile" />
         </div>
       </div>
       {subtitle && (

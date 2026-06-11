@@ -1,7 +1,6 @@
 /* Wireline design-system utilities split from src/index.css. */
 @reference "../index.css";
 
-
 /* ═══════════════════════════════════════════════════════════════════
    GLOBAL EDITORIAL FOUNDATION
    Subtle paper tactility + refined focus + consistent motion language
@@ -2128,12 +2127,7 @@ body,
     black calc(100% - 48px),
     transparent 100%
   );
-  mask-image: linear-gradient(
-    to right,
-    black 0%,
-    black calc(100% - 48px),
-    transparent 100%
-  );
+  mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
 }
 .wl-pipeline-board::-webkit-scrollbar {
   height: 8px;
@@ -2817,8 +2811,6 @@ body,
   }
 }
 
-
-
 /* -------------------------  AURORA UTILITIES  ------------------------- */
 
 @utility brutal-border {
@@ -2948,7 +2940,6 @@ body,
   );
   mix-blend-mode: screen;
 }
-
 
 /* Glass surface helper — cream translucent.
  * Performance note: hundreds of elements get .glass applied, each with
@@ -8468,15 +8459,18 @@ select:focus {
     0 0 60px rgba(139, 63, 214, 0.06);
 }
 
-/* Authenticated app canvas — rich editorial cream (matches auth portal) */
+/* Authenticated app canvas — rich editorial cream (matches auth portal).
+ * Keep this layer intentionally boring: Firefox is much more sensitive to
+ * color-mix + large fixed gradients under sticky/backdrop-filter chrome, which
+ * can read as muddy brown panels on ultrawide monitors. Use concrete colors so
+ * all engines paint the same calm cream field. */
 .authenticated-canvas {
-  background-color: var(--wl-cream, #f5f0e6);
-  background-image: linear-gradient(
-    168deg,
-    color-mix(in srgb, var(--wl-cream-warm, #f5efe5) 90%, white) 0%,
-    var(--wl-cream, #f5f0e6) 38%,
-    color-mix(in srgb, var(--wl-paper, #efe9dc) 42%, var(--wl-cream, #f5f0e6)) 100%
-  );
+  background-color: #f5f0e6;
+  background-image: linear-gradient(168deg, #faf7ef 0%, #f5f0e6 42%, #efe9dc 100%);
+}
+.dark .authenticated-canvas {
+  background-color: var(--background, #0f0c17);
+  background-image: none;
 }
 
 /* ── NAV GROUP DIVIDER ──
