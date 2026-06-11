@@ -304,6 +304,7 @@ export default function AppShell() {
 
   const pageCtx = getPageContext(location.pathname, location.search);
   const showPageContext = shouldShowAppPageContext(location.pathname);
+  const routeAnnouncement = [pageCtx.title, pageCtx.subtitle].filter(Boolean).join(" — ");
 
   return (
     <div
@@ -317,6 +318,9 @@ export default function AppShell() {
         Skip to main content
       </a>
       <AuroraBackdrop />
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {routeAnnouncement}
+      </div>
 
       <ErrorBoundary fallback={null}>
         <Suspense fallback={null}>
@@ -369,6 +373,7 @@ export default function AppShell() {
       <main
         id="main-content"
         tabIndex={-1}
+        aria-labelledby={showPageContext ? "workspace-page-title" : undefined}
         className="client-console__main flex-1 min-h-0 overflow-x-hidden overflow-y-auto md:overflow-hidden overscroll-y-contain relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
       >
         <EmailVerifyBanner />
