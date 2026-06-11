@@ -17,6 +17,7 @@ type ClientSubTabsProps = {
   density?: "default" | "compact";
   "aria-label"?: string;
   layoutIdPrefix?: string;
+  instanceId?: string;
 };
 
 /**
@@ -31,15 +32,17 @@ export default function ClientSubTabs({
   density = "default",
   "aria-label": ariaLabel = "Page sections",
   layoutIdPrefix = "client-subtab",
+  instanceId,
 }: ClientSubTabsProps) {
+  const domIdPrefix = instanceId ? `${layoutIdPrefix}-${instanceId}` : layoutIdPrefix;
   const focusTab = useCallback(
     (index: number) => {
       const tab = tabs[index];
       if (!tab) return;
       onChange(tab.id);
-      document.getElementById(`${layoutIdPrefix}-tab-${tab.id}`)?.focus();
+      document.getElementById(`${domIdPrefix}-tab-${tab.id}`)?.focus();
     },
-    [tabs, onChange, layoutIdPrefix],
+    [tabs, onChange, domIdPrefix],
   );
 
   const handleKeyDown = useCallback(
@@ -96,14 +99,16 @@ export default function ClientSubTabs({
           return (
             <ShadButton
               key={tab.id}
-              id={`${layoutIdPrefix}-tab-${tab.id}`}
+              id={`${domIdPrefix}-tab-${tab.id}`}
               type="button"
               variant="ghost"
               disableAnimations
               role="tab"
               aria-selected={active}
               tabIndex={active ? 0 : -1}
-              onClick={() => onChange(tab.id)}
+              onClick={() => {
+                if (!active) onChange(tab.id);
+              }}
               className={cn(
                 "touch-press hover:scale-[1.02] relative shrink-0 inline-flex h-auto items-center gap-1 transition-colors uppercase font-medium whitespace-nowrap rounded-none",
                 "wl-label",
@@ -115,7 +120,7 @@ export default function ClientSubTabs({
             >
               {active && (
                 <motion.span
-                  layoutId={`${layoutIdPrefix}-pill`}
+                  layoutId={`${domIdPrefix}-pill`}
                   aria-hidden="true"
                   className="app-tab-active-bg absolute inset-0"
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}

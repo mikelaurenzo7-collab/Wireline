@@ -6,6 +6,7 @@ import { cn } from "../../lib/utils";
 type AppChromeSubTabsProps = {
   className?: string;
   density?: "default" | "compact";
+  instanceId?: string;
 };
 
 /**
@@ -14,6 +15,7 @@ type AppChromeSubTabsProps = {
 export default function AppChromeSubTabs({
   className,
   density = "default",
+  instanceId = "default",
 }: AppChromeSubTabsProps) {
   const chrome = useAppChromeTabs();
 
@@ -45,6 +47,7 @@ export default function AppChromeSubTabs({
         onChange={primary.setActiveId}
         aria-label={secondary ? `${primary.ariaLabel} — choose category` : primary.ariaLabel}
         layoutIdPrefix={primary.layoutIdPrefix}
+        instanceId={`${instanceId}-primary`}
         density={density}
         className="mb-0 md:mb-0 justify-start lg:justify-start"
       />
@@ -57,6 +60,7 @@ export default function AppChromeSubTabs({
             onChange={secondary.setActiveId}
             aria-label={`${secondary.ariaLabel} — choose view`}
             layoutIdPrefix={secondary.layoutIdPrefix}
+            instanceId={`${instanceId}-secondary`}
             density={density}
             className="mb-0 md:mb-0 justify-start lg:justify-start"
           />

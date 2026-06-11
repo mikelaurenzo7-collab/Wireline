@@ -44,6 +44,14 @@ export async function validateDirectorChatModelSelection(
     return { ok: true, selection };
   }
 
+  if (selection.provider !== "openrouter") {
+    return {
+      ok: false,
+      error: "Model provider is not available on this workspace",
+      status: 400,
+    };
+  }
+
   if (!isOpenRouterConfigured()) {
     return {
       ok: false,
@@ -77,6 +85,7 @@ export async function sanitizeDirectorChatModelPreference(
   options?: { planId?: string | null; email?: string | null },
 ): Promise<DirectorChatModelSelection> {
   if (selection.provider === "wireline") return selection;
+  if (selection.provider !== "openrouter") return DEFAULT_DIRECTOR_MODEL_SELECTION;
   if (
     !isOpenRouterConfigured() ||
     !openRouterAllowedForEntitlements(options?.planId, options?.email)

@@ -1,75 +1,85 @@
-// src/lib/director-model-selection.ts
-// Extended to support Grok 4.3 as first-class provider for Director chat.
-// Full implementation: Grok is now a supported provider and can be set as default.
-
-import { xaiClient, callDirectorGrok } from './grokClient'; // Our Grok 4.3 wrapper
+import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 
 export type WirelineDirectorTier = "auto" | "sonnet" | "opus";
 
 export type DirectorChatModelSelection =
   | { provider: "wireline"; tier: WirelineDirectorTier }
-  | { provider: "openrouter"; modelId: string }
-  | { provider: "xai" | "grok"; model: "grok-4.3" | "grok-3" };  // NEW: Grok 4.3 support
+  | { provider: "openrouter"; modelId: string };
 
 export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = {
-  provider: "xai",
-  model: "grok-4.3",
+  provider: "wireline",
+  tier: "auto",
 };
 
-export function parseDirectorChatModelSelection(raw: any): DirectorChatModelSelection {
-  // Keep existing parsing logic + add Grok support
-  if (raw?.provider === "xai" || raw?.provider === "grok") {
-    return {
-      provider: "xai",
-      model: raw.model || "grok-4.3",
-    };
+const WIRELINE_TIERS = new Set<WirelineDirectorTier>(["auto", "sonnet", "opus"]);
+
+export function parseDirectorChatModelSelection(raw: unknown): DirectorChatModelSelection | null {
+  if (!raw || typeof raw !== "object") return null;
+  const data = raw as Record<string, unknown>;
+
+  if (data.provider === "wireline") {
+    const tier = typeof data.tier === "string" ? data.tier : "auto";
+    if (!WIRELINE_TIERS.has(tier as WirelineDirectorTier)) return null;
+    return { provider: "wireline", tier: tier as WirelineDirectorTier };
   }
-  if (raw?.provider === "openrouter" && raw.modelId) {
-    return { provider: "openrouter", modelId: raw.modelId };
+
+  if (data.provider === "openrouter") {
+    const modelId = typeof data.modelId === "string" ? data.modelId.trim() : "";
+    if (!isOpenRouterModelId(modelId)) return null;
+    return { provider: "openrouter", modelId };
   }
-  // Fallback to existing wireline logic or default
-  return DEFAULT_DIRECTOR_MODEL_SELECTION;
+
+  return null;
 }
 
-export function isXaiModel(selection: DirectorChatModelSelection | null | undefined): boolean {
-  return selection?.provider === "xai" || selection?.provider === "grok";
-}
+export type ResolvedDirectorLlm = {
+  provider: "wireline" | "openrouter";
+  model: string;
+  modelKind: "sonnet" | "opus" | "custom";
+  modelLabel: string;
+  openRouterModelId?: string;
+  deepThink: boolean;
+  maxTokens: number;
+};
 
 export function resolveDirectorLlm(input: {
   selection?: DirectorChatModelSelection | null;
   autoOpus?: boolean;
-  // other existing params...
-}) {
-  const selection = input.selection || DEFAULT_DIRECTOR_MODEL_SELECTION;
+  deepThink?: boolean;
+  longDeliverable?: boolean;
+  claudeSonnet?: string;
+  claudeOpus?: string;
+  modelLabelForOpenRouter?: (modelId: string) => string;
+}): ResolvedDirectorLlm {
+  const selection = input.selection ?? DEFAULT_DIRECTOR_MODEL_SELECTION;
+  const claudeSonnet = input.claudeSonnet ?? CLAUDE_MODELS.SONNET;
+  const claudeOpus = input.claudeOpus ?? CLAUDE_DIRECTOR_MODEL;
 
-  if (isXaiModel(selection)) {
-    // Use our Grok 4.3 wrapper
+  if (selection.provider === "openrouter") {
     return {
-      provider: "xai",
-      model: (selection as any).model || "grok-4.3",
-      client: xaiClient,
-      // The actual streaming will use callDirectorGrok or the client directly
-      // in director-stream-runner.ts or the caller
-      streamFn: callDirectorGrok,
+      provider: "openrouter",
+      model: selection.modelId,
+      modelKind: "custom",
+      modelLabel: input.modelLabelForOpenRouter?.(selection.modelId) ?? selection.modelId,
+      openRouterModelId: selection.modelId,
+      deepThink: false,
+      maxTokens: input.longDeliverable ? 5000 : 2500,
     };
   }
 
-  // Existing logic for wireline / openrouter / claude continues unchanged
-  // (your original code for sonnet, opus, openrouter remains here)
-  if (selection.provider === "openrouter") {
-    // your existing OpenRouter handling
-    return { provider: "openrouter", modelId: selection.modelId };
-  }
+  const useOpus =
+    selection.tier === "opus" || (selection.tier === "auto" && input.autoOpus === true);
+  const modelKind = useOpus ? "opus" : "sonnet";
 
-  // wireline tier logic (sonnet/opus/auto) - unchanged
   return {
     provider: "wireline",
-    tier: (selection as any).tier || "auto",
+    model: useOpus ? claudeOpus : claudeSonnet,
+    modelKind,
+    modelLabel: useOpus ? "Opus" : "Sonnet",
+    deepThink: useOpus && input.deepThink === true,
+    maxTokens: input.longDeliverable ? (useOpus ? 6000 : 4000) : useOpus ? 3200 : 2200,
   };
 }
-
-// Re-export for convenience
-export { DEFAULT_DIRECTOR_MODEL_SELECTION as originalDefault } from './director-model-selection'; // if needed for migration
 
 /**
  * Returns true if the given ID looks like a valid OpenRouter model ID.
@@ -78,11 +88,11 @@ export { DEFAULT_DIRECTOR_MODEL_SELECTION as originalDefault } from './director-
  */
 export function isOpenRouterModelId(id: string): boolean {
   if (typeof id !== "string" || !id) return false;
+  if (id.length > 160) return false;
+  if (id.includes("..") || /\s/.test(id)) return false;
   const lower = id.toLowerCase();
-  // Exclude our internal Wireline / xAI / Grok models
   if (lower.startsWith("wireline/") || lower.startsWith("xai/") || lower.startsWith("grok/")) {
     return false;
   }
-  // Standard OpenRouter format contains a slash
-  return id.includes("/");
+  return /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id);
 }

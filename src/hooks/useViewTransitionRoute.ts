@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 /**
@@ -8,13 +8,24 @@ import { useLocation } from "react-router-dom";
 export function useViewTransitionRoute() {
   const { pathname } = useLocation();
   const isFirst = useRef(true);
+  const canUseViewTransitions = useMemo(() => {
+    if (typeof document === "undefined") return false;
+    if (typeof document.startViewTransition !== "function") return false;
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent.toLowerCase();
+    // Firefox still shows root-snapshot artifacts on the authenticated shell
+    // (brown side slabs / stale tab captures). Keep route changes on the
+    // Motion cross-fade there until its View Transitions implementation settles.
+    if (ua.includes("firefox") || ua.includes("fxios")) return false;
+    return true;
+  }, []);
 
   useEffect(() => {
     if (isFirst.current) {
       isFirst.current = false;
       return;
     }
-    if (typeof document.startViewTransition !== "function") return;
+    if (!canUseViewTransitions) return;
     document.startViewTransition(() => {});
-  }, [pathname]);
+  }, [pathname, canUseViewTransitions]);
 }
