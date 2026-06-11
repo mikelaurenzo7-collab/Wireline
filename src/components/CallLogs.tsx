@@ -34,6 +34,7 @@ import { authFetch } from "../lib/api";
 import { resolveBrandAccent } from "../lib/brand-token";
 import { BRAND } from "../constants/brand-colors";
 import { formatDate, formatTime } from "../lib/safe-date";
+import { formatCost } from "../lib/safe-number";
 import { ClaudeRecipeButton } from "./ClaudeRecipes";
 import CsvExportButton from "./CsvExportButton";
 import PageShell, { Panel } from "./PageShell";
@@ -619,7 +620,7 @@ function CallDetail({
             <Clock className="w-3 h-3" />
             <span>{formatDuration(call.duration_seconds || 0)}</span>
             <span className="w-1 h-1 rounded-full bg-white/15" />
-            <span className="text-destructive/80">${Number(call.cost ?? 0).toFixed(4)}</span>
+            <span className="text-destructive/80">{formatCost(call.cost)}</span>
           </div>
         </div>
 
@@ -652,7 +653,7 @@ function CallDetail({
                     value={formatDuration(call.duration_seconds || 0)}
                     icon={Clock}
                   />
-                  <Stat label="Cost" value={`$${Number(call.cost ?? 0).toFixed(4)}`} />
+                  <Stat label="Cost" value={formatCost(call.cost)} />
                   <Stat label="Lead score" value={`${call.lead_score ?? 0}`} />
                   <Stat
                     label="Sentiment"

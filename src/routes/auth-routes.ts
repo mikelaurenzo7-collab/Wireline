@@ -31,7 +31,12 @@ import {
 } from "../lib/api-validation";
 import { getPostgresErrorCode } from "../lib/pg-errors";
 import { bootstrapFounderFleetIfEmpty, scheduleFounderBootstrap } from "../lib/founder-bootstrap";
-import { authSuccessBody, clearSessionCookie, setSessionCookie } from "../lib/session-cookie";
+import {
+  authSuccessBody,
+  clearSessionCookie,
+  setSessionCookie,
+  getSessionTokenFromRequest,
+} from "../lib/session-cookie";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -326,26 +331,46 @@ router.post(
 
 /**
  * GET /api/auth/session — hydrate client user from httpOnly cookie.
+ *
+ * This is a *probe*, not a guard: it runs on every page load, including every
+ * signed-out marketing page. Returning 401 for an anonymous visitor is correct
+ * REST but pollutes the browser console with a "Failed to load resource: 401"
+ * on each public page. So we authenticate inline and resolve to a 200 with
+ * `{ user: null }` for anonymous/invalid sessions — the client already treats a
+ * null user as signed-out. A valid session still returns the hydrated user.
  */
-router.get(
-  "/api/auth/session",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    const [row] = await drizzle
-      .select({ fullName: schema.users.fullName, email: schema.users.email })
-      .from(schema.users)
-      .where(eq(schema.users.id, req.user.id))
-      .limit(1);
-    return res.json({
-      user: {
-        id: req.user.id,
-        email: row?.email ?? req.user.email,
-        full_name: row?.fullName ?? undefined,
-        is_owner: isOwnerEmail(req.user.email),
-      },
-    });
-  },
-);
+router.get("/api/auth/session", async (req: Request, res: Response) => {
+  const anonymous = () => res.json({ user: null });
+
+  const token = getSessionTokenFromRequest(req);
+  if (!token) return anonymous();
+
+  let secret: string;
+  try {
+    secret = requireInternalJwtSecret();
+  } catch {
+    return anonymous();
+  }
+
+  const payload = await verifyInternalJwt(token, secret);
+  if (!payload?.sub) return anonymous();
+
+  const [row] = await drizzle
+    .select({ fullName: schema.users.fullName, email: schema.users.email })
+    .from(schema.users)
+    .where(eq(schema.users.id, payload.sub))
+    .limit(1);
+
+  const email = row?.email ?? payload.email ?? "";
+  return res.json({
+    user: {
+      id: payload.sub,
+      email,
+      full_name: row?.fullName ?? undefined,
+      is_owner: isOwnerEmail(email),
+    },
+  });
+});
 
 /**
  * POST /api/auth/migrate-session — one-time move from legacy localStorage JWT.

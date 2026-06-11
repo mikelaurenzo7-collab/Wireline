@@ -228,8 +228,12 @@ export function TriagePanel({
         : prev,
     );
 
+  // "All clear" must not contradict the hot-lead strip directly below it. When
+  // hot leads are in play the strip itself carries the signal ("agents are on
+  // it"), so the green banner only appears when the board is genuinely empty.
+  const hasHotLeads = (data?.hot_leads?.length ?? 0) > 0;
   const allClearBanner =
-    !loading && data && !fetchErr && totalAttention === 0 ? (
+    !loading && data && !fetchErr && totalAttention === 0 && !hasHotLeads ? (
       <div
         role="status"
         className={cn(
@@ -251,7 +255,7 @@ export function TriagePanel({
     ) : null;
 
   const hotLeadStrip =
-    !loading && data && !fetchErr && (data.hot_leads?.length ?? 0) > 0 ? (
+    !loading && data && !fetchErr && hasHotLeads ? (
       <WidgetBoundary label="Hot Leads">
         <HotLeadStrip items={data.hot_leads} />
       </WidgetBoundary>

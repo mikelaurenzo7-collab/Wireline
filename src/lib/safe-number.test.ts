@@ -13,6 +13,7 @@ import {
   safeNumber,
   safeFixed,
   formatMoney,
+  formatCost,
   formatPercent,
   formatInt,
   formatPhone,
@@ -96,6 +97,27 @@ describe("formatMoney", () => {
 
   it("supports sub-cent precision when asked", () => {
     expect(formatMoney(0.0042, 4)).toBe("$0.0042");
+  });
+});
+
+describe("formatCost", () => {
+  it("shows Free for zero, negative, or missing cost", () => {
+    expect(formatCost(0)).toBe("Free");
+    expect(formatCost(null)).toBe("Free");
+    expect(formatCost(undefined)).toBe("Free");
+    expect(formatCost(-1)).toBe("Free");
+    expect(formatCost(NaN)).toBe("Free");
+  });
+
+  it("collapses sub-cent spend into <$0.01 instead of $0.0000", () => {
+    expect(formatCost(0.0004)).toBe("<$0.01");
+    expect(formatCost(0.009)).toBe("<$0.01");
+  });
+
+  it("formats real costs with two decimals", () => {
+    expect(formatCost(0.01)).toBe("$0.01");
+    expect(formatCost(0.42)).toBe("$0.42");
+    expect(formatCost(12.5)).toBe("$12.50");
   });
 });
 

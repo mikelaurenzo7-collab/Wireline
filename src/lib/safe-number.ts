@@ -74,6 +74,24 @@ export function formatMoney(input: unknown, decimals = 2, fallback?: string): st
 }
 
 /**
+ * Human-facing cost formatter for a single call / event. Per-item AI spend is
+ * often a fraction of a cent, where `toFixed(4)` ("$0.0000") reads like a bug
+ * and `toFixed(2)` ("$0.00") wrongly implies free. This collapses the noise:
+ *
+ *   formatCost(0)        → "Free"
+ *   formatCost(null)     → "Free"
+ *   formatCost(0.0004)   → "<$0.01"
+ *   formatCost(0.42)     → "$0.42"
+ *   formatCost(12.5)     → "$12.50"
+ */
+export function formatCost(input: unknown): string {
+  const n = safeNumber(input);
+  if (n == null || n <= 0) return "Free";
+  if (n < 0.01) return "<$0.01";
+  return `$${n.toFixed(2)}`;
+}
+
+/**
  * Percent formatter — input is a fraction (0..1) by default. Pass
  * `alreadyScaled: true` if your input is already in 0..100 form.
  *

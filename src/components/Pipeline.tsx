@@ -403,7 +403,11 @@ export default function Pipeline() {
                                       </Tooltip>
                                     </TooltipProvider>
                                   )}
-                                  <div className="flex items-center justify-between mt-2">
+                                  {/* Footer: metadata and the quick-move pills never share a
+                                   *  single non-wrapping row. On phones the pills sit on their own
+                                   *  wrapping line (always visible — drag is impractical on touch);
+                                   *  on sm+ they collapse into an inline hover/focus-reveal rail. */}
+                                  <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
                                     <span className="wl-micro-meta min-w-0">
                                       <span className="whitespace-nowrap">
                                         {lead.attempts ?? 0} attempt
@@ -416,7 +420,7 @@ export default function Pipeline() {
                                         </span>
                                       )}
                                     </span>
-                                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
+                                    <div className="flex flex-wrap items-center gap-1 sm:flex-nowrap sm:justify-end opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
                                       {STAGES.filter((s) => s.id !== stage.id)
                                         .slice(0, 3)
                                         .map((s) => (
@@ -424,14 +428,14 @@ export default function Pipeline() {
                                             key={s.id}
                                             onClick={() => moveLead(lead.id, s.id)}
                                             variant="outline"
-                                            className="wl-label px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
+                                            className="wl-label shrink-0 whitespace-nowrap px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
                                             title={`Move to ${s.label}`}
                                             aria-label={`Move ${lead.customerName || "lead"} to ${s.label}`}
                                           >
                                             → {s.label}
                                           </ShadButton>
                                         ))}
-                                      <ChevronRight className="w-3 h-3 text-ink/40" />
+                                      <ChevronRight className="hidden sm:block w-3 h-3 text-ink/40 shrink-0" />
                                     </div>
                                   </div>
                                 </CardContent>

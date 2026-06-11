@@ -91,16 +91,31 @@ router.get(
       const completed = apptAgg?.completed ?? 0;
       const queuedLeads = leadAgg?.queuedLeads ?? 0;
 
+      // The funnel mixes three independent sources (call_logs, appointments,
+      // outbound_leads). A "drop-off from the previous stage" is only truthful
+      // between same-source stages where one is a genuine subset of the prior
+      // (Connected ⊆ Calls, Qualified ⊆ Connected, Completed ⊆ Booked).
+      // Cross-source boundaries (Calls vs Queued, Booked vs Qualified) carry
+      // `sequential: false` so the client never asserts a fake conversion —
+      // which previously produced "None progressed" directly above a non-zero
+      // downstream stage. "High intent" is a quality signal, not a gate, so it
+      // renders as a side metric (`kind: "signal"`) rather than a funnel bar.
       res.json({
         window_days: days,
         stages: [
-          { name: "Queued", count: queuedLeads },
-          { name: "Calls", count: totalCalls },
-          { name: "Connected", count: connected },
-          { name: "Qualified", count: qualified },
-          { name: "High intent", count: highIntent },
-          { name: "Booked", count: bookings },
-          { name: "Completed", count: completed },
+          { name: "Queued", count: queuedLeads, kind: "flow", sequential: false },
+          { name: "Calls", count: totalCalls, kind: "flow", sequential: false },
+          { name: "Connected", count: connected, kind: "flow", sequential: true },
+          { name: "Qualified", count: qualified, kind: "flow", sequential: true },
+          { name: "Booked", count: bookings, kind: "flow", sequential: false },
+          { name: "Completed", count: completed, kind: "flow", sequential: true },
+          {
+            name: "High intent",
+            count: highIntent,
+            kind: "signal",
+            sequential: false,
+            hint: "Calls the agent flagged as high purchase intent",
+          },
         ],
       });
     } catch (e) {
