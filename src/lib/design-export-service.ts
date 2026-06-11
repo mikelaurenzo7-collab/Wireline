@@ -60,7 +60,7 @@ function extractFontsFromHtml(html: string): string[] {
     const family = raw
       .replace(/font-family:\s*/i, "")
       .trim()
-      .replace(/['"]/g, "");
+      .replace(/[\'"]/g, "");
     if (family) fonts.add(family.split(",")[0]?.trim() ?? family);
   }
   return [...fonts];
@@ -233,6 +233,114 @@ export function buildReactExportZip(input: {
   return buildZipBuffer(files);
 }
 
+export function buildShopifyStorefrontStarterZip(input: {
+  title: string;
+  html?: Buffer;
+  image?: Buffer;
+  promptSummary?: string;
+}): Buffer {
+  const htmlStr =
+    input.html?.toString("utf8") ?? "<!doctype html><html><body><p>Wireline storefront concept</p></body></html>";
+  const bodyHtml = extractBodyInnerHtml(htmlStr);
+  const escaped = escapeForTemplateLiteral(bodyHtml);
+  const componentName =
+    input.title.replace(/[^a-zA-Z0-9]/g, "").replace(/^[0-9]/, "S") || "StorefrontHome";
+
+  const readme = [
+    `# ${input.title}`,
+    "",
+    "Wireline Store Generator export.",
+    "",
+    "## Included",
+    "- `src/StorefrontHome.tsx` — editable React storefront starter.",
+    "- `src/storefront-products.ts` — placeholder catalog data for local editing.",
+    "- `prototype.html` — original Wireline live preview artifact.",
+    "- `design.md` — design notes and prompt context.",
+    "",
+    "## Production notes",
+    "- Keep Shopify store configuration in the destination project environment, not in this ZIP.",
+    "- Replace placeholder products with data from the destination storefront layer.",
+    "- Keep operations actions in Wireline's authenticated Shopify connection; storefront code should stay customer-facing.",
+  ].join("\n");
+
+  const component = `import React from "react";
+import { storefrontProducts } from "./storefront-products";
+
+/** Wireline Store Generator export. No live store credentials are embedded. */
+export function ${componentName}() {
+  return (
+    <main className="min-h-screen bg-[#f7f1e7] text-[#201a16]">
+      <section className="mx-auto flex max-w-7xl flex-col gap-10 px-6 py-16 lg:px-10">
+        <div className="rounded-[2rem] border border-black/10 bg-white/75 p-8 shadow-2xl shadow-black/10">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-black/50">Wireline Store Generator</p>
+          <h1 className="mt-4 max-w-4xl text-5xl font-semibold tracking-[-0.05em] md:text-7xl">${input.title}</h1>
+          <p className="mt-6 max-w-2xl text-lg text-black/60">${input.promptSummary || "Premium storefront starter generated from Wireline Design."}</p>
+        </div>
+        <div className="grid gap-5 md:grid-cols-3">
+          {storefrontProducts.map((product) => (
+            <article key={product.handle} className="rounded-[1.5rem] border border-black/10 bg-white p-5 shadow-xl shadow-black/5">
+              <div className="aspect-[4/5] rounded-[1rem] bg-black/[0.04]" />
+              <h2 className="mt-5 text-xl font-semibold tracking-[-0.03em]">{product.title}</h2>
+              <p className="mt-2 text-sm text-black/55">{product.description}</p>
+              <div className="mt-5 flex items-center justify-between">
+                <span className="font-medium">{product.price}</span>
+                <button className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white">View product</button>
+              </div>
+            </article>
+          ))}
+        </div>
+        <details className="rounded-[1.5rem] border border-black/10 bg-white/70 p-5 text-sm text-black/55">
+          <summary className="cursor-pointer font-medium text-black">Original generated body</summary>
+          <div className="prose mt-4 max-w-none" dangerouslySetInnerHTML={{ __html: \`${escaped}\` }} />
+        </details>
+      </section>
+    </main>
+  );
+}
+
+export default ${componentName};
+`;
+
+  const products = `export const storefrontProducts = [
+  {
+    handle: "hero-product",
+    title: "Hero Product",
+    description: "Replace with the destination Shopify catalog item.",
+    price: "$128",
+  },
+  {
+    handle: "signature-kit",
+    title: "Signature Kit",
+    description: "Use this as the collection-card pattern for generated storefronts.",
+    price: "$248",
+  },
+  {
+    handle: "limited-drop",
+    title: "Limited Drop",
+    description: "Built for premium launches, bundles, and drops.",
+    price: "$96",
+  },
+] as const;
+`;
+
+  const notes = buildDesignNotesMarkdown({
+    title: input.title,
+    promptSummary: input.promptSummary,
+    html: htmlStr,
+  });
+
+  const files: Array<{ name: string; data: Buffer }> = [
+    { name: "README.md", data: Buffer.from(readme, "utf8") },
+    { name: "src/StorefrontHome.tsx", data: Buffer.from(component, "utf8") },
+    { name: "src/storefront-products.ts", data: Buffer.from(products, "utf8") },
+    { name: "prototype.html", data: Buffer.from(htmlStr, "utf8") },
+    { name: "design.md", data: Buffer.from(notes, "utf8") },
+  ];
+
+  if (input.image) files.push({ name: "screenshot.png", data: input.image });
+  return buildZipBuffer(files);
+}
+
 export async function packageFigmaExportForUser(
   userId: string,
   preview: DirectorPreviewMeta & { promptSummary?: string },
@@ -276,4 +384,22 @@ export async function packageReactExportForUser(
     .slice(0, 32);
 
   return { zip, fileName: `wireline-react-${slug || "export"}.zip` };
+}
+
+export async function packageShopifyStorefrontExportForUser(
+  userId: string,
+  preview: DirectorPreviewMeta & { promptSummary?: string },
+): Promise<{ zip: Buffer; fileName: string }> {
+  const artifacts = await loadPreviewExportArtifacts(userId, preview);
+  const zip = buildShopifyStorefrontStarterZip({
+    title: preview.title,
+    html: artifacts.html,
+    image: artifacts.image,
+    promptSummary: preview.promptSummary,
+  });
+  const slug = preview.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 32);
+  return { zip, fileName: `wireline-shopify-storefront-${slug || "export"}.zip` };
 }
