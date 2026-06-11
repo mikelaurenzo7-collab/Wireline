@@ -1,6 +1,6 @@
 // src/lib/grokClient.ts
 // xAI Grok 4.3 client for Wireline Director chat
-// Uses official xAI OpenAI-compatible endpoint
+// Uses official xAI OpenAI-compatible endpoint via the openai package
 
 import OpenAI from 'openai';
 
