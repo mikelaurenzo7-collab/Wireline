@@ -12,6 +12,7 @@ import {
   designImportFigmaSchema,
   designImportWebsiteSchema,
   designGithubPrSchema,
+  designShopifyStorefrontExportSchema,
 } from "../lib/api-validation";
 import { log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
@@ -23,6 +24,7 @@ import {
 import {
   packageFigmaExportForUser,
   packageReactExportForUser,
+  packageShopifyStorefrontExportForUser,
   buildDesignNotesMarkdown,
   loadPreviewExportArtifacts,
   htmlToReactTailwindComponent,
@@ -169,6 +171,25 @@ router.post(
       res.send(zip);
     } catch (e) {
       log.error("react export failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(400, getErrorMessage(e));
+    }
+  },
+);
+
+router.post(
+  "/api/design/export/shopify-storefront",
+  authenticateUser,
+  designExportLimiter,
+  validateBody(designShopifyStorefrontExportSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const preview = previewFromBody(req.body);
+      const { zip, fileName } = await packageShopifyStorefrontExportForUser(req.user.id, preview);
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+      res.send(zip);
+    } catch (e) {
+      log.error("shopify storefront export failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(400, getErrorMessage(e));
     }
   },
