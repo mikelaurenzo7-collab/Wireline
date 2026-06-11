@@ -462,7 +462,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                     {line}
                                   </div>
                                 ))}
-                              </div>
+                            </div>
                             )}
                           </div>
                         )}
@@ -492,7 +492,8 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
               icon={<Users className="w-5 h-5" />}
               label="Loading fleet"
               className="flex-1 min-h-[8rem] py-4"
-            /> : agents.length === 0 ? (
+            />
+          ) : agents.length === 0 ? (
             <EmptyState
               icon={Users}
               eyebrow={OPS_CHANNEL_EMPTY.fleetRail.eyebrow}
@@ -502,7 +503,8 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
               density="compact"
               withHalo={false}
               className="py-4"
-            />) : (
+            />
+          ) : (
             <>
               <div className="flex xl:hidden gap-2 tab-strip-scroll pb-1 -mx-1 px-1 shrink-0">
                 {agents.map((a) => {
