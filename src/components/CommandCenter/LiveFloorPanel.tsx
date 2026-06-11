@@ -19,18 +19,18 @@ import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-
 import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 export type FloorCall = {
-  id: string;
-  agent_id?: string;
-  customer_number: string;
-  sentiment_label: string;
-  urgency: number;
+  id: string,
+  agent_id?: string,
+  customer_number: string,
+  sentiment_label: string,
+  urgency: number,
   status: "active" | "escalated";
   thought?: string;
 };
 
 export type FloorAgent = {
-  id: string;
-  name: string;
+  id: string,
+  name: string,
   role?: string;
 };
 
@@ -231,8 +231,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
               icon={<Radio className="w-6 h-6" />}
               label={OPS_COPY.floorLoading}
               className="flex-1 min-h-[12rem]"
-            />
-          ) : calls.length === 0 ? (
+            ) : calls.length === 0 ? (
             <div className="flex-1 min-h-[12rem] flex items-center justify-center w-full min-w-0 px-2 sm:px-4">
               <EmptyState
                 icon={Radio}
@@ -256,29 +255,48 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                   {calls.map((call) => {
                     const agent = agents.find((a) => a.id === call.agent_id);
                     const escalated = call.status === "escalated";
+                    const isActive = call.status === "active";
+
                     return (
                       <motion.article
                         key={call.id}
                         layout
                         initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          // Subtle breathing pulse only on active (non-escalated) calls
+                          scale: isActive ? [1, 1.005, 1] : 1,
+                        }}
+                        transition={{
+                          duration: isActive ? 3.2 : 0.2,
+                          repeat: isActive ? Infinity : 0,
+                          ease: "easeInOut",
+                        }}
                         exit={{ opacity: 0, scale: 0.98 }}
                         className={cn(
-                          "transition-all duration-500 hover:shadow-[0_4px_24px_rgba(var(--brand-rgb),0.12)] hover:-translate-y-0.5 group relative overflow-hidden",
+                          "transition-all duration-500 hover:shadow-[0_4px_24px_rgba(var(--brand-rgb),0.12)] hover:-translate-y-0.5 group relative overflow-hidden rounded-lg border",
+                          escalated 
+                            ? "border-destructive/40 bg-destructive/[0.03] shadow-sm" 
+                            : "border-ink/10 bg-paper/95 shadow-sm hover:border-brand/25",
                           escalated ? WL_OPS_CLASSES.callCardEscalated : WL_OPS_CLASSES.callCard,
                         )}
                       >
-                        <div className="flex items-start gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                        <div className="flex items-start gap-2.5 sm:gap-3 mb-2 sm:mb-3 p-3 sm:p-3.5">
                           <div
                             className={cn(
-                              "w-9 h-9 sm:w-11 sm:h-11 rounded-md flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_0_12px_rgba(var(--brand-rgb),0.3)]",
+                              "w-9 h-9 sm:w-11 sm:h-11 rounded-md flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-105",
                               escalated
-                                ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                ? "bg-destructive/10 text-destructive border border-destructive/30"
                                 : "bg-gradient-to-br from-brand to-brand-deep text-on-brand shadow-sm shadow-brand/20",
                             )}
                           >
                             <Phone
-                              className={cn("w-4 h-4 sm:w-5 sm:h-5", escalated && "animate-pulse")}
+                              className={cn(
+                                "w-4 h-4 sm:w-5 sm:h-5 transition-all",
+                                escalated && "animate-pulse",
+                                isActive && "animate-[pulse_2.8s_ease-in-out_infinite]"
+                              )}
                             />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -295,18 +313,18 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                 <AgentActivityIndicator active size={14} pose="on-call" />
                               )}
                               {agent?.name ?? "Agent"} ·{" "}
-                              <span className={escalated ? "text-destructive" : "text-brand"}>
+                              <span className={escalated ? "text-destructive font-medium" : "text-brand"}>
                                 {call.sentiment_label}
                               </span>
                             </p>
                           </div>
                           {escalated && (
-                            <ShieldAlert className="w-4 h-4 text-destructive shrink-0" />
+                            <ShieldAlert className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                           )}
                         </div>
 
                         {call.thought && (
-                          <div className="mb-2 sm:mb-3 p-2.5 sm:p-3 rounded-md wl-panel">
+                          <div className="mb-2 sm:mb-3 mx-3 p-2.5 sm:p-3 rounded-md wl-panel border border-ink/8">
                             <div className="mb-1">
                               <span className="wl-label text-muted">Live reasoning</span>
                             </div>
@@ -321,8 +339,8 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                           </div>
                         )}
 
-                        <div className="mb-2 sm:mb-3">
-                          <div className="flex justify-between chrome-subtle mb-1">
+                        <div className="mb-2 sm:mb-3 px-3">
+                          <div className="flex justify-between chrome-subtle mb-1 text-[11px]">
                             <span>Urgency</span>
                             <span className="font-mono font-semibold text-ink">
                               {Math.round(call.urgency * 10)}%
@@ -333,7 +351,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min(100, call.urgency * 10)}%` }}
                               className={cn(
-                                "h-full rounded-full",
+                                "h-full rounded-full transition-all",
                                 call.urgency > 7
                                   ? "bg-destructive"
                                   : "bg-gradient-to-r from-brand to-brand-deep",
@@ -343,7 +361,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         </div>
 
                         {listeningCallId === call.id && (
-                          <div className="flex items-center gap-2 mb-3 p-2 rounded-md bg-brand/5 border border-brand/20">
+                          <div className="flex items-center gap-2 mb-3 mx-3 p-2 rounded-md bg-brand/5 border border-brand/20">
                             <span className="wl-label text-brand animate-pulse">LIVE</span>
                             <div className="flex items-end gap-0.5 h-4 flex-1 justify-end">
                               {[140, 200, 160, 230].map((mult, i) => (
@@ -357,7 +375,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                           </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 px-3 pb-3">
                           {listeningCallId === call.id ? (
                             <ShadButton
                               type="button"
@@ -410,7 +428,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         </div>
 
                         {whisperingCallId === call.id && (
-                          <div className="mt-3 p-3 rounded-md border border-brand/25 bg-brand/[0.04] space-y-2">
+                          <div className="mt-3 mx-3 p-3 rounded-md border border-brand/25 bg-brand/[0.04] space-y-2">
                             <div className="flex gap-2">
                               <Input
                                 type="text"
@@ -443,7 +461,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                     {line}
                                   </div>
                                 ))}
-                              </div>
+                            </div>
                             )}
                           </div>
                         )}
@@ -473,8 +491,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
               icon={<Users className="w-5 h-5" />}
               label="Loading fleet"
               className="flex-1 min-h-[8rem] py-4"
-            />
-          ) : agents.length === 0 ? (
+            ) : agents.length === 0 ? (
             <EmptyState
               icon={Users}
               eyebrow={OPS_CHANNEL_EMPTY.fleetRail.eyebrow}
@@ -484,8 +501,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
               density="compact"
               withHalo={false}
               className="py-4"
-            />
-          ) : (
+            ) : (
             <>
               <div className="flex xl:hidden gap-2 tab-strip-scroll pb-1 -mx-1 px-1 shrink-0">
                 {agents.map((a) => {
