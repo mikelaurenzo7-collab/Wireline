@@ -176,7 +176,7 @@ export default function LandingPage() {
                   Live demo — no signup
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-2xl border border-ink/10 bg-white/30 backdrop-blur-xl p-4 sm:p-6 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-2xl border border-ink/10 bg-paper/95 backdrop-blur-xl p-4 sm:p-6 shadow-sm">
                   {csDemo && (
                     <div className="flex flex-col items-center text-center p-2">
                       <p className="text-[12px] font-medium text-ink/70 mb-3">
