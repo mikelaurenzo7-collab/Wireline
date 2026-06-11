@@ -1,111 +1,61 @@
 import { motion, useReducedMotion } from "motion/react";
-import { Check, Calendar, MessageSquare, PhoneCall } from "lucide-react";
+import { Calendar, Check, MessageSquare, PhoneCall } from "lucide-react";
 
 /**
- * HeroCallPreview — an ambient, non-interactive "live call" visual for the
- * landing hero. It shows the product *doing the job* in one frame: the agent's
- * persona + vibe, a live call status, a streaming transcript, and a real tool
- * action (booking → Calendar/SMS). Purely decorative/illustrative — the real,
- * callable demo lines live in <BrowserCallWidget> right below it.
+ * HeroCallPreview — crisp, static-first product artifact for the landing hero.
  *
- * Aurora Cream contract: razor-edge surfaces (circles via `rounded-full` only),
- * `from-brand to-brand-deep` gradient, mono micro-labels, Fraunces display.
- * All motion is gated on `useReducedMotion()` and resolves to a correct, static
- * resting state — the visual must read perfectly with zero animation.
+ * The previous version relied on purple glow halos that bled into the cream
+ * surface. This version treats the preview like an enterprise product screenshot:
+ * hard edges, restrained depth, readable transcript, and minimal motion.
  */
 
-const BAR_COUNT = 42;
-// Deterministic per-bar heights (SSR/hydration-safe — no Math.random at render).
-const REST = (i: number) => 4 + ((i * 7) % 10); // 4..13px resting height
-const PEAK = (i: number) => 14 + ((i * 11) % 22); // 14..35px animated peak
-// Secondary amplitude shape — fills the silence gaps between peaks
-const PEAK2 = (i: number) => 8 + ((i * 17) % 12); // 8..19px mid-peak
+const BAR_COUNT = 38;
+const REST = (i: number) => 5 + ((i * 7) % 8);
+const PEAK = (i: number) => 13 + ((i * 11) % 18);
+const PEAK2 = (i: number) => 8 + ((i * 17) % 10);
 
 export default function HeroCallPreview() {
   const reduce = useReducedMotion();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 22, scale: 0.982 }}
+      initial={{ opacity: 0, y: 18, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="relative mx-auto mt-10 lg:mt-12 w-full max-w-md text-left"
+      transition={{ duration: 0.65, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      className="relative mx-auto w-full max-w-xl text-left"
       aria-label="Live call preview: a Wireline agent answering an inbound call and booking an appointment"
     >
-      {/* layered brand halos for depth */}
-      <span aria-hidden="true" className="absolute -inset-8 -z-10 bg-brand/20 blur-3xl scale-105" />
-      <span aria-hidden="true" className="absolute -inset-4 -z-10 bg-brand/10 blur-xl scale-100" />
-
-      <div className="relative border border-ink/10 bg-gradient-to-b from-white/90 to-paper/95 shadow-[0_1px_0_rgba(255,255,255,0.8)_inset,0_40px_80px_-30px_rgba(26,22,20,0.5)]">
-        {/* ── Header: agent identity + live status ── */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-ink/10">
-          <div className="relative w-11 h-11 shrink-0">
-            {/* dual-ring avatar surround */}
-            <span
-              aria-hidden="true"
-              className="absolute -inset-1.5 rounded-full border border-brand/20"
-            />
-            <span
-              aria-hidden="true"
-              className="absolute -inset-3 rounded-full border border-brand/10"
-            />
-            <motion.div
-              animate={
-                reduce
-                  ? {}
-                  : {
-                      boxShadow: [
-                        "0 6px 16px -8px rgba(79,30,123,0.5)",
-                        "0 8px 22px -6px rgba(79,30,123,0.9)",
-                        "0 6px 16px -8px rgba(79,30,123,0.5)",
-                      ],
-                    }
-              }
-              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-              className="w-11 h-11 rounded-full bg-gradient-to-br from-brand to-brand-deep grid place-items-center text-white font-display italic text-xl"
-            >
+      <div className="relative border border-ink/[0.14] bg-[#FBF8F0] shadow-[0_24px_70px_-42px_rgba(26,22,20,0.55),0_1px_0_rgba(255,255,255,0.8)_inset]">
+        <div className="flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-ink/[0.1] bg-white/[0.42]">
+          <div className="relative grid h-11 w-11 shrink-0 place-items-center border border-ink/[0.12] bg-paper shadow-[0_1px_0_rgba(255,255,255,0.9)_inset]">
+            <div className="grid h-8 w-8 place-items-center bg-brand text-white font-display text-lg leading-none">
               S
-            </motion.div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 font-semibold text-[15px] tracking-tight text-ink">
-              Sarah
-              <motion.span
-                animate={
-                  reduce
-                    ? {}
-                    : {
-                        borderColor: [
-                          "rgba(79,30,123,0.3)",
-                          "rgba(79,30,123,0.75)",
-                          "rgba(79,30,123,0.3)",
-                        ],
-                      }
-                }
-                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-                className="font-mono text-[9.5px] tracking-[0.12em] uppercase text-brand border px-1.5 py-0.5"
-              >
-                warm
-              </motion.span>
             </div>
-            <p className="text-[12px] text-muted mt-0.5">Front desk · inbound</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2 font-semibold text-[14px] tracking-tight text-ink">
+              Sarah
+              <span className="border border-brand/20 bg-brand/[0.05] px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-brand">
+                warm
+              </span>
+            </div>
+            <p className="mt-0.5 text-[12px] text-ink/58">Front desk · inbound support</p>
+          </div>
+
+          <div className="hidden xs:flex items-center gap-2 shrink-0">
             <span className="relative flex h-2 w-2" aria-hidden="true">
-              {!reduce && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-              )}
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              {!reduce && <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-500/45" />}
+              <span className="relative inline-flex h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="font-mono text-[11px] text-ink tracking-[0.04em] tabular-nums">
+            <span className="font-mono text-[10px] text-ink/72 tracking-[0.08em] tabular-nums">
               ON CALL · 0:42
             </span>
           </div>
         </div>
 
-        {/* ── Live waveform — richer with dual-layered bars ── */}
         <div
-          className="flex items-end justify-center gap-[2.5px] h-14 px-4 border-b border-ink/10 bg-brand/[0.025]"
+          className="flex h-14 items-end justify-center gap-[2.5px] border-b border-ink/[0.1] bg-[linear-gradient(180deg,rgba(255,255,255,0.42),rgba(26,22,20,0.025))] px-4"
           aria-hidden="true"
         >
           {Array.from({ length: BAR_COUNT }).map((_, i) => {
@@ -113,25 +63,24 @@ export default function HeroCallPreview() {
             return (
               <motion.span
                 key={i}
-                className="flex-1 max-w-[4px] bg-gradient-to-b from-brand via-brand/80 to-brand-deep/60"
-                style={{ borderRadius: "1px 1px 0 0" }}
+                className="flex-1 max-w-[4px] bg-brand/55"
                 initial={{ height: reduce ? peakTarget * 0.55 : REST(i) }}
                 animate={
                   reduce
                     ? undefined
                     : {
                         height: [REST(i), peakTarget, REST(i)],
-                        opacity: [0.6, 1, 0.6],
+                        opacity: [0.42, 0.9, 0.42],
                       }
                 }
                 transition={
                   reduce
                     ? undefined
                     : {
-                        duration: 0.75 + (i % 6) * 0.11,
+                        duration: 0.9 + (i % 5) * 0.08,
                         repeat: Infinity,
                         ease: "easeInOut",
-                        delay: (i * 0.035) % 0.65,
+                        delay: (i * 0.035) % 0.55,
                       }
                 }
               />
@@ -139,32 +88,32 @@ export default function HeroCallPreview() {
           })}
         </div>
 
-        {/* ── Streaming transcript — staggered entrance ── */}
-        <div className="px-5 py-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-4 sm:px-5 py-4">
           <motion.div
-            initial={{ opacity: 0, x: -14, scale: 0.96 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ duration: 0.55, delay: 1.1, ease: [0.16, 1, 0.3, 1] }}
-            className="self-start max-w-[84%] text-[13.5px] leading-snug px-3 py-2.5 border border-ink/10 bg-ink/[0.03]"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-[86%] border border-ink/[0.1] bg-white/[0.55] px-3 py-2.5 text-[13px] leading-snug text-ink"
           >
-            <span className="block font-mono text-[8.5px] tracking-[0.14em] uppercase text-muted mb-1.5">
+            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-ink/48">
               Caller
             </span>
             Hi — do you have any openings this Saturday?
           </motion.div>
+
           <motion.div
-            initial={{ opacity: 0, x: 14, scale: 0.96 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ duration: 0.55, delay: 1.7, ease: [0.16, 1, 0.3, 1] }}
-            className="self-end max-w-[84%] text-[13.5px] leading-snug px-3 py-2.5 border border-brand/22 bg-brand/[0.07]"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
+            className="ml-auto max-w-[86%] border border-brand/18 bg-brand/[0.045] px-3 py-2.5 text-[13px] leading-snug text-ink"
           >
-            <span className="block font-mono text-[8.5px] tracking-[0.14em] uppercase text-muted mb-1.5">
+            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-ink/48">
               Sarah
             </span>
             We do — 9:30 or 2:15. Want me to lock one in?
             {!reduce && (
               <motion.span
-                className="inline-block w-[6px] h-[14px] bg-brand align-[-2px] ml-0.5"
+                className="ml-0.5 inline-block h-[13px] w-[5px] align-[-2px] bg-brand/70"
                 animate={{ opacity: [1, 0] }}
                 transition={{ duration: 0.55, repeat: Infinity, repeatType: "reverse" }}
                 aria-hidden="true"
@@ -173,47 +122,40 @@ export default function HeroCallPreview() {
           </motion.div>
         </div>
 
-        {/* ── Tool action footer — flashes in after conversation ── */}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 2.5, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-2.5 px-5 py-3 border-t border-ink/10 bg-white/50"
+          transition={{ duration: 0.42, delay: 1.08, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-wrap items-center gap-2.5 border-t border-ink/[0.1] bg-white/[0.48] px-4 sm:px-5 py-3"
         >
-          <motion.span
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, delay: 2.65, ease: [0.34, 1.56, 0.64, 1] }}
-            className="w-[18px] h-[18px] rounded-full bg-emerald-500 grid place-items-center text-white shrink-0"
-          >
-            <Check className="w-3 h-3" strokeWidth={3} />
-          </motion.span>
+          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-emerald-500 text-white">
+            <Check className="h-3 w-3" strokeWidth={3} />
+          </span>
           <span className="text-[12.5px] text-ink">
             <strong className="font-semibold">Booking appointment</strong> — Sat 9:30 AM
           </span>
           <span className="ml-auto flex gap-1.5">
-            <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-muted border border-ink/10 px-1.5 py-1 inline-flex items-center gap-1">
-              <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-ink/55">
+              <Calendar className="h-2.5 w-2.5" aria-hidden="true" />
               Calendar
             </span>
-            <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-muted border border-ink/10 px-1.5 py-1 inline-flex items-center gap-1">
-              <MessageSquare className="w-2.5 h-2.5" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-ink/55">
+              <MessageSquare className="h-2.5 w-2.5" aria-hidden="true" />
               SMS
             </span>
           </span>
         </motion.div>
       </div>
 
-      {/* Live activity badge — floats below the card */}
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 2.9, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-500/25 bg-emerald-50/90 backdrop-blur-sm"
+        transition={{ duration: 0.42, delay: 1.24, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-emerald-500/22 bg-[#F7F3EA]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(26,22,20,0.5)] backdrop-blur-sm"
       >
-        <PhoneCall className="w-3 h-3 text-emerald-600" aria-hidden="true" />
-        <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-emerald-700">
-          Live · Agent handling call
+        <PhoneCall className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-emerald-700">
+          Live · handled by agent
         </span>
       </motion.div>
     </motion.div>
