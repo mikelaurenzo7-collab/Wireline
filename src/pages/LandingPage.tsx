@@ -114,15 +114,12 @@ export default function LandingPage() {
       <div className="marketing-surface min-h-dvh bg-paper relative paper-texture">
         <PublicSiteHeader active="home" />
 
-        {/* ─── Hero ───────────────────────────────────────────────── */}
+        {/* ─── Hero — Cinematic Master Scene (Perfection Redesign) ─── */}
         <section
           data-testid="hero-section"
           className="relative px-5 sm:px-6 lg:px-12 pt-20 sm:pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
-          {/* wl-aurora-field now has an inner cream-tinted mask layer for extra insurance
-             against any residual purple bleed on rich cream. The mask is extremely
-             subtle (near-invisible) and only active where the aurora orbs live.
-             On mobile we further reduce effective intensity via the field. */}
+          {/* Aurora Field + Spotlight — now orchestrated as one living atmosphere */}
           <div className="wl-aurora-field absolute inset-0 z-0 lg:opacity-100 opacity-[0.92]" aria-hidden="true">
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb" />
@@ -130,9 +127,7 @@ export default function LandingPage() {
             <span className="wl-aurora-orb wl-aurora-orb--mid" />
             <span className="wl-hero-spotlight" />
 
-            {/* Ultra-subtle cream-tinted radial mask — anchors the rich cream
-               and kills any possible purple tint/bleed from the soft gradients.
-               100% CSP-safe, zero performance impact. */}
+            {/* Ultra-subtle cream-tinted radial mask — anchors the rich cream */}
             <div className="wl-cream-aurora-mask absolute inset-0 pointer-events-none"
                  style={{
                    background: `radial-gradient(ellipse 85% 70% at 50% 35%, 
@@ -142,19 +137,30 @@ export default function LandingPage() {
                  }} />
           </div>
 
-          <HeroWirelines />
-          <HeroDecorations />
+          {/* Hero Scene Coordinator — gives wirelines + robots shared intent with the aurora */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="hero-scene absolute inset-0 z-[1] pointer-events-none"
+            aria-hidden="true"
+          >
+            <HeroWirelines />
+            <HeroDecorations />
+          </motion.div>
+
           <div className="relative z-10 max-w-7xl mx-auto w-full">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
+              {/* Badge — elegant entrance */}
               <motion.span
-                initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                initial={{ opacity: 0, y: 14, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.65, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
                 className="hero-badge inline-flex items-center gap-2.5 border border-ink/15 bg-ink/[0.03] px-5 py-2.5 mb-7 lg:mb-9"
               >
                 <span className="wl-eyebrow-dot" aria-hidden="true" />
@@ -163,6 +169,7 @@ export default function LandingPage() {
                 </span>
               </motion.span>
 
+              {/* Headline — cinematic word reveal, supported by the scene */}
               <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto text-balance">
                 <span>Every conversation,</span>
                 <span className="wl-aurora-text hero-headline-accent">
@@ -171,9 +178,9 @@ export default function LandingPage() {
               </h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.75, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
                 className="mt-6 lg:mt-8 text-[clamp(0.95rem,1.45vw,1.25rem)] leading-relaxed text-ink/65 max-w-2xl mx-auto"
               >
                 Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
@@ -184,9 +191,9 @@ export default function LandingPage() {
 
               {/* Live Demo Section — Majestic on all viewports */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.65, delay: 0.95, ease: [0.16, 1, 0.3, 1] }}
                 className="mt-10 lg:mt-12 max-w-3xl mx-auto"
               >
                 <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-ink/50 mb-4">
