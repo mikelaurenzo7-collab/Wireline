@@ -1,0 +1,75 @@
+/* Legacy compatibility aliases split from src/index.css. */
+@reference "../index.css";
+
+/* -------------------------  Brutal-shadow legacy aliases  ----------- */
+.brutal-shadow {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 8px 32px -8px rgba(0, 0, 0, 0.12),
+    0 4px 16px -4px rgba(107, 43, 153, 0.14);
+}
+
+.brutal-shadow-brand {
+  box-shadow:
+    0 0 0 1px rgba(107, 43, 153, 0.25) inset,
+    0 8px 24px -6px rgba(107, 43, 153, 0.3),
+    0 14px 40px -10px rgba(107, 43, 153, 0.18);
+}
+
+/* Display headline accent — solid brand on the upright editorial face.
+ * Used to live as a rainbow gradient; flattened pre-launch so the
+ * operator console no longer looks like every other "AI startup". */
+.text-aurora {
+  @apply font-display;
+  font-style: normal;
+  color: var(--color-brand);
+}
+
+/* Legacy alias — same treatment. */
+.text-stroke {
+  color: var(--color-brand);
+  filter: drop-shadow(0 0 16px rgba(107, 43, 153, 0.2));
+}
+
+.brand-wordmark {
+  @apply font-display uppercase font-normal;
+  letter-spacing: 0;
+  text-rendering: geometricPrecision;
+  color: var(--color-brand);
+  filter: drop-shadow(0 0 10px rgba(107, 43, 153, 0.18));
+}
+
+/* Subtle brand-tinted ring for emphasized surfaces. Previously a 3-stop
+ * cyan→violet→magenta gradient; now a single soft teal hairline. */
+.aurora-ring {
+  position: relative;
+  isolation: isolate;
+}
+.aurora-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: rgba(107, 43, 153, 0.45);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Mobile: the aurora ring becomes near-invisible. The point of the
+ * ring is a subtle premium accent on desktop hover states — on a
+ * 390px phone screen it just adds a vibrating purple seam around
+ * every card. Drop opacity drastically below the md breakpoint. */
+@media (max-width: 767px) {
+  .aurora-ring::before {
+    background: rgba(107, 43, 153, 0.18);
+  }
+}
+
