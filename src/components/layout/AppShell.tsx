@@ -37,12 +37,14 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/ops": "Live callers, supervisor tools & fleet pulse",
   "/insights": "Performance analytics, topics & trend discovery",
   "/pipeline": "Leads across the funnel — scored and staged",
+  "/design": "Build branded pages, flows & shareable previews",
   "/admin": "Account configuration & integrations",
   "/agents": "Deploy, configure & manage your fleet",
   "/integrations": "Email, CRM & third-party connections",
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
   "/chat": "Fleet coach — plan, coach agents, and approve from one thread",
+  "/founder": "Owner command center, launch posture & growth controls",
   "/help": "Team lines, demos & quick paths into the product",
 };
 
@@ -195,11 +197,15 @@ export default function AppShell() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const edgeSwipe = useRef<{ x: number; y: number } | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const lastRouteKey = useRef<string | null>(null);
   const [navBadges, setNavBadges] = useState<Record<string, number>>({});
   const { user, loading } = useAuth();
   const { branding } = useBranding();
   const location = useLocation();
   const navigate = useNavigate();
+  const pageCtx = getPageContext(location.pathname, location.search);
   useViewTransitionRoute();
   const vv = useVisualViewport();
 
@@ -236,7 +242,24 @@ export default function AppShell() {
 
   useEffect(() => {
     setDrawerOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!user) return;
+    const routeKey = `${location.pathname}${location.search}`;
+    if (lastRouteKey.current == null) {
+      lastRouteKey.current = routeKey;
+      return;
+    }
+    if (lastRouteKey.current === routeKey) return;
+    lastRouteKey.current = routeKey;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      mainRef.current?.focus({ preventScroll: true });
+      stageRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [location.pathname, location.search, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -268,11 +291,9 @@ export default function AppShell() {
   }, [user, navigate]);
 
   useEffect(() => {
-    const label =
-      PAGE_TITLES[location.pathname] ??
-      (location.pathname.startsWith("/contact/") ? "Contact Profile" : null);
+    const label = pageCtx.title || PAGE_TITLES[location.pathname];
     document.title = label ? `${label} — ${branding.brand_name}` : branding.brand_name;
-  }, [location.pathname, branding.brand_name]);
+  }, [location.pathname, branding.brand_name, pageCtx.title]);
 
   if (loading) {
     return (
@@ -302,7 +323,6 @@ export default function AppShell() {
     );
   }
 
-  const pageCtx = getPageContext(location.pathname, location.search);
   const showPageContext = shouldShowAppPageContext(location.pathname);
   const routeAnnouncement = [pageCtx.title, pageCtx.subtitle].filter(Boolean).join(" — ");
 
@@ -371,6 +391,7 @@ export default function AppShell() {
       <Sidebar navBadges={navBadges} />
 
       <main
+        ref={mainRef}
         id="main-content"
         tabIndex={-1}
         aria-labelledby={showPageContext ? "workspace-page-title" : undefined}
@@ -392,7 +413,10 @@ export default function AppShell() {
         )}
 
         <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
-          <div className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:px-3 md:pb-2.5 lg:px-3 lg:pb-3">
+          <div
+            ref={stageRef}
+            className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:px-3 md:pb-2.5 lg:px-3 lg:pb-3"
+          >
             <div
               className={cn(
                 "app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pb-0 md:pb-3 lg:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas",
