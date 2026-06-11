@@ -32,6 +32,12 @@ describe("WIRELINE_PAINTER_UI", () => {
     expect(WIRELINE_PAINTER_UI.composerPlaceholder.length).toBeGreaterThan(30);
   });
 
+  it("ships both long and short page subtitles for responsive headers", () => {
+    expect(WIRELINE_PAINTER_UI.pageSubtitle).toMatch(/prototypes/i);
+    expect(WIRELINE_PAINTER_UI.pageSubtitleShort).toMatch(/studio/i);
+    expect(WIRELINE_PAINTER_UI.pageSubtitleShort.length).toBeLessThan(10);
+  });
+
   it("builds handoff link with encoded prompt", () => {
     const reply = WIRELINE_PAINTER_UI.buildHandoffReply("Design a HVAC landing page");
     expect(reply).toContain("/design?prompt=");

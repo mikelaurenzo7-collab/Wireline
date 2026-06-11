@@ -56,7 +56,7 @@ function PulseMetric({
         )}
       >
         {loading ? (
-          <Skeleton className="h-6 w-10 mt-0.5" aria-label={`${label}: loading`} />
+          <Skeleton className="h-6 w-14 mt-0.5" aria-label={`${label}: loading`} />
         ) : (
           <AnimatedCounter value={value} />
         )}

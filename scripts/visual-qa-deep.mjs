@@ -171,24 +171,45 @@ async function captureRoute(page, route, vp, dir) {
     ]);
     await page.waitForTimeout(1800);
   } catch (e) {
-    findings.push({ route: route.path, viewport: vp.name, error: e.message });
-    return;
+    const msg = e.message.split("\n")[0];
+    findings.push({ route: route.path, viewport: vp.name, error: msg });
+    console.log(`✗ ${vp.name.padEnd(7)} ${route.path.padEnd(36)} ERROR — ${msg}`);
+    throw e; // bubble so the sweep can recreate the page
   }
 
-  // Full page
-  await page.screenshot({ path: fullFile, fullPage: true });
+  // Screenshots are best-effort — one slow page (e.g. infinite animation
+  // blocking fonts/raf) must never kill the whole sweep.
+  const shoot = async (file, opts) => {
+    try {
+      await page.screenshot({ path: file, timeout: 20_000, animations: "disabled", ...opts });
+      return true;
+    } catch (e) {
+      findings.push({ route: route.path, viewport: vp.name, error: `screenshot ${path.basename(file)}: ${e.message.split("\n")[0]}` });
+      return false;
+    }
+  };
+
+  // Full page (cap at 8000px to avoid renderer OOM on very long pages)
+  const okFull = await shoot(fullFile, { fullPage: true });
+  if (!okFull) {
+    // Salvage at least the viewport shot before giving up on this route.
+    await shoot(topFile, { fullPage: false });
+    return;
+  }
   // Viewport top
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({ path: topFile, fullPage: false });
+  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
+  await shoot(topFile, { fullPage: false });
   // Scroll to ~60% for the bottom-half crop
-  await page.evaluate(() => {
-    const h = document.documentElement.scrollHeight;
-    window.scrollTo(0, Math.max(0, h * 0.55));
-  });
+  await page
+    .evaluate(() => {
+      const h = document.documentElement.scrollHeight;
+      window.scrollTo(0, Math.max(0, h * 0.55));
+    })
+    .catch(() => {});
   await page.waitForTimeout(400);
-  await page.screenshot({ path: bottomFile, fullPage: false });
+  await shoot(bottomFile, { fullPage: false });
   // Reset scroll
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
 
   let metrics = null;
   let issues = [];
@@ -211,33 +232,91 @@ async function captureRoute(page, route, vp, dir) {
   console.log(`${mark} ${vp.name.padEnd(7)} ${route.path.padEnd(36)} ${kb}KB${issues.length ? ` — ${issues.join("; ")}` : ""}`);
 }
 
-async function sweepRoutes(context, routes, dir) {
+/** Chromium launch args tuned for containers (tiny /dev/shm causes Target crashed). */
+const LAUNCH_OPTS = {
+  headless: true,
+  args: ["--disable-dev-shm-usage", "--no-sandbox", "--disable-gpu"],
+};
+
+/**
+ * Sweep with full crash recovery: if a page OR the whole browser dies we
+ * relaunch and resume from the next route. `session.setup(context)` re-applies
+ * cookies/init scripts after a relaunch.
+ */
+async function sweepRoutes(session, routes, dir) {
+  let browser = await chromium.launch(LAUNCH_OPTS);
+  let context = await browser.newContext();
+  await session.setup(context);
+
   for (const vp of VIEWPORTS) {
-    const page = await context.newPage();
+    let page = await context.newPage();
     await page.setViewportSize({ width: vp.width, height: vp.height });
     for (const route of routes) {
-      await captureRoute(page, route, vp, dir);
+      try {
+        await captureRoute(page, route, vp, dir);
+      } catch {
+        // Page or browser crash — rebuild whatever died and continue.
+        await page.close().catch(() => {});
+        if (!browser.isConnected()) {
+          await browser.close().catch(() => {});
+          browser = await chromium.launch(LAUNCH_OPTS);
+          context = await browser.newContext();
+          await session.setup(context);
+        }
+        try {
+          page = await context.newPage();
+        } catch {
+          browser = await chromium.launch(LAUNCH_OPTS);
+          context = await browser.newContext();
+          await session.setup(context);
+          page = await context.newPage();
+        }
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        // One retry for the crashed route on the fresh page.
+        await captureRoute(page, route, vp, dir).catch(() => {});
+      }
     }
-    await page.close();
+    await page.close().catch(() => {});
   }
+  await browser.close().catch(() => {});
+}
+
+/** Pre-acknowledge cookie banner + onboarding modals so captures show the product, not chrome. */
+async function quietContext(context) {
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("wireline_cookie_consent", "acknowledged");
+      localStorage.setItem("wireline_post_signup_dismissed", "true");
+      localStorage.setItem("wireline_onboarding_celebrated", "true");
+    } catch {
+      /* ignore */
+    }
+  });
 }
 
 async function main() {
   console.log(`[visual-qa-deep] base=${base} viewports=${VIEWPORTS.map((v) => v.name).join(",")}`);
 
   // Public sweep (no auth)
-  const publicCtx = await chromium.launch({ headless: true }).then((b) => b.newContext());
   console.log(`\n— Public (${PUBLIC_ROUTES.length + AUTH_ROUTES_PUBLIC.length} routes) —`);
-  await sweepRoutes(publicCtx, [...PUBLIC_ROUTES, ...AUTH_ROUTES_PUBLIC], PUBLIC_DIR);
-  await publicCtx.browser().close();
+  await sweepRoutes(
+    { setup: async (ctx) => quietContext(ctx) },
+    [...PUBLIC_ROUTES, ...AUTH_ROUTES_PUBLIC],
+    PUBLIC_DIR,
+  );
 
-  // Auth sweep
-  const browser = await chromium.launch({ headless: true });
-  const authCtx = await browser.newContext();
-  await loginViaApi(authCtx);
+  // Auth sweep — setup re-applies session cookie after any browser relaunch.
   console.log(`\n— Authenticated (${AUTH_ROUTES.length} routes) —`);
-  await sweepRoutes(authCtx, AUTH_ROUTES, AUTH_DIR);
-  await browser.close();
+  await sweepRoutes(
+    {
+      setup: async (ctx) => {
+        await quietContext(ctx);
+        await loginViaApi(ctx);
+      },
+    },
+    AUTH_ROUTES,
+    AUTH_DIR,
+  );
 
   const report = {
     base,

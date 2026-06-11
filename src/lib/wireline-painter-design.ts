@@ -72,6 +72,8 @@ export const WIRELINE_PAINTER_UI = {
   personaName: "Painter",
   personaTagline: "Wireline Design studio",
   pageSubtitle: "Pages, flows, and live prototypes — click through your renders",
+  /** ≤390px header track — full subtitle truncates on small phones */
+  pageSubtitleShort: "Studio",
   composerPlaceholder:
     "Describe the screen or site to paint — e.g. mobile booking page for a cleaning company with terracotta accents…",
   workingStatus: "Painter is rendering…",

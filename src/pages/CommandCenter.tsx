@@ -19,6 +19,7 @@ import { motion } from "motion/react";
 import { Activity } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import { EmptyState } from "../components/ui/EmptyState";
+import { InlineEmpty } from "../components/ui/InlineEmpty";
 import {
   WL_OPS_CLASSES,
   OPS_SENTIMENT_COLORS,
@@ -574,16 +575,28 @@ export default function LiveOps() {
                       </div>
 
                       {sentimentData.length === 0 ? (
-                        <EmptyState
-                          icon={Activity}
-                          eyebrow={OPS_CHANNEL_EMPTY.sentiment.eyebrow}
-                          title={OPS_CHANNEL_EMPTY.sentiment.title}
-                          description={OPS_CHANNEL_EMPTY.sentiment.description}
-                          actions={[...OPS_CHANNEL_EMPTY.sentiment.actions]}
-                          density="compact"
-                          withHalo={false}
-                          className="py-8"
-                        />
+                        <>
+                          {/* Mobile: compact inline empty so the pulse strip (above) stays in view */}
+                          <div className="md:hidden py-1">
+                            <InlineEmpty
+                              label={OPS_CHANNEL_EMPTY.sentiment.title}
+                              icon={Activity}
+                            />
+                          </div>
+                          {/* Desktop+: keep the richer EmptyState */}
+                          <div className="hidden md:block">
+                            <EmptyState
+                              icon={Activity}
+                              eyebrow={OPS_CHANNEL_EMPTY.sentiment.eyebrow}
+                              title={OPS_CHANNEL_EMPTY.sentiment.title}
+                              description={OPS_CHANNEL_EMPTY.sentiment.description}
+                              actions={[...OPS_CHANNEL_EMPTY.sentiment.actions]}
+                              density="compact"
+                              withHalo={false}
+                              className="py-8"
+                            />
+                          </div>
+                        </>
                       ) : (
                         <Suspense
                           fallback={

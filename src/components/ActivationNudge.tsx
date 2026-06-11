@@ -85,7 +85,8 @@ export default function ActivationNudge({ className }: { className?: string }) {
     <div
       className={cn(
         WL_OPS_CLASSES.setupNudge,
-        "flex flex-col sm:flex-row sm:items-center gap-3 mx-4 mt-3 mb-1",
+        // Compact footprint — reduces vertical chrome on dense boards (Pipeline, Live Ops)
+        "flex flex-col sm:flex-row sm:items-center gap-2 mx-4 mt-2 mb-0.5 py-2 px-3 text-[12px]",
         className,
       )}
       role="status"

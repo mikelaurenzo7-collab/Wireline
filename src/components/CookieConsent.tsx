@@ -76,8 +76,9 @@ export default function CookieConsent() {
             onAuthRoute
               ? "top-[max(0.75rem,env(safe-area-inset-top,0))]"
               : clearMarketingSticky
-                ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]"
-                : "bottom-[max(0.75rem,env(safe-area-inset-bottom,0))]",
+                ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
+                : // Extra clearance on marketing routes to keep the banner below the centered hero preview card
+                  "bottom-[calc(4.25rem+env(safe-area-inset-bottom,0))]",
           )}
           role="dialog"
           aria-label="Cookie notice"

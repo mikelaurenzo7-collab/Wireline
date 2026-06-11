@@ -301,6 +301,15 @@ export default function TopBar({
           {/* Full-bleed routes (/chat): one sr-only h1 — contextual routes use WorkspaceTopBar. */}
           {breadcrumb && showTopBarTheme && <h1 className="sr-only">{breadcrumb.title}</h1>}
 
+          {/* Mobile (<lg) compact label for full-bleed routes so /chat shows a clean short title. */}
+          {breadcrumb && showTopBarTheme && (
+            <div className="lg:hidden flex items-center min-w-0 ml-1">
+              <span className="text-[13px] font-semibold tracking-[-0.01em] text-ink truncate">
+                {breadcrumb.title}
+              </span>
+            </div>
+          )}
+
           {/* Desktop (lg+): breadcrumb chrome for full-bleed routes only (visual; h1 above). */}
           <div className="hidden lg:flex items-center gap-3 min-w-0 flex-1">
             <AnimatePresence mode="wait">

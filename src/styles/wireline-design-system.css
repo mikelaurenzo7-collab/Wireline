@@ -2121,6 +2121,19 @@ body,
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 43, 153, 0.35) transparent;
+  /* Subtle edge fade to hint more columns exist */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black calc(100% - 48px),
+    transparent 100%
+  );
 }
 .wl-pipeline-board::-webkit-scrollbar {
   height: 8px;
@@ -2128,6 +2141,13 @@ body,
 .wl-pipeline-board::-webkit-scrollbar-thumb {
   background: rgba(107, 43, 153, 0.35);
   border-radius: 999px;
+}
+/* Remove fade mask on desktop when scroll not needed (edge hint only on overflow) */
+@media (min-width: 768px) {
+  .wl-pipeline-board {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 .wl-pipeline-card-grip {

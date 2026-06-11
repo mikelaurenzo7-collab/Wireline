@@ -44,7 +44,7 @@ export default function WorkspaceTopBar({
         <div className="flex items-center gap-2 lg:gap-2.5">
           <div
             className={cn(
-              "min-w-0 flex-1 lg:flex-none flex flex-col justify-center gap-0.5 sm:max-w-[11rem] lg:max-w-[15rem]",
+              "min-w-0 flex-1 lg:flex-none flex flex-col justify-center gap-0.5 sm:max-w-[14rem] lg:max-w-[18rem]",
               WL_APP_CLASSES.pageContextAccent,
             )}
           >
@@ -98,7 +98,8 @@ export default function WorkspaceTopBar({
         <p
           className={cn(
             WL_APP_CLASSES.bodyCaption,
-            "px-3 pb-2 pt-0 sm:pt-0 border-t border-black/[0.05] sm:border-t-0 min-w-0 line-clamp-1 sm:line-clamp-2 text-pretty",
+            // Never truncate on mobile — allow natural wrap up to 2 lines; give breathing room
+            "px-3 pb-2 pt-0 sm:pt-0 border-t border-black/[0.05] sm:border-t-0 min-w-0 line-clamp-2 sm:line-clamp-2 text-pretty max-w-[calc(100%-1.5rem)]",
             WL_APP_CLASSES.pageContextAccent,
           )}
         >

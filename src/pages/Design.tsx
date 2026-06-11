@@ -162,7 +162,10 @@ export default function Design() {
                 {WIRELINE_PAINTER_UI.personaName}
                 <span className="wl-composer-design-beta">{WIRELINE_PAINTER_UI.betaLabel}</span>
               </p>
-              <p className="wl-label text-muted truncate">{WIRELINE_PAINTER_UI.pageSubtitle}</p>
+              <p className="wl-label text-muted truncate">
+                <span className="sm:hidden">{WIRELINE_PAINTER_UI.pageSubtitleShort}</span>
+                <span className="hidden sm:inline">{WIRELINE_PAINTER_UI.pageSubtitle}</span>
+              </p>
             </div>
           </div>
 
