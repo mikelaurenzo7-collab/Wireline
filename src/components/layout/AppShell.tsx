@@ -115,12 +115,12 @@ function getPageContext(
         const agentsTab = params.get("tab");
         if (agentsTab === "fleet")
           return {
-            eyebrow: section ?? "Fleet",
+            eyebrow: section ?? "Agents",
             title: "My Fleet",
             subtitle: "Configure and manage deployed agents",
           };
         return {
-          eyebrow: section ?? "Fleet",
+          eyebrow: section ?? "Agents",
           title: "Agents",
           subtitle: ROUTE_SUBTITLES["/agents"],
         };
@@ -134,10 +134,10 @@ function getPageContext(
           flow: { title: "Flow", subtitle: "Conversation stages and transitions" },
         };
         if (trainingTab && trainingMeta[trainingTab]) {
-          return { eyebrow: section ?? "Fleet", ...trainingMeta[trainingTab] };
+          return { eyebrow: section ?? "Agents", ...trainingMeta[trainingTab] };
         }
         return {
-          eyebrow: section ?? "Fleet",
+          eyebrow: section ?? "Agents",
           title: "Training",
           subtitle: ROUTE_SUBTITLES["/training"],
         };
@@ -190,7 +190,7 @@ function getPageContext(
       subtitle: "Timeline, calls & appointments",
     };
   const prefix = `/${pathname.split("/").filter(Boolean)[0] || ""}`;
-  return { title: PAGE_TITLES[prefix] || "Workspace" };
+  return { title: PAGE_TITLES[prefix] || "Command" };
 }
 
 export default function AppShell() {

@@ -33,7 +33,7 @@ export type NavItem = {
   matches?: string[];
   /** When true, the item only renders for the platform owner. */
   ownerOnly?: boolean;
-  /** Page context / breadcrumb only — not rendered in the desktop rail */
+  /** Page context / breadcrumb only; not rendered in the desktop rail */
   section?: string;
   /** Optional rail/drawer badge (e.g. beta surfaces) */
   betaLabel?: string;
@@ -43,24 +43,25 @@ function withSection(items: NavItem[], section: string): NavItem[] {
   return items.map((item) => ({ ...item, section }));
 }
 
-// Four-group nav: Workspace (command), Channels (communication surfaces),
-// Sales (pipeline), Admin (settings).
+// Five-group nav: Command (cockpit + business intelligence), Channels
+// (communication surfaces), Agents (fleet management, coaching, training),
+// Design (standalone beta), Admin (footer settings).
 //
-// Live Ops is the default landing surface — live floor, actions, and analytics.
-// Chat (Director) is fleet coaching and strategy; Wireline Design (/design) is Painter —
-// pages, flows, and immersive click-through prototypes in a split studio.
-// Training has been elevated to its own sidebar page
-// because the customization depth (knowledge, voices, pronunciation, simulator,
-// flow) warrants dedicated real-estate rather than a buried tab.
+// Command groups the operator's daily cockpit: Live Ops (live floor,
+// supervisor tools, actions), Insights (analytics & reliability), and
+// Pipeline (sales funnel). These are the "what's happening now" surfaces.
 //
-// Channels group surfaces Phone, Email, and SMS as first-class pages — these
-// are the communication arteries of the platform and operators need instant
-// access without hunting through sub-routes.
+// Channels surfaces Phone, Email, and SMS as first-class pages - the
+// communication arteries operators need instant access to.
 //
-// Live Ops (/ops) is the unified command center: live callers, supervisor
-// floor tools (listen-in / whisper), action feed, and fleet analytics.
-// /cockpit redirects here — one surface, no duplicate nav slot.
-const WORKSPACE_NAV: NavItem[] = [
+// Agents groups everything about building and improving the fleet: fleet
+// configuration, Director chat coaching, and Training (knowledge, voices,
+// pronunciation, simulator, flow).
+//
+// Design is isolated as a standalone beta surface - the Painter studio for
+// pages, flows, and immersive click-through prototypes. It doesn't fit
+// cleanly into another group and warrants its own space.
+const COMMAND_NAV: NavItem[] = [
   {
     label: "Live Ops",
     path: "/ops",
@@ -68,29 +69,8 @@ const WORKSPACE_NAV: NavItem[] = [
     dataTour: "dashboard",
     matches: ["/dashboard", "/command", "/live", "/cockpit", "/triage"],
   },
-  {
-    label: "Chat",
-    path: "/chat",
-    icon: MessagesSquare,
-    dataTour: "chat",
-    matches: ["/chat"],
-  },
-  {
-    label: "Design",
-    path: "/design",
-    icon: Paintbrush,
-    dataTour: "design",
-    matches: ["/design"],
-    betaLabel: "Beta",
-  },
-  {
-    label: "Training",
-    path: "/training",
-    icon: GraduationCap,
-    dataTour: "training",
-    matches: ["/knowledge"],
-  },
   { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
+  { label: "Pipeline", path: "/pipeline", icon: Kanban },
 ];
 
 const CHANNELS_NAV: NavItem[] = [
@@ -116,15 +96,38 @@ const CHANNELS_NAV: NavItem[] = [
   },
 ];
 
-const SALES_NAV: NavItem[] = [{ label: "Pipeline", path: "/pipeline", icon: Kanban }];
-
-const FLEET_NAV: NavItem[] = [
+const AGENTS_NAV: NavItem[] = [
   {
     label: "Agents",
     path: "/agents",
     icon: Users,
     dataTour: "agents",
     matches: ["/agents"],
+  },
+  {
+    label: "Chat",
+    path: "/chat",
+    icon: MessagesSquare,
+    dataTour: "chat",
+    matches: ["/chat"],
+  },
+  {
+    label: "Training",
+    path: "/training",
+    icon: GraduationCap,
+    dataTour: "training",
+    matches: ["/knowledge"],
+  },
+];
+
+const DESIGN_NAV: NavItem[] = [
+  {
+    label: "Design",
+    path: "/design",
+    icon: Paintbrush,
+    dataTour: "design",
+    matches: ["/design"],
+    betaLabel: "Beta",
   },
 ];
 
@@ -138,23 +141,24 @@ const ADMIN_NAV: NavItem[] = [
   },
 ];
 
-/** Logical IA groups — used for mobile drawer sections and docs; labels are not shown on desktop rail. */
+/** Logical IA groups - used for mobile drawer sections and docs; labels are not shown on desktop rail. */
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
-  { label: "Workspace", items: withSection(WORKSPACE_NAV, "Workspace") },
+  { label: "Command", items: withSection(COMMAND_NAV, "Command") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
-  { label: "Sales", items: withSection(SALES_NAV, "Sales") },
+  { label: "Agents", items: withSection(AGENTS_NAV, "Agents") },
+  { label: "Design", items: withSection(DESIGN_NAV, "Design") },
   {
     label: "Admin",
-    items: [...withSection(FLEET_NAV, "Fleet"), ...withSection(ADMIN_NAV, "Admin")],
+    items: withSection(ADMIN_NAV, "Admin"),
   },
 ];
 
-/** Single continuous desktop rail — no section headers, fits without scroll on typical viewports. */
+/** Single continuous desktop rail - no section headers, fits without scroll on typical viewports. */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
-  ...withSection(WORKSPACE_NAV, "Workspace"),
+  ...withSection(COMMAND_NAV, "Command"),
   ...withSection(CHANNELS_NAV, "Channels"),
-  ...withSection(SALES_NAV, "Sales"),
-  ...withSection(FLEET_NAV, "Fleet"),
+  ...withSection(AGENTS_NAV, "Agents"),
+  ...withSection(DESIGN_NAV, "Design"),
 ];
 
 export function findNavItemForPath(pathname: string): NavItem | undefined {
@@ -193,7 +197,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/contact": "Contact Profile",
 };
 
-/** g+key shortcuts — keep in sync with AppShell and Sidebar hints. */
+/** g+key shortcuts - keep in sync with AppShell and Sidebar hints. */
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   D: "/ops",
   T: "/ops?tab=triage",

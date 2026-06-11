@@ -39,9 +39,10 @@ export const ROUTE_ACCENT_VARIANTS = {
 } as const;
 
 export const NAV_GROUP_ACCENTS: Record<string, string> = {
-  Workspace: BRAND.purple,
+  Command: BRAND.purple,
   Channels: BRAND.purpleLight,
-  Sales: BRAND.purpleDeep,
+  Agents: BRAND.purpleDeep,
+  Design: BRAND.purpleMid,
   Admin: BRAND.purpleMuted,
 };
 

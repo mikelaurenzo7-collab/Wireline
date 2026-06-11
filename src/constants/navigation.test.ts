@@ -1,62 +1,75 @@
 /**
  * navigation.test.ts
- * Lock navigation IA after Live Ops merge + Activity consolidation.
+ * Locks the authenticated app IA: Command, Channels, Agents, Design, Admin.
  */
 import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
-  it("ships exactly four logical groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Workspace", "Channels", "Sales", "Admin"]);
+  it("ships exactly five logical groups in the documented order", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual([
+      "Command",
+      "Channels",
+      "Agents",
+      "Design",
+      "Admin",
+    ]);
   });
 
-  it("desktop rail is a single flat list without Settings (footer only)", () => {
+  it("desktop rail is a single flat list without Admin footer items", () => {
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).toEqual([
       "/ops",
-      "/chat",
-      "/design",
-      "/training",
       "/insights",
+      "/pipeline",
       "/phone",
       "/email",
       "/sms",
-      "/pipeline",
       "/agents",
+      "/chat",
+      "/training",
+      "/design",
     ]);
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
-      "Workspace",
-      "Workspace",
-      "Workspace",
-      "Workspace",
-      "Workspace",
+      "Command",
+      "Command",
+      "Command",
       "Channels",
       "Channels",
       "Channels",
-      "Sales",
-      "Fleet",
+      "Agents",
+      "Agents",
+      "Agents",
+      "Design",
     ]);
   });
 
-  it("Workspace group: Live Ops first, then Chat, Training, Insights (Triage is an Ops tab)", () => {
-    const ws = NAV_GROUPS.find((g) => g.label === "Workspace")!;
-    expect(ws.items.map((i) => i.path)).toEqual([
-      "/ops",
-      "/chat",
-      "/design",
-      "/training",
-      "/insights",
-    ]);
+  it("Command group holds the cockpit, intelligence, and pipeline surfaces", () => {
+    const command = NAV_GROUPS.find((g) => g.label === "Command")!;
+    expect(command.items.map((i) => i.path)).toEqual(["/ops", "/insights", "/pipeline"]);
   });
 
-  it("Design nav item is beta-labelled in the workspace group", () => {
-    const design = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === "/design")!;
+  it("Channels group has Phone, Email, SMS", () => {
+    const channels = NAV_GROUPS.find((g) => g.label === "Channels")!;
+    expect(channels.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);
+  });
+
+  it("Agents group holds fleet management, chat coaching, and training", () => {
+    const agents = NAV_GROUPS.find((g) => g.label === "Agents")!;
+    expect(agents.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/training"]);
+  });
+
+  it("Design is a standalone beta-labelled group", () => {
+    const designGroup = NAV_GROUPS.find((g) => g.label === "Design")!;
+    expect(designGroup.items.map((i) => i.path)).toEqual(["/design"]);
+    const design = designGroup.items[0];
     expect(design.betaLabel).toBe("Beta");
     expect(PAGE_TITLES["/design"]).toBe("Wireline Design");
   });
 
-  it("Channels group has Phone, Email, SMS", () => {
-    const ch = NAV_GROUPS.find((g) => g.label === "Channels")!;
-    expect(ch.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);
+  it("Admin group keeps Settings in footer-only navigation", () => {
+    const admin = NAV_GROUPS.find((g) => g.label === "Admin")!;
+    expect(admin.items.map((i) => i.path)).toEqual(["/admin"]);
+    expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).not.toContain("/admin");
   });
 
   it("Phone matches legacy activity and appointments routes", () => {
@@ -98,18 +111,6 @@ describe("Top-bar navigation IA", () => {
     expect(APP_KEYBOARD_SHORTCUTS.T).toBe("/ops?tab=triage");
     expect(APP_KEYBOARD_SHORTCUTS.N).toBe("/training");
     expect(APP_KEYBOARD_SHORTCUTS.P).toBe("/phone");
-  });
-
-  it("Sales group has Pipeline only", () => {
-    const sales = NAV_GROUPS.find((g) => g.label === "Sales")!;
-    expect(sales.items.map((i) => i.path)).toEqual(["/pipeline"]);
-  });
-
-  it("Admin group has Agents and Settings as separate items", () => {
-    const admin = NAV_GROUPS.find((g) => g.label === "Admin")!;
-    expect(admin.items.map((i) => i.path)).toEqual(["/agents", "/admin"]);
-    const settings = admin.items.find((i) => i.path === "/admin")!;
-    expect(settings.matches).not.toContain("/agents");
   });
 
   it("every nav item has a PAGE_TITLES entry", () => {
