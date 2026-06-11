@@ -2,7 +2,10 @@
 /**
  * check-readme-pricing.mjs
  * ----------------------------------------------------------------------
- * Verifies the README pricing table is in sync with src/lib/plan-catalog.ts.
+ * Verifies customer-facing docs are in sync with code-owned constants.
+ *
+ * - README pricing table ↔ src/lib/plan-catalog.ts
+ * - README/ARCHITECTURE model copy ↔ src/lib/claude-models.ts
  *
  * Why: the audit found three places where the README told customers one
  * price and the code charged another. Marketing-doc drift is the kind of
@@ -19,6 +22,8 @@ const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, "..");
 
 const readme = readFileSync(resolve(repoRoot, "README.md"), "utf8");
+const architecture = readFileSync(resolve(repoRoot, "ARCHITECTURE.md"), "utf8");
+const claudeModelsSource = readFileSync(resolve(repoRoot, "src/lib/claude-models.ts"), "utf8");
 const catalogSource = readFileSync(resolve(repoRoot, "src/lib/plan-catalog.ts"), "utf8");
 const pricingSource = readFileSync(resolve(repoRoot, "src/pages/Pricing.tsx"), "utf8");
 const indexHtml = readFileSync(resolve(repoRoot, "index.html"), "utf8");
@@ -95,6 +100,9 @@ for (const plan of plans) {
   }
 }
 
+
+checkClaudeModelDocs();
+
 // Cross-check: README must declare $0.X / min overage values for personal
 // and starter that match the catalog. Catches the older drift where
 // README said "$0.20 / $0.18 / $0.16" while the catalog had moved.
@@ -113,16 +121,91 @@ for (const plan of plans) {
 }
 
 if (issues.length > 0) {
-  console.error("📛  README pricing is out of sync with plan-catalog.ts:\n");
+  console.error("📛  Documentation drift detected:\n");
   for (const i of issues) console.error("  " + i);
   console.error(
-    "\n  Edit /app/README.md (or /app/src/lib/plan-catalog.ts) so the table and the catalog agree.",
+    "\n  Edit the docs or their source-of-truth constants so README.md, ARCHITECTURE.md, plan-catalog.ts, and claude-models.ts agree.",
   );
   process.exit(1);
 }
 
-console.log("✅  README pricing table matches src/lib/plan-catalog.ts");
+console.log("✅  README pricing table and Claude model docs match source constants");
 process.exit(0);
+
+function checkClaudeModelDocs() {
+  const voiceModelKey = extractAssignedClaudeModelKey("VAPI_TENANT_DEFAULT_MODEL");
+  const reasoningModelKey = extractAssignedClaudeModelKey("CLAUDE_REASONING_MODEL_DEFAULT");
+  const voiceModelName = displayNameForClaudeModel(extractClaudeModelId(voiceModelKey));
+  const reasoningModelName = displayNameForClaudeModel(extractClaudeModelId(reasoningModelKey));
+
+  const requiredMentions = [
+    { docName: "README.md", source: readme, modelName: voiceModelName, layer: "voice runtime" },
+    { docName: "README.md", source: readme, modelName: reasoningModelName, layer: "reasoning default" },
+    { docName: "ARCHITECTURE.md", source: architecture, modelName: voiceModelName, layer: "voice runtime" },
+    { docName: "ARCHITECTURE.md", source: architecture, modelName: reasoningModelName, layer: "reasoning default" },
+  ];
+
+  for (const mention of requiredMentions) {
+    if (!mention.source.includes(mention.modelName)) {
+      issues.push(
+        `❌  ${mention.docName} missing ${mention.layer} model from src/lib/claude-models.ts: ${mention.modelName}.`,
+      );
+    }
+  }
+
+  const priorOpusName = displayNameForClaudeModel(extractClaudeModelId("OPUS_4_7"));
+  if (readme.includes(priorOpusName)) {
+    issues.push(
+      `❌  README.md still mentions ${priorOpusName}; README should describe the current reasoning default ${reasoningModelName}.`,
+    );
+  }
+
+  const architectureLines = architecture.split(/\r?\n/);
+  architectureLines.forEach((line, index) => {
+    if (!line.includes(priorOpusName)) return;
+    if (!/(prior|previous|historical|deprecated|legacy|formerly|old|took|routinely)/i.test(line)) {
+      issues.push(
+        `❌  ARCHITECTURE.md line ${index + 1} mentions ${priorOpusName} without historical/deprecated context.`,
+      );
+    }
+  });
+}
+
+function extractAssignedClaudeModelKey(exportName) {
+  const assignment = new RegExp(
+    `export\\s+const\\s+${escapeRe(exportName)}(?::[^=]+)?=([\\s\\S]*?);`,
+  ).exec(claudeModelsSource)?.[1];
+  if (!assignment) {
+    issues.push(`❌  Unable to find ${exportName} in src/lib/claude-models.ts.`);
+    return "";
+  }
+
+  const modelKey = /CLAUDE_MODELS\.(\w+)/.exec(assignment)?.[1];
+  if (!modelKey) {
+    issues.push(`❌  Unable to resolve ${exportName} to a CLAUDE_MODELS key.`);
+    return "";
+  }
+  return modelKey;
+}
+
+function extractClaudeModelId(modelKey) {
+  const modelId = new RegExp(`${escapeRe(modelKey)}:\\s*"([^"]+)"`).exec(claudeModelsSource)?.[1];
+  if (!modelId) {
+    issues.push(`❌  Unable to find CLAUDE_MODELS.${modelKey} in src/lib/claude-models.ts.`);
+    return "";
+  }
+  return modelId;
+}
+
+function displayNameForClaudeModel(modelId) {
+  const match = /^claude-(haiku|sonnet|opus)-(\d+)-(\d+)$/.exec(modelId);
+  if (!match) {
+    issues.push(`❌  Unable to format Claude model id ${modelId}.`);
+    return modelId;
+  }
+  const family = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+  return `Claude ${family} ${match[2]}.${match[3]}`;
+}
 
 function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
