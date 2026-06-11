@@ -9,6 +9,7 @@
  * without requiring a DOM renderer.
  */
 import { describe, it, expect } from "vitest";
+import * as ConstellationPrimitives from "../constellation";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,6 +23,23 @@ function readComponent(name: string): string {
 function readIndexCss(): string {
   return fs.readFileSync(path.resolve(__dirname, "../../../index.css"), "utf8");
 }
+
+describe("constellation barrel", () => {
+  it("documents the supported design-system export surface", () => {
+    expect(Object.keys(ConstellationPrimitives).sort()).toEqual([
+      "AuroraWave",
+      "ConstellationField",
+      "GlyphMorph",
+      "HaloButton",
+      "NebulaPulse",
+      "PrismBadge",
+      "PulseRing",
+      "SignalThread",
+      "StatusOrb",
+      "VoidButton",
+    ]);
+  });
+});
 
 // ═══════════════════════════════════════════════════════════════════
 // CONSTELLATION ERA PRIMITIVES

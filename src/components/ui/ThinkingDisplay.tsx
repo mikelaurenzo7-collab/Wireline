@@ -3,7 +3,7 @@
  * with a "top echelon" UX: collapsible accordion, typewriter reveal, duration
  * badge, and step-by-step breakdown.
  *
- * Used by both DirectorWorkspace and AgentWorkspace.
+ * Used by Director chat/workspace surfaces that stream adaptive reasoning.
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";

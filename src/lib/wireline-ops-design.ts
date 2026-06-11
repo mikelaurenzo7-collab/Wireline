@@ -600,7 +600,7 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "performance",
     label: "Performance",
-    tabs: ["funnel", "goals", "heatmap", "leaderboard"] as const,
+    tabs: ["funnel", "goals", "heatmap", "leaderboard", "brief", "benchmarks"] as const,
   },
   {
     id: "reliability",

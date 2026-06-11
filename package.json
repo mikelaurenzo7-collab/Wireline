@@ -61,7 +61,9 @@
     "dogfood:director": "node scripts/dogfood-director.mjs",
     "test:design": "vitest run wireline-design-audit shadcn-pivot-ratchet wireline-director-design",
     "test:coverage": "vitest run --coverage",
-    "analyze": "VISUALIZE=1 vite build"
+    "analyze": "VISUALIZE=1 vite build",
+    "dead-code:baseline": "node scripts/check-dead-code-baseline.mjs",
+    "dead-code": "knip --include files"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -144,6 +146,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^9.1.7",
+    "knip": "^6.16.1",
     "lint-staged": "^15.5.1",
     "prettier": "^3.5.3",
     "rollup-plugin-visualizer": "^7.0.1",

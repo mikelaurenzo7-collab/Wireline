@@ -191,7 +191,7 @@ test.describe("Responsive — signup form adapts", () => {
  *   ported" cramped or overly sparse layout.
  *
  * These tests protect the exact rules we are actively enforcing in AgentChat,
- * AgentWorkspace, composer, pricing CTAs, and all future operator surfaces.
+ * AgentChat composer, pricing CTAs, and all future operator surfaces.
  */
 test.describe("Design system — every viewport flawless (mobile + desktop refined)", () => {
   test("primary CTAs on pricing meet 36px+ mobile tap target and scale elegantly on desktop", async ({
@@ -266,7 +266,7 @@ test.describe("Design system — every viewport flawless (mobile + desktop refin
 
 /**
  * TDD lock-in for the exact mobile + desktop design system rules we are enforcing
- * across the primary operator surfaces (AgentChat rail, AgentWorkspace tabs,
+ * across the primary operator surfaces (AgentChat rail, route-level tabs,
  * composer, proposal cards, etc.).
  *
  * These tests are written first (TDD) to define the non-negotiable owner standards:
@@ -280,7 +280,6 @@ test.describe("Design system TDD — workspace tabs & composer (mobile flawless 
   test("workspace tab/pill targets meet 36px+ on mobile phones and stay refined on desktop", async ({
     page,
   }) => {
-    // This mirrors the exact pill structure in AgentWorkspace (Training/Connectors/Memory toggles)
     // and the rail in AgentChat. We assert the invariants so regressions in future edits are caught.
 
     // Mobile phone (Pixel 5 / iPhone 12 class — primary first-impression viewport)

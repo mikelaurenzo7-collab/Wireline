@@ -11,6 +11,8 @@ import GoalsView from "../GoalsView";
 import WidgetBoundary from "../WidgetBoundary";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
+import DailyBrief from "../DailyBrief";
+import PerformanceBenchmarks from "../PerformanceBenchmarks";
 import { SegmentStrip } from "../ui/SegmentStrip";
 import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import {
@@ -67,6 +69,8 @@ export default function InsightsView() {
       topics: wrap("Topics", <TopicsView />),
       heatmap: wrap("Heatmap", <HeatmapView days={days} />),
       leaderboard: wrap("Leaderboard", <LeaderboardView days={days} />),
+      brief: wrap("Daily Brief", <DailyBrief />),
+      benchmarks: wrap("Benchmarks", <PerformanceBenchmarks />),
       failures: wrap("Failures", <FailureModesView />),
       latency: wrap("Latency", <VoiceLatencyView days={days} />),
       reliability: wrap("Reliability", <VoiceReliabilityView days={days} />),
