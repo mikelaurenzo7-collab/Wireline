@@ -1,3 +1,4 @@
+/* Updated version with stronger live demo prominence */
 /**
  * /showcase — agent templates for prospects.
  *
@@ -79,25 +80,32 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
   return (
     <a
       href={`tel:${agent.tel}`}
-      className="group marketing-panel p-4 min-h-[56px] transition-all hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(79,30,123,0.2)]"
+      className="group marketing-panel p-5 min-h-[72px] transition-all hover:border-brand/40 hover:shadow-[0_10px_30px_-12px_rgba(79,30,123,0.25)] flex flex-col justify-center"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-4">
         <div
-          className="w-10 h-10 flex items-center justify-center shrink-0 wl-showcase-badge"
+          className="w-12 h-12 flex items-center justify-center shrink-0 rounded-xl wl-showcase-badge"
           data-showcase-tint={agent.tint}
         >
-          <Phone className="w-4 h-4" strokeWidth={2.3} />
+          <Phone className="w-5 h-5" strokeWidth={2.4} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ink/55 mb-1">
-            {label} · {agent.name}
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/60 mb-0.5">
+            {label}
           </p>
-          <p className="font-display italic text-lg leading-tight text-ink line-clamp-2">
+          <p className="font-display text-xl leading-none text-ink mb-1">
+            {agent.name}
+          </p>
+          <p className="font-mono text-[15px] font-medium text-brand tracking-tight">
+            {agent.display}
+          </p>
+          <p className="text-sm text-ink/70 mt-1 line-clamp-1">
             {agent.role}
           </p>
-          <p className="mt-1 font-mono text-[12px] text-ink/75">{agent.display}</p>
         </div>
-        <ArrowRight className="w-4 h-4 text-ink/35 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+        <div className="shrink-0 text-right">
+          <ArrowRight className="w-5 h-5 text-ink/40 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+        </div>
       </div>
     </a>
   );
@@ -166,12 +174,12 @@ export default function Showcase() {
           </span>
           <span className="h-px flex-1 bg-ink/[0.12]" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {WIRELINE_DEMO_AGENTS.map((agent) => (
             <PhoneLineCard key={agent.tel} agent={agent} label="Demo" />
           ))}
         </div>
-        <p className="mt-5 text-[12px] text-ink/55 text-center">
+        <p className="mt-6 text-[13px] text-ink/60 text-center max-w-md mx-auto">
           Each line role-plays one industry so you can hear exactly what your callers would
           experience. They never reach a real person — they're demos.
         </p>
