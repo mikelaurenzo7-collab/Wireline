@@ -1,0 +1,262 @@
+/* Wireline Design preview styles (legacy wl-stitch-* class prefix). */
+@reference "../index.css";
+
+/* Wireline Design in-chat preview (legacy wl-stitch-* class prefix) */
+.wl-stitch-gallery {
+  max-width: min(100%, 56rem);
+}
+.wl-stitch-device {
+  width: 100%;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-ink) 6%, transparent);
+}
+.wl-stitch-device--mobile {
+  max-width: min(100%, 430px);
+}
+.wl-stitch-device--tablet {
+  max-width: min(100%, 520px);
+}
+.wl-stitch-device--desktop {
+  max-width: 100%;
+  min-width: 0;
+}
+.wl-stitch-device--immersive {
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 0.875rem;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--color-brand) 10%, transparent),
+    0 24px 48px -28px color-mix(in srgb, var(--color-brand) 35%, transparent);
+}
+.wl-stitch-device-screen--immersive {
+  min-height: min(78vh, 920px);
+  aspect-ratio: auto;
+}
+.wl-stitch-device--immersive.wl-stitch-device--mobile .wl-stitch-device-screen--immersive,
+.wl-stitch-device--immersive.wl-stitch-device--tablet .wl-stitch-device-screen--immersive {
+  aspect-ratio: 9 / 16;
+  max-height: min(82vh, 960px);
+}
+.wl-stitch-live-iframe--immersive {
+  min-height: min(78vh, 920px);
+}
+/* Code view — read-only HTML source inspector (Claude-artifact parity) */
+.wl-stitch-code {
+  background: color-mix(in srgb, var(--paper) 92%, var(--color-brand) 3%);
+}
+.dark .wl-stitch-code {
+  background: color-mix(in srgb, var(--velvet) 88%, black 6%);
+}
+.wl-stitch-code-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+.wl-stitch-code-pre {
+  margin: 0;
+  padding: 0.75rem 0;
+  list-style: none;
+  width: max-content;
+  min-width: 100%;
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+  line-height: 1.65;
+  tab-size: 2;
+  color: color-mix(in srgb, var(--ink) 88%, var(--color-brand) 12%);
+}
+.dark .wl-stitch-code-pre {
+  color: color-mix(in srgb, white 82%, var(--color-brand) 18%);
+}
+.wl-stitch-code-line {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  align-items: baseline;
+}
+.wl-stitch-code-line:hover .wl-stitch-code-text {
+  background: color-mix(in srgb, var(--color-brand) 6%, transparent);
+}
+.wl-stitch-code-ln {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding-right: 0.75rem;
+  text-align: right;
+  user-select: none;
+  color: color-mix(in srgb, var(--color-muted) 65%, transparent);
+  /* Opaque so horizontally-scrolled source slides behind the gutter cleanly. */
+  background: color-mix(in srgb, var(--paper) 86%, var(--color-brand) 8%);
+  border-right: 1px solid color-mix(in srgb, var(--color-brand) 14%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.dark .wl-stitch-code-ln {
+  background: color-mix(in srgb, var(--velvet) 82%, black 10%);
+}
+.wl-stitch-code-text {
+  font: inherit;
+  color: inherit;
+  background: none;
+  padding-left: 1rem;
+  padding-right: 1.125rem;
+  white-space: pre;
+}
+
+.wl-stitch-device-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--paper) 94%, white),
+    color-mix(in srgb, var(--paper) 82%, var(--color-brand) 3%)
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-brand) 4%, transparent);
+}
+.dark .wl-stitch-device-chrome {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand) 8%, rgba(18, 14, 28, 0.95)),
+    color-mix(in srgb, var(--color-brand) 4%, rgba(12, 10, 20, 0.92))
+  );
+  border-bottom-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  box-shadow: inset 0 -1px 0 rgba(139, 63, 214, 0.06);
+}
+.wl-stitch-device-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 55%, #e879a9);
+}
+.wl-stitch-device-dot--mid {
+  opacity: 0.65;
+}
+.wl-stitch-device-dot--dim {
+  opacity: 0.35;
+}
+.wl-stitch-device-url {
+  margin-left: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-ink) 45%, transparent);
+}
+.wl-stitch-device-screen {
+  background: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.wl-stitch-device--desktop .wl-stitch-device-screen {
+  aspect-ratio: 16 / 10;
+  min-height: min(58vh, 640px);
+}
+.wl-stitch-device--mobile .wl-stitch-device-screen,
+.wl-stitch-device--tablet .wl-stitch-device-screen {
+  aspect-ratio: 9 / 16;
+  max-height: min(72vh, 780px);
+  margin-inline: auto;
+  max-width: 100%;
+}
+.dark .wl-stitch-device-screen {
+  background: rgba(8, 6, 14, 0.92);
+}
+/* Scroll affordance for mobile frames */
+.wl-stitch-device--mobile .wl-stitch-device-screen::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.wl-stitch-device--mobile:hover .wl-stitch-device-screen::after {
+  opacity: 1;
+}
+.wl-stitch-live-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border: 0;
+  background: var(--paper, white);
+  contain: layout paint;
+}
+.wl-stitch-device--desktop .wl-stitch-live-iframe {
+  min-height: min(58vh, 640px);
+}
+.wl-stitch-device--mobile .wl-stitch-live-iframe,
+.wl-stitch-device--tablet .wl-stitch-live-iframe {
+  min-height: min(68vh, 720px);
+}
+.wl-stitch-device--studio {
+  max-width: min(100%, 64rem);
+}
+.wl-stitch-device--mobile.wl-stitch-device--studio {
+  max-width: min(100%, 24rem);
+}
+.wl-stitch-device--tablet.wl-stitch-device--studio {
+  max-width: min(100%, 48rem);
+}
+.wl-stitch-device-screen--studio {
+  min-height: min(72vh, 720px);
+}
+.wl-stitch-live-iframe--studio {
+  min-height: min(72vh, 720px);
+}
+.wl-design-preview-page {
+  min-height: 100%;
+}
+.wl-stitch-live-session {
+  max-width: min(100%, 42rem);
+}
+.wl-stitch-live-shimmer {
+  position: relative;
+  overflow: hidden;
+  contain: paint;
+}
+.wl-stitch-live-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    color-mix(in srgb, var(--color-brand) 12%, transparent) 50%,
+    transparent 60%
+  );
+  animation: wl-stitch-shimmer 2.4s ease-in-out infinite;
+  pointer-events: none;
+  will-change: transform;
+  transform: translateZ(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .wl-stitch-live-shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+@keyframes wl-stitch-shimmer {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+/* Respect reduced motion globally for Stitch surfaces */
+@media (prefers-reduced-motion: reduce) {
+  .wl-stitch-device,
+  .wl-stitch-device-chrome,
+  .wl-stitch-device-screen,
+  .wl-stitch-live-iframe {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+

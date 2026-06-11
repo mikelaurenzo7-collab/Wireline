@@ -3,7 +3,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-// Authenticated-surface contrast hardening — must load AFTER index.css so its
+// CSS layer order: base tokens first, then shell layout, compatibility aliases,
+// design utilities, and preview-specific classes before auth hardening.
+import "./styles/app-shell.css";
+import "./styles/legacy-aliases.css";
+import "./styles/wireline-design-system.css";
+import "./styles/design-preview.css";
+// Authenticated-surface contrast hardening — must load AFTER the core CSS stack so its
 // theme-aware --color-brand-ink override and ghost-button rules win the cascade.
 import "./styles/auth-contrast.css";
 // Open‑space preference – removed compact overrides
@@ -29,7 +35,9 @@ if (typeof window !== "undefined") {
       const reloadCount = Number(sessionStorage.getItem("wireline:preload-reload-count") || "0");
 
       if (lastReload && now - Number(lastReload) < 10000 && reloadCount >= 2) {
-        console.error(`[wireline:preload] Preload failed repeatedly (${reason}). Preventing infinite reload loop.`);
+        console.error(
+          `[wireline:preload] Preload failed repeatedly (${reason}). Preventing infinite reload loop.`,
+        );
         return;
       }
 
@@ -56,10 +64,11 @@ if (typeof window !== "undefined") {
 
   window.addEventListener("error", (event) => {
     const message = event.message || (event.error instanceof Error ? event.error.message : "");
-    if (message && (
-      message.includes("Failed to fetch dynamically imported module") ||
-      message.includes("error loading dynamically imported module")
-    )) {
+    if (
+      message &&
+      (message.includes("Failed to fetch dynamically imported module") ||
+        message.includes("error loading dynamically imported module"))
+    ) {
       console.error("[wireline:preload] Dynamic import failed, initiating safe reload...");
       safeReload("error event");
       return;
@@ -74,10 +83,11 @@ if (typeof window !== "undefined") {
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
     const msg = reason instanceof Error ? reason.message : String(reason);
-    if (msg && (
-      msg.includes("Failed to fetch dynamically imported module") ||
-      msg.includes("error loading dynamically imported module")
-    )) {
+    if (
+      msg &&
+      (msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("error loading dynamically imported module"))
+    ) {
       console.error("[wireline:preload] Dynamic import rejection, initiating safe reload...");
       safeReload("unhandledrejection");
       return;
