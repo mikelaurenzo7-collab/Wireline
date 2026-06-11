@@ -2,6 +2,7 @@
  * Wireline Design export, import, and integration status routes.
  */
 import express, { type Response } from "express";
+import { z } from "zod";
 import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
@@ -50,6 +51,10 @@ const designExportLimiter = createRateLimiter({
 
 const PROVIDERS = new Set<DesignIntegrationProvider>(["figma", "canva", "github"]);
 
+const designGithubPrWithContextSchema = designGithubPrSchema.extend({
+  handoffContext: z.string().max(8000).optional(),
+});
+
 function boundedInt(raw: unknown, fallback: number, min: number, max: number): number {
   const parsed = typeof raw === "string" ? Number.parseInt(raw, 10) : Number(raw);
   if (!Number.isFinite(parsed)) return fallback;
@@ -68,6 +73,14 @@ function normalizeCartLines(raw: unknown): Array<{ merchandiseId: string; quanti
     })
     .filter((line) => line.merchandiseId.length > 0)
     .slice(0, 20);
+}
+
+function isMissingShopifyConnection(message: string): boolean {
+  return /connect shopify/i.test(message);
+}
+
+function isMissingStorefrontAccess(message: string): boolean {
+  return /storefront api access is not configured/i.test(message);
 }
 
 router.get(
@@ -118,11 +131,13 @@ router.get(
     res.json({
       ...status,
       requiresConnection: !status.connected,
-      message: status.connected
-        ? status.error
-          ? "Shopify is connected, but the storefront catalog is not available yet."
-          : "Shopify storefront catalog is ready."
-        : "Connect Shopify to use live catalog and cart generation.",
+      message: !status.connected
+        ? "Connect Shopify to use live catalog and cart generation."
+        : status.requiresStorefrontAccess
+          ? "Shopify is connected. Add Storefront API access to unlock live catalog and cart generation."
+          : status.ready
+            ? "Shopify storefront catalog is ready."
+            : "Shopify is connected, but the storefront catalog is not available yet.",
     });
   },
 );
@@ -138,16 +153,28 @@ router.get(
         productsFirst: boundedInt(req.query.productsFirst, 12, 1, 24),
         collectionsFirst: boundedInt(req.query.collectionsFirst, 6, 1, 12),
       });
-      res.json({ connected: true, ...catalog });
+      res.json({ connected: true, ready: true, ...catalog });
     } catch (e) {
       const message = getErrorMessage(e);
-      if (/connect shopify/i.test(message)) {
+      if (isMissingShopifyConnection(message)) {
         res.json({
           connected: false,
+          ready: false,
           products: [],
           collections: [],
           requiresConnection: true,
           message: "Connect Shopify to use live catalog generation.",
+        });
+        return;
+      }
+      if (isMissingStorefrontAccess(message)) {
+        res.status(409).json({
+          connected: true,
+          ready: false,
+          products: [],
+          collections: [],
+          requiresStorefrontAccess: true,
+          message: "Add Storefront API access to use live catalog generation.",
         });
         return;
       }
@@ -166,14 +193,24 @@ router.post(
       const lines = normalizeCartLines(req.body?.lines);
       if (lines.length === 0) throw new Error("At least one product variant is required.");
       const cart = await createShopifyStorefrontCart({ userId: req.user.id, lines });
-      res.json({ connected: true, cart });
+      res.json({ connected: true, ready: true, cart });
     } catch (e) {
       const message = getErrorMessage(e);
-      if (/connect shopify/i.test(message)) {
+      if (isMissingShopifyConnection(message)) {
         res.status(409).json({
           connected: false,
+          ready: false,
           requiresConnection: true,
           error: "Connect Shopify to use live cart generation.",
+        });
+        return;
+      }
+      if (isMissingStorefrontAccess(message)) {
+        res.status(409).json({
+          connected: true,
+          ready: false,
+          requiresStorefrontAccess: true,
+          error: "Add Storefront API access to use live cart generation.",
         });
         return;
       }
@@ -194,14 +231,24 @@ router.post(
       if (!cartId) throw new Error("cartId is required.");
       if (lines.length === 0) throw new Error("At least one product variant is required.");
       const cart = await addShopifyStorefrontCartLines({ userId: req.user.id, cartId, lines });
-      res.json({ connected: true, cart });
+      res.json({ connected: true, ready: true, cart });
     } catch (e) {
       const message = getErrorMessage(e);
-      if (/connect shopify/i.test(message)) {
+      if (isMissingShopifyConnection(message)) {
         res.status(409).json({
           connected: false,
+          ready: false,
           requiresConnection: true,
           error: "Connect Shopify to use live cart generation.",
+        });
+        return;
+      }
+      if (isMissingStorefrontAccess(message)) {
+        res.status(409).json({
+          connected: true,
+          ready: false,
+          requiresStorefrontAccess: true,
+          error: "Add Storefront API access to use live cart generation.",
         });
         return;
       }
@@ -361,7 +408,7 @@ router.post(
   "/api/design/export/github-pr",
   authenticateUser,
   designExportLimiter,
-  validateBody(designGithubPrSchema),
+  validateBody(designGithubPrWithContextSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const preview = previewFromBody(req.body);
