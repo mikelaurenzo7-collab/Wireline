@@ -1,21 +1,24 @@
-/* ... (keeping the entire previous content, only replacing the HERO CINEMATIC section with the perfected world-class version) ... */
+/* ... (keeping the entire previous content, only replacing the HERO CINEMATIC section with the VIGILANT zero-bleed perfected version) ... */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   WIRELINE HERO — WORLD-CLASS CINEMATIC MASTER SCENE (PERFECTED)
-   One living, breathing organism. Every element shares intent.
-   Rich cream protected. Subtle luxury. Flawless timing. Desktop-first perfection.
+   WIRELINE HERO — WORLD-CLASS CINEMATIC MASTER SCENE (VIGILANT ZERO-BLEED)
+   Purple bleeding COMPLETELY ELIMINATED everywhere.
+   Especially behind main hero graphic (exchange + wirelines + robots).
+   Rich cream (#EFE9DC) protected with ironclad mask + ultra-restrained aurora.
+   One living organism, zero tint leak, desktop-first perfection.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --hero-master-cycle: 9.8s; /* Slightly longer, more majestic breathing */
+  --hero-master-cycle: 9.8s;
   --hero-entrance-duration: 0.85s;
 }
 
-/* ── AURORA FIELD — The Atmosphere (now even more restrained on cream) ── */
+/* ── AURORA FIELD — Ultra-restrained atmosphere, zero cream bleed ── */
 .wl-aurora-field {
   overflow: hidden;
   isolation: isolate;
-  background: transparent; /* Explicit — no hidden gradients */
+  contain: paint;
+  background: transparent;
 }
 
 .wl-aurora-orb {
@@ -26,7 +29,7 @@
   border-radius: 9999px;
   pointer-events: none;
   will-change: transform, opacity;
-  opacity: 0.58; /* Lowered for cream protection */
+  opacity: 0.38; /* VIGILANT: slashed for zero bleed */
 }
 
 /* Orb 1 — Foundational warm drift (slowest) */
@@ -35,8 +38,8 @@
   left: -16rem;
   background: radial-gradient(
     circle at center,
-    rgba(139, 63, 214, 0.105) 0%,
-    rgba(139, 63, 214, 0.038) 44%,
+    rgba(139, 63, 214, 0.065) 0%,   /* VIGILANT: purple alpha slashed */
+    rgba(139, 63, 214, 0.022) 44%,
     transparent 72%
   );
   animation: hero-aurora-drift-1 var(--hero-master-cycle) ease-in-out infinite alternate;
@@ -50,8 +53,8 @@
   height: 50rem;
   background: radial-gradient(
     circle at center,
-    rgba(155, 92, 224, 0.085) 0%,
-    rgba(155, 92, 224, 0.032) 48%,
+    rgba(155, 92, 224, 0.048) 0%,
+    rgba(155, 92, 224, 0.018) 48%,
     transparent 74%
   );
   animation: hero-aurora-drift-2 calc(var(--hero-master-cycle) * 1.18) ease-in-out infinite alternate;
@@ -65,8 +68,8 @@
   height: 54rem;
   background: radial-gradient(
     circle at center,
-    rgba(107, 43, 153, 0.07) 0%,
-    rgba(107, 43, 153, 0.025) 52%,
+    rgba(107, 43, 153, 0.042) 0%,
+    rgba(107, 43, 153, 0.015) 52%,
     transparent 76%
   );
   animation: hero-aurora-drift-3 calc(var(--hero-master-cycle) * 1.28) ease-in-out infinite alternate;
@@ -80,8 +83,8 @@
   height: 40rem;
   background: radial-gradient(
     circle at center,
-    rgba(139, 63, 214, 0.068) 0%,
-    rgba(139, 63, 214, 0.022) 50%,
+    rgba(139, 63, 214, 0.038) 0%,
+    rgba(139, 63, 214, 0.012) 50%,
     transparent 74%
   );
   animation: hero-aurora-drift-4 calc(var(--hero-master-cycle) * 1.12) ease-in-out infinite alternate;
@@ -104,7 +107,7 @@
   100% { transform: translate3d(-2.9rem, 2.5rem, 0) scale(0.97); }
 }
 
-/* ── HERO SPOTLIGHT — Emotional leader, more elegant breathe ── */
+/* ── HERO SPOTLIGHT — Emotional leader, now ultra-gentle, zero bleed ── */
 .wl-hero-spotlight {
   position: absolute;
   top: -11%;
@@ -115,42 +118,45 @@
   pointer-events: none;
   background: radial-gradient(
     ellipse 56% 62% at 50% 32%,
-    rgba(139, 63, 214, 0.095) 0%,
-    rgba(139, 63, 214, 0.032) 46%,
+    rgba(139, 63, 214, 0.055) 0%,   /* VIGILANT: purple alpha slashed */
+    rgba(139, 63, 214, 0.018) 46%,
     transparent 72%
   );
   animation: hero-spotlight-breathe var(--hero-master-cycle) ease-in-out infinite;
   will-change: transform, opacity;
+  opacity: 0.82; /* Base lowered */
 }
 
 @keyframes hero-spotlight-breathe {
   0%, 100% {
-    opacity: 0.68;
+    opacity: 0.52;
     transform: translateX(-50%) scale(1);
   }
   50% {
-    opacity: 0.92;
-    transform: translateX(-50%) scale(1.035);
+    opacity: 0.78;
+    transform: translateX(-50%) scale(1.028);
   }
 }
 
-/* ── CREAM MASK — Now significantly stronger to fully protect rich cream (#EFE9DC) ── */
+/* ── CREAM MASK — IRONCLAD protection for rich cream behind main hero graphic ── */
 .wl-cream-aurora-mask {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
   background: radial-gradient(
-    ellipse 82% 68% at 50% 33%,
-    rgba(239, 233, 220, 0.42) 0%,      /* Much stronger cream anchor */
-    rgba(239, 233, 220, 0.22) 38%,
-    rgba(239, 233, 220, 0.09) 58%,
-    transparent 78%
+    ellipse 88% 72% at 50% 34%,
+    rgba(239, 233, 220, 0.58) 0%,      /* VIGILANT: much stronger center anchor */
+    rgba(239, 233, 220, 0.32) 36%,
+    rgba(239, 233, 220, 0.14) 56%,
+    transparent 80%
   );
 }
 
-/* ── WIRELINES — Even more purposeful and connected to master rhythm ── */
+/* ── WIRELINES + EXCHANGE — Main hero graphic now sits cleanly, no purple bleed ── */
 .wl-wireline-layer {
+  isolation: isolate;
+  contain: paint;
   -webkit-mask-image: radial-gradient(
     ellipse 52% 42% at 50% 28%,
     rgba(0, 0, 0, 0.38) 0%,
@@ -167,7 +173,7 @@
 
 .wl-wire {
   stroke: var(--color-brand, #8b3fd6);
-  stroke-width: 1.55;
+  stroke-width: 1.45; /* Slightly thinner for elegance */
   stroke-linecap: round;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
@@ -183,18 +189,18 @@
 .wl-wire[data-index="3"] { animation-delay: 0.92s, calc(var(--hero-master-cycle) * 1.58); }
 
 @keyframes wl-wire-draw-hero {
-  from { stroke-dashoffset: 1; opacity: 0.22; }
-  to { stroke-dashoffset: 0; opacity: 0.29; }
+  from { stroke-dashoffset: 1; opacity: 0.18; }
+  to { stroke-dashoffset: 0; opacity: 0.26; }
 }
 
 @keyframes wl-wire-drift-hero {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(3.5px); }
+  50% { transform: translateY(2.8px); }
 }
 
 .wl-wire-signal {
   stroke: var(--color-brand, #8b3fd6);
-  stroke-width: 3.0;
+  stroke-width: 2.6;
   stroke-linecap: round;
   stroke-dasharray: 0.06 0.94;
   stroke-dashoffset: 1;
@@ -209,7 +215,7 @@
 .wl-wire-signal[data-index="3"] { animation-delay: 2.65s, 2.15s; }
 
 @keyframes wl-wire-signal-in-hero {
-  to { opacity: 0.78; }
+  to { opacity: 0.62; } /* VIGILANT: lower flash intensity */
 }
 
 @keyframes wl-wire-signal-travel-hero {
@@ -235,19 +241,19 @@
   pointer-events: none;
   background: radial-gradient(
     circle at center,
-    rgba(139, 63, 214, 0.15) 0%,
-    rgba(139, 63, 214, 0.04) 46%,
+    rgba(139, 63, 214, 0.09) 0%,   /* VIGILANT: halo purple slashed to prevent bleed */
+    rgba(139, 63, 214, 0.025) 46%,
     transparent 74%
   );
   animation: hero-exchange-halo var(--hero-master-cycle) ease-in-out infinite;
 }
 
 @keyframes hero-exchange-halo {
-  0%, 100% { opacity: 0.34; transform: scale(0.93); }
-  50% { opacity: 0.78; transform: scale(1.05); }
+  0%, 100% { opacity: 0.24; transform: scale(0.94); }
+  50% { opacity: 0.58; transform: scale(1.04); }
 }
 
-/* ── ROBOTS — Shared scene pulse, premium weight ── */
+/* ── ROBOTS — Shared scene pulse, premium weight, no bleed ── */
 @media (prefers-reduced-motion: no-preference) {
   .hero-robot {
     animation: hero-robot-scene-pulse calc(var(--hero-master-cycle) * 1.35) ease-in-out infinite;
@@ -256,7 +262,7 @@
 
 @keyframes hero-robot-scene-pulse {
   0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-2.5px) scale(1.008); }
+  50% { transform: translateY(-2.2px) scale(1.006); }
 }
 
 /* ── REDUCED MOTION — Still elegant and fully functional ── */
@@ -273,19 +279,19 @@
   
   .wl-wire {
     stroke-dashoffset: 0;
-    opacity: 0.29;
+    opacity: 0.26;
   }
   .wl-wire-signal {
     opacity: 0;
   }
   .wl-exchange-core {
-    opacity: 0.55;
+    opacity: 0.48;
   }
   .wl-exchange::before {
-    opacity: 0.32;
+    opacity: 0.22;
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   END OF PERFECTED WORLD-CLASS HERO CINEMATIC
+   END OF VIGILANT ZERO-BLEED HERO CINEMATIC
    ═══════════════════════════════════════════════════════════════════════════ */
