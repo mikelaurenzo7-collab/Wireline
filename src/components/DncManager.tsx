@@ -253,9 +253,14 @@ export default function DncManager() {
     total: entries.length,
     manual: entries.filter((e) => e.source === "manual").length,
     csv: entries.filter((e) => e.source === "csv" || e.source === "import").length,
+    // STOP-keyword opt-outs arrive tagged "sms-stop"; count every opt-out
+    // dialect so this card can't show 0 while the list is full of STOP rows
+    // (and so manual + csv + opt-out reconciles with the total).
     optOut: entries.filter(
       (e) =>
         e.source === "opt-out" ||
+        e.source === "sms-stop" ||
+        e.source === "sms_stop" ||
         e.source === "sms_opt_out" ||
         e.source === "email_opt_out" ||
         e.reason === "opt-out",

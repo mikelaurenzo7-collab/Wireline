@@ -19,8 +19,21 @@ function readComponent(name: string): string {
   return fs.readFileSync(path.resolve(__dirname, `../${name}.tsx`), "utf8");
 }
 
+// Global CSS was refactored from a single index.css into layered files under
+// src/styles/* that index.css `@import`s. These assertions check the overall
+// global-CSS surface, so read index.css *and* every layered file it pulls in.
 function readIndexCss(): string {
-  return fs.readFileSync(path.resolve(__dirname, "../../../index.css"), "utf8");
+  const srcRoot = path.resolve(__dirname, "../../../");
+  let css = fs.readFileSync(path.join(srcRoot, "index.css"), "utf8");
+  const stylesDir = path.join(srcRoot, "styles");
+  if (fs.existsSync(stylesDir)) {
+    for (const file of fs.readdirSync(stylesDir)) {
+      if (file.endsWith(".css")) {
+        css += "\n" + fs.readFileSync(path.join(stylesDir, file), "utf8");
+      }
+    }
+  }
+  return css;
 }
 
 // ═══════════════════════════════════════════════════════════════════

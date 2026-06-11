@@ -36,6 +36,7 @@ import ClientToolbar from "./layout/ClientToolbar";
 import { useToast } from "../contexts/ToastContext";
 import { cn, logFetchError } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
+import { formatCost } from "../lib/safe-number";
 import type { AuditEvent, AuditSeverity } from "../types/audit";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -154,7 +155,7 @@ const EventRow = React.memo(
             </div>
             <div className="text-right">
               {event.cost_usd != null && (
-                <p className="text-sm text-ink">${Number(event.cost_usd ?? 0).toFixed(4)}</p>
+                <p className="text-sm text-ink">{formatCost(event.cost_usd)}</p>
               )}
             </div>
           </div>
@@ -241,6 +242,10 @@ export default function AuditLog() {
 
   // State
   const [events, setEvents] = useState<AuditEvent[]>([]);
+  // The events endpoint is page-capped, so the rows we hold can be fewer than
+  // the true match count. Track that total so the list header reconciles with
+  // the "Total Events" stat instead of contradicting it.
+  const [eventsTotal, setEventsTotal] = useState(0);
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -289,6 +294,7 @@ export default function AuditLog() {
       };
 
       setEvents(eventsData.events ?? []);
+      setEventsTotal(eventsData.total ?? eventsData.events?.length ?? 0);
       setStats(mappedStats);
     } catch (err) {
       logFetchError("Failed to load audit log:", err);
@@ -562,7 +568,13 @@ export default function AuditLog() {
           <div className="flex-1 min-h-0">
             <Panel
               title="Activity Stream"
-              hint={`${filteredEvents.length} events`}
+              hint={
+                searchQuery.trim()
+                  ? `${filteredEvents.length} of ${events.length} shown`
+                  : eventsTotal > events.length
+                    ? `Showing ${events.length} of ${eventsTotal.toLocaleString()}`
+                    : `${events.length} event${events.length === 1 ? "" : "s"}`
+              }
               icon={Shield}
               scroll
               className="h-full"

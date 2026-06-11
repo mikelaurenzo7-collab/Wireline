@@ -157,8 +157,8 @@ export default function IntegrationDirectivePresets({
           const catPresets = PRESETS.filter((p) => p.category === cat);
 
           return (
-            <div key={cat} className="rounded-md bg-black/10 border border-border p-3 space-y-3">
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
+            <div key={cat} className="rounded-md wl-panel border border-black/8 p-3 space-y-3">
+              <div className="flex items-center gap-2 pb-2 border-b border-black/8">
                 <Icon className="w-3.5 h-3.5 text-brand" />
                 <span className="text-xs font-semibold uppercase tracking-wider text-ink">
                   {cat}
@@ -178,7 +178,12 @@ export default function IntegrationDirectivePresets({
                     >
                       <div className="space-y-1 min-w-0">
                         <span className="text-xs font-medium text-ink/90">{preset.label}</span>
-                        <p className="text-[10px] text-muted font-mono leading-relaxed truncate hover:text-clip hover:whitespace-normal">
+                        {/* Clamp to two whole lines — no mid-word `truncate` that
+                         *  relied on a hover-to-reveal hack unreachable on touch. */}
+                        <p
+                          className="text-[10px] text-muted font-mono leading-relaxed line-clamp-2"
+                          title={preset.directive}
+                        >
                           {preset.directive}
                         </p>
                       </div>
@@ -190,6 +195,9 @@ export default function IntegrationDirectivePresets({
                             checked={isActive}
                             onCheckedChange={() => handleToggle(preset, isActive)}
                             aria-label={`Toggle preset: ${preset.label}`}
+                            // Lift the off-state track contrast on cream so the
+                            // toggle never reads as a disabled grey blob.
+                            className="data-[state=unchecked]:bg-ink/20"
                           />
                         )}
                       </div>

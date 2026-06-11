@@ -517,7 +517,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
           await tx.insert(dncList).values({
             userId,
             phone: cust.phone,
-            reason: i % 2 === 0 ? "Customer requested STOP via SMS" : "Manual op-add",
+            reason: i % 2 === 0 ? "Customer requested STOP via SMS" : "Manually added by operator",
             source: i % 2 === 0 ? "sms-stop" : "manual",
             demo: true,
             createdAt: randomCreatedAt(40),
