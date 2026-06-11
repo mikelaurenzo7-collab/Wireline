@@ -4,8 +4,6 @@ import { motion } from "motion/react";
 import { ArrowUpRight, Plus } from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
-import { HeroDecorations } from "../components/marketing/HeroDecorations";
-import HeroWirelines from "../components/marketing/HeroWirelines";
 import HeroCallPreview from "../components/marketing/HeroCallPreview";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
@@ -106,157 +104,134 @@ export default function LandingPage() {
       <div className="marketing-surface min-h-dvh bg-paper relative paper-texture">
         <PublicSiteHeader active="home" />
 
-        {/* ─── Hero — World-Class Cinematic Master Scene ─── */}
+        {/* ─── Hero — executive-grade product scene, no purple backdrop or robot wires ─── */}
         <section
           data-testid="hero-section"
-          className="relative px-5 sm:px-6 lg:px-12 pt-20 sm:pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
+          className="relative overflow-hidden border-b border-ink/[0.08] bg-paper px-5 sm:px-6 lg:px-12 pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-20"
         >
-          {/* Aurora Field + Spotlight + Strong Cream Protection */}
-          <div className="wl-aurora-field absolute inset-0 z-0 lg:opacity-100 opacity-[0.92]" aria-hidden="true">
-            <span className="wl-aurora-orb" />
-            <span className="wl-aurora-orb" />
-            <span className="wl-aurora-orb" />
-            <span className="wl-aurora-orb wl-aurora-orb--mid" />
-            <span className="wl-hero-spotlight" />
-
-            {/* Significantly stronger cream mask — fully protects rich #EFE9DC paper */}
-            <div className="wl-cream-aurora-mask absolute inset-0 pointer-events-none" />
-          </div>
-
-          {/* Hero Scene Coordinator — wirelines + robots now perfectly synced to master rhythm */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="hero-scene absolute inset-0 z-[1] pointer-events-none"
+          <div
             aria-hidden="true"
-          >
-            <HeroWirelines />
-            <HeroDecorations />
-          </motion.div>
+            className="pointer-events-none absolute inset-0 opacity-[0.34] [background-image:linear-gradient(to_right,rgba(26,22,20,0.055)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26,22,20,0.04)_1px,transparent_1px)] [background-size:72px_72px]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-16 h-px bg-ink/[0.08]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-20 h-[34rem] w-px -translate-x-1/2 bg-gradient-to-b from-ink/[0.08] via-ink/[0.035] to-transparent"
+          />
 
-          <div className="relative z-10 max-w-7xl mx-auto w-full">
+          <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(460px,0.78fr)] lg:gap-16">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="text-center"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-3xl text-left"
             >
-              {/* Elegant Badge */}
-              <motion.span
-                initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="hero-badge inline-flex items-center gap-2.5 border border-ink/15 bg-ink/[0.025] px-5 py-2.5 mb-7 lg:mb-9"
-              >
-                <span className="wl-eyebrow-dot" aria-hidden="true" />
-                <span className="font-mono text-[11px] sm:text-[13px] uppercase tracking-[0.22em] text-ink/85">
-                  Phone + Email + SMS
-                </span>
-              </motion.span>
+              <span className="inline-flex items-center gap-2 border border-ink/[0.12] bg-white/[0.35] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ink/72 shadow-[0_1px_0_rgba(255,255,255,0.75)_inset]">
+                <span className="h-1.5 w-1.5 bg-brand" aria-hidden="true" />
+                Phone · Email · SMS
+              </span>
 
-              {/* Headline — cinematic, perfectly readable on protected cream */}
-              <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto text-balance">
-                <span>Every conversation,</span>
-                <span className="wl-aurora-text hero-headline-accent">
-                  answered like your best rep.
-                </span>
+              <h1 className="mt-7 max-w-4xl font-display text-[clamp(3rem,7vw,7.1rem)] leading-[0.88] tracking-[-0.075em] text-ink text-balance">
+                AI agents that answer every customer like your best rep.
               </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.72, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-6 lg:mt-8 text-[clamp(0.95rem,1.42vw,1.22rem)] leading-relaxed text-ink/65 max-w-2xl mx-auto"
-              >
-                Wireline deploys AI agents on real phone numbers — inbound support,
-                and email follow-ups. Trained on your playbook, improving with every call.
-              </motion.p>
+              <p className="mt-7 max-w-2xl text-[clamp(1rem,1.45vw,1.28rem)] leading-relaxed text-ink/68">
+                Deploy a trained agent fleet on real phone numbers in minutes. Handle inbound calls,
+                qualify leads, book appointments, send follow-ups, and keep every interaction visible
+                from one supervisor cockpit.
+              </p>
 
-              <HeroCallPreview />
-
-              {/* Live Demo — Premium glass cards with perfect cream consistency */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.92, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-10 lg:mt-12 max-w-3xl mx-auto"
-              >
-                <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-ink/50 mb-4">
-                  Live demo — no signup
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-paper/95 backdrop-blur-xl p-4 sm:p-6 shadow-[0_1px_0_0_rgba(26,22,20,0.04)]">
-                  {csDemo && (
-                    <div className="flex flex-col items-center text-center p-3 rounded-sm border border-ink/8 bg-white/60 hover:bg-white/80 transition-colors duration-200">
-                      <p className="text-[12px] font-medium text-ink/70 mb-3 tracking-tight">
-                        Jordan · Inbound Support
-                      </p>
-                      <BrowserCallWidget
-                        agentName={csDemo.name}
-                        buttonLabel={`Talk to ${csDemo.name}`}
-                      />
-                      <a
-                        href={`tel:${csDemo.tel}`}
-                        className="mt-3.5 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
-                      >
-                        {csDemo.display}
-                      </a>
-                    </div>
-                  )}
-                  {salesDemo && (
-                    <div className="flex flex-col items-center text-center p-3 rounded-sm border border-ink/8 bg-white/60 hover:bg-white/80 transition-colors duration-200 sm:border-l sm:border-ink/[0.1] sm:pl-6">
-                      <p className="text-[12px] font-medium text-ink/70 mb-3 tracking-tight">
-                        Jake · Outbound Sales
-                      </p>
-                      <BrowserCallWidget
-                        agentName={salesDemo.name}
-                        buttonLabel={`Talk to ${salesDemo.name}`}
-                      />
-                      <a
-                        href={`tel:${salesDemo.tel}`}
-                        className="mt-3.5 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
-                      >
-                        {salesDemo.display}
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[13px] leading-snug text-ink/60">
-                  <Link
-                    to="/showcase"
-                    data-testid="hero-showcase-link"
-                    className="inline-flex items-center gap-1 text-ink/70 hover:text-brand transition-colors"
-                  >
-                    Hear medical, legal, real estate & more
-                    <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
-                  </Link>
-                  <span className="hidden sm:inline text-ink/25" aria-hidden="true">
-                    ·
-                  </span>
-                  <p className="text-center sm:text-left">
-                    14-day trial from the header · no card required
-                  </p>
-                </div>
-
-                <div
-                  data-testid="hero-trust-badges"
-                  className="wl-reveal-stagger mt-6 pt-4 border-t border-ink/10 flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2"
-                  aria-label="Security and compliance"
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Link
+                  to="/signup"
+                  data-testid="hero-primary-cta"
+                  className="inline-flex min-h-12 items-center justify-center bg-ink px-6 text-[14px] font-semibold text-paper transition-transform duration-200 hover:-translate-y-px"
                 >
-                  {TRUST_BADGES.map((badge, i) => (
-                    <span key={badge} className="inline-flex items-center gap-2.5">
-                      {i > 0 && <span className="text-ink/30 hidden sm:inline">·</span>}
-                      <span className="font-mono text-[11px] sm:text-[12px] uppercase tracking-[0.18em] text-ink/75 font-medium">
-                        {badge}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
+                  Start free trial
+                </Link>
+                <Link
+                  to="/showcase"
+                  data-testid="hero-showcase-link"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] bg-white/[0.28] px-6 text-[14px] font-semibold text-ink transition-colors hover:bg-white/60"
+                >
+                  Hear live demos
+                  <ArrowUpRight className="h-4 w-4 shrink-0" />
+                </Link>
+              </div>
+
+              <div
+                data-testid="hero-trust-badges"
+                className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ink/[0.1] pt-5"
+                aria-label="Security and compliance"
+              >
+                {TRUST_BADGES.map((badge) => (
+                  <span
+                    key={badge}
+                    className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink/58"
+                  >
+                    {badge}
+                  </span>
+                ))}
+              </div>
             </motion.div>
+
+            <div className="relative lg:pt-7">
+              <div
+                aria-hidden="true"
+                className="absolute -left-4 -top-4 h-16 w-16 border-l border-t border-ink/[0.14]"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute -bottom-5 -right-4 h-20 w-20 border-b border-r border-ink/[0.14]"
+              />
+              <HeroCallPreview />
+            </div>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 mx-auto mt-12 w-full max-w-4xl"
+          >
+            <p className="mb-4 text-center font-mono text-[11px] uppercase tracking-[0.24em] text-ink/48">
+              Live demo — no signup
+            </p>
+
+            <div className="grid grid-cols-1 gap-3 border border-ink/[0.1] bg-[#FBF8F0]/90 p-3 shadow-[0_1px_0_rgba(255,255,255,0.75)_inset] sm:grid-cols-2 sm:p-4">
+              {csDemo && (
+                <div className="flex flex-col items-center border border-ink/[0.08] bg-white/[0.48] p-4 text-center transition-colors duration-200 hover:bg-white/[0.68]">
+                  <p className="mb-3 text-[12px] font-semibold tracking-tight text-ink/70">
+                    Jordan · Inbound Support
+                  </p>
+                  <BrowserCallWidget agentName={csDemo.name} buttonLabel={`Talk to ${csDemo.name}`} />
+                  <a
+                    href={`tel:${csDemo.tel}`}
+                    className="mt-3.5 font-mono text-[13px] tracking-tight text-brand transition-colors hover:text-brand/80"
+                  >
+                    {csDemo.display}
+                  </a>
+                </div>
+              )}
+              {salesDemo && (
+                <div className="flex flex-col items-center border border-ink/[0.08] bg-white/[0.48] p-4 text-center transition-colors duration-200 hover:bg-white/[0.68]">
+                  <p className="mb-3 text-[12px] font-semibold tracking-tight text-ink/70">
+                    Jake · Outbound Sales
+                  </p>
+                  <BrowserCallWidget agentName={salesDemo.name} buttonLabel={`Talk to ${salesDemo.name}`} />
+                  <a
+                    href={`tel:${salesDemo.tel}`}
+                    className="mt-3.5 font-mono text-[13px] tracking-tight text-brand transition-colors hover:text-brand/80"
+                  >
+                    {salesDemo.display}
+                  </a>
+                </div>
+              )}
+            </div>
+          </motion.div>
         </section>
 
         {/* ─── Proof ──────────────────────────────────────────────── */}
