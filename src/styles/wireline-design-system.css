@@ -9169,10 +9169,11 @@ html {
 .wl-aurora-orb {
   position: absolute;
   display: block;
-  width: 44rem;
-  height: 44rem;
+  width: 38rem;
+  height: 38rem;
   border-radius: 9999px;
   pointer-events: none;
+  opacity: 0.72;
   will-change: transform;
 }
 .wl-aurora-orb:nth-child(1) {
@@ -9180,8 +9181,8 @@ html {
   left: -14rem;
   background: radial-gradient(
     circle at center,
-    rgba(139, 63, 214, 0.16) 0%,
-    rgba(139, 63, 214, 0.06) 40%,
+    rgba(139, 63, 214, 0.08) 0%,
+    rgba(139, 63, 214, 0.026) 40%,
     transparent 68%
   );
   animation: wl-aurora-drift-a 32s var(--ease-soft) infinite alternate;
@@ -9193,8 +9194,8 @@ html {
   height: 40rem;
   background: radial-gradient(
     circle at center,
-    rgba(155, 92, 224, 0.14) 0%,
-    rgba(155, 92, 224, 0.05) 44%,
+    rgba(155, 92, 224, 0.07) 0%,
+    rgba(155, 92, 224, 0.024) 44%,
     transparent 70%
   );
   animation: wl-aurora-drift-b 41s var(--ease-soft) infinite alternate;
@@ -9206,8 +9207,8 @@ html {
   height: 52rem;
   background: radial-gradient(
     circle at center,
-    rgba(107, 43, 153, 0.1) 0%,
-    rgba(107, 43, 153, 0.035) 48%,
+    rgba(107, 43, 153, 0.045) 0%,
+    rgba(107, 43, 153, 0.016) 48%,
     transparent 72%
   );
   animation: wl-aurora-drift-c 49s var(--ease-soft) infinite alternate;
@@ -9274,8 +9275,8 @@ html {
   pointer-events: none;
   background: radial-gradient(
     ellipse 58% 60% at 50% 38%,
-    rgba(139, 63, 214, 0.14) 0%,
-    rgba(139, 63, 214, 0.05) 42%,
+    rgba(139, 63, 214, 0.07) 0%,
+    rgba(139, 63, 214, 0.022) 42%,
     transparent 68%
   );
   animation: wl-aurora-breathe 9s ease-in-out infinite;
