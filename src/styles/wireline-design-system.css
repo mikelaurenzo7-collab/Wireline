@@ -1,15 +1,99 @@
 /* Wireline marketing hero polish — zero purple background bleed. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   WIRELINE MARKETING — VIEWPORT UNIFORMITY CONTRACT
+   One responsive width system for public pages. Prevents horizontal bleed,
+   stretches gracefully on large screens, and keeps safe-area gutters stable.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --wl-marketing-gutter: clamp(1rem, 3.4vw, 4.5rem);
+  --wl-marketing-content-max: 1440px;
+  --wl-marketing-content-wide: 1680px;
+  --hero-master-cycle: 9.8s;
+  --hero-entrance-duration: 0.85s;
+}
+
+.marketing-surface {
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  .marketing-surface {
+    overflow-x: hidden;
+  }
+}
+
+.marketing-surface #main-content,
+.marketing-surface main,
+.marketing-surface section,
+.marketing-surface article,
+.marketing-surface footer,
+.marketing-surface header,
+.marketing-surface nav,
+.marketing-surface div {
+  min-width: 0;
+}
+
+.marketing-surface img,
+.marketing-surface svg,
+.marketing-surface video,
+.marketing-surface canvas,
+.marketing-surface iframe {
+  max-width: 100%;
+}
+
+.marketing-surface [data-testid="site-header"] > div,
+.marketing-surface .wl-marketing-container {
+  width: min(calc(100% - (var(--wl-marketing-gutter) * 2)), var(--wl-marketing-content-max));
+  max-width: var(--wl-marketing-content-max) !important;
+  margin-inline: auto;
+}
+
+.marketing-surface [data-testid="site-header"] > div {
+  padding-inline: 0 !important;
+}
+
+.marketing-surface > section,
+.marketing-surface #main-content {
+  width: 100%;
+  scroll-padding-top: 5rem;
+}
+
+.marketing-surface > section {
+  padding-left: max(var(--wl-marketing-gutter), env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(var(--wl-marketing-gutter), env(safe-area-inset-right, 0px)) !important;
+}
+
+.marketing-surface #main-content > div:not([class*="max-w-none"]) {
+  width: min(100%, var(--wl-marketing-content-max));
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --wl-marketing-content-max: var(--wl-marketing-content-wide);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --wl-marketing-gutter: clamp(0.875rem, 4.8vw, 1.125rem);
+  }
+
+  .marketing-surface [data-testid="site-header"] > div,
+  .marketing-surface .wl-marketing-container {
+    width: calc(100% - (var(--wl-marketing-gutter) * 2));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    WIRELINE HERO — ZERO-BLEED MARKETING SURFACE
    Purple is reserved for crisp brand strokes and CTAs only. The page field
    stays cream/ink, with no violet wash behind the hero content.
    ═══════════════════════════════════════════════════════════════════════════ */
-
-:root {
-  --hero-master-cycle: 9.8s;
-  --hero-entrance-duration: 0.85s;
-}
 
 .wl-aurora-field {
   overflow: hidden;
