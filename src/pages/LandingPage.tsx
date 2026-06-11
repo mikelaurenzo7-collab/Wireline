@@ -21,14 +21,6 @@ const STATS = [
 
 const TRUST_BADGES = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
 
-/**
- * Top-of-funnel FAQ — the questions a prospect asks before they ever reach
- * pricing. Deliberately distinct from the billing-focused FAQ on /pricing:
- * these handle product objections (quality, the never-fabricate rule, speed,
- * fit, security). The visible copy below and the FAQPage JSON-LD are built
- * from this single source so the structured data can never drift from what a
- * human actually reads — a requirement for Google FAQ rich results.
- */
 const FAQS = [
   {
     q: "What exactly is Wireline?",
@@ -114,12 +106,12 @@ export default function LandingPage() {
       <div className="marketing-surface min-h-dvh bg-paper relative paper-texture">
         <PublicSiteHeader active="home" />
 
-        {/* ─── Hero — Cinematic Master Scene (Perfection Redesign) ─── */}
+        {/* ─── Hero — World-Class Cinematic Master Scene ─── */}
         <section
           data-testid="hero-section"
           className="relative px-5 sm:px-6 lg:px-12 pt-20 sm:pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
-          {/* Aurora Field + Spotlight — now orchestrated as one living atmosphere */}
+          {/* Aurora Field + Spotlight + Strong Cream Protection */}
           <div className="wl-aurora-field absolute inset-0 z-0 lg:opacity-100 opacity-[0.92]" aria-hidden="true">
             <span className="wl-aurora-orb" />
             <span className="wl-aurora-orb" />
@@ -127,21 +119,15 @@ export default function LandingPage() {
             <span className="wl-aurora-orb wl-aurora-orb--mid" />
             <span className="wl-hero-spotlight" />
 
-            {/* Ultra-subtle cream-tinted radial mask — anchors the rich cream */}
-            <div className="wl-cream-aurora-mask absolute inset-0 pointer-events-none"
-                 style={{
-                   background: `radial-gradient(ellipse 85% 70% at 50% 35%, 
-                     rgba(245,240,230,0.18) 0%, 
-                     rgba(245,240,230,0.08) 45%, 
-                     transparent 72%)`
-                 }} />
+            {/* Significantly stronger cream mask — fully protects rich #EFE9DC paper */}
+            <div className="wl-cream-aurora-mask absolute inset-0 pointer-events-none" />
           </div>
 
-          {/* Hero Scene Coordinator — gives wirelines + robots shared intent with the aurora */}
+          {/* Hero Scene Coordinator — wirelines + robots now perfectly synced to master rhythm */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="hero-scene absolute inset-0 z-[1] pointer-events-none"
             aria-hidden="true"
           >
@@ -153,15 +139,15 @@ export default function LandingPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
-              {/* Badge — elegant entrance */}
+              {/* Elegant Badge */}
               <motion.span
-                initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                initial={{ opacity: 0, y: 12, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.65, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="hero-badge inline-flex items-center gap-2.5 border border-ink/15 bg-ink/[0.03] px-5 py-2.5 mb-7 lg:mb-9"
+                transition={{ duration: 0.6, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+                className="hero-badge inline-flex items-center gap-2.5 border border-ink/15 bg-ink/[0.025] px-5 py-2.5 mb-7 lg:mb-9"
               >
                 <span className="wl-eyebrow-dot" aria-hidden="true" />
                 <span className="font-mono text-[11px] sm:text-[13px] uppercase tracking-[0.22em] text-ink/85">
@@ -169,7 +155,7 @@ export default function LandingPage() {
                 </span>
               </motion.span>
 
-              {/* Headline — cinematic word reveal, supported by the scene */}
+              {/* Headline — cinematic, perfectly readable on protected cream */}
               <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto text-balance">
                 <span>Every conversation,</span>
                 <span className="wl-aurora-text hero-headline-accent">
@@ -178,10 +164,10 @@ export default function LandingPage() {
               </h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 18 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.75, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-6 lg:mt-8 text-[clamp(0.95rem,1.45vw,1.25rem)] leading-relaxed text-ink/65 max-w-2xl mx-auto"
+                transition={{ duration: 0.7, delay: 0.72, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-6 lg:mt-8 text-[clamp(0.95rem,1.42vw,1.22rem)] leading-relaxed text-ink/65 max-w-2xl mx-auto"
               >
                 Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
                 and email follow-ups. Trained on your playbook, improving with every call.
@@ -189,21 +175,21 @@ export default function LandingPage() {
 
               <HeroCallPreview />
 
-              {/* Live Demo Section — Majestic on all viewports */}
+              {/* Live Demo — Premium glass cards with perfect cream consistency */}
               <motion.div
-                initial={{ opacity: 0, y: 22 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: 0.95, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, delay: 0.92, ease: [0.16, 1, 0.3, 1] }}
                 className="mt-10 lg:mt-12 max-w-3xl mx-auto"
               >
                 <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-ink/50 mb-4">
                   Live demo — no signup
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-paper/95 backdrop-blur-xl p-4 sm:p-6 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-paper/95 backdrop-blur-xl p-4 sm:p-6 shadow-[0_1px_0_0_rgba(26,22,20,0.04)]">
                   {csDemo && (
-                    <div className="flex flex-col items-center text-center p-2">
-                      <p className="text-[12px] font-medium text-ink/70 mb-3">
+                    <div className="flex flex-col items-center text-center p-3 rounded-sm border border-ink/8 bg-white/60 hover:bg-white/80 transition-colors duration-200">
+                      <p className="text-[12px] font-medium text-ink/70 mb-3 tracking-tight">
                         Jordan · Inbound Support
                       </p>
                       <BrowserCallWidget
@@ -212,15 +198,15 @@ export default function LandingPage() {
                       />
                       <a
                         href={`tel:${csDemo.tel}`}
-                        className="mt-3 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
+                        className="mt-3.5 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
                       >
                         {csDemo.display}
                       </a>
                     </div>
                   )}
                   {salesDemo && (
-                    <div className="flex flex-col items-center text-center p-2 sm:border-l sm:border-ink/[0.1] sm:pl-6">
-                      <p className="text-[12px] font-medium text-ink/70 mb-3">
+                    <div className="flex flex-col items-center text-center p-3 rounded-sm border border-ink/8 bg-white/60 hover:bg-white/80 transition-colors duration-200 sm:border-l sm:border-ink/[0.1] sm:pl-6">
+                      <p className="text-[12px] font-medium text-ink/70 mb-3 tracking-tight">
                         Jake · Outbound Sales
                       </p>
                       <BrowserCallWidget
@@ -229,7 +215,7 @@ export default function LandingPage() {
                       />
                       <a
                         href={`tel:${salesDemo.tel}`}
-                        className="mt-3 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
+                        className="mt-3.5 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
                       >
                         {salesDemo.display}
                       </a>
@@ -256,7 +242,7 @@ export default function LandingPage() {
 
                 <div
                   data-testid="hero-trust-badges"
-                  className="wl-reveal-stagger mt-6 pt-4 border-t border-ink/10 flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5 gap-y-2"
+                  className="wl-reveal-stagger mt-6 pt-4 border-t border-ink/10 flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2"
                   aria-label="Security and compliance"
                 >
                   {TRUST_BADGES.map((badge, i) => (
@@ -325,7 +311,7 @@ export default function LandingPage() {
                 Plugs into the tools you already run.
               </h2>
               <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
-            </motion.div>
+            </div>
             <IntegrationLogos compact />
           </div>
         </section>
@@ -348,7 +334,7 @@ export default function LandingPage() {
                 Everything you&rsquo;d ask your best rep.
               </h2>
               <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
-            </motion.div>
+            </div>
 
             <div className="border-t border-ink/[0.12] rounded-b-2xl overflow-hidden">
               {FAQS.map((faq, i) => (
