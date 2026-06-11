@@ -465,6 +465,98 @@
   opacity: 0.9;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Live voice orb — audio-reactive radial visualization.
+   Driven entirely by `data-orb-pulse` (0..1 live volume from Vapi)
+   via CSS attr(), so it stays CSP-safe (no inline styles) and
+   re-paints in lockstep with the real call stream. The single
+   custom property `--orb-pulse` inherits to every descendant.
+   ───────────────────────────────────────────────────────────── */
+[data-orb-pulse] {
+  --orb-pulse: attr(data-orb-pulse type(<number>), 0);
+}
+
+.wl-voice-orb {
+  --orb-color: var(--call-color, var(--color-brand));
+}
+
+/* Ambient brand halo that swells with the agent's voice. */
+.wl-voice-orb-halo {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--orb-color) 38%, transparent) 0%,
+    transparent 70%
+  );
+  filter: blur(10px);
+  transform: scale(calc(1.05 + var(--orb-pulse) * 0.65));
+  transition: transform 120ms ease-out;
+}
+
+/* Concentric reactive rings — each reacts a little more than the last
+   so loud speech visibly ripples outward. */
+.wl-voice-orb-ring {
+  border: 1px solid color-mix(in srgb, var(--orb-color) 55%, transparent);
+  transform: scale(calc(var(--ring-base) + var(--orb-pulse) * var(--ring-react)));
+  opacity: calc(var(--ring-opacity) + var(--orb-pulse) * 0.5);
+  transition:
+    transform 120ms ease-out,
+    opacity 120ms ease-out;
+}
+.wl-voice-orb-ring[data-ring="1"] {
+  --ring-base: 1.04;
+  --ring-react: 0.4;
+  --ring-opacity: 0.32;
+}
+.wl-voice-orb-ring[data-ring="2"] {
+  --ring-base: 1.18;
+  --ring-react: 0.72;
+  --ring-opacity: 0.2;
+}
+.wl-voice-orb-ring[data-ring="3"] {
+  --ring-base: 1.34;
+  --ring-react: 1.08;
+  --ring-opacity: 0.1;
+}
+
+/* Gradient core carrying the agent initial. */
+.wl-voice-orb-core {
+  background-image: linear-gradient(135deg, var(--color-brand), var(--color-brand-deep));
+  box-shadow:
+    0 12px 32px -14px color-mix(in srgb, var(--orb-color) 75%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transform: scale(1);
+  transition: transform 90ms ease-out;
+}
+/* When the agent is speaking, the core throbs with live amplitude. */
+.wl-voice-orb[data-speaking="true"] .wl-voice-orb-core {
+  transform: scale(calc(1 + var(--orb-pulse) * 0.13));
+}
+
+/* While merely listening, the core breathes gently on its own. */
+@media (prefers-reduced-motion: no-preference) {
+  .wl-voice-orb[data-speaking="false"] .wl-voice-orb-core {
+    animation: wl-orb-breathe 3.2s ease-in-out infinite;
+  }
+}
+
+@keyframes wl-orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-voice-orb-halo,
+  .wl-voice-orb-ring,
+  .wl-voice-orb-core {
+    transition: none;
+  }
+}
+
 .wl-brand-text {
   color: var(--brand-color);
 }

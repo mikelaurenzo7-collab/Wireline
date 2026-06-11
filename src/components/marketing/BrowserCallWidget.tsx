@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import Vapi from "@vapi-ai/web";
-import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
+import { PhoneOff, Mic, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { BRAND } from "../../constants/brand-colors";
+import VoiceOrb from "./VoiceOrb";
 
 // Retrieve Vapi public key safely from Vite environment
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
@@ -130,6 +131,32 @@ export default function BrowserCallWidget({
 
   return (
     <div className="flex flex-col items-center gap-3">
+      {/* Live audio-reactive voice orb — the agent's voice made visible. */}
+      {callActive && (
+        <div className="flex flex-col items-center gap-2 animate-fade-in">
+          <VoiceOrb
+            agentName={agentName}
+            volume={volume}
+            speaking={speakerActive}
+            color={activeColor}
+          />
+          <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] uppercase text-muted">
+            <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+              {speakerActive && (
+                <span className="absolute inline-flex h-full w-full rounded-full bg-brand/60 animate-ping" />
+              )}
+              <span
+                className={cn(
+                  "relative inline-flex h-1.5 w-1.5 rounded-full",
+                  speakerActive ? "bg-brand" : "bg-emerald-500",
+                )}
+              />
+            </span>
+            {speakerActive ? "Agent speaking" : "Listening"}
+          </span>
+        </div>
+      )}
+
       <ShadButton
         type="button"
         disableAnimations
