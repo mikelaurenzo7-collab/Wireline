@@ -169,7 +169,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.7, delay: 0.72, ease: [0.16, 1, 0.3, 1] }}
                 className="mt-6 lg:mt-8 text-[clamp(0.95rem,1.42vw,1.22rem)] leading-relaxed text-ink/65 max-w-2xl mx-auto"
               >
-                Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
+                Wireline deploys AI agents on real phone numbers — inbound support,
                 and email follow-ups. Trained on your playbook, improving with every call.
               </motion.p>
 
@@ -311,7 +311,7 @@ export default function LandingPage() {
                 Plugs into the tools you already run.
               </h2>
               <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
-            </div>
+            </motion.div>
             <IntegrationLogos compact />
           </div>
         </section>
@@ -334,7 +334,7 @@ export default function LandingPage() {
                 Everything you&rsquo;d ask your best rep.
               </h2>
               <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
-            </div>
+            </motion.div>
 
             <div className="border-t border-ink/[0.12] rounded-b-2xl overflow-hidden">
               {FAQS.map((faq, i) => (
