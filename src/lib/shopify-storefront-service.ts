@@ -69,7 +69,16 @@ interface GraphqlResponse<T> {
   errors?: Array<{ message?: string }>;
 }
 
-async function getConnectedShopifyShop(userId: string): Promise<{ shop: string } | null> {
+interface StorefrontClient {
+  shop: string;
+  storefrontAccessToken: string | null;
+}
+
+function getString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+async function getConnectedShopifyStorefrontClient(userId: string): Promise<StorefrontClient | null> {
   const [connection] = await drizzle
     .select({ instanceUrl: schema.crmConnections.instanceUrl, metadata: schema.crmConnections.metadata })
     .from(schema.crmConnections)
@@ -79,7 +88,10 @@ async function getConnectedShopifyShop(userId: string): Promise<{ shop: string }
     .limit(1);
 
   if (!connection) return null;
-  const meta = connection.metadata as { shop?: unknown } | null;
+  const meta = connection.metadata as
+    | { shop?: unknown; storefrontAccessToken?: unknown; storefront_access_token?: unknown }
+    | null;
+
   let shop = meta && typeof meta.shop === "string" ? normalizeShopDomain(meta.shop) : null;
   if (!shop && connection.instanceUrl) {
     try {
@@ -88,19 +100,37 @@ async function getConnectedShopifyShop(userId: string): Promise<{ shop: string }
       /* malformed legacy instanceUrl */
     }
   }
-  return shop ? { shop } : null;
+  if (!shop) return null;
+
+  const metadataToken = getString(meta?.storefrontAccessToken) || getString(meta?.storefront_access_token);
+  const envToken = getString(process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN);
+  return { shop, storefrontAccessToken: metadataToken || envToken };
+}
+
+function requireStorefrontAccess(client: StorefrontClient): string {
+  if (!client.storefrontAccessToken) {
+    throw new Error(
+      "Shopify is connected, but Storefront API access is not configured for live catalog and cart generation.",
+    );
+  }
+  return client.storefrontAccessToken;
 }
 
 async function storefrontGraphql<T>(
-  shop: string,
+  client: StorefrontClient,
   query: string,
   variables?: Record<string, unknown>,
 ): Promise<T> {
+  const storefrontAccessToken = requireStorefrontAccess(client);
   const response = await fetchWithTimeout(
-    `https://${shop}/api/${STOREFRONT_API_VERSION}/graphql.json`,
+    `https://${client.shop}/api/${STOREFRONT_API_VERSION}/graphql.json`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Shopify-Storefront-Access-Token": storefrontAccessToken,
+      },
       body: JSON.stringify({ query, variables }),
     },
     15_000,
@@ -171,15 +201,28 @@ export async function loadShopifyStorefrontStatus(userId: string): Promise<{
   shop?: string;
   primaryDomainUrl?: string;
   apiVersion: string;
+  ready: boolean;
+  requiresStorefrontAccess?: boolean;
   error?: string;
 }> {
-  const connected = await getConnectedShopifyShop(userId);
-  if (!connected) return { connected: false, apiVersion: STOREFRONT_API_VERSION };
+  const client = await getConnectedShopifyStorefrontClient(userId);
+  if (!client) return { connected: false, ready: false, apiVersion: STOREFRONT_API_VERSION };
+  if (!client.storefrontAccessToken) {
+    return {
+      connected: true,
+      ready: false,
+      shop: client.shop,
+      apiVersion: STOREFRONT_API_VERSION,
+      requiresStorefrontAccess: true,
+      error: "Storefront API access is not configured for this Shopify connection.",
+    };
+  }
   try {
     const catalog = await loadShopifyStorefrontCatalog({ userId, productsFirst: 1, collectionsFirst: 1 });
     return {
       connected: true,
-      shop: connected.shop,
+      ready: true,
+      shop: client.shop,
       primaryDomainUrl: catalog.primaryDomainUrl,
       apiVersion: STOREFRONT_API_VERSION,
     };
@@ -187,7 +230,8 @@ export async function loadShopifyStorefrontStatus(userId: string): Promise<{
     log.warn("Shopify Storefront status failed", { error: getErrorMessage(error) });
     return {
       connected: true,
-      shop: connected.shop,
+      ready: false,
+      shop: client.shop,
       apiVersion: STOREFRONT_API_VERSION,
       error: getErrorMessage(error),
     };
@@ -199,14 +243,14 @@ export async function loadShopifyStorefrontCatalog(params: {
   productsFirst?: number;
   collectionsFirst?: number;
 }): Promise<StorefrontCatalog> {
-  const connected = await getConnectedShopifyShop(params.userId);
-  if (!connected) throw new Error("Connect Shopify before generating a live storefront catalog.");
+  const client = await getConnectedShopifyStorefrontClient(params.userId);
+  if (!client) throw new Error("Connect Shopify before generating a live storefront catalog.");
   const productsFirst = Math.min(Math.max(params.productsFirst ?? 12, 1), 24);
   const collectionsFirst = Math.min(Math.max(params.collectionsFirst ?? 6, 1), 12);
-  const data = await storefrontGraphql<any>(connected.shop, CATALOG_QUERY, { productsFirst, collectionsFirst });
+  const data = await storefrontGraphql<any>(client, CATALOG_QUERY, { productsFirst, collectionsFirst });
 
   return {
-    shop: connected.shop,
+    shop: client.shop,
     primaryDomainUrl: data.shop?.primaryDomain?.url,
     products: (data.products?.edges ?? []).map((edge: any) => {
       const node = edge.node;
@@ -249,9 +293,9 @@ export async function createShopifyStorefrontCart(params: {
   userId: string;
   lines: Array<{ merchandiseId: string; quantity: number }>;
 }): Promise<StorefrontCart> {
-  const connected = await getConnectedShopifyShop(params.userId);
-  if (!connected) throw new Error("Connect Shopify before creating a storefront cart.");
-  const data = await storefrontGraphql<any>(connected.shop, CART_CREATE_MUTATION, { lines: params.lines });
+  const client = await getConnectedShopifyStorefrontClient(params.userId);
+  if (!client) throw new Error("Connect Shopify before creating a storefront cart.");
+  const data = await storefrontGraphql<any>(client, CART_CREATE_MUTATION, { lines: params.lines });
   const errors = data.cartCreate?.userErrors ?? [];
   if (errors.length) throw new Error(errors.map((e: any) => e.message).join("; "));
   return mapCart(data.cartCreate.cart);
@@ -262,9 +306,9 @@ export async function addShopifyStorefrontCartLines(params: {
   cartId: string;
   lines: Array<{ merchandiseId: string; quantity: number }>;
 }): Promise<StorefrontCart> {
-  const connected = await getConnectedShopifyShop(params.userId);
-  if (!connected) throw new Error("Connect Shopify before updating a storefront cart.");
-  const data = await storefrontGraphql<any>(connected.shop, CART_LINES_ADD_MUTATION, {
+  const client = await getConnectedShopifyStorefrontClient(params.userId);
+  if (!client) throw new Error("Connect Shopify before updating a storefront cart.");
+  const data = await storefrontGraphql<any>(client, CART_LINES_ADD_MUTATION, {
     cartId: params.cartId,
     lines: params.lines,
   });
