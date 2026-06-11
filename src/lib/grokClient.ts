@@ -2,13 +2,14 @@
 // xAI Grok 4.3 client for Wireline Director chat
 // Uses official xAI OpenAI-compatible endpoint via the openai package
 
-import OpenAI from 'openai';
+import OpenAI from "openai";
+import { log } from "./server-context";
 
 const XAI_API_KEY = process.env.XAI_API_KEY;
-const XAI_BASE_URL = process.env.XAI_BASE_URL || 'https://api.x.ai/v1';
+const XAI_BASE_URL = process.env.XAI_BASE_URL || "https://api.x.ai/v1";
 
 if (!XAI_API_KEY) {
-  console.warn('⚠️ XAI_API_KEY is not set. Director chat will fail in production.');
+  log.warn("XAI_API_KEY is not set. Director chat will fail in production.");
 }
 
 export const xaiClient = new OpenAI({
@@ -29,18 +30,18 @@ export async function callDirectorGrok({
 }: {
   systemPrompt: string;
   userMessage: string;
-  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
   temperature?: number;
   maxTokens?: number;
 }) {
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: 'system', content: systemPrompt },
+    { role: "system", content: systemPrompt },
     ...history,
-    { role: 'user', content: userMessage },
+    { role: "user", content: userMessage },
   ];
 
   const stream = await xaiClient.chat.completions.create({
-    model: 'grok-4.3',           // Confirm latest model name in xAI console
+    model: "grok-4.3", // Confirm latest model name in xAI console
     messages,
     temperature,
     top_p: 0.92,
@@ -64,17 +65,17 @@ export async function callDirectorGrokSync({
 }: {
   systemPrompt: string;
   userMessage: string;
-  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
   temperature?: number;
 }) {
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: 'system', content: systemPrompt },
+    { role: "system", content: systemPrompt },
     ...history,
-    { role: 'user', content: userMessage },
+    { role: "user", content: userMessage },
   ];
 
   const response = await xaiClient.chat.completions.create({
-    model: 'grok-4.3',
+    model: "grok-4.3",
     messages,
     temperature,
     top_p: 0.92,
@@ -84,5 +85,5 @@ export async function callDirectorGrokSync({
     stream: false,
   });
 
-  return response.choices[0]?.message?.content || '';
+  return response.choices[0]?.message?.content || "";
 }
