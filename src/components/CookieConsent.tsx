@@ -70,6 +70,8 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
+            // Mobile: a slim, full-width pill that doesn't compete with hero copy.
+            // ≥sm: bottom-left compact card, never spans the screen.
             "fixed z-[9999] left-3 right-3 sm:left-5 sm:right-auto sm:max-w-[320px]",
             onAuthRoute
               ? "top-[max(0.75rem,env(safe-area-inset-top,0))]"

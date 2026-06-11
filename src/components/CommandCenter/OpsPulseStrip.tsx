@@ -3,6 +3,7 @@ import { cn } from "../../lib/utils";
 import { WL_OPS_CLASSES, OPS_PULSE_METRICS } from "../../lib/wireline-ops-design";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { AnimatedCounter } from "../ui/AnimatedCounter";
+import { Skeleton } from "../ui/shadcn/Skeleton";
 
 type OpsTabId = "floor" | "intel" | "triage" | "analytics";
 
@@ -54,7 +55,11 @@ function PulseMetric({
           loading && "text-muted-foreground",
         )}
       >
-        {loading ? "…" : <AnimatedCounter value={value} />}
+        {loading ? (
+          <Skeleton className="h-6 w-10 mt-0.5" aria-label={`${label}: loading`} />
+        ) : (
+          <AnimatedCounter value={value} />
+        )}
       </motion.span>
     </>
   );

@@ -1303,9 +1303,15 @@ export default function DirectorWorkspace({
                         : "Mission control active"}
                   </span>
                 ) : focusedAgent ? (
-                  `Coaching ${focusedAgent.name}`
+                  <span>
+                    <span className="sm:hidden">Coaching</span>
+                    <span className="hidden sm:inline">Coaching {focusedAgent.name}</span>
+                  </span>
                 ) : (
-                  "Always-on fleet manager"
+                  <span>
+                    <span className="sm:hidden">Fleet manager</span>
+                    <span className="hidden sm:inline">Always-on fleet manager</span>
+                  </span>
                 )}
               </p>
             </div>

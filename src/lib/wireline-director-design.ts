@@ -586,7 +586,7 @@ export const WL_APP_CLASSES = {
   missionCanvas:
     "wl-mission-canvas bg-gradient-to-b from-paper/40 to-paper/85 dark:from-velvet/20 dark:to-velvet/45",
   settingsPanel:
-    "wl-panel-elevated border border-border/80 rounded-lg p-6 space-y-6 mt-8 shadow-sm transition-all duration-300 focus-within:shadow-md",
+    "wl-panel-elevated border border-border/80 rounded-md p-6 space-y-6 mt-8 shadow-sm transition-all duration-300 focus-within:shadow-md",
   settingsIcon:
     "w-10 h-10 rounded-md bg-brand flex items-center justify-center text-primary-foreground shrink-0 shadow-sm shadow-brand/20",
   settingsRow:
@@ -619,7 +619,7 @@ export const WL_APP_CLASSES = {
   /** Editorial left rail on mobile page context */
   mobileContextAccent: "wl-mobile-context-accent",
   /** Segmented control track (day range, channel pickers) */
-  segmentStrip: "app-segment-strip bg-muted/40 p-0.5 rounded-lg border border-border/40",
+  segmentStrip: "app-segment-strip bg-muted/40 p-0.5 rounded-md border border-border/40",
   /** System banners (trial, verify email) */
   banner: "wl-banner transition-all duration-300",
   /** Light paper / dark velvet elevated surfaces (bubbles, cards, composer) */
