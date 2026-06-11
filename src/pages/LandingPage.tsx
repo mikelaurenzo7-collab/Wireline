@@ -117,7 +117,7 @@ export default function LandingPage() {
         {/* ─── Hero ───────────────────────────────────────────────── */}
         <section
           data-testid="hero-section"
-          className="relative px-6 lg:px-12 pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
+          className="relative px-5 sm:px-6 lg:px-12 pt-20 sm:pt-24 pb-10 lg:pt-28 lg:pb-12 overflow-x-hidden"
         >
           <div className="wl-aurora-field absolute inset-0 z-0" aria-hidden="true">
             <span className="wl-aurora-orb" />
@@ -146,7 +146,7 @@ export default function LandingPage() {
                 </span>
               </motion.span>
 
-              <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto">
+              <h1 className="hero-word-reveal hero-headline hero-headline-glow text-ink max-w-4xl mx-auto text-balance">
                 <span>Every conversation,</span>
                 <span className="wl-aurora-text hero-headline-accent">
                   answered like your best rep.
@@ -157,7 +157,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-6 lg:mt-8 text-[clamp(0.9rem,1.5vw,1.2rem)] leading-relaxed text-ink/65 max-w-xl mx-auto"
+                className="mt-6 lg:mt-8 text-[clamp(0.95rem,1.45vw,1.25rem)] leading-relaxed text-ink/65 max-w-2xl mx-auto"
               >
                 Wireline deploys AI agents on real phone numbers — inbound support, outbound sales,
                 and email follow-ups. Trained on your playbook, improving with every call.
@@ -165,21 +165,22 @@ export default function LandingPage() {
 
               <HeroCallPreview />
 
+              {/* Live Demo Section — Majestic on all viewports */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="mt-10 lg:mt-12 max-w-2xl mx-auto"
+                className="mt-10 lg:mt-12 max-w-3xl mx-auto"
               >
                 <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] text-ink/50 mb-4">
                   Live demo — no signup
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-md border border-ink/10 bg-white/25 backdrop-blur-sm p-4 sm:p-5 shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-2xl border border-ink/10 bg-white/30 backdrop-blur-xl p-4 sm:p-6 shadow-sm">
                   {csDemo && (
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <p className="text-[11px] font-medium text-ink/70">
-                        Jordan · inbound support
+                    <div className="flex flex-col items-center text-center p-2">
+                      <p className="text-[12px] font-medium text-ink/70 mb-3">
+                        Jordan · Inbound Support
                       </p>
                       <BrowserCallWidget
                         agentName={csDemo.name}
@@ -187,22 +188,24 @@ export default function LandingPage() {
                       />
                       <a
                         href={`tel:${csDemo.tel}`}
-                        className="text-[11px] font-mono text-ink/50 hover:text-brand transition-colors"
+                        className="mt-3 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
                       >
                         {csDemo.display}
                       </a>
                     </div>
                   )}
                   {salesDemo && (
-                    <div className="flex flex-col items-center gap-2 text-center sm:border-l sm:border-ink/[0.08] sm:pl-4">
-                      <p className="text-[11px] font-medium text-ink/70">Jake · outbound sales</p>
+                    <div className="flex flex-col items-center text-center p-2 sm:border-l sm:border-ink/[0.1] sm:pl-6">
+                      <p className="text-[12px] font-medium text-ink/70 mb-3">
+                        Jake · Outbound Sales
+                      </p>
                       <BrowserCallWidget
                         agentName={salesDemo.name}
                         buttonLabel={`Talk to ${salesDemo.name}`}
                       />
                       <a
                         href={`tel:${salesDemo.tel}`}
-                        className="text-[11px] font-mono text-ink/50 hover:text-brand transition-colors"
+                        className="mt-3 text-[13px] font-mono text-brand hover:text-brand/80 transition-colors tracking-tight"
                       >
                         {salesDemo.display}
                       </a>
@@ -216,7 +219,7 @@ export default function LandingPage() {
                     data-testid="hero-showcase-link"
                     className="inline-flex items-center gap-1 text-ink/70 hover:text-brand transition-colors"
                   >
-                    Hear medical, legal, real estate &amp; more
+                    Hear medical, legal, real estate & more
                     <ArrowUpRight className="w-3.5 h-3.5 shrink-0" />
                   </Link>
                   <span className="hidden sm:inline text-ink/25" aria-hidden="true">
@@ -229,20 +232,13 @@ export default function LandingPage() {
 
                 <div
                   data-testid="hero-trust-badges"
-                  className="wl-reveal-stagger mt-6 pt-4 border-t border-ink/10 flex flex-wrap items-center justify-center gap-x-2.5 sm:gap-x-4 gap-y-2"
+                  className="wl-reveal-stagger mt-6 pt-4 border-t border-ink/10 flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5 gap-y-2"
                   aria-label="Security and compliance"
                 >
                   {TRUST_BADGES.map((badge, i) => (
-                    <span key={badge} className="inline-flex items-center gap-2.5 sm:gap-4">
-                      {i > 0 && (
-                        <span
-                          className="text-ink/35 hidden sm:inline font-mono text-[13px] leading-none"
-                          aria-hidden="true"
-                        >
-                          ·
-                        </span>
-                      )}
-                      <span className="font-mono text-[12px] sm:text-[13px] uppercase tracking-[0.16em] text-ink/78 font-medium">
+                    <span key={badge} className="inline-flex items-center gap-2.5">
+                      {i > 0 && <span className="text-ink/30 hidden sm:inline">·</span>}
+                      <span className="font-mono text-[11px] sm:text-[12px] uppercase tracking-[0.18em] text-ink/75 font-medium">
                         {badge}
                       </span>
                     </span>
@@ -256,10 +252,10 @@ export default function LandingPage() {
         {/* ─── Proof ──────────────────────────────────────────────── */}
         <section
           data-testid="proof-section"
-          className="landing-section landing-section--band landing-section--band-after-hero px-6 lg:px-12"
+          className="landing-section landing-section--band landing-section--band-after-hero px-5 sm:px-6 lg:px-12"
         >
           <div className="landing-section-inner max-w-7xl">
-            <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08]">
+            <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] rounded-2xl overflow-hidden">
               {STATS.map((stat, i) => (
                 <motion.div
                   key={stat.label}
@@ -285,7 +281,7 @@ export default function LandingPage() {
         </section>
 
         {/* ─── Integrations ───────────────────────────────────────── */}
-        <section data-testid="integrations-section" className="landing-section px-6 lg:px-12">
+        <section data-testid="integrations-section" className="landing-section px-5 sm:px-6 lg:px-12">
           <div className="landing-section-inner max-w-5xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -308,7 +304,7 @@ export default function LandingPage() {
         </section>
 
         {/* ─── FAQ ────────────────────────────────────────────────── */}
-        <section data-testid="faq-section" className="landing-section px-6 lg:px-12">
+        <section data-testid="faq-section" className="landing-section px-5 sm:px-6 lg:px-12">
           <div className="landing-section-inner max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -327,7 +323,7 @@ export default function LandingPage() {
               <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
             </motion.div>
 
-            <div className="border-t border-ink/[0.12]">
+            <div className="border-t border-ink/[0.12] rounded-b-2xl overflow-hidden">
               {FAQS.map((faq, i) => (
                 <motion.details
                   key={faq.q}
@@ -335,7 +331,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.2) }}
-                  className="wl-faq-item faq-details group border-b border-ink/[0.12]"
+                  className="wl-faq-item faq-details group border-b border-ink/[0.12] last:border-b-0"
                   data-testid={`faq-item-${i}`}
                   onToggle={(e: React.ToggleEvent<HTMLDetailsElement>) => {
                     const el = e.currentTarget;
@@ -346,8 +342,8 @@ export default function LandingPage() {
                     }
                   }}
                 >
-                  <summary className="flex items-start justify-between gap-4 py-5 lg:py-6 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
-                    <span className="font-display italic text-base sm:text-lg lg:text-xl text-ink leading-snug">
+                  <summary className="flex items-start justify-between gap-4 py-5 lg:py-6 cursor-pointer list-none select-none px-1 [&::-webkit-details-marker]:hidden">
+                    <span className="font-display italic text-base sm:text-lg lg:text-xl text-ink leading-snug pr-4">
                       {faq.q}
                     </span>
                     <Plus
