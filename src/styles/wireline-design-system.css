@@ -1,11 +1,9 @@
-/* ... (keeping the entire previous content, only replacing the HERO CINEMATIC section with the VIGILANT zero-bleed perfected version) ... */
+/* Wireline marketing hero polish — zero purple background bleed. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   WIRELINE HERO — WORLD-CLASS CINEMATIC MASTER SCENE (VIGILANT ZERO-BLEED)
-   Purple bleeding COMPLETELY ELIMINATED everywhere.
-   Especially behind main hero graphic (exchange + wirelines + robots).
-   Rich cream (#EFE9DC) protected with ironclad mask + ultra-restrained aurora.
-   One living organism, zero tint leak, desktop-first perfection.
+   WIRELINE HERO — ZERO-BLEED MARKETING SURFACE
+   Purple is reserved for crisp brand strokes and CTAs only. The page field
+   stays cream/ink, with no violet wash behind the hero content.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -13,7 +11,6 @@
   --hero-entrance-duration: 0.85s;
 }
 
-/* ── AURORA FIELD — Ultra-restrained atmosphere, zero cream bleed ── */
 .wl-aurora-field {
   overflow: hidden;
   isolation: isolate;
@@ -21,164 +18,46 @@
   background: transparent;
 }
 
-.wl-aurora-orb {
-  position: absolute;
-  display: block;
-  width: 44rem;
-  height: 44rem;
-  border-radius: 9999px;
-  pointer-events: none;
-  will-change: transform, opacity;
-  opacity: 0.38; /* VIGILANT: slashed for zero bleed */
-}
-
-/* Orb 1 — Foundational warm drift (slowest) */
-.wl-aurora-orb:nth-child(1) {
-  top: -20rem;
-  left: -16rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.065) 0%,   /* VIGILANT: purple alpha slashed */
-    rgba(139, 63, 214, 0.022) 44%,
-    transparent 72%
-  );
-  animation: hero-aurora-drift-1 var(--hero-master-cycle) ease-in-out infinite alternate;
-}
-
-/* Orb 2 — Cooler counter-drift */
-.wl-aurora-orb:nth-child(2) {
-  top: -14rem;
-  right: -18rem;
-  width: 50rem;
-  height: 50rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.048) 0%,
-    rgba(155, 92, 224, 0.018) 48%,
-    transparent 74%
-  );
-  animation: hero-aurora-drift-2 calc(var(--hero-master-cycle) * 1.18) ease-in-out infinite alternate;
-}
-
-/* Orb 3 — Bottom bloom */
-.wl-aurora-orb:nth-child(3) {
-  bottom: -26rem;
-  left: 24%;
-  width: 54rem;
-  height: 54rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(107, 43, 153, 0.042) 0%,
-    rgba(107, 43, 153, 0.015) 52%,
-    transparent 76%
-  );
-  animation: hero-aurora-drift-3 calc(var(--hero-master-cycle) * 1.28) ease-in-out infinite alternate;
-}
-
-/* Orb 4 — Mid accent (subtle counter) */
-.wl-aurora-orb.wl-aurora-orb--mid {
-  top: 14%;
-  right: 18%;
-  width: 40rem;
-  height: 40rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.038) 0%,
-    rgba(139, 63, 214, 0.012) 50%,
-    transparent 74%
-  );
-  animation: hero-aurora-drift-4 calc(var(--hero-master-cycle) * 1.12) ease-in-out infinite alternate;
-}
-
-@keyframes hero-aurora-drift-1 {
-  0% { transform: translate3d(0, 0, 0) scale(1.0); }
-  100% { transform: translate3d(4.2rem, 2.8rem, 0) scale(1.07); }
-}
-@keyframes hero-aurora-drift-2 {
-  0% { transform: translate3d(0, 0, 0) scale(1.0); }
-  100% { transform: translate3d(-4.8rem, 3.4rem, 0) scale(0.95); }
-}
-@keyframes hero-aurora-drift-3 {
-  0% { transform: translate3d(0, 0, 0) scale(0.98); }
-  100% { transform: translate3d(3.4rem, -3.8rem, 0) scale(1.06); }
-}
-@keyframes hero-aurora-drift-4 {
-  0% { transform: translate3d(0, 0, 0) scale(1.01); }
-  100% { transform: translate3d(-2.9rem, 2.5rem, 0) scale(0.97); }
-}
-
-/* ── HERO SPOTLIGHT — Emotional leader, now ultra-gentle, zero bleed ── */
+.wl-aurora-orb,
 .wl-hero-spotlight {
-  position: absolute;
-  top: -11%;
-  left: 50%;
-  width: min(82rem, 102vw);
-  height: min(46rem, 72vh);
-  transform: translateX(-50%);
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 56% 62% at 50% 32%,
-    rgba(139, 63, 214, 0.055) 0%,   /* VIGILANT: purple alpha slashed */
-    rgba(139, 63, 214, 0.018) 46%,
-    transparent 72%
-  );
-  animation: hero-spotlight-breathe var(--hero-master-cycle) ease-in-out infinite;
-  will-change: transform, opacity;
-  opacity: 0.82; /* Base lowered */
+  display: none !important;
 }
 
-@keyframes hero-spotlight-breathe {
-  0%, 100% {
-    opacity: 0.52;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 0.78;
-    transform: translateX(-50%) scale(1.028);
-  }
-}
-
-/* ── CREAM MASK — IRONCLAD protection for rich cream behind main hero graphic ── */
 .wl-cream-aurora-mask {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 3;
-  background: radial-gradient(
-    ellipse 88% 72% at 50% 34%,
-    rgba(239, 233, 220, 0.58) 0%,      /* VIGILANT: much stronger center anchor */
-    rgba(239, 233, 220, 0.32) 36%,
-    rgba(239, 233, 220, 0.14) 56%,
-    transparent 80%
-  );
+  background:
+    radial-gradient(ellipse 82% 56% at 50% 22%, rgba(255, 252, 246, 0.74), transparent 70%),
+    linear-gradient(180deg, rgba(239, 233, 220, 0.98) 0%, rgba(239, 233, 220, 0.86) 58%, rgba(239, 233, 220, 0) 100%);
 }
 
-/* ── WIRELINES + EXCHANGE — Main hero graphic now sits cleanly, no purple bleed ── */
 .wl-wireline-layer {
   isolation: isolate;
   contain: paint;
   -webkit-mask-image: radial-gradient(
-    ellipse 52% 42% at 50% 28%,
-    rgba(0, 0, 0, 0.38) 0%,
-    rgba(0, 0, 0, 0.72) 58%,
+    ellipse 58% 44% at 50% 28%,
+    rgba(0, 0, 0, 0.56) 0%,
+    rgba(0, 0, 0, 0.84) 56%,
     #000 100%
   );
   mask-image: radial-gradient(
-    ellipse 52% 42% at 50% 28%,
-    rgba(0, 0, 0, 0.38) 0%,
-    rgba(0, 0, 0, 0.72) 58%,
+    ellipse 58% 44% at 50% 28%,
+    rgba(0, 0, 0, 0.56) 0%,
+    rgba(0, 0, 0, 0.84) 56%,
     #000 100%
   );
 }
 
 .wl-wire {
-  stroke: var(--color-brand, #8b3fd6);
-  stroke-width: 1.45; /* Slightly thinner for elegance */
+  stroke: color-mix(in srgb, var(--color-brand, #8b3fd6) 72%, #1a1614 28%);
+  stroke-width: 1.2;
   stroke-linecap: round;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   opacity: 0;
-  animation: 
+  animation:
     wl-wire-draw-hero 1.55s cubic-bezier(0.23, 1, 0.32, 1) forwards,
     wl-wire-drift-hero calc(var(--hero-master-cycle) * 1.45) ease-in-out infinite;
 }
@@ -189,23 +68,23 @@
 .wl-wire[data-index="3"] { animation-delay: 0.92s, calc(var(--hero-master-cycle) * 1.58); }
 
 @keyframes wl-wire-draw-hero {
-  from { stroke-dashoffset: 1; opacity: 0.18; }
-  to { stroke-dashoffset: 0; opacity: 0.26; }
+  from { stroke-dashoffset: 1; opacity: 0.14; }
+  to { stroke-dashoffset: 0; opacity: 0.2; }
 }
 
 @keyframes wl-wire-drift-hero {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(2.8px); }
+  50% { transform: translateY(2.4px); }
 }
 
 .wl-wire-signal {
-  stroke: var(--color-brand, #8b3fd6);
-  stroke-width: 2.6;
+  stroke: color-mix(in srgb, var(--color-brand, #8b3fd6) 80%, #1a1614 20%);
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-dasharray: 0.06 0.94;
   stroke-dashoffset: 1;
   opacity: 0;
-  animation: 
+  animation:
     wl-wire-signal-in-hero 0.85s ease 2.05s forwards,
     wl-wire-signal-travel-hero 3.05s linear infinite;
 }
@@ -215,7 +94,7 @@
 .wl-wire-signal[data-index="3"] { animation-delay: 2.65s, 2.15s; }
 
 @keyframes wl-wire-signal-in-hero {
-  to { opacity: 0.62; } /* VIGILANT: lower flash intensity */
+  to { opacity: 0.36; }
 }
 
 @keyframes wl-wire-signal-travel-hero {
@@ -224,7 +103,7 @@
 }
 
 .wl-exchange-core {
-  fill: var(--color-brand, #8b3fd6);
+  fill: color-mix(in srgb, var(--color-brand, #8b3fd6) 78%, #1a1614 22%);
   opacity: 0;
   animation: wl-exchange-in-hero 1.05s cubic-bezier(0.23, 1, 0.32, 1) 1.65s forwards;
 }
@@ -234,26 +113,25 @@
   position: absolute;
   left: 32px;
   top: 38px;
-  width: 13.5rem;
-  height: 13.5rem;
-  margin-left: -6.75rem;
-  margin-top: -6.75rem;
+  width: 12rem;
+  height: 12rem;
+  margin-left: -6rem;
+  margin-top: -6rem;
   pointer-events: none;
   background: radial-gradient(
     circle at center,
-    rgba(139, 63, 214, 0.09) 0%,   /* VIGILANT: halo purple slashed to prevent bleed */
-    rgba(139, 63, 214, 0.025) 46%,
-    transparent 74%
+    rgba(26, 22, 20, 0.055) 0%,
+    rgba(26, 22, 20, 0.018) 42%,
+    transparent 72%
   );
   animation: hero-exchange-halo var(--hero-master-cycle) ease-in-out infinite;
 }
 
 @keyframes hero-exchange-halo {
-  0%, 100% { opacity: 0.24; transform: scale(0.94); }
-  50% { opacity: 0.58; transform: scale(1.04); }
+  0%, 100% { opacity: 0.18; transform: scale(0.94); }
+  50% { opacity: 0.32; transform: scale(1.04); }
 }
 
-/* ── ROBOTS — Shared scene pulse, premium weight, no bleed ── */
 @media (prefers-reduced-motion: no-preference) {
   .hero-robot {
     animation: hero-robot-scene-pulse calc(var(--hero-master-cycle) * 1.35) ease-in-out infinite;
@@ -265,10 +143,7 @@
   50% { transform: translateY(-2.2px) scale(1.006); }
 }
 
-/* ── REDUCED MOTION — Still elegant and fully functional ── */
 @media (prefers-reduced-motion: reduce) {
-  .wl-aurora-orb,
-  .wl-hero-spotlight,
   .wl-wire,
   .wl-wire-signal,
   .wl-exchange-core,
@@ -276,22 +151,25 @@
   .hero-robot {
     animation: none !important;
   }
-  
+
   .wl-wire {
     stroke-dashoffset: 0;
-    opacity: 0.26;
+    opacity: 0.2;
   }
+
   .wl-wire-signal {
     opacity: 0;
   }
+
   .wl-exchange-core {
-    opacity: 0.48;
+    opacity: 0.44;
   }
+
   .wl-exchange::before {
-    opacity: 0.22;
+    opacity: 0.18;
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   END OF VIGILANT ZERO-BLEED HERO CINEMATIC
+   END ZERO-BLEED MARKETING HERO
    ═══════════════════════════════════════════════════════════════════════════ */
