@@ -1,6 +1,9 @@
-import { fetchWithTimeout, log } from "./server-context";
+/* eslint-disable @typescript-eslint/no-explicit-any -- Shopify Storefront API returns vendor-defined GraphQL envelopes. */
+import { and, eq } from "drizzle-orm";
+import * as schema from "../db/schema";
+import { drizzle, fetchWithTimeout, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
-import { getConnectedShopifyShop } from "./shopify-service";
+import { normalizeShopDomain } from "./shopify-service";
 
 const STOREFRONT_API_VERSION = "2026-04";
 
@@ -64,6 +67,28 @@ export interface StorefrontCart {
 interface GraphqlResponse<T> {
   data?: T;
   errors?: Array<{ message?: string }>;
+}
+
+async function getConnectedShopifyShop(userId: string): Promise<{ shop: string } | null> {
+  const [connection] = await drizzle
+    .select({ instanceUrl: schema.crmConnections.instanceUrl, metadata: schema.crmConnections.metadata })
+    .from(schema.crmConnections)
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "shopify")),
+    )
+    .limit(1);
+
+  if (!connection) return null;
+  const meta = connection.metadata as { shop?: unknown } | null;
+  let shop = meta && typeof meta.shop === "string" ? normalizeShopDomain(meta.shop) : null;
+  if (!shop && connection.instanceUrl) {
+    try {
+      shop = normalizeShopDomain(new URL(connection.instanceUrl).host);
+    } catch {
+      /* malformed legacy instanceUrl */
+    }
+  }
+  return shop ? { shop } : null;
 }
 
 async function storefrontGraphql<T>(
