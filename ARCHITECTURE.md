@@ -61,12 +61,40 @@ Concretely Opus drives:
 - `post-call-digest.ts` → outcome classification + CRM + email + CSAT pipeline
 - Integration Manager → multi-step tool orchestration with guardrails
 
-### 1.3 Enforcement Points
+### 1.3 Per-agent model override (Agent Studio)
+
+The customization-first Agent Studio lets operators pick a **per-agent**
+reasoning model and temperature for the live voice runtime, instead of being
+locked to the tenant default + archetype temperature. This is a deliberate
+relaxation of the moat — **bounded so it can't be used to break the moat**:
+
+- **Curated catalog, not a free-text field.** `VOICE_MODEL_CATALOG` in
+  `claude-models.ts` is the source of truth for the picker — only Vapi-native
+  providers (Anthropic, Google, OpenAI, **xAI/Grok**, and **OpenRouter** as an
+  opt-in proxy). Each entry carries a `speed` badge and a `latencyWarning`
+  flag, so heavy options (Opus, OpenRouter) tell the operator the TTFT
+  trade-off up front rather than silently degrading their calls.
+- **Provider gating.** An option only appears if its `envKey` is configured,
+  so the picker never offers a provider the deployment can't actually reach.
+- **Validation can't reach Vapi dirty.** Per-agent `llm_provider` / `llm_model`
+  flow through `resolveVapiVoiceModelSelection()`, which normalizes/validates
+  against the native provider set; an unknown value falls back to the tenant
+  default. `llm_temperature` is clamped to `[0, 1]` via
+  `clampVoiceTemperature()` so an override can't make a live agent erratic.
+- **Inheritance preserved.** All three columns are nullable; NULL → inherit the
+  tenant default + archetype temperature, identical to pre-Studio behaviour.
+
+OpenRouter is allowed on voice but flagged: the extra proxy hop adds latency
+and variance, so it's ideal for the reasoning side and a labelled escape hatch
+on the live wire.
+
+### 1.4 Enforcement Points
 
 | File | Role |
 |------|------|
 | `src/lib/claude-models.ts` | Constants: `VAPI_TENANT_DEFAULT_MODEL`, `VAPI_SHOWCASE_MODEL`, `VAPI_PREMIUM_MODEL`, `CLAUDE_REASONING_MODEL_DEFAULT`, `selectModelForTask()` |
-| `src/lib/vapi-assistant-factory.ts` | Reads `voice_llm_provider`/`voice_llm_model` from `wireline_settings`; resolves via `resolveVapiVoiceModelSelection()` |
+| `src/lib/vapi-assistant-factory.ts` | Per-agent `llmProvider`/`llmModel`/`llmTemperature` override tenant `voice_llm_*`; resolved via `resolveVapiVoiceModelSelection()` + `clampVoiceTemperature()` |
+| `src/lib/claude-models.ts` | `VOICE_MODEL_CATALOG` — curated, env-gated per-agent model picker (anthropic / google / openai / xai / openrouter) |
 | `src/lib/vapi-client.ts` | Same resolution path, for outbound calls |
 | `src/lib/claude-recipes.ts` | `brief`, `coach`, `postCallAnalysis`, `dailyBrief` all use `CLAUDE_REASONING_MODEL_DEFAULT` (Opus 4.8) |
 | `src/db/schema.ts` | `wireline_settings.voiceLlmProvider` / `voiceLlmModel` defaults — set to anthropic / claude-sonnet-4-6 so every new tenant lands on the right voice runtime out of the box |

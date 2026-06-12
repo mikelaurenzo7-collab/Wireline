@@ -95,12 +95,20 @@ contracts/             # api-types.ts shared client/server contract
   `dailyBrief` in `claude-recipes.ts` — runs off the live wire)
 - **Simple tasks** → Claude Haiku 4.5 via `selectModelForTask("simple")`
 - **Fallback / grounded search** → Gemini Flash
+- **Per-agent override** → operators can pick a per-agent voice model +
+  temperature from `VOICE_MODEL_CATALOG` (anthropic / google / openai / xai /
+  openrouter). Bounded by design: curated + env-gated catalog, latency badges,
+  `resolveVapiVoiceModelSelection()` validation, and `clampVoiceTemperature()`
+  to `[0,1]`. NULL columns inherit the tenant default. See `ARCHITECTURE.md §1.3`.
 
 Rules:
 - Never hardcode a model ID — import from `claude-models.ts`.
 - Never change the **voice** layer without measuring TTFT on the real
   ~18 KB system prompt; never change the **reasoning** layer without a
   benchmark showing equal-or-better adaptive quality on Wireline workloads.
+- Per-agent model options must stay in `VOICE_MODEL_CATALOG` (curated +
+  env-gated + latency-flagged) — never expose an unbounded model field on the
+  voice path.
 - **Don't add a new `/api/claude/*` route without adding it to the spend-cap
   array** and the authz allowlist.
 

@@ -31,6 +31,13 @@ export const OPENAI_MODELS = {
   GPT_4O: "gpt-4o",
 } as const;
 
+export const XAI_MODELS = {
+  /** Grok — fast conversational model, Vapi-native. Good voice latency. */
+  GROK_3: "grok-3",
+  GROK_3_MINI: "grok-3-mini",
+  GROK_2: "grok-2",
+} as const;
+
 export const GEMINI_MODELS = {
   /** GA release, May 19 2026. Replaces gemini-3-flash-preview. */
   FLASH_3_5: "gemini-3.5-flash",
@@ -102,8 +109,15 @@ const GEMINI_FLASH_LATEST_ALIASES = new Set([
   "gemini-flash-latest",
 ]);
 
+/**
+ * Vapi-native LLM providers we accept on the live voice runtime. Each is a
+ * first-class provider string Vapi understands; "openrouter" proxies to any
+ * model (handy, but adds a hop + latency variance — see the catalog notes).
+ */
+export type VapiVoiceProvider = "anthropic" | "google" | "openai" | "xai" | "openrouter";
+
 export interface VapiVoiceModelSelection {
-  provider: "anthropic" | "google" | "openai";
+  provider: VapiVoiceProvider;
   model: string;
   fallbackModels?: string[];
 }
@@ -193,10 +207,151 @@ export function resolveVapiVoiceModelSelection(input?: {
     };
   }
 
+  // xAI / Grok — Vapi-native, fast conversational latency. Bare "xai" or
+  // unspecified Grok model lands on grok-3 (the smart-but-snappy default).
+  if (requestedProvider === "xai" || requestedModelLower.startsWith("grok")) {
+    const normalizedXaiModel =
+      requestedModel && requestedModelLower.startsWith("grok")
+        ? requestedModel
+        : XAI_MODELS.GROK_3;
+    return {
+      provider: "xai",
+      model: normalizedXaiModel,
+    };
+  }
+
+  // OpenRouter — proxy to any model. Vapi routes through it as a first-class
+  // provider, but the extra hop adds latency + variance, so it's an opt-in
+  // "advanced" path (great for reasoning, flagged for voice in the catalog).
+  // We pass the requested model id through verbatim (OpenRouter ids are
+  // namespaced, e.g. "x-ai/grok-3", "anthropic/claude-sonnet-4-6").
+  if (requestedProvider === "openrouter") {
+    return {
+      provider: "openrouter",
+      model: requestedModel || "openai/gpt-4o",
+    };
+  }
+
   return {
     provider: VAPI_TENANT_DEFAULT_PROVIDER,
     model: VAPI_TENANT_DEFAULT_MODEL,
   };
+}
+
+/**
+ * Curated per-agent voice model catalog — the source of truth for the
+ * agent-builder model picker. Every entry is a Vapi-native provider so it
+ * runs on the live wire; `speed` drives the UI badge and `latencyWarning`
+ * surfaces a "may slow your calls" note so operators can't silently nuke
+ * their own TTFT. `envKey` is the server-side credential that must be set
+ * for the option to appear (the picker hides providers with no key).
+ *
+ * This protects the moat (DESIGN/ARCHITECTURE: voice tier is latency-bound)
+ * while honouring the customization-first direction: pick any of these, but
+ * the heavy ones tell you the trade-off up front.
+ */
+export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
+
+export interface VoiceModelOption {
+  provider: VapiVoiceProvider;
+  model: string;
+  label: string;
+  speed: VoiceModelSpeed;
+  /** Env var that gates availability of this provider. */
+  envKey: string;
+  /** True when this model can push TTFT past the comfortable voice budget. */
+  latencyWarning?: boolean;
+  note?: string;
+}
+
+export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
+  // Anthropic — the production default. Sonnet is the smart-but-snappy voice
+  // profile; Opus is deeper but slower (flagged); Haiku is the fastest.
+  {
+    provider: "anthropic",
+    model: CLAUDE_MODELS.SONNET,
+    label: "Claude Sonnet 4.6",
+    speed: "fast",
+    envKey: "ANTHROPIC_API_KEY",
+    note: "Wireline default — smartest model in the latency class voice tolerates.",
+  },
+  {
+    provider: "anthropic",
+    model: CLAUDE_MODELS.HAIKU,
+    label: "Claude Haiku 4.5",
+    speed: "fastest",
+    envKey: "ANTHROPIC_API_KEY",
+    note: "Fastest Claude — great for high-volume, script-tight lines.",
+  },
+  {
+    provider: "anthropic",
+    model: CLAUDE_MODELS.OPUS,
+    label: "Claude Opus 4.8",
+    speed: "heavy",
+    envKey: "ANTHROPIC_API_KEY",
+    latencyWarning: true,
+    note: "Deepest reasoning, but TTFT can read as dead air on a live call.",
+  },
+  // Google — Gemini Flash is extremely fast and the voice fallback model.
+  {
+    provider: "google",
+    model: GEMINI_MODELS.FLASH_3_5,
+    label: "Gemini 3.5 Flash",
+    speed: "fastest",
+    envKey: "GEMINI_API_KEY",
+    note: "Very fast and cheap; also the platform voice fallback.",
+  },
+  // OpenAI — GPT-4o, balanced and reliable on tool calls.
+  {
+    provider: "openai",
+    model: OPENAI_MODELS.GPT_4O,
+    label: "GPT-4o",
+    speed: "balanced",
+    envKey: "OPENAI_API_KEY",
+    note: "Balanced and dependable; solid tool-calling.",
+  },
+  // xAI — Grok, fast and conversational with a distinctive style.
+  {
+    provider: "xai",
+    model: XAI_MODELS.GROK_3,
+    label: "Grok 3",
+    speed: "fast",
+    envKey: "XAI_API_KEY",
+    note: "Conversational and quick, with a livelier default tone.",
+  },
+  {
+    provider: "xai",
+    model: XAI_MODELS.GROK_3_MINI,
+    label: "Grok 3 Mini",
+    speed: "fastest",
+    envKey: "XAI_API_KEY",
+    note: "Lighter, faster Grok for snappy lines.",
+  },
+  // OpenRouter — any model, opt-in. Flagged for voice latency.
+  {
+    provider: "openrouter",
+    model: "openai/gpt-4o",
+    label: "OpenRouter (any model)",
+    speed: "balanced",
+    envKey: "OPENROUTER_API_KEY",
+    latencyWarning: true,
+    note: "Reach any model via OpenRouter. Adds a proxy hop — best off the live wire.",
+  },
+] as const;
+
+/**
+ * Clamp a per-agent temperature override into the safe voice range [0, 1].
+ *
+ * Per-agent control is great, but an out-of-range temperature can make a
+ * live agent erratic (too high) or robotic (too low) — and some providers
+ * accept up to 2.0, which on voice is chaos. NULL/invalid → archetype
+ * fallback, so an unset override behaves exactly as before.
+ */
+export function clampVoiceTemperature(value: unknown, fallback: number): number {
+  if (value == null) return fallback;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(1, Math.max(0, n));
 }
 
 /** Task complexity tiers for automatic model selection */
