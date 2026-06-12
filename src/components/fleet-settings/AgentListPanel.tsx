@@ -3,7 +3,7 @@
  * AgentListPanel — Fleet sidebar showing all agents + create form.
  * Extracted from the monolithic FleetSettings.tsx during the 2026 audit.
  */
-import { Bot, Mail, Loader2, Shield, Trash2 } from "lucide-react";
+import { Bot, Mail, Loader2, Shield, Trash2, ChevronRight, PanelLeftClose } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
 import { RoleBadge } from "../fleet/helpers";
@@ -27,6 +27,9 @@ interface Props {
   onCreateAgent: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
   onSeedFleet: () => void;
   onFetchPerformance: (id: string) => void;
+  /** Collapse the desktop list to a slim avatar rail (single-focus Studio). */
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export default function AgentListPanel({
@@ -42,7 +45,60 @@ export default function AgentListPanel({
   onCreateAgent,
   onSeedFleet,
   onFetchPerformance,
+  collapsed = false,
+  onToggleCollapse,
 }: Props) {
+  // Collapsed (desktop only): a slim avatar rail so the agent editor is the
+  // single focus. Click an avatar to switch, the chevron to reopen the list.
+  if (collapsed) {
+    return (
+      <aside className="hidden md:flex w-14 border-r border-black/8 h-full min-h-0 flex-col items-center gap-2 py-3 bg-paper/40 shrink-0">
+        <ShadButton
+          type="button"
+          variant="ghost"
+          size="icon"
+          disableAnimations
+          onClick={onToggleCollapse}
+          title="Show agents"
+          aria-label="Show agent list"
+          className="w-9 h-9 rounded-md text-ink/50 hover:text-ink touch-press hover:scale-[1.05]"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </ShadButton>
+        <span className="wl-label-muted tabular-nums">{agents.length}</span>
+        <div className="flex-1 min-h-0 w-full overflow-y-auto scroll-viewport flex flex-col items-center gap-2 pt-1">
+          {agents.map((agent) => (
+            <ShadButton
+              key={agent.id}
+              type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
+              onClick={() => {
+                onSelectAgent(agent);
+                onFetchPerformance(agent.id);
+              }}
+              title={agent.name}
+              aria-label={`Select agent ${agent.name}`}
+              className={cn(
+                "w-9 h-9 rounded-md shrink-0 touch-press hover:scale-[1.05]",
+                selectedAgent?.id === agent.id
+                  ? "ring-2 ring-brand/40 bg-brand/10 text-brand"
+                  : "text-ink/55 hover:bg-brand/5 hover:text-ink",
+              )}
+            >
+              {agent.channel === "email" ? (
+                <Mail className="w-4 h-4" />
+              ) : (
+                <Bot className="w-4 h-4" />
+              )}
+            </ShadButton>
+          ))}
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside
       className={cn(
@@ -58,7 +114,23 @@ export default function AgentListPanel({
             Your agents
           </h2>
         </div>
-        <span className="wl-label-muted tabular-nums shrink-0">{agents.length}</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="wl-label-muted tabular-nums">{agents.length}</span>
+          {onToggleCollapse && (
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              disableAnimations
+              onClick={onToggleCollapse}
+              title="Collapse list"
+              aria-label="Collapse agent list"
+              className="hidden md:inline-flex w-7 h-7 rounded-md text-ink/40 hover:text-ink touch-press hover:scale-[1.05]"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </ShadButton>
+          )}
+        </div>
       </div>
 
       <div className="px-3 py-3 flex-1 min-h-0 scroll-viewport space-y-2">
