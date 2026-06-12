@@ -34,11 +34,11 @@ const OpsSentimentChart = lazy(() => import("../components/CommandCenter/OpsSent
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type LiveCall = {
-  id: string,
-  agent_id?: string,
-  customer_number: string,
-  sentiment_label: string,
-  urgency: number,
+  id: string;
+  agent_id?: string;
+  customer_number: string;
+  sentiment_label: string;
+  urgency: number;
   status: "active" | "escalated";
   thought?: string;
 };
@@ -48,60 +48,60 @@ const OPS_ROUTE = resolveAppPageSubTabRoute("/ops")!;
 type OpsTabId = "floor" | "intel" | "triage" | "analytics";
 
 type ActionItem = {
-  id: string,
+  id: string;
   type: "send_email" | "schedule_calendar" | "update_crm_lead" | "create_internal_task";
   priority: "high" | "medium" | "low";
   status: "pending" | "completed" | "failed";
-  description: string,
-  created_at: string,
+  description: string;
+  created_at: string;
   payload?: Record<string, unknown>;
   reasoning?: string;
 };
 
 type LeadDossier = {
-  customer_number: string,
-  full_name?: string,
-  company?: string,
-  job_title?: string,
-  bio?: string,
+  customer_number: string;
+  full_name?: string;
+  company?: string;
+  job_title?: string;
+  bio?: string;
   linked_in_url?: string;
 };
 
 type TelemetryStats = {
   sentimentBreakdown?: {
-    positive?: number,
-    neutral?: number,
-    negative?: number,
+    positive?: number;
+    neutral?: number;
+    negative?: number;
   };
   unitEconomics?: {
-    efficiencyScore?: number,
-    costPerMinute?: number | string,
-    costPerLead?: number | string,
+    efficiencyScore?: number;
+    costPerMinute?: number | string;
+    costPerLead?: number | string;
   };
   agents?: {
-    id: string,
-    name: string,
-    role?: string,
+    id: string;
+    name: string;
+    role?: string;
   }[];
 };
 
 type SignalPayload = {
-  id: string,
-  agent_id?: string | null,
-  customer_number: string,
-  label?: string,
-  urgency?: number,
-  status?: string,
+  id: string;
+  agent_id?: string | null;
+  customer_number: string;
+  label?: string;
+  urgency?: number;
+  status?: string;
   thought?: string;
 };
 
 type TaskPayload = {
-  id: string,
+  id: string;
   task_type: "send_email" | "schedule_calendar" | "update_crm_lead" | "create_internal_task";
   priority: "high" | "medium" | "low";
-  status: string,
-  description?: string,
-  created_at: string,
+  status: string;
+  description?: string;
+  created_at: string;
   payload?: Record<string, unknown>;
   resolution_notes?: string;
 };
@@ -507,7 +507,7 @@ export default function LiveOps() {
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
-                      "flex-1 min-h-0 flex flex-col overflow-hidden wl-panel border border-ink/10 rounded-lg shadow-sm",
+                      "flex-1 min-h-0 flex flex-col overflow-hidden wl-panel border border-ink/10 rounded-md shadow-sm",
                     )}
                   >
                     <LiveFloorPanel
@@ -531,7 +531,7 @@ export default function LiveOps() {
                   <div
                     className={clsx(
                       WL_OPS_CLASSES.floorFrame,
-                      "flex-1 min-h-0 flex flex-col overflow-hidden wl-panel border border-ink/10 rounded-lg shadow-sm",
+                      "flex-1 min-h-0 flex flex-col overflow-hidden wl-panel border border-ink/10 rounded-md shadow-sm",
                     )}
                   >
                     <ActionFeed actions={actions} onRefresh={refresh} />
@@ -569,7 +569,7 @@ export default function LiveOps() {
                     <div
                       className={clsx(
                         WL_OPS_CLASSES.railCard,
-                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-lg",
+                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-md",
                       )}
                     >
                       <div className="flex items-center justify-between mb-4">
@@ -616,7 +616,7 @@ export default function LiveOps() {
                     <div
                       className={clsx(
                         WL_OPS_CLASSES.railCard,
-                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-lg",
+                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-md",
                       )}
                     >
                       <div className="flex items-center justify-between mb-3">

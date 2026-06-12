@@ -1,6 +1,7 @@
 /**
- * HeroDecorations — four top gutter robots (2 left, 2 right). Hero uses vivid treatment.
- * Vertical slots avoid the live-demo block (roughly 38–72% of hero height on desktop).
+ * HeroDecorations — four gutter robots (2 left, 2 right). Hero uses vivid treatment.
+ * Top pair sits in the hero's empty top strip (above the headline baseline);
+ * mid pair hugs the screen edges below the fold line so neither column is covered.
  */
 import { SectionStickers, type SectionStickerSlot } from "./SectionStickers";
 
@@ -8,75 +9,52 @@ interface HeroDecorationsProps {
   className?: string;
 }
 
-const MIN_TOP_REM = 8;
-/** max-w-2xl demo + headline buffer on desktop. */
-const HERO_CORRIDOR_HALF = "31rem";
+/** Keeps robots clear of the two-column hero content at wide viewports. */
+const HERO_CORRIDOR_HALF = "46rem";
 
 export const HERO_STICKER_SLOTS: SectionStickerSlot[] = [
   {
     variant: 1,
     pose: "on-call",
-    size: 92,
+    size: 84,
     opacity: 0.96,
     side: "left",
-    top: `max(${MIN_TOP_REM}rem, 12%)`,
+    top: "1.25rem",
     contentHalfRem: HERO_CORRIDOR_HALF,
     delayMs: 0,
     floatMs: 4600,
   },
   {
-    variant: 5,
-    pose: "phone",
-    size: 76,
-    opacity: 0.9,
-    side: "left",
-    top: "30%",
-    contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 140,
-    floatMs: 5600,
-  },
-  {
     variant: 3,
     pose: "typing",
-    size: 64,
+    size: 62,
     opacity: 0.82,
     side: "left",
-    top: "52%",
+    top: "46%",
     contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 260,
+    delayMs: 220,
     floatMs: 6200,
   },
   {
     variant: 2,
     pose: "phone",
-    size: 88,
+    size: 80,
     opacity: 0.96,
     side: "right",
-    top: `max(${MIN_TOP_REM}rem, 13%)`,
+    top: "1.5rem",
     contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 70,
+    delayMs: 90,
     floatMs: 4900,
-  },
-  {
-    variant: 6,
-    pose: "on-call",
-    size: 72,
-    opacity: 0.9,
-    side: "right",
-    top: "31%",
-    contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 180,
-    floatMs: 5200,
   },
   {
     variant: 4,
     pose: "texting",
-    size: 62,
+    size: 60,
     opacity: 0.8,
     side: "right",
-    top: "54%",
+    top: "48%",
     contentHalfRem: HERO_CORRIDOR_HALF,
-    delayMs: 310,
+    delayMs: 320,
     floatMs: 6800,
   },
 ];

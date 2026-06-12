@@ -19,18 +19,18 @@ import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-
 import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
 
 export type FloorCall = {
-  id: string,
-  agent_id?: string,
-  customer_number: string,
-  sentiment_label: string,
-  urgency: number,
+  id: string;
+  agent_id?: string;
+  customer_number: string;
+  sentiment_label: string;
+  urgency: number;
   status: "active" | "escalated";
   thought?: string;
 };
 
 export type FloorAgent = {
-  id: string,
-  name: string,
+  id: string;
+  name: string;
   role?: string;
 };
 
@@ -263,8 +263,8 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         key={call.id}
                         layout
                         initial={{ opacity: 0, y: 8 }}
-                        animate={{ 
-                          opacity: 1, 
+                        animate={{
+                          opacity: 1,
                           y: 0,
                           // Subtle breathing pulse only on active (non-escalated) calls
                           scale: isActive ? [1, 1.005, 1] : 1,
@@ -276,9 +276,9 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         }}
                         exit={{ opacity: 0, scale: 0.98 }}
                         className={cn(
-                          "transition-all duration-500 hover:shadow-[0_4px_24px_rgba(var(--brand-rgb),0.12)] hover:-translate-y-0.5 group relative overflow-hidden rounded-lg border",
-                          escalated 
-                            ? "border-destructive/40 bg-destructive/[0.03] shadow-sm" 
+                          "transition-all duration-500 hover:shadow-[0_4px_24px_rgba(var(--brand-rgb),0.12)] hover:-translate-y-0.5 group relative overflow-hidden rounded-md border",
+                          escalated
+                            ? "border-destructive/40 bg-destructive/[0.03] shadow-sm"
                             : "border-ink/10 bg-paper/95 shadow-sm hover:border-brand/25",
                           escalated ? WL_OPS_CLASSES.callCardEscalated : WL_OPS_CLASSES.callCard,
                         )}
@@ -296,7 +296,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               className={cn(
                                 "w-4 h-4 sm:w-5 sm:h-5 transition-all",
                                 escalated && "animate-pulse",
-                                isActive && "animate-[pulse_2.8s_ease-in-out_infinite]"
+                                isActive && "animate-[pulse_2.8s_ease-in-out_infinite]",
                               )}
                             />
                           </div>
@@ -314,7 +314,11 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                 <AgentActivityIndicator active size={14} pose="on-call" />
                               )}
                               {agent?.name ?? "Agent"} ·{" "}
-                              <span className={escalated ? "text-destructive font-medium" : "text-brand"}>
+                              <span
+                                className={
+                                  escalated ? "text-destructive font-medium" : "text-brand"
+                                }
+                              >
                                 {call.sentiment_label}
                               </span>
                             </p>
@@ -462,7 +466,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                     {line}
                                   </div>
                                 ))}
-                            </div>
+                              </div>
                             )}
                           </div>
                         )}
