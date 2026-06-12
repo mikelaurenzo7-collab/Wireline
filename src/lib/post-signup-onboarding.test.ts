@@ -64,7 +64,7 @@ describe("onboarding welcome copy", () => {
     expect(onboardingWelcomeSubtitle(null)).toBe(ONBOARDING_WELCOME.subtitle);
   });
 
-  it("defines console map destinations (replaces product tour)", () => {
-    expect(CONSOLE_MAP.items.map((i) => i.path)).toEqual(["/ops", "/chat", "/agents", "/insights"]);
+  it("defines console map destinations, Studio first (replaces product tour)", () => {
+    expect(CONSOLE_MAP.items.map((i) => i.path)).toEqual(["/agents", "/ops", "/chat", "/insights"]);
   });
 });

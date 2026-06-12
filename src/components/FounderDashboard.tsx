@@ -236,7 +236,7 @@ export default function FounderDashboard() {
   }
 
   if (!user?.is_owner) {
-    return <Navigate to="/ops" replace />;
+    return <Navigate to="/agents" replace />;
   }
 
   if (selected) {

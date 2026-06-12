@@ -34,6 +34,12 @@ export const CONSOLE_MAP = {
   sectionTitle: "Your console",
   items: [
     {
+      id: "agents",
+      label: "Studio",
+      detail: "Build, voice & tune your agents",
+      path: "/agents",
+    },
+    {
       id: "ops",
       label: "Live Ops",
       detail: "Live callers, approvals, and fleet pulse",
@@ -44,12 +50,6 @@ export const CONSOLE_MAP = {
       label: "Chat",
       detail: "Director + per-agent coaching",
       path: "/chat",
-    },
-    {
-      id: "agents",
-      label: "Studio",
-      detail: "Build, voice & tune your agents",
-      path: "/agents",
     },
     {
       id: "insights",

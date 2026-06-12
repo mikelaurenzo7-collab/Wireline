@@ -95,7 +95,7 @@ in the same PR when the contract changes.
 ```
 AuroraBackdrop (fixed z-0, calm paper/velvet — no loud washes behind data UI)
   AppShell
-    Sidebar (data-rail expanded|collapsed; 4 groups: Workspace / Channels / Sales / Admin)
+    Sidebar (data-rail expanded|collapsed; groups: Studio / Command / Channels / Design / Admin)
     main.app-surface → TopBar → scroll-viewport → page
 ```
 
@@ -104,11 +104,14 @@ Marketing pages use `.marketing-surface` (more expressive); app pages use
 
 ## Authenticated route map
 
-Workspace: `/ops` (Live Ops, default landing) · `/chat` (Director) ·
-`/design` (Painter, Beta) · `/training` · `/insights`
+Studio-first IA — `/` lands on `/agents` (the Studio), and the Studio group
+leads the rail.
+
+Studio: `/agents` (Studio canvas, authed home) · `/chat` (Director) · `/training`
+Command: `/ops` (Live Ops) · `/insights` · `/pipeline`
 Channels: `/phone` · `/email` · `/sms`
-Sales: `/pipeline`
-Other: `/agents` · `/integrations` · `/admin` · `/help` · `/founder` (owner-only)
+Other: `/design` (Painter, Beta) · `/integrations` · `/admin` · `/help` ·
+`/founder` (owner-only)
 
 ## Accessibility & mobile
 

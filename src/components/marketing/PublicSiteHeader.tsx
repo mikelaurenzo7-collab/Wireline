@@ -166,11 +166,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           <div className="flex items-center gap-3 shrink-0">
             {signedIn && !isAuth ? (
               <Link
-                to="/ops"
+                to="/agents"
                 data-testid="header-dashboard"
                 className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-brand/25 hover:-translate-y-px"
               >
-                Open dashboard
+                Open the Studio
               </Link>
             ) : (
               <>
@@ -292,12 +292,12 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <div className="shrink-0 border-t border-ink/[0.08] p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-2.5">
                 {signedIn && !isAuth ? (
                   <Link
-                    to="/ops"
+                    to="/agents"
                     data-testid="header-dashboard-mobile"
                     className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Open dashboard
+                    Open the Studio
                     <ArrowRight aria-hidden="true" className="w-4 h-4" />
                   </Link>
                 ) : (
