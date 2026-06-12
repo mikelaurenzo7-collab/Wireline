@@ -798,10 +798,12 @@
     64px 64px;
 }
 .wl-aurora-top-highlight {
+  /* Soft top sheen — restrained so it reads as light catching premium paper,
+   * not a white wash. Tied to the richer cream token; less white, less reach. */
   background: radial-gradient(
-    120% 70% at 50% -8%,
-    color-mix(in srgb, var(--wl-cream, #f5f0e6) 35%, white) 0%,
-    transparent 42%
+    118% 62% at 50% -10%,
+    color-mix(in srgb, var(--wl-cream, #f0e6d4) 52%, white) 0%,
+    transparent 38%
   );
 }
 .wl-route-ambience-a {
@@ -8573,8 +8575,16 @@ select:focus {
  * can read as muddy brown panels on ultrawide monitors. Use concrete colors so
  * all engines paint the same calm cream field. */
 .authenticated-canvas {
-  background-color: #f5f0e6;
-  background-image: linear-gradient(168deg, #faf7ef 0%, #f5f0e6 42%, #efe9dc 100%);
+  /* Richer editorial cream, token-driven so the canvas matches the .wl-panel
+   * surfaces that sit on it (both resolve from --paper). A soft top-light to
+   * warm-paper foot gives depth without washing the field out. */
+  background-color: var(--paper, #f0e6d4);
+  background-image: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--paper, #f0e6d4) 86%, white) 0%,
+    var(--paper, #f0e6d4) 46%,
+    var(--paper-warm, #e8dcc8) 100%
+  );
 }
 .dark .authenticated-canvas {
   background-color: var(--background, #0f0c17);
