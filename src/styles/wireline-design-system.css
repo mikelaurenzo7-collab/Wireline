@@ -695,6 +695,11 @@
     #2d1040 55%,
     #1f0c30 100%
   );
+  /* Hairline inner light on the leading edge + a soft cast onto the cream
+   * canvas, so the rail reads as a distinct elevated plane, not a flat fill. */
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.045),
+    1px 0 24px -8px rgba(20, 8, 32, 0.45);
 }
 .wl-chrome-logo-chip {
   background: var(--wl-cream, #f5f0e6);
@@ -949,13 +954,17 @@ body,
  * Replaces heavy flat borders with ambient luminosity. Panels feel like
  * they exist in physical space — lit from above, floating over depth. */
 .wl-panel {
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+  background: color-mix(in srgb, var(--paper, #f0e6d4) 94%, white);
   backdrop-filter: blur(12px) saturate(110%);
   -webkit-backdrop-filter: blur(12px) saturate(110%);
-  border: 1px solid rgba(26, 22, 20, 0.08);
+  border: 1px solid rgba(26, 22, 20, 0.07);
+  /* Layered editorial depth: tight contact shadow + lifted ambient, a bright
+   * top specular and a faint foot — so the surface reads as pressed paper. */
   box-shadow:
-    0 4px 16px rgba(26, 22, 20, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 1px 2px rgba(26, 22, 20, 0.04),
+    0 6px 20px -6px rgba(26, 22, 20, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(26, 22, 20, 0.025);
 }
 .dark .wl-panel {
   background: rgba(15, 12, 23, 0.75);
@@ -969,14 +978,17 @@ body,
 
 /* Elevated version for primary workspace containers */
 .wl-panel-elevated {
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f0e6d4) 89%, white);
   backdrop-filter: blur(16px) saturate(120%);
   -webkit-backdrop-filter: blur(16px) saturate(120%);
-  border: 1px solid rgba(26, 22, 20, 0.1);
+  border: 1px solid rgba(26, 22, 20, 0.09);
+  /* Primary container — a deeper float: stronger ambient lift, crisper top
+   * specular and a defined foot for a tactile, premium press. */
   box-shadow:
-    0 8px 32px rgba(26, 22, 20, 0.06),
-    0 1px 4px rgba(26, 22, 20, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 1px 3px rgba(26, 22, 20, 0.05),
+    0 14px 40px -12px rgba(26, 22, 20, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(26, 22, 20, 0.03);
 }
 .dark .wl-panel-elevated {
   background: rgba(15, 12, 23, 0.82);
