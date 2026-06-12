@@ -33,4 +33,12 @@ describe("FleetSettings shell", () => {
     expect(SRC).toContain("<AgentConfigPanel");
     expect(SRC.indexOf("<DirectorWorkspace")).toBeLessThan(SRC.indexOf("<AgentConfigPanel"));
   });
+
+  it("anchors the canvas with an identity hero and docks the co-pilot smaller", () => {
+    // Identity (name + vitals) lives up top in the center canvas; the co-pilot
+    // is a focused chat docked at the bottom, not the whole center column.
+    expect(SRC).toContain("<AgentIdentityVitals");
+    expect(SRC.indexOf("<AgentIdentityVitals")).toBeLessThan(SRC.indexOf("<DirectorWorkspace"));
+    expect(SRC).toContain("max-h-[560px]");
+  });
 });

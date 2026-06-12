@@ -10,7 +10,6 @@ import {
   Mail,
   MessageCircle,
   Users,
-  PlugZap,
 } from "lucide-react";
 import {
   ROUTE_ACCENT_DEFAULT,
@@ -44,11 +43,12 @@ function withSection(items: NavItem[], section: string): NavItem[] {
   return items.map((item) => ({ ...item, section }));
 }
 
-// Agent Studio OS nav: Studio is for creating and tuning one agent with an
-// embedded Director co-pilot. The standalone Director page is for managing the
-// broader agent workforce after agents exist: plans, approvals, fleet actions,
-// research, daily gameplans, and cross-agent coordination.
-const BUILD_NAV: NavItem[] = [
+// Studio-first IA. Studio leads — the build pivot: shape and tune agents on the
+// canvas with the embedded Director co-pilot, coach them in the standalone
+// Director chat, and teach them in Training. Command is the run surface
+// (cockpit, intelligence, pipeline). Channels are the wires. Integrations now
+// live in the agent tuning rail, not the primary nav.
+const STUDIO_NAV: NavItem[] = [
   {
     label: "Agent Studio",
     path: "/agents",
@@ -57,23 +57,6 @@ const BUILD_NAV: NavItem[] = [
     matches: ["/agents"],
   },
   {
-    label: "Knowledge",
-    path: "/training",
-    icon: GraduationCap,
-    dataTour: "training",
-    matches: ["/knowledge"],
-  },
-  {
-    label: "Integrations",
-    path: "/integrations",
-    icon: PlugZap,
-    dataTour: "integrations",
-    matches: ["/integrations"],
-  },
-];
-
-const MANAGE_NAV: NavItem[] = [
-  {
     label: "Director",
     path: "/chat",
     icon: MessagesSquare,
@@ -81,14 +64,24 @@ const MANAGE_NAV: NavItem[] = [
     matches: ["/chat"],
   },
   {
+    label: "Training",
+    path: "/training",
+    icon: GraduationCap,
+    dataTour: "training",
+    matches: ["/knowledge"],
+  },
+];
+
+const COMMAND_NAV: NavItem[] = [
+  {
     label: "Live Ops",
     path: "/ops",
     icon: LayoutGrid,
     dataTour: "dashboard",
     matches: ["/dashboard", "/command", "/live", "/cockpit", "/triage"],
   },
-  { label: "Pipeline", path: "/pipeline", icon: Kanban },
   { label: "Insights", path: "/insights", icon: BarChart3, dataTour: "insights" },
+  { label: "Pipeline", path: "/pipeline", icon: Kanban },
 ];
 
 const CHANNELS_NAV: NavItem[] = [
@@ -137,20 +130,17 @@ const ADMIN_NAV: NavItem[] = [
 
 /** Logical IA groups - used for mobile drawer sections and docs; labels are not shown on desktop rail. */
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
-  { label: "Create", items: withSection(BUILD_NAV, "Create") },
-  { label: "Manage", items: withSection(MANAGE_NAV, "Manage") },
+  { label: "Studio", items: withSection(STUDIO_NAV, "Studio") },
+  { label: "Command", items: withSection(COMMAND_NAV, "Command") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
   { label: "Design", items: withSection(DESIGN_NAV, "Design") },
-  {
-    label: "System",
-    items: withSection(ADMIN_NAV, "System"),
-  },
+  { label: "Admin", items: withSection(ADMIN_NAV, "Admin") },
 ];
 
 /** Single continuous desktop rail - no section headers, fits without scroll on typical viewports. */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
-  ...withSection(BUILD_NAV, "Create"),
-  ...withSection(MANAGE_NAV, "Manage"),
+  ...withSection(STUDIO_NAV, "Studio"),
+  ...withSection(COMMAND_NAV, "Command"),
   ...withSection(CHANNELS_NAV, "Channels"),
   ...withSection(DESIGN_NAV, "Design"),
 ];
@@ -179,7 +169,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/agents": "Agent Studio",
   "/chat": "Director",
   "/design": "Wireline Design",
-  "/training": "Knowledge",
+  "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",
   "/admin": "Settings",
@@ -194,12 +184,12 @@ export const PAGE_TITLES: Record<string, string> = {
 /** g+key shortcuts - keep in sync with AppShell and Sidebar hints. */
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   A: "/agents",
-  K: "/training",
-  C: "/integrations",
-  D: "/chat",
-  O: "/ops",
-  L: "/pipeline",
+  C: "/chat",
+  N: "/training",
+  D: "/ops",
+  T: "/ops?tab=triage",
   I: "/insights",
+  L: "/pipeline",
   P: "/phone",
   E: "/email",
   M: "/sms",
@@ -208,12 +198,11 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/agents": "g a",
-  "/training": "g k",
-  "/integrations": "g c",
-  "/chat": "g d",
-  "/ops": "g o",
-  "/pipeline": "g l",
+  "/chat": "g c",
+  "/training": "g n",
+  "/ops": "g d",
   "/insights": "g i",
+  "/pipeline": "g l",
   "/phone": "g p",
   "/email": "g e",
   "/sms": "g m",
