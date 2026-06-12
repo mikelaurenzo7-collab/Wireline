@@ -306,14 +306,15 @@ function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) 
             data-logo-height={height}
             data-logo-scale={logo.scale}
           >
-            <div
-              className="inline-flex items-center"
-              style={{ height: `${px}px` }}
-            >
+            <div className="inline-flex items-center">
               {React.cloneElement(logo.svg as React.ReactElement<any>, {
                 className: "wl-integration-logo-svg block",
+                // Pixel height lives on the SVG's style object (a JS prop, not a
+                // JSX `style={}` attribute) so the CSP inline-style ratchet stays
+                // at zero. The logo height is genuinely dynamic (base × per-logo
+                // scale), so a static utility class can't express it.
                 style: {
-                  height: "100%",
+                  height: `${px}px`,
                   width: "auto",
                   display: "block",
                   fill: "currentColor",
