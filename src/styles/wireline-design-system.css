@@ -216,23 +216,11 @@
   50% { opacity: 0.32; transform: scale(1.04); }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .hero-robot {
-    animation: hero-robot-scene-pulse calc(var(--hero-master-cycle) * 1.35) ease-in-out infinite;
-  }
-}
-
-@keyframes hero-robot-scene-pulse {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-2.2px) scale(1.006); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .wl-wire,
   .wl-wire-signal,
   .wl-exchange-core,
-  .wl-exchange::before,
-  .hero-robot {
+  .wl-exchange::before {
     animation: none !important;
   }
 
@@ -257,71 +245,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    END ZERO-BLEED MARKETING HERO
    ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   WIRELINE GUTTER STICKERS — robot mascots in the marketing gutters.
-   Consumed by SectionStickers.tsx (wl-sticker-slot / -enter / -float / -halo).
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.wl-sticker-slot {
-  opacity: 0.88;
-}
-
-.wl-sticker-slot.wl-sticker-vivid {
-  opacity: 1;
-}
-
-.wl-sticker-halo {
-  position: absolute;
-  inset: -22%;
-  pointer-events: none;
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.12) 0%,
-    rgba(239, 233, 220, 0.5) 45%,
-    transparent 72%
-  );
-}
-
-.wl-sticker-orbit-rings {
-  display: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .wl-sticker-enter {
-    animation: wl-sticker-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: var(--wl-sticker-enter-delay, 0ms);
-  }
-
-  .wl-sticker-float {
-    animation: wl-sticker-float 5.4s ease-in-out infinite alternate;
-  }
-
-  .wl-sticker-slot:nth-child(2n) .wl-sticker-float {
-    animation-duration: 6.4s;
-    animation-delay: 0.9s;
-  }
-}
-
-@keyframes wl-sticker-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes wl-sticker-float {
-  from {
-    transform: translateY(-3px);
-  }
-  to {
-    transform: translateY(3px);
-  }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN-SYSTEM PRIMITIVES — restored animation contract.

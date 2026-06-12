@@ -21,7 +21,6 @@ import {
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import HeroCallPreview from "../components/marketing/HeroCallPreview";
-import { HeroDecorations } from "../components/marketing/HeroDecorations";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
@@ -257,8 +256,6 @@ export default function LandingPage() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-16 h-px bg-ink/[0.08]"
           />
-          <HeroDecorations />
-
           <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(460px,0.78fr)] lg:gap-16">
             <motion.div
               initial={{ opacity: 0, y: 14 }}

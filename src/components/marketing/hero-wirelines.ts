@@ -5,9 +5,9 @@
  * into a central exchange hub behind the headline, and call signals travel
  * along them left → exchange → right. Coordinates live in a normalized
  * 1440×720 viewBox stretched to the hero (`preserveAspectRatio="none"`), so
- * each value is a fraction of the hero box. Anchors mirror
- * HERO_STICKER_SLOTS in HeroDecorations.tsx (left 14%/28%, right 15%/30%,
- * 31rem corridor): if those slots move, retune the anchors here.
+ * each value is a fraction of the hero box. Anchors reflect the original
+ * hero gutter layout that fed the switchboard scene; if that layout returns,
+ * retune the anchors here to match it.
  *
  * Path direction is meaningful: left wires point INTO the hub and right
  * wires point OUT of it, so a decreasing stroke-dashoffset animates one
@@ -28,7 +28,7 @@ export type WirelineWire = {
   side: "left" | "right";
 };
 
-/** Robot-end anchors, tuned to the four HERO_STICKER_SLOTS positions. */
+/** Robot-end anchors, tuned to the original four-point gutter layout. */
 const ANCHORS = {
   leftTop: { x: 186, y: 108 },
   leftLow: { x: 172, y: 206 },
