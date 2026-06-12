@@ -57,9 +57,9 @@ const HOW_IT_WORKS = [
   },
   {
     numeral: "II",
-    kicker: "Act II — Deploy",
-    title: "Approve the playbook",
-    body: "Pick a voice and a vibe — warm, playful, or authoritative. Your agent holds one personality for the entire call and never claims an action it can't take.",
+    kicker: "Act II — Shape",
+    title: "Shape it in the Studio",
+    body: "Dial in the voice character — warm, playful, or authoritative — and pick each agent's brain: Claude, Gemini, GPT, or Grok, with speed badges so a heavier model never sneaks onto a live call. One personality, held for the entire conversation.",
     footnote: "Live in under 10 minutes",
     pose: "on-call",
     variant: 2,
@@ -115,11 +115,15 @@ const INDUSTRIES: ReadonlyArray<{ slug: VerticalKey; label: string }> = [
 const FAQS = [
   {
     q: "What exactly is Wireline?",
-    a: "Wireline is a horizontal AI agent platform. One fleet of agents answers your inbound calls, works your outbound list, replies to email, and handles SMS — trained on your playbook, live on real phone numbers, and watched from a single supervisor cockpit. You deploy your first agent in under 10 minutes, no developers required.",
+    a: "Wireline is a horizontal AI agent platform. One fleet of agents answers your inbound calls, works your outbound list, replies to email, and handles SMS — trained on your playbook, shaped in a Studio where you pick each agent's voice and brain, live on real phone numbers, and watched from a single supervisor cockpit. You deploy your first agent in under 10 minutes, no developers required.",
   },
   {
     q: "Will it sound like a robot?",
-    a: `No. Each agent has one set personality, voice, and cadence — you pick its vibe (warm, playful, or authoritative) once, and it holds that same character for the entire call instead of lurching between tones. It still adapts to whatever the caller asks, in a natural human voice. End-to-end response latency lands around 700–900 ms, well under the "did they hang up?" threshold, so conversations feel like talking to your sharpest rep.`,
+    a: `No. Each agent has one set personality, voice, and cadence — you pick its vibe (warm, playful, or authoritative) once, and it holds that same character for the entire call instead of lurching between tones. The Studio's voice-character sliders let you drag stability, style, and expressiveness until it sounds like your shop. End-to-end response latency lands around 700–900 ms, well under the "did they hang up?" threshold, so conversations feel like talking to your sharpest rep.`,
+  },
+  {
+    q: "Can I pick which AI model my agents run on?",
+    a: "Yes — per agent. Every agent starts on Wireline's latency-tuned default, and the Studio lets you swap any individual agent onto Claude, Gemini, GPT, or Grok. Speed badges flag heavier models before they slow a live call, and a temperature dial sets how focused or expressive each agent plays it.",
   },
   {
     q: "What happens when the agent can't do something?",

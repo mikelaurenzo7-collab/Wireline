@@ -70,6 +70,16 @@ const ROWS: Row[] = [
     retell: "partial",
   },
   {
+    feature: "Per-agent model choice in a no-code Studio",
+    detail:
+      "Swap any individual agent onto Claude, Gemini, GPT, or Grok from the Studio — speed badges flag heavier picks before they slow a live call, with a per-agent temperature dial. No API keys to juggle, no code.",
+    wireline: true,
+    air: false,
+    synthflow: false,
+    bland: "partial",
+    retell: "partial",
+  },
+  {
     feature: "White-label phone numbers included",
     detail:
       "Every plan includes a dedicated voice number with no separate carrier bill. Customer never sees infra.",
