@@ -35,6 +35,7 @@ import {
 // Sidebar extracted during the 2026 audit god-file slicing pass.
 import AgentListPanel from "./AgentListPanel";
 import AgentConfigPanel from "./AgentConfigPanel";
+import TuningRailMap from "./TuningRailMap";
 
 // Re-export the public surface so existing consumers
 // (`import { AGENT_ROLES } from "./FleetSettings"`) keep working
@@ -517,9 +518,15 @@ export default function FleetSettings() {
               <div className="shrink-0 border-b border-border/80 px-3 py-2.5 bg-paper/80 dark:bg-velvet/50">
                 <p className="wl-label text-brand tracking-[0.2em]">Tuning rail</p>
                 <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
-                  Specific controls for voice, model, tools, rules, memory, and business context.
+                  Fine tune identity, role, phone, voice, SMS, email, knowledge, integrations,
+                  rules, and launch readiness.
                 </p>
               </div>
+              <TuningRailMap
+                selectedAgent={selectedAgent}
+                agentConfig={agentConfig}
+                integrationStatus={integrationStatus}
+              />
               <AgentConfigPanel
                 selectedAgent={selectedAgent}
                 setSelectedAgent={setSelectedAgent}
