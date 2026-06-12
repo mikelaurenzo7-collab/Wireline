@@ -98,7 +98,7 @@ const CHANNELS_NAV: NavItem[] = [
 
 const AGENTS_NAV: NavItem[] = [
   {
-    label: "Agents",
+    label: "Studio",
     path: "/agents",
     icon: Users,
     dataTour: "agents",
@@ -182,7 +182,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/insights": "Insights",
   "/cockpit": "Live Ops",
   "/knowledge": "Knowledge",
-  "/agents": "Agents",
+  "/agents": "Studio",
   "/chat": "Chat",
   "/design": "Wireline Design",
   "/training": "Training",

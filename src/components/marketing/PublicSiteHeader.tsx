@@ -42,7 +42,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const isAuth = active === "signin" || active === "signup";
   const signedIn = !!user && !authLoading;
-  const homeTo = signedIn ? "/ops" : "/";
+  const homeTo = signedIn ? "/agents" : "/";
 
   useEffect(() => {
     setMenuOpen(false);
