@@ -25,4 +25,12 @@ describe("FleetSettings shell", () => {
     // Build canvas is the default; templates are a summoned starting point.
     expect(SRC).toContain('useState<"canvas" | "templates">("canvas")');
   });
+
+  it("centers the Director chat and keeps tuning in a separate rail", () => {
+    expect(SRC).toContain('data-testid="studio-director-center"');
+    expect(SRC).toContain("<DirectorWorkspace");
+    expect(SRC).toContain('data-testid="studio-tuning-rail"');
+    expect(SRC).toContain("<AgentConfigPanel");
+    expect(SRC.indexOf("<DirectorWorkspace")).toBeLessThan(SRC.indexOf("<AgentConfigPanel"));
+  });
 });
