@@ -9,6 +9,7 @@ import ToastStack from "./components/Toast";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
+import { AccountProvider } from "./contexts/AccountContext";
 import AppShell from "./components/layout/AppShell";
 import NotFound from "./components/layout/NotFound";
 import MarketingRouteFallback from "./components/layout/MarketingRouteFallback";
@@ -383,7 +384,9 @@ function AppContent() {
   // AppShell already renders the ⌘K CommandBar — don't double-mount.
   return (
     <AgentsProvider>
-      <AppShell />
+      <AccountProvider>
+        <AppShell />
+      </AccountProvider>
     </AgentsProvider>
   );
 }

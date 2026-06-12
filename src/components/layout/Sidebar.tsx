@@ -11,8 +11,10 @@ import { Crown, LifeBuoy, LogOut, Search, Settings } from "lucide-react";
 import { motion } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAccount } from "../../contexts/AccountContext";
 import { useBranding } from "../../contexts/BrandingContext";
-import { SIDEBAR_NAV_ITEMS, type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
+import { type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
+import { accountSidebarItems } from "../../lib/account-type";
 import { BRAND } from "../../constants/brand-colors";
 import { authFetch } from "../../lib/api";
 import { useLivePresence } from "../../hooks/useLivePresence";
@@ -32,6 +34,7 @@ interface SidebarProps {
 export default function Sidebar({ navBadges }: SidebarProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { accountType } = useAccount();
   const { branding } = useBranding();
   const liveCalls = useLivePresence();
 
@@ -116,7 +119,9 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           aria-label="Console pages"
         >
           <div className="space-y-px">
-            {SIDEBAR_NAV_ITEMS.filter((item) => !item.ownerOnly || user?.is_owner === true).map(
+            {accountSidebarItems(accountType)
+              .filter((item) => !item.ownerOnly || user?.is_owner === true)
+              .map(
               (item, index, items) => {
                 const prev = items[index - 1];
                 const clusterBreak = prev && prev.section !== item.section;

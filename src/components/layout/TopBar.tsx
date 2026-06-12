@@ -19,11 +19,12 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
 import {
   findNavItemForPath,
-  NAV_GROUPS,
   NAV_SHORTCUT_HINTS,
   PAGE_TITLES,
   type NavItem,
 } from "../../constants/navigation";
+import { accountNavGroups } from "../../lib/account-type";
+import { useAccount } from "../../contexts/AccountContext";
 import { useBranding } from "../../contexts/BrandingContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { shouldShowTopBarThemeToggle } from "../../lib/wireline-app-chrome";
@@ -48,6 +49,8 @@ export default function TopBar({
   const location = useLocation();
   const { theme } = useTheme();
   const { user, signOut } = useAuth();
+  const { accountType } = useAccount();
+  const navGroups = accountNavGroups(accountType);
   const { branding } = useBranding();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
@@ -345,7 +348,7 @@ export default function TopBar({
               viewports still see groups inline. Hidden on phone (drawer carries
               nav) and on lg+ (Sidebar does). */}
           <nav className="hidden md:flex lg:hidden items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
-            {NAV_GROUPS.map((group, gIdx) => {
+            {navGroups.map((group, gIdx) => {
               const visibleItems = group.items.filter(
                 (item) => !item.ownerOnly || user?.is_owner === true,
               );
@@ -587,7 +590,7 @@ export default function TopBar({
               </div>
 
               <nav className="flex-1 min-h-0 scroll-viewport space-y-1">
-                {NAV_GROUPS.map((group) => {
+                {navGroups.map((group) => {
                   const visibleItems = group.items.filter(
                     (item) => !item.ownerOnly || user?.is_owner === true,
                   );
