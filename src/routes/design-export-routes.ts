@@ -201,6 +201,7 @@ router.post(
           connected: false,
           ready: false,
           requiresConnection: true,
+          code: "SHOPIFY_NOT_CONNECTED",
           error: "Connect Shopify to use live cart generation.",
         });
         return;
@@ -210,6 +211,7 @@ router.post(
           connected: true,
           ready: false,
           requiresStorefrontAccess: true,
+          code: "SHOPIFY_STOREFRONT_ACCESS_MISSING",
           error: "Add Storefront API access to use live cart generation.",
         });
         return;
@@ -239,6 +241,7 @@ router.post(
           connected: false,
           ready: false,
           requiresConnection: true,
+          code: "SHOPIFY_NOT_CONNECTED",
           error: "Connect Shopify to use live cart generation.",
         });
         return;
@@ -248,6 +251,7 @@ router.post(
           connected: true,
           ready: false,
           requiresStorefrontAccess: true,
+          code: "SHOPIFY_STOREFRONT_ACCESS_MISSING",
           error: "Add Storefront API access to use live cart generation.",
         });
         return;

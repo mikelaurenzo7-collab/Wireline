@@ -60,7 +60,7 @@ function extractFontsFromHtml(html: string): string[] {
     const family = raw
       .replace(/font-family:\s*/i, "")
       .trim()
-      .replace(/[\'"]/g, "");
+      .replace(/['"]/g, "");
     if (family) fonts.add(family.split(",")[0]?.trim() ?? family);
   }
   return [...fonts];
@@ -240,7 +240,8 @@ export function buildShopifyStorefrontStarterZip(input: {
   promptSummary?: string;
 }): Buffer {
   const htmlStr =
-    input.html?.toString("utf8") ?? "<!doctype html><html><body><p>Wireline storefront concept</p></body></html>";
+    input.html?.toString("utf8") ??
+    "<!doctype html><html><body><p>Wireline storefront concept</p></body></html>";
   const bodyHtml = extractBodyInnerHtml(htmlStr);
   const escaped = escapeForTemplateLiteral(bodyHtml);
   const componentName =

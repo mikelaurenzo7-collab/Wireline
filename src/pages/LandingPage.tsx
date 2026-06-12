@@ -1,23 +1,98 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { motion, type MotionProps } from "motion/react";
+import {
+  Activity,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  Ear,
+  Globe,
+  Mail,
+  MessageSquare,
+  PhoneCall,
+  PhoneIncoming,
+  PhoneOutgoing,
+  Plus,
+  Rocket,
+  ScrollText,
+  Sparkles,
+} from "lucide-react";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import HeroCallPreview from "../components/marketing/HeroCallPreview";
+import { HeroDecorations } from "../components/marketing/HeroDecorations";
+import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
-import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import { WIRELINE_FEATURES } from "../data/wireline-knowledge";
+import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
+
+/* ── Source-of-truth derived data ─────────────────────────────────── */
+
+const PERSONAL_PLAN = STRIPE_PLANS.find((p) => p.id === "personal");
+const PAID_PLANS = STRIPE_PLANS.filter((p) => p.price_usd_monthly > 0);
 
 const STATS = [
   { value: "24/7", label: "Availability" },
   { value: "<10m", label: "First agent live" },
-  { value: "0", label: "Card required" },
+  { value: "~800ms", label: "Voice response" },
+  { value: `$${PERSONAL_PLAN?.price_usd_monthly ?? 49}`, label: "Entry plan / mo" },
 ] as const;
 
 const TRUST_BADGES = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
+
+const CAPABILITY_ICONS = [PhoneIncoming, PhoneOutgoing, Mail, MessageSquare, Activity] as const;
+
+const HOW_IT_WORKS = [
+  {
+    icon: Globe,
+    title: "Paste your website",
+    body: "Wireline reads your site and drafts the whole playbook — business profile, FAQs, scheduling rules, and escalation paths — before you type a word.",
+  },
+  {
+    icon: ScrollText,
+    title: "Approve the playbook",
+    body: "Pick a voice and a vibe — warm, playful, or authoritative. Your agent holds one personality for the entire call and never claims an action it can't take.",
+  },
+  {
+    icon: Rocket,
+    title: "Go live on a real number",
+    body: "A dedicated voice number is provisioned instantly — no Twilio account, no developers. Inbound, outbound, email, and SMS from the same fleet.",
+  },
+] as const;
+
+const COCKPIT_POINTS = [
+  {
+    icon: Ear,
+    title: "Listen in & whisper-coach",
+    body: "Drop into any live call silently, or whisper guidance only your agent hears — mid-sentence course corrections without the caller ever knowing.",
+  },
+  {
+    icon: ScrollText,
+    title: "Every word on the record",
+    body: "Full transcripts, sentiment, and outcomes on every interaction. When an agent escalates or takes a message, you see exactly why.",
+  },
+  {
+    icon: Sparkles,
+    title: "A fleet that gets sharper",
+    body: "The self-improvement loop mines lessons from your highest-scoring calls and feeds them back into the playbook — every call sharpens the next.",
+  },
+] as const;
+
+const INDUSTRIES: ReadonlyArray<{ slug: VerticalKey; label: string }> = [
+  { slug: "home-services", label: "Home Services" },
+  { slug: "medical", label: "Medical" },
+  { slug: "legal", label: "Legal" },
+  { slug: "real-estate", label: "Real Estate" },
+  { slug: "insurance", label: "Insurance" },
+  { slug: "restaurants", label: "Restaurants" },
+  { slug: "sales", label: "Sales Teams" },
+  { slug: "personal", label: "Personal" },
+];
 
 const FAQS = [
   {
@@ -63,6 +138,7 @@ const FOOTER_COLS = [
       { to: "/pricing", label: "Pricing" },
       { to: "/showcase", label: "Demos" },
       { to: "/compare", label: "Compare" },
+      { to: "/developers", label: "Developers" },
       { to: "/status", label: "Status" },
     ],
   },
@@ -70,6 +146,7 @@ const FOOTER_COLS = [
     title: "Company",
     links: [
       { to: "/about", label: "About" },
+      { to: "/blog", label: "Blog" },
       { to: "/security", label: "Security" },
       { to: "/support", label: "Support" },
       { to: "/changelog", label: "Changelog" },
@@ -83,6 +160,69 @@ const FOOTER_COLS = [
     ],
   },
 ];
+
+/* ── Shared editorial atoms ───────────────────────────────────────── */
+
+const REVEAL: MotionProps = {
+  initial: { opacity: 0, y: 16 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.25 },
+  transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+};
+
+function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
+  return (
+    <p
+      className={`inline-flex items-center gap-2 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] ${
+        dark ? "text-paper/55" : "text-ink/65"
+      }`}
+    >
+      <span className="h-1.5 w-1.5 bg-brand" aria-hidden="true" />
+      {children}
+    </p>
+  );
+}
+
+function SectionHead({
+  eyebrow,
+  title,
+  lede,
+  dark = false,
+  align = "center",
+}: {
+  eyebrow: string;
+  title: string;
+  lede?: string;
+  dark?: boolean;
+  align?: "center" | "left";
+}) {
+  return (
+    <motion.div
+      {...REVEAL}
+      className={`mb-12 lg:mb-16 ${align === "center" ? "text-center" : "text-left"}`}
+    >
+      <Eyebrow dark={dark}>{eyebrow}</Eyebrow>
+      <h2
+        className={`mt-4 font-display text-[clamp(1.8rem,4.2vw,3.4rem)] leading-[1.02] tracking-[-0.03em] text-balance ${
+          dark ? "text-paper" : "text-ink"
+        }`}
+      >
+        {title}
+      </h2>
+      {lede && (
+        <p
+          className={`mt-5 text-[15px] sm:text-base leading-relaxed ${
+            align === "center" ? "mx-auto" : ""
+          } max-w-2xl ${dark ? "text-paper/60" : "text-ink/65"}`}
+        >
+          {lede}
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
+/* ── Page ─────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   useEffect(() => {
@@ -101,13 +241,13 @@ export default function LandingPage() {
         path="/"
         structuredData={FAQ_STRUCTURED_DATA}
       />
-      <div className="marketing-surface min-h-dvh bg-paper relative paper-texture">
+      <div className="marketing-surface relative min-h-dvh bg-paper">
         <PublicSiteHeader active="home" />
 
-        {/* ─── Hero — executive-grade product scene, no purple backdrop or robot wires ─── */}
+        {/* ─── Hero — executive product scene with gutter robots ──── */}
         <section
           data-testid="hero-section"
-          className="relative overflow-hidden border-b border-ink/[0.08] bg-paper px-5 sm:px-6 lg:px-12 pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-20"
+          className="relative overflow-hidden border-b border-ink/[0.08] bg-paper pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-20"
         >
           <div
             aria-hidden="true"
@@ -117,10 +257,7 @@ export default function LandingPage() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-16 h-px bg-ink/[0.08]"
           />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-20 h-[34rem] w-px -translate-x-1/2 bg-gradient-to-b from-ink/[0.08] via-ink/[0.035] to-transparent"
-          />
+          <HeroDecorations />
 
           <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(460px,0.78fr)] lg:gap-16">
             <motion.div
@@ -140,8 +277,8 @@ export default function LandingPage() {
 
               <p className="mt-7 max-w-2xl text-[clamp(1rem,1.45vw,1.28rem)] leading-relaxed text-ink/68">
                 Deploy a trained agent fleet on real phone numbers in minutes. Handle inbound calls,
-                qualify leads, book appointments, send follow-ups, and keep every interaction visible
-                from one supervisor cockpit.
+                qualify leads, book appointments, send follow-ups, and keep every interaction
+                visible from one supervisor cockpit.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -170,7 +307,7 @@ export default function LandingPage() {
                 {TRUST_BADGES.map((badge) => (
                   <span
                     key={badge}
-                    className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink/58"
+                    className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-ink/58"
                   >
                     {badge}
                   </span>
@@ -207,7 +344,10 @@ export default function LandingPage() {
                   <p className="mb-3 text-[12px] font-semibold tracking-tight text-ink/70">
                     Jordan · Inbound Support
                   </p>
-                  <BrowserCallWidget agentName={csDemo.name} buttonLabel={`Talk to ${csDemo.name}`} />
+                  <BrowserCallWidget
+                    agentName={csDemo.name}
+                    buttonLabel={`Talk to ${csDemo.name}`}
+                  />
                   <a
                     href={`tel:${csDemo.tel}`}
                     className="mt-3.5 font-mono text-[13px] tracking-tight text-brand transition-colors hover:text-brand/80"
@@ -221,7 +361,10 @@ export default function LandingPage() {
                   <p className="mb-3 text-[12px] font-semibold tracking-tight text-ink/70">
                     Jake · Outbound Sales
                   </p>
-                  <BrowserCallWidget agentName={salesDemo.name} buttonLabel={`Talk to ${salesDemo.name}`} />
+                  <BrowserCallWidget
+                    agentName={salesDemo.name}
+                    buttonLabel={`Talk to ${salesDemo.name}`}
+                  />
                   <a
                     href={`tel:${salesDemo.tel}`}
                     className="mt-3.5 font-mono text-[13px] tracking-tight text-brand transition-colors hover:text-brand/80"
@@ -234,29 +377,23 @@ export default function LandingPage() {
           </motion.div>
         </section>
 
-        {/* ─── Proof ──────────────────────────────────────────────── */}
-        <section
-          data-testid="proof-section"
-          className="landing-section landing-section--band landing-section--band-after-hero px-5 sm:px-6 lg:px-12"
-        >
-          <div className="landing-section-inner max-w-7xl">
-            <div className="wl-reveal-stagger grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] rounded-md overflow-hidden">
+        {/* ─── Proof band ─────────────────────────────────────────── */}
+        <section data-testid="proof-section" className="border-b border-ink/[0.08] py-14 lg:py-20">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="grid grid-cols-2 gap-px overflow-hidden border border-ink/[0.08] bg-ink/[0.08] lg:grid-cols-4">
               {STATS.map((stat, i) => (
                 <motion.div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20, scale: 0.96 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="wl-stat-glow bg-paper p-8 md:p-10 lg:p-12 group stat-shimmer"
+                  transition={{ delay: i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  className="bg-paper p-7 sm:p-9 lg:p-11"
                 >
-                  <p
-                    className="stat-value-flip wl-text-gradient font-display italic text-[clamp(2.2rem,5vw,4rem)] leading-none tracking-tight"
-                    data-delay={`${0.3 + i * 0.2}s`}
-                  >
+                  <p className="font-display text-[clamp(2rem,4.4vw,3.6rem)] leading-none tracking-tight text-ink">
                     {stat.value}
                   </p>
-                  <p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-ink/65 mt-3">
+                  <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-ink/65 sm:text-[11px]">
                     {stat.label}
                   </p>
                 </motion.div>
@@ -265,53 +402,372 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ─── Capabilities — one fleet, every channel ────────────── */}
+        <section data-testid="capabilities-section" className="py-20 lg:py-28">
+          <div className="mx-auto w-full max-w-7xl">
+            <SectionHead
+              eyebrow="One fleet, every channel"
+              title="Five jobs your fleet takes off your plate on day one."
+              lede="The same agents, the same playbook, the same memory of every customer — across phone, email, and SMS. No per-channel vendors to stitch together."
+            />
+
+            <div className="grid grid-cols-1 gap-px border border-ink/[0.08] bg-ink/[0.08] md:grid-cols-2 xl:grid-cols-5">
+              {WIRELINE_FEATURES.map((feature, i) => {
+                const Icon = CAPABILITY_ICONS[i] ?? Activity;
+                return (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                    className="group flex flex-col bg-paper p-6 transition-colors duration-200 hover:bg-white/[0.55] lg:p-7"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="grid h-10 w-10 place-items-center border border-ink/[0.12] bg-white/[0.45] text-brand">
+                        <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
+                      </span>
+                      <span className="font-mono text-[10px] tracking-[0.2em] text-ink/35">
+                        0{i + 1}
+                      </span>
+                    </div>
+                    <h3 className="mt-5 font-display text-lg leading-snug tracking-tight text-ink lg:text-xl">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-2.5 text-[13px] leading-relaxed text-ink/65">
+                      {feature.blurb}
+                    </p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── How it works ───────────────────────────────────────── */}
+        <section
+          data-testid="how-it-works-section"
+          className="border-y border-ink/[0.08] bg-[#FBF8F0]/70 py-20 lg:py-28"
+        >
+          <div className="mx-auto w-full max-w-6xl">
+            <SectionHead
+              eyebrow="Under 10 minutes"
+              title="From website to working agent in three steps."
+              lede="No developers, no prompt engineering, no phone-system migration. If you can paste a URL, you can deploy a fleet."
+            />
+
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-6 lg:gap-10">
+              {HOW_IT_WORKS.map((step, i) => (
+                <motion.div
+                  key={step.title}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative border-t-2 border-brand/70 pt-6"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-display text-3xl leading-none text-ink/25 lg:text-4xl">
+                      {i + 1}
+                    </span>
+                    <span className="grid h-9 w-9 place-items-center border border-ink/[0.12] bg-white/[0.5] text-brand">
+                      <step.icon className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
+                    </span>
+                  </div>
+                  <h3 className="mt-4 font-display text-xl tracking-tight text-ink lg:text-2xl">
+                    {step.title}
+                  </h3>
+                  <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink/65">{step.body}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div {...REVEAL} className="mt-12 text-center">
+              <Link
+                to="/signup"
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-ink px-7 text-[14px] font-semibold text-paper transition-transform duration-200 hover:-translate-y-px"
+              >
+                Deploy your first agent
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-ink/45">
+                14-day trial · No card required
+              </p>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ─── Supervisor cockpit — dark band ─────────────────────── */}
+        <section data-testid="cockpit-section" className="bg-ink py-20 text-paper lg:py-28">
+          <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+            <div>
+              <SectionHead
+                dark
+                align="left"
+                eyebrow="The supervisor cockpit"
+                title="Autonomous never means unsupervised."
+                lede="Live Ops is your trading floor: every call on the board, every agent accountable, every escalation one click from a human."
+              />
+
+              <div className="-mt-4 space-y-7">
+                {COCKPIT_POINTS.map((point) => (
+                  <motion.div key={point.title} {...REVEAL} className="flex gap-4">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center border border-paper/[0.14] bg-paper/[0.04] text-paper/85">
+                      <point.icon
+                        className="h-[18px] w-[18px]"
+                        strokeWidth={1.7}
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <div>
+                      <h3 className="font-display text-lg tracking-tight text-paper">
+                        {point.title}
+                      </h3>
+                      <p className="mt-1.5 max-w-xl text-[13.5px] leading-relaxed text-paper/60">
+                        {point.body}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Static cockpit board mock */}
+            <motion.div
+              {...REVEAL}
+              aria-hidden="true"
+              className="border border-paper/[0.12] bg-[#221C19] shadow-[0_30px_80px_-50px_rgba(0,0,0,0.9)]"
+            >
+              <div className="flex items-center justify-between border-b border-paper/[0.1] px-5 py-3.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-paper/55">
+                  Live Ops · Floor
+                </span>
+                <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-emerald-400">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/50" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  </span>
+                  3 on call
+                </span>
+              </div>
+
+              <div className="divide-y divide-paper/[0.07]">
+                {[
+                  {
+                    agent: "Sarah",
+                    line: "Inbound · booking Sat 9:30",
+                    time: "0:42",
+                    tone: "warm",
+                  },
+                  {
+                    agent: "Jake",
+                    line: "Outbound · qualifying lead (BANT)",
+                    time: "2:18",
+                    tone: "playful",
+                  },
+                  {
+                    agent: "Jordan",
+                    line: "Support · warranty question",
+                    time: "1:05",
+                    tone: "warm",
+                  },
+                ].map((row) => (
+                  <div key={row.agent} className="flex items-center gap-3 px-5 py-3.5">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center bg-brand font-display text-sm text-white">
+                      {row.agent[0]}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-paper/90">
+                        {row.agent}
+                        <span className="ml-2 border border-brand/30 bg-brand/[0.12] px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.14em] text-paper/70">
+                          {row.tone}
+                        </span>
+                      </p>
+                      <p className="truncate text-[11.5px] text-paper/50">{row.line}</p>
+                    </div>
+                    <span className="flex items-center gap-1.5 font-mono text-[10px] tabular-nums text-paper/60">
+                      <PhoneCall className="h-3 w-3 text-emerald-400" />
+                      {row.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-paper/[0.1] bg-paper/[0.03] px-5 py-3.5">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper/40">
+                  Whisper to Sarah
+                </p>
+                <p className="mt-1.5 text-[12.5px] italic text-paper/70">
+                  &ldquo;Offer the 2:15 slot first — morning crew is booked.&rdquo;
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ─── Industries ─────────────────────────────────────────── */}
+        <section data-testid="industries-section" className="py-20 lg:py-28">
+          <div className="mx-auto w-full max-w-7xl">
+            <SectionHead
+              eyebrow="Vertical onboarding"
+              title="Horizontal platform. Purpose-built starting points."
+              lede="Every industry gets its own playbook, demo agent, and escalation rules — not a generic script with your name pasted in."
+            />
+
+            <div className="grid grid-cols-1 gap-px border border-ink/[0.08] bg-ink/[0.08] sm:grid-cols-2 xl:grid-cols-4">
+              {INDUSTRIES.map(({ slug, label }, i) => {
+                const wedge = WEDGES[slug];
+                return (
+                  <motion.div
+                    key={slug}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: (i % 4) * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="bg-paper"
+                  >
+                    <Link
+                      to={`/for/${slug}`}
+                      className="group flex h-full flex-col p-6 transition-colors duration-200 hover:bg-white/[0.55] lg:p-7"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/50">
+                          {label}
+                        </span>
+                        <ArrowUpRight
+                          className="h-4 w-4 text-ink/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <p className="mt-4 font-display text-[17px] leading-snug tracking-tight text-ink lg:text-lg">
+                        {wedge.headline}
+                      </p>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* ─── Integrations ───────────────────────────────────────── */}
         <section
           data-testid="integrations-section"
-          className="landing-section px-5 sm:px-6 lg:px-12"
+          className="border-y border-ink/[0.08] bg-[#FBF8F0]/70 py-16 lg:py-20"
         >
-          <div className="landing-section-inner max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="landing-section-head text-center"
-            >
-              <p className="inline-flex items-center gap-2 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
-                <span className="wl-eyebrow-dot" aria-hidden="true" />
-                Your stack
-              </p>
-              <h2 className="font-display italic text-[clamp(1.4rem,3.5vw,2.25rem)] leading-[1.08] text-ink">
-                Plugs into the tools you already run.
-              </h2>
-              <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
-            </motion.div>
+          <div className="mx-auto w-full max-w-5xl">
+            <SectionHead eyebrow="Your stack" title="Plugs into the tools you already run." />
             <IntegrationLogos compact />
           </div>
         </section>
 
-        {/* ─── FAQ ────────────────────────────────────────────────── */}
-        <section data-testid="faq-section" className="landing-section px-5 sm:px-6 lg:px-12">
-          <div className="landing-section-inner max-w-3xl">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="landing-section-head text-center"
-            >
-              <p className="inline-flex items-center gap-2 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-3">
-                <span className="wl-eyebrow-dot" aria-hidden="true" />
-                Questions, answered
-              </p>
-              <h2 className="font-display italic text-[clamp(1.6rem,4vw,3rem)] leading-[1.05] text-ink">
-                Everything you&rsquo;d ask your best rep.
-              </h2>
-              <div className="wl-divider-aurora mx-auto mt-6 w-24" aria-hidden="true" />
-            </motion.div>
+        {/* ─── Pricing teaser ─────────────────────────────────────── */}
+        <section data-testid="pricing-teaser-section" className="py-20 lg:py-28">
+          <div className="mx-auto w-full max-w-7xl">
+            <SectionHead
+              eyebrow="Honest unit economics"
+              title="Priced like a tool, not a headcount."
+              lede="Every plan includes dedicated voice numbers — no Twilio account, no per-seat games. Start free for 14 days on any tier."
+            />
 
-            <div className="border-t border-ink/[0.12] rounded-b-2xl overflow-hidden">
+            <div className="grid grid-cols-1 gap-px border border-ink/[0.08] bg-ink/[0.08] sm:grid-cols-2 xl:grid-cols-4">
+              {PAID_PLANS.map((plan, i) => {
+                const highlight = plan.id === "pro";
+                return (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className={`flex flex-col p-6 lg:p-7 ${
+                      highlight ? "bg-ink text-paper" : "bg-paper text-ink"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3
+                        className={`font-mono text-[11px] uppercase tracking-[0.22em] ${
+                          highlight ? "text-paper/70" : "text-ink/60"
+                        }`}
+                      >
+                        {plan.name}
+                      </h3>
+                      {highlight && (
+                        <span className="border border-paper/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-paper/75">
+                          Most popular
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-4 font-display text-4xl leading-none tracking-tight">
+                      ${plan.price_usd_monthly.toLocaleString()}
+                      <span
+                        className={`ml-1 align-baseline font-sans text-[13px] font-normal ${
+                          highlight ? "text-paper/55" : "text-ink/50"
+                        }`}
+                      >
+                        /mo
+                      </span>
+                    </p>
+                    <ul
+                      className={`mt-5 flex-1 space-y-2.5 text-[13px] leading-snug ${
+                        highlight ? "text-paper/75" : "text-ink/70"
+                      }`}
+                    >
+                      {[
+                        `${plan.max_agents} AI agent${plan.max_agents === 1 ? "" : "s"} (voice + email)`,
+                        `${plan.voice_minutes_monthly.toLocaleString()} voice minutes / month`,
+                        `${plan.included_phone_numbers} dedicated number${
+                          plan.included_phone_numbers === 1 ? "" : "s"
+                        } included`,
+                      ].map((line) => (
+                        <li key={line} className="flex items-start gap-2">
+                          <Check
+                            className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${
+                              highlight ? "text-emerald-400" : "text-brand"
+                            }`}
+                            strokeWidth={2.4}
+                            aria-hidden="true"
+                          />
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={`/signup?plan=${plan.id}`}
+                      className={`mt-6 inline-flex min-h-11 items-center justify-center text-[13px] font-semibold transition-transform duration-200 hover:-translate-y-px ${
+                        highlight
+                          ? "bg-paper text-ink"
+                          : "border border-ink/[0.16] bg-white/[0.35] text-ink hover:bg-white/60"
+                      }`}
+                    >
+                      Start free trial
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <motion.p {...REVEAL} className="mt-8 text-center text-[13px] text-ink/60">
+              Need 100+ agents, SAML SSO, or an SLA?{" "}
+              <Link
+                to="/pricing"
+                className="font-semibold text-brand underline-offset-4 hover:underline"
+              >
+                See full pricing &amp; Enterprise
+              </Link>
+            </motion.p>
+          </div>
+        </section>
+
+        {/* ─── FAQ ────────────────────────────────────────────────── */}
+        <section data-testid="faq-section" className="border-t border-ink/[0.08] py-20 lg:py-28">
+          <div className="mx-auto w-full max-w-3xl">
+            <SectionHead
+              eyebrow="Questions, answered"
+              title="Everything you'd ask your best rep."
+            />
+
+            <div className="border-t border-ink/[0.12]">
               {FAQS.map((faq, i) => (
                 <motion.details
                   key={faq.q}
@@ -319,27 +775,19 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.2) }}
-                  className="wl-faq-item faq-details group border-b border-ink/[0.12] last:border-b-0"
+                  className="group border-b border-ink/[0.12]"
                   data-testid={`faq-item-${i}`}
-                  onToggle={(e: React.ToggleEvent<HTMLDetailsElement>) => {
-                    const el = e.currentTarget;
-                    if (el.open) {
-                      el.setAttribute("data-open", "true");
-                    } else {
-                      el.removeAttribute("data-open");
-                    }
-                  }}
                 >
-                  <summary className="flex items-start justify-between gap-4 py-5 lg:py-6 cursor-pointer list-none select-none px-1 [&::-webkit-details-marker]:hidden">
-                    <span className="font-display italic text-base sm:text-lg lg:text-xl text-ink leading-snug pr-4">
+                  <summary className="flex cursor-pointer list-none select-none items-start justify-between gap-4 px-1 py-5 lg:py-6 [&::-webkit-details-marker]:hidden">
+                    <span className="pr-4 font-display text-base leading-snug text-ink sm:text-lg lg:text-xl">
                       {faq.q}
                     </span>
                     <Plus
                       aria-hidden="true"
-                      className="w-5 h-5 shrink-0 mt-1 text-ink/45 transition-transform duration-300 group-open:rotate-45 group-hover:text-brand"
+                      className="mt-1 h-5 w-5 shrink-0 text-ink/45 transition-transform duration-300 group-open:rotate-45 group-hover:text-brand"
                     />
                   </summary>
-                  <p className="text-ink/70 leading-relaxed text-[13px] sm:text-[15px] pb-6 pr-8 max-w-prose">
+                  <p className="max-w-prose pb-6 pr-8 text-[13px] leading-relaxed text-ink/70 sm:text-[15px]">
                     {faq.a}
                   </p>
                 </motion.details>
@@ -348,22 +796,63 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ─── Final CTA band ─────────────────────────────────────── */}
+        <section
+          data-testid="final-cta-section"
+          className="relative overflow-hidden bg-ink py-20 text-paper lg:py-28"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.25] [background-image:linear-gradient(to_right,rgba(239,233,220,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(239,233,220,0.045)_1px,transparent_1px)] [background-size:72px_72px]"
+          />
+          <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
+            <motion.div {...REVEAL}>
+              <Eyebrow dark>Right now, a call is going to voicemail</Eyebrow>
+              <h2 className="mt-5 font-display text-[clamp(2.4rem,5.6vw,4.6rem)] leading-[0.95] tracking-[-0.05em] text-paper text-balance">
+                Your next missed call doesn&rsquo;t have to be.
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-paper/60 sm:text-base">
+                Deploy a trained agent on a real number before your coffee cools. 14 days free, no
+                card, cancel in one click.
+              </p>
+              <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  to="/signup"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 bg-paper px-7 text-[14px] font-semibold text-ink transition-transform duration-200 hover:-translate-y-px"
+                >
+                  Start free trial
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                {csDemo && (
+                  <a
+                    href={`tel:${csDemo.tel}`}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 border border-paper/[0.22] px-7 text-[14px] font-semibold text-paper transition-colors hover:bg-paper/[0.06]"
+                  >
+                    <PhoneCall className="h-4 w-4" aria-hidden="true" />
+                    Call a live agent — {csDemo.display}
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
         {/* ─── Footer ─────────────────────────────────────────────── */}
         <footer
           data-testid="landing-footer"
-          className="footer-brand-glow bg-ink text-paper border-t border-paper/[0.08] wl-landing-footer-bg"
+          className="border-t border-paper/[0.08] bg-ink text-paper"
         >
-          <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
-            <div className="wl-reveal-stagger grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
+          <div className="mx-auto max-w-7xl px-6 py-16 lg:px-12 lg:py-20">
+            <div className="mb-16 grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12">
               <div className="col-span-2 md:col-span-1">
-                <p className="font-display italic text-2xl text-paper/90 mb-3">Wireline</p>
-                <p className="text-[13px] text-paper/55 leading-relaxed max-w-xs">
+                <p className="mb-3 font-display text-2xl text-paper/90">Wireline</p>
+                <p className="max-w-xs text-[13px] leading-relaxed text-paper/55">
                   AI voice + email agents for every business. One fleet, your playbook, 24/7.
                 </p>
               </div>
               {FOOTER_COLS.map((col) => (
                 <div key={col.title}>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-paper/45 mb-4">
+                  <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.25em] text-paper/45">
                     {col.title}
                   </p>
                   <ul className="space-y-2.5">
@@ -371,7 +860,7 @@ export default function LandingPage() {
                       <li key={link.to}>
                         <Link
                           to={link.to}
-                          className="text-[13px] text-paper/60 hover:text-paper transition-colors"
+                          className="text-[13px] text-paper/60 transition-colors hover:text-paper"
                         >
                           {link.label}
                         </Link>
@@ -382,14 +871,14 @@ export default function LandingPage() {
               ))}
             </div>
 
-            <div className="border-t border-paper/[0.08] pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <p className="font-mono text-[11px] text-paper/40 tracking-[0.08em]">
+            <div className="flex flex-col items-start justify-between gap-4 border-t border-paper/[0.08] pt-8 md:flex-row md:items-center">
+              <p className="font-mono text-[11px] tracking-[0.08em] text-paper/40">
                 &copy; {new Date().getFullYear()} Wireline Inc.
               </p>
               <Link
                 to="/signin"
                 data-testid="footer-signin"
-                className="text-[13px] text-paper/55 hover:text-paper transition-colors"
+                className="text-[13px] text-paper/55 transition-colors hover:text-paper"
               >
                 Sign in
               </Link>
