@@ -8,6 +8,7 @@ import {
   createOpenAIRealtimeClientSecret,
   getOpenAIRealtimeStatus,
 } from "../lib/voice/openai-realtime-service";
+import { getVoiceRuntimePolicyStatus } from "../lib/voice/voice-runtime-policy";
 
 const router = express.Router();
 
@@ -28,7 +29,10 @@ router.get(
   authenticateUser,
   openaiRealtimeLimiter,
   async (_req: AuthenticatedRequest, res: Response) => {
-    res.json(getOpenAIRealtimeStatus());
+    res.json({
+      ...getOpenAIRealtimeStatus(),
+      runtimePolicy: getVoiceRuntimePolicyStatus(),
+    });
   },
 );
 
@@ -44,7 +48,13 @@ router.post(
       model: req.body.model,
       voice: req.body.voice,
     });
-    res.json(session);
+    res.json({
+      ...session,
+      wireline: {
+        ...((session as { wireline?: Record<string, unknown> }).wireline || {}),
+        runtimeRole: "fallback",
+      },
+    });
   },
 );
 
