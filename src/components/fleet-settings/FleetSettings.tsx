@@ -16,6 +16,7 @@ import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
 import DirectorWorkspace from "../DirectorWorkspace";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { cn } from "../../lib/utils";
 import { LayoutGrid, ArrowLeft } from "lucide-react";
 import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import {
@@ -35,6 +36,7 @@ import {
 // Sidebar extracted during the 2026 audit god-file slicing pass.
 import AgentListPanel from "./AgentListPanel";
 import AgentConfigPanel from "./AgentConfigPanel";
+import AgentIdentityVitals from "./AgentIdentityVitals";
 import TuningRailMap from "./TuningRailMap";
 
 // Re-export the public surface so existing consumers
@@ -494,18 +496,64 @@ export default function FleetSettings() {
               onToggleCollapse={() => setListCollapsed((v) => !v)}
             />
 
-            {/* Middle: Director co-pilot chat. This is the primary Studio surface:
-                users explain the agent they want in plain English, get proposals,
-                and keep the conversation in context with the selected agent. */}
+            {/* Middle: the agent canvas. Identity up top, an open stage in the
+                center, and the Director co-pilot docked as a focused chat at the
+                bottom — describe the agent you want in plain English; the precise
+                controls live in the right rail. */}
             <section
               data-testid="studio-director-center"
-              className="min-h-[520px] md:min-h-0 md:flex-1 min-w-0 flex flex-col border-y md:border-y-0 md:border-x border-border/70 bg-background/45"
-              aria-label="Director co-pilot chat"
+              className="min-h-[560px] md:min-h-0 md:flex-1 min-w-0 flex flex-col border-y md:border-y-0 md:border-x border-border/70 bg-background/45"
+              aria-label="Agent canvas"
             >
-              <DirectorWorkspace
-                focusAgentId={selectedAgent?.id ?? null}
-                onFocusAgentChange={handleDirectorFocusAgent}
-              />
+              {selectedAgent && (
+                <>
+                  {/* Identity hero — name, then who answers, in what voice, on
+                      what brain, at what number. Anchors the open canvas. */}
+                  <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border/50">
+                    <div className="flex items-center gap-3 mb-3 min-w-0">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand/12 text-brand text-base font-semibold uppercase">
+                        {String(selectedAgent.name ?? "A").trim().charAt(0) || "A"}
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="truncate text-lg font-semibold leading-tight text-ink/90">
+                          {selectedAgent.name || "Untitled agent"}
+                        </h2>
+                        <p className="wl-label capitalize text-muted/80">
+                          {selectedAgent.role
+                            ? String(selectedAgent.role).replace(/_/g, " ")
+                            : "Agent"}
+                        </p>
+                      </div>
+                    </div>
+                    <AgentIdentityVitals agent={selectedAgent} />
+                  </div>
+                  {/* Open stage — breathing room that anchors the co-pilot to the
+                      bottom. The hint shows on larger viewports. */}
+                  <div className="flex flex-1 min-h-0 flex-col items-center justify-center px-6 text-center">
+                    <p className="hidden md:block max-w-sm text-sm leading-relaxed text-muted/70">
+                      Shape{" "}
+                      <span className="text-ink/80">{selectedAgent.name || "this agent"}</span> by
+                      talking to your co-pilot below — or fine-tune voice, brain, tools, and rules
+                      in the rail on the right.
+                    </p>
+                  </div>
+                </>
+              )}
+              {/* Co-pilot — the Director, docked as a focused chat. Fills the
+                  canvas until an agent is selected, then anchors the bottom. */}
+              <div
+                className={cn(
+                  "flex flex-col min-h-0",
+                  selectedAgent
+                    ? "shrink-0 h-[46%] md:h-[44%] min-h-[300px] max-h-[560px] border-t border-border/60 bg-background/60"
+                    : "flex-1",
+                )}
+              >
+                <DirectorWorkspace
+                  focusAgentId={selectedAgent?.id ?? null}
+                  onFocusAgentChange={handleDirectorFocusAgent}
+                />
+              </div>
             </section>
 
             {/* Right: precision tuning rail. The Director can propose changes in

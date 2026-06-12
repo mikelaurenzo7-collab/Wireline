@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- selectedAgent / agentConfig
+ * are the heterogeneous snake_case JSON rows from /api/agents and the per-agent
+ * config endpoints, mirrored from FleetSettings. Shared client types belong in
+ * contracts/api-types.ts and are tracked separately. */
 import type { ComponentType } from "react";
 import {
   BadgeCheck,
@@ -111,7 +115,7 @@ export default function TuningRailMap({
               tools, rules, and final launch readiness.
             </p>
           </div>
-          <div className="shrink-0 rounded-full border border-brand/20 bg-brand/10 px-2 py-1 text-[10px] font-mono tabular-nums text-brand">
+          <div className="shrink-0 rounded-full border border-brand/20 bg-brand/10 px-2 py-1 text-[11px] font-mono tabular-nums text-brand">
             {launchScore}/6 ready
           </div>
         </div>
@@ -125,7 +129,7 @@ export default function TuningRailMap({
               key={section.id}
               className={cn(
                 "rounded-md border px-2.5 py-2 transition-colors",
-                section.featured
+                "featured" in section && section.featured
                   ? "border-brand/25 bg-brand/[0.07]"
                   : "border-border/80 bg-background/45 hover:border-brand/20",
               )}
@@ -134,7 +138,7 @@ export default function TuningRailMap({
                 <Icon className="w-3 h-3 shrink-0 text-brand" />
                 <span className="wl-label text-ink truncate">{section.label}</span>
               </div>
-              <p className="mt-1 text-[10px] leading-snug text-muted line-clamp-2">{section.hint}</p>
+              <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2">{section.hint}</p>
             </div>
           );
         })}
@@ -145,13 +149,13 @@ export default function TuningRailMap({
           <span className="inline-flex items-center gap-1.5 wl-label text-brand">
             <Sparkles className="w-3 h-3" /> Voice lab
           </span>
-          <span className="text-[10px] text-muted">primary surface</span>
+          <span className="text-[11px] text-muted">primary surface</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {voiceTuningIdeas.map((idea) => (
             <span
               key={idea}
-              className="rounded-full border border-brand/15 bg-brand/[0.045] px-2 py-1 text-[10px] leading-none text-ink/75"
+              className="rounded-full border border-brand/15 bg-brand/[0.045] px-2 py-1 text-[11px] leading-none text-ink/75"
             >
               {idea}
             </span>
@@ -159,13 +163,13 @@ export default function TuningRailMap({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+      <div className="grid grid-cols-3 gap-1.5 text-[11px]">
         <SignalTile icon={Phone} label="Voice" value={hasVoice ? "armed" : "needs setup"} active={hasVoice} />
         <SignalTile icon={MessageCircle} label="SMS" value="routing" active={!!selectedAgent?.sms_enabled} />
         <SignalTile icon={Mail} label="Email" value="relay" active={selectedAgent?.channel === "email"} />
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
         <SignalTile icon={FileText} label="Knowledge" value={hasKnowledge ? "loaded" : "empty"} active={hasKnowledge} />
         <SignalTile
           icon={PlugZap}
