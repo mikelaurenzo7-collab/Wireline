@@ -39,7 +39,9 @@ export default function AppRoutes() {
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Live Ops is the default landing surface for signed-in operators. */}
-          <Route path="/" element={<Navigate to="/ops" replace />} />
+          {/* Studio is home: the build-your-agent surface is the landing page.
+              Live Ops remains one tap away under Command (and via its aliases). */}
+          <Route path="/" element={<Navigate to="/agents" replace />} />
           <Route
             path="/ops"
             element={

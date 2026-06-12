@@ -39,7 +39,7 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/pipeline": "Leads across the funnel — scored and staged",
   "/design": "Build branded pages, flows & shareable previews",
   "/admin": "Account configuration & integrations",
-  "/agents": "Deploy, configure & manage your fleet",
+  "/agents": "Build, voice & tune your agents",
   "/integrations": "Email, CRM & third-party connections",
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
@@ -121,7 +121,7 @@ function getPageContext(
           };
         return {
           eyebrow: section ?? "Agents",
-          title: "Agents",
+          title: "Studio",
           subtitle: ROUTE_SUBTITLES["/agents"],
         };
       }
