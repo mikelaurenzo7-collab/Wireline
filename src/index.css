@@ -19,14 +19,14 @@
    * sticker slots. Was referenced in 6 places but never defined, so
    * fallback-less `var(--wl-cream)` consumers (sidebar wordmark) silently
    * inherited low-contrast purple. */
-  --wl-cream: #f5f0e6;
+  --wl-cream: #f0e6d4;
 
   /* Surface colors */
-  --background: #f5f0e6;
+  --background: #f0e6d4;
   --foreground: #1a1614;
-  --card: color-mix(in srgb, #f5f0e6 94%, #efe9dc);
+  --card: color-mix(in srgb, #f0e6d4 92%, #e8dcc8);
   --card-foreground: #1a1614;
-  --popover: color-mix(in srgb, #f5f0e6 97%, white);
+  --popover: color-mix(in srgb, #f0e6d4 95%, white);
   --popover-foreground: #1a1614;
 
   /* Brand primary — lighter editorial violet that matches the hero accent.
@@ -72,10 +72,10 @@
   --chart-4: #3b154c;
   --chart-5: #d4c9b8;
 
-  /* Core theme variables — rich cream canvas + warm paper accent */
+  /* Core theme variables — RICH cream canvas + warm paper accent */
   --ink: #1a1614;
-  --paper: #f5f0e6;
-  --paper-warm: #efe9dc;
+  --paper: #f0e6d4;
+  --paper-warm: #e8dcc8;
   /** Elevated dark panels — composer, artifacts, live session fades */
   --velvet: #1a1225;
   --chrome-glow: #8b3fd6;
@@ -223,7 +223,7 @@
   --color-brand-deep: #6b2b99;
   --color-ink: var(--ink);
   --color-paper: var(--paper);
-  --color-paper-warm: var(--paper-warm, #efe9dc);
+  --color-paper-warm: var(--paper-warm, #e8dcc8);
   --color-velvet: var(--velvet);
   --color-chrome-glow: var(--chrome-glow);
   --color-on-brand: #ffffff;
@@ -294,7 +294,7 @@
   --color-cyan-200: #d4c9b8;
   --color-cyan-300: #c4b5a0;
   --color-cyan-400: #a988c4;
-  --color-cyan-500: #8b6fa8;
+  --color-cyan-500: #8b3fd6;
   --color-cyan-600: #8b3fd6;
   --color-cyan-700: #8b3fd6;
 
