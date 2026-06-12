@@ -44,10 +44,10 @@ function withSection(items: NavItem[], section: string): NavItem[] {
   return items.map((item) => ({ ...item, section }));
 }
 
-// Agent Studio OS nav: Build the agent, command the agent workforce, operate
-// the live desk, then measure and configure the system. This replaces the old
-// templates-era mental model where channels and galleries felt like separate
-// product tabs instead of supporting surfaces around customizable agents.
+// Agent Studio OS nav: Studio is for creating and tuning one agent with an
+// embedded Director co-pilot. The standalone Director page is for managing the
+// broader agent workforce after agents exist: plans, approvals, fleet actions,
+// research, daily gameplans, and cross-agent coordination.
 const BUILD_NAV: NavItem[] = [
   {
     label: "Agent Studio",
@@ -55,13 +55,6 @@ const BUILD_NAV: NavItem[] = [
     icon: Users,
     dataTour: "agents",
     matches: ["/agents"],
-  },
-  {
-    label: "Director",
-    path: "/chat",
-    icon: MessagesSquare,
-    dataTour: "chat",
-    matches: ["/chat"],
   },
   {
     label: "Knowledge",
@@ -79,7 +72,14 @@ const BUILD_NAV: NavItem[] = [
   },
 ];
 
-const OPERATE_NAV: NavItem[] = [
+const MANAGE_NAV: NavItem[] = [
+  {
+    label: "Director",
+    path: "/chat",
+    icon: MessagesSquare,
+    dataTour: "chat",
+    matches: ["/chat"],
+  },
   {
     label: "Live Ops",
     path: "/ops",
@@ -137,8 +137,8 @@ const ADMIN_NAV: NavItem[] = [
 
 /** Logical IA groups - used for mobile drawer sections and docs; labels are not shown on desktop rail. */
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
-  { label: "Build", items: withSection(BUILD_NAV, "Build") },
-  { label: "Operate", items: withSection(OPERATE_NAV, "Operate") },
+  { label: "Create", items: withSection(BUILD_NAV, "Create") },
+  { label: "Manage", items: withSection(MANAGE_NAV, "Manage") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
   { label: "Design", items: withSection(DESIGN_NAV, "Design") },
   {
@@ -149,8 +149,8 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 
 /** Single continuous desktop rail - no section headers, fits without scroll on typical viewports. */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
-  ...withSection(BUILD_NAV, "Build"),
-  ...withSection(OPERATE_NAV, "Operate"),
+  ...withSection(BUILD_NAV, "Create"),
+  ...withSection(MANAGE_NAV, "Manage"),
   ...withSection(CHANNELS_NAV, "Channels"),
   ...withSection(DESIGN_NAV, "Design"),
 ];
@@ -194,9 +194,9 @@ export const PAGE_TITLES: Record<string, string> = {
 /** g+key shortcuts - keep in sync with AppShell and Sidebar hints. */
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   A: "/agents",
-  D: "/chat",
   K: "/training",
   C: "/integrations",
+  D: "/chat",
   O: "/ops",
   L: "/pipeline",
   I: "/insights",
@@ -208,9 +208,9 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/agents": "g a",
-  "/chat": "g d",
   "/training": "g k",
   "/integrations": "g c",
+  "/chat": "g d",
   "/ops": "g o",
   "/pipeline": "g l",
   "/insights": "g i",
