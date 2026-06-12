@@ -965,6 +965,29 @@ router.post(
   },
 );
 
+/**
+ * Per-agent voice model catalog — drives the Agent Studio model picker.
+ *
+ * Returns only the curated VOICE_MODEL_CATALOG options whose provider key is
+ * configured on this deployment, so the picker never offers a model the
+ * platform can't actually reach. The tenant default always passes through
+ * (it's the inherit option). Read-only; no tenant data, so safe + cheap.
+ */
+router.get(
+  "/api/agents/voice-models",
+  authenticateUser,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    const options = claudeBrain.VOICE_MODEL_CATALOG.filter(
+      (opt) => !!process.env[opt.envKey],
+    );
+    res.json({
+      options,
+      tenantDefaultProvider: claudeBrain.VAPI_TENANT_DEFAULT_PROVIDER,
+      tenantDefaultModel: claudeBrain.VAPI_TENANT_DEFAULT_MODEL,
+    });
+  },
+);
+
 router.put(
   "/api/agents/:id",
   authenticateUser,

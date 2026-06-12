@@ -36,6 +36,7 @@ import AgentExportImport from "../AgentExportImport";
 import AgentBusinessProfile from "../AgentBusinessProfile";
 import AgentScorecard from "../AgentScorecard";
 import VoiceFineTuningPanel from "../VoiceFineTuningPanel";
+import AgentModelSelector from "../AgentModelSelector";
 import AgentIntegrationCanvas from "../AgentIntegrationCanvas";
 import { Sparkline, RoleBadge, PREMIUM_VOICES, AGENT_ROLES } from "../fleet/helpers";
 import { resolveAgentTools, getRoleToolSet } from "../../lib/agent-capabilities";
@@ -662,6 +663,11 @@ export default function AgentConfigPanel({
                           onLocalChange={(patch) =>
                             setSelectedAgent({ ...selectedAgent, ...patch })
                           }
+                          onCommit={(patch) => updateAgentMeta(patch)}
+                        />
+
+                        <AgentModelSelector
+                          agent={selectedAgent}
                           onCommit={(patch) => updateAgentMeta(patch)}
                         />
 
