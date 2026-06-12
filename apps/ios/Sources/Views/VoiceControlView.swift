@@ -1,50 +1,50 @@
 import SwiftUI
 
-/// Voice Control template simulation - Phase 4 Polished
-/// Voice-first, safe for driving. Aurora Cream aligned with clean bubbles and large action buttons.
+/// Voice Control View - HIG Aligned for CarPlay
+/// Voice-first design with minimal visual distraction during conversations.
+/// Large, clear action buttons. Follows Apple guidance for conversational apps.
 struct VoiceControlView: View {
     @State private var isListening = false
     @State private var transcript = "What are today’s hot leads?"
     @State private var agentResponse = "You have 4 qualified leads today. The top one is Apex Software - interested in demo."
     
     var body: some View {
-        VStack(spacing: 28) {  // Improved breathing room
-            // Header
+        VStack(spacing: 32) {
+            // Minimal header during conversation
             HStack(spacing: 12) {
                 Image(systemName: isListening ? "waveform" : "mic.fill")
-                    .font(.largeTitle)
+                    .font(.title)
                     .foregroundColor(.purple)
                 Text(isListening ? "Listening..." : "Talking to your SDR Agent...")
                     .font(.headline)
-                    .foregroundColor(.primary)
             }
             
-            // Conversation bubbles
-            VStack(alignment: .leading, spacing: 16) {
+            // Conversation - Clean and readable
+            VStack(alignment: .leading, spacing: 20) {
                 Text(transcript)
-                    .padding(16)
+                    .padding(18)
                     .background(Color(.systemGray5))
-                    .cornerRadius(18)
+                    .cornerRadius(16)
                     .font(.body)
-                    
+                
                 Text(agentResponse)
-                    .padding(16)
-                    .background(Color.purple.opacity(0.12))
-                    .cornerRadius(18)
+                    .padding(18)
+                    .background(Color.purple.opacity(0.1))
+                    .cornerRadius(16)
                     .font(.body)
             }
             
-            // Safe action buttons - large targets
-            HStack(spacing: 12) {
+            // Large, safe action buttons
+            HStack(spacing: 14) {
                 Button("Call Lead") {
-                    // Trigger backend / CallKit
+                    // Action
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.purple)
                 .controlSize(.large)
                 
                 Button("Add Note") {
-                    // Log note
+                    // Action
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
@@ -58,7 +58,7 @@ struct VoiceControlView: View {
             
             Spacer()
         }
-        .padding(24)
+        .padding(28)
         .background(Color(.systemBackground))
     }
 }

@@ -1,17 +1,16 @@
-# Phase 4 Polish & QA Checklist
+Phase 4 Polish & QA Checklist
 
-**Feature**: Wireline iOS App + CarPlay
+**Status**: HIG Alignment Pass Started
 
-## iPhone App Polish
-- [x] Basic DashboardView polished
-- [x] AgentListView polished
-- [ ] More screens (e.g., Pipeline, Settings)
+## HIG-Aligned Improvements (Applied)
+- [x] CarPlayWidgetView – Improved glanceability, larger touch targets (16pt vertical padding), better spacing, accessibility labels
+- [x] VoiceControlView – More voice-first, minimal visuals during conversation, large action buttons
+- [ ] Full accessibility audit (VoiceOver, Dynamic Type)
+- [ ] Consistent design tokens across iPhone + CarPlay
 
-## Design System
-- [x] Aurora Cream alignment on new iPhone views
-- [ ] Full design token system shared between iPhone and CarPlay
+## Remaining Polish Items
+- [ ] iPhone views polish with HIG spacing and hierarchy
+- [ ] Visual QA using visual-qa-ui-ux-master
+- [ ] High contrast and reduced motion support
 
-## Feature Expansion Brainstorm
-- [x] Texting from CarPlay feasibility analyzed (voice-driven recommended)
-
-Next recommended: Visual QA or deeper iPhone polish.
+Progress tracked here.
