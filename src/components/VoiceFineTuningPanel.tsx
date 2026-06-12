@@ -10,11 +10,13 @@
  *   style             (0..1, default 0.0)  — style exaggeration
  *   speaker_boost     (bool, default true) — perceived loudness
  *
- * Hidden behind a "Show advanced" toggle because the defaults are
- * sane (they exactly match ElevenLabs's defaults) and most operators
- * never need to touch them. Operators with cloned voices flip the
- * advanced toggle, dial the sliders, and the audible difference is
- * immediately apparent on the next test call.
+ * Surfaced as a first-class "Voice character" control (open by default)
+ * so shaping how an agent sounds is part of building it, not a buried
+ * power-user escape hatch. The defaults are sane (they exactly match
+ * ElevenLabs's defaults), so an operator who touches nothing still gets
+ * a great voice — but the sliders invite tuning, and the audible
+ * difference is immediately apparent on the next test call. Collapsible
+ * for operators who want to tuck it away once dialed in.
  *
  * Auto-save UX: the slider's `onChange` updates local optimistic
  * state (no API hit), and the commit fires on `onPointerUp` /
@@ -141,7 +143,7 @@ export default function VoiceFineTuningPanel({
   onLocalChange,
   onCommit,
 }: VoiceFineTuningPanelProps) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(true);
 
   const stability = toNum(agent?.voice_stability, DEFAULTS.voice_stability);
   const similarity = toNum(agent?.voice_similarity_boost, DEFAULTS.voice_similarity_boost);
@@ -169,22 +171,21 @@ export default function VoiceFineTuningPanel({
   };
 
   return (
-    <div className="rounded-md border border-white/8 bg-black/[0.02]">
-      {/* Header — click to expand. Stays compact when closed; the
-          "modified" pip surfaces a small visual cue when the operator
-          has tuned away from defaults without forcing them to open
-          the panel. */}
+    <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015]">
+      {/* Header — click to collapse. Open by default so voice shaping is
+          part of building the agent; the "modified" pip surfaces a small
+          visual cue when the operator has tuned away from defaults. */}
       <ShadButton
         type="button"
         variant="ghost"
         disableAnimations
         onClick={() => setAdvancedOpen((o) => !o)}
-        className="w-full h-auto justify-between gap-2 px-3 py-2 rounded-none hover:bg-white/4"
+        className="w-full h-auto justify-between gap-2 px-3 py-2 rounded-none hover:bg-ink/[0.03]"
         aria-expanded={advancedOpen}
       >
-        <span className="flex items-center gap-1.5 wl-label text-ink/40">
+        <span className="flex items-center gap-1.5 wl-label text-ink/55">
           <Sliders className="w-2.5 h-2.5 text-brand" />
-          Voice fine-tuning
+          Voice character
           {!atDefaults && (
             <span
               className="inline-block w-1.5 h-1.5 rounded-full bg-brand"
@@ -193,16 +194,14 @@ export default function VoiceFineTuningPanel({
             />
           )}
         </span>
-        <span className="wl-micro-meta">
-          {advancedOpen ? "Hide advanced" : "Show advanced"}
-        </span>
+        <span className="wl-micro-meta">{advancedOpen ? "Collapse" : "Expand"}</span>
       </ShadButton>
 
       {advancedOpen && (
-        <div className="px-3 pb-3 pt-1 space-y-3 border-t border-white/8">
+        <div className="px-3 pb-3 pt-1 space-y-3 border-t border-ink/[0.08]">
           <p className="wl-micro-meta leading-relaxed">
-            Power-user tuning for ElevenLabs voices. Defaults work for most agents — only worth
-            touching if you cloned your own voice and want to dial it in.
+            Shape how your agent sounds. Drag to taste — the difference is audible on your next
+            test call, and you can reset anytime.
           </p>
 
           <SliderRow
