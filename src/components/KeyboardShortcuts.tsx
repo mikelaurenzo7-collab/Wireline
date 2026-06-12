@@ -14,13 +14,19 @@ const CMD_KEY = IS_APPLE ? "⌘" : "Ctrl";
 
 const SHORTCUTS = [
   {
-    category: "Navigation",
+    category: "Create",
     items: [
-      { keys: ["G", "A"], description: "Go to Studio" },
-      { keys: ["G", "R"], description: "Go to Chat" },
-      { keys: ["G", "N"], description: "Go to Training" },
-      { keys: ["G", "D"], description: "Go to Live Ops" },
-      { keys: ["G", "T"], description: "Go to Triage" },
+      { keys: ["G", "A"], description: "Go to Agent Studio" },
+      { keys: ["G", "K"], description: "Go to Knowledge" },
+      { keys: ["G", "C"], description: "Go to Integrations" },
+    ],
+  },
+  {
+    category: "Manage",
+    items: [
+      { keys: ["G", "D"], description: "Go to Director" },
+      { keys: ["G", "O"], description: "Go to Live Ops" },
+      { keys: ["G", "L"], description: "Go to Pipeline" },
       { keys: ["G", "I"], description: "Go to Insights" },
       { keys: ["G", "P"], description: "Go to Phone" },
       { keys: ["G", "E"], description: "Go to Email" },
