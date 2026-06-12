@@ -32,7 +32,6 @@ import {
   ScrollText,
   Ban,
   LifeBuoy,
-  Paintbrush,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
@@ -221,14 +220,6 @@ export default function CommandBar() {
       icon: Database,
       category: "Navigation",
       action: () => navigate("/training?tab=database"),
-    },
-    {
-      id: "design",
-      label: "Design",
-      description: "Painter — visual workspace builder (Beta)",
-      icon: Paintbrush,
-      category: "Navigation",
-      action: () => navigate("/design"),
     },
     {
       id: "integrations",

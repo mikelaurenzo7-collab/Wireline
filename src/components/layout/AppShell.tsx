@@ -37,7 +37,6 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/ops": "Live callers, supervisor tools & fleet pulse",
   "/insights": "Performance analytics, topics & trend discovery",
   "/pipeline": "Leads across the funnel — scored and staged",
-  "/design": "Build branded pages, flows & shareable previews",
   "/admin": "Account configuration & integrations",
   "/agents": "Build, voice & tune your agents",
   "/integrations": "Email, CRM & third-party connections",
