@@ -14,6 +14,7 @@ import { useToast } from "../../contexts/ToastContext";
 import AgentTemplates from "../AgentTemplates";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
+import DirectorWorkspace from "../DirectorWorkspace";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { LayoutGrid, ArrowLeft } from "lucide-react";
 import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
@@ -281,7 +282,7 @@ export default function FleetSettings() {
       setNewAgentId("");
       toastSuccess("Agent deployed", agentName);
       await fetchAgents();
-      navigate(`/chat?agent=${encodeURIComponent(agentId)}`);
+      navigate(`/agents?agent=${encodeURIComponent(agentId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
     }
@@ -385,6 +386,18 @@ export default function FleetSettings() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const [seedConfirmOpen, setSeedConfirmOpen] = useState(false);
 
+  const handleDirectorFocusAgent = (agentId: string | null) => {
+    if (!agentId) {
+      setSelectedAgent(null);
+      navigate("/agents", { replace: true });
+      return;
+    }
+    const match = agents.find((a) => a.id === agentId);
+    if (match) setSelectedAgent(match);
+    setView("canvas");
+    navigate(`/agents?agent=${encodeURIComponent(agentId)}`, { replace: true });
+  };
+
   const handleDeleteAgent = async (agentId: string) => {
     setIsDeletingAgent(agentId);
     try {
@@ -445,9 +458,9 @@ export default function FleetSettings() {
             )
           }
         />
-        {/* One open canvas — no tab wall. Both surfaces stay mounted and toggle
-            with `hidden` so switching never wipes form state, scroll, or focus;
-            the build canvas is the default front door, templates are summoned. */}
+        {/* One open canvas — no tab wall. The middle is now the Director chat:
+            clients describe the exact agent they want, while the right rail
+            exposes precise controls for voice, model, tools, rules, and context. */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div
             hidden={view !== "templates"}
@@ -459,7 +472,8 @@ export default function FleetSettings() {
             hidden={view !== "canvas"}
             className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden"
           >
-            {/* Sidebar: Agents List — extracted to fleet-settings/AgentListPanel.tsx */}
+            {/* Left: fleet switcher. Collapsed once an agent is selected so the
+                co-pilot conversation and tuning controls get the prime space. */}
             <AgentListPanel
               agents={agents}
               selectedAgent={selectedAgent}
@@ -479,23 +493,51 @@ export default function FleetSettings() {
               onToggleCollapse={() => setListCollapsed((v) => !v)}
             />
 
-            <AgentConfigPanel
-              selectedAgent={selectedAgent}
-              setSelectedAgent={setSelectedAgent}
-              agentConfig={agentConfig}
-              setAgentConfig={setAgentConfig}
-              isConfigLoading={isConfigLoading}
-              fetchAgentConfig={fetchAgentConfig}
-              updateAgentMeta={updateAgentMeta}
-              toggleIntegrationGroup={toggleIntegrationGroup}
-              toggleAgentTool={toggleAgentTool}
-              resetAgentToolsToRoleDefaults={resetAgentToolsToRoleDefaults}
-              agentStats={agentStats}
-              fetchAgentPerformance={fetchAgentPerformance}
-              isApplyingTemplate={isApplyingTemplate}
-              applyRoleTemplate={applyRoleTemplate}
-              integrationStatus={integrationStatus}
-            />
+            {/* Middle: Director co-pilot chat. This is the primary Studio surface:
+                users explain the agent they want in plain English, get proposals,
+                and keep the conversation in context with the selected agent. */}
+            <section
+              data-testid="studio-director-center"
+              className="min-h-[520px] md:min-h-0 md:flex-1 min-w-0 flex flex-col border-y md:border-y-0 md:border-x border-border/70 bg-background/45"
+              aria-label="Director co-pilot chat"
+            >
+              <DirectorWorkspace
+                focusAgentId={selectedAgent?.id ?? null}
+                onFocusAgentChange={handleDirectorFocusAgent}
+              />
+            </section>
+
+            {/* Right: precision tuning rail. The Director can propose changes in
+                the middle, and clients can still manually customize everything. */}
+            <aside
+              data-testid="studio-tuning-rail"
+              className="min-h-[620px] md:min-h-0 md:w-[420px] lg:w-[480px] 2xl:w-[560px] shrink-0 flex flex-col bg-paper/70 dark:bg-velvet/35"
+              aria-label="Agent tuning rail"
+            >
+              <div className="shrink-0 border-b border-border/80 px-3 py-2.5 bg-paper/80 dark:bg-velvet/50">
+                <p className="wl-label text-brand tracking-[0.2em]">Tuning rail</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+                  Specific controls for voice, model, tools, rules, memory, and business context.
+                </p>
+              </div>
+              <AgentConfigPanel
+                selectedAgent={selectedAgent}
+                setSelectedAgent={setSelectedAgent}
+                agentConfig={agentConfig}
+                setAgentConfig={setAgentConfig}
+                isConfigLoading={isConfigLoading}
+                fetchAgentConfig={fetchAgentConfig}
+                updateAgentMeta={updateAgentMeta}
+                toggleIntegrationGroup={toggleIntegrationGroup}
+                toggleAgentTool={toggleAgentTool}
+                resetAgentToolsToRoleDefaults={resetAgentToolsToRoleDefaults}
+                agentStats={agentStats}
+                fetchAgentPerformance={fetchAgentPerformance}
+                isApplyingTemplate={isApplyingTemplate}
+                applyRoleTemplate={applyRoleTemplate}
+                integrationStatus={integrationStatus}
+              />
+            </aside>
           </div>
         </div>
       </ClientRouteViewport>
