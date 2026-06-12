@@ -7,17 +7,16 @@ import {
   ArrowUpRight,
   Check,
   Ear,
-  Globe,
   Mail,
   MessageSquare,
   PhoneCall,
   PhoneIncoming,
   PhoneOutgoing,
   Plus,
-  Rocket,
   ScrollText,
   Sparkles,
 } from "lucide-react";
+import { RobotHead, type RobotPose } from "../components/marketing/RobotHead";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import HeroCallPreview from "../components/marketing/HeroCallPreview";
@@ -48,21 +47,41 @@ const CAPABILITY_ICONS = [PhoneIncoming, PhoneOutgoing, Mail, MessageSquare, Act
 
 const HOW_IT_WORKS = [
   {
-    icon: Globe,
+    numeral: "I",
+    kicker: "Act I — Teach",
     title: "Paste your website",
     body: "Wireline reads your site and drafts the whole playbook — business profile, FAQs, scheduling rules, and escalation paths — before you type a word.",
+    footnote: "~3 minutes, one approval",
+    pose: "typing",
+    variant: 5,
   },
   {
-    icon: ScrollText,
+    numeral: "II",
+    kicker: "Act II — Deploy",
     title: "Approve the playbook",
     body: "Pick a voice and a vibe — warm, playful, or authoritative. Your agent holds one personality for the entire call and never claims an action it can't take.",
+    footnote: "Live in under 10 minutes",
+    pose: "on-call",
+    variant: 2,
   },
   {
-    icon: Rocket,
+    numeral: "III",
+    kicker: "Act III — Supervise",
     title: "Go live on a real number",
     body: "A dedicated voice number is provisioned instantly — no Twilio account, no developers. Inbound, outbound, email, and SMS from the same fleet.",
+    footnote: "Full audit trail, always",
+    pose: "texting",
+    variant: 4,
   },
-] as const;
+] as const satisfies ReadonlyArray<{
+  numeral: string;
+  kicker: string;
+  title: string;
+  body: string;
+  footnote: string;
+  pose: RobotPose;
+  variant: 1 | 2 | 3 | 4 | 5 | 6;
+}>;
 
 const COCKPIT_POINTS = [
   {
@@ -449,33 +468,69 @@ export default function LandingPage() {
           <div className="mx-auto w-full max-w-6xl">
             <SectionHead
               eyebrow="Under 10 minutes"
-              title="From website to working agent in three steps."
+              title="From website to working agent in three acts."
               lede="No developers, no prompt engineering, no phone-system migration. If you can paste a URL, you can deploy a fleet."
             />
 
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-6 lg:gap-10">
+            <div className="relative mt-16 grid grid-cols-1 gap-14 md:grid-cols-3 md:gap-6 lg:mt-20 lg:gap-10">
+              {/* The wire: threads the three acts together on desktop */}
+              <svg
+                className="pointer-events-none absolute left-[4%] top-8 z-0 hidden h-[60px] w-[92%] text-ink/[0.14] md:block"
+                viewBox="0 0 1000 60"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 30 C 120 30, 140 8, 260 14 S 460 52, 580 38 S 840 10, 1000 28"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeDasharray="6 7"
+                  strokeLinecap="round"
+                />
+              </svg>
+
               {HOW_IT_WORKS.map((step, i) => (
-                <motion.div
+                <motion.article
                   key={step.title}
-                  initial={{ opacity: 0, y: 18 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative border-t-2 border-brand/70 pt-6"
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ delay: i * 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="group relative text-center md:text-left"
+                  data-testid={`act-${i + 1}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="font-display text-3xl leading-none text-ink/25 lg:text-4xl">
-                      {i + 1}
-                    </span>
-                    <span className="grid h-9 w-9 place-items-center border border-ink/[0.12] bg-white/[0.5] text-brand">
-                      <step.icon className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
+                  {/* Ghost roman numeral */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -top-9 left-1/2 z-0 -translate-x-1/2 select-none font-display text-[clamp(7rem,11vw,10rem)] leading-none text-transparent transition-colors duration-500 [-webkit-text-stroke:1.5px_rgba(26,22,20,0.14)] group-hover:[-webkit-text-stroke:1.5px_rgba(139,63,214,0.38)] md:left-auto md:right-2 md:translate-x-0"
+                  >
+                    {step.numeral}
+                  </span>
+
+                  {/* Robot mascot on pedestal */}
+                  <div className="relative z-10 mb-5 flex justify-center md:justify-start">
+                    <span className="inline-flex h-24 w-24 items-end justify-center rounded-full border border-ink/10 pb-1.5 transition-all duration-500 [background:radial-gradient(circle_at_50%_42%,rgba(139,63,214,0.1),transparent_72%)] group-hover:-translate-y-1 group-hover:border-brand/40">
+                      <RobotHead variant={step.variant} pose={step.pose} size={72} vivid />
                     </span>
                   </div>
-                  <h3 className="mt-4 font-display text-xl tracking-tight text-ink lg:text-2xl">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink/65">{step.body}</p>
-                </motion.div>
+
+                  <div className="relative z-10">
+                    <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-brand sm:text-[11px]">
+                      {step.kicker}
+                    </p>
+                    <h3 className="font-display text-xl tracking-tight text-ink text-balance lg:text-2xl">
+                      {step.title}
+                    </h3>
+                    <p className="mx-auto mt-2.5 max-w-sm text-[13.5px] leading-relaxed text-ink/65 md:mx-0">
+                      {step.body}
+                    </p>
+                    <p className="mt-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/50 sm:text-[11px]">
+                      <span className="inline-block h-px w-3.5 bg-brand/65" aria-hidden="true" />
+                      {step.footnote}
+                    </p>
+                  </div>
+                </motion.article>
               ))}
             </div>
 
