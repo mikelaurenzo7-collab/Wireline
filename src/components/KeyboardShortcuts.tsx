@@ -14,17 +14,17 @@ const CMD_KEY = IS_APPLE ? "⌘" : "Ctrl";
 
 const SHORTCUTS = [
   {
-    category: "Build",
+    category: "Create",
     items: [
       { keys: ["G", "A"], description: "Go to Agent Studio" },
-      { keys: ["G", "D"], description: "Go to Director" },
       { keys: ["G", "K"], description: "Go to Knowledge" },
       { keys: ["G", "C"], description: "Go to Integrations" },
     ],
   },
   {
-    category: "Operate",
+    category: "Manage",
     items: [
+      { keys: ["G", "D"], description: "Go to Director" },
       { keys: ["G", "O"], description: "Go to Live Ops" },
       { keys: ["G", "L"], description: "Go to Pipeline" },
       { keys: ["G", "I"], description: "Go to Insights" },
