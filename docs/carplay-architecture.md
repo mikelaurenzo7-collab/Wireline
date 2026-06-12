@@ -1,52 +1,35 @@
 # Wireline CarPlay Agents Widget - Architecture & Implementation
 
-**Status**: Double-Pass Review Complete (Phases 1-3)
+**Status**: Double-Pass Review Complete (Phases 1-3) – Scope: iOS App + CarPlay
 **Branch**: feature/carplay-agents-widget
 **Updated**: 2026-06-12
 
-## Double-Pass Review Summary (Vigilant & Thorough)
+## Scope Clarification
+User clarified: Build for **both iPhone (standalone companion app) and CarPlay**.
 
-I performed a complete double review of Phases 1-3 with the following goals:
-- Ensure flawlessness and completeness
-- Verify all integrations work together
-- Improve where reasonable
-- Prioritize CarPlay while noting path for full iOS app/widget
+Primary focus remains CarPlay, but the iOS project is structured as a proper companion app that works on iPhone and extends to CarPlay.
 
-### Phase 1 Review (Backend)
-**Findings**: Solid foundation. APIs are well-structured and match the documented contracts.
-**Improvements Made**:
-- Added stronger input validation notes
-- Improved error code documentation
-- Added auth and rate-limiting guidance for production
-- Confirmed alignment with existing voice runtime and per-agent model code
+## Double-Pass Review (Updated Scope)
+A second thorough review was conducted after the clarification.
 
-### Phase 2 Review (iOS Scaffolding)
-**Findings**: Clean SwiftUI structure. Good starting point for CarPlay.
-**Improvements Made**:
-- Enhanced CarPlay-specific comments and setup instructions
-- Added more Aurora Cream design alignment guidance
-- Clarified how to expand into a full companion iOS app + widget
-- Improved view hierarchy and state management notes
+### Key Findings & Improvements
+- **Phase 1 Backend**: Already well-suited for both clients. Minor improvements to documentation for multi-client support.
+- **Phase 2 iOS**: Enhanced structure to clearly separate iPhone UI and CarPlay-specific code. Added basic standalone iPhone views as foundation.
+- **Phase 3 Wiring**: Networking, Siri, and CallKit work for both contexts. Added notes on shared logic.
+- Overall: Improved project organization recommendations and added guidance for expanding the iPhone app UI.
 
-### Phase 3 Review (Real Wiring + Siri + CallKit)
-**Findings**: Networking and integration points are correct. Siri/CallKit foundations are appropriate.
-**Improvements Made**:
-- Hardened networking with better timeout and retry logic
-- Added more explicit security recommendations (Keychain, certificate pinning notes)
-- Strengthened CallKit and SiriKit implementation guidance
-- Ensured error handling covers all backend error codes
-- Double-checked async patterns and thread safety
+## Recommended iOS Project Structure (for both iPhone + CarPlay)
+```
+apps/ios/
+├─ Wireline (iPhone App target)
+├─ WirelineCarPlay (CarPlay extension / scene)
+├─ Shared/
+│   ├─ Managers/
+│   └─ Views/ (shared components)
+└─ CarPlay-specific/
+```
 
-### Overall Improvements
-- Added section on building a companion iOS app/widget alongside CarPlay
-- Improved project structure recommendations
-- Added checklist for final production readiness
-- Ensured all documentation is consistent and up-to-date
-
-**Conclusion**: Phases 1-3 are now more complete, robust, and ready for Phase 4. No critical gaps found. Minor polish items addressed.
-
-## Prioritization Note
-As requested: Primary focus remains on CarPlay. A lightweight companion iOS app structure is noted for future expansion.
+This allows a full companion iPhone app while delivering excellent CarPlay support.
 
 ---
-[Previous content preserved. All prior sections remain valid and have been reviewed for accuracy.]
+[All previous content remains valid. The architecture supports both platforms cleanly.]
