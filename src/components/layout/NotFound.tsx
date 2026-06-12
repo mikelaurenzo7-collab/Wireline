@@ -112,24 +112,24 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         ) : (
           <>
             <NotFoundCard
-              to="/ops"
+              to="/agents"
               icon={Home}
-              label="Live Ops"
-              hint="Mission control"
+              label="Studio"
+              hint="Build & tune agents"
               accent={BRAND.purple}
             />
             <NotFoundCard
               to="/chat"
-              icon={LayoutGrid}
+              icon={MessageSquare}
               label="Chat"
               hint="Director & agents"
               accent={BRAND.purple}
             />
             <NotFoundCard
-              to="/agents"
-              icon={MessageSquare}
-              label="Agents"
-              hint="Manage fleet"
+              to="/ops"
+              icon={LayoutGrid}
+              label="Live Ops"
+              hint="Mission control"
               accent={BRAND.purple}
             />
             <NotFoundCard

@@ -47,8 +47,8 @@ export const CONSOLE_MAP = {
     },
     {
       id: "agents",
-      label: "Agents",
-      detail: "Deploy, voices, and knowledge",
+      label: "Studio",
+      detail: "Build, voice & tune your agents",
       path: "/agents",
     },
     {

@@ -1,6 +1,7 @@
 /**
  * navigation.test.ts
- * Locks the authenticated app IA: Command, Channels, Agents, Design, Admin.
+ * Locks the authenticated app IA: Studio, Command, Channels, Design, Admin.
+ * Studio leads — the build-first pivot (the Studio is also the authed home).
  */
 import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } from "./navigation";
@@ -8,9 +9,9 @@ import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } fr
 describe("Top-bar navigation IA", () => {
   it("ships exactly five logical groups in the documented order", () => {
     expect(NAV_GROUPS.map((g) => g.label)).toEqual([
+      "Studio",
       "Command",
       "Channels",
-      "Agents",
       "Design",
       "Admin",
     ]);
@@ -18,27 +19,27 @@ describe("Top-bar navigation IA", () => {
 
   it("desktop rail is a single flat list without Admin footer items", () => {
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).toEqual([
+      "/agents",
+      "/chat",
+      "/training",
       "/ops",
       "/insights",
       "/pipeline",
       "/phone",
       "/email",
       "/sms",
-      "/agents",
-      "/chat",
-      "/training",
       "/design",
     ]);
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
+      "Studio",
+      "Studio",
+      "Studio",
       "Command",
       "Command",
       "Command",
       "Channels",
       "Channels",
       "Channels",
-      "Agents",
-      "Agents",
-      "Agents",
       "Design",
     ]);
   });
@@ -53,9 +54,10 @@ describe("Top-bar navigation IA", () => {
     expect(channels.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);
   });
 
-  it("Agents group holds fleet management, chat coaching, and training", () => {
-    const agents = NAV_GROUPS.find((g) => g.label === "Agents")!;
-    expect(agents.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/training"]);
+  it("Studio group leads with the canvas, chat coaching, and training", () => {
+    const studio = NAV_GROUPS.find((g) => g.label === "Studio")!;
+    expect(studio.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/training"]);
+    expect(NAV_GROUPS[0].label).toBe("Studio");
   });
 
   it("Design is a standalone beta-labelled group", () => {

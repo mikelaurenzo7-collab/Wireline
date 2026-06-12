@@ -43,20 +43,21 @@ function withSection(items: NavItem[], section: string): NavItem[] {
   return items.map((item) => ({ ...item, section }));
 }
 
-// Five-group nav: Command (cockpit + business intelligence), Channels
-// (communication surfaces), Agents (fleet management, coaching, training),
-// Design (standalone beta), Admin (footer settings).
+// Five-group nav: Studio (build, coach, train the fleet), Command (cockpit +
+// business intelligence), Channels (communication surfaces), Design
+// (standalone beta), Admin (footer settings).
 //
-// Command groups the operator's daily cockpit: Live Ops (live floor,
-// supervisor tools, actions), Insights (analytics & reliability), and
-// Pipeline (sales funnel). These are the "what's happening now" surfaces.
+// Studio leads — the build-first IA. It groups everything about creating and
+// improving agents: the Studio canvas (fleet configuration), Director chat
+// coaching, and Training (knowledge, voices, pronunciation, simulator, flow).
+// It is also the authenticated home ("/" lands on /agents).
+//
+// Command is the operator's daily cockpit: Live Ops (live floor, supervisor
+// tools, actions), Insights (analytics & reliability), and Pipeline (sales
+// funnel). These are the "what's happening now" surfaces.
 //
 // Channels surfaces Phone, Email, and SMS as first-class pages - the
 // communication arteries operators need instant access to.
-//
-// Agents groups everything about building and improving the fleet: fleet
-// configuration, Director chat coaching, and Training (knowledge, voices,
-// pronunciation, simulator, flow).
 //
 // Design is isolated as a standalone beta surface - the Painter studio for
 // pages, flows, and immersive click-through prototypes. It doesn't fit
@@ -96,7 +97,7 @@ const CHANNELS_NAV: NavItem[] = [
   },
 ];
 
-const AGENTS_NAV: NavItem[] = [
+const STUDIO_NAV: NavItem[] = [
   {
     label: "Studio",
     path: "/agents",
@@ -143,9 +144,9 @@ const ADMIN_NAV: NavItem[] = [
 
 /** Logical IA groups - used for mobile drawer sections and docs; labels are not shown on desktop rail. */
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  { label: "Studio", items: withSection(STUDIO_NAV, "Studio") },
   { label: "Command", items: withSection(COMMAND_NAV, "Command") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
-  { label: "Agents", items: withSection(AGENTS_NAV, "Agents") },
   { label: "Design", items: withSection(DESIGN_NAV, "Design") },
   {
     label: "Admin",
@@ -155,9 +156,9 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 
 /** Single continuous desktop rail - no section headers, fits without scroll on typical viewports. */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
+  ...withSection(STUDIO_NAV, "Studio"),
   ...withSection(COMMAND_NAV, "Command"),
   ...withSection(CHANNELS_NAV, "Channels"),
-  ...withSection(AGENTS_NAV, "Agents"),
   ...withSection(DESIGN_NAV, "Design"),
 ];
 
