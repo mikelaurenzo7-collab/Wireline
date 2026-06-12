@@ -123,6 +123,32 @@ export default function FleetSettings() {
     selectedAgentIdRef.current = selectedAgent?.id ?? null;
   }, [selectedAgent?.id]);
 
+  // Deep-link / template-deploy focus: when ?agent=<id> points at a different
+  // agent (e.g. a template just deployed into the fleet), refresh the list and
+  // put that agent on the canvas. Both tabs stay mounted, so this must react
+  // to the param — a mount-time check alone would miss mid-session deploys.
+  const requestedAgentId = searchParams.get("agent");
+  useEffect(() => {
+    if (!requestedAgentId || requestedAgentId === selectedAgentIdRef.current) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await authFetch("/api/agents");
+        const data = await r.json();
+        if (cancelled) return;
+        const list = data.agents || [];
+        setAgents(list);
+        const match = list.find((a: { id: string }) => a.id === requestedAgentId);
+        if (match) setSelectedAgent(match);
+      } catch {
+        /* non-critical — manual selection still works */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedAgentId]);
+
   const fetchAgents = async () => {
     setIsLoading(true);
     try {
@@ -141,7 +167,13 @@ export default function FleetSettings() {
       }
 
       if (!selectedAgent && agentsRes.agents?.length > 0) {
-        setSelectedAgent(agentsRes.agents[0]);
+        // Deep-link focus: /agents?agent=<id> lands with that agent on the
+        // canvas (template deploys route here). Falls back to the first agent.
+        const requestedId = searchParams.get("agent");
+        const requested = requestedId
+          ? agentsRes.agents.find((a: { id: string }) => a.id === requestedId)
+          : undefined;
+        setSelectedAgent(requested ?? agentsRes.agents[0]);
       }
 
       // Notify the app-wide agents context so the chat rail + anything else
