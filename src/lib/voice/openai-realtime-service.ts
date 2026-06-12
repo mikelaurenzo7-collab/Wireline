@@ -4,7 +4,6 @@ import { fetchWithTimeout, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
-  OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
   buildOpenAIRealtimeInstructions,
   normalizeOpenAIRealtimeVoice,
 } from "./openai-realtime-config";
@@ -52,9 +51,6 @@ export function buildOpenAIRealtimeSessionConfig(input: CreateOpenAIRealtimeClie
           turn_detection: {
             type: "semantic_vad",
           },
-          transcription: {
-            model: OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
-          },
         },
         output: {
           format: {
@@ -72,7 +68,6 @@ export function getOpenAIRealtimeStatus() {
     configured: Boolean(process.env.OPENAI_API_KEY?.trim()),
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     defaultVoice: normalizeOpenAIRealtimeVoice(process.env.OPENAI_REALTIME_VOICE),
-    defaultTranscriber: OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
     deepgramFluxRecommended: true,
     mode: "beta",
   };
