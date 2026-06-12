@@ -102,6 +102,15 @@ export default function CommandBar() {
   const commands: CommandItem[] = [
     // ── Navigation ─────────────────────────────────────────
     {
+      id: "agents",
+      label: "Studio",
+      description: "Build, voice & tune your agents — home",
+      icon: Bot,
+      category: "Navigation",
+      shortcut: "A",
+      action: () => navigate("/agents"),
+    },
+    {
       id: "chat",
       label: "Chat",
       description: "Direct your agents — the main control surface",
@@ -212,15 +221,6 @@ export default function CommandBar() {
       icon: Database,
       category: "Navigation",
       action: () => navigate("/training?tab=database"),
-    },
-    {
-      id: "agents",
-      label: "Agents",
-      description: "Configure autonomous agents",
-      icon: Bot,
-      category: "Navigation",
-      shortcut: "A",
-      action: () => navigate("/agents"),
     },
     {
       id: "design",
