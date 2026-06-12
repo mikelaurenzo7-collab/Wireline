@@ -78,6 +78,7 @@ import jobRouter from "./src/routes/job-routes";
 import soc2Router from "./src/routes/soc2-routes";
 import healthRouter from "./src/routes/health-routes";
 import voiceObservabilityRouter from "./src/routes/voice-observability-routes";
+import openaiRealtimeRouter from "./src/routes/openai-realtime-routes";
 import intakeRouter from "./src/routes/intake-routes";
 import openapiRouter from "./src/routes/openapi-routes";
 import claudeRouter from "./src/routes/claude-routes";
@@ -271,6 +272,7 @@ app.use("/api", defaultApiTimeoutMiddleware);
 // Global Router Mounting
 app.use("/api/health", healthRouter);
 app.use("/api", voiceObservabilityRouter);
+app.use(openaiRealtimeRouter);
 app.use("/api/quotas", quotaRouter);
 app.use("/api/jobs", jobRouter);
 app.use("/api/intake", intakeRouter);
