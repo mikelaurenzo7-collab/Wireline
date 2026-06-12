@@ -2,6 +2,7 @@
  * Director empty-state starter prompts — featured chips + expandable rest.
  */
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -13,6 +14,49 @@ import {
   WL_DIRECTOR_CLASSES,
 } from "../../lib/wireline-director-design";
 
+const STUDIO_AGENT_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
+  {
+    id: "studio-name-role",
+    label: "Name this agent and define its role",
+    intent: "Identity, title, and job definition",
+  },
+  {
+    id: "studio-responsibilities",
+    label: "Give this agent responsibilities, boundaries, and escalation rules",
+    intent: "Scope of work and handoff rules",
+  },
+  {
+    id: "studio-phone-number",
+    label: "Help me assign the right phone number and call behavior",
+    intent: "Voice channel setup and routing",
+  },
+  {
+    id: "studio-voice",
+    label: "Make the voice warmer, more confident, and more concise",
+    intent: "Voice personality and tone tuning",
+  },
+  {
+    id: "studio-tools",
+    label: "Connect the tools this role needs: CRM, calendar, and email",
+    intent: "Role-based integrations and permissions",
+  },
+  {
+    id: "studio-instructions",
+    label: "Draft the agent instructions and behavior rules",
+    intent: "Agent instructions and behavior policy",
+  },
+  {
+    id: "studio-knowledge",
+    label: "Tell me what knowledge this agent still needs before launch",
+    intent: "Launch readiness and missing context",
+  },
+  {
+    id: "studio-launch-checklist",
+    label: "Build a launch checklist and fix anything missing",
+    intent: "Activation checklist and quality gate",
+  },
+] as const;
+
 export interface DirectorStarterPromptsProps {
   onSelect: (label: string) => void;
   prompts?: readonly DirectorStarterPrompt[];
@@ -23,19 +67,24 @@ export interface DirectorStarterPromptsProps {
 
 export function DirectorStarterPrompts({
   onSelect,
-  prompts = DIRECTOR_STARTER_PROMPTS,
-  starterEyebrow = DIRECTOR_EMPTY_HERO.starterEyebrow,
+  prompts,
+  starterEyebrow,
   featuredCount = DIRECTOR_STARTER_PROMPTS_FEATURED_COUNT,
   className,
 }: DirectorStarterPromptsProps) {
   const [expanded, setExpanded] = useState(false);
-  const featured = prompts.slice(0, featuredCount);
-  const rest = prompts.slice(featuredCount);
+  const location = useLocation();
+  const isStudioSurface = location.pathname === "/agents" || location.pathname.startsWith("/agents/");
+  const resolvedPrompts = prompts ?? (isStudioSurface ? STUDIO_AGENT_STARTER_PROMPTS : DIRECTOR_STARTER_PROMPTS);
+  const resolvedEyebrow =
+    starterEyebrow ?? (isStudioSurface ? "Tell Director what to edit" : DIRECTOR_EMPTY_HERO.starterEyebrow);
+  const featured = resolvedPrompts.slice(0, featuredCount);
+  const rest = resolvedPrompts.slice(featuredCount);
   const hasMore = rest.length > 0;
 
   return (
     <div className={cn("wl-director-empty-section w-full", className)}>
-      <p className="wl-label text-brand/60 mb-2.5">{starterEyebrow}</p>
+      <p className="wl-label text-brand/60 mb-2.5">{resolvedEyebrow}</p>
       <div className="stagger-children grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
         {featured.map((p) => (
           <StarterChip
