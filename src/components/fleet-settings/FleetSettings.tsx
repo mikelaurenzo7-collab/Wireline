@@ -63,6 +63,10 @@ export default function FleetSettings() {
   const [newAgentRole, _setNewAgentRole] = useState<RoleValue>("customer_service");
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
+  // Single-focus Studio: collapse the desktop agent list to a slim rail so the
+  // editor is the focus. Defaults collapsed; the full list returns when no
+  // agent is selected (you need it to pick or create one).
+  const [listCollapsed, setListCollapsed] = useState(true);
 
   const [isConfigLoading, setIsConfigLoading] = useState(false);
   // Tenant-level connection status for the integration scoping panel.
@@ -415,6 +419,8 @@ export default function FleetSettings() {
               }}
               onSeedFleet={() => setSeedConfirmOpen(true)}
               onFetchPerformance={fetchAgentPerformance}
+              collapsed={listCollapsed && !!selectedAgent}
+              onToggleCollapse={() => setListCollapsed((v) => !v)}
             />
 
             <AgentConfigPanel
