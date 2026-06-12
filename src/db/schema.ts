@@ -19,7 +19,7 @@ import {
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
-// Schema version: latest applied migration is `drizzle/migrations/0052_design_integrations.sql`.
+// Schema version: latest migration is `drizzle/migrations/0054_add_agent_llm_overrides.sql`.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
 // 0. IDENTITY & ACCOUNTS
@@ -359,6 +359,23 @@ export const agents = pgTable(
      * Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
      */
     voiceSpeed: decimal("voice_speed", { precision: 3, scale: 2 }).default("1.0"),
+    /**
+     * Per-agent reasoning-model override (customization-first Agent Studio).
+     *
+     * NULL on any of these → the agent inherits the tenant default
+     * (settings.voice_llm_provider / voice_llm_model) and the archetype's
+     * temperature, exactly as before. When set, the voice factory routes the
+     * live call through this provider/model instead. Values are validated +
+     * normalized by resolveVapiVoiceModelSelection() against the Vapi-native
+     * provider set (anthropic | google | openai | xai | openrouter), so a bad
+     * value can never reach Vapi — it falls back to the tenant default.
+     *
+     * llm_temperature is clamped to a safe range in the factory so a per-agent
+     * override can't destabilize the live tier. See VOICE_MODEL_CATALOG.
+     */
+    llmProvider: text("llm_provider"),
+    llmModel: text("llm_model"),
+    llmTemperature: decimal("llm_temperature", { precision: 3, scale: 2 }),
     /**
      * ElevenLabs voice fine-tuning — quality knobs operators with cloned
      * voices need to dial in their exact sound. All four map 1:1 to the

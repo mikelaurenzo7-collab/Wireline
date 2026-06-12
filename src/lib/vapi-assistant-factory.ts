@@ -34,6 +34,7 @@ import {
   VAPI_TENANT_DEFAULT_MODEL,
   VAPI_TENANT_DEFAULT_PROVIDER,
   resolveVapiVoiceModelSelection,
+  clampVoiceTemperature,
 } from "./claude-brain";
 import { getWirelinePersona } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
@@ -338,9 +339,17 @@ export async function buildVapiAssistant({
   }
 
   const agentRole = agentConfigRow?.role || DEFAULT_AGENT_ROLE;
+  // Per-agent reasoning-model override (Agent Studio) takes precedence over
+  // the tenant default; both fall through to the platform default. The
+  // resolver normalizes/validates against the Vapi-native provider set, so a
+  // bad per-agent value can never reach Vapi — it lands on the tenant model.
   const voiceSelection = resolveVapiVoiceModelSelection({
-    provider: userSettings?.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
-    model: userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
+    provider:
+      agentConfigRow?.llmProvider ||
+      userSettings?.voice_llm_provider ||
+      VAPI_TENANT_DEFAULT_PROVIDER,
+    model:
+      agentConfigRow?.llmModel || userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
   });
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
@@ -348,7 +357,10 @@ export async function buildVapiAssistant({
   const archetype = isOutbound
     ? OUTBOUND_ARCHETYPE_BY_ROLE[agentRole] || "The Closer"
     : agentConfigRow?.archetype || "Receptionist";
-  const { rules: archetypeRules, temp: llmTemp } = getArchetypeConfig(archetype);
+  const { rules: archetypeRules, temp: archetypeTemp } = getArchetypeConfig(archetype);
+  // Per-agent temperature override, clamped to the safe voice range; NULL
+  // inherits the archetype's tuned default.
+  const llmTemp = clampVoiceTemperature(agentConfigRow?.llmTemperature, archetypeTemp);
 
   const roleProtocol = ROLE_SPECIFIC_PROTOCOLS[agentRole] || "";
 

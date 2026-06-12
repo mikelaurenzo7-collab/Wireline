@@ -21,6 +21,9 @@ import {
   resolveVapiVoiceModelSelection,
   selectModelForTask,
   MODEL_PRICING,
+  XAI_MODELS,
+  VOICE_MODEL_CATALOG,
+  clampVoiceTemperature,
 } from "./claude-models";
 
 describe("Wireline LLM tiering — constants are stable", () => {
@@ -163,6 +166,90 @@ describe("resolveVapiVoiceModelSelection", () => {
         model: VAPI_TENANT_DEFAULT_MODEL,
       },
     );
+  });
+
+  describe("xAI / Grok normalization", () => {
+    it("returns grok-3 for bare 'xai' provider with no model", () => {
+      expect(resolveVapiVoiceModelSelection({ provider: "xai" })).toEqual({
+        provider: "xai",
+        model: XAI_MODELS.GROK_3,
+      });
+    });
+
+    it("infers xai from a grok* model string with no provider", () => {
+      const out = resolveVapiVoiceModelSelection({ model: "grok-3-mini" });
+      expect(out.provider).toBe("xai");
+      expect(out.model).toBe("grok-3-mini");
+    });
+
+    it("never attaches a cross-provider fallback list on xai", () => {
+      const out = resolveVapiVoiceModelSelection({ provider: "xai" });
+      expect(out.fallbackModels).toBeUndefined();
+    });
+  });
+
+  describe("OpenRouter passthrough", () => {
+    it("passes a namespaced model id through verbatim", () => {
+      expect(
+        resolveVapiVoiceModelSelection({ provider: "openrouter", model: "x-ai/grok-3" }),
+      ).toEqual({
+        provider: "openrouter",
+        model: "x-ai/grok-3",
+      });
+    });
+
+    it("defaults to a concrete model for bare 'openrouter'", () => {
+      const out = resolveVapiVoiceModelSelection({ provider: "openrouter" });
+      expect(out.provider).toBe("openrouter");
+      expect(out.model).toBe("openai/gpt-4o");
+    });
+  });
+});
+
+describe("VOICE_MODEL_CATALOG", () => {
+  it("only lists Vapi-native providers", () => {
+    const allowed = new Set(["anthropic", "google", "openai", "xai", "openrouter"]);
+    for (const opt of VOICE_MODEL_CATALOG) {
+      expect(allowed.has(opt.provider)).toBe(true);
+    }
+  });
+
+  it("every catalog entry resolves to its own provider (no silent fallthrough)", () => {
+    for (const opt of VOICE_MODEL_CATALOG) {
+      const out = resolveVapiVoiceModelSelection({ provider: opt.provider, model: opt.model });
+      expect(out.provider).toBe(opt.provider);
+    }
+  });
+
+  it("flags latency on the heavy/proxy options (Opus, OpenRouter)", () => {
+    const opus = VOICE_MODEL_CATALOG.find((o) => o.model.includes("opus"));
+    const openrouter = VOICE_MODEL_CATALOG.find((o) => o.provider === "openrouter");
+    expect(opus?.latencyWarning).toBe(true);
+    expect(openrouter?.latencyWarning).toBe(true);
+  });
+
+  it("gates every option behind a provider env key", () => {
+    for (const opt of VOICE_MODEL_CATALOG) {
+      expect(opt.envKey).toMatch(/_API_KEY$/);
+    }
+  });
+});
+
+describe("clampVoiceTemperature", () => {
+  it("returns the archetype fallback when the override is null/invalid", () => {
+    expect(clampVoiceTemperature(null, 0.7)).toBe(0.7);
+    expect(clampVoiceTemperature(undefined, 0.7)).toBe(0.7);
+    expect(clampVoiceTemperature("not-a-number", 0.7)).toBe(0.7);
+  });
+
+  it("clamps into the safe voice range [0, 1]", () => {
+    expect(clampVoiceTemperature(1.9, 0.7)).toBe(1);
+    expect(clampVoiceTemperature(-0.5, 0.7)).toBe(0);
+    expect(clampVoiceTemperature(0.42, 0.7)).toBe(0.42);
+  });
+
+  it("coerces numeric strings (pg numeric columns arrive as strings)", () => {
+    expect(clampVoiceTemperature("0.30", 0.7)).toBe(0.3);
   });
 });
 
