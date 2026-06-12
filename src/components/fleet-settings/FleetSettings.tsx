@@ -14,7 +14,8 @@ import { useToast } from "../../contexts/ToastContext";
 import AgentTemplates from "../AgentTemplates";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
-import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../../lib/page-sub-tabs";
+import { ShadButton } from "../ui/shadcn/ShadButton";
+import { LayoutGrid, ArrowLeft } from "lucide-react";
 import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import {
   AGENT_TOOL_CATALOG,
@@ -41,15 +42,14 @@ import AgentConfigPanel from "./AgentConfigPanel";
 // can be removed once every callsite has been migrated.
 export { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER, AGENT_ROLES };
 
-const AGENTS_ROUTE = resolveAppPageSubTabRoute("/agents")!;
-
 export default function FleetSettings() {
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const activeTab = resolveAppPageSubTabId(AGENTS_ROUTE, searchParams.get("tab")) as
-    | "templates"
-    | "fleet";
+  // The Studio is one open canvas, not a tab wall. Default view is the build
+  // canvas (your agents); templates are a starting point you summon, not the
+  // front door. A template deploy lands back on the canvas (see ?agent= below).
+  const [view, setView] = useState<"canvas" | "templates">("canvas");
   const [agents, setAgents] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<{ status: string; max_agents: number | null }>({
     status: "active",
@@ -139,7 +139,12 @@ export default function FleetSettings() {
         const list = data.agents || [];
         setAgents(list);
         const match = list.find((a: { id: string }) => a.id === requestedAgentId);
-        if (match) setSelectedAgent(match);
+        if (match) {
+          setSelectedAgent(match);
+          // A template just deployed (or a deep link) — snap back to the canvas
+          // so the new agent is what you see, not the gallery you came from.
+          setView("canvas");
+        }
       } catch {
         /* non-critical — manual selection still works */
       }
@@ -407,32 +412,51 @@ export default function FleetSettings() {
         <ClientToolbar
           left={
             <span className="app-toolbar-stat wl-label text-muted/80 tracking-[0.28em]">
-              {activeTab === "templates"
-                ? "Template gallery"
+              {view === "templates"
+                ? "Start from a template"
                 : OPS_CHANNEL_TOOLBAR.fleet.agentsStat(agents.length)}
             </span>
           }
+          actions={
+            view === "templates" ? (
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
+                onClick={() => setView("canvas")}
+                className="gap-1.5 wl-label text-muted hover:text-brand"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to your agents
+              </ShadButton>
+            ) : (
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disableAnimations
+                onClick={() => setView("templates")}
+                className="gap-1.5 wl-label border-border hover:border-brand/30 hover:text-brand"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                Start from a template
+              </ShadButton>
+            )
+          }
         />
-        {/* Tab content — render BOTH panels and toggle visibility with
-            `hidden`. Switching the ternary previously unmounted the
-            inactive panel, wiping form state, scroll positions, and
-            input focus every time the operator flipped tabs. Now
-            both stay mounted; React diffs are stable. */}
+        {/* One open canvas — no tab wall. Both surfaces stay mounted and toggle
+            with `hidden` so switching never wipes form state, scroll, or focus;
+            the build canvas is the default front door, templates are summoned. */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div
-            id="fleet-panel-templates"
-            role="tabpanel"
-            tabIndex={0}
-            hidden={activeTab !== "templates"}
+            hidden={view !== "templates"}
             className="flex-1 min-h-0 flex flex-col overflow-hidden"
           >
             <AgentTemplates />
           </div>
           <div
-            id="fleet-panel-fleet"
-            role="tabpanel"
-            tabIndex={0}
-            hidden={activeTab !== "fleet"}
+            hidden={view !== "canvas"}
             className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden"
           >
             {/* Sidebar: Agents List — extracted to fleet-settings/AgentListPanel.tsx */}
