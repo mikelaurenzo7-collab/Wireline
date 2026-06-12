@@ -24,12 +24,18 @@ import {
   Plus,
   Workflow,
   ArrowUpRight,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { InlineEmpty } from "../ui/InlineEmpty";
-import { OPS_TRAINING_PANEL } from "../../lib/wireline-ops-design";
+import {
+  OPS_TRAINING_PANEL,
+  OPS_STUDIO_ASSISTS,
+  OPS_STUDIO_ASSISTS_COPY,
+  directorAssistHref,
+} from "../../lib/wireline-ops-design";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import AgentExportImport from "../AgentExportImport";
@@ -278,6 +284,31 @@ export default function AgentConfigPanel({
                       {/* Identity vitals — who answers, in what voice, on what
                           brain, at what number. The single-focus Studio anchor. */}
                       <AgentIdentityVitals agent={selectedAgent} />
+
+                      {/* Director co-pilot — setup assists scoped to this agent.
+                          Each chip opens Director coach mode with the composer
+                          prefilled; the Director proposes config changes the
+                          operator approves. Build help, one tap away. */}
+                      <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+                        <span className="shrink-0 inline-flex items-center gap-1.5">
+                          <Sparkles className="w-3 h-3 text-brand" />
+                          <span className="wl-label text-brand whitespace-nowrap">
+                            {OPS_STUDIO_ASSISTS_COPY.eyebrow}
+                          </span>
+                          <span className="hidden lg:inline text-[11px] text-ink/60 whitespace-nowrap">
+                            — {OPS_STUDIO_ASSISTS_COPY.hint}
+                          </span>
+                        </span>
+                        {OPS_STUDIO_ASSISTS.map((assist) => (
+                          <Link
+                            key={assist.label}
+                            to={directorAssistHref(selectedAgent.id, assist.prompt)}
+                            className="shrink-0 inline-flex items-center px-2.5 py-1.5 rounded-md wl-panel border border-border hover:border-brand/30 wl-label text-muted hover:text-brand transition-colors touch-press hit-area-44"
+                          >
+                            {assist.label}
+                          </Link>
+                        ))}
+                      </div>
 
                       {/* Role assignment row */}
                       <div className="rounded-md wl-panel border border-border p-3 flex flex-wrap items-center gap-3">

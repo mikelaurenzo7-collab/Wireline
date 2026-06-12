@@ -378,6 +378,45 @@ export const OPS_TRAINING_ASSISTS_COPY = {
   hint: "Runs in Director chat",
 } as const;
 
+/**
+ * Studio co-pilot assists — setup-oriented prompts on the agent canvas.
+ * Where Training assists review performance, these help BUILD the agent:
+ * each deep-links into Director coach mode scoped to the focused agent,
+ * where the Director proposes config changes the operator approves.
+ */
+export const OPS_STUDIO_ASSISTS = [
+  {
+    label: "Write the greeting",
+    prompt:
+      "Write a warm, on-brand opening greeting for this agent and propose it as the first message.",
+  },
+  {
+    label: "Sharpen the persona",
+    prompt:
+      "Rewrite this agent's personality block — keep the role, make it sharper, warmer, and more specific to my business.",
+  },
+  {
+    label: "Set the schedule",
+    prompt:
+      "Help me set this agent's business hours and an out-of-hours message for my timezone.",
+  },
+  {
+    label: "Pick the right tools",
+    prompt:
+      "Review this agent's enabled tools for its role and propose which to turn on or off, with one-line reasons.",
+  },
+  {
+    label: "Prep a test call",
+    prompt:
+      "Give me a 60-second test-call script to verify this agent's greeting, knowledge, and escalation handling.",
+  },
+] as const;
+
+export const OPS_STUDIO_ASSISTS_COPY = {
+  eyebrow: "Director co-pilot",
+  hint: "Opens Director scoped to this agent",
+} as const;
+
 /** Deep-link into Director chat with an agent focused and the composer prefilled. */
 export function directorAssistHref(agentId: string, prompt: string): string {
   return `/chat?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;

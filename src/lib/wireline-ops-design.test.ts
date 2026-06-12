@@ -9,6 +9,8 @@ import {
   OPS_TRIAGE_EMPTY,
   OPS_TRIAGE_COPY,
   OPS_TRAINING_ASSISTS,
+  OPS_STUDIO_ASSISTS,
+  OPS_STUDIO_ASSISTS_COPY,
   directorAssistHref,
   directorPromptHref,
   OPS_HELP,
@@ -89,6 +91,13 @@ describe("Wireline Live Ops design contract", () => {
     expect(directorAssistHref("a/1", "go")).toBe("/chat?agent=a%2F1&prompt=go");
     expect(OPS_TRAINING_ASSISTS.length).toBeGreaterThanOrEqual(5);
     expect(OPS_TRAINING_ASSISTS.every((a) => a.label && a.prompt)).toBe(true);
+  });
+
+  it("defines the Studio co-pilot assists contract", () => {
+    expect(OPS_STUDIO_ASSISTS.length).toBeGreaterThanOrEqual(5);
+    expect(OPS_STUDIO_ASSISTS.every((a) => a.label && a.prompt)).toBe(true);
+    expect(OPS_STUDIO_ASSISTS_COPY.eyebrow.toLowerCase()).toContain("director");
+    expect(OPS_STUDIO_ASSISTS_COPY.hint.toLowerCase()).toContain("agent");
   });
 
   it("defines training panel nested empty copy", () => {
