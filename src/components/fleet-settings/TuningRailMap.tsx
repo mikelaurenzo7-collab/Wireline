@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import {
   BadgeCheck,
   Brain,
@@ -185,7 +186,7 @@ function SignalTile({
   value,
   active,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   label: string;
   value: string;
   active?: boolean;
