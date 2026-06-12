@@ -42,7 +42,8 @@ export async function authenticatePage(page: Page, baseURL: string) {
   }
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { level: 1, name: /live ops/i })).toBeVisible({
+  // Authenticated "/" lands on the Agent Studio (Studio-as-home).
+  await expect(page.getByRole("heading", { level: 1, name: /^studio$/i })).toBeVisible({
     timeout: 25_000,
   });
 }
