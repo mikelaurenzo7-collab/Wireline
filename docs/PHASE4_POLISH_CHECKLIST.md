@@ -1,18 +1,17 @@
 # Phase 4 Polish & QA Checklist
 
 **Feature**: Wireline iOS App + CarPlay
-**Status**: Design Polish Started
 
-## Design Polish (In Progress)
-- [x] CarPlayWidgetView polished (spacing, colors, touch targets)
-- [x] VoiceControlView polished (hierarchy, buttons, accessibility)
-- [ ] iPhone companion app screens (basic dashboard polish)
-- [ ] Consistent design tokens across both platforms
+## iPhone App Polish
+- [x] Basic DashboardView polished
+- [x] AgentListView polished
+- [ ] More screens (e.g., Pipeline, Settings)
 
-## Remaining Phase 4 Items
-- [ ] Full visual QA
-- [ ] Accessibility & safety compliance
-- [ ] Functional testing (CarPlay Simulator + handoff)
-- [ ] Production readiness
+## Design System
+- [x] Aurora Cream alignment on new iPhone views
+- [ ] Full design token system shared between iPhone and CarPlay
 
-Progress will be tracked here.
+## Feature Expansion Brainstorm
+- [x] Texting from CarPlay feasibility analyzed (voice-driven recommended)
+
+Next recommended: Visual QA or deeper iPhone polish.
