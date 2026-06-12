@@ -60,7 +60,6 @@ export const ROUTE_ACCENTS: Record<string, BrandAccentPair> = {
   "/appointments": ROUTE_ACCENT_VARIANTS.warm,
   "/agents": ROUTE_ACCENT_VARIANTS.primary,
   "/chat": ROUTE_ACCENT_VARIANTS.soft,
-  "/design": ROUTE_ACCENT_VARIANTS.warm,
   "/training": ROUTE_ACCENT_VARIANTS.warm,
   "/knowledge": ROUTE_ACCENT_VARIANTS.light,
   "/integrations": ROUTE_ACCENT_VARIANTS.soft,

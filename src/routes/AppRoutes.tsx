@@ -30,8 +30,6 @@ const Training = lazyRoute(() => import("../pages/Training"));
 const PhonePage = lazyRoute(() => import("../pages/PhonePage"));
 const EmailPage = lazyRoute(() => import("../pages/EmailPage"));
 const SmsPage = lazyRoute(() => import("../pages/SmsPage"));
-const DesignPreviewPage = lazyRoute(() => import("../pages/DesignPreviewPage"));
-const Design = lazyRoute(() => import("../pages/Design"));
 
 export default function AppRoutes() {
   return (
@@ -172,26 +170,6 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <AgentChat />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/design"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <Design />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/design/preview"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <DesignPreviewPage />
                 </ErrorBoundary>
               </PageTransition>
             }

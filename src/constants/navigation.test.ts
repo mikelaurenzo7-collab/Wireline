@@ -1,20 +1,14 @@
 /**
  * navigation.test.ts
- * Locks the authenticated app IA: Studio, Command, Channels, Design, Admin.
+ * Locks the authenticated app IA: Studio, Command, Channels, Admin.
  * Studio leads — the build-first pivot (the Studio is also the authed home).
  */
 import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
-  it("ships exactly five logical groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual([
-      "Studio",
-      "Command",
-      "Channels",
-      "Design",
-      "Admin",
-    ]);
+  it("ships exactly four logical groups in the documented order", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Studio", "Command", "Channels", "Admin"]);
   });
 
   it("desktop rail is a single flat list without Admin footer items", () => {
@@ -28,7 +22,6 @@ describe("Top-bar navigation IA", () => {
       "/phone",
       "/email",
       "/sms",
-      "/design",
     ]);
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
       "Studio",
@@ -40,7 +33,6 @@ describe("Top-bar navigation IA", () => {
       "Channels",
       "Channels",
       "Channels",
-      "Design",
     ]);
   });
 
@@ -58,14 +50,6 @@ describe("Top-bar navigation IA", () => {
     const studio = NAV_GROUPS.find((g) => g.label === "Studio")!;
     expect(studio.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/training"]);
     expect(NAV_GROUPS[0].label).toBe("Studio");
-  });
-
-  it("Design is a standalone beta-labelled group", () => {
-    const designGroup = NAV_GROUPS.find((g) => g.label === "Design")!;
-    expect(designGroup.items.map((i) => i.path)).toEqual(["/design"]);
-    const design = designGroup.items[0];
-    expect(design.betaLabel).toBe("Beta");
-    expect(PAGE_TITLES["/design"]).toBe("Wireline Design");
   });
 
   it("Admin group keeps Settings in footer-only navigation", () => {

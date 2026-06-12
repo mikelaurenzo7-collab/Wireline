@@ -5,7 +5,6 @@ import {
   Kanban,
   SlidersHorizontal,
   GraduationCap,
-  Paintbrush,
   Phone,
   Mail,
   MessageCircle,
@@ -107,17 +106,6 @@ const CHANNELS_NAV: NavItem[] = [
   },
 ];
 
-const DESIGN_NAV: NavItem[] = [
-  {
-    label: "Design",
-    path: "/design",
-    icon: Paintbrush,
-    dataTour: "design",
-    matches: ["/design"],
-    betaLabel: "Beta",
-  },
-];
-
 const ADMIN_NAV: NavItem[] = [
   {
     label: "Settings",
@@ -133,7 +121,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   { label: "Studio", items: withSection(STUDIO_NAV, "Studio") },
   { label: "Command", items: withSection(COMMAND_NAV, "Command") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
-  { label: "Design", items: withSection(DESIGN_NAV, "Design") },
   { label: "Admin", items: withSection(ADMIN_NAV, "Admin") },
 ];
 
@@ -142,7 +129,6 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
   ...withSection(STUDIO_NAV, "Studio"),
   ...withSection(COMMAND_NAV, "Command"),
   ...withSection(CHANNELS_NAV, "Channels"),
-  ...withSection(DESIGN_NAV, "Design"),
 ];
 
 export function findNavItemForPath(pathname: string): NavItem | undefined {
@@ -168,7 +154,6 @@ export const PAGE_TITLES: Record<string, string> = {
   "/knowledge": "Knowledge",
   "/agents": "Agent Studio",
   "/chat": "Director",
-  "/design": "Wireline Design",
   "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",
