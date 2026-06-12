@@ -12,7 +12,6 @@ import {
   Globe,
   History,
   Layers,
-  LayoutGrid,
   ListTodo,
   Megaphone,
   Mic,
@@ -21,7 +20,6 @@ import {
   Radio,
   Receipt,
   Repeat,
-  Shield,
   Star,
   Target,
   TrendingUp,
@@ -93,16 +91,9 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       { id: "flow", label: "Flow", icon: Workflow },
     ],
   },
-  {
-    pathname: "/agents",
-    defaultTab: "templates",
-    ariaLabel: "Agent sections",
-    layoutIdPrefix: "agents-section",
-    tabs: [
-      { id: "templates", label: "Templates", icon: LayoutGrid },
-      { id: "fleet", label: "My Fleet", icon: Shield },
-    ],
-  },
+  // /agents (the Studio) intentionally has no sub-tabs: it's one open build
+  // canvas. Templates are summoned from the canvas, not a competing front-door
+  // tab. (FleetSettings owns that toggle via local view state.)
 ];
 
 const ADMIN_HUB_PATHS = ["/admin", "/integrations", "/dnc", "/audit"] as const;

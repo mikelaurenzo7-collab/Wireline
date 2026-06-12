@@ -15,10 +15,14 @@ describe("FleetSettings shell", () => {
     expect(SRC).not.toContain("AdminHubViewport");
   });
 
-  it("routes templates vs fleet via app chrome sub-tabs", () => {
+  it("is one open canvas — no front-door sub-tab wall", () => {
+    // The Studio deliberately has no /agents sub-tabs: it lands on the build
+    // canvas, and templates are summoned via local view state, not a tab.
     const agentsRoute = APP_PAGE_SUB_TAB_ROUTES.find((r) => r.pathname === "/agents");
-    expect(agentsRoute?.tabs.map((t) => t.label)).toEqual(["Templates", "My Fleet"]);
-    expect(SRC).toContain("resolveAppPageSubTabId");
+    expect(agentsRoute).toBeUndefined();
+    expect(SRC).not.toContain("resolveAppPageSubTabId");
     expect(SRC).not.toContain("SettingsTabSwitcher");
+    // Build canvas is the default; templates are a summoned starting point.
+    expect(SRC).toContain('useState<"canvas" | "templates">("canvas")');
   });
 });

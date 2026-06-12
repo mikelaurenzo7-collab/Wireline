@@ -602,9 +602,9 @@ export default function AgentTemplates() {
         typeof data === "object" && data && "id" in data && typeof data.id === "string"
           ? data.id
           : uniqueId;
-      // Templates are starting points, not destinations: land in the Studio
+      // Templates are starting points, not destinations: land on the Studio
       // canvas with the new agent in focus, ready to voice and tune.
-      navigate(`/agents?tab=fleet&agent=${encodeURIComponent(createdId)}`);
+      navigate(`/agents?agent=${encodeURIComponent(createdId)}`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
       setDeploying(null);
