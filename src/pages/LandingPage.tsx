@@ -475,7 +475,7 @@ export default function LandingPage() {
             <div className="relative mt-16 grid grid-cols-1 gap-14 md:grid-cols-3 md:gap-6 lg:mt-20 lg:gap-10">
               {/* The wire: threads the three acts together on desktop */}
               <svg
-                className="pointer-events-none absolute left-[4%] top-8 z-0 hidden h-[60px] w-[92%] text-brand/40 md:block"
+                className="pointer-events-none absolute left-[4%] top-8 z-0 hidden h-[60px] w-[92%] text-ink/[0.14] md:block"
                 viewBox="0 0 1000 60"
                 preserveAspectRatio="none"
                 aria-hidden="true"
