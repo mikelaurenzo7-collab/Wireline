@@ -63,7 +63,7 @@ test.describe("Wireline authenticated shell (mobile)", () => {
   });
 
   const routes: { path: string; heading: RegExp }[] = [
-    { path: "/", heading: /live ops/i },
+    { path: "/agents", heading: /^studio$/i },
     { path: "/outbound", heading: /^outbound$/i },
     { path: "/insights", heading: /^insights$/i },
     { path: "/ops?tab=triage", heading: /live ops/i },
@@ -93,8 +93,17 @@ test.describe("Wireline authenticated shell (mobile)", () => {
     await expect(page.getByRole("dialog", { name: /page actions/i })).toBeHidden();
   });
 
-  test("live ops exposes mobile page actions sheet", async ({ page }) => {
+  test("authenticated home redirects to the Studio", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/agents/);
+    await expect(page.getByRole("heading", { level: 1, name: /^studio$/i })).toBeVisible({
+      timeout: 25_000,
+    });
+    await assertNoHorizontalOverflow(page);
+  });
+
+  test("live ops exposes mobile page actions sheet", async ({ page }) => {
+    await page.goto("/ops", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { level: 1, name: /live ops/i })).toBeVisible({
       timeout: 25_000,
     });
