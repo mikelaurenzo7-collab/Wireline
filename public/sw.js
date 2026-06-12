@@ -1,4 +1,11 @@
-const CACHE_NAME = "wireline-v1";
+// Bumping CACHE_NAME is the kill switch for stale clients: the activate
+// handler deletes every cache that doesn't match, and changing this string
+// changes sw.js's bytes, which is what makes browsers re-install the worker.
+// v1 pre-cached "/" once at install and never refreshed it — clients that ever
+// hit the offline fallback were pinned to that first-visit shell (old hashed
+// chunks then served cache-first), i.e. a permanently outdated app. v2 purges
+// those caches and keeps the fallback shell fresh on every successful visit.
+const CACHE_NAME = "wireline-v2";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
@@ -51,25 +58,57 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle SPA navigation requests: Network-First falling back to Cached Root Shell
+  // SPA navigations: Network-First. On success, refresh the cached shell so
+  // the offline fallback is always the latest shell the client has seen —
+  // never a first-install snapshot pointing at long-gone hashed chunks.
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        console.error("[wireline:sw] Serving cached app shell for navigation:", url.pathname);
-        return caches.match("/");
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put("/", responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          console.error("[wireline:sw] Serving cached app shell for navigation:", url.pathname);
+          return caches.match("/");
+        })
+    );
+    return;
+  }
+
+  // Immutable build artifacts (content-hashed under /assets/): Cache-First.
+  // A hash change is a URL change, so a hit here can never be stale.
+  if (url.pathname.startsWith("/assets/")) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200 && response.type === "basic") {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        });
       })
     );
     return;
   }
 
-  // Static Assets (CSS, JS, Fonts, Images): Cache-First, fallback to Network
+  // Everything else (favicons, manifest, fonts at stable URLs): Network-First
+  // with cache fallback, refreshing the cached copy on success. These URLs
+  // aren't content-hashed, so Cache-First would pin them forever.
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
-        // Cache successful responses for our own origin
+    fetch(event.request)
+      .then((response) => {
         if (response && response.status === 200 && response.type === "basic") {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -77,7 +116,7 @@ self.addEventListener("fetch", (event) => {
           });
         }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
