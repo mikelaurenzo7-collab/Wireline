@@ -37,6 +37,7 @@ import AgentBusinessProfile from "../AgentBusinessProfile";
 import AgentScorecard from "../AgentScorecard";
 import VoiceFineTuningPanel from "../VoiceFineTuningPanel";
 import AgentModelSelector from "../AgentModelSelector";
+import AgentIdentityVitals from "./AgentIdentityVitals";
 import AgentIntegrationCanvas from "../AgentIntegrationCanvas";
 import { Sparkline, RoleBadge, PREMIUM_VOICES, AGENT_ROLES } from "../fleet/helpers";
 import { resolveAgentTools, getRoleToolSet } from "../../lib/agent-capabilities";
@@ -273,6 +274,10 @@ export default function AgentConfigPanel({
                           ID: <span className="font-mono text-ink/80">{selectedAgent.id}</span>
                         </div>
                       </div>
+
+                      {/* Identity vitals — who answers, in what voice, on what
+                          brain, at what number. The single-focus Studio anchor. */}
+                      <AgentIdentityVitals agent={selectedAgent} />
 
                       {/* Role assignment row */}
                       <div className="rounded-md wl-panel border border-border p-3 flex flex-wrap items-center gap-3">
