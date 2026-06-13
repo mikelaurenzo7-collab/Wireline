@@ -26,6 +26,7 @@ ios/
 │   ├── Auth/AuthService.swift   Sign-in → JWT from session cookie → Keychain.
 │   ├── Networking/              WingmanConfig, WingmanAPI (Bearer), KeychainStore.
 │   ├── Calls/CallManager.swift  CallKit provider + PushKit (VoIP) registry.
+│   ├── CarPlay/CarPlaySceneDelegate.swift  CarPlay Communication template.
 │   ├── Intents/
 │   │   ├── CallAgentIntent.swift   "Have an agent place a call."
 │   │   └── WingmanIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
@@ -117,10 +118,14 @@ restricts CarPlay template categories and Wingman is a communication app.
 
 ## Roadmap
 
-- **Phase 1 (this scaffold + backend):** Bearer auth, `/api/mobile/me|agents|devices`,
-  outbound App Intent, CallKit + PushKit VoIP inbound, Personal/Business workspace.
-- **Phase 2:** CarPlay Communication template; `DelegateCallIntent`
-  ("have him take this call") + backend `/api/mobile/calls/:id/delegate`.
+- **Phase 1 — done:** Bearer auth, `/api/mobile/me|agents|devices|calls`,
+  outbound App Intent + the full activation layer (Siri/widgets/Ask Wingman),
+  CallKit + PushKit VoIP inbound, recap pushes, Personal/Business workspace,
+  Calls tab, and "take this call" handoff (`/api/mobile/calls/:id/handoff`).
+- **Phase 2 — in code, gated on entitlement:** CarPlay Communication scene
+  (`CarPlay/CarPlaySceneDelegate.swift`) — call-back list + agents. Activates
+  once Apple grants `carplay-communication`. (Calls already appear in CarPlay's
+  native UI via CallKit regardless.)
 - **Phase 3:** in-call tool dispatch (Maps/Spotify/Calendar via alert push),
   optional low-latency WebSocket channel, prepaid credit wallet UI.
 

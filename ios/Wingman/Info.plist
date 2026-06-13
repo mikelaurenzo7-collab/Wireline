@@ -36,6 +36,21 @@
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
+		<!-- CarPlay Communication scene. The phone UI stays on SwiftUI's
+		     default scene; this only adds the CarPlay template surface, and it
+		     activates once Apple grants the carplay-communication entitlement. -->
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>WingmanCarPlay</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 
 	<!-- Deep-link scheme used by widgets / Control Center to open the app at a
