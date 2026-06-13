@@ -1,12 +1,12 @@
 ---
 name: wireline-design
 description: >-
-  Wireline UI/UX upgrade skill — Aurora Cream design system (warm cream +
-  silky purple, razor-edge zero-radius, editorial type), CSP-safe styling
-  patterns, shadcn ratchets, and Director mission-control contract. Use when
-  improving any Wireline screen, polishing UX flows, fixing visual bugs, or
-  when the user mentions design pass, level up UI, Director, fleet dashboard,
-  or CSP-safe styling.
+  Wireline UI/UX upgrade skill — Rich Cream + Controlled Purple design system
+  (warm cream + lighter contained purple, razor-edge zero-radius, editorial type),
+  CSP-safe styling patterns, shadcn ratchets, Wireline Wizard builder surfaces,
+  and Director Mode fleet contract. Use when improving any Wireline screen,
+  polishing UX flows, fixing visual bugs, or when the user mentions design pass,
+  level up UI, Wizard, Director Mode, fleet dashboard, or CSP-safe styling.
 ---
 
 # Wireline design — implementation contract
@@ -19,22 +19,22 @@ Everything here is verified against source-of-truth files. When in doubt,
 
 | Token | Value | Source |
 |---|---|---|
-| `--primary` (light) | `#8b3fd6` | `src/index.css` |
-| `--primary` (dark) | `#9b5ce0` | `src/index.css` |
+| `--primary` (light) | `#9b5ce0` | `src/index.css` |
+| `--primary` (dark) | `#b982ff` | `src/index.css` |
 | `--color-brand` | `var(--primary)` | `src/index.css` `@theme` |
-| `BRAND.purple` | `#8B3FD6` | `src/constants/brand-colors.ts` |
-| `BRAND.purpleDeep` | `#3B154C` | sidebar / secondary |
+| `BRAND.purple` | `#9B5CE0` | `src/constants/brand-colors.ts` |
+| `BRAND.purpleDeep` | `#4C1D75` | sidebar / secondary |
 | `BRAND.cream` / `paper` | `#F5F0E6` / `#EFE9DC` | backgrounds |
 | `BRAND.ink` | `#1A1614` | body text (light) |
 | `BRAND.velvet` | `#1A1225` | dark elevated panels |
-| `BRAND.chromeGlow` | `#C77DFF` | luminous brand on dark chrome |
+| `BRAND.chromeGlow` | `#B982FF` | luminous brand on dark chrome; never full-page bleed |
 | `BRAND.rose` | `#E8466A` | errors/critical ONLY — never decorative |
 
-Director accents (`wireline-director-design.ts`): violet `#8B3FD6`,
-signal `#10B981` (executed approvals only), opus `#D97706` (deep-analysis badge only).
+Director accents (`wireline-director-design.ts`): controlled purple for brand hierarchy,
+signal `#10B981` (executed approvals only), and deep-analysis badges only when semantically required.
 
-**Palette law:** purple + cream family only. Legacy `emerald-*`/`sky-*`/`blue-*`
-utilities are remapped to brand in `index.css` — never introduce new off-hue literals.
+**Palette law:** rich cream + controlled purple only. No aurora/multicolor gradient language.
+Legacy `emerald-*`/`sky-*`/`blue-*` utilities are remapped to brand in `index.css` — never introduce new off-hue decorative literals. Purple highlights must be contained, low-opacity, and anchored to a component or edge; never a drifting page wash.
 
 ## Typography
 
@@ -85,7 +85,9 @@ CSP ratchet (`npm run csp:check`, `src/lib/csp-inventory.ts`): **zero**
 | Streaming tasks | `LiveTaskPipeline` |
 | Scroll inside locked shell | `scroll-viewport` |
 
-Director surface: import every class/copy string from
+Wireline Wizard surface: use for builder/copilot copy, agent creation, simulations, approvals, and user-facing chat.
+
+Director Mode surface: import every fleet/op class/copy string from
 `WL_DIRECTOR_CLASSES` / `WL_APP_CLASSES` in `src/lib/wireline-director-design.ts`
 — never duplicate the strings in TSX. Update `wireline-director-design.test.ts`
 in the same PR when the contract changes.
@@ -93,13 +95,13 @@ in the same PR when the contract changes.
 ## Layout shell
 
 ```
-AuroraBackdrop (fixed z-0, calm paper/velvet — no loud washes behind data UI)
+AuthenticatedBackdrop (fixed z-0, calm paper/velvet — no drifting color washes behind data UI)
   AppShell
     Sidebar (data-rail expanded|collapsed; groups: Studio / Command / Channels / Design / Admin)
     main.app-surface → TopBar → scroll-viewport → page
 ```
 
-Marketing pages use `.marketing-surface` (more expressive); app pages use
+Marketing pages use `.marketing-surface` (more expressive but controlled); app pages use
 `.app-surface` (clarity + density). First paint: `public/app-shell.css`.
 
 ## Authenticated route map
@@ -107,8 +109,8 @@ Marketing pages use `.marketing-surface` (more expressive); app pages use
 Studio-first IA — `/` lands on `/agents` (the Studio), and the Studio group
 leads the rail.
 
-Studio: `/agents` (Studio canvas, authed home) · `/chat` (Director) · `/training`
-Command: `/ops` (Live Ops) · `/insights` · `/pipeline`
+Studio: `/agents` (Studio canvas, authed home) · `/chat` (Wireline Wizard) · `/training`
+Command: `/ops` (Live Ops / Director Mode) · `/insights` · `/pipeline`
 Channels: `/phone` · `/email` · `/sms`
 Other: `/design` (Painter, Beta) · `/integrations` · `/admin` · `/help` ·
 `/founder` (owner-only)
@@ -125,7 +127,7 @@ Other: `/design` (Painter, Beta) · `/integrations` · `/admin` · `/help` ·
 
 ```
 1. Read affected component(s) + relevant index.css blocks
-2. Audit: off-brand hues, style={ regressions, missing empty/loading/error states
+2. Audit: off-brand hues, uncontrolled purple wash, style={ regressions, missing empty/loading/error states
 3. Implement: index.css utilities → data-* / classes → minimal TSX diff
 4. Verify dark mode, 390px, focus rings, reduced motion
 5. npm run csp:check && npm run test:design (if contract touched) && npm run lint
@@ -135,8 +137,9 @@ Other: `/design` (Painter, Beta) · `/integrations` · `/admin` · `/help` ·
 
 - `style={` / `<style>` in TSX, or `asStyle()` shims to game inventory
 - New inline `#hex` when a token exists; any blue/teal/orange decoration
+- Aurora/multicolor gradient language, drifting orbs, or full-page purple glow fields
 - `rounded-lg`+ literals; raw `<button>`/`<input>`/`<select>`/`<dialog>`
-- Generic AI copy ("Unlock the power of…") — Director tone is specific, operator-facing
+- Generic AI copy ("Unlock the power of…") — Wireline tone is specific, operator-facing
 - Hover-only actions on touch-primary flows
 - Breaking `scroll-viewport` / AppShell scroll lock
 - Weakening ratchet baselines or removing tests
