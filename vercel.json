@@ -58,20 +58,6 @@
       ]
     }
   ],
-  "crons": [
-    {
-      "path": "/api/jobs/sweep",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/daily-brief/schedule",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/health/canary",
-      "schedule": "0 4 * * *"
-    }
-  ],
   "functions": {
     "api/index.ts": {
       "maxDuration": 600,
