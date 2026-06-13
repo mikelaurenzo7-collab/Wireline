@@ -88,11 +88,30 @@ restricts CarPlay template categories and Wingman is a communication app.
 - **Phase 3:** in-call tool dispatch (Maps/Spotify/Calendar via alert push),
   optional low-latency WebSocket channel, prepaid credit wallet UI.
 
+## Design
+
+**Direction: iOS-native first, brand accent second.** Wingman keeps SF Pro,
+system materials, and standard controls — best HIG fit and the smoothest App
+Store review — and layers Wireline's "Rich Cream + Purple" identity on top as
+the accent tint (`#8B3FD6`) and cream surfaces (`#F5F1E8`). `Theme/WingmanTheme.swift`
+holds the tokens, mirrored from the web's `src/index.css`; apply them with
+`.tint(Brand.purple)` and the `.wingmanBrand()` view modifier. The CallKit and
+CarPlay call surfaces are system-rendered (Apple's, not themeable) — we only
+contribute the app icon, accent tint, and call labels there.
+
 ## Build
 
-Open `Wingman.xcodeproj` in Xcode 16+, set your team + bundle id, point
-`WingmanAPI.baseURL` at your environment, and run on a physical device (PushKit
-VoIP and CarPlay-on-device need real hardware; the CarPlay Simulator covers UI).
-The Xcode project file is intentionally not committed yet — generate it from
-these sources (File → New → App, then add the files) or via XcodeGen using a
-`project.yml`, so the project pins to your team/signing rather than ours.
+This repo commits a **XcodeGen** spec (`ios/project.yml`) instead of a checked-in
+`.pbxproj`, so the project pins to *your* signing rather than ours:
+
+```bash
+brew install xcodegen        # one-time
+cd ios && xcodegen generate  # writes Wingman.xcodeproj
+open Wingman.xcodeproj
+```
+
+Then set your Development Team in **Signing & Capabilities**, point
+`WingmanAPI.baseURL` at your environment, and run on a **physical device**
+(PushKit VoIP and CarPlay-on-device need real hardware; the CarPlay Simulator
+covers UI only). The CarPlay Communication entitlement is deferred to Phase 2 —
+see the note in `project.yml`.

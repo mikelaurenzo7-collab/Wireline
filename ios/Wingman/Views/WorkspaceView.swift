@@ -26,6 +26,7 @@ struct WorkspaceView: View {
                 }
             }
             .navigationTitle("Wingman")
+            .wingmanBrand()
             .task { await load() }
             .refreshable { await load() }
         }

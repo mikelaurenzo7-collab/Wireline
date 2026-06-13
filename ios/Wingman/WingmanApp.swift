@@ -7,6 +7,7 @@ struct WingmanApp: App {
     var body: some Scene {
         WindowGroup {
             WorkspaceView()
+                .tint(Brand.purple)
         }
     }
 }
