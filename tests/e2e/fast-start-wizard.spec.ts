@@ -13,7 +13,7 @@ test.describe("Fast Start Wizard", () => {
     await page.goto("/auth");
     await page.fill('[data-testid="email-input"]', "test@example.com");
     await page.fill('[data-testid="password-input"]', "password123");
-    await page.click('[data-testid="sign-in-button"]");
+    await page.click('[data-testid="sign-in-button"]');
     await page.waitForURL("**/dashboard**");
   });
 
