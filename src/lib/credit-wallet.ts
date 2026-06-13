@@ -1,0 +1,168 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Drizzle's transaction callback receives a PgTransaction whose full generic type is unwieldy to spell out; `tx: any` matches the pattern used across the data layer. */
+/**
+ * Prepaid credit wallet — an append-only USD ledger (wireline_credit_ledger).
+ *
+ * Credits are purchased on the WEB (Stripe); the iOS app is read-only on
+ * billing to stay clear of Apple's IAP rules. Credits absorb voice-minute
+ * overage before Stripe metering: a user with no balance bills exactly as
+ * before, so this is purely additive.
+ *
+ * Concurrency: every mutation runs inside a transaction holding a per-user
+ * advisory lock, so concurrent debits/credits can't race on the balance. The
+ * (user, ref_type, ref_id) unique index makes each movement idempotent under
+ * webhook/Vapi retries.
+ */
+import { drizzle, log } from "./server-context";
+import * as schema from "../db/schema";
+import { eq, sql, desc } from "drizzle-orm";
+
+export interface LedgerEntry {
+  id: string;
+  deltaUsd: number;
+  balanceAfterUsd: number;
+  reason: string;
+  createdAt: string | null;
+}
+
+/** Current balance in USD (sum of all deltas; 0 when there are no rows). */
+export async function getCreditBalanceUsd(userId: string): Promise<number> {
+  const [row] = await drizzle
+    .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
+    .from(schema.creditLedger)
+    .where(eq(schema.creditLedger.userId, userId));
+  return Number(row?.balance ?? 0);
+}
+
+/** Recent ledger entries, newest first. */
+export async function getRecentLedger(userId: string, limit = 20): Promise<LedgerEntry[]> {
+  const rows = await drizzle
+    .select({
+      id: schema.creditLedger.id,
+      deltaUsd: schema.creditLedger.deltaUsd,
+      balanceAfterUsd: schema.creditLedger.balanceAfterUsd,
+      reason: schema.creditLedger.reason,
+      createdAt: schema.creditLedger.createdAt,
+    })
+    .from(schema.creditLedger)
+    .where(eq(schema.creditLedger.userId, userId))
+    .orderBy(desc(schema.creditLedger.createdAt))
+    .limit(Math.min(Math.max(1, limit), 100));
+  return rows.map((r) => ({
+    id: r.id,
+    deltaUsd: Number(r.deltaUsd),
+    balanceAfterUsd: Number(r.balanceAfterUsd),
+    reason: r.reason,
+    createdAt: r.createdAt ? new Date(r.createdAt as unknown as string).toISOString() : null,
+  }));
+}
+
+/** Round to whole cents to avoid float drift in the ledger. */
+function cents(usd: number): number {
+  return Math.round(usd * 100) / 100;
+}
+
+async function appendLedger(
+  userId: string,
+  deltaUsd: number,
+  reason: string,
+  ref?: { type: string; id: string },
+): Promise<{ applied: number; balance: number }> {
+  return drizzle.transaction(async (tx: any) => {
+    // Serialize all wallet mutations for this user.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+
+    const [sumRow] = await tx
+      .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
+      .from(schema.creditLedger)
+      .where(eq(schema.creditLedger.userId, userId));
+    const balance = Number(sumRow?.balance ?? 0);
+    const balanceAfter = cents(balance + deltaUsd);
+
+    const inserted = await tx
+      .insert(schema.creditLedger)
+      .values({
+        userId,
+        deltaUsd: String(cents(deltaUsd)),
+        balanceAfterUsd: String(balanceAfter),
+        reason,
+        refType: ref?.type ?? null,
+        refId: ref?.id ?? null,
+      })
+      .onConflictDoNothing()
+      .returning({ id: schema.creditLedger.id });
+
+    // Conflict → this movement already happened (idempotent retry): no change.
+    if (inserted.length === 0) return { applied: 0, balance };
+    return { applied: deltaUsd, balance: balanceAfter };
+  });
+}
+
+/**
+ * Add credit (a web Stripe top-up or a manual grant). Idempotent per `ref`.
+ * Returns the new balance.
+ */
+export async function addCredit(
+  userId: string,
+  amountUsd: number,
+  reason: string,
+  ref?: { type: string; id: string },
+): Promise<number> {
+  const amount = cents(amountUsd);
+  if (!(amount > 0)) return getCreditBalanceUsd(userId);
+  try {
+    const { balance } = await appendLedger(userId, amount, reason, ref);
+    return balance;
+  } catch (err) {
+    log.error("addCredit failed", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return getCreditBalanceUsd(userId);
+  }
+}
+
+/**
+ * Debit the wallet to absorb a voice-overage charge, but ONLY when the balance
+ * covers the full cost — partial coverage is skipped so we never both debit
+ * credits AND meter the same minutes to Stripe (no double-charge). Idempotent
+ * per call id. Returns the USD debited (0 if not covered / on error).
+ */
+export async function debitForOverage(
+  userId: string,
+  costUsd: number,
+  vapiCallId: string,
+): Promise<number> {
+  const cost = cents(costUsd);
+  if (!(cost > 0)) return 0;
+  try {
+    return await drizzle.transaction(async (tx: any) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+      const [sumRow] = await tx
+        .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
+        .from(schema.creditLedger)
+        .where(eq(schema.creditLedger.userId, userId));
+      const balance = Number(sumRow?.balance ?? 0);
+      if (balance < cost) return 0; // can't fully cover → let Stripe meter it
+
+      const inserted = await tx
+        .insert(schema.creditLedger)
+        .values({
+          userId,
+          deltaUsd: String(-cost),
+          balanceAfterUsd: String(cents(balance - cost)),
+          reason: "voice_overage",
+          refType: "voice_overage",
+          refId: vapiCallId,
+        })
+        .onConflictDoNothing()
+        .returning({ id: schema.creditLedger.id });
+      return inserted.length === 0 ? 0 : cost; // conflict → already debited
+    });
+  } catch (err) {
+    log.error("debitForOverage failed", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return 0;
+  }
+}

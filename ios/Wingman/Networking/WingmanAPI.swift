@@ -34,6 +34,10 @@ actor WingmanAPI {
         try await get("/api/mobile/calls/recent?limit=\(limit)")
     }
 
+    func wallet() async throws -> WalletResponse {
+        try await get("/api/mobile/wallet")
+    }
+
     // MARK: - Writes
 
     /// Register/refresh this device's APNs tokens so the backend can wake it

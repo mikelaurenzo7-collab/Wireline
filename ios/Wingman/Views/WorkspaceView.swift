@@ -64,6 +64,9 @@ struct WorkspaceView: View {
 
     private var activationSection: some View {
         Section {
+            NavigationLink { WalletView() } label: {
+                Label("Wallet & credits", systemImage: "creditcard")
+            }
             NavigationLink { ActivationSetupView() } label: {
                 Label("Activate Wingman everywhere", systemImage: "wand.and.stars")
             }

@@ -55,6 +55,7 @@ export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
   "wireline_cadences",
   "wireline_supervisor_subscriptions",
   "wireline_mobile_devices",
+  "wireline_credit_ledger",
   "wireline_consent_log",
   "wireline_lead_dossiers",
   "wireline_goals",

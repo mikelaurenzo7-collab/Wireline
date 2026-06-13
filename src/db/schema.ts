@@ -1320,6 +1320,36 @@ export const mobileDevices = pgTable(
   }),
 );
 
+// 3.8 PREPAID CREDIT WALLET (Wingman)
+//
+// Append-only ledger of USD credit movements. Positive deltas are top-ups
+// (purchased on the WEB via Stripe — never in-app, to stay clear of Apple's
+// IAP rules; the iOS app is read-only on billing). Negative deltas are debits
+// that absorb voice-minute overage before Stripe metering kicks in. Balance is
+// the sum of deltas; balance_after is denormalized per row for audit + fast
+// reads. Existing tenants simply have no rows (balance 0) and bill exactly as
+// before.
+export const creditLedger = pgTable(
+  "wireline_credit_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deltaUsd: decimal("delta_usd", { precision: 12, scale: 4 }).notNull(),
+    balanceAfterUsd: decimal("balance_after_usd", { precision: 12, scale: 4 }).notNull(),
+    reason: text("reason").notNull(),
+    refType: text("ref_type"),
+    refId: text("ref_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t: any) => ({
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_credit_ledger_user ON wireline_credit_ledger (user_id, created_at DESC)`,
+    // Idempotent top-ups/debits: a given (user, ref_type, ref_id) lands once.
+    refUnique: unique("wireline_credit_ledger_ref_key").on(t.userId, t.refType, t.refId),
+  }),
+);
+
 // 4. AUDIT LOG (AI SPEND & COMPLIANCE)
 export const auditLog = pgTable(
   "wireline_audit_log",

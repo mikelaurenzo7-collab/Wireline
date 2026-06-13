@@ -121,6 +121,29 @@ struct RecentCallsResponse: Codable {
     let needsAttention: Int
 }
 
+struct WalletEntry: Codable, Identifiable {
+    let id: String
+    let deltaUsd: Double
+    let balanceAfterUsd: Double
+    let reason: String
+    let createdAt: String?
+    enum CodingKeys: String, CodingKey {
+        case id, reason
+        case deltaUsd = "deltaUsd"
+        case balanceAfterUsd = "balanceAfterUsd"
+        case createdAt = "createdAt"
+    }
+}
+
+struct WalletResponse: Codable {
+    let balanceUsd: Double
+    let ledger: [WalletEntry]
+    enum CodingKeys: String, CodingKey {
+        case balanceUsd = "balance_usd"
+        case ledger
+    }
+}
+
 /// Payload carried by an inbound-call VoIP push (see src/lib/apns-push.ts).
 struct IncomingCallPush: Codable {
     let callId: String

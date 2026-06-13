@@ -31,6 +31,7 @@ import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
 import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
+import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -516,6 +517,27 @@ router.post(
     } catch (err) {
       log.error("POST /api/mobile/calls/:callId/handoff failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to take the call.");
+    }
+  },
+);
+
+// ── GET /api/mobile/wallet — prepaid credit balance + recent ledger ────────
+// READ-ONLY. Top-ups happen on the web (Stripe); the app never sells credits
+// in-app, which keeps Wingman clear of Apple's IAP requirement.
+router.get(
+  "/api/mobile/wallet",
+  authenticateUser,
+  mobileRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [balanceUsd, ledger] = await Promise.all([
+        getCreditBalanceUsd(req.user.id),
+        getRecentLedger(req.user.id, 20),
+      ]);
+      res.json({ balance_usd: balanceUsd, ledger });
+    } catch (err) {
+      log.error("GET /api/mobile/wallet failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load wallet.");
     }
   },
 );
