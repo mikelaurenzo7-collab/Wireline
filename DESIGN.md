@@ -1,12 +1,12 @@
-# Wireline Design System — Aurora Cream
+# Wireline Design System — Rich Cream + Controlled Purple
 
-**Status:** Internal reference (2026)
+**Status:** Internal reference (2026)  
 **Goal:** One cohesive, premium, editorial visual language across every client-facing surface.
 
 > **Canonical UI layer:** [`src/components/ui/shadcn/*`](src/components/ui/shadcn/).
 > Every button, input, modal, sheet, tab, dropdown, switch, tooltip,
 > badge, alert, progress, skeleton, avatar, accordion, separator, and
-> command palette ships from there. The Aurora Cream primitives
+> command palette ships from there. The Rich Cream + Controlled Purple primitives
 > (`Medallion`, `SectionHeader`, `EmptyState`, `Button` alias) compose
 > shadcn primitives; they never reimplement them. Dark mode flips via
 > `ThemeContext` toggling the `.dark` class on `<html>`.
@@ -25,17 +25,18 @@
 - **Mono (Labels, Code, Metrics):** `font-mono` → JetBrains Mono
 
 ### Color
-- `--color-brand`: #4F1E7B (Silky Purple)
-- `--color-brand-deep`: #3B154C
+- `--color-brand`: #9B5CE0 (lighter controlled purple)
+- `--color-brand-deep`: #4C1D75
 - `--color-ink`: #1A1614
-- `--color-paper`: #EFE9DC (warm cream base)
+- `--color-paper`: #EFE9DC / #F5F0E6 family (warm cream base)
 - `--color-muted` / `--color-muted-soft`
-- Gradients: Always `from-brand to-brand-deep` for primary actions and medallions.
+- Gradients: Always controlled `from-brand to-brand-deep` for primary actions and medallions.
+- Purple glow rule: keep it contained, low-opacity, and anchored to a component or edge. No drifting orb fields or full-canvas purple bleed.
 
 ### Effects
 - `.glass` — the signature translucent cream surface. **Permitted surfaces:** modal overlays (`.glass-elevated`), sticky shells (`.shell-sticky-glass`), sidebar chrome, icon buttons on glass panels. **Do not** use for ordinary card bodies — use `<Card>` instead (see migration note below).
-- `.aurora-ring` — subtle premium border glow (use on active/selected states)
-- Soft brand halos: `<span aria-hidden className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150" />`
+- `.aurora-ring` — compatibility class name only; treat as a controlled selected-state border glow, not an aurora/multicolor effect.
+- Soft brand halos: use low opacity only, for example `<span aria-hidden className="absolute inset-0 -z-10 rounded-full bg-brand/15 blur-xl scale-125" />`. Do not use `bg-brand/30 blur-2xl scale-150` on cream canvases.
 
 > **Migration note — `glassUtility` ratchet:** The `shadcn-pivot-ratchet` tracks `.glass` usage and only allows it to decrease over time. Card bodies that currently carry `.glass` should be migrated to `<Card>` from `src/components/ui/shadcn/`. `<Card>` consumes the `--card` design token, adapts to dark-mode automatically, and is the canonical card surface going forward. Shell surfaces (TopBar, Sidebar, modals, popovers, sticky headers) are permanently exempt — those keep `.glass`/`.glass-strong`/`.glass-elevated`/`.shell-sticky-glass`.
 
@@ -94,6 +95,7 @@ permanent. Raising a baseline is reserved for a deliberate, explained exception.
 </Medallion>
 ```
 - The signature visual motif for empty states, identity, and status.
+- Halo must remain contained and soft; no smeared page glow.
 
 ### EmptyState (Canonical)
 ```tsx
@@ -128,7 +130,7 @@ permanent. Raising a baseline is reserved for a deliberate, explained exception.
 
 **Do**
 - Start every major content block with `SectionHeader`.
-- Use `Medallion` + halo for every empty / idle / no-data state.
+- Use `Medallion` + contained halo for every empty / idle / no-data state.
 - Keep CTAs consistent (`primary` gradient or `secondary` glass).
 - Use `<Card>` for all card surfaces; reserve `.glass` for non-card surfaces (modals, sticky shells, popovers, icon-button faces) where the shadcn Card token is inappropriate.
 - Mark purely decorative elements with `aria-hidden`.
@@ -148,6 +150,7 @@ permanent. Raising a baseline is reserved for a deliberate, explained exception.
 - Stack multiple cards inside cards without clear visual separation.
 - Use bulky `w-11 h-11` / `w-12 h-12` classes to satisfy tap targets — this distorts the compact visual silhouette. Use `hit-area-44` or the built-in `::after` expansion on ShadButton instead.
 - Use heavy flat `border border-black/8` for workspace panels — migrate to `.wl-panel` / `.wl-panel-elevated` specular depth system.
+- Use aurora/multicolor language, drifting violet orb fields, or uncontrolled purple bleed on cream surfaces.
 
 ---
 
@@ -169,7 +172,7 @@ locked viewport** pattern at every size:
 | Class | Purpose |
 |-------|---------|
 | `.wl-panel` | Specular depth surface (ambient blur + inset highlight) |
-| `.wl-panel-elevated` | Primary workspace container (deeper blur + aurora glow) |
+| `.wl-panel-elevated` | Primary workspace container (deeper blur + contained purple glow) |
 | `.touch-press` | Zero-latency GPU-driven scale(0.97) on :active |
 | `.touch-press-deep` | Deeper press for larger surfaces (scale 0.95 + opacity) |
 | `.wl-orbit` | Orbital activity ring around agent avatars |
@@ -186,17 +189,19 @@ On mobile (<xl), panels slide up from the bottom as full-width sheets instead of
 
 ---
 
-## 3c. Director mission control
+## 3c. Wireline Wizard + Director Mode
 
-The **Director** is the account-level operator chat (route `/director`). It is
-the reference implementation for density, streaming UX, and purple/cream
-chrome. Do not invent one-off class names or copy in Director components.
+**Wireline Wizard** is the user-facing builder/copilot for agent creation, simulations, approvals, and chat.
+
+**Director Mode** is the advanced fleet layer for routing, QA, live ops, escalation, and multi-agent governance.
+
+Director Mode is the reference implementation for density, streaming UX, and controlled purple/cream chrome. Do not invent one-off class names or copy in Director components.
 
 ### Design contract (`src/lib/wireline-director-design.ts`)
 
 | Export | Use |
 |--------|-----|
-| `WIRELINE_DIRECTOR_BRAND` | Violet / signal / opus accent hex values |
+| `WIRELINE_DIRECTOR_BRAND` | Controlled purple / signal / opus accent hex values |
 | `WL_DIRECTOR_CLASSES` | Canonical Tailwind + `wl-*` utility bundles (composer, bubbles, proposals, live orchestra) |
 | `WL_APP_CLASSES` | Shared app chrome outside Director (settings, insights, integrations) |
 | `DIRECTOR_CAPABILITY_*` | Capability catalog categories, labels, starter prompts |
@@ -269,17 +274,17 @@ Never render a raw `<button>` / `<input>` / `<dialog>` / `<select>` in
 (`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts`) fails CI
 if these counts grow.
 
-### Tier 2 — Aurora Cream compositions (`src/components/ui/`)
+### Tier 2 — Rich Cream + Controlled Purple compositions (`src/components/ui/`)
 
 Higher-level patterns composed **out of** the shadcn primitives:
 
-- `Medallion.tsx` — signature halo motif for empty/idle states.
+- `Medallion.tsx` — signature contained halo motif for empty/idle states.
 - `SectionHeader.tsx` — mono eyebrow + upright display title + muted
   description, used at the top of every major content block.
 - `EmptyState.tsx` — canonical "no data yet" surface; wraps `Medallion`
   + `ShadButton`.
 - `HaloButton.tsx` — thin `<ShadButton asChild>` wrapper for branded/halo
-  CTAs that have hand-tuned glass + blur-2xl halos. Preserves the visual
+  CTAs that have hand-tuned glass + contained halos. Preserves the visual
   pixel-perfectly while satisfying the raw-`<button>` ratchet.
 
 Feature components live in their own folders (`src/components/<feature>/…`)
@@ -295,4 +300,4 @@ HTML controls.
 
 ---
 
-*When in doubt, look at the Director welcome state or the elevated AgentWorkspace empty state — they are the current gold standard.*
+*When in doubt, look at the Wireline Wizard setup state, Director Mode fleet state, or elevated AgentWorkspace empty state — they are the current gold standard.*
