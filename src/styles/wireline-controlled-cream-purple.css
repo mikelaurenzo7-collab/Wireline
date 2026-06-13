@@ -1,0 +1,117 @@
+/*
+ * Wireline Rich Cream + Controlled Purple compatibility layer.
+ *
+ * Some legacy class names still include `aurora` for backwards compatibility.
+ * This file makes those classes render as controlled cream/purple — not
+ * multicolor, not drifting, and not a full-canvas purple bleed.
+ */
+
+.wl-aurora-field {
+  background: var(--color-paper);
+  background-image: var(--paper-grain);
+  background-size: 3.2px 3.4px;
+  background-repeat: repeat;
+}
+
+.wl-aurora-orb {
+  position: absolute;
+  display: block;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(155, 92, 224, 0.10) 0%,
+    rgba(155, 92, 224, 0.045) 34%,
+    transparent 68%
+  );
+  filter: blur(18px);
+  opacity: 0.72;
+}
+
+.wl-aurora-orb:nth-child(1) {
+  width: 22rem;
+  height: 22rem;
+  top: -10rem;
+  right: -7rem;
+}
+
+.wl-aurora-orb:nth-child(2) {
+  width: 16rem;
+  height: 16rem;
+  top: 18rem;
+  left: -8rem;
+  opacity: 0.42;
+}
+
+.wl-aurora-orb:nth-child(3) {
+  width: 18rem;
+  height: 18rem;
+  right: 18%;
+  bottom: -11rem;
+  opacity: 0.30;
+}
+
+.wl-aurora-dark-base {
+  background: #0f0c17;
+}
+
+.wl-aurora-grain {
+  background-image: var(--paper-grain);
+  background-size: 3.2px 3.4px;
+  background-repeat: repeat;
+}
+
+.wl-aurora-top-highlight {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.28), transparent);
+}
+
+.aurora-divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    rgba(155, 92, 224, 0.10),
+    rgba(155, 92, 224, 0.035),
+    transparent
+  );
+}
+
+.wl-aurora-text {
+  background: linear-gradient(135deg, #4c1d75 0%, #9b5ce0 48%, #b982ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.aurora-ring {
+  box-shadow:
+    0 0 0 1px rgba(155, 92, 224, 0.16),
+    0 12px 34px rgba(155, 92, 224, 0.08);
+}
+
+.wl-accent-halo,
+.wl-recipe-halo,
+.medallion-accent-halo,
+.brand-preview-accent-bg {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--wl-accent, #9b5ce0) 18%, transparent) 0%,
+    color-mix(in srgb, var(--wl-accent, #9b5ce0) 6%, transparent) 40%,
+    transparent 72%
+  );
+}
+
+.glass-1 {
+  background: color-mix(in srgb, #f5f0e6 90%, white);
+  border-color: rgba(26, 22, 20, 0.08);
+}
+
+.glass-2 {
+  background: color-mix(in srgb, #f5f0e6 94%, white);
+  border-color: rgba(26, 22, 20, 0.06);
+}
+
+.dark .glass-1,
+.dark .glass-2 {
+  background: rgba(26, 18, 37, 0.88);
+  border-color: rgba(185, 130, 255, 0.12);
+}
