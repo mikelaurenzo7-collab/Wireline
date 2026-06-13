@@ -43,10 +43,10 @@ function withSection(items: NavItem[], section: string): NavItem[] {
 }
 
 // Studio-first IA. Studio leads — the build pivot: shape and tune agents on the
-// canvas with the embedded Bot co-pilot, coach them in the standalone Bot chat,
-// and teach them in Training. Command is the run surface (cockpit,
-// intelligence, pipeline). Channels are the wires. Integrations now live in the
-// agent tuning rail, not the primary nav.
+// canvas with the embedded Wireline Wizard co-pilot, coach them in the
+// standalone Wireline Wizard chat, and teach them in Training. Command is the
+// run surface (cockpit, intelligence, pipeline). Channels are the wires.
+// Integrations now live in the agent tuning rail, not the primary nav.
 const STUDIO_NAV: NavItem[] = [
   {
     label: "Agent Studio",
@@ -56,7 +56,7 @@ const STUDIO_NAV: NavItem[] = [
     matches: ["/agents"],
   },
   {
-    label: "Bot",
+    label: "Wireline Wizard",
     path: "/chat",
     icon: MessagesSquare,
     dataTour: "chat",
@@ -153,7 +153,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/cockpit": "Live Ops",
   "/knowledge": "Knowledge",
   "/agents": "Agent Studio",
-  "/chat": "Bot",
+  "/chat": "Wireline Wizard",
   "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",
