@@ -384,6 +384,7 @@ export default function Cadences() {
                   disableAnimations
                   onClick={() => togglePause(c)}
                   title={c.active ? "Pause" : "Resume"}
+                  aria-label={c.active ? "Pause cadence" : "Resume cadence"}
                   className="w-8 h-8 rounded-md text-muted hover:text-ink"
                 >
                   {c.active ? (
@@ -399,6 +400,7 @@ export default function Cadences() {
                   disableAnimations
                   onClick={() => remove(c)}
                   title="Delete"
+                  aria-label="Delete cadence"
                   className="w-8 h-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -425,6 +427,7 @@ export default function Cadences() {
                 size="icon"
                 disableAnimations
                 onClick={() => setShowBuilder(false)}
+                aria-label="Close cadence builder"
                 className="w-8 h-8 rounded-md text-muted"
               >
                 <X className="w-4 h-4" />
@@ -517,6 +520,7 @@ export default function Cadences() {
                     disableAnimations
                     onClick={() => removeStep(i)}
                     title="Remove step"
+                    aria-label="Remove step"
                     className="w-8 h-8 text-muted hover:text-rose-500 hover:bg-rose-500/10"
                   >
                     <X className="w-3.5 h-3.5" />

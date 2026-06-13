@@ -56,6 +56,7 @@ export function PersonaCloneForm({
                   variant="outline"
                   size="icon"
                   onClick={() => setSamples((arr) => arr.filter((_, j) => j !== i))}
+                  aria-label="Remove voice sample"
                   className="w-10 h-10 rounded-md text-rose-500 hover:bg-rose-500/10 shrink-0 self-start mt-1 after:hidden"
                 >
                   <X className="w-4 h-4" />

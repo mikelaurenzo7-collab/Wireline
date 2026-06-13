@@ -233,6 +233,7 @@ export function ActionFeed({
                                 onClick={(e) => handleReject(action.id, e)}
                                 className="hit-area-44 min-h-7 w-7 rounded-md text-destructive hover:bg-destructive/10 touch-press hover:scale-[1.02]"
                                 title="Reject"
+                                aria-label="Reject action"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </ShadButton>
@@ -244,6 +245,7 @@ export function ActionFeed({
                                 onClick={(e) => handleApprove(action.id, e)}
                                 className="hit-area-44 min-h-7 w-7 rounded-md text-brand hover:bg-brand/10 touch-press hover:scale-[1.02]"
                                 title="Approve"
+                                aria-label="Approve action"
                               >
                                 <Check className="w-3.5 h-3.5" />
                               </ShadButton>

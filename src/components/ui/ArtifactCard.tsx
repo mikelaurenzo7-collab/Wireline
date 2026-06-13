@@ -177,6 +177,7 @@ export function ArtifactCard({
               onClick={() => setShowPreview(!showPreview)}
               className="h-8 w-8 hover:bg-brand/8 text-muted hover:text-brand after:hidden"
               title="Preview"
+              aria-label={showPreview ? "Hide preview" : "Show preview"}
             >
               <Eye className="w-3.5 h-3.5" />
             </ShadButton>

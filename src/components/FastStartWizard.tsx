@@ -406,6 +406,7 @@ export default function FastStartWizard({
               disableAnimations
               onClick={onClose}
               disabled={isSubmitting}
+              aria-label="Close"
               className="rounded-full touch-press hover:scale-[1.05]"
             >
               <X className="w-5 h-5" />
@@ -553,7 +554,7 @@ export default function FastStartWizard({
                             "p-4 h-auto rounded-md border text-left transition-all w-full justify-start flex-col items-start touch-press-deep hover:scale-[1.01]",
                             selectedVoiceId === voice.id
                               ? "border-brand bg-brand/5"
-                              : "border-black/10 hover:border-black/20"
+                              : "border-black/10 hover:border-black/20",
                           )}
                         >
                           <div className="flex items-center justify-between mb-2">

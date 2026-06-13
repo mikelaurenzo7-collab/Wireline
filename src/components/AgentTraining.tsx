@@ -657,6 +657,7 @@ export default function AgentTraining({
                                     onClick={() =>
                                       setEditingDirective({ id: d.id, content: d.content })
                                     }
+                                    aria-label="Edit directive"
                                     className="w-6 h-6 rounded-full"
                                   >
                                     <Pencil className="w-3 h-3" />
@@ -666,6 +667,7 @@ export default function AgentTraining({
                                     size="icon"
                                     disableAnimations
                                     onClick={() => deleteItem(d.id, "directive")}
+                                    aria-label="Delete directive"
                                     className="w-6 h-6 rounded-full hover:text-rose-500 hover:border-rose-500/30"
                                   >
                                     <Trash2 className="w-3 h-3" />
@@ -698,6 +700,7 @@ export default function AgentTraining({
                         disableAnimations
                         onClick={() => saveManualEntry("directive", newDirective)}
                         disabled={!newDirective || isSavingEntry}
+                        aria-label="Add directive"
                         className="w-9 h-9 rounded-full bg-rose-500/15 border-rose-500/30 text-rose-500 hover:bg-rose-500/25"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -791,6 +794,7 @@ export default function AgentTraining({
                                     onClick={() =>
                                       setEditingKnowledge({ id: k.id, content: k.content })
                                     }
+                                    aria-label="Edit knowledge entry"
                                     className="w-6 h-6 rounded-full"
                                   >
                                     <Pencil className="w-3 h-3" />
@@ -800,6 +804,7 @@ export default function AgentTraining({
                                     size="icon"
                                     disableAnimations
                                     onClick={() => deleteItem(k.id, "knowledge")}
+                                    aria-label="Delete knowledge entry"
                                     className="w-6 h-6 rounded-full hover:text-brand hover:border-brand/30"
                                   >
                                     <Trash2 className="w-3 h-3" />
@@ -832,6 +837,7 @@ export default function AgentTraining({
                         disableAnimations
                         onClick={() => saveManualEntry("knowledge", newKnowledge)}
                         disabled={!newKnowledge || isSavingEntry}
+                        aria-label="Add knowledge entry"
                         className="w-9 h-9 rounded-full bg-brand/15 border-brand/30 text-brand hover:bg-brand/25"
                       >
                         <Plus className="w-3.5 h-3.5" />

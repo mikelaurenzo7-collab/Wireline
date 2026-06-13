@@ -112,13 +112,9 @@ export function CarrierPanel({
             <div className="rounded-md wl-panel border border-brand/30 p-3 space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                <p className="wl-label text-ink/80">
-                  Voice network key
-                </p>
+                <p className="wl-label text-ink/80">Voice network key</p>
               </div>
-              <p className="wl-label text-brand">
-                Managed by Wireline
-              </p>
+              <p className="wl-label text-brand">Managed by Wireline</p>
             </div>
             <div
               className={cn(
@@ -135,26 +131,16 @@ export function CarrierPanel({
                     hasBrowserVoiceKey ? "bg-brand" : "bg-rose-500",
                   )}
                 />
-                <p className="wl-label text-ink/80">
-                  Browser voice key
-                </p>
+                <p className="wl-label text-ink/80">Browser voice key</p>
               </div>
-              <p
-                className={cn(
-                  "wl-label",
-                  hasBrowserVoiceKey ? "text-brand" : "text-rose-500",
-                )}
-              >
+              <p className={cn("wl-label", hasBrowserVoiceKey ? "text-brand" : "text-rose-500")}>
                 {hasBrowserVoiceKey ? "Connected" : "Missing"}
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label
-              htmlFor="vapi-phone-number-id"
-              className="wl-label text-ink/40"
-            >
+            <label htmlFor="vapi-phone-number-id" className="wl-label text-ink/40">
               Default Wireline phone number ID
             </label>
             <Input
@@ -170,10 +156,7 @@ export function CarrierPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label
-              htmlFor="vapi-inbound-agent-id"
-              className="wl-label text-ink/40"
-            >
+            <label htmlFor="vapi-inbound-agent-id" className="wl-label text-ink/40">
               Default inbound voice agent
             </label>
             <div className="relative">
@@ -228,9 +211,7 @@ export function CarrierPanel({
                 </p>
 
                 <div className="rounded-md wl-panel border border-input p-4 space-y-3 bg-black/10">
-                  <div className="wl-label text-brand">
-                    Custom Model Selection
-                  </div>
+                  <div className="wl-label text-brand">Custom Model Selection</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {[
                       {
@@ -268,19 +249,14 @@ export function CarrierPanel({
                       >
                         <div className="flex items-baseline justify-between mb-0.5">
                           <span className="text-sm text-ink">{p.label}</span>
-                          <span className="wl-label-muted">
-                            {p.sub}
-                          </span>
+                          <span className="wl-label-muted">{p.sub}</span>
                         </div>
                         <p className="wl-micro-meta--muted leading-snug">{p.desc}</p>
                       </ShadButton>
                     ))}
                   </div>
                   <div className="space-y-1.5 pt-2">
-                    <label
-                      htmlFor="voice-llm-model"
-                      className="wl-label text-ink/40"
-                    >
+                    <label htmlFor="voice-llm-model" className="wl-label text-ink/40">
                       Model Revision Override
                     </label>
                     <Input
@@ -523,6 +499,7 @@ export function CarrierPanel({
                   twilio_messaging_enabled: !settings.twilio_messaging_enabled,
                 })
               }
+              aria-label="Toggle outbound SMS"
               aria-pressed={!!settings.twilio_messaging_enabled}
               className={cn(
                 "shrink-0 w-11 h-6 rounded-full p-0 relative",
@@ -539,10 +516,7 @@ export function CarrierPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label
-              htmlFor="twilio-sms-from"
-              className="wl-label text-ink/40"
-            >
+            <label htmlFor="twilio-sms-from" className="wl-label text-ink/40">
               SMS sender number
             </label>
             <Input
@@ -563,10 +537,7 @@ export function CarrierPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label
-              htmlFor="twilio-messaging-sid"
-              className="wl-label text-ink/40"
-            >
+            <label htmlFor="twilio-messaging-sid" className="wl-label text-ink/40">
               OR Messaging Service SID (recommended for scale)
             </label>
             <Input
@@ -607,9 +578,7 @@ export function CarrierPanel({
               was set up — this just exposes them to operators. */}
           <div className="mt-6 pt-5 border-t border-input space-y-3">
             <div>
-              <p className="wl-label text-ink/40 mb-1">
-                Alerts to you
-              </p>
+              <p className="wl-label text-ink/40 mb-1">Alerts to you</p>
               <p className="text-[11px] text-muted leading-relaxed">
                 Have Wireline text YOU when your agents do something worth knowing about — booked
                 meetings, escalations, hot leads, trial milestones.
@@ -634,6 +603,7 @@ export function CarrierPanel({
                     twilio_manager_alerts_enabled: !settings.twilio_manager_alerts_enabled,
                   })
                 }
+                aria-label="Toggle manager SMS alerts"
                 aria-pressed={!!settings.twilio_manager_alerts_enabled}
                 className={cn(
                   "shrink-0 w-11 h-6 rounded-full p-0 relative",
@@ -653,10 +623,7 @@ export function CarrierPanel({
 
             {settings.twilio_manager_alerts_enabled && (
               <div className="space-y-1.5">
-                <label
-                  htmlFor="manager-alert-number"
-                  className="wl-label text-ink/40"
-                >
+                <label htmlFor="manager-alert-number" className="wl-label text-ink/40">
                   Your phone number
                 </label>
                 <Input
