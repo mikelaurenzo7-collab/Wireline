@@ -1,9 +1,7 @@
 # Wingman (iOS)
 
 Native iOS + CarPlay client for the Wireline AI voice agent platform. Wingman is
-**voice-first**: it screens inbound calls and places outbound calls through your
-Wireline agents, is woken by VoIP push when a call arrives, and is driven by
-"Hey Siri, tell Wingman to…" App Intents. It is a thin client over the existing
+**voice-first for everyday people**: ask it to call the doctor, pharmacy, restaurant, school, landlord, airline, support line, family member, or local service with a clear message; it can also screen inbound calls, wake from VoIP push, and run through "Hey Siri, tell Wingman to…" App Intents. It is a thin client over the existing
 Wireline backend — no business logic, prompts, model selection, or billing lives
 here. The phone is a remote control for the fleet.
 
@@ -30,7 +28,7 @@ ios/
 │   ├── Device/DeviceActionHandler.swift  In-call actions: Maps / EventKit / Music.
 │   ├── Intents/
 │   │   ├── CallAgentIntent.swift   "Have an agent place a call."
-│   │   └── WingmanIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
+│   │   └── WingmanIntents.swift     Ask / Take this / Summarize / Attention / Open + AppShortcuts.
 │   ├── Components/BrandComponents.swift  Medallion, AgentRow, CallCard, buttons.
 │   └── Views/
 │       ├── RootTabView.swift         Signed-in shell: Home + Calls tabs.
@@ -49,7 +47,7 @@ across the whole iOS surface, all powered by **App Intents + App Shortcuts**:
 
 | Entry point | How |
 |---|---|
-| **Siri** | "Ask Wingman", "…summarize my last call", "…what needs my attention". Auto-registered, zero setup. |
+| **Siri** | "Ask Wingman", "…take this call", "…summarize my last call", "…what needs my attention". Auto-registered, zero setup. |
 | **Action button** (15 Pro+) | User assigns the *Ask Wingman* shortcut in Settings. |
 | **Back Tap** | User assigns a shortcut in Settings → Accessibility → Touch. |
 | **Home / Lock Screen widget** | `WingmanWidgets` deep-links to `wingman://ask`. |
@@ -108,7 +106,7 @@ unaffected.
 ## What's approvable vs aspirational (be honest)
 
 **Approvable / shipped intent:** CallKit inbound + outbound, the CarPlay
-Communication template (recents/contacts/dialer), Siri + App Intents to place a
+Communication template (live ops active-call handoff, recents, agents), Siri + App Intents to place a
 call, and deep-linking Maps / Spotify / Calendar (open the other app at the right
 place).
 
@@ -120,11 +118,11 @@ restricts CarPlay template categories and Wingman is a communication app.
 ## Roadmap
 
 - **Phase 1 — done:** Bearer auth, `/api/mobile/me|agents|devices|calls`,
-  outbound App Intent + the full activation layer (Siri/widgets/Ask Wingman),
+  outbound and take-this-call App Intents + the full activation layer (Siri/widgets/Ask Wingman),
   CallKit + PushKit VoIP inbound, recap pushes, Personal/Business workspace,
   Calls tab, and "take this call" handoff (`/api/mobile/calls/:id/handoff`).
 - **Phase 2 — in code, gated on entitlement:** CarPlay Communication scene
-  (`CarPlay/CarPlaySceneDelegate.swift`) — call-back list + agents. Activates
+  (`CarPlay/CarPlaySceneDelegate.swift`) — live ops handoff, call-back list, business workspace, and agents. Activates
   once Apple grants `carplay-communication`. (Calls already appear in CarPlay's
   native UI via CallKit regardless.)
 - **Phase 3 — started:** in-call **device actions** shipped — the agent can
@@ -143,6 +141,10 @@ holds the tokens, mirrored from the web's `src/index.css`; apply them with
 `.tint(Brand.purple)` and the `.wingmanBrand()` view modifier. The CallKit and
 CarPlay call surfaces are system-rendered (Apple's, not themeable) — we only
 contribute the app icon, accent tint, and call labels there.
+
+## Everyday shortcuts, App Store + CarPlay readiness
+
+Start with [EVERYDAY_SHORTCUTS_PLAN.md](./EVERYDAY_SHORTCUTS_PLAN.md) for the consumer-first Siri, Shortcuts, widgets, Action button, Back Tap, Control Center, Spotlight, CarPlay, and future Apple Watch plan. Then use [APP_STORE_CARPLAY_READINESS.md](./APP_STORE_CARPLAY_READINESS.md) for the submission plan, CarPlay entitlement packet, App Review notes template, intent inventory, screenshot set, and release blockers.
 
 ## Build
 

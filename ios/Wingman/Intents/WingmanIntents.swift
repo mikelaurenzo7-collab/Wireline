@@ -12,13 +12,47 @@ import SwiftUI
 /// composer (the in-app big button presents the same surface).
 struct AskWingmanIntent: AppIntent {
     static var title: LocalizedStringResource = "Ask Wingman"
-    static var description = IntentDescription("Open Wingman to make a request.")
+    static var description = IntentDescription("Open Wingman to make an everyday call request.")
     static var openAppWhenRun = true
 
     @MainActor
     func perform() async throws -> some IntentResult {
         WingmanRouter.shared.route = .ask
         return .result()
+    }
+}
+
+/// "Have Wingman take this" — transfers the latest eligible live call to the
+/// user's saved callback number. This is intentionally narrow: it does not
+/// browse calls or expose transcripts from Siri/CarPlay; it just performs the
+/// active communication handoff the user explicitly requested.
+struct TakeThisCallIntent: AppIntent {
+    static var title: LocalizedStringResource = "Have Wingman take this"
+    static var description = IntentDescription("Transfer your latest live Wingman call to your callback number.")
+    static var openAppWhenRun = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard KeychainStore.loadToken() != nil else {
+            return .result(dialog: "Open Wingman and sign in first.")
+        }
+        do {
+            let activeCalls = try await WingmanAPI.shared.activeCalls()
+            guard let call = activeCalls.first else {
+                return .result(dialog: "I don't see a live call to take over right now.")
+            }
+            try await WingmanAPI.shared.handoffCall(callId: call.callId)
+            let label = call.label ?? call.customerNumber ?? "that call"
+            return .result(dialog: "I'm transferring \(label) to you now.")
+        } catch WingmanAPI.APIError.http(status: 400, body: _) {
+            return .result(dialog: "Add your callback number in Wingman settings, then try again.")
+        } catch WingmanAPI.APIError.http(status: 404, body: _) {
+            return .result(dialog: "That live call is no longer available.")
+        } catch WingmanAPI.APIError.http(status: 409, body: _) {
+            return .result(dialog: "That call can't be transferred yet.")
+        } catch {
+            return .result(dialog: "I couldn't reach Wingman just now. Try again in a moment.")
+        }
     }
 }
 
@@ -107,10 +141,24 @@ struct WingmanShortcuts: AppShortcutsProvider {
             phrases: [
                 "Have \(.applicationName) place a call",
                 "Tell \(.applicationName) to call someone",
+                "Have \(.applicationName) call the doctor",
+                "Ask \(.applicationName) to make a call",
             ],
             shortTitle: "Place a call",
             systemImageName: "phone.arrow.up.right"
         )
+
+        AppShortcut(
+            intent: TakeThisCallIntent(),
+            phrases: [
+                "Have \(.applicationName) take this",
+                "Ask \(.applicationName) to take this call",
+                "Tell \(.applicationName) to transfer this call to me",
+            ],
+            shortTitle: "Take this call",
+            systemImageName: "phone.arrow.down.left"
+        )
+
         AppShortcut(
             intent: SummarizeLastCallIntent(),
             phrases: [

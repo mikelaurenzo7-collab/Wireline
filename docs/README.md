@@ -22,6 +22,16 @@ Quick links to every operational and technical document in this repository.
 | [scripts/restore-drill.md](../scripts/restore-drill.md) | Disaster recovery PITR drill — RTO/RPO measurement            |
 | [OPERATOR_SUCCESS.md](./OPERATOR_SUCCESS.md)            | Activation ladder, quality checklist, north-star metrics      |
 
+## Security automation
+
+| Check | Purpose |
+| ----- | ------- |
+| `npm run authz:check` | Regenerates `docs/AUTHZ_MATRIX.md` and fails if a route is neither protected nor explicitly allowlisted as public. |
+| `npm run tenant-insert:check` | Guards service-role inserts into tenant-owned tables so new rows include an obvious `userId` or user-scoped values object. |
+| `npm run api-error:check` | Enforces the API error-shape ratchet so legacy inline error responses do not regress. |
+
+These checks are part of `npm run verify`; keep new security ratchets wired into that command so local and CI validation stay identical.
+
 ## Getting Started
 
 | Document                                              | Purpose                                              |
