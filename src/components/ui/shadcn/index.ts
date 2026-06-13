@@ -4,7 +4,7 @@
  * This is the **canonical** UI layer for Wireline. Pages and feature
  * components should compose primitives from here rather than rolling their
  * own `<button>` / `<input>` / modal / tabs / etc. Combined with the
- * Aurora Cream tokens in `src/index.css` (`--background`, `--primary`,
+ * Rich Cream + Purple tokens in `src/index.css` (`--background`, `--primary`,
  * `--card`, `--ring`, …), this guarantees:
  *
  *   - Theme/dark-mode flips work everywhere (tokens, not literals)

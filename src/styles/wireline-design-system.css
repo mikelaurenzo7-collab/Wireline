@@ -34,7 +34,7 @@
 /* Refined glass layering for surfaces that need it (modals, sticky chrome, icon buttons).
    Never use on standard card bodies — use .elev-* + bg-card instead. */
 .glass-1 {
-  background: color-mix(in srgb, #f5f0e6 88%, white);
+  background: color-mix(in srgb, #f5f1e8 88%, white);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid rgba(26, 22, 20, 0.08);
@@ -45,7 +45,7 @@
 }
 
 .glass-2 {
-  background: color-mix(in srgb, #f5f0e6 92%, white);
+  background: color-mix(in srgb, #f5f1e8 92%, white);
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
   border: 1px solid rgba(26, 22, 20, 0.06);
@@ -55,7 +55,7 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Editorial hairline / aurora divider — consistent across the system */
+/* Editorial hairline — consistent across the system */
 .hairline {
   height: 1px;
   background: linear-gradient(
@@ -74,7 +74,9 @@
   );
 }
 
-.aurora-divider {
+/* Single-hue purple divider — renamed from .aurora-divider in the
+ * Rich Cream + Purple rebrand (June 2026). */
+.wl-divider {
   height: 1px;
   background: linear-gradient(
     to right,
@@ -225,7 +227,8 @@
   );
 }
 
-/* ── CSP-safe data-attribute theming (replaces runtime style={}) ─────────── */
+/* ── CSP-safe data-attribute theming (replaces runtime style={}
+) ─────────── */
 
 [data-accent] {
   --wl-accent: attr(data-accent type(<color>));
@@ -702,24 +705,24 @@
     1px 0 24px -8px rgba(20, 8, 32, 0.45);
 }
 .wl-chrome-logo-chip {
-  background: var(--wl-cream, #f5f0e6);
+  background: var(--wl-cream, #f5f1e8);
   box-shadow:
     0 4px 14px -4px rgba(0, 0, 0, 0.2),
     0 0 0 1px rgba(255, 255, 255, 0.22) inset;
 }
 .wl-chrome-logo-chip--paper {
-  background: var(--color-paper, #efe9dc);
+  background: var(--color-paper, #f5f1e8);
   box-shadow:
     0 4px 14px -4px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.22) inset;
 }
 .wl-avatar-cream {
-  background: var(--wl-cream, #f5f0e6);
+  background: var(--wl-cream, #f5f1e8);
   color: var(--color-brand-deep, #3b154c);
 }
 .wl-live-pulse-dot {
-  background: rgba(239, 233, 220, 0.32);
-  box-shadow: 0 0 0 1px rgba(239, 233, 220, 0.18);
+  background: rgba(245, 241, 232, 0.32);
+  box-shadow: 0 0 0 1px rgba(245, 241, 232, 0.18);
 }
 .wl-live-pulse-dot--active {
   background: var(--color-brand, #8b3fd6);
@@ -760,7 +763,7 @@
 }
 .wl-topnav-active-text--dark,
 .wl-topnav-active-text--drawer {
-  color: var(--color-paper, #efe9dc);
+  color: var(--color-paper, #f5f1e8);
 }
 .wl-panel-editorial {
   box-shadow:
@@ -791,10 +794,10 @@
   background: var(--color-brand-mid, #6b2b99);
   box-shadow: 0 4px 12px -4px rgba(107, 43, 153, 0.55);
 }
-.wl-aurora-dark-base {
+.wl-canvas-dark-base {
   background: linear-gradient(180deg, #2d1a3e 0%, var(--color-brand-ink, #2e0f4a) 100%);
 }
-.wl-aurora-grain {
+.wl-paper-grain {
   background-image:
     radial-gradient(circle at 25% 30%, rgba(26, 22, 20, 0.014) 0.6px, transparent 0.8px),
     radial-gradient(circle at 70% 65%, rgba(26, 22, 20, 0.01) 0.5px, transparent 0.7px);
@@ -802,12 +805,12 @@
     48px 48px,
     64px 64px;
 }
-.wl-aurora-top-highlight {
+.wl-canvas-top-highlight {
   /* Soft top sheen — restrained so it reads as light catching premium paper,
    * not a white wash. Tied to the richer cream token; less white, less reach. */
   background: radial-gradient(
     118% 62% at 50% -10%,
-    color-mix(in srgb, var(--wl-cream, #f0e6d4) 52%, white) 0%,
+    color-mix(in srgb, var(--wl-cream, #f5f1e8) 52%, white) 0%,
     transparent 38%
   );
 }
@@ -817,14 +820,14 @@
      strengths smeared like an ink bleed near panel headers. */
   background: radial-gradient(
     circle at 30% 30%,
-    color-mix(in srgb, var(--wl-route-from) 6.5%, var(--wl-cream, #f5f0e6)),
+    color-mix(in srgb, var(--wl-route-from) 6.5%, var(--wl-cream, #f5f1e8)),
     transparent 58%
   );
 }
 .wl-route-ambience-b {
   background: radial-gradient(
     circle at 60% 60%,
-    color-mix(in srgb, var(--wl-route-to) 5.5%, var(--wl-cream, #f5f0e6)),
+    color-mix(in srgb, var(--wl-route-to) 5.5%, var(--wl-cream, #f5f1e8)),
     transparent 60%
   );
 }
@@ -954,7 +957,7 @@ body,
  * Replaces heavy flat borders with ambient luminosity. Panels feel like
  * they exist in physical space — lit from above, floating over depth. */
 .wl-panel {
-  background: color-mix(in srgb, var(--paper, #f0e6d4) 94%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 94%, white);
   backdrop-filter: blur(12px) saturate(110%);
   -webkit-backdrop-filter: blur(12px) saturate(110%);
   border: 1px solid rgba(26, 22, 20, 0.07);
@@ -978,7 +981,7 @@ body,
 
 /* Elevated version for primary workspace containers */
 .wl-panel-elevated {
-  background: color-mix(in srgb, var(--paper, #f0e6d4) 89%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 89%, white);
   backdrop-filter: blur(16px) saturate(120%);
   -webkit-backdrop-filter: blur(16px) saturate(120%);
   border: 1px solid rgba(26, 22, 20, 0.09);
@@ -1013,7 +1016,7 @@ body,
   position: sticky;
   left: 0;
   z-index: 2;
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 96%, white);
   box-shadow:
     1px 0 0 rgba(26, 22, 20, 0.08),
     8px 0 14px -10px rgba(26, 22, 20, 0.18);
@@ -1355,7 +1358,7 @@ body,
   pointer-events: none;
   background: linear-gradient(
     to left,
-    color-mix(in srgb, var(--paper, #f5f0e6) 92%, white),
+    color-mix(in srgb, var(--paper, #f5f1e8) 92%, white),
     transparent
   );
 }
@@ -1410,7 +1413,7 @@ body,
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
   border-top: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, transparent);
 }
 @media (min-width: 1024px) {
@@ -1460,7 +1463,7 @@ body,
   margin-inline: -0.75rem;
   padding-inline: 0.75rem;
   padding-bottom: 0.375rem;
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
 }
 @media (min-width: 640px) {
   .wl-composer-accessory-catalog-sticky {
@@ -1488,7 +1491,7 @@ body,
   padding: 0.375rem 0.625rem;
   border-radius: 9999px;
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 14%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 70%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 70%, white);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1517,11 +1520,11 @@ body,
   height: 5px;
   border-radius: 9999px;
   background: var(--color-brand, #8b3fd6);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--paper, #f5f0e6) 80%, white);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--paper, #f5f1e8) 80%, white);
 }
 .wl-composer-tool-chip--active {
   border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 38%, transparent);
-  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, var(--paper, #f5f1e8));
   color: var(--color-brand, #8b3fd6);
   box-shadow:
     inset 0 -2px 0 var(--color-brand, #8b3fd6),
@@ -1537,7 +1540,7 @@ body,
   padding: 0.375rem 0.75rem;
   border-radius: 9999px;
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 16%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 72%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 72%, white);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1551,7 +1554,7 @@ body,
   min-height: 2.5rem;
   padding: 0.5rem 0.875rem;
   border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 42%, transparent);
-  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 12%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 12%, var(--paper, #f5f1e8));
   color: var(--color-brand, #8b3fd6);
   box-shadow:
     inset 0 -2px 0 var(--color-brand, #8b3fd6),
@@ -1581,7 +1584,7 @@ body,
   letter-spacing: 0.06em;
   line-height: 1.1;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--wl-cream, #f5f0e6) 88%, white);
+  color: color-mix(in srgb, var(--wl-cream, #f5f1e8) 88%, white);
   background: color-mix(in srgb, var(--color-brand, #8b3fd6) 55%, transparent);
   border: 1px solid color-mix(in srgb, white 22%, transparent);
 }
@@ -1602,7 +1605,7 @@ body,
   resize: vertical;
   border-radius: 0.625rem;
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 14%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
   padding: 0.625rem 0.75rem;
   font-size: 0.8125rem;
   line-height: 1.45;
@@ -1628,7 +1631,7 @@ body,
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-brand, #8b3fd6);
-  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, var(--paper, #f5f1e8));
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 22%, transparent);
 }
 
@@ -1649,7 +1652,7 @@ body,
   padding: 0.5rem 0.625rem;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 12%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 70%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 70%, white);
 }
 
 .wl-design-setup-nudge {
@@ -1737,7 +1740,7 @@ body,
 .wl-proposal-card[data-proposal="true"]:not([data-resolved="true"]) {
   border-style: dashed;
   border-color: rgba(139, 63, 214, 0.22);
-  background: color-mix(in srgb, var(--color-brand) 2%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 2%, var(--paper, #f5f1e8));
 }
 .dark .wl-proposal-card[data-proposal="true"]:not([data-resolved="true"]) {
   background: color-mix(in srgb, var(--color-brand) 4%, transparent);
@@ -2007,7 +2010,7 @@ body,
 .wl-starter-chip {
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 14%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 94%, white);
   /* Frosted depth (previously layered via .glass-1 in feature code; folded in
      here so the chip owns its full surface and the .glass ratchet stays at 0). */
   backdrop-filter: blur(12px) saturate(140%);
@@ -2020,7 +2023,7 @@ body,
 }
 .wl-starter-chip:hover {
   border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.75) inset,
     0 6px 16px -10px rgba(107, 43, 153, 0.2);
@@ -2109,7 +2112,7 @@ body,
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 96%, white);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 .dark .wl-integration-preview-card {
@@ -2171,7 +2174,7 @@ body,
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: var(--paper, #f5f0e6);
+  background: var(--paper, #f5f1e8);
   overflow-y: auto;
 }
 @media (min-width: 768px) {
@@ -2206,14 +2209,14 @@ body,
 /* Help center — calm operator cards (no gradient carnival) */
 .wl-help-agent-card {
   border: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 10%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 92%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 92%, white);
   transition:
     border-color 0.15s ease,
     background 0.15s ease;
 }
 .wl-help-agent-card:hover {
   border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
-  background: color-mix(in srgb, var(--color-brand) 4%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 4%, var(--paper, #f5f1e8));
 }
 .wl-help-agent-card[data-demo="true"] {
   border-style: dashed;
@@ -2238,7 +2241,7 @@ body,
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 8%, transparent);
   border-radius: 0.375rem;
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 96%, white);
   transition:
     border-color 0.15s ease,
     background 0.15s ease;
@@ -2248,7 +2251,7 @@ body,
 }
 .wl-fleet-agent-row--active {
   border-color: color-mix(in srgb, var(--color-brand) 35%, transparent);
-  background: color-mix(in srgb, var(--color-brand) 8%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--paper, #f5f1e8));
 }
 .wl-fleet-agent-row--active::before {
   content: "";
@@ -2266,7 +2269,7 @@ body,
   background: transparent;
 }
 .wl-fleet-agent-row--list:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f1e8));
 }
 .wl-fleet-agent-avatar {
   width: 2.25rem;
@@ -2277,7 +2280,7 @@ body,
   justify-content: center;
   flex-shrink: 0;
   border: 1px solid color-mix(in srgb, var(--color-ink, #1a1424) 8%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
   color: color-mix(in srgb, var(--color-ink, #1a1424) 65%, transparent);
   transition:
     border-color 0.15s ease,
@@ -2424,7 +2427,7 @@ body,
   padding: 0.4rem 0.75rem;
   border-radius: 9999px;
   border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 22%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 92%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 92%, white);
   box-shadow: 0 4px 20px rgba(59, 21, 76, 0.12);
   font-size: 0.625rem;
   font-weight: 600;
@@ -2438,7 +2441,7 @@ body,
 
 .wl-director-artifacts-panel {
   border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 14%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 94%, white);
 }
 .dark .wl-director-artifacts-panel {
   background: color-mix(in srgb, var(--background) 82%, #0f0c17);
@@ -2446,7 +2449,7 @@ body,
 
 .wl-director-research-sources {
   border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 12%, transparent);
-  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 4%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand, #8b3fd6) 4%, var(--paper, #f5f1e8));
 }
 .dark .wl-director-research-sources {
   background: color-mix(in srgb, var(--color-brand, #8b3fd6) 6%, var(--background));
@@ -2723,12 +2726,12 @@ body,
 .dark .wl-banner--info {
   background: rgba(139, 63, 214, 0.12);
   border-bottom-color: rgba(139, 63, 214, 0.28);
-  color: rgba(239, 233, 220, 0.92);
+  color: rgba(245, 241, 232, 0.92);
 }
 .dark .wl-banner--warn {
   background: rgba(139, 63, 214, 0.16);
   border-bottom-color: rgba(139, 63, 214, 0.35);
-  color: rgba(239, 233, 220, 0.95);
+  color: rgba(245, 241, 232, 0.95);
 }
 .dark .wl-banner--critical {
   background: rgba(232, 70, 106, 0.14);
@@ -2803,7 +2806,7 @@ body,
   background: rgba(255, 255, 255, 0.04);
 }
 .app-segment-strip.wl-panel {
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 90%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 90%, white);
 }
 
 /* Filter triggers and compact selects on channel pages */
@@ -2899,8 +2902,8 @@ body,
 @utility brutal-card {
   @apply relative overflow-hidden p-6 md:p-8 border border-black/8;
   background:
-    linear-gradient(180deg, rgba(247, 242, 234, 0.8), rgba(245, 239, 229, 0.55)),
-    rgba(239, 233, 220, 0.75);
+    linear-gradient(180deg, rgba(249, 246, 240, 0.8), rgba(248, 244, 237, 0.55)),
+    rgba(245, 241, 232, 0.75);
   backdrop-filter: blur(32px) saturate(140%);
   -webkit-backdrop-filter: blur(32px) saturate(140%);
   box-shadow:
@@ -2965,18 +2968,21 @@ body,
  * Color note (Mike feedback): the top gradient used to be near-pure
  * white rgba(255,255,255,X). On signed-in pages dominated by glass
  * cards, that pushed the WHOLE viewport toward white and broke the
- * warm-terracotta brand feel that AuthPortal nails. Switched the
- * gradient stops to derive from --color-paper (#EFE9DC) so every
- * glass surface inherits the same warm cream — auth'd console and
- * AuthPortal now read as the same brand canvas. */
-/* Glass panels derive from the warm-tan paper base (#EFE9DC → rgb
- * 239,233,220) but sit a touch lighter so cards read as raised. Keep
- * these in lockstep with --color-paper so the whole app stays one
- * consistent warm tone — no white-vs-purple drift. */
+ * warm brand feel that AuthPortal nails. The gradient stops derive
+ * from the cream paper base so every glass surface inherits the same
+ * cream — auth'd console and AuthPortal read as one brand canvas.
+ *
+ * Lightened June 2026: the paper base moved from the rich tan #EFE9DC
+ * to the lighter #F5F1E8, so these stops were lifted in lockstep
+ * (rgb 239,233,220 → 245,241,232) — still cream, just brighter and
+ * less yellow for readability. */
+/* Glass panels derive from the light cream paper base but sit a touch
+ * lighter still so cards read as raised. Keep these in lockstep with
+ * --color-paper so the whole app stays one consistent cream tone. */
 .glass {
   background:
-    linear-gradient(180deg, rgba(250, 247, 240, 0.78), rgba(238, 231, 218, 0.62)),
-    rgba(245, 239, 229, 0.58);
+    linear-gradient(180deg, rgba(250, 247, 240, 0.78), rgba(245, 241, 232, 0.62)),
+    rgba(248, 244, 237, 0.58);
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
   border: 1px solid rgba(26, 22, 20, 0.085);
@@ -2987,8 +2993,8 @@ body,
 
 .glass-strong {
   background:
-    linear-gradient(180deg, rgba(250, 247, 241, 0.94), rgba(239, 232, 219, 0.86)),
-    rgba(245, 239, 229, 0.88);
+    linear-gradient(180deg, rgba(250, 247, 241, 0.94), rgba(245, 241, 232, 0.86)),
+    rgba(248, 244, 237, 0.88);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(26, 22, 20, 0.1);
@@ -3033,114 +3039,7 @@ body,
 
 .animate-pulse-intense {
   animation: pulse-intense 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes aurora-pan {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes aurora-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(2%, -2%, 0) scale(1.05);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-.animate-aurora-drift {
-  animation: aurora-drift 18s ease-in-out infinite;
-}
-
-@keyframes aurora-blob-1 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(6%, -4%, 0) scale(1.08);
-  }
-  66% {
-    transform: translate3d(-4%, 6%, 0) scale(0.96);
-  }
-}
-
-@keyframes aurora-blob-2 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(-5%, 6%, 0) scale(0.94);
-  }
-  66% {
-    transform: translate3d(4%, -4%, 0) scale(1.06);
-  }
-}
-
-@keyframes aurora-blob-3 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(3%, 3%, 0) scale(1.1);
-  }
-}
-
-.animate-aurora-blob-1 {
-  animation: aurora-blob-1 25s ease-in-out infinite;
-}
-
-.animate-aurora-blob-2 {
-  animation: aurora-blob-2 30s ease-in-out infinite;
-}
-
-.animate-aurora-blob-3 {
-  animation: aurora-blob-3 20s ease-in-out infinite;
-}
-
-/* Auth-portal aurora — slow breathing radial blobs behind the form
-   column. Two layers run on offset durations (14s vs 19s) so the motion
-   never feels synchronized or mechanical. translate3d nudges the GPU
-   compositor; scale lets the blob "breathe" rather than slide. */
-@keyframes wireline-aurora-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate3d(-6%, 5%, 0) scale(1.08);
-    opacity: 0.42;
-  }
-}
-@keyframes wireline-aurora-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate3d(7%, -4%, 0) scale(1.12);
-    opacity: 0.38;
-  }
-}
-
-/* Respect prefers-reduced-motion — kills the breathing for visitors
-   who've asked browsers to minimise animation. */
-@media (prefers-reduced-motion: reduce) {
-  [class*="wireline-aurora-"] {
-    animation: none !important;
-  }
-}
+}/* (Auth-portal aurora-blob breathing animation retired with the Rich Cream + Purple rebrand.) */
 
 @keyframes shimmer {
   0% {
@@ -3355,12 +3254,8 @@ body,
    stops the constant pan/drift/shimmer motion that some users find
    distracting or that wastes battery on laptops. */
 @media (prefers-reduced-motion: reduce) {
-  .text-aurora,
+  .text-brand-display,
   .brand-wordmark,
-  .animate-aurora-drift,
-  .animate-aurora-blob-1,
-  .animate-aurora-blob-2,
-  .animate-aurora-blob-3,
   .animate-pulse-intense,
   .skeleton-shimmer,
   .shimmer-line {
@@ -3383,15 +3278,6 @@ body,
     animation: none !important;
   }
 }
-
-/* Soft glow ring for focused / selected items */
-.ring-aurora {
-  box-shadow:
-    0 0 0 1px rgba(107, 43, 153, 0.5),
-    0 0 20px rgba(107, 43, 153, 0.25),
-    0 0 40px rgba(107, 43, 153, 0.1);
-}
-
 .font-display {
   font-family: var(--font-display);
 }
@@ -3454,7 +3340,7 @@ body,
  * Scope cream regardless of light/dark so "Standing by", footer eyebrows, and
  * collapse labels stay legible. */
 [data-rail] .chrome-eyebrow {
-  color: color-mix(in srgb, var(--wl-cream, #f5f0e6) 74%, transparent);
+  color: color-mix(in srgb, var(--wl-cream, #f5f1e8) 74%, transparent);
 }
 
 .chrome-muted {
@@ -3792,7 +3678,7 @@ body,
 .app-surface select {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.28)),
-    rgba(239, 233, 220, 0.38) !important;
+    rgba(245, 241, 232, 0.38) !important;
   border-color: rgba(26, 22, 20, 0.13) !important;
   color: var(--color-ink);
   box-shadow:
@@ -3816,7 +3702,7 @@ body,
   border-color: rgba(26, 22, 20, 0.075) !important;
   background:
     linear-gradient(180deg, rgba(250, 247, 241, 0.8), rgba(241, 235, 224, 0.58)),
-    rgba(245, 239, 229, 0.64) !important;
+    rgba(248, 244, 237, 0.64) !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.78) inset,
     0 20px 50px -34px rgba(26, 22, 20, 0.32);
@@ -3832,7 +3718,7 @@ body,
 .brand-preview-card {
   border: 1px solid rgba(26, 22, 20, 0.085);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.36), rgba(239, 233, 220, 0.68)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.36), rgba(245, 241, 232, 0.68)),
     var(--color-paper);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.76) inset,
@@ -3869,7 +3755,7 @@ body,
 .app-tab-strip,
 .wl-subtab-strip {
   border-color: rgba(26, 22, 20, 0.08) !important;
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 90%, white) !important;
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 90%, white) !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.7) inset,
     0 4px 14px -12px rgba(26, 22, 20, 0.08);
@@ -3878,7 +3764,7 @@ body,
 /* Sticky workspace top bar — title + section tabs + tools */
 .workspace-top-bar .app-tab-strip,
 .workspace-top-bar .wl-subtab-strip {
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 82%, white) !important;
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 82%, white) !important;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset;
 }
 
@@ -3909,7 +3795,7 @@ body,
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(239, 233, 220, 0.2) transparent;
+  scrollbar-color: rgba(245, 241, 232, 0.2) transparent;
 }
 @media (min-height: 760px) {
   .wl-rail-nav {
@@ -3924,8 +3810,8 @@ body,
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(239, 233, 220, 0.14) 20%,
-    rgba(239, 233, 220, 0.14) 80%,
+    rgba(245, 241, 232, 0.14) 20%,
+    rgba(245, 241, 232, 0.14) 80%,
     transparent
   );
 }
@@ -4115,7 +4001,7 @@ body.wl-col-resizing * {
   position: relative;
   border-radius: 0.75rem;
   border: 1px solid rgba(139, 63, 214, 0.1);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 94%, white);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
     0 16px 48px -32px rgba(59, 21, 76, 0.12),
@@ -4136,7 +4022,7 @@ body.wl-col-resizing * {
   position: relative;
   border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 12%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 96%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 96%, white);
   box-shadow: 0 0 0 1px rgba(26, 22, 20, 0.03);
   overflow: hidden;
 }
@@ -4183,7 +4069,7 @@ body.wl-col-resizing * {
   padding: 0.65rem 0.75rem 0.7rem 0.85rem;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
   overflow: hidden;
 }
 .wl-ops-metric::before {
@@ -4215,7 +4101,7 @@ button.wl-ops-metric--interactive {
 }
 button.wl-ops-metric--interactive:hover {
   border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f1e8));
 }
 button.wl-ops-metric--interactive:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
@@ -4223,7 +4109,7 @@ button.wl-ops-metric--interactive:focus-visible {
 }
 button.wl-ops-metric--interactive[data-active="true"] {
   border-color: color-mix(in srgb, var(--color-brand) 32%, transparent);
-  background: color-mix(in srgb, var(--color-brand) 8%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 8%, var(--paper, #f5f1e8));
   box-shadow: 0 1px 0 color-mix(in srgb, white 65%, transparent) inset;
 }
 .dark button.wl-ops-metric--interactive:hover {
@@ -4284,7 +4170,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
   position: relative;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-ink) 8%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 90%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 90%, white);
   padding: 1rem 1rem 1rem 1.15rem;
   overflow: hidden;
   transition:
@@ -4313,13 +4199,13 @@ button.wl-ops-metric--interactive[data-active="true"] {
 }
 .wl-ops-call-card--escalated {
   border-color: color-mix(in srgb, var(--color-destructive, #e8466a) 35%, transparent);
-  background: color-mix(in srgb, var(--color-destructive, #e8466a) 4%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-destructive, #e8466a) 4%, var(--paper, #f5f1e8));
 }
 
 .wl-ops-rail-card {
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 94%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 94%, white);
   padding: 0.9rem 1rem;
 }
 .dark .wl-ops-rail-card {
@@ -4366,7 +4252,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
   position: relative;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 22%, transparent);
-  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 5%, var(--paper, #f5f1e8));
   padding: 0.85rem 1rem 0.85rem 1.1rem;
   overflow: hidden;
 }
@@ -4387,7 +4273,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
 .wl-celebration-panel {
   border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 14%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 97%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 97%, white);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.85) inset,
     0 24px 64px -32px rgba(59, 21, 76, 0.18);
@@ -4404,7 +4290,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
   padding: 0.55rem 0.65rem;
   border-radius: 0.5rem;
   border: 1px solid color-mix(in srgb, var(--color-ink) 6%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 88%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 88%, white);
   text-align: left;
   transition:
     border-color 0.2s ease,
@@ -4412,12 +4298,12 @@ button.wl-ops-metric--interactive[data-active="true"] {
 }
 .wl-console-map-item:hover {
   border-color: color-mix(in srgb, var(--color-brand) 28%, transparent);
-  background: color-mix(in srgb, var(--color-brand) 6%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--color-brand) 6%, var(--paper, #f5f1e8));
 }
 
 /* Authenticated app — semantic status + modals (purple/cream; signal = executed/success only) */
 .wl-status-success {
-  background: color-mix(in srgb, var(--wl-signal) 10%, var(--paper, #f5f0e6));
+  background: color-mix(in srgb, var(--wl-signal) 10%, var(--paper, #f5f1e8));
   border-color: color-mix(in srgb, var(--wl-signal) 28%, transparent);
   color: color-mix(in srgb, var(--wl-signal) 72%, var(--color-ink));
 }
@@ -4467,7 +4353,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
 .wl-modal-surface {
   border-radius: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--color-brand) 14%, transparent);
-  background: color-mix(in srgb, var(--paper, #f5f0e6) 97%, white);
+  background: color-mix(in srgb, var(--paper, #f5f1e8) 97%, white);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.85) inset,
     0 24px 64px -32px rgba(59, 21, 76, 0.18);
@@ -4512,7 +4398,7 @@ button.wl-ops-metric--interactive[data-active="true"] {
   pointer-events: none;
   background: linear-gradient(
     to top,
-    color-mix(in srgb, var(--paper, #f5f0e6) 92%, transparent),
+    color-mix(in srgb, var(--paper, #f5f1e8) 92%, transparent),
     transparent
   );
   z-index: 2;
@@ -4667,7 +4553,7 @@ select:focus {
   /* Same warm-tan paper base as .glass + .glass-strong. */
   background:
     linear-gradient(180deg, rgba(248, 243, 235, 0.97), rgba(246, 241, 231, 0.86)),
-    rgba(239, 233, 220, 0.98);
+    rgba(245, 241, 232, 0.98);
   backdrop-filter: blur(56px) saturate(180%);
   -webkit-backdrop-filter: blur(56px) saturate(180%);
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -4808,15 +4694,6 @@ select:focus {
     0 6px 20px -6px rgba(107, 43, 153, 0.14);
   border-color: rgba(107, 43, 153, 0.2);
 }
-
-/* Brand badge — soft purple pill with AAA-readable text */
-.badge-aurora {
-  background: rgba(107, 43, 153, 0.1);
-  border: 1px solid rgba(107, 43, 153, 0.3);
-  color: var(--color-brand-ink);
-  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.20em] leading-none;
-}
-
 /* ── Ghost brand button — translucent purple with AAA text contrast ──── */
 .btn-ghost-brand {
   display: inline-flex;
@@ -4982,7 +4859,7 @@ select:focus {
     168deg,
     color-mix(in srgb, var(--color-paper) 96%, white) 0%,
     var(--color-paper) 45%,
-    color-mix(in srgb, var(--paper-warm, #efe9dc) 38%, var(--color-paper)) 100%
+    color-mix(in srgb, var(--paper-warm, #ece6d9) 38%, var(--color-paper)) 100%
   );
   border: 1px solid rgba(26, 22, 20, 0.07);
   box-shadow:
@@ -5112,8 +4989,9 @@ select:focus {
 
 /* -------------------------  PAGE TITLE GLOW  -------------------------- */
 
-/* Large display headings — solid warm ink, editorial weight. */
-.page-title-aurora {
+/* Large display headings — solid warm ink, editorial weight.
+ * Renamed from .page-title-aurora in the Rich Cream + Purple rebrand. */
+.wl-page-title {
   color: #1c1917;
 }
 
@@ -5217,7 +5095,7 @@ select:focus {
 /* Light mode override for the same tooltip */
 @media (prefers-color-scheme: light) {
   .recharts-tooltip-custom-glass {
-    background: rgba(239, 233, 220, 0.96) !important;
+    background: rgba(245, 241, 232, 0.96) !important;
     border-color: rgba(139, 63, 214, 0.18) !important;
   }
 }
@@ -5282,7 +5160,7 @@ select:focus {
 }
 .wl-canvas-agent-core {
   background: radial-gradient(circle at 35% 35%, rgba(79, 30, 123, 0.96), rgba(18, 0, 32, 0.98));
-  border: 1.5px solid rgba(239, 233, 220, 0.28);
+  border: 1.5px solid rgba(245, 241, 232, 0.28);
   box-shadow:
     0 0 20px rgba(79, 30, 123, 0.65),
     0 0 42px rgba(79, 30, 123, 0.2),
@@ -5331,10 +5209,10 @@ select:focus {
   box-shadow: 0 0 5px color-mix(in srgb, var(--wl-integration-accent) 44%, transparent);
 }
 .wl-canvas-node__label {
-  color: rgba(239, 233, 220, 0.32);
+  color: rgba(245, 241, 232, 0.32);
 }
 .wl-canvas-node[data-enabled="true"] .wl-canvas-node__label {
-  color: rgba(239, 233, 220, 0.85);
+  color: rgba(245, 241, 232, 0.85);
 }
 .wl-canvas-node[data-active="true"] .wl-canvas-node__label {
   color: var(--wl-integration-accent);
@@ -5470,7 +5348,7 @@ select:focus {
 
   /* Lighter glass on phones — skip expensive blur, keep warm cream opacity. */
   .glass {
-    background: color-mix(in srgb, #f5f0e6 94%, white);
+    background: color-mix(in srgb, #f5f1e8 94%, white);
     backdrop-filter: blur(10px) saturate(130%);
     -webkit-backdrop-filter: blur(10px) saturate(130%);
     border-color: rgba(0, 0, 0, 0.06);
@@ -5478,7 +5356,7 @@ select:focus {
 
   .glass-strong,
   .glass-elevated {
-    background: color-mix(in srgb, #f5f0e6 97%, white);
+    background: color-mix(in srgb, #f5f1e8 97%, white);
     backdrop-filter: blur(14px) saturate(150%);
     -webkit-backdrop-filter: blur(14px) saturate(150%);
   }
@@ -5703,8 +5581,8 @@ select:focus {
 
 /* ---------------------------------------------------------------------
  * Reduced motion — respect operator OS-level preference.
- * Wireline leans on aurora gradients, scanlines, and motion/react
- * animations everywhere. For users with prefers-reduced-motion set,
+ * Wireline leans on subtle brand-purple gradients, scanlines, and
+ * motion/react animations. For users with prefers-reduced-motion set,
  * collapse animations to a near-zero duration so they don't induce
  * vestibular distress, but keep static styling intact.
  * ---------------------------------------------------------------------*/
@@ -5717,7 +5595,7 @@ select:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Aurora orbs and scanlines are decorative-only — hide entirely. */
+  /* Decorative orbs and scanlines — hide entirely under reduced-motion. */
   .scanline {
     display: none !important;
   }
@@ -5748,8 +5626,8 @@ select:focus {
 /* Enhanced glass card reflections and colors on hover */
 .glass.card-interactive:hover {
   background:
-    linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(245, 239, 229, 0.72)),
-    rgba(239, 233, 220, 0.75);
+    linear-gradient(180deg, rgba(248, 243, 235, 0.92), rgba(248, 244, 237, 0.72)),
+    rgba(245, 241, 232, 0.75);
   border-color: rgba(139, 63, 214, 0.32);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
@@ -5759,7 +5637,7 @@ select:focus {
 .glass-strong.card-interactive:hover {
   background:
     linear-gradient(180deg, rgba(249, 244, 236, 0.98), rgba(246, 241, 231, 0.9)),
-    rgba(239, 233, 220, 0.96);
+    rgba(245, 241, 232, 0.96);
   border-color: rgba(139, 63, 214, 0.38);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
@@ -5857,7 +5735,7 @@ select:focus {
   color: #f3e8ff;
 }
 
-.dark .text-aurora,
+.dark .text-brand-display,
 .dark .text-stroke,
 .dark .brand-wordmark {
   color: #c77dff;
@@ -6311,44 +6189,7 @@ select:focus {
   opacity: 0.156;
 }
 
-/* AuroraWave — layered sinusoidal pan + undulate */
-@keyframes aurora-wave-pan {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-@keyframes aurora-wave-undulate {
-  0% {
-    transform: translateY(0) scaleY(1);
-  }
-  100% {
-    transform: translateY(-3px) scaleY(1.08);
-  }
-}
-.aurora-wave-container {
-  animation: aurora-wave-pan 20s linear infinite;
-}
-.aurora-wave-path[data-layer="0"] {
-  animation: aurora-wave-undulate 12s ease-in-out 0s infinite alternate;
-}
-.aurora-wave-path[data-layer="1"] {
-  animation: aurora-wave-undulate 16s ease-in-out 1.5s infinite alternate;
-}
-.aurora-wave-path[data-layer="2"] {
-  animation: aurora-wave-undulate 20s ease-in-out 3s infinite alternate;
-}
-.aurora-wave-path[data-layer="3"] {
-  animation: aurora-wave-undulate 24s ease-in-out 4.5s infinite alternate;
-}
-.aurora-wave-path[data-layer="4"] {
-  animation: aurora-wave-undulate 28s ease-in-out 6s infinite alternate;
-}
-.aurora-wave-path[data-layer="5"] {
-  animation: aurora-wave-undulate 32s ease-in-out 7.5s infinite alternate;
-}
+/* (AuroraWave sinusoidal pan/undulate animations retired with the Rich Cream + Purple rebrand.) */
 
 /* ConstellationField — particle drift presets */
 @keyframes constellation-drift-0 {
@@ -6852,22 +6693,7 @@ select:focus {
   filter: drop-shadow(0 3px 10px rgba(107, 43, 153, 0.12));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .aurora-wave-container,
-  .aurora-wave-path,
-  .constellation-node circle,
-  .nebula-plasma-node,
-  .pulse-ring--active .pulse-ring__ring,
-  .robot-head--animated .robot-antenna-pulse,
-  .robot-head--animated .robot-text-dot,
-  .robot-head--animated .robot-typing-cursor,
-  .robot-head--animated .robot-key,
-  .robot-head--animated .robot-call-wave,
-  .robot-head--animated .robot-call-glow,
-  .robot-head--animated .robot-wave-bar {
-    animation: none !important;
-  }
-}
+@media (prefers-reduced-motion: reduce) {}
 
 /* ── HERO WIRELINES — switchboard layer behind the landing hero ──────────
    Wires draw in from the gutter robots to a central exchange, then signal
@@ -7414,11 +7240,11 @@ select:focus {
 }
 
 .prism-badge-surface[data-variant="ghost"] .prism-frost {
-  background: rgba(239, 233, 220, 0.6);
+  background: rgba(245, 241, 232, 0.6);
 }
 
 .prism-badge-surface:not([data-variant="ghost"]) .prism-frost {
-  background: rgba(239, 233, 220, 0.45);
+  background: rgba(245, 241, 232, 0.45);
 }
 
 .prism-specular-edge {
@@ -7673,8 +7499,8 @@ select:focus {
   border-radius: 9999px;
   background: radial-gradient(
     circle at 50% 42%,
-    rgba(239, 233, 220, 0.96) 0%,
-    rgba(239, 233, 220, 0.62) 42%,
+    rgba(245, 241, 232, 0.96) 0%,
+    rgba(245, 241, 232, 0.62) 42%,
     rgba(139, 63, 214, 0.06) 68%,
     transparent 80%
   );
@@ -8197,7 +8023,7 @@ select:focus {
   }
 }
 
-/* ── AUTH PORTAL — solid rich cream canvas (no purple aurora wash) ── */
+/* ── AUTH PORTAL — solid rich cream canvas (no purple washes) ── */
 .auth-portal-canvas {
   background-color: var(--wl-cream);
   background-image: linear-gradient(
@@ -8590,12 +8416,12 @@ select:focus {
   /* Richer editorial cream, token-driven so the canvas matches the .wl-panel
    * surfaces that sit on it (both resolve from --paper). A soft top-light to
    * warm-paper foot gives depth without washing the field out. */
-  background-color: var(--paper, #f0e6d4);
+  background-color: var(--paper, #f5f1e8);
   background-image: linear-gradient(
     168deg,
-    color-mix(in srgb, var(--paper, #f0e6d4) 86%, white) 0%,
-    var(--paper, #f0e6d4) 46%,
-    var(--paper-warm, #e8dcc8) 100%
+    color-mix(in srgb, var(--paper, #f5f1e8) 86%, white) 0%,
+    var(--paper, #f5f1e8) 46%,
+    var(--paper-warm, #ece6d9) 100%
   );
 }
 .dark .authenticated-canvas {
@@ -9098,7 +8924,7 @@ html {
 }
 .dark .wl-capability-pill {
   background: rgba(139, 63, 214, 0.1);
-  color: rgba(239, 233, 220, 0.88);
+  color: rgba(245, 241, 232, 0.88);
 }
 
 /* ── BRAND SPINNER ──
@@ -9272,152 +9098,29 @@ html {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MAJESTIC MARKETING LAYER — Aurora Cream, Fable-grade
+   MAJESTIC MARKETING LAYER — Rich Cream + Purple, Fable-grade
    ───────────────────────────────────────────────────────────────────────
-   Ambient aurora light-fields, luminous gradient display type, a breathing
-   hero spotlight, live eyebrow pulses, lustre cards, and animated aurora
-   hairlines for the public marketing surfaces. Purely decorative and
-   CSP-safe — every bit of motion lives here as a keyframe, never an inline
-   style — reduced-motion aware, and tuned to stay soft on warm cream so the
-   aurora reads as intentional light, never a corner smudge.
+   Luminous single-hue purple display type, a breathing hero spotlight,
+   live eyebrow pulses, lustre cards, and animated brand-purple hairlines
+   for the public marketing surfaces. Purely decorative and CSP-safe —
+   every bit of motion lives here as a keyframe, never an inline style —
+   reduced-motion aware, and tuned to stay soft on warm cream so the
+   light reads as intentional ambience, never a corner smudge.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── AURORA FIELD ──
- * Drop-in ambient backdrop. The host element supplies positioning (fixed for
- * the page backdrop, absolute for the hero); the field only clips and holds
- * the slowly-drifting brand orbs. */
-.wl-aurora-field {
-  overflow: hidden;
-  isolation: isolate;
-}
-.wl-aurora-orb {
-  position: absolute;
-  display: block;
-  width: 38rem;
-  height: 38rem;
-  border-radius: 9999px;
-  pointer-events: none;
-  opacity: 0.72;
-  will-change: transform;
-}
-.wl-aurora-orb:nth-child(1) {
-  top: -18rem;
-  left: -14rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.15) 0%,
-    rgba(139, 63, 214, 0.055) 40%,
-    transparent 68%
-  );
-  animation: wl-aurora-drift-a 32s var(--ease-soft) infinite alternate;
-}
-.wl-aurora-orb:nth-child(2) {
-  top: -12rem;
-  right: -16rem;
-  width: 44rem;
-  height: 44rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.12) 0%,
-    rgba(155, 92, 224, 0.042) 44%,
-    transparent 70%
-  );
-  animation: wl-aurora-drift-b 41s var(--ease-soft) infinite alternate;
-}
-.wl-aurora-orb:nth-child(3) {
-  bottom: -22rem;
-  left: 28%;
-  width: 56rem;
-  height: 56rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(107, 43, 153, 0.085) 0%,
-    rgba(107, 43, 153, 0.03) 48%,
-    transparent 72%
-  );
-  animation: wl-aurora-drift-c 49s var(--ease-soft) infinite alternate;
-}
-/* 4th orb — mid-screen warm bloom, drifts from right to left */
-.wl-aurora-orb.wl-aurora-orb--mid {
-  top: 18%;
-  right: 22%;
-  width: 36rem;
-  height: 36rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(107, 43, 153, 0.09) 0%,
-    rgba(139, 63, 214, 0.032) 46%,
-    transparent 70%
-  );
-  animation: wl-aurora-drift-d 37s var(--ease-soft) infinite alternate;
-}
-
-@keyframes wl-aurora-drift-d {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1.04);
-  }
+/* (Aurora field + drifting orb keyframes retired with the Rich Cream +
+ * Purple rebrand. The marketing backdrop is now a flat cream canvas.) */
+@keyframes wl-spotlight-breathe {
+  0%,
   100% {
-    transform: translate3d(-5rem, 2rem, 0) scale(0.92);
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(1.04);
   }
 }
-
-.dark .wl-aurora-orb:nth-child(1) {
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.28) 0%,
-    rgba(155, 92, 224, 0.1) 42%,
-    transparent 70%
-  );
-}
-.dark .wl-aurora-orb:nth-child(2) {
-  background: radial-gradient(
-    circle at center,
-    rgba(199, 125, 255, 0.22) 0%,
-    rgba(199, 125, 255, 0.08) 46%,
-    transparent 72%
-  );
-}
-.dark .wl-aurora-orb:nth-child(3) {
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.2) 0%,
-    rgba(139, 63, 214, 0.07) 50%,
-    transparent 74%
-  );
-}
-.dark .wl-aurora-orb.wl-aurora-orb--mid {
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.18) 0%,
-    rgba(139, 63, 214, 0.065) 46%,
-    transparent 70%
-  );
-}
-@keyframes wl-aurora-drift-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(5rem, 3rem, 0) scale(1.12);
-  }
-}
-@keyframes wl-aurora-drift-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1.06);
-  }
-  100% {
-    transform: translate3d(-4rem, 4rem, 0) scale(0.94);
-  }
-}
-@keyframes wl-aurora-drift-c {
-  0% {
-    transform: translate3d(0, 0, 0) scale(0.96);
-  }
-  100% {
-    transform: translate3d(4rem, -3rem, 0) scale(1.1);
-  }
-}
-
 /* ── HERO SPOTLIGHT ──
  * A soft, breathing column of brand light centered behind the headline.
  * Pairs with the switchboard wirelines for a composed, living hero scene. */
@@ -9435,7 +9138,7 @@ html {
     rgba(139, 63, 214, 0.046) 42%,
     transparent 68%
   );
-  animation: wl-aurora-breathe 8s ease-in-out infinite;
+  animation: wl-spotlight-breathe 8s ease-in-out infinite;
 }
 .dark .wl-hero-spotlight {
   background: radial-gradient(
@@ -9445,21 +9148,11 @@ html {
     transparent 70%
   );
 }
-@keyframes wl-aurora-breathe {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.05);
-  }
-}
-
-/* ── AURORA DISPLAY TYPE ──
- * Luminous brand gradient that slowly pans across display headlines. */
-.wl-aurora-text {
+/* ── RICH PURPLE DISPLAY TYPE ──
+ * Single-hue purple gradient (all shades of brand purple) that slowly
+ * pans across display headlines. Renamed from .wl-aurora-text in the
+ * Rich Cream + Purple rebrand (June 2026). */
+.wl-brand-display {
   background-image: linear-gradient(
     100deg,
     #3b154c 0%,
@@ -9473,9 +9166,9 @@ html {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: wl-aurora-text-pan 9s ease-in-out infinite;
+  animation: wl-brand-display-pan 9s ease-in-out infinite;
 }
-.dark .wl-aurora-text {
+.dark .wl-brand-display {
   background-image: linear-gradient(
     100deg,
     #c77dff 0%,
@@ -9485,7 +9178,7 @@ html {
     #c77dff 100%
   );
 }
-@keyframes wl-aurora-text-pan {
+@keyframes wl-brand-display-pan {
   0%,
   100% {
     background-position: 0% center;
@@ -9547,35 +9240,7 @@ html {
   box-shadow:
     0 28px 64px -28px rgba(139, 63, 214, 0.28),
     0 6px 18px -8px rgba(26, 22, 20, 0.08);
-}
-
-/* ── AURORA HAIRLINE ──
- * An animated brand divider — a thread of light under section eyebrows. */
-.wl-divider-aurora {
-  height: 1px;
-  border: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(139, 63, 214, 0.45) 30%,
-    rgba(155, 92, 224, 0.8) 50%,
-    rgba(139, 63, 214, 0.45) 70%,
-    transparent
-  );
-  background-size: 200% 100%;
-  animation: wl-aurora-line-pan 6.5s ease-in-out infinite;
-}
-@keyframes wl-aurora-line-pan {
-  0%,
-  100% {
-    background-position: 0% center;
-  }
-  50% {
-    background-position: 100% center;
-  }
-}
-
-/* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
+}/* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
  * The call signals become luminous comets of light, and the central
  * exchange gains a breathing halo so the whole switchboard reads as a
  * living core wired to the gutter robots. Pure CSS on the existing layer. */
@@ -9625,15 +9290,7 @@ html {
 }
 
 /* ── REDUCED MOTION — settle the majestic layer into a static still ── */
-@media (prefers-reduced-motion: reduce) {
-  .wl-aurora-orb,
-  .wl-hero-spotlight,
-  .wl-aurora-text,
-  .wl-divider-aurora,
-  .wl-exchange::before {
-    animation: none !important;
-  }
-  .wl-eyebrow-dot::after {
+@media (prefers-reduced-motion: reduce) {  .wl-eyebrow-dot::after {
     animation: none !important;
     opacity: 0 !important;
   }
@@ -9743,35 +9400,6 @@ html {
     width: calc(100% - (var(--wl-marketing-gutter) * 2));
   }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   WIRELINE HERO — ZERO-BLEED MARKETING SURFACE
-   Purple is reserved for crisp brand strokes and CTAs only. The page field
-   stays cream/ink, with no violet wash behind the hero content.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.wl-aurora-field {
-  overflow: hidden;
-  isolation: isolate;
-  contain: paint;
-  background: transparent;
-}
-
-.wl-aurora-orb,
-.wl-hero-spotlight {
-  display: none !important;
-}
-
-.wl-cream-aurora-mask {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background:
-    radial-gradient(ellipse 82% 56% at 50% 22%, rgba(255, 252, 246, 0.74), transparent 70%),
-    linear-gradient(180deg, rgba(239, 233, 220, 0.98) 0%, rgba(239, 233, 220, 0.86) 58%, rgba(239, 233, 220, 0) 100%);
-}
-
 .wl-wireline-layer {
   isolation: isolate;
   contain: paint;
@@ -9903,7 +9531,7 @@ html {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN-SYSTEM PRIMITIVES — restored animation contract.
-   Consumed by PulseRing, AuroraWave, StatusOrb, NebulaPulse, GlyphMorph,
+   Consumed by PulseRing, StatusOrb, NebulaPulse, GlyphMorph,
    PrismBadge, VoidButton, SignalThread. Contract is locked by
    src/components/ui/__tests__/constellation-primitives.test.tsx.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -9943,21 +9571,6 @@ html {
   0% { transform: scale(0.45); opacity: 0.85; }
   70% { opacity: 0.18; }
   100% { transform: scale(1.35); opacity: 0; }
-}
-
-/* ── AuroraWave — looping layered wave pan ── */
-.aurora-wave-container {
-  animation: aurora-wave-pan 18s linear infinite;
-  will-change: transform;
-}
-
-@keyframes aurora-wave-pan {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-.aurora-wave-path {
-  opacity: 0.65;
 }
 
 /* ── StatusOrb — breathing presence node ── */
@@ -10108,7 +9721,7 @@ html {
 .dark .prism-badge-surface {
   background: rgba(26, 22, 20, 0.85);
   border-color: rgba(245, 240, 230, 0.16);
-  color: #f5f0e6;
+  color: #f5f1e8;
 }
 
 .prism-holo-layer {
@@ -10199,24 +9812,6 @@ html {
 /* ── Reduced motion: every primitive settles to a calm static state ── */
 @media (prefers-reduced-motion: reduce) {
   .pulse-ring--active .pulse-ring__ring,
-  .aurora-wave-container,
-  .status-orb-breathe,
-  .status-orb-pulse,
-  .status-orb-orbit,
-  .nebula-drift-0,
-  .nebula-drift-1,
-  .nebula-drift-2,
-  .nebula-drift-3,
-  .nebula-drift-4,
-  .glyph-morph--reveal .glyph-morph-char,
-  .glyph-morph-breathe .glyph-morph-char,
-  .glyph-morph-char.glyph-morph-glitch,
-  .prism-holo-animated,
-  .void-shimmer-stripe,
-  .signal-thread-pulse {
-    animation: none !important;
-  }
-
   .glyph-morph--reveal .glyph-morph-char {
     opacity: 1;
   }

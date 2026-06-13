@@ -396,7 +396,7 @@ export default function App() {
     // reducedMotion="user" tells motion to honor the OS-level
     // prefers-reduced-motion media query. Users with vestibular disorders
     // (or anyone who flipped the system toggle) now get static UI instead
-    // of aurora/glow/scale animations.
+    // of decorative glow/scale animations.
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
         <ThemeProvider>

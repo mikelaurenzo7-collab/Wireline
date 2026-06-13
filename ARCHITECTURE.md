@@ -184,7 +184,7 @@ approvals, integrations, research, and document deliverables.
 | **UI shell** | `src/components/DirectorWorkspace.tsx` | Layout, streaming chat, artifacts rail |
 | **Subcomponents** | `src/components/director/*` | Live session, composer, capability catalog, proposals |
 | **Design contract** | `src/lib/wireline-director-design.ts` | Copy, `WL_DIRECTOR_CLASSES`, capability categories — tested in `wireline-director-design.test.ts` |
-| **Visual system** | `DESIGN.md` + `src/index.css` | Aurora Cream utilities (`.wl-director-*`, composer dock, proposal cards) |
+| **Visual system** | `DESIGN.md` + `src/index.css` | Rich Cream + Purple utilities (`.wl-director-*`, composer dock, proposal cards) |
 | **Persistence** | `directorConversationMessages`, `directorArtifacts` | Thread history + generated files |
 
 Primary route: `/director` (also embedded in `FounderDashboard` and `AgentChat` with optional agent focus). See `DESIGN.md` §3c for component map.
@@ -270,7 +270,7 @@ on the production system-prompt size.
 | `src/lib/wireline-director-design.ts` | Director UI contract (copy, CSS class names, capability catalog) |
 | `src/components/DirectorWorkspace.tsx` | Director mission-control shell |
 | `src/routes/health-routes.ts` | `/api/health` minimal probe + `/api/health/internal` + `/api/health/models` |
-| `DESIGN.md` | Aurora Cream design system + shadcn ratchet rules |
+| `DESIGN.md` | Rich Cream + Purple design system + shadcn ratchet rules |
 
 ---
 

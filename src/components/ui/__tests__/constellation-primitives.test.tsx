@@ -2,7 +2,7 @@
  * Wireline Design System — Full Primitive Test Suite
  *
  * Covers ALL design system primitives:
- *   CONSTELLATION ERA: ConstellationField, PulseRing, AuroraWave, StatusOrb
+ *   CONSTELLATION ERA: ConstellationField, PulseRing, StatusOrb
  *   IDENTITY v3:       NebulaPulse, GlyphMorph, PrismBadge, VoidButton, SignalThread
  *
  * Tests verify logic, structural contracts, accessibility, and motion safety
@@ -132,51 +132,9 @@ describe("PulseRing", () => {
   });
 });
 
-describe("AuroraWave", () => {
-  const src = readComponent("AuroraWave");
-
-  it("exports an AuroraWave function component", () => {
-    expect(src).toContain("export function AuroraWave");
-  });
-
-  it("clamps layers between 1 and 6", () => {
-    expect(src).toContain("Math.max(1, Math.min(6, layers))");
-  });
-
-  it("generates SVG path elements for each wave", () => {
-    expect(src).toContain("<path");
-    expect(src).toContain("wavePath");
-  });
-
-  it("uses linearGradient fills with brand color", () => {
-    expect(src).toContain("<linearGradient");
-    expect(src).toContain("--primary");
-  });
-
-  it("supports subtle/medium/strong intensity levels", () => {
-    expect(src).toContain("subtle");
-    expect(src).toContain("medium");
-    expect(src).toContain("strong");
-  });
-
-  it("generates wave using sine function", () => {
-    expect(src).toContain("Math.sin");
-  });
-
-  it("is aria-hidden", () => {
-    expect(src).toContain('aria-hidden="true"');
-  });
-
-  it("includes reduced-motion guard in global CSS", () => {
-    expect(readIndexCss()).toContain("prefers-reduced-motion");
-    expect(src).toContain("aurora-wave-path");
-  });
-
-  it("uses translateX(-50%) for seamless loop panning via CSS", () => {
-    expect(src).toContain("aurora-wave-container");
-    expect(readIndexCss()).toContain("translateX(-50%)");
-  });
-});
+// AuroraWave was retired with the Rich Cream + Purple rebrand (June 2026).
+// The component generated SVG sinusoidal purple waves — exactly the kind of
+// multi-color bleed the new system avoids. Tests intentionally removed.
 
 describe("StatusOrb", () => {
   const src = readComponent("StatusOrb");

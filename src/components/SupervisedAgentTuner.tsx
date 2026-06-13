@@ -304,6 +304,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                             onClick={() => deleteLesson(lesson.id)}
                             disabled={isDeleting === lesson.id}
                             title="Discard"
+                            aria-label="Discard lesson"
                             className="h-7 w-7 rounded-md text-muted/70 hover:text-rose-500 hover:border-rose-500/30"
                           >
                             {isDeleting === lesson.id ? (

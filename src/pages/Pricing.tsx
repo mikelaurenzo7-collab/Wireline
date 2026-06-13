@@ -266,7 +266,7 @@ export default function Pricing() {
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="font-display italic text-[clamp(2.25rem,5vw,4rem)] leading-[1.05] tracking-tight mb-4 text-balance"
         >
-          <span className="wl-aurora-text">Plans that scale</span>
+          <span className="wl-brand-display">Plans that scale</span>
           <br />
           <span className="text-ink">with your fleet</span>
         </motion.h1>
@@ -415,7 +415,7 @@ export default function Pricing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className={`relative p-4 lg:p-5 flex flex-col ${
-                tier.highlight ? "aurora-ring tier-spotlight md:scale-[1.02] md:-my-1 md:z-10" : ""
+                tier.highlight ? "wl-purple-ring tier-spotlight md:scale-[1.02] md:-my-1 md:z-10" : ""
               }`}
             >
               <div

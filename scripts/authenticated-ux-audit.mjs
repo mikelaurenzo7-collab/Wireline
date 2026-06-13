@@ -120,7 +120,7 @@ async function shellChecks(page, ctx) {
   const issues = [];
   const shell = await page.locator('[data-testid="client-console"]').count();
   if (!shell) issues.push("missing client-console shell");
-  const rail = await page.locator('[data-testid="aurora-rail"]').count();
+  const rail = await page.locator('[data-testid="sidebar-rail"]').count();
   if (!rail && ctx.viewport !== "mobile") issues.push("missing sidebar rail on non-mobile");
   const overflow = await assertNoHorizontalOverflow(page);
   if (!overflow) issues.push("horizontal overflow");

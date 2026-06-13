@@ -73,7 +73,7 @@ export default function Developers() {
           transition={{ delay: 0.05, duration: 0.6 }}
           className="font-display italic text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-tight mb-4 text-balance"
         >
-          <span className="text-aurora">Build on Wireline</span>
+          <span className="text-brand-display">Build on Wireline</span>
         </motion.h1>
 
         <motion.p

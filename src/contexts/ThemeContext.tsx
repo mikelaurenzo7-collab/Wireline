@@ -1,8 +1,8 @@
 /**
  * ThemeContext — surfaces the dark/light theme preference,
  * persists it to localStorage, and toggles the `.dark` class on
- * `<html>` so the shadcn token system flips between the Aurora Cream
- * and the deep purple dark palette.
+ * `<html>` so the shadcn token system flips between the Rich Cream
+ * light palette and the deep purple dark palette.
  *
  * Defaults to "light" for a consistent, branded first experience.
  */

@@ -9,7 +9,7 @@
 import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
 export const WIRELINE_DIRECTOR_BRAND = {
-  /** Primary aurora violet — matches --color-brand */
+  /** Primary brand violet — matches --color-brand */
   violet: "#8B3FD6",
   violetDeep: "#6B2FA8",
   /** Success rail for executed approvals */
@@ -602,7 +602,7 @@ export const WL_APP_CLASSES = {
   textSuccess: "wl-text-success",
   pulseLive: "wl-pulse-live",
   modalSurface: "wl-modal-surface transition-all duration-300 ease-out",
-  /** Framed empty / insight stat — elevated panel without aurora chrome */
+  /** Framed empty / insight stat — elevated panel without multi-hue chrome */
   panelFrame:
     "relative rounded-md wl-panel-elevated border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:border-border-hover",
   signalOrbFrame: WL_SIGNAL_CLASSES.signalOrbFrame,

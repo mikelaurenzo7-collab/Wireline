@@ -97,7 +97,7 @@ export default function FailureModesView() {
                 </span>
               </div>
             </div>
-            <div className="font-display italic text-3xl text-aurora">{m.count}</div>
+            <div className="font-display italic text-3xl text-brand-display">{m.count}</div>
           </div>
           <p className="text-sm text-ink/75 leading-relaxed">{m.description}</p>
           <div className="rounded-md bg-brand/10 border border-brand/30 p-4">

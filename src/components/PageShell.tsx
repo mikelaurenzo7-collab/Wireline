@@ -152,7 +152,7 @@ export default function PageShell({
               <div className="lg:hidden">
                 {eyebrow && <p className="text-eyebrow text-brand mb-1">{eyebrow}</p>}
                 {title && (
-                  <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
+                  <h1 className="wl-page-title font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance">
                     {title}
                   </h1>
                 )}

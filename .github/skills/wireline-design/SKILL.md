@@ -1,8 +1,9 @@
 ---
 name: wireline-design
 description: >-
-  Wireline UI/UX upgrade skill — Aurora Cream design system (warm cream +
-  silky purple, razor-edge zero-radius, editorial type), CSP-safe styling
+  Wireline UI/UX upgrade skill — Rich Cream + Purple design system (warm
+  cream paper + silky brand purple — only those two colors, no aurora
+  multi-hue bleeds — razor-edge zero-radius, editorial type), CSP-safe styling
   patterns, shadcn ratchets, and Director mission-control contract. Use when
   improving any Wireline screen, polishing UX flows, fixing visual bugs, or
   when the user mentions design pass, level up UI, Director, fleet dashboard,
@@ -93,7 +94,7 @@ in the same PR when the contract changes.
 ## Layout shell
 
 ```
-AuroraBackdrop (fixed z-0, calm paper/velvet — no loud washes behind data UI)
+CreamBackdrop (fixed z-0, calm paper/velvet — no loud washes behind data UI)
   AppShell
     Sidebar (data-rail expanded|collapsed; groups: Studio / Command / Channels / Design / Admin)
     main.app-surface → TopBar → scroll-viewport → page

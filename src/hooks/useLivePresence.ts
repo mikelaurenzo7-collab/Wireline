@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 /**
  * useLivePresence — single source of truth for "how many calls are live on
  * the floor right now." Polls /api/fleet/presence on a steady cadence and
- * returns the live count. Used by both the Aurora Rail foot-pulse and the
+ * returns the live count. Used by both the Sidebar Rail foot-pulse and the
  * desktop context-bar mission-control pulse so the two never disagree and
  * we never double-instrument the same endpoint with divergent intervals.
  *

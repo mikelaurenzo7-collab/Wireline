@@ -21,7 +21,7 @@ interface Props {
 }
 
 /**
- * EmptyState — compatibility shim that delegates to the canonical Aurora Cream
+ * EmptyState — compatibility shim that delegates to the canonical Rich Cream + Purple
  * {@link UiEmptyState} primitive (`components/ui/EmptyState`). Kept so existing
  * imports keep working while every empty surface renders the single, unified,
  * gem-like pattern. New code should import from `components/ui/EmptyState`.

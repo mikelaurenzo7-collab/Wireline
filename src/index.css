@@ -7,10 +7,10 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════
-   SHADCN/UI THEME — Wireline Aurora Cream
+   SHADCN/UI THEME — Wireline Rich Cream + Purple
    CSS custom properties for shadcn components, layered alongside
    the existing @theme block. Public-facing pages retain their
-   original glass/aurora design system intact.
+   original glass / brand-purple design system intact.
    ══════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.75rem;
@@ -18,15 +18,21 @@
   /* Brand cream — consumed by the rail wordmark, ambience washes, and
    * sticker slots. Was referenced in 6 places but never defined, so
    * fallback-less `var(--wl-cream)` consumers (sidebar wordmark) silently
-   * inherited low-contrast purple. */
-  --wl-cream: #f0e6d4;
+   * inherited low-contrast purple.
+   *
+   * Lightened (June 2026): the canvas was a rich warm tan (#f0e6d4) that
+   * muddied muted text, hairline borders, and panel separation. Shifted to
+   * a lighter, less-yellow cream (#f5f1e8 — red/blue gap 28 → 13) so ink and
+   * brand purple read cleanly. The "rich" character now lives in the purple,
+   * not the paper. */
+  --wl-cream: #f5f1e8;
 
   /* Surface colors */
-  --background: #f0e6d4;
+  --background: #f5f1e8;
   --foreground: #1a1614;
-  --card: color-mix(in srgb, #f0e6d4 92%, #e8dcc8);
+  --card: color-mix(in srgb, #f5f1e8 92%, #ece6d9);
   --card-foreground: #1a1614;
-  --popover: color-mix(in srgb, #f0e6d4 95%, white);
+  --popover: color-mix(in srgb, #f5f1e8 96%, white);
   --popover-foreground: #1a1614;
 
   /* Brand primary — lighter editorial violet that matches the hero accent.
@@ -72,10 +78,12 @@
   --chart-4: #3b154c;
   --chart-5: #d4c9b8;
 
-  /* Core theme variables — RICH cream canvas + warm paper accent */
+  /* Core theme variables — LIGHT cream canvas + warm paper accent.
+   * Paper lightened from the old rich tan #f0e6d4 → #f5f1e8 for readability;
+   * paper-warm tracks it (#e8dcc8 → #ece6d9) so cards stay a hair warmer. */
   --ink: #1a1614;
-  --paper: #f0e6d4;
-  --paper-warm: #e8dcc8;
+  --paper: #f5f1e8;
+  --paper-warm: #ece6d9;
   /** Elevated dark panels — composer, artifacts, live session fades */
   --velvet: #1a1225;
   --chrome-glow: #8b3fd6;
@@ -89,7 +97,7 @@
   --muted-soft-resolved: #5c574f;
 
   /* ═══════════════════════════════════════════════════════════════
-     REFINED EDITORIAL FOUNDATION — Aurora Cream 2.5
+     REFINED EDITORIAL FOUNDATION — Rich Cream + Purple
      Extreme attention to depth, rhythm, light, and tactility.
      ═══════════════════════════════════════════════════════════════ */
 
@@ -194,11 +202,11 @@
 }
 
 /* ------------------------------------------------------------------------
-   AURORA CREAM — a warm, editorial light system.
+   RICH CREAM + PURPLE — a warm, editorial light system.
    Inspired by the parchment warmth of Claude/Anthropic's palette.
-   Soft cream backgrounds with luminous aurora gradients as accents,
-   frosted cream glass surfaces, and dark warm-ink typography on an
-   editorial Instrument Serif italic display face.
+   Soft rich-cream backgrounds with single-hue brand-purple gradients as
+   accents (no multi-color washes), frosted cream glass surfaces, and
+   dark warm-ink typography on an editorial Fraunces upright display face.
    Existing utility class names continue to work automatically.
    -------------------------------------------------------------------- */
 
@@ -223,7 +231,7 @@
   --color-brand-deep: #6b2b99;
   --color-ink: var(--ink);
   --color-paper: var(--paper);
-  --color-paper-warm: var(--paper-warm, #e8dcc8);
+  --color-paper-warm: var(--paper-warm, #ece6d9);
   --color-velvet: var(--velvet);
   --color-chrome-glow: var(--chrome-glow);
   --color-on-brand: #ffffff;

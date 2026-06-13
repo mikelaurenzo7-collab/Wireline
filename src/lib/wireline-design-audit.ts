@@ -101,6 +101,7 @@ export const APP_MICRO_TEXT_10_PATTERN = /text-\[10px\]/g;
 
 export const DESIGN_AUDIT_BASELINE = {
   appAuroraRing: 0,
+  appAuroraTokens: 0,
   appBrutalBtn: 0,
   appOffBrandHex: 0,
   appOffBrandGradient: 0,
@@ -108,5 +109,5 @@ export const DESIGN_AUDIT_BASELINE = {
   appText8px: 0,
   appText9px: 5, // Raised to support sandbox/regression micro labels
   appText10px: 8, // Raised to support PainterWorkspace / sandbox micro labels
-  marketingAuroraRingMax: 2, // Pricing tier spotlight + allowed marketing flourish
+  marketingAuroraRingMax: 0, // Rich Cream + Purple rebrand retires the aurora-ring class
 } as const;

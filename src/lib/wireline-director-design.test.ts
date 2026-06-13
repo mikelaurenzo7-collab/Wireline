@@ -28,7 +28,7 @@ import {
 } from "./wireline-director-design";
 
 describe("Wireline Director design contract", () => {
-  it("uses Wireline aurora violet as primary brand", () => {
+  it("uses Wireline brand violet as primary brand", () => {
     expect(WIRELINE_DIRECTOR_BRAND.violet).toBe("#8B3FD6");
     expect(WIRELINE_DIRECTOR_BRAND.violetDeep).toMatch(/^#/);
   });

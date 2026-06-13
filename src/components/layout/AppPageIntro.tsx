@@ -53,7 +53,7 @@ export default function AppPageIntro({
         <div className="min-w-0 w-full max-w-2xl">
           <div className="lg:hidden">
             {eyebrow && <p className="wl-label text-brand/80 mb-1 wl-reveal">{eyebrow}</p>}
-            <h1 className="page-title-aurora font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance hero-headline-glow">
+            <h1 className="wl-page-title font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance hero-headline-glow">
               {title}
             </h1>
           </div>

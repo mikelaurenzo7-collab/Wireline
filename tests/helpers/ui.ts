@@ -198,7 +198,7 @@ export async function gotoHydrated(page: Page, path: string) {
 /** Authenticated shell: wait for sidebar rail and primary heading. */
 export async function gotoAuthenticated(page: Page, path: string) {
   await page.goto(path, { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("aurora-rail")).toBeVisible({ timeout: 25_000 });
+  await expect(page.getByTestId("sidebar-rail")).toBeVisible({ timeout: 25_000 });
   await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({ timeout: 25_000 });
 }
 

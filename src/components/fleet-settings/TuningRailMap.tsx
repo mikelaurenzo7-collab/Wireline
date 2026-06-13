@@ -19,6 +19,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { computeAgentReadiness } from "./agent-readiness";
 
 type TuningRailMapProps = {
   selectedAgent: any | null;
@@ -94,15 +95,16 @@ export default function TuningRailMap({
   agentConfig,
   integrationStatus,
 }: TuningRailMapProps) {
-  const hasAgent = !!selectedAgent;
-  const hasVoice = !!selectedAgent?.voice_id || selectedAgent?.channel === "email";
-  const hasPhone = !!selectedAgent?.phone_number || !!selectedAgent?.transfer_phone;
-  const hasKnowledge = !!selectedAgent?.website_url || (agentConfig?.knowledge?.length ?? 0) > 0;
-  const hasRules = (agentConfig?.directives?.length ?? 0) > 0 || !!agentConfig?.personality;
-  const connectedIntegrations = Object.values(integrationStatus ?? {}).filter((item) => item.connected).length;
-  const launchScore = [hasAgent, hasVoice, hasPhone, hasKnowledge, hasRules, connectedIntegrations > 0].filter(
-    Boolean,
-  ).length;
+  // Readiness is computed by the shared helper so the rail's X/6 score and the
+  // center canvas readiness stage can never disagree.
+  const { flags, score: launchScore } = computeAgentReadiness(
+    selectedAgent,
+    agentConfig,
+    integrationStatus,
+  );
+  // hasPhone feeds the launch score (inside the helper) but has no dedicated
+  // SignalTile, so it isn't destructured here.
+  const { hasVoice, hasKnowledge, hasRules, connectedIntegrations } = flags;
 
   return (
     <div className="shrink-0 border-b border-border/80 bg-paper/75 dark:bg-velvet/45 px-3 py-3 space-y-3">

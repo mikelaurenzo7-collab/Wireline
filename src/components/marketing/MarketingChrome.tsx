@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import PublicSiteHeader, { type PublicNavActive } from "./PublicSiteHeader";
 import MarketingFooter from "./MarketingFooter";
 import MarketingStickyCta from "./MarketingStickyCta";
-import MarketingAuroraBackdrop from "./MarketingAuroraBackdrop";
 import { cn } from "../../lib/utils";
 
 type Props = {
@@ -36,7 +35,6 @@ export default function MarketingChrome({
         className,
       )}
     >
-      {!authCanvas && <MarketingAuroraBackdrop />}
       <PublicSiteHeader active={active} />
       <div
         id="main-content"

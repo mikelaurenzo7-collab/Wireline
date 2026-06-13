@@ -405,7 +405,7 @@ export default function CommandBar() {
             aria-label="Command bar"
             className="relative w-full max-w-xl overflow-hidden wl-panel elev-glow"
           >
-            {/* Aurora ring border */}
+            {/* Purple ring border */}
             <div className="absolute inset-0 rounded-md p-px overflow-hidden pointer-events-none z-20">
               <div className="absolute inset-0 rounded-md wl-command-glow-ring" />
             </div>

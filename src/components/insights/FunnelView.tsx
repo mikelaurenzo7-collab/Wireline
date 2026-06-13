@@ -62,7 +62,7 @@ export default function FunnelView({ days }: { days: number }) {
           >
             <div className="flex items-baseline justify-between text-sm">
               <span className="font-display italic text-2xl text-ink">{s.name}</span>
-              <span className="font-display italic text-3xl text-aurora tabular-nums">
+              <span className="font-display italic text-3xl text-brand-display tabular-nums">
                 {s.count.toLocaleString()}
               </span>
             </div>

@@ -105,8 +105,11 @@
     --wl-purple-light: #8b3fd6;
     --wl-purple-deep: #6b2b99;
     --wl-purple-muted: #8b6fa8;
-    --wl-cream: #f5f0e6;
-    --wl-paper: #efe9dc;
+    /* Lightened June 2026 — track the index.css canvas (#f0e6d4 → #f5f1e8).
+     * --wl-paper was the old rich tan; lifted so the marketing robot and
+     * dark-mode wordmark match the lighter cream canvas. */
+    --wl-cream: #f5f1e8;
+    --wl-paper: #f5f1e8;
     --wl-cream-warm: #f5efe5;
     --wl-ink: #1a1614;
     --wl-emerald: #10b981;

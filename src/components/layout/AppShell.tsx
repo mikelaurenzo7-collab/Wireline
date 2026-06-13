@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { authFetch, readApiJson } from "../../lib/api";
 import WirelineMark from "../WirelineMark";
 import ErrorBoundary from "../ErrorBoundary";
-import AuroraBackdrop from "./AuroraBackdrop";
+import CreamBackdrop from "./CreamBackdrop";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
 import WorkspaceTopBar from "./WorkspaceTopBar";
@@ -297,7 +297,7 @@ export default function AppShell() {
   if (loading) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center p-12 text-center relative overflow-hidden">
-        <AuroraBackdrop />
+        <CreamBackdrop />
         <div className="relative w-36 h-36 md:w-44 md:h-44 mb-10 md:mb-12 animate-spin-slow">
           <div className="absolute inset-0 rounded-full wl-loading-conic-ring" />
           <div className="absolute inset-2 rounded-full bg-paper" />
@@ -336,7 +336,7 @@ export default function AppShell() {
       >
         Skip to main content
       </a>
-      <AuroraBackdrop />
+      <CreamBackdrop />
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {routeAnnouncement}
       </div>

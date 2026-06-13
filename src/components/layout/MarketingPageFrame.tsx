@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import PublicSiteHeader, { type PublicNavActive } from "../marketing/PublicSiteHeader";
 import MarketingFooter from "../marketing/MarketingFooter";
 import MarketingStickyCta from "../marketing/MarketingStickyCta";
-import MarketingAuroraBackdrop from "../marketing/MarketingAuroraBackdrop";
 import { cn } from "../../lib/utils";
 
 type MarketingSectionLink = {
@@ -26,7 +25,7 @@ interface MarketingPageFrameProps {
 }
 
 /**
- * Shared shell for public marketing pages — typography, aurora, nav, footer.
+ * Shared shell for public marketing pages — typography, nav, footer.
  */
 export default function MarketingPageFrame({
   children,
@@ -49,7 +48,6 @@ export default function MarketingPageFrame({
         className,
       )}
     >
-      <MarketingAuroraBackdrop />
       <PublicSiteHeader active={active} />
 
       <main

@@ -125,7 +125,7 @@ All migrations use `IF NOT EXISTS` — safe to re-run.
 
 ### Styling
 
-- Read `DESIGN.md` before changing UI — shadcn primitives, Aurora Cream tokens, ratchet rules
+- Read `DESIGN.md` before changing UI — shadcn primitives, Rich Cream + Purple tokens, ratchet rules
 - Director / mission-control surfaces: use `WL_DIRECTOR_CLASSES` and shared copy from `wireline-director-design.ts`; run `npm run test:design` when the contract changes
 - Tailwind CSS 4 — no raw CSS except `src/index.css` globals
 - All viewports equal: design at 390px, but treat laptop and desktop as first-class — escalate layouts past `md:` into `lg:`/`xl:`/`2xl:` so 1440px+ screens never render like tablets

@@ -37,6 +37,7 @@ import {
 import AgentListPanel from "./AgentListPanel";
 import AgentConfigPanel from "./AgentConfigPanel";
 import AgentIdentityVitals from "./AgentIdentityVitals";
+import AgentReadinessStage from "./AgentReadinessStage";
 import TuningRailMap from "./TuningRailMap";
 
 // Re-export the public surface so existing consumers
@@ -527,16 +528,14 @@ export default function FleetSettings() {
                     </div>
                     <AgentIdentityVitals agent={selectedAgent} />
                   </div>
-                  {/* Open stage — breathing room that anchors the co-pilot to the
-                      bottom. The hint shows on larger viewports. */}
-                  <div className="flex flex-1 min-h-0 flex-col items-center justify-center px-6 text-center">
-                    <p className="hidden md:block max-w-sm text-sm leading-relaxed text-muted/70">
-                      Shape{" "}
-                      <span className="text-ink/80">{selectedAgent.name || "this agent"}</span> by
-                      talking to your co-pilot below — or fine-tune voice, brain, tools, and rules
-                      in the rail on the right.
-                    </p>
-                  </div>
+                  {/* Open stage — the focal readiness moment that anchors the
+                      co-pilot to the bottom. Shows where the agent stands and the
+                      one thing to do next (works on every viewport). */}
+                  <AgentReadinessStage
+                    agent={selectedAgent}
+                    agentConfig={agentConfig}
+                    integrationStatus={integrationStatus}
+                  />
                 </>
               )}
               {/* Co-pilot — the Director, docked as a focused chat. Fills the

@@ -2,7 +2,7 @@ import { cn } from "../../../lib/utils";
 
 /**
  * Branded skeleton — uses the new editorial elevation + paper tactility
- * so loading states feel like part of the Aurora Cream system rather than
+ * so loading states feel like part of the Rich Cream + Purple system rather than
  * generic gray blocks. Subtle brand pulse, respects dark velvet.
  */
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
