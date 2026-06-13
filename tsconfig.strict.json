@@ -73,6 +73,19 @@
     // Pure decision logic, covered by their *.test.ts peers.
     "src/lib/wireline-agent-escalation.ts",
     "src/lib/wireline-agent-objections.ts",
+    // ─── Added 2026-Q2 audit follow-up (client-safe pure helpers) ──
+    // Agent seat entitlement math — plan cap + purchased extras.
+    "src/lib/agent-entitlements.ts",
+    // Outbound dialer E.164 normalisation + DNC matching.
+    "src/lib/dialer-compliance.ts",
+    // DNC import/list caps — shared by browser + compliance routes.
+    "src/lib/dnc-import-limits.ts",
+    // External URL allowlisting (http/https only) for rendered anchors.
+    "src/lib/safe-external-url.ts",
+    // Platform-operator gating helpers (owner-only admin tabs).
+    "src/lib/admin-access.ts",
+    // Director chat thread-key parsing.
+    "src/lib/director-thread-keys.ts",
     // Test suites corresponding to the strict-clean modules
     "src/lib/agent-runtime.test.ts",
     "src/lib/personality-vibes.test.ts",
@@ -92,6 +105,12 @@
     "src/lib/wireline-agent-objections.test.ts",
     "src/lib/secret-vault.test.ts",
     "src/lib/tenant-quotas.test.ts",
-    "src/lib/soc2-controls.test.ts"
+    "src/lib/soc2-controls.test.ts",
+    "src/lib/agent-entitlements.test.ts",
+    "src/lib/dialer-compliance.test.ts",
+    "src/lib/dnc-import-limits.test.ts",
+    "src/lib/safe-external-url.test.ts",
+    "src/lib/admin-access.test.ts",
+    "src/lib/director-thread-keys.test.ts"
   ]
 }
