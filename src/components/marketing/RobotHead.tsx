@@ -26,8 +26,8 @@ const COLORS = {
   purpleDeep: "var(--wl-purple-deep, #3B154C)",
   emerald: "var(--wl-emerald, #8B3FD6)",
   emeraldSoft: "var(--wl-emerald-soft, #8B6FA8)",
-  cream: "var(--wl-cream, #F5F0E6)",
-  paper: "var(--wl-paper, #EFE9DC)",
+  cream: "var(--wl-cream, #F5F1E8)",
+  paper: "var(--wl-paper, #F5F1E8)",
   ink: "var(--wl-ink, #1F2937)",
 };
 

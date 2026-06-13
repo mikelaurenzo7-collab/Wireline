@@ -273,10 +273,6 @@ export default function LandingPage() {
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.34] [background-image:linear-gradient(to_right,rgba(26,22,20,0.055)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26,22,20,0.04)_1px,transparent_1px)] [background-size:72px_72px]"
-          />
-          <div
-            aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-16 h-px bg-ink/[0.08]"
           />
           <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(460px,0.78fr)] lg:gap-16">
@@ -857,10 +853,6 @@ export default function LandingPage() {
           data-testid="final-cta-section"
           className="relative overflow-hidden bg-ink py-20 text-paper lg:py-28"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.25] [background-image:linear-gradient(to_right,rgba(239,233,220,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(239,233,220,0.045)_1px,transparent_1px)] [background-size:72px_72px]"
-          />
           <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
             <motion.div {...REVEAL}>
               <Eyebrow dark>Right now, a call is going to voicemail</Eyebrow>
