@@ -21,6 +21,7 @@ import { handleEndOfCallReport } from "../../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
 import { touchNavCounts } from "../../lib/nav-counts-invalidate";
+import { notifyInboundCall } from "../../lib/apns-push";
 import {
   isToolCallFailureResult,
   recordInboundWebhookHealth,
@@ -295,6 +296,22 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
             set: { status },
           });
         if (agent?.user_id) touchNavCounts(agent.user_id);
+
+        // Wake the user's registered Wingman devices for an INBOUND call that
+        // is just starting to ring, so the iOS app can report a CallKit
+        // incoming call. Best-effort and env-gated (no-op without APNs creds);
+        // it must never block or fail the webhook. Outbound calls are skipped —
+        // the operator placed those, so there's nothing to "answer".
+        const callType = (payload.call as { type?: string } | undefined)?.type;
+        const isInbound = callType ? callType.toLowerCase().includes("inbound") : false;
+        if (isInbound && ["ringing", "queued"].includes(status || "") && agent?.user_id) {
+          void notifyInboundCall(agent.user_id, {
+            callId,
+            fromNumber: customerNumber || "Unknown",
+            agentName: (agent as { name?: string } | undefined)?.name ?? null,
+            agentId: webhookAgentId ?? null,
+          });
+        }
 
         // Update lead status to "Connected" when call is in-progress
         if (status === "in-progress" && customerNumber && agent?.user_id) {

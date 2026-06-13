@@ -1281,6 +1281,37 @@ export const intakeKeys = pgTable(
   }),
 );
 
+// 3.7 MOBILE DEVICES (Wingman — APNs / PushKit VoIP push targets)
+//
+// One row per registered iOS device per user. The native Wingman app
+// registers its PushKit VoIP token here after sign-in so the backend can
+// wake the device with a CallKit-reportable VoIP push when an inbound call
+// arrives (see src/lib/apns-push.ts). The separate alert token is used for
+// non-call notifications (e.g. mid-call tool dispatch). FK cascade removes
+// rows when the user is deleted; the (user_id, device_id) unique key makes
+// token refresh an idempotent upsert.
+export const mobileDevices = pgTable(
+  "wireline_mobile_devices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: text("device_id").notNull(),
+    apnsVoipToken: text("apns_voip_token"),
+    apnsAlertToken: text("apns_alert_token"),
+    platform: text("platform").default("ios").notNull(),
+    appVersion: text("app_version"),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t: any) => ({
+    userDeviceUnique: unique("wireline_mobile_devices_user_device_key").on(t.userId, t.deviceId),
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_mobile_devices_user_id ON wireline_mobile_devices USING btree (user_id)`,
+  }),
+);
+
 // 4. AUDIT LOG (AI SPEND & COMPLIANCE)
 export const auditLog = pgTable(
   "wireline_audit_log",
