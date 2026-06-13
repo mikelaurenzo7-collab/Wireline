@@ -10,6 +10,8 @@ import { drizzle, fetchWithTimeout, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, ilike } from "drizzle-orm";
 import { isDncBlocked } from "./compliance";
+import { getErrorMessage } from "./server-utils";
+import { isSsrfUrl } from "./webhook-validators";
 import {
   sanitizePhone,
   KNOWLEDGE_GAP_PREFIX,
@@ -668,5 +670,63 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       status: 502,
       error: `Voice carrier unavailable after retries: ${errMsg}`,
     };
+  }
+}
+
+/**
+ * Transfer an in-progress call to a phone number via Vapi's live call-control
+ * URL (monitor.controlUrl). This is how the operator "takes" a call from the
+ * Wingman app: the agent warm-transfers the live caller to the operator's
+ * number. Uses Vapi only — no Twilio. The control URL is pre-authenticated by
+ * Vapi (token embedded), so no Bearer is attached.
+ *
+ * The control URL is captured from the webhook and stored on signal_presence;
+ * it's externally-sourced, so we SSRF-guard it and require a vapi.ai host
+ * before issuing the request.
+ */
+export async function transferLiveCall(
+  controlUrl: string,
+  toNumber: string,
+  content = "Transferring your call now — please hold.",
+): Promise<{ ok: boolean; status: number; error?: string }> {
+  if (!controlUrl || isSsrfUrl(controlUrl)) {
+    return { ok: false, status: 400, error: "Invalid control URL." };
+  }
+  let host: string;
+  try {
+    host = new URL(controlUrl).hostname;
+  } catch {
+    return { ok: false, status: 400, error: "Malformed control URL." };
+  }
+  if (host !== "vapi.ai" && !host.endsWith(".vapi.ai")) {
+    return { ok: false, status: 400, error: "Control URL host not allowed." };
+  }
+
+  try {
+    const response = await fetchWithTimeout(
+      controlUrl,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "transfer",
+          destination: { type: "number", number: toNumber },
+          content,
+        }),
+      },
+      10_000,
+    );
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      log.warn("Vapi live transfer rejected", {
+        status: response.status,
+        body: body.slice(0, 200),
+      });
+      return { ok: false, status: response.status, error: "Transfer was rejected by the carrier." };
+    }
+    return { ok: true, status: 200 };
+  } catch (err) {
+    log.error("Vapi live transfer failed", { error: getErrorMessage(err) });
+    return { ok: false, status: 502, error: "Could not reach the voice carrier." };
   }
 }

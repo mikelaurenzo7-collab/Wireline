@@ -51,6 +51,12 @@ export const AGENT_TOOL_NAME_VALUES = [
   "crm_update_deal_stage",
   "shopify_apply_discount",
   "square_send_invoice",
+  // Device actions (Wingman personal-assistant tools — dispatched to the
+  // operator's phone via push; opt-in per agent, never in a customer-facing
+  // default role set).
+  "navigate_to",
+  "add_reminder",
+  "play_music",
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
@@ -75,7 +81,7 @@ export interface AgentToolCatalogEntry {
   name: AgentToolName;
   label: string;
   description: string;
-  group: "core" | "calendar" | "crm" | "messaging" | "team" | "meetings" | "ecommerce";
+  group: "core" | "calendar" | "crm" | "messaging" | "team" | "meetings" | "ecommerce" | "device";
   integration?: ToolIntegration;
 }
 
@@ -460,6 +466,27 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
       "Creates and sends a Square invoice directly to the customer's email or phone number.",
     group: "ecommerce",
     integration: "square",
+  },
+  // Device actions — Wingman personal-assistant tools. No integration; they
+  // dispatch a push to the operator's phone, which deep-links Maps / writes a
+  // calendar event / opens music. Opt-in per agent via enabledTools.
+  {
+    name: "navigate_to",
+    label: "Navigate to a place",
+    description: "Sends turn-by-turn directions to a destination to the operator's phone.",
+    group: "device",
+  },
+  {
+    name: "add_reminder",
+    label: "Add a reminder",
+    description: "Creates a calendar reminder on the operator's phone.",
+    group: "device",
+  },
+  {
+    name: "play_music",
+    label: "Play music",
+    description: "Opens music playback for a song, artist, or playlist on the operator's phone.",
+    group: "device",
   },
 ] as const;
 

@@ -27,6 +27,7 @@ import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
 import { findCallLogByVapiCallId, isOutboundCallPlaceholder } from "./outbound-call-tracking";
 import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
+import { notifyCallRecap } from "./apns-push";
 
 export interface CallReportPayload {
   message: {
@@ -148,6 +149,15 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       userId,
       durationSeconds: duration,
       vapiCallId: call?.id || "unknown",
+    });
+
+    // Ping the operator's Wingman devices with a tap-to-open recap. Best-effort
+    // and env-gated (no-op without APNs creds); never blocks the webhook.
+    void notifyCallRecap(userId, {
+      callId: vapiCallId,
+      agentName: call?.assistant?.name || null,
+      fromNumber: call?.customer?.number || null,
+      summary: analysis?.summary || null,
     });
 
     // Post-call digest — classify outcome, log to CRM, email the operator.

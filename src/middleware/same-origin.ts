@@ -11,6 +11,10 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   "/api/intake/leads",
   "/api/health",
   "/api/public-stats",
+  // Native Wingman iOS app: Bearer-token only, sends no Origin/Referer, and
+  // never accepts cookies — structurally not CSRF-reachable. Listed explicitly
+  // so the intent is durable rather than relying on the header-less fall-through.
+  "/api/mobile/",
 ];
 
 function collectAllowedOrigins(): Set<string> {

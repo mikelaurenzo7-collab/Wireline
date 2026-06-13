@@ -137,6 +137,10 @@ export const settings = pgTable("wireline_settings", {
   twilioWhatsappFromNumber: text("twilio_whatsapp_from_number"),
   twilioManagerAlertNumber: text("twilio_manager_alert_number"),
   vapiPhoneInboundAgentId: text("vapi_phone_inbound_agent_id"),
+  // Operator's personal callback number (E.164). When they "take" a live call
+  // from the Wingman app, the agent warm-transfers the caller here. iOS can't
+  // read the device's own number, so the user sets this once.
+  handoffPhone: text("handoff_phone"),
   prospectingEnabled: boolean("prospecting_enabled").default(false),
   targetTitles: jsonb("target_titles"),
   targetIndustries: jsonb("target_industries"),
@@ -1252,6 +1256,10 @@ export const signalPresence = pgTable(
     status: text("status"),
     label: text("label").default("Live · Active"),
     type: text("type").default("voice"),
+    // Vapi live-call control URL (monitor.controlUrl) captured from the
+    // webhook. Lets the operator transfer/take an in-progress call from the
+    // mobile app without raw Twilio access. NULL until Vapi reports it.
+    controlUrl: text("control_url"),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
   },
   () => ({
@@ -1278,6 +1286,67 @@ export const intakeKeys = pgTable(
   },
   () => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_intake_keys_user_id ON wireline_intake_keys USING btree (user_id)`,
+  }),
+);
+
+// 3.7 MOBILE DEVICES (Wingman — APNs / PushKit VoIP push targets)
+//
+// One row per registered iOS device per user. The native Wingman app
+// registers its PushKit VoIP token here after sign-in so the backend can
+// wake the device with a CallKit-reportable VoIP push when an inbound call
+// arrives (see src/lib/apns-push.ts). The separate alert token is used for
+// non-call notifications (e.g. mid-call tool dispatch). FK cascade removes
+// rows when the user is deleted; the (user_id, device_id) unique key makes
+// token refresh an idempotent upsert.
+export const mobileDevices = pgTable(
+  "wireline_mobile_devices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: text("device_id").notNull(),
+    apnsVoipToken: text("apns_voip_token"),
+    apnsAlertToken: text("apns_alert_token"),
+    platform: text("platform").default("ios").notNull(),
+    appVersion: text("app_version"),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t: any) => ({
+    userDeviceUnique: unique("wireline_mobile_devices_user_device_key").on(t.userId, t.deviceId),
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_mobile_devices_user_id ON wireline_mobile_devices USING btree (user_id)`,
+  }),
+);
+
+// 3.8 PREPAID CREDIT WALLET (Wingman)
+//
+// Append-only ledger of USD credit movements. Positive deltas are top-ups
+// (purchased on the WEB via Stripe — never in-app, to stay clear of Apple's
+// IAP rules; the iOS app is read-only on billing). Negative deltas are debits
+// that absorb voice-minute overage before Stripe metering kicks in. Balance is
+// the sum of deltas; balance_after is denormalized per row for audit + fast
+// reads. Existing tenants simply have no rows (balance 0) and bill exactly as
+// before.
+export const creditLedger = pgTable(
+  "wireline_credit_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deltaUsd: decimal("delta_usd", { precision: 12, scale: 4 }).notNull(),
+    balanceAfterUsd: decimal("balance_after_usd", { precision: 12, scale: 4 }).notNull(),
+    reason: text("reason").notNull(),
+    refType: text("ref_type"),
+    refId: text("ref_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t: any) => ({
+    userIdx: sql`CREATE INDEX IF NOT EXISTS idx_credit_ledger_user ON wireline_credit_ledger (user_id, created_at DESC)`,
+    // Idempotent top-ups/debits: a given (user, ref_type, ref_id) lands once.
+    refUnique: unique("wireline_credit_ledger_ref_key").on(t.userId, t.refType, t.refId),
   }),
 );
 
