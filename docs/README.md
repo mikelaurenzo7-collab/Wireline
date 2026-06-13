@@ -9,7 +9,7 @@ Quick links to every operational and technical document in this repository.
 | Document                                  | Purpose                                                           |
 | ----------------------------------------- | ----------------------------------------------------------------- |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)     | System design, LLM tiering, data flows, upgrade paths             |
-| [DESIGN.md](../DESIGN.md)                 | Aurora Cream UI system — shadcn tiers, tokens, Director contract  |
+| [DESIGN.md](../DESIGN.md)                 | Rich Cream + Purple UI system — shadcn tiers, tokens, Director contract |
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md) | Schema overview, indexes, RLS, connection config, troubleshooting |
 | [CONTRIBUTING.md](../CONTRIBUTING.md)     | Onboarding, workflow, code standards, security checklist          |
 

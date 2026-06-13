@@ -1,10 +1,10 @@
 /**
- * AuroraBackdrop — calm cream canvas behind authenticated pages.
+ * CreamBackdrop — calm cream canvas behind authenticated pages.
  *
- * Solid warm paper with optional subtle grain — no purple/teal aurora washes
+ * Solid warm paper with optional subtle grain — no purple/teal washes
  * that competed with data UI. Dark mode keeps a restrained velvet base.
  */
-export default function AuroraBackdrop() {
+export default function CreamBackdrop() {
   return (
     <div
       aria-hidden="true"
@@ -14,13 +14,13 @@ export default function AuroraBackdrop() {
       <div className="absolute inset-0 dark:hidden authenticated-canvas paper-texture" />
 
       {/* Dark — deep editorial base */}
-      <div className="absolute inset-0 hidden dark:block wl-aurora-dark-base" />
+      <div className="absolute inset-0 hidden dark:block wl-canvas-dark-base" />
 
       {/* Paper grain — barely perceptible tactility */}
-      <div className="absolute inset-0 opacity-[0.35] dark:opacity-[0.12] wl-aurora-grain" />
+      <div className="absolute inset-0 opacity-[0.35] dark:opacity-[0.12] wl-paper-grain" />
 
       {/* Soft top highlight — depth without color cast */}
-      <div className="absolute inset-0 dark:hidden wl-aurora-top-highlight" />
+      <div className="absolute inset-0 dark:hidden wl-canvas-top-highlight" />
     </div>
   );
 }

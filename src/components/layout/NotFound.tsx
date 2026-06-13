@@ -19,7 +19,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
 
   return (
     <div className="min-h-[80svh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
-      {/* Subtle aurora glow behind the 404 mark */}
+      {/* Subtle purple glow behind the 404 mark */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"
@@ -34,7 +34,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         initial={{ opacity: 0, scale: 0.92, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="font-display italic text-aurora text-[6rem] sm:text-[8rem] lg:text-[10rem] xl:text-[12rem] leading-none select-none"
+        className="font-display italic text-brand-display text-[6rem] sm:text-[8rem] lg:text-[10rem] xl:text-[12rem] leading-none select-none"
       >
         404
       </motion.div>

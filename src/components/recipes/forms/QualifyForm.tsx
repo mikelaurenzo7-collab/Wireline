@@ -54,7 +54,7 @@ export function QualifyForm({
           <div className="rounded-md p-6 wl-panel-elevated border border-white/12 flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Aggregate</div>
-              <div className="font-display italic text-6xl text-aurora leading-none">
+              <div className="font-display italic text-6xl text-brand-display leading-none">
                 {q.total_score}
               </div>
             </div>

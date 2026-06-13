@@ -22,7 +22,7 @@ export async function assertAppSurface(page: Page) {
 
 export async function assertAuthenticatedShell(page: Page) {
   await expect(page.getByTestId("client-console")).toBeVisible({ timeout: 25_000 });
-  await expect(page.getByTestId("aurora-rail")).toBeVisible();
+  await expect(page.getByTestId("sidebar-rail")).toBeVisible();
   await assertAppSurface(page);
 }
 
@@ -41,10 +41,10 @@ export async function assertFocusRingToken(page: Page) {
   expect(ring.length).toBeGreaterThan(0);
 }
 
-/** Authenticated app chrome must not expose legacy aurora-ring decoration. */
+/** Authenticated app chrome must not expose the legacy aurora-ring decoration (retired with the Rich Cream + Purple rebrand). */
 export async function assertNoAuroraRingInApp(page: Page) {
   const count = await page.locator(".aurora-ring").count();
-  expect(count, "app routes must not render .aurora-ring").toBe(0);
+  expect(count, "app routes must not render .aurora-ring (renamed to .wl-purple-ring)").toBe(0);
 }
 
 /** Removed landing hero orbs must not reappear in DOM. */

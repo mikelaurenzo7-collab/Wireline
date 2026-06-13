@@ -279,8 +279,8 @@ export default function TopBar({
         )}
       >
         <div className="h-11 flex items-center gap-2 px-3 lg:pl-3 lg:pr-4">
-          {/* Logo / Brand — VISIBLE under lg only. On lg+ the Sidebar (Aurora
-              rail) carries brand chrome, so we hide this to avoid double-brand
+          {/* Logo / Brand — VISIBLE under lg only. On lg+ the Sidebar rail
+              carries brand chrome, so we hide this to avoid double-brand
               and reclaim the top-bar real-estate for the breadcrumb. */}
           <Link
             to="/"
@@ -514,7 +514,7 @@ export default function TopBar({
             {/* Hamburger — phone + tablet (< lg). Opens the slide-in nav
                 drawer. On mobile this is now the primary way to reach every
                 destination (the bottom tab bar was removed to match how
-                top SaaS render on mobile web). On desktop (lg+) the Aurora
+                top SaaS render on mobile web). On desktop (lg+) the Sidebar
                 rail carries the nav instead. */}
             <ShadButton
               ref={drawerTriggerRef}
@@ -638,7 +638,7 @@ export default function TopBar({
                 </div>
               </nav>
 
-              <div className="pt-3 mt-3 aurora-divider space-y-2">
+              <div className="pt-3 mt-3 wl-divider space-y-2">
                 <div className="flex items-center gap-2 rounded-md wl-panel px-2 py-2">
                   <div className="avatar-ring w-8 h-8 rounded-full flex items-center justify-center text-on-brand font-medium text-sm shrink-0 bg-brand">
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}

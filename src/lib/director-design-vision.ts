@@ -60,7 +60,7 @@ function sectionBlueprint(device: string): string {
 function antiPatternsBlock(): string {
   return [
     "## Anti-patterns (never ship)",
-    "- Generic AI purple gradients or Wireline Aurora branding unless explicitly requested",
+    "- Generic AI purple gradients or legacy Wireline aurora branding unless explicitly requested",
     "- Bare <a href> text links as the primary CTA",
     "- Lorem ipsum or placeholder Latin",
     "- External-only CSS (preview requires embedded <style>)",

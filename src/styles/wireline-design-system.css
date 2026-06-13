@@ -55,7 +55,7 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Editorial hairline / aurora divider — consistent across the system */
+/* Editorial hairline — consistent across the system */
 .hairline {
   height: 1px;
   background: linear-gradient(
@@ -74,7 +74,9 @@
   );
 }
 
-.aurora-divider {
+/* Single-hue purple divider — renamed from .aurora-divider in the
+ * Rich Cream + Purple rebrand (June 2026). */
+.wl-divider {
   height: 1px;
   background: linear-gradient(
     to right,
@@ -225,7 +227,8 @@
   );
 }
 
-/* ── CSP-safe data-attribute theming (replaces runtime style={}) ─────────── */
+/* ── CSP-safe data-attribute theming (replaces runtime style={}
+) ─────────── */
 
 [data-accent] {
   --wl-accent: attr(data-accent type(<color>));
@@ -791,10 +794,10 @@
   background: var(--color-brand-mid, #6b2b99);
   box-shadow: 0 4px 12px -4px rgba(107, 43, 153, 0.55);
 }
-.wl-aurora-dark-base {
+.wl-canvas-dark-base {
   background: linear-gradient(180deg, #2d1a3e 0%, var(--color-brand-ink, #2e0f4a) 100%);
 }
-.wl-aurora-grain {
+.wl-paper-grain {
   background-image:
     radial-gradient(circle at 25% 30%, rgba(26, 22, 20, 0.014) 0.6px, transparent 0.8px),
     radial-gradient(circle at 70% 65%, rgba(26, 22, 20, 0.01) 0.5px, transparent 0.7px);
@@ -802,7 +805,7 @@
     48px 48px,
     64px 64px;
 }
-.wl-aurora-top-highlight {
+.wl-canvas-top-highlight {
   /* Soft top sheen — restrained so it reads as light catching premium paper,
    * not a white wash. Tied to the richer cream token; less white, less reach. */
   background: radial-gradient(
@@ -3033,114 +3036,7 @@ body,
 
 .animate-pulse-intense {
   animation: pulse-intense 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes aurora-pan {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes aurora-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(2%, -2%, 0) scale(1.05);
-  }
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-.animate-aurora-drift {
-  animation: aurora-drift 18s ease-in-out infinite;
-}
-
-@keyframes aurora-blob-1 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(6%, -4%, 0) scale(1.08);
-  }
-  66% {
-    transform: translate3d(-4%, 6%, 0) scale(0.96);
-  }
-}
-
-@keyframes aurora-blob-2 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(-5%, 6%, 0) scale(0.94);
-  }
-  66% {
-    transform: translate3d(4%, -4%, 0) scale(1.06);
-  }
-}
-
-@keyframes aurora-blob-3 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(3%, 3%, 0) scale(1.1);
-  }
-}
-
-.animate-aurora-blob-1 {
-  animation: aurora-blob-1 25s ease-in-out infinite;
-}
-
-.animate-aurora-blob-2 {
-  animation: aurora-blob-2 30s ease-in-out infinite;
-}
-
-.animate-aurora-blob-3 {
-  animation: aurora-blob-3 20s ease-in-out infinite;
-}
-
-/* Auth-portal aurora — slow breathing radial blobs behind the form
-   column. Two layers run on offset durations (14s vs 19s) so the motion
-   never feels synchronized or mechanical. translate3d nudges the GPU
-   compositor; scale lets the blob "breathe" rather than slide. */
-@keyframes wireline-aurora-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.55;
-  }
-  100% {
-    transform: translate3d(-6%, 5%, 0) scale(1.08);
-    opacity: 0.42;
-  }
-}
-@keyframes wireline-aurora-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate3d(7%, -4%, 0) scale(1.12);
-    opacity: 0.38;
-  }
-}
-
-/* Respect prefers-reduced-motion — kills the breathing for visitors
-   who've asked browsers to minimise animation. */
-@media (prefers-reduced-motion: reduce) {
-  [class*="wireline-aurora-"] {
-    animation: none !important;
-  }
-}
+}/* (Auth-portal aurora-blob breathing animation retired with the Rich Cream + Purple rebrand.) */
 
 @keyframes shimmer {
   0% {
@@ -3355,12 +3251,8 @@ body,
    stops the constant pan/drift/shimmer motion that some users find
    distracting or that wastes battery on laptops. */
 @media (prefers-reduced-motion: reduce) {
-  .text-aurora,
+  .text-brand-display,
   .brand-wordmark,
-  .animate-aurora-drift,
-  .animate-aurora-blob-1,
-  .animate-aurora-blob-2,
-  .animate-aurora-blob-3,
   .animate-pulse-intense,
   .skeleton-shimmer,
   .shimmer-line {
@@ -3383,15 +3275,6 @@ body,
     animation: none !important;
   }
 }
-
-/* Soft glow ring for focused / selected items */
-.ring-aurora {
-  box-shadow:
-    0 0 0 1px rgba(107, 43, 153, 0.5),
-    0 0 20px rgba(107, 43, 153, 0.25),
-    0 0 40px rgba(107, 43, 153, 0.1);
-}
-
 .font-display {
   font-family: var(--font-display);
 }
@@ -4808,15 +4691,6 @@ select:focus {
     0 6px 20px -6px rgba(107, 43, 153, 0.14);
   border-color: rgba(107, 43, 153, 0.2);
 }
-
-/* Brand badge — soft purple pill with AAA-readable text */
-.badge-aurora {
-  background: rgba(107, 43, 153, 0.1);
-  border: 1px solid rgba(107, 43, 153, 0.3);
-  color: var(--color-brand-ink);
-  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.20em] leading-none;
-}
-
 /* ── Ghost brand button — translucent purple with AAA text contrast ──── */
 .btn-ghost-brand {
   display: inline-flex;
@@ -5112,8 +4986,9 @@ select:focus {
 
 /* -------------------------  PAGE TITLE GLOW  -------------------------- */
 
-/* Large display headings — solid warm ink, editorial weight. */
-.page-title-aurora {
+/* Large display headings — solid warm ink, editorial weight.
+ * Renamed from .page-title-aurora in the Rich Cream + Purple rebrand. */
+.wl-page-title {
   color: #1c1917;
 }
 
@@ -5703,8 +5578,8 @@ select:focus {
 
 /* ---------------------------------------------------------------------
  * Reduced motion — respect operator OS-level preference.
- * Wireline leans on aurora gradients, scanlines, and motion/react
- * animations everywhere. For users with prefers-reduced-motion set,
+ * Wireline leans on subtle brand-purple gradients, scanlines, and
+ * motion/react animations. For users with prefers-reduced-motion set,
  * collapse animations to a near-zero duration so they don't induce
  * vestibular distress, but keep static styling intact.
  * ---------------------------------------------------------------------*/
@@ -5717,7 +5592,7 @@ select:focus {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Aurora orbs and scanlines are decorative-only — hide entirely. */
+  /* Decorative orbs and scanlines — hide entirely under reduced-motion. */
   .scanline {
     display: none !important;
   }
@@ -5857,7 +5732,7 @@ select:focus {
   color: #f3e8ff;
 }
 
-.dark .text-aurora,
+.dark .text-brand-display,
 .dark .text-stroke,
 .dark .brand-wordmark {
   color: #c77dff;
@@ -6311,44 +6186,7 @@ select:focus {
   opacity: 0.156;
 }
 
-/* AuroraWave — layered sinusoidal pan + undulate */
-@keyframes aurora-wave-pan {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-@keyframes aurora-wave-undulate {
-  0% {
-    transform: translateY(0) scaleY(1);
-  }
-  100% {
-    transform: translateY(-3px) scaleY(1.08);
-  }
-}
-.aurora-wave-container {
-  animation: aurora-wave-pan 20s linear infinite;
-}
-.aurora-wave-path[data-layer="0"] {
-  animation: aurora-wave-undulate 12s ease-in-out 0s infinite alternate;
-}
-.aurora-wave-path[data-layer="1"] {
-  animation: aurora-wave-undulate 16s ease-in-out 1.5s infinite alternate;
-}
-.aurora-wave-path[data-layer="2"] {
-  animation: aurora-wave-undulate 20s ease-in-out 3s infinite alternate;
-}
-.aurora-wave-path[data-layer="3"] {
-  animation: aurora-wave-undulate 24s ease-in-out 4.5s infinite alternate;
-}
-.aurora-wave-path[data-layer="4"] {
-  animation: aurora-wave-undulate 28s ease-in-out 6s infinite alternate;
-}
-.aurora-wave-path[data-layer="5"] {
-  animation: aurora-wave-undulate 32s ease-in-out 7.5s infinite alternate;
-}
+/* (AuroraWave sinusoidal pan/undulate animations retired with the Rich Cream + Purple rebrand.) */
 
 /* ConstellationField — particle drift presets */
 @keyframes constellation-drift-0 {
@@ -6852,22 +6690,7 @@ select:focus {
   filter: drop-shadow(0 3px 10px rgba(107, 43, 153, 0.12));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .aurora-wave-container,
-  .aurora-wave-path,
-  .constellation-node circle,
-  .nebula-plasma-node,
-  .pulse-ring--active .pulse-ring__ring,
-  .robot-head--animated .robot-antenna-pulse,
-  .robot-head--animated .robot-text-dot,
-  .robot-head--animated .robot-typing-cursor,
-  .robot-head--animated .robot-key,
-  .robot-head--animated .robot-call-wave,
-  .robot-head--animated .robot-call-glow,
-  .robot-head--animated .robot-wave-bar {
-    animation: none !important;
-  }
-}
+@media (prefers-reduced-motion: reduce) {}
 
 /* ── HERO WIRELINES — switchboard layer behind the landing hero ──────────
    Wires draw in from the gutter robots to a central exchange, then signal
@@ -8197,7 +8020,7 @@ select:focus {
   }
 }
 
-/* ── AUTH PORTAL — solid rich cream canvas (no purple aurora wash) ── */
+/* ── AUTH PORTAL — solid rich cream canvas (no purple washes) ── */
 .auth-portal-canvas {
   background-color: var(--wl-cream);
   background-image: linear-gradient(
@@ -9272,152 +9095,29 @@ html {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MAJESTIC MARKETING LAYER — Aurora Cream, Fable-grade
+   MAJESTIC MARKETING LAYER — Rich Cream + Purple, Fable-grade
    ───────────────────────────────────────────────────────────────────────
-   Ambient aurora light-fields, luminous gradient display type, a breathing
-   hero spotlight, live eyebrow pulses, lustre cards, and animated aurora
-   hairlines for the public marketing surfaces. Purely decorative and
-   CSP-safe — every bit of motion lives here as a keyframe, never an inline
-   style — reduced-motion aware, and tuned to stay soft on warm cream so the
-   aurora reads as intentional light, never a corner smudge.
+   Luminous single-hue purple display type, a breathing hero spotlight,
+   live eyebrow pulses, lustre cards, and animated brand-purple hairlines
+   for the public marketing surfaces. Purely decorative and CSP-safe —
+   every bit of motion lives here as a keyframe, never an inline style —
+   reduced-motion aware, and tuned to stay soft on warm cream so the
+   light reads as intentional ambience, never a corner smudge.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── AURORA FIELD ──
- * Drop-in ambient backdrop. The host element supplies positioning (fixed for
- * the page backdrop, absolute for the hero); the field only clips and holds
- * the slowly-drifting brand orbs. */
-.wl-aurora-field {
-  overflow: hidden;
-  isolation: isolate;
-}
-.wl-aurora-orb {
-  position: absolute;
-  display: block;
-  width: 38rem;
-  height: 38rem;
-  border-radius: 9999px;
-  pointer-events: none;
-  opacity: 0.72;
-  will-change: transform;
-}
-.wl-aurora-orb:nth-child(1) {
-  top: -18rem;
-  left: -14rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.15) 0%,
-    rgba(139, 63, 214, 0.055) 40%,
-    transparent 68%
-  );
-  animation: wl-aurora-drift-a 32s var(--ease-soft) infinite alternate;
-}
-.wl-aurora-orb:nth-child(2) {
-  top: -12rem;
-  right: -16rem;
-  width: 44rem;
-  height: 44rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.12) 0%,
-    rgba(155, 92, 224, 0.042) 44%,
-    transparent 70%
-  );
-  animation: wl-aurora-drift-b 41s var(--ease-soft) infinite alternate;
-}
-.wl-aurora-orb:nth-child(3) {
-  bottom: -22rem;
-  left: 28%;
-  width: 56rem;
-  height: 56rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(107, 43, 153, 0.085) 0%,
-    rgba(107, 43, 153, 0.03) 48%,
-    transparent 72%
-  );
-  animation: wl-aurora-drift-c 49s var(--ease-soft) infinite alternate;
-}
-/* 4th orb — mid-screen warm bloom, drifts from right to left */
-.wl-aurora-orb.wl-aurora-orb--mid {
-  top: 18%;
-  right: 22%;
-  width: 36rem;
-  height: 36rem;
-  background: radial-gradient(
-    circle at center,
-    rgba(107, 43, 153, 0.09) 0%,
-    rgba(139, 63, 214, 0.032) 46%,
-    transparent 70%
-  );
-  animation: wl-aurora-drift-d 37s var(--ease-soft) infinite alternate;
-}
-
-@keyframes wl-aurora-drift-d {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1.04);
-  }
+/* (Aurora field + drifting orb keyframes retired with the Rich Cream +
+ * Purple rebrand. The marketing backdrop is now a flat cream canvas.) */
+@keyframes wl-spotlight-breathe {
+  0%,
   100% {
-    transform: translate3d(-5rem, 2rem, 0) scale(0.92);
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(1.04);
   }
 }
-
-.dark .wl-aurora-orb:nth-child(1) {
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.28) 0%,
-    rgba(155, 92, 224, 0.1) 42%,
-    transparent 70%
-  );
-}
-.dark .wl-aurora-orb:nth-child(2) {
-  background: radial-gradient(
-    circle at center,
-    rgba(199, 125, 255, 0.22) 0%,
-    rgba(199, 125, 255, 0.08) 46%,
-    transparent 72%
-  );
-}
-.dark .wl-aurora-orb:nth-child(3) {
-  background: radial-gradient(
-    circle at center,
-    rgba(139, 63, 214, 0.2) 0%,
-    rgba(139, 63, 214, 0.07) 50%,
-    transparent 74%
-  );
-}
-.dark .wl-aurora-orb.wl-aurora-orb--mid {
-  background: radial-gradient(
-    circle at center,
-    rgba(155, 92, 224, 0.18) 0%,
-    rgba(139, 63, 214, 0.065) 46%,
-    transparent 70%
-  );
-}
-@keyframes wl-aurora-drift-a {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(5rem, 3rem, 0) scale(1.12);
-  }
-}
-@keyframes wl-aurora-drift-b {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1.06);
-  }
-  100% {
-    transform: translate3d(-4rem, 4rem, 0) scale(0.94);
-  }
-}
-@keyframes wl-aurora-drift-c {
-  0% {
-    transform: translate3d(0, 0, 0) scale(0.96);
-  }
-  100% {
-    transform: translate3d(4rem, -3rem, 0) scale(1.1);
-  }
-}
-
 /* ── HERO SPOTLIGHT ──
  * A soft, breathing column of brand light centered behind the headline.
  * Pairs with the switchboard wirelines for a composed, living hero scene. */
@@ -9435,7 +9135,7 @@ html {
     rgba(139, 63, 214, 0.046) 42%,
     transparent 68%
   );
-  animation: wl-aurora-breathe 8s ease-in-out infinite;
+  animation: wl-spotlight-breathe 8s ease-in-out infinite;
 }
 .dark .wl-hero-spotlight {
   background: radial-gradient(
@@ -9445,21 +9145,11 @@ html {
     transparent 70%
   );
 }
-@keyframes wl-aurora-breathe {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.05);
-  }
-}
-
-/* ── AURORA DISPLAY TYPE ──
- * Luminous brand gradient that slowly pans across display headlines. */
-.wl-aurora-text {
+/* ── RICH PURPLE DISPLAY TYPE ──
+ * Single-hue purple gradient (all shades of brand purple) that slowly
+ * pans across display headlines. Renamed from .wl-aurora-text in the
+ * Rich Cream + Purple rebrand (June 2026). */
+.wl-brand-display {
   background-image: linear-gradient(
     100deg,
     #3b154c 0%,
@@ -9473,9 +9163,9 @@ html {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: wl-aurora-text-pan 9s ease-in-out infinite;
+  animation: wl-brand-display-pan 9s ease-in-out infinite;
 }
-.dark .wl-aurora-text {
+.dark .wl-brand-display {
   background-image: linear-gradient(
     100deg,
     #c77dff 0%,
@@ -9485,7 +9175,7 @@ html {
     #c77dff 100%
   );
 }
-@keyframes wl-aurora-text-pan {
+@keyframes wl-brand-display-pan {
   0%,
   100% {
     background-position: 0% center;
@@ -9547,35 +9237,7 @@ html {
   box-shadow:
     0 28px 64px -28px rgba(139, 63, 214, 0.28),
     0 6px 18px -8px rgba(26, 22, 20, 0.08);
-}
-
-/* ── AURORA HAIRLINE ──
- * An animated brand divider — a thread of light under section eyebrows. */
-.wl-divider-aurora {
-  height: 1px;
-  border: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(139, 63, 214, 0.45) 30%,
-    rgba(155, 92, 224, 0.8) 50%,
-    rgba(139, 63, 214, 0.45) 70%,
-    transparent
-  );
-  background-size: 200% 100%;
-  animation: wl-aurora-line-pan 6.5s ease-in-out infinite;
-}
-@keyframes wl-aurora-line-pan {
-  0%,
-  100% {
-    background-position: 0% center;
-  }
-  50% {
-    background-position: 100% center;
-  }
-}
-
-/* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
+}/* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
  * The call signals become luminous comets of light, and the central
  * exchange gains a breathing halo so the whole switchboard reads as a
  * living core wired to the gutter robots. Pure CSS on the existing layer. */
@@ -9625,15 +9287,7 @@ html {
 }
 
 /* ── REDUCED MOTION — settle the majestic layer into a static still ── */
-@media (prefers-reduced-motion: reduce) {
-  .wl-aurora-orb,
-  .wl-hero-spotlight,
-  .wl-aurora-text,
-  .wl-divider-aurora,
-  .wl-exchange::before {
-    animation: none !important;
-  }
-  .wl-eyebrow-dot::after {
+@media (prefers-reduced-motion: reduce) {  .wl-eyebrow-dot::after {
     animation: none !important;
     opacity: 0 !important;
   }
@@ -9743,35 +9397,6 @@ html {
     width: calc(100% - (var(--wl-marketing-gutter) * 2));
   }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   WIRELINE HERO — ZERO-BLEED MARKETING SURFACE
-   Purple is reserved for crisp brand strokes and CTAs only. The page field
-   stays cream/ink, with no violet wash behind the hero content.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.wl-aurora-field {
-  overflow: hidden;
-  isolation: isolate;
-  contain: paint;
-  background: transparent;
-}
-
-.wl-aurora-orb,
-.wl-hero-spotlight {
-  display: none !important;
-}
-
-.wl-cream-aurora-mask {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background:
-    radial-gradient(ellipse 82% 56% at 50% 22%, rgba(255, 252, 246, 0.74), transparent 70%),
-    linear-gradient(180deg, rgba(239, 233, 220, 0.98) 0%, rgba(239, 233, 220, 0.86) 58%, rgba(239, 233, 220, 0) 100%);
-}
-
 .wl-wireline-layer {
   isolation: isolate;
   contain: paint;
@@ -9903,7 +9528,7 @@ html {
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN-SYSTEM PRIMITIVES — restored animation contract.
-   Consumed by PulseRing, AuroraWave, StatusOrb, NebulaPulse, GlyphMorph,
+   Consumed by PulseRing, StatusOrb, NebulaPulse, GlyphMorph,
    PrismBadge, VoidButton, SignalThread. Contract is locked by
    src/components/ui/__tests__/constellation-primitives.test.tsx.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -9943,21 +9568,6 @@ html {
   0% { transform: scale(0.45); opacity: 0.85; }
   70% { opacity: 0.18; }
   100% { transform: scale(1.35); opacity: 0; }
-}
-
-/* ── AuroraWave — looping layered wave pan ── */
-.aurora-wave-container {
-  animation: aurora-wave-pan 18s linear infinite;
-  will-change: transform;
-}
-
-@keyframes aurora-wave-pan {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-.aurora-wave-path {
-  opacity: 0.65;
 }
 
 /* ── StatusOrb — breathing presence node ── */
@@ -10199,24 +9809,6 @@ html {
 /* ── Reduced motion: every primitive settles to a calm static state ── */
 @media (prefers-reduced-motion: reduce) {
   .pulse-ring--active .pulse-ring__ring,
-  .aurora-wave-container,
-  .status-orb-breathe,
-  .status-orb-pulse,
-  .status-orb-orbit,
-  .nebula-drift-0,
-  .nebula-drift-1,
-  .nebula-drift-2,
-  .nebula-drift-3,
-  .nebula-drift-4,
-  .glyph-morph--reveal .glyph-morph-char,
-  .glyph-morph-breathe .glyph-morph-char,
-  .glyph-morph-char.glyph-morph-glitch,
-  .prism-holo-animated,
-  .void-shimmer-stripe,
-  .signal-thread-pulse {
-    animation: none !important;
-  }
-
   .glyph-morph--reveal .glyph-morph-char {
     opacity: 1;
   }

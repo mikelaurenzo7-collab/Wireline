@@ -1,5 +1,5 @@
 /**
- * Aurora Cream Skeleton System
+ * Rich Cream + Purple Skeleton System
  * Animated placeholder components that match the frosted-wl-panel design language.
  * Use these instead of spinners for any data-loading state.
  */

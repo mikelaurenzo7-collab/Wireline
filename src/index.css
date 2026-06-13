@@ -7,10 +7,10 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════
-   SHADCN/UI THEME — Wireline Aurora Cream
+   SHADCN/UI THEME — Wireline Rich Cream + Purple
    CSS custom properties for shadcn components, layered alongside
    the existing @theme block. Public-facing pages retain their
-   original glass/aurora design system intact.
+   original glass / brand-purple design system intact.
    ══════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.75rem;
@@ -89,7 +89,7 @@
   --muted-soft-resolved: #5c574f;
 
   /* ═══════════════════════════════════════════════════════════════
-     REFINED EDITORIAL FOUNDATION — Aurora Cream 2.5
+     REFINED EDITORIAL FOUNDATION — Rich Cream + Purple
      Extreme attention to depth, rhythm, light, and tactility.
      ═══════════════════════════════════════════════════════════════ */
 
@@ -194,11 +194,11 @@
 }
 
 /* ------------------------------------------------------------------------
-   AURORA CREAM — a warm, editorial light system.
+   RICH CREAM + PURPLE — a warm, editorial light system.
    Inspired by the parchment warmth of Claude/Anthropic's palette.
-   Soft cream backgrounds with luminous aurora gradients as accents,
-   frosted cream glass surfaces, and dark warm-ink typography on an
-   editorial Instrument Serif italic display face.
+   Soft rich-cream backgrounds with single-hue brand-purple gradients as
+   accents (no multi-color washes), frosted cream glass surfaces, and
+   dark warm-ink typography on an editorial Fraunces upright display face.
    Existing utility class names continue to work automatically.
    -------------------------------------------------------------------- */
 

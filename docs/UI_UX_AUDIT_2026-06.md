@@ -6,7 +6,7 @@ navigation contract). Conducted against `main` @ `91b4261e`.
 
 **Method:**
 
-1. Static audit of design-system adherence (DESIGN.md / Aurora Cream),
+1. Static audit of design-system adherence (DESIGN.md / Rich Cream + Purple),
    accessibility, responsive architecture, and UX states across all pages
    and ~260 component files.
 2. Live visual review of the running app (public + auth surfaces) at

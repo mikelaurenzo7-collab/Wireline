@@ -22,11 +22,19 @@ function assertMax(actual: number, max: number, metric: string) {
 }
 
 describe("wireline design audit — authenticated app surfaces", () => {
-  it("has no aurora-ring in app components or pages", () => {
+  it("has no aurora-ring legacy class in app components or pages", () => {
     assertMax(
       countPatternInScope(/\baurora-ring\b/g, "app"),
       DESIGN_AUDIT_BASELINE.appAuroraRing,
       "app aurora-ring",
+    );
+  });
+
+  it("has no aurora-* tokens left in app components or pages", () => {
+    assertMax(
+      countPatternInScope(/\baurora[-_]/gi, "app"),
+      DESIGN_AUDIT_BASELINE.appAuroraTokens,
+      "app aurora tokens",
     );
   });
 
@@ -88,7 +96,7 @@ describe("wireline design audit — authenticated app surfaces", () => {
 });
 
 describe("wireline design audit — marketing surfaces", () => {
-  it("allows aurora-ring only within marketing budget", () => {
+  it("keeps the aurora-ring legacy class out of marketing now that the rebrand is done", () => {
     assertMax(
       countPatternInScope(/\baurora-ring\b/g, "marketing"),
       DESIGN_AUDIT_BASELINE.marketingAuroraRingMax,

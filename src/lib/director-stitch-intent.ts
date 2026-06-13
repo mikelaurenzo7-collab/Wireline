@@ -135,11 +135,11 @@ export function resolveStitchMediaOperation(
 
 /** Legacy Wireline product UI brief — only when the operator explicitly asks for Wireline surfaces. */
 export const WIRELINE_STITCH_DESIGN_BRIEF =
-  'Wireline "Aurora Cream" design system: paper #EFE9DC, ink #1A1614, brand #4F1E7B→#3B154C gradient CTAs, Fraunces italic headlines, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), cream glass top shells, purple aurora-ring on active states. Premium B2B SaaS — production-ready, not generic AI-purple template.';
+  'Wireline "Rich Cream + Purple" design system: paper #EFE9DC, ink #1A1614, brand #4F1E7B→#3B154C gradient CTAs, Fraunces upright headlines, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), cream glass top shells, single-hue purple hairline on active states (no multi-color bleeds, no aurora gradients). Premium B2B SaaS — production-ready, not generic AI-purple template.';
 
 /** Legacy Wireline dark product UI brief — only for explicit Wireline dark-mode requests. */
 export const WIRELINE_STITCH_DARK_DESIGN_BRIEF =
-  'Wireline "Aurora Dark" design system: paper #0D0D11, ink #E2E8F0, brand #7C3AED→#4C1D95 gradient CTAs, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), dark glassmorphism panels with 1px border-white/10 and backdrop-blur-md, purple aurora-glow on active states. Premium B2B SaaS dashboard — production-ready, dark mode, not generic AI-purple template.';
+  'Wireline "Rich Cream + Purple" dark mode: paper #0D0D11, ink #E2E8F0, brand #7C3AED→#4C1D95 gradient CTAs, Plus Jakarta Sans UI, JetBrains Mono labels (small caps, wide tracking). Sharp editorial corners (minimal radius), dark glassmorphism panels with 1px border-white/10 and backdrop-blur-md, single-hue purple glow on active states (no aurora multi-color bleeds). Premium B2B SaaS dashboard — production-ready, dark mode, not generic AI-purple template.';
 
 /** Default delivery rules for client-owned design renders (not Wireline product UI). */
 export const CLIENT_STITCH_DELIVERY_BRIEF =

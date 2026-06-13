@@ -5,7 +5,7 @@
  * - Refined active/engaged states with better elevation and depth
  * - Premium focus treatment
  * - Improved visual rhythm and hierarchy
- * - Consistent with Aurora Cream design language
+ * - Consistent with Rich Cream + Purple design language
  */
 import type { ReactNode } from "react";
 import {

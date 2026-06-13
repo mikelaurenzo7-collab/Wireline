@@ -57,7 +57,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
     <TooltipProvider delayDuration={220}>
       <aside
         aria-label="Primary navigation"
-        data-testid="aurora-rail"
+        data-testid="sidebar-rail"
         className={cn(
           "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] w-[56px] elev-3 wl-rail-shell",
           "border-r border-white/[0.08]",

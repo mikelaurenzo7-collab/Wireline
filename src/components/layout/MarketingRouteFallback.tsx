@@ -4,7 +4,7 @@
  * Replaces the flat `bg-paper` Suspense placeholder used while lazy
  * marketing pages stream in. Reuses the gem Medallion + halo so the
  * first impression a prospect gets matches the rest of the marketing
- * surface (aurora cream, crystalline glint) instead of a blank panel.
+ * surface (rich cream + purple, crystalline glint) instead of a blank panel.
  *
  * The component intentionally renders WITHOUT the full MarketingChrome
  * (header/footer) — those modules are themselves async-loaded, so

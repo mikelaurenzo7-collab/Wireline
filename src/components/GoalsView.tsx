@@ -251,7 +251,7 @@ function GoalCard({
         </Ring>
         <div className="min-w-0 flex flex-col gap-1.5">
           <div className="flex items-baseline gap-1.5">
-            <span className="font-semibold text-3xl text-aurora tabular-nums">
+            <span className="font-semibold text-3xl text-brand-display tabular-nums">
               {num(goal.actual)}
             </span>
             <span className="text-sm text-muted tabular-nums">/ {num(goal.target)}</span>

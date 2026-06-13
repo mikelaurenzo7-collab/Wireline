@@ -1,4 +1,4 @@
-# Wireline Design System — Aurora Cream
+# Wireline Design System — Rich Cream + Purple
 
 **Status:** Internal reference (2026)
 **Goal:** One cohesive, premium, editorial visual language across every client-facing surface.
@@ -6,10 +6,20 @@
 > **Canonical UI layer:** [`src/components/ui/shadcn/*`](src/components/ui/shadcn/).
 > Every button, input, modal, sheet, tab, dropdown, switch, tooltip,
 > badge, alert, progress, skeleton, avatar, accordion, separator, and
-> command palette ships from there. The Aurora Cream primitives
+> command palette ships from there. The Rich Cream + Purple primitives
 > (`Medallion`, `SectionHeader`, `EmptyState`, `Button` alias) compose
 > shadcn primitives; they never reimplement them. Dark mode flips via
 > `ThemeContext` toggling the `.dark` class on `<html>`.
+>
+> **Rebrand note (June 2026):** The system was previously called
+> "Aurora Cream." We dropped the "Aurora" label because it kept
+> drifting the language into multi-color washes, sinusoidal SVG
+> backdrops, and cyan/violet/magenta orb bleeds that competed with
+> data UI. The system is two colors: **rich cream** (paper) and
+> **brand purple**. Single-hue gradients within purple are fine
+> (e.g. `from-brand to-brand-deep`); multi-color, multi-stop, or
+> rainbow gradients are not. Anything `aurora-*` in legacy code is
+> being renamed or deleted.
 
 ---
 
@@ -34,7 +44,7 @@
 
 ### Effects
 - `.glass` — the signature translucent cream surface. **Permitted surfaces:** modal overlays (`.glass-elevated`), sticky shells (`.shell-sticky-glass`), sidebar chrome, icon buttons on glass panels. **Do not** use for ordinary card bodies — use `<Card>` instead (see migration note below).
-- `.aurora-ring` — subtle premium border glow (use on active/selected states)
+- `.wl-purple-ring` — subtle premium purple hairline (use on active/selected states; replaces the retired `.aurora-ring`)
 - Soft brand halos: `<span aria-hidden className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150" />`
 
 > **Migration note — `glassUtility` ratchet:** The `shadcn-pivot-ratchet` tracks `.glass` usage and only allows it to decrease over time. Card bodies that currently carry `.glass` should be migrated to `<Card>` from `src/components/ui/shadcn/`. `<Card>` consumes the `--card` design token, adapts to dark-mode automatically, and is the canonical card surface going forward. Shell surfaces (TopBar, Sidebar, modals, popovers, sticky headers) are permanently exempt — those keep `.glass`/`.glass-strong`/`.glass-elevated`/`.shell-sticky-glass`.
@@ -269,7 +279,7 @@ Never render a raw `<button>` / `<input>` / `<dialog>` / `<select>` in
 (`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts`) fails CI
 if these counts grow.
 
-### Tier 2 — Aurora Cream compositions (`src/components/ui/`)
+### Tier 2 — Rich Cream + Purple compositions (`src/components/ui/`)
 
 Higher-level patterns composed **out of** the shadcn primitives:
 
