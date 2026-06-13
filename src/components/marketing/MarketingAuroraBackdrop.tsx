@@ -1,24 +1,18 @@
 /**
- * Shared marketing backdrop — the Aurora Cream "majestic" canvas.
+ * Shared marketing backdrop — Rich Cream + Controlled Purple canvas.
  *
- * Renders the warm cream paper plus three large, slowly-drifting brand-violet
- * aurora orbs (top-left, top-right, lower-center). They sit far behind content
- * (`z-0`, `pointer-events-none`) and stay deliberately soft so the cream still
- * dominates — the orbs read as intentional ambient light across every
- * marketing page rather than a corner smudge. All motion is CSS keyframes in
- * `wireline-design-system.css` (`.wl-aurora-*`), CSP-safe, and collapses to a
- * calm static field under `prefers-reduced-motion`.
+ * This intentionally replaces the old aurora/orb field. The public site should
+ * use warm cream paper with small, contained light-purple highlights — not large
+ * drifting violet washes that can read as purple bleed on the canvas.
  *
- * Consumed by both shared shells (`MarketingChrome`, `MarketingPageFrame`), so
- * one field unifies the entire public site. The landing page composes its own
- * hero field on top of the switchboard.
+ * Filename/export remain for compatibility with existing imports.
  */
 export default function MarketingAuroraBackdrop() {
   return (
-    <div className="wl-aurora-field pointer-events-none fixed inset-0 z-0 bg-paper" aria-hidden>
-      <span className="wl-aurora-orb" />
-      <span className="wl-aurora-orb" />
-      <span className="wl-aurora-orb" />
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-paper paper-texture" aria-hidden>
+      <span className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(155,92,224,0.10),transparent_68%)] blur-2xl" />
+      <span className="absolute left-[-10rem] top-[18rem] h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(185,130,255,0.06),transparent_70%)] blur-2xl" />
+      <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/20 to-transparent" />
     </div>
   );
 }
