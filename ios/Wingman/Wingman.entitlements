@@ -7,9 +7,7 @@
 	<key>aps-environment</key>
 	<string>development</string>
 
-	<!-- Phase 2 (requires Apple approval before it can be signed; add then):
-	<key>com.apple.developer.carplay-communication</key>
-	<true/>
-	-->
+	<!-- Phase 2: add the CarPlay Communication entitlement only after Apple
+	     grants it in the Developer portal; ungranted entitlements break signing. -->
 </dict>
 </plist>
