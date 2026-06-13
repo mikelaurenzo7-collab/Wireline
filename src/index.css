@@ -7,44 +7,42 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════
-   SHADCN/UI THEME — Wireline Aurora Cream
+   SHADCN/UI THEME — Wireline Rich Cream + Controlled Purple
    CSS custom properties for shadcn components, layered alongside
-   the existing @theme block. Public-facing pages retain their
-   original glass/aurora design system intact.
+   the existing @theme block. The system is intentionally limited to
+   warm cream surfaces and controlled purple accents — no aurora / multicolor
+   bleed language.
    ══════════════════════════════════════════════════════════════════ */
 :root {
   --radius: 0.75rem;
   --wl-signal: #10b981;
   /* Brand cream — consumed by the rail wordmark, ambience washes, and
-   * sticker slots. Was referenced in 6 places but never defined, so
-   * fallback-less `var(--wl-cream)` consumers (sidebar wordmark) silently
-   * inherited low-contrast purple. */
-  --wl-cream: #f0e6d4;
+   * sticker slots. */
+  --wl-cream: #f5f0e6;
 
   /* Surface colors */
-  --background: #f0e6d4;
+  --background: #f5f0e6;
   --foreground: #1a1614;
-  --card: color-mix(in srgb, #f0e6d4 92%, #e8dcc8);
+  --card: color-mix(in srgb, #f5f0e6 93%, #e8dcc8);
   --card-foreground: #1a1614;
-  --popover: color-mix(in srgb, #f0e6d4 95%, white);
+  --popover: color-mix(in srgb, #f5f0e6 96%, white);
   --popover-foreground: #1a1614;
 
-  /* Brand primary — lighter editorial violet that matches the hero accent.
-   * The previous deeper #6B2B99 now lives on as --color-brand-deep (hover). */
-  --primary: #8b3fd6;
+  /* Brand primary — lighter, cleaner purple. Keep accents contained. */
+  --primary: #9b5ce0;
   --primary-foreground: #ffffff;
 
   /* Secondary */
-  --secondary: #3b154c;
+  --secondary: #4c1d75;
   --secondary-foreground: #ffffff;
 
   /* Muted */
   --muted: rgba(26, 22, 20, 0.05);
   --muted-foreground: #5a534a;
 
-  /* Accent */
-  --accent: rgba(139, 63, 214, 0.06);
-  --accent-foreground: #8b3fd6;
+  /* Accent — controlled purple tint only, never page bleed. */
+  --accent: rgba(155, 92, 224, 0.055);
+  --accent-foreground: #9b5ce0;
 
   /* Destructive */
   --destructive: #e8466a;
@@ -53,44 +51,41 @@
   /* Borders & inputs */
   --border: rgba(26, 22, 20, 0.1);
   --input: rgba(26, 22, 20, 0.12);
-  --ring: rgba(139, 63, 214, 0.35);
+  --ring: rgba(155, 92, 224, 0.28);
 
   /* Sidebar */
-  --sidebar-background: rgba(59, 21, 76, 0.96);
-  --sidebar-foreground: rgba(245, 240, 230, 0.9);
-  --sidebar-primary: #8b3fd6;
+  --sidebar-background: rgba(76, 29, 117, 0.96);
+  --sidebar-foreground: rgba(245, 240, 230, 0.92);
+  --sidebar-primary: #9b5ce0;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(245, 240, 230, 0.06);
-  --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
+  --sidebar-accent-foreground: rgba(245, 240, 230, 0.88);
   --sidebar-border: rgba(245, 240, 230, 0.08);
-  --sidebar-ring: rgba(139, 63, 214, 0.4);
+  --sidebar-ring: rgba(155, 92, 224, 0.34);
 
   /* Charts */
-  --chart-1: #8b3fd6;
-  --chart-2: #8b3fd6;
-  --chart-3: #8b6fa8;
-  --chart-4: #3b154c;
+  --chart-1: #9b5ce0;
+  --chart-2: #7c3fc6;
+  --chart-3: #a88bc7;
+  --chart-4: #4c1d75;
   --chart-5: #d4c9b8;
 
-  /* Core theme variables — RICH cream canvas + warm paper accent */
+  /* Core theme variables — rich cream canvas + warm paper accent */
   --ink: #1a1614;
-  --paper: #f0e6d4;
+  --paper: #f5f0e6;
   --paper-warm: #e8dcc8;
   /** Elevated dark panels — composer, artifacts, live session fades */
   --velvet: #1a1225;
-  --chrome-glow: #8b3fd6;
+  --chrome-glow: #b982ff;
 
   /* Muted typography — resolves to the warm cream-ink fades on light
-   * and the cool zinc fades on dark. Referenced by --color-muted /
-   * --color-muted-soft in the @theme block below so `text-muted` and
-   * `text-muted-soft` flip automatically when the .dark class lands on
-   * <html>. */
+   * and the controlled purple fades on dark. */
   --muted-resolved: #5a534a;
   --muted-soft-resolved: #5c574f;
 
   /* ═══════════════════════════════════════════════════════════════
-     REFINED EDITORIAL FOUNDATION — Aurora Cream 2.5
-     Extreme attention to depth, rhythm, light, and tactility.
+     REFINED EDITORIAL FOUNDATION — Rich Cream + Controlled Purple
+     Depth, rhythm, light, and tactility without uncontrolled gradient bleed.
      ═══════════════════════════════════════════════════════════════ */
 
   /* Elevation — luxurious, paper-aware shadows. Never harsh. */
@@ -98,7 +93,7 @@
   --shadow-1: 0 1px 2px rgba(26, 22, 20, 0.04), 0 1px 1px rgba(26, 22, 20, 0.03);
   --shadow-2: 0 4px 12px rgba(26, 22, 20, 0.06), 0 1px 3px rgba(26, 22, 20, 0.05);
   --shadow-3: 0 10px 30px rgba(26, 22, 20, 0.08), 0 3px 8px rgba(26, 22, 20, 0.06);
-  --shadow-glow: 0 0 0 1px rgba(139, 63, 214, 0.08), 0 8px 32px rgba(139, 63, 214, 0.06);
+  --shadow-glow: 0 0 0 1px rgba(155, 92, 224, 0.055), 0 8px 28px rgba(155, 92, 224, 0.045);
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(26, 22, 20, 0.04);
 
   /* Motion language — consistent editorial springs */
@@ -109,8 +104,8 @@
   --spring-lux: 320 28 1;
 
   /* Focus — refined, generous, brand-tinted, never harsh */
-  --focus-ring: 0 0 0 3px rgba(139, 63, 214, 0.12);
-  --focus-ring-dark: 0 0 0 3px rgba(199, 125, 255, 0.18);
+  --focus-ring: 0 0 0 3px rgba(155, 92, 224, 0.10);
+  --focus-ring-dark: 0 0 0 3px rgba(185, 130, 255, 0.14);
 
   /* Paper tactility — extremely subtle warm grain (performance safe) */
   --paper-grain:
@@ -119,9 +114,9 @@
 }
 
 .dark {
-  /* Dark mode surface colors — deep velvet editorial purple-black */
+  /* Dark mode surface colors — controlled purple-black, not a purple haze */
   --velvet: #1a1225;
-  --chrome-glow: #c77dff;
+  --chrome-glow: #b982ff;
   --background: #0f0c17;
   --foreground: #f3e8ff;
   --card: rgba(24, 18, 38, 0.92);
@@ -129,77 +124,75 @@
   --popover: rgba(20, 15, 32, 0.97);
   --popover-foreground: #f3e8ff;
 
-  /* Brand primary — slightly more luminous for velvet contrast */
-  --primary: #9b5ce0;
+  /* Brand primary — lighter, cleaner on dark chrome */
+  --primary: #b982ff;
   --primary-foreground: #ffffff;
 
-  /* Secondary — richer velvet */
+  /* Secondary */
   --secondary: #261a38;
   --secondary-foreground: #f3e8ff;
 
-  /* Muted — softer, more atmospheric */
-  --muted: rgba(155, 92, 224, 0.12);
-  --muted-foreground: #b89ad9;
+  /* Muted */
+  --muted: rgba(185, 130, 255, 0.10);
+  --muted-foreground: #c6a9e8;
 
-  /* Accent — luminous velvet highlight */
-  --accent: rgba(155, 92, 224, 0.22);
-  --accent-foreground: #d4b3ff;
+  /* Accent — controlled highlight */
+  --accent: rgba(185, 130, 255, 0.16);
+  --accent-foreground: #e0c7ff;
 
   /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  /* Borders & inputs — finer, more luxurious */
-  --border: rgba(155, 92, 224, 0.18);
-  --input: rgba(155, 92, 224, 0.12);
-  --ring: rgba(155, 92, 224, 0.45);
+  /* Borders & inputs */
+  --border: rgba(185, 130, 255, 0.14);
+  --input: rgba(185, 130, 255, 0.10);
+  --ring: rgba(185, 130, 255, 0.32);
 
-  /* Sidebar — deeper velvet */
+  /* Sidebar */
   --sidebar-background: rgba(22, 15, 36, 0.98);
   --sidebar-foreground: #f3e8ff;
-  --sidebar-primary: #9b5ce0;
+  --sidebar-primary: #b982ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(155, 92, 224, 0.14);
-  --sidebar-accent-foreground: #d4b3ff;
-  --sidebar-border: rgba(155, 92, 224, 0.22);
-  --sidebar-ring: rgba(155, 92, 224, 0.45);
+  --sidebar-accent: rgba(185, 130, 255, 0.10);
+  --sidebar-accent-foreground: #e0c7ff;
+  --sidebar-border: rgba(185, 130, 255, 0.16);
+  --sidebar-ring: rgba(185, 130, 255, 0.32);
 
-  /* Charts — refined for velvet dark */
-  --chart-1: #9b5ce0;
+  /* Charts */
+  --chart-1: #b982ff;
   --chart-2: #9b5ce0;
-  --chart-3: #8b6fa8;
-  --chart-4: #6b2b99;
-  --chart-5: #3b154c;
+  --chart-3: #a88bc7;
+  --chart-4: #7c3fc6;
+  --chart-5: #4c1d75;
 
   /* Dark mode theme re-mappings */
   --ink: #f3e8ff;
   --paper: #0f0c17;
 
   /* Muted resolves to soft purple-tinted text */
-  --muted-resolved: #b89ad9;
-  --muted-soft-resolved: #9370b5;
+  --muted-resolved: #c6a9e8;
+  --muted-soft-resolved: #a88bc7;
 
-  /* Dark elevation — deeper, velvet shadows with purple undertone */
+  /* Dark elevation — controlled, not smeared */
   --shadow-0: none;
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.42), 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.52), 0 6px 16px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 0 1px rgba(155, 92, 224, 0.28), 0 12px 48px rgba(155, 92, 224, 0.18);
+  --shadow-glow: 0 0 0 1px rgba(185, 130, 255, 0.18), 0 12px 42px rgba(185, 130, 255, 0.10);
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
 
-  /* Dark paper grain — cooler, more velvety, higher tactility */
+  /* Dark paper grain */
   --paper-grain:
     radial-gradient(circle at 22% 28%, rgba(255, 255, 255, 0.018) 0.6px, transparent 0.8px),
     radial-gradient(circle at 72% 68%, rgba(255, 255, 255, 0.012) 0.5px, transparent 0.7px);
 }
 
 /* ------------------------------------------------------------------------
-   AURORA CREAM — a warm, editorial light system.
-   Inspired by the parchment warmth of Claude/Anthropic's palette.
-   Soft cream backgrounds with luminous aurora gradients as accents,
-   frosted cream glass surfaces, and dark warm-ink typography on an
-   editorial Instrument Serif italic display face.
-   Existing utility class names continue to work automatically.
+   RICH CREAM + CONTROLLED PURPLE
+   Warm cream backgrounds, contained purple accents, frosted cream glass,
+   and dark warm-ink typography. Avoid multicolor / aurora gradients and
+   full-canvas purple bleeds.
    -------------------------------------------------------------------- */
 
 @theme {
@@ -218,9 +211,9 @@
 
   /* Core palette */
   --color-brand: var(--primary);
-  --color-brand-2: #8b3fd6;
-  --color-brand-3: #8b6fa8;
-  --color-brand-deep: #6b2b99;
+  --color-brand-2: #9b5ce0;
+  --color-brand-3: #a88bc7;
+  --color-brand-deep: #4c1d75;
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-paper-warm: var(--paper-warm, #e8dcc8);
@@ -245,67 +238,67 @@
   --color-zinc-900: #ede6da;
   --color-zinc-950: #e8e1d4;
 
-  /* Refined accents — remapped to purple/cream so legacy utility classes
+  /* Controlled accents — remapped to purple/cream so legacy utility classes
    * (bg-emerald-500, text-amber-600, border-sky-500, etc.) never bleed
-   * off-brand blues, oranges, or teals on client-facing surfaces. */
+   * into uncontrolled multicolor on client-facing surfaces. */
   --color-rose-500: #e8466a;
   --color-rose-600: #c53050;
 
-  --color-emerald-50: #f5f0f8;
-  --color-emerald-100: #ede4f2;
-  --color-emerald-200: #d9cce8;
-  --color-emerald-300: #b399d1;
-  --color-emerald-400: #8b6fa8;
-  --color-emerald-500: #8b3fd6;
-  --color-emerald-600: #8b3fd6;
-  --color-emerald-700: #3b154c;
-  --color-emerald-800: #2e0f4a;
+  --color-emerald-50: #f7f1fb;
+  --color-emerald-100: #efe4f8;
+  --color-emerald-200: #dfcef0;
+  --color-emerald-300: #c6a6e6;
+  --color-emerald-400: #a88bc7;
+  --color-emerald-500: #9b5ce0;
+  --color-emerald-600: #9b5ce0;
+  --color-emerald-700: #4c1d75;
+  --color-emerald-800: #2e123f;
 
   --color-amber-50: #f7f3ec;
   --color-amber-100: #ede6da;
   --color-amber-200: #d4c9b8;
   --color-amber-300: #c4b5a0;
-  --color-amber-400: #a988c4;
-  --color-amber-500: #8b6fa8;
-  --color-amber-600: #8b3fd6;
-  --color-amber-700: #8b3fd6;
-  --color-amber-800: #3b154c;
+  --color-amber-400: #b79bd2;
+  --color-amber-500: #a88bc7;
+  --color-amber-600: #9b5ce0;
+  --color-amber-700: #9b5ce0;
+  --color-amber-800: #4c1d75;
 
-  --color-blue-50: #f5f0f8;
-  --color-blue-100: #ede4f2;
-  --color-blue-200: #d9cce8;
-  --color-blue-300: #b399d1;
-  --color-blue-400: #8b6fa8;
-  --color-blue-500: #8b3fd6;
-  --color-blue-600: #8b3fd6;
-  --color-blue-700: #3b154c;
+  --color-blue-50: #f7f1fb;
+  --color-blue-100: #efe4f8;
+  --color-blue-200: #dfcef0;
+  --color-blue-300: #c6a6e6;
+  --color-blue-400: #a88bc7;
+  --color-blue-500: #9b5ce0;
+  --color-blue-600: #9b5ce0;
+  --color-blue-700: #4c1d75;
 
-  --color-sky-50: #f5f0f8;
-  --color-sky-100: #ede4f2;
-  --color-sky-200: #d9cce8;
-  --color-sky-300: #b399d1;
-  --color-sky-400: #8b6fa8;
-  --color-sky-500: #8b3fd6;
-  --color-sky-600: #8b3fd6;
-  --color-sky-700: #3b154c;
+  --color-sky-50: #f7f1fb;
+  --color-sky-100: #efe4f8;
+  --color-sky-200: #dfcef0;
+  --color-sky-300: #c6a6e6;
+  --color-sky-400: #a88bc7;
+  --color-sky-500: #9b5ce0;
+  --color-sky-600: #9b5ce0;
+  --color-sky-700: #4c1d75;
 
-  --color-cyan-50: #f5f0ec;
+  --color-cyan-50: #f7f3ec;
   --color-cyan-100: #ede6da;
   --color-cyan-200: #d4c9b8;
   --color-cyan-300: #c4b5a0;
-  --color-cyan-400: #a988c4;
-  --color-cyan-500: #8b3fd6;
-  --color-cyan-600: #8b3fd6;
-  --color-cyan-700: #8b3fd6;
+  --color-cyan-400: #b79bd2;
+  --color-cyan-500: #9b5ce0;
+  --color-cyan-600: #9b5ce0;
+  --color-cyan-700: #9b5ce0;
 
   --color-orange-50: #f7f3ec;
   --color-orange-100: #ede6da;
   --color-orange-200: #d4c9b8;
   --color-orange-300: #c4b5a0;
-  --color-orange-400: #a988c4;
-  --color-orange-500: #8b6fa8;
-  --color-orange-600: #8b3fd6;
-  --color-orange-700: #8b3fd6;
+  --color-orange-400: #b79bd2;
+  --color-orange-500: #a88bc7;
+  --color-orange-600: #9b5ce0;
+  --color-orange-700: #9b5ce0;
 
   --radius-sm: 0;
   --radius-md: 0;
@@ -314,4 +307,3 @@
   --radius-2xl: 0;
   --radius-3xl: 0;
 }
-
