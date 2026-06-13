@@ -6,9 +6,9 @@ import AppIntents
 /// which builds the agent's system prompt and dials via Vapi. No prompt logic
 /// runs on the device.
 struct CallAgentIntent: AppIntent {
-    static var title: LocalizedStringResource = "Have an agent place a call"
+    static var title: LocalizedStringResource = "Have Wingman place a call"
     static var description = IntentDescription(
-        "Asks a Wingman agent to call someone with an optional instruction."
+        "Ask Wingman to call a person or business with your message, like telling the doctor you are running late."
     )
     // Opening the app is unnecessary — this runs in the background via Siri.
     static var openAppWhenRun = false
@@ -23,7 +23,7 @@ struct CallAgentIntent: AppIntent {
     var context: String
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Have \(\.$agentName) call \(\.$phoneNumber) and say \(\.$context)")
+        Summary("Have Wingman call \(\.$phoneNumber) and say \(\.$context) using \(\.$agentName)")
     }
 
     @MainActor

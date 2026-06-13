@@ -34,6 +34,11 @@ New for Wingman push (optional — without them, push is a safe no-op):
 - [ ] **Request the CarPlay Communication entitlement** — Apple approval is
       slow, start early. (Phase 2; not needed for the iPhone app.)
 
+### App Store / CarPlay review prep
+- [ ] Complete `ios/EVERYDAY_SHORTCUTS_PLAN.md` and `ios/APP_STORE_CARPLAY_READINESS.md` before TestFlight external review or App Store submission.
+- [ ] Prepare the CarPlay Communication entitlement request narrative before adding any CarPlay entitlement to the signed app.
+- [ ] Seed an App Review demo account with agents, recent calls, and a callback number so reviewers can exercise the account-gated flows without manual support.
+
 ### Xcode / build / ship
 - [ ] `brew install xcodegen` then `cd ios && xcodegen generate`.
 - [ ] Set your **Development Team** on both targets (`Wingman`, `WingmanWidgets`).

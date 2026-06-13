@@ -20,7 +20,7 @@
     "lint:eslint": "eslint --max-warnings 0 src/",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
-    "verify": "npm run lint && npm run lint:eslint && npm run docs:check && npm run csp:check && npm run authz:check && npm run api-error:check && npm run test:run && npm run security:audit && npm run build && npm run smoke:server",
+    "verify": "npm run lint && npm run lint:eslint && npm run docs:check && npm run csp:check && npm run authz:check && npm run tenant-insert:check && npm run api-error:check && npm run test:run && npm run security:audit && npm run build && npm run smoke:server",
     "assets": "node scripts/render-image-assets.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "stripe:setup": "node scripts/setup-stripe-billing.mjs",
@@ -62,7 +62,8 @@
     "test:design": "vitest run wireline-design-audit shadcn-pivot-ratchet wireline-director-design",
     "test:coverage": "vitest run --coverage",
     "analyze": "VISUALIZE=1 vite build",
-    "strict:coverage": "node scripts/strict-coverage.mjs"
+    "strict:coverage": "node scripts/strict-coverage.mjs",
+    "tenant-insert:check": "node scripts/check-user-id-inserts.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
