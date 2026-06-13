@@ -3,9 +3,11 @@ import SwiftUI
 /// Root workspace. `/api/mobile/me` decides the lens: Personal (a simple
 /// agent picker + "add agent") or Business (the fleet roster + live calls).
 struct WorkspaceView: View {
+    @EnvironmentObject private var auth: AuthService
     @State private var me: MobileMe?
     @State private var agents: [Agent] = []
     @State private var loadError: String?
+    @State private var showingDialer = false
 
     var body: some View {
         NavigationStack {
@@ -19,14 +21,26 @@ struct WorkspaceView: View {
                         }
                     }
                 } else if let loadError {
-                    ContentUnavailableView("Couldn't load", systemImage: "wifi.exclamationmark",
-                                           description: Text(loadError))
+                    BrandEmptyState(title: "Couldn't load", message: loadError,
+                                    systemImage: "wifi.exclamationmark")
                 } else {
                     ProgressView("Loading workspace…")
                 }
             }
             .navigationTitle("Wingman")
             .wingmanBrand()
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingDialer = true } label: { Image(systemName: "phone.arrow.up.right") }
+                        .disabled(agents.isEmpty)
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button("Sign out", role: .destructive) { auth.signOut() }
+                    } label: { Image(systemName: "person.crop.circle") }
+                }
+            }
+            .sheet(isPresented: $showingDialer) { OutboundCallView(agents: agents) }
             .task { await load() }
             .refreshable { await load() }
         }
@@ -34,41 +48,48 @@ struct WorkspaceView: View {
 
     @ViewBuilder
     private func accountSection(_ me: MobileMe) -> some View {
-        Section("Account") {
-            LabeledContent("Plan", value: me.account.planName)
-            LabeledContent("Mode", value: me.account.mode.rawValue.capitalized)
-            LabeledContent("Agents", value: agentCountLabel(me.agents))
+        Section {
+            HStack(spacing: 12) {
+                Medallion(systemImage: me.account.mode == .business ? "person.3.fill" : "person.fill")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(me.account.businessName ?? me.user.fullName ?? me.user.email)
+                        .font(.headline)
+                    Text("\(me.account.planName) · \(agentCountLabel(me.agents))")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
         }
     }
 
     @ViewBuilder
     private func agentSection(_ me: MobileMe) -> some View {
         Section("Agents") {
-            ForEach(agents) { agent in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(agent.name).font(.headline)
-                    if let role = agent.role {
-                        Text(role).font(.caption).foregroundStyle(.secondary)
-                    }
-                }
+            if agents.isEmpty {
+                BrandEmptyState(title: "No agents yet",
+                                message: "Create your first agent on the web to start taking calls.",
+                                systemImage: "person.wave.2")
+            } else {
+                ForEach(agents) { AgentRow(agent: $0) }
             }
             if me.agents.canAddMore, let price = me.extraAgent.priceUsd, me.extraAgent.configured {
                 Label("Add an agent · $\(Int(price))/mo", systemImage: "plus.circle")
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Brand.purple)
             }
         }
     }
 
     private var businessSection: some View {
         Section("Command") {
-            NavigationLink("Live calls") { ActiveCallsView() }
+            NavigationLink { ActiveCallsView() } label: {
+                Label("Live calls", systemImage: "dot.radiowaves.left.and.right")
+            }
         }
     }
 
     private func agentCountLabel(_ q: MobileMe.AgentQuota) -> String {
-        if q.unlimited { return "\(q.count) (unlimited)" }
-        if let cap = q.effectiveCap { return "\(q.count) of \(cap)" }
-        return "\(q.count)"
+        if q.unlimited { return "\(q.count) agents" }
+        if let cap = q.effectiveCap { return "\(q.count) of \(cap) agents" }
+        return "\(q.count) agents"
     }
 
     private func load() async {
@@ -89,14 +110,21 @@ struct ActiveCallsView: View {
     @State private var calls: [ActiveCall] = []
 
     var body: some View {
-        List(calls) { call in
-            VStack(alignment: .leading) {
-                Text(call.customerNumber ?? "Unknown").font(.headline)
-                Text(call.status ?? "—").font(.caption).foregroundStyle(.secondary)
+        Group {
+            if calls.isEmpty {
+                BrandEmptyState(title: "No live calls", message: "Active calls will appear here.",
+                                systemImage: "phone.down")
+            } else {
+                List(calls) { CallCard(call: $0) }
             }
         }
         .navigationTitle("Live calls")
-        .task { calls = (try? await WingmanAPI.shared.activeCalls()) ?? [] }
-        .refreshable { calls = (try? await WingmanAPI.shared.activeCalls()) ?? [] }
+        .wingmanBrand()
+        .task { await refresh() }
+        .refreshable { await refresh() }
+    }
+
+    private func refresh() async {
+        calls = (try? await WingmanAPI.shared.activeCalls()) ?? []
     }
 }

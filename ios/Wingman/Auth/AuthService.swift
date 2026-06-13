@@ -1,0 +1,83 @@
+import Foundation
+import SwiftUI
+
+/// Observable sign-in state for the app shell. On sign-in we POST to the
+/// existing `/api/auth/signin`, then pull the JWT out of the `wireline_session`
+/// cookie the backend returns and stash it in the Keychain — from then on every
+/// `/api/mobile/*` request authenticates with `Authorization: Bearer <jwt>`.
+///
+/// Why the cookie value works as a Bearer token: `getSessionTokenFromRequest`
+/// on the backend accepts either the cookie or a Bearer header, and the cookie
+/// value *is* the signed JWT. `httpOnly` only hides a cookie from browser
+/// JavaScript — native URLSession clients can still read it.
+@MainActor
+final class AuthService: ObservableObject {
+    @Published var isSignedIn: Bool = KeychainStore.loadToken() != nil
+    @Published var isWorking = false
+    @Published var errorMessage: String?
+
+    func signIn(email: String, password: String) async {
+        isWorking = true
+        errorMessage = nil
+        defer { isWorking = false }
+        do {
+            let token = try await Self.requestSessionToken(email: email, password: password)
+            KeychainStore.saveToken(token)
+            isSignedIn = true
+            await CallManager.shared.refreshDeviceRegistration()
+        } catch {
+            errorMessage = (error as? AuthError)?.message ?? error.localizedDescription
+        }
+    }
+
+    func signOut() {
+        Task { await CallManager.shared.unregisterDevice() }
+        KeychainStore.clear()
+        isSignedIn = false
+    }
+
+    enum AuthError: Error {
+        case badCredentials
+        case noSessionCookie
+        case server(String)
+
+        var message: String {
+            switch self {
+            case .badCredentials: return "Incorrect email or password."
+            case .noSessionCookie: return "Sign-in succeeded but no session was returned."
+            case let .server(msg): return msg
+            }
+        }
+    }
+
+    /// POST /api/auth/signin and extract the session JWT from the Set-Cookie header.
+    private static func requestSessionToken(email: String, password: String) async throws -> String {
+        var req = URLRequest(url: WingmanConfig.baseURL.appendingPathComponent("/api/auth/signin"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["email": email, "password": password])
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        guard let http = response as? HTTPURLResponse else {
+            throw AuthError.server("No response from server.")
+        }
+        guard http.statusCode == 200 else {
+            if http.statusCode == 401 { throw AuthError.badCredentials }
+            throw AuthError.server("Sign-in failed (\(http.statusCode)).")
+        }
+
+        // Pull the session JWT out of the Set-Cookie response headers.
+        let headers = http.allHeaderFields as? [String: String] ?? [:]
+        let cookies = HTTPCookie.cookies(withResponseHeaderFields: headers, for: WingmanConfig.baseURL)
+        if let session = cookies.first(where: { $0.name == WingmanConfig.sessionCookieName }) {
+            return session.value
+        }
+        // Fall back to the shared cookie storage, which URLSession also populates.
+        if let session = HTTPCookieStorage.shared.cookies(for: WingmanConfig.baseURL)?
+            .first(where: { $0.name == WingmanConfig.sessionCookieName }) {
+            return session.value
+        }
+        _ = data
+        throw AuthError.noSessionCookie
+    }
+}

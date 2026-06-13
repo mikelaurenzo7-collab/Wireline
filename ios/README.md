@@ -14,15 +14,26 @@ here. The phone is a remote control for the fleet.
 ## Architecture
 
 ```
-ios/Wingman/
-├── WingmanApp.swift            App entry; registers PushKit + CallKit on launch.
-├── Models/Models.swift         Codable mirrors of the /api/mobile/* payloads.
-├── Networking/
-│   ├── WingmanAPI.swift        Bearer-auth REST client for /api/mobile/*.
-│   └── KeychainStore.swift     JWT storage (kSecAttrAccessibleAfterFirstUnlock).
-├── Calls/CallManager.swift     CallKit provider + PushKit (VoIP) registry.
-├── Intents/CallAgentIntent.swift  App Intents: place / (Phase 2) delegate a call.
-└── Views/WorkspaceView.swift   SwiftUI: Personal vs Business workspace.
+ios/
+├── project.yml                 XcodeGen spec → generates Wingman.xcodeproj.
+└── Wingman/
+    ├── WingmanApp.swift         App entry; sign-in gate; registers PushKit on launch.
+    ├── Info.plist               Background modes + usage strings.
+    ├── Wingman.entitlements     aps-environment (CarPlay entitlement deferred).
+    ├── Theme/WingmanTheme.swift Brand tokens (purple/cream) + .wingmanBrand().
+    ├── Models/Models.swift      Codable mirrors of the /api/mobile/* payloads.
+    ├── Auth/AuthService.swift   Sign-in → JWT from session cookie → Keychain.
+    ├── Networking/
+    │   ├── WingmanConfig.swift  Backend base URL + session-cookie name.
+    │   ├── WingmanAPI.swift     Bearer-auth REST client for /api/mobile/*.
+    │   └── KeychainStore.swift  JWT storage (kSecAttrAccessibleAfterFirstUnlock).
+    ├── Calls/CallManager.swift  CallKit provider + PushKit (VoIP) registry.
+    ├── Intents/CallAgentIntent.swift  App Intents: place / (Phase 2) delegate a call.
+    ├── Components/BrandComponents.swift  Medallion, AgentRow, CallCard, buttons.
+    └── Views/
+        ├── SignInView.swift     Branded sign-in.
+        ├── WorkspaceView.swift  Personal vs Business workspace + dialer.
+        └── OutboundCallView.swift  Manual outbound dial sheet.
 ```
 
 ### How a call flows

@@ -6,8 +6,7 @@ import Foundation
 actor WingmanAPI {
     static let shared = WingmanAPI()
 
-    /// Point this at your environment, e.g. https://app.wireline.example.
-    var baseURL = URL(string: "https://app.wireline.example")!
+    private var baseURL: URL { WingmanConfig.baseURL }
 
     enum APIError: Error {
         case notAuthenticated

@@ -13,6 +13,8 @@ final class CallManager: NSObject {
     private let callController = CXCallController()
     private var voipRegistry: PKPushRegistry?
     private let deviceId = (UIDevice.current.identifierForVendor?.uuidString) ?? UUID().uuidString
+    /// Latest VoIP token (hex), cached so we can re-register after sign-in.
+    private var lastVoipToken: String?
 
     override init() {
         let config = CXProviderConfiguration()
@@ -34,6 +36,20 @@ final class CallManager: NSObject {
         voipRegistry = registry
     }
 
+    /// Re-POST the cached VoIP token after a fresh sign-in (the token itself
+    /// doesn't change on sign-in, but the authenticated user it binds to does).
+    func refreshDeviceRegistration() async {
+        guard let token = lastVoipToken else { return }
+        try? await WingmanAPI.shared.registerDevice(
+            deviceId: deviceId, voipToken: token, alertToken: nil
+        )
+    }
+
+    /// Drop this device server-side on sign-out so it stops receiving pushes.
+    func unregisterDevice() async {
+        try? await WingmanAPI.shared.unregisterDevice(deviceId: deviceId)
+    }
+
     // MARK: - Outbound (CallKit start)
 
     func startOutboundCall(to displayName: String, handle: String) {
@@ -53,6 +69,7 @@ extension CallManager: PKPushRegistryDelegate {
                       didUpdate pushCredentials: PKPushCredentials,
                       for type: PKPushType) {
         let token = pushCredentials.token.map { String(format: "%02x", $0) }.joined()
+        lastVoipToken = token
         Task {
             try? await WingmanAPI.shared.registerDevice(
                 deviceId: deviceId, voipToken: token, alertToken: nil

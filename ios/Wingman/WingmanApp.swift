@@ -3,11 +3,19 @@ import SwiftUI
 @main
 struct WingmanApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var auth = AuthService()
 
     var body: some Scene {
         WindowGroup {
-            WorkspaceView()
-                .tint(Brand.purple)
+            Group {
+                if auth.isSignedIn {
+                    WorkspaceView()
+                } else {
+                    SignInView()
+                }
+            }
+            .environmentObject(auth)
+            .tint(Brand.purple)
         }
     }
 }
