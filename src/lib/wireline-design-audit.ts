@@ -108,5 +108,5 @@ export const DESIGN_AUDIT_BASELINE = {
   appText8px: 0,
   appText9px: 5, // Raised to support sandbox/regression micro labels
   appText10px: 8, // Raised to support PainterWorkspace / sandbox micro labels
-  marketingAuroraRingMax: 2, // Pricing tier spotlight + allowed marketing flourish
+  marketingAuroraRingMax: 0,
 } as const;
