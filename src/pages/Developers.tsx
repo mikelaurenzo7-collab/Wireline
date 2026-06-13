@@ -95,7 +95,7 @@ export default function Developers() {
           <a
             href={openApiUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium border border-white/15 text-ink hover:border-white/30 hover:bg-white/5 transition-all"
           >
             <BookOpen className="w-4 h-4" /> OpenAPI Spec
@@ -104,7 +104,7 @@ export default function Developers() {
           <a
             href={swaggerUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium text-on-brand transition-all wl-dev-swagger-btn"
           >
             Try in Swagger UI
@@ -172,7 +172,7 @@ export default function Developers() {
           <a
             href={openApiUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="text-brand hover:underline"
           >
             OpenAPI spec
@@ -199,7 +199,7 @@ export default function Developers() {
             <a
               href={swaggerUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 text-[11px] uppercase tracking-[0.30em] font-medium border border-white/15 text-ink hover:border-white/30"
             >
               Swagger UI <ExternalLink className="w-3 h-3 opacity-50" />

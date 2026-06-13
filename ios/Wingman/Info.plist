@@ -28,7 +28,9 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Wingman needs the microphone so you can speak on calls your agents place or hand to you.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Wingman adds reminders to your calendar when an agent schedules a follow-up.</string>
+	<string>Wingman adds follow-up events to your calendar when an agent schedules one.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Wingman only writes follow-up events you request; it does not read your calendar.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Wingman lets you ask Siri to place or hand off calls through your agents.</string>
 

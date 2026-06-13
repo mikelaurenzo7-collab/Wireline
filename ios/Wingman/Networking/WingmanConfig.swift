@@ -4,8 +4,9 @@ import Foundation
 /// environment (local dev, preview, or production) — both the auth flow and
 /// the authenticated API client read from here.
 enum WingmanConfig {
-    /// e.g. http://localhost:3000 for the dev server, or your Vercel URL.
-    static var baseURL = URL(string: "https://app.wireline.example")!
+    /// Production API origin for TestFlight/App Store builds.
+    /// Override locally only in an uncommitted debug change.
+    static var baseURL = URL(string: "https://trywireline.com")!
 
     /// The httpOnly session cookie the backend sets on sign-in. Its value is
     /// the JWT we reuse as the `Authorization: Bearer` token on /api/mobile/*.
