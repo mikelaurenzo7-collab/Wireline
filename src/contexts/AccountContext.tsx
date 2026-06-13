@@ -122,11 +122,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     [accountType, planId, loading, override, setAccountType],
   );
 
-  return (
-    <AccountContext.Provider value={value}>
-      {children}
-    </AccountContext.Provider>
-  );
+  return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 
 /**

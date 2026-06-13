@@ -82,11 +82,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     [branding, updateBranding, isLoading],
   );
 
-  return (
-    <BrandingContext.Provider value={value}>
-      {children}
-    </BrandingContext.Provider>
-  );
+  return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;
 }
 
 export function useBranding() {
