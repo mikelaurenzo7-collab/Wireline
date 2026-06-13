@@ -137,6 +137,10 @@ export const settings = pgTable("wireline_settings", {
   twilioWhatsappFromNumber: text("twilio_whatsapp_from_number"),
   twilioManagerAlertNumber: text("twilio_manager_alert_number"),
   vapiPhoneInboundAgentId: text("vapi_phone_inbound_agent_id"),
+  // Operator's personal callback number (E.164). When they "take" a live call
+  // from the Wingman app, the agent warm-transfers the caller here. iOS can't
+  // read the device's own number, so the user sets this once.
+  handoffPhone: text("handoff_phone"),
   prospectingEnabled: boolean("prospecting_enabled").default(false),
   targetTitles: jsonb("target_titles"),
   targetIndustries: jsonb("target_industries"),
@@ -1252,6 +1256,10 @@ export const signalPresence = pgTable(
     status: text("status"),
     label: text("label").default("Live · Active"),
     type: text("type").default("voice"),
+    // Vapi live-call control URL (monitor.controlUrl) captured from the
+    // webhook. Lets the operator transfer/take an in-progress call from the
+    // mobile app without raw Twilio access. NULL until Vapi reports it.
+    controlUrl: text("control_url"),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
   },
   () => ({

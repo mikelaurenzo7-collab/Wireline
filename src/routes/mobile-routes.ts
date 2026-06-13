@@ -30,7 +30,7 @@ import { resolveAccountType } from "../lib/account-type";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
-import { placeOutboundCall } from "../lib/vapi-client";
+import { placeOutboundCall, transferLiveCall } from "../lib/vapi-client";
 import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -72,6 +72,7 @@ router.get(
           maxAgents: schema.settings.maxAgents,
           extraAgents: schema.settings.extraAgents,
           businessName: schema.settings.businessName,
+          handoffPhone: schema.settings.handoffPhone,
         })
         .from(schema.settings)
         .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
@@ -121,6 +122,10 @@ router.get(
           price_usd: plan?.extra_agent_price_usd ?? null,
           configured:
             !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv as string],
+        },
+        settings: {
+          // The operator's callback number for "take this call" handoffs.
+          handoff_phone: row?.handoffPhone || null,
         },
       });
     } catch (err) {
@@ -419,6 +424,98 @@ router.get(
     } catch (err) {
       log.error("GET /api/mobile/calls/recent failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to load recent calls.");
+    }
+  },
+);
+
+const e164 = z.string().regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)");
+
+// ── PUT /api/mobile/settings — operator's mobile-app preferences ───────────
+// Currently just the callback number used for "take this call" handoffs.
+const mobileSettingsSchema = z.object({
+  handoffPhone: e164.nullable().optional(),
+});
+
+router.put(
+  "/api/mobile/settings",
+  authenticateUser,
+  mobileSensitiveRateLimiter,
+  validate({ body: mobileSettingsSchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { handoffPhone } = req.body as { handoffPhone?: string | null };
+      if (handoffPhone !== undefined) {
+        await drizzle
+          .update(schema.settings)
+          .set({ handoffPhone: handoffPhone || null })
+          .where(eq(schema.settings.userId, req.user.id));
+      }
+      res.json({ success: true, handoff_phone: handoffPhone ?? null });
+    } catch (err) {
+      log.error("PUT /api/mobile/settings failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to save settings.");
+    }
+  },
+);
+
+// ── POST /api/mobile/calls/:callId/handoff — "take this call" ──────────────
+// Warm-transfers an in-progress call to the operator's number via Vapi live
+// control (no Twilio). Destination is the request's `to` or the saved
+// handoff_phone. Ownership is enforced by scoping the presence row to user.
+const handoffSchema = z.object({ to: e164.optional() });
+
+router.post(
+  "/api/mobile/calls/:callId/handoff",
+  authenticateUser,
+  mobileSensitiveRateLimiter,
+  validate({ body: handoffSchema }),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const [presence] = await drizzle
+        .select({ controlUrl: schema.signalPresence.controlUrl })
+        .from(schema.signalPresence)
+        .where(
+          and(
+            eq(schema.signalPresence.id, req.params.callId),
+            eq(schema.signalPresence.userId, req.user.id),
+          ),
+        )
+        .limit(1);
+
+      if (!presence) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "That call isn't active." });
+      }
+      if (!presence.controlUrl) {
+        return res.status(409).json({
+          code: "HANDOFF_UNAVAILABLE",
+          error: "This call can't be taken over yet — the carrier hasn't reported control info.",
+        });
+      }
+
+      let destination = (req.body as { to?: string }).to;
+      if (!destination) {
+        const [s] = await drizzle
+          .select({ handoffPhone: schema.settings.handoffPhone })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, req.user.id))
+          .limit(1);
+        destination = s?.handoffPhone || undefined;
+      }
+      if (!destination) {
+        return res.status(400).json({
+          code: "NO_CALLBACK_NUMBER",
+          error: "Set a callback number first so we know where to send the call.",
+        });
+      }
+
+      const result = await transferLiveCall(presence.controlUrl, destination);
+      if (!result.ok) {
+        return res.status(result.status).json({ code: "ERROR", error: result.error });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      log.error("POST /api/mobile/calls/:callId/handoff failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to take the call.");
     }
   },
 );

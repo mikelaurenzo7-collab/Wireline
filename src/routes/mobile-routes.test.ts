@@ -64,8 +64,10 @@ vi.mock("../lib/voice-spend-control", () => ({
 }));
 
 const placeOutboundCall = vi.fn();
+const transferLiveCall = vi.fn();
 vi.mock("../lib/vapi-client", () => ({
   placeOutboundCall: (...a: unknown[]) => placeOutboundCall(...a),
+  transferLiveCall: (...a: unknown[]) => transferLiveCall(...a),
 }));
 
 const isDncBlocked = vi.fn(async () => false);
@@ -212,6 +214,51 @@ describe("mobile-routes", () => {
       expect(res.status).toBe(200);
       expect(res.body.calls[0].id).toBe("42");
       expect(res.body.needsAttention).toBe(1);
+    });
+  });
+
+  describe("PUT /api/mobile/settings", () => {
+    it("saves a valid callback number", async () => {
+      h.queue.push(undefined); // the settings update
+      const res = await request(app)
+        .put("/api/mobile/settings")
+        .send({ handoffPhone: "+15551234567" });
+      expect(res.status).toBe(200);
+      expect(res.body.handoff_phone).toBe("+15551234567");
+    });
+
+    it("rejects a malformed number with 400", async () => {
+      const res = await request(app).put("/api/mobile/settings").send({ handoffPhone: "nope" });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("POST /api/mobile/calls/:callId/handoff", () => {
+    it("404s when the call isn't active for this user", async () => {
+      h.queue.push([]); // presence lookup → none
+      const res = await request(app).post("/api/mobile/calls/call-1/handoff").send({});
+      expect(res.status).toBe(404);
+      expect(transferLiveCall).not.toHaveBeenCalled();
+    });
+
+    it("409s when the carrier hasn't reported a control URL yet", async () => {
+      h.queue.push([{ controlUrl: null }]);
+      const res = await request(app).post("/api/mobile/calls/call-1/handoff").send({});
+      expect(res.status).toBe(409);
+      expect(transferLiveCall).not.toHaveBeenCalled();
+    });
+
+    it("transfers the live call to the provided number", async () => {
+      h.queue.push([{ controlUrl: "https://x.vapi.ai/control/abc" }]);
+      transferLiveCall.mockResolvedValue({ ok: true, status: 200 });
+      const res = await request(app)
+        .post("/api/mobile/calls/call-1/handoff")
+        .send({ to: "+15557654321" });
+      expect(res.status).toBe(200);
+      expect(transferLiveCall).toHaveBeenCalledWith(
+        "https://x.vapi.ai/control/abc",
+        "+15557654321",
+      );
     });
   });
 });
