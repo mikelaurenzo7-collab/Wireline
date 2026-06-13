@@ -88,7 +88,7 @@ describe("wireline design audit — authenticated app surfaces", () => {
 });
 
 describe("wireline design audit — marketing surfaces", () => {
-  it("allows aurora-ring only within marketing budget", () => {
+  it("has no aurora-ring in marketing components or pages", () => {
     assertMax(
       countPatternInScope(/\baurora-ring\b/g, "marketing"),
       DESIGN_AUDIT_BASELINE.marketingAuroraRingMax,
