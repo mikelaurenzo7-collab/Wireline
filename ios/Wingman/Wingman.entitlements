@@ -7,6 +7,15 @@
 	<key>aps-environment</key>
 	<string>development</string>
 
+	<!-- App Group shared with the WingmanWidgets extension. The app writes a
+	     snapshot here (recent calls, follow-up count, balance) that the widgets
+	     read. Must match WingmanWidgets.entitlements and
+	     WingmanWidgetShared.appGroupId. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.wireline.wingman</string>
+	</array>
+
 	<!-- Phase 2: add the CarPlay Communication entitlement only after Apple
 	     grants it in the Developer portal; ungranted entitlements break signing. -->
 </dict>

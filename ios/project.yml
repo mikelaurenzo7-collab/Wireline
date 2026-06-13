@@ -36,6 +36,7 @@ targets:
     platform: iOS
     sources:
       - path: Wingman
+      - path: WingmanShared # snapshot types shared with the widget extension
     dependencies:
       - target: WingmanWidgets
     settings:
@@ -53,10 +54,12 @@ targets:
     platform: iOS
     sources:
       - path: WingmanWidgets
+      - path: WingmanShared # same snapshot types, read-only in the extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wireline.wingman.widgets
         PRODUCT_NAME: WingmanWidgets
         INFOPLIST_FILE: WingmanWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: WingmanWidgets/WingmanWidgets.entitlements
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1"

@@ -6,6 +6,7 @@ struct WingmanApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var auth = AuthService()
     @StateObject private var router = WingmanRouter.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -20,8 +21,21 @@ struct WingmanApp: App {
             .environmentObject(router)
             .tint(Brand.purple)
             .onOpenURL { url in
+                switch url.host {
                 // wingman://ask (from a widget / Control Center) → Ask surface.
-                if url.host == "ask" { router.showAsk = true }
+                case "ask": router.showAsk = true
+                // wingman://calls (from the recent-calls / needs-attention
+                // widgets) → bring the app forward on the Calls surface.
+                case "calls": router.route = .calls
+                default: break
+                }
+            }
+            // Keep the Home/Lock Screen widgets fresh: refresh the App Group
+            // snapshot whenever the app becomes active or sign-in state flips.
+            .task(id: auth.isSignedIn) { await WidgetSync.refresh(signedIn: auth.isSignedIn) }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                Task { await WidgetSync.refresh(signedIn: auth.isSignedIn) }
             }
         }
     }
