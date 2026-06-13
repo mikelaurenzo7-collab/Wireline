@@ -224,7 +224,7 @@ export default function Compare() {
         {/* Matrix */}
         <section
           id="compare-matrix"
-          className="relative z-10 max-w-7xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-20"
+          className="relative z-10 wl-measure-wide scroll-mt-28 px-4 sm:px-6 lg:px-10 xl:px-14 pb-20"
         >
           {/* Mobile scroll affordance — the table is wider than 360-390px
             viewports by design (6 competitor columns need readable

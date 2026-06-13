@@ -57,7 +57,9 @@ export default function MarketingPageFrame({
           "relative z-10 flex-1 min-h-0",
           scroll ? "scroll-viewport" : "overflow-hidden flex flex-col",
           stickyCta && scroll && "marketing-has-sticky-cta",
-          scroll ? "px-5 py-8 md:py-12 lg:px-8" : "px-5 pb-4 lg:px-8 lg:pb-6",
+          scroll
+            ? "px-5 py-8 md:py-12 lg:px-8 xl:px-12 2xl:px-16"
+            : "px-5 pb-4 lg:px-8 xl:px-12 lg:pb-6",
           mainClassName,
         )}
       >
@@ -65,7 +67,7 @@ export default function MarketingPageFrame({
           <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-black/8 bg-paper/88 px-5 py-2.5 backdrop-blur md:-mx-8 md:px-8">
             <nav
               aria-label="On this page"
-              className="mx-auto flex max-w-[1200px] items-center gap-2 overflow-x-auto tab-strip-scroll"
+              className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"
             >
               <span className="shrink-0 wl-label text-ink/45">On this page</span>
               {sectionLinks.map((link) => {
@@ -89,7 +91,7 @@ export default function MarketingPageFrame({
             </nav>
           </div>
         )}
-        <div className={cn(scroll && "max-w-[1200px] mx-auto w-full")}>{children}</div>
+        <div className={cn(scroll && "wl-measure")}>{children}</div>
       </main>
 
       {footer && (

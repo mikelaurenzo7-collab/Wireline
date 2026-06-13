@@ -2505,6 +2505,49 @@ body,
   border-radius: 2px;
 }
 
+/* ── DESKTOP CONTENT MEASURES ──
+ * Centralized editorial measure for public/marketing surfaces. The team
+ * previously tuned for 390px and stranded a ~1200px column on 1440px+
+ * displays (large dead gutters that read as a "stretched tablet"). These
+ * classes escalate the measure into xl/2xl so wide screens read as a true
+ * desktop tool, per DESIGN.md §3b. Breakpoints mirror Tailwind's xl (80rem)
+ * and 2xl (96rem). Use `.wl-measure` for standard sections and
+ * `.wl-measure-wide` for hero / showcase / full-bleed-feeling bands.
+ *
+ * One source of truth — do NOT reintroduce scattered `max-w-[1200px]` /
+ * `max-w-7xl mx-auto` literals on marketing sections; reach for these. */
+.wl-measure {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 75rem; /* 1200px — baseline editorial measure */
+}
+@media (min-width: 80rem) {
+  .wl-measure {
+    max-width: 85rem; /* 1360px — xl widen */
+  }
+}
+@media (min-width: 96rem) {
+  .wl-measure {
+    max-width: 95rem; /* 1520px — 2xl widen */
+  }
+}
+
+.wl-measure-wide {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 85rem; /* 1360px */
+}
+@media (min-width: 80rem) {
+  .wl-measure-wide {
+    max-width: 96rem; /* 1536px */
+  }
+}
+@media (min-width: 96rem) {
+  .wl-measure-wide {
+    max-width: 105rem; /* 1680px */
+  }
+}
+
 /* ── UTILITY CAPTIONS / LABELS ──
  * Premium uppercase labels with positive tracking for small sizes.
  * App surfaces enforce a 10px floor — do not use text-[8px]/text-[9px] in TSX. */
@@ -3039,7 +3082,7 @@ body,
 
 .animate-pulse-intense {
   animation: pulse-intense 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}/* (Auth-portal aurora-blob breathing animation retired with the Rich Cream + Purple rebrand.) */
+} /* (Auth-portal aurora-blob breathing animation retired with the Rich Cream + Purple rebrand.) */
 
 @keyframes shimmer {
   0% {
@@ -6693,7 +6736,8 @@ select:focus {
   filter: drop-shadow(0 3px 10px rgba(107, 43, 153, 0.12));
 }
 
-@media (prefers-reduced-motion: reduce) {}
+@media (prefers-reduced-motion: reduce) {
+}
 
 /* ── HERO WIRELINES — switchboard layer behind the landing hero ──────────
    Wires draw in from the gutter robots to a central exchange, then signal
@@ -9240,7 +9284,7 @@ html {
   box-shadow:
     0 28px 64px -28px rgba(139, 63, 214, 0.28),
     0 6px 18px -8px rgba(26, 22, 20, 0.08);
-}/* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
+} /* ── SWITCHBOARD ENHANCEMENT — "opus-approved" hero motion ──
  * The call signals become luminous comets of light, and the central
  * exchange gains a breathing halo so the whole switchboard reads as a
  * living core wired to the gutter robots. Pure CSS on the existing layer. */
@@ -9290,7 +9334,8 @@ html {
 }
 
 /* ── REDUCED MOTION — settle the majestic layer into a static still ── */
-@media (prefers-reduced-motion: reduce) {  .wl-eyebrow-dot::after {
+@media (prefers-reduced-motion: reduce) {
+  .wl-eyebrow-dot::after {
     animation: none !important;
     opacity: 0 !important;
   }
@@ -9301,7 +9346,6 @@ html {
     transform: none;
   }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════════
    LATEST MARKETING / LANDING POLISH (appended)
@@ -9429,19 +9473,38 @@ html {
     wl-wire-drift-hero calc(var(--hero-master-cycle) * 1.45) ease-in-out infinite;
 }
 
-.wl-wire[data-index="0"] { animation-delay: 0.32s, calc(var(--hero-master-cycle) * 0.78); }
-.wl-wire[data-index="1"] { animation-delay: 0.52s, calc(var(--hero-master-cycle) * 1.05); }
-.wl-wire[data-index="2"] { animation-delay: 0.72s, calc(var(--hero-master-cycle) * 1.32); }
-.wl-wire[data-index="3"] { animation-delay: 0.92s, calc(var(--hero-master-cycle) * 1.58); }
+.wl-wire[data-index="0"] {
+  animation-delay: 0.32s, calc(var(--hero-master-cycle) * 0.78);
+}
+.wl-wire[data-index="1"] {
+  animation-delay: 0.52s, calc(var(--hero-master-cycle) * 1.05);
+}
+.wl-wire[data-index="2"] {
+  animation-delay: 0.72s, calc(var(--hero-master-cycle) * 1.32);
+}
+.wl-wire[data-index="3"] {
+  animation-delay: 0.92s, calc(var(--hero-master-cycle) * 1.58);
+}
 
 @keyframes wl-wire-draw-hero {
-  from { stroke-dashoffset: 1; opacity: 0.14; }
-  to { stroke-dashoffset: 0; opacity: 0.2; }
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0.14;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 0.2;
+  }
 }
 
 @keyframes wl-wire-drift-hero {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(2.4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2.4px);
+  }
 }
 
 .wl-wire-signal {
@@ -9456,17 +9519,29 @@ html {
     wl-wire-signal-travel-hero 3.05s linear infinite;
 }
 
-.wl-wire-signal[data-index="1"] { animation-delay: 2.25s, 0.78s; }
-.wl-wire-signal[data-index="2"] { animation-delay: 2.45s, 1.48s; }
-.wl-wire-signal[data-index="3"] { animation-delay: 2.65s, 2.15s; }
+.wl-wire-signal[data-index="1"] {
+  animation-delay: 2.25s, 0.78s;
+}
+.wl-wire-signal[data-index="2"] {
+  animation-delay: 2.45s, 1.48s;
+}
+.wl-wire-signal[data-index="3"] {
+  animation-delay: 2.65s, 2.15s;
+}
 
 @keyframes wl-wire-signal-in-hero {
-  to { opacity: 0.36; }
+  to {
+    opacity: 0.36;
+  }
 }
 
 @keyframes wl-wire-signal-travel-hero {
-  from { stroke-dashoffset: 1; }
-  to { stroke-dashoffset: 0; }
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .wl-exchange-core {
@@ -9495,8 +9570,15 @@ html {
 }
 
 @keyframes hero-exchange-halo {
-  0%, 100% { opacity: 0.18; transform: scale(0.94); }
-  50% { opacity: 0.32; transform: scale(1.04); }
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.32;
+    transform: scale(1.04);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -9540,10 +9622,18 @@ html {
 .pulse-ring {
   --pulse-color: rgba(139, 63, 214, 0.55);
 }
-.pulse-ring--brand { --pulse-color: rgba(139, 63, 214, 0.55); }
-.pulse-ring--emerald { --pulse-color: rgba(16, 185, 129, 0.55); }
-.pulse-ring--destructive { --pulse-color: rgba(220, 38, 38, 0.5); }
-.pulse-ring--muted { --pulse-color: rgba(26, 22, 20, 0.3); }
+.pulse-ring--brand {
+  --pulse-color: rgba(139, 63, 214, 0.55);
+}
+.pulse-ring--emerald {
+  --pulse-color: rgba(16, 185, 129, 0.55);
+}
+.pulse-ring--destructive {
+  --pulse-color: rgba(220, 38, 38, 0.5);
+}
+.pulse-ring--muted {
+  --pulse-color: rgba(26, 22, 20, 0.3);
+}
 
 .pulse-ring__core {
   inset: 30%;
@@ -9558,19 +9648,35 @@ html {
 .pulse-ring--active .pulse-ring__ring {
   animation: pulse-ring-expand 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
-.pulse-ring--active .pulse-ring__ring[data-index="1"] { animation-delay: 0.6s; }
-.pulse-ring--active .pulse-ring__ring[data-index="2"] { animation-delay: 1.2s; }
-.pulse-ring--active .pulse-ring__ring[data-index="3"] { animation-delay: 1.8s; }
-.pulse-ring--active .pulse-ring__ring[data-index="4"] { animation-delay: 2.1s; }
+.pulse-ring--active .pulse-ring__ring[data-index="1"] {
+  animation-delay: 0.6s;
+}
+.pulse-ring--active .pulse-ring__ring[data-index="2"] {
+  animation-delay: 1.2s;
+}
+.pulse-ring--active .pulse-ring__ring[data-index="3"] {
+  animation-delay: 1.8s;
+}
+.pulse-ring--active .pulse-ring__ring[data-index="4"] {
+  animation-delay: 2.1s;
+}
 
 .pulse-ring:not(.pulse-ring--active) .pulse-ring__ring {
   opacity: 0.25;
 }
 
 @keyframes pulse-ring-expand {
-  0% { transform: scale(0.45); opacity: 0.85; }
-  70% { opacity: 0.18; }
-  100% { transform: scale(1.35); opacity: 0; }
+  0% {
+    transform: scale(0.45);
+    opacity: 0.85;
+  }
+  70% {
+    opacity: 0.18;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
 }
 
 /* ── StatusOrb — breathing presence node ── */
@@ -9580,7 +9686,11 @@ html {
 }
 
 .status-orb__halo {
-  background: radial-gradient(circle at center, var(--orb-color, rgba(139, 63, 214, 0.4)), transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    var(--orb-color, rgba(139, 63, 214, 0.4)),
+    transparent 70%
+  );
 }
 
 .status-orb-breathe {
@@ -9596,18 +9706,34 @@ html {
 }
 
 @keyframes status-orb-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.08); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
 }
 
 @keyframes status-orb-pulse {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes status-orb-orbit {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── NebulaPulse — drifting plasma field ── */
@@ -9615,42 +9741,86 @@ html {
   width: 45%;
   height: 45%;
   border-radius: 9999px;
-  background: radial-gradient(circle at center, var(--plasma-color, rgba(139, 63, 214, 0.28)), transparent 72%);
+  background: radial-gradient(
+    circle at center,
+    var(--plasma-color, rgba(139, 63, 214, 0.28)),
+    transparent 72%
+  );
   filter: blur(40px);
   will-change: transform;
 }
 
-.nebula-drift-0 { animation: nebula-drift-0 16s ease-in-out infinite alternate; }
-.nebula-drift-1 { animation: nebula-drift-1 19s ease-in-out infinite alternate; }
-.nebula-drift-2 { animation: nebula-drift-2 22s ease-in-out infinite alternate; }
-.nebula-drift-3 { animation: nebula-drift-3 17s ease-in-out infinite alternate; }
-.nebula-drift-4 { animation: nebula-drift-4 21s ease-in-out infinite alternate; }
+.nebula-drift-0 {
+  animation: nebula-drift-0 16s ease-in-out infinite alternate;
+}
+.nebula-drift-1 {
+  animation: nebula-drift-1 19s ease-in-out infinite alternate;
+}
+.nebula-drift-2 {
+  animation: nebula-drift-2 22s ease-in-out infinite alternate;
+}
+.nebula-drift-3 {
+  animation: nebula-drift-3 17s ease-in-out infinite alternate;
+}
+.nebula-drift-4 {
+  animation: nebula-drift-4 21s ease-in-out infinite alternate;
+}
 
-.nebula-delay-0 { animation-delay: 0s; }
-.nebula-delay-1 { animation-delay: -3.5s; }
-.nebula-delay-2 { animation-delay: -7s; }
-.nebula-delay-3 { animation-delay: -10.5s; }
-.nebula-delay-4 { animation-delay: -14s; }
+.nebula-delay-0 {
+  animation-delay: 0s;
+}
+.nebula-delay-1 {
+  animation-delay: -3.5s;
+}
+.nebula-delay-2 {
+  animation-delay: -7s;
+}
+.nebula-delay-3 {
+  animation-delay: -10.5s;
+}
+.nebula-delay-4 {
+  animation-delay: -14s;
+}
 
 @keyframes nebula-drift-0 {
-  from { transform: translate(-6%, -4%) scale(1); }
-  to { transform: translate(8%, 6%) scale(1.12); }
+  from {
+    transform: translate(-6%, -4%) scale(1);
+  }
+  to {
+    transform: translate(8%, 6%) scale(1.12);
+  }
 }
 @keyframes nebula-drift-1 {
-  from { transform: translate(5%, -7%) scale(1.05); }
-  to { transform: translate(-7%, 5%) scale(0.94); }
+  from {
+    transform: translate(5%, -7%) scale(1.05);
+  }
+  to {
+    transform: translate(-7%, 5%) scale(0.94);
+  }
 }
 @keyframes nebula-drift-2 {
-  from { transform: translate(-4%, 7%) scale(0.96); }
-  to { transform: translate(6%, -6%) scale(1.1); }
+  from {
+    transform: translate(-4%, 7%) scale(0.96);
+  }
+  to {
+    transform: translate(6%, -6%) scale(1.1);
+  }
 }
 @keyframes nebula-drift-3 {
-  from { transform: translate(7%, 4%) scale(1.08); }
-  to { transform: translate(-5%, -7%) scale(0.97); }
+  from {
+    transform: translate(7%, 4%) scale(1.08);
+  }
+  to {
+    transform: translate(-5%, -7%) scale(0.97);
+  }
 }
 @keyframes nebula-drift-4 {
-  from { transform: translate(-7%, -5%) scale(1.02); }
-  to { transform: translate(4%, 7%) scale(1.14); }
+  from {
+    transform: translate(-7%, -5%) scale(1.02);
+  }
+  to {
+    transform: translate(4%, 7%) scale(1.14);
+  }
 }
 
 /* ── GlyphMorph — kinetic typographic identity ── */
@@ -9693,16 +9863,38 @@ html {
 }
 
 @keyframes glyph-morph-breathe {
-  0%, 100% { transform: translateY(0); opacity: 1; }
-  50% { transform: translateY(-0.06em); opacity: 0.82; }
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-0.06em);
+    opacity: 0.82;
+  }
 }
 
 @keyframes glyph-morph-glitch {
-  0% { transform: translate(0, 0); opacity: 1; }
-  25% { transform: translate(-0.04em, 0.03em); opacity: 0.7; }
-  50% { transform: translate(0.05em, -0.02em); opacity: 1; }
-  75% { transform: translate(-0.02em, -0.04em); opacity: 0.8; }
-  100% { transform: translate(0, 0); opacity: 1; }
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-0.04em, 0.03em);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(0.05em, -0.02em);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-0.02em, -0.04em);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
 }
 
 /* ── PrismBadge — holographic identity chip ── */
@@ -9741,8 +9933,12 @@ html {
 }
 
 @keyframes prism-holo-rotate {
-  from { --prism-angle: 0deg; }
-  to { --prism-angle: 360deg; }
+  from {
+    --prism-angle: 0deg;
+  }
+  to {
+    --prism-angle: 360deg;
+  }
 }
 
 .prism-frost {
@@ -9800,8 +9996,14 @@ html {
 }
 
 @keyframes void-shimmer-sweep {
-  0%, 55% { transform: translateX(-120%); }
-  85%, 100% { transform: translateX(120%); }
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  85%,
+  100% {
+    transform: translateX(120%);
+  }
 }
 
 /* ── SignalThread — Bézier signal pulses ── */

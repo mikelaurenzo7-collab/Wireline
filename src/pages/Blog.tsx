@@ -81,7 +81,7 @@ export default function Blog() {
           </motion.article>
         </section>
 
-        <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-24">
+        <section className="relative z-10 wl-measure px-4 sm:px-6 lg:px-10 xl:px-14 pb-24">
           <div className="flex items-end justify-between gap-4 mb-8">
             <div>
               <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
@@ -91,7 +91,7 @@ export default function Blog() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
             {recentPosts.map((post, index) => (
               <motion.article
                 key={post.id}
