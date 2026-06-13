@@ -18,9 +18,6 @@ struct WorkspaceView: View {
                         askSection
                         accountSection(me)
                         agentSection(me)
-                        if me.account.mode == .business {
-                            businessSection
-                        }
                         activationSection
                     }
                 } else if let loadError {
@@ -44,7 +41,6 @@ struct WorkspaceView: View {
                 }
             }
             .sheet(isPresented: $showingDialer) { OutboundCallView(agents: agents) }
-            .sheet(isPresented: $router.showAsk) { AskWingmanView(agents: agents) }
             .task { await load() }
             .refreshable { await load() }
         }
@@ -103,14 +99,6 @@ struct WorkspaceView: View {
         }
     }
 
-    private var businessSection: some View {
-        Section("Command") {
-            NavigationLink { ActiveCallsView() } label: {
-                Label("Live calls", systemImage: "dot.radiowaves.left.and.right")
-            }
-        }
-    }
-
     private func agentCountLabel(_ q: MobileMe.AgentQuota) -> String {
         if q.unlimited { return "\(q.count) agents" }
         if let cap = q.effectiveCap { return "\(q.count) of \(cap) agents" }
@@ -127,29 +115,5 @@ struct WorkspaceView: View {
         } catch {
             self.loadError = error.localizedDescription
         }
-    }
-}
-
-/// Business-mode live-call list, backed by the push-missed poll fallback.
-struct ActiveCallsView: View {
-    @State private var calls: [ActiveCall] = []
-
-    var body: some View {
-        Group {
-            if calls.isEmpty {
-                BrandEmptyState(title: "No live calls", message: "Active calls will appear here.",
-                                systemImage: "phone.down")
-            } else {
-                List(calls) { CallCard(call: $0) }
-            }
-        }
-        .navigationTitle("Live calls")
-        .wingmanBrand()
-        .task { await refresh() }
-        .refreshable { await refresh() }
-    }
-
-    private func refresh() async {
-        calls = (try? await WingmanAPI.shared.activeCalls()) ?? []
     }
 }

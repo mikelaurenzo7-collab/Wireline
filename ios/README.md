@@ -31,7 +31,9 @@ ios/
 │   │   └── WingmanIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
 │   ├── Components/BrandComponents.swift  Medallion, AgentRow, CallCard, buttons.
 │   └── Views/
+│       ├── RootTabView.swift         Signed-in shell: Home + Calls tabs.
 │       ├── SignInView.swift / WorkspaceView.swift / OutboundCallView.swift
+│       ├── CallsView.swift / CallDetailView.swift  Activity + per-call recap.
 │       ├── AskWingmanView.swift      In-app "Ask Wingman" surface.
 │       └── ActivationSetupView.swift "Activate everywhere" setup screen.
 └── WingmanWidgets/             WidgetKit extension (Home/Lock-screen "Ask Wingman").

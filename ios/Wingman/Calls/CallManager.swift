@@ -13,8 +13,10 @@ final class CallManager: NSObject {
     private let callController = CXCallController()
     private var voipRegistry: PKPushRegistry?
     private let deviceId = (UIDevice.current.identifierForVendor?.uuidString) ?? UUID().uuidString
-    /// Latest VoIP token (hex), cached so we can re-register after sign-in.
+    /// Latest tokens (hex), cached so each registration sends BOTH — otherwise
+    /// a VoIP-only or alert-only POST would null out the other column.
     private var lastVoipToken: String?
+    private var lastAlertToken: String?
 
     override init() {
         let config = CXProviderConfiguration()
@@ -36,12 +38,24 @@ final class CallManager: NSObject {
         voipRegistry = registry
     }
 
-    /// Re-POST the cached VoIP token after a fresh sign-in (the token itself
-    /// doesn't change on sign-in, but the authenticated user it binds to does).
+    /// Cache the standard alert token (from APNs remote-notification
+    /// registration) and re-register. Recap pushes are delivered to this token.
+    func setAlertToken(_ token: String) {
+        lastAlertToken = token
+        Task { await pushRegistration() }
+    }
+
+    /// Re-register after a fresh sign-in (the tokens don't change, but the
+    /// authenticated user they bind to does).
     func refreshDeviceRegistration() async {
-        guard let token = lastVoipToken else { return }
+        await pushRegistration()
+    }
+
+    /// POST both cached tokens together so neither overwrites the other.
+    private func pushRegistration() async {
+        guard lastVoipToken != nil || lastAlertToken != nil else { return }
         try? await WingmanAPI.shared.registerDevice(
-            deviceId: deviceId, voipToken: token, alertToken: nil
+            deviceId: deviceId, voipToken: lastVoipToken, alertToken: lastAlertToken
         )
     }
 
@@ -70,11 +84,7 @@ extension CallManager: PKPushRegistryDelegate {
                       for type: PKPushType) {
         let token = pushCredentials.token.map { String(format: "%02x", $0) }.joined()
         lastVoipToken = token
-        Task {
-            try? await WingmanAPI.shared.registerDevice(
-                deviceId: deviceId, voipToken: token, alertToken: nil
-            )
-        }
+        Task { await pushRegistration() }
     }
 
     func pushRegistry(_ registry: PKPushRegistry,

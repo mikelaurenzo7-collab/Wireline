@@ -20,6 +20,8 @@ enum Brand {
     static let signal = Color(hex: 0x10B981)
     /// Destructive (`--destructive` #E8466A).
     static let destructive = Color(hex: 0xE8466A)
+    /// Faint purple wash for tinted chips/selected rows (`--accent`).
+    static let accentTint = Color(hex: 0x8B3FD6, opacity: 0.10)
 }
 
 extension Color {

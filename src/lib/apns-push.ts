@@ -252,3 +252,69 @@ export async function notifyInboundCall(
     return { sent: 0, devices: 0 };
   }
 }
+
+export interface CallRecapPush {
+  callId: string;
+  agentName?: string | null;
+  fromNumber?: string | null;
+  summary?: string | null;
+}
+
+/**
+ * Send a tap-to-open recap alert to a user's devices after a call completes.
+ * Uses the standard alert token (separate from the VoIP token) so it works
+ * when the app is backgrounded. Best-effort, env-gated, never throws.
+ */
+export async function notifyCallRecap(
+  userId: string,
+  recap: CallRecapPush,
+): Promise<{ sent: number; devices: number }> {
+  if (!isApnsConfigured()) return { sent: 0, devices: 0 };
+  try {
+    const devices = await drizzle
+      .select({
+        id: schema.mobileDevices.id,
+        token: schema.mobileDevices.apnsAlertToken,
+      })
+      .from(schema.mobileDevices)
+      .where(eq(schema.mobileDevices.userId, userId));
+
+    const targets = devices.filter((d) => !!d.token);
+    if (targets.length === 0) return { sent: 0, devices: 0 };
+
+    const who = recap.fromNumber || "a caller";
+    const summary = (recap.summary || "Tap to see the recap.").slice(0, 240);
+    const payload = {
+      aps: {
+        alert: {
+          title: recap.agentName ? `${recap.agentName} · call recap` : "Call recap",
+          subtitle: who,
+          body: summary,
+        },
+        sound: "default",
+      },
+      type: "call_recap",
+      callId: recap.callId,
+    };
+
+    let sent = 0;
+    await Promise.all(
+      targets.map(async (d) => {
+        const res = await sendApnsPush(d.token as string, payload, "alert");
+        if (res.ok) sent += 1;
+        else if (res.reason === "BadDeviceToken" || res.reason === "Unregistered") {
+          await drizzle
+            .update(schema.mobileDevices)
+            .set({ apnsAlertToken: null })
+            .where(eq(schema.mobileDevices.id, d.id));
+        }
+      }),
+    );
+    return { sent, devices: targets.length };
+  } catch (err) {
+    log.warn("notifyCallRecap failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { sent: 0, devices: 0 };
+  }
+}

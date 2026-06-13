@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct WingmanApp: App {
@@ -10,7 +11,7 @@ struct WingmanApp: App {
         WindowGroup {
             Group {
                 if auth.isSignedIn {
-                    WorkspaceView()
+                    RootTabView()
                 } else {
                     SignInView()
                 }
@@ -31,8 +32,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // Register for VoIP pushes so the backend can wake us on inbound calls.
+        // VoIP pushes (PushKit) wake us on inbound calls.
         CallManager.shared.registerForVoIPPushes()
+        // Standard alert pushes deliver call recaps when backgrounded.
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            guard granted else { return }
+            DispatchQueue.main.async { application.registerForRemoteNotifications() }
+        }
         return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+        CallManager.shared.setAlertToken(token)
     }
 }
