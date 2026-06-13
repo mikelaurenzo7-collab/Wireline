@@ -3,6 +3,12 @@
  * match the same cap), pricing surface, voice-minute caps + overage rate,
  * and price-id → plan resolution at runtime.
  *
+ * PRODUCT POSITIONING (June 2026): Wireline Wizard is the user-facing builder
+ * and copilot for every plan. Director Mode is the advanced fleet-management
+ * layer for business-scale workspaces. Internal director-* implementation names
+ * can remain until a deliberate cleanup pass; do not expose Director as the
+ * default assistant name on Personal or iOS-forward surfaces.
+ *
  * PRICING PHILOSOPHY (Mike's call): Overages should be RARE, not the default.
  * Each tier ships with ~2.5x the minutes a typical customer in that segment
  * actually burns per month, so hitting overage is a clear signal to upgrade
@@ -103,12 +109,14 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PERSONAL_OVERAGE_PRICE_ID",
     features: [
-      "1 AI voice agent (voice + email)",
+      "Wireline Wizard personal agent builder",
+      "1 AI voice agent for calls you want handled",
       "Dedicated voice number INCLUDED — no Twilio bill",
       "400 voice minutes / month (covers most solo operators)",
+      "Approve call plans before sensitive actions",
+      "Live call logs + transcripts + sentiment",
       "Unlimited inbound email",
       "All integrations included (Slack, Teams, HubSpot, DocuSign, Sheets, more)",
-      "Call logs + transcripts + sentiment",
       "Overage billed at $0.20 / min (rare on this volume)",
       "Add more agents: $49/each/month",
     ],
@@ -131,6 +139,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "3 AI agents (voice + email)",
       "3 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
       "1,200 voice minutes / month",
+      "Wireline Wizard for agent setup, simulation, and tuning",
       "Outbound dialer (CSV + auto-dial)",
       "Live call monitor + sentiment",
       "All integrations included (Slack, Teams, HubSpot, DocuSign, Sheets, more)",
@@ -157,6 +166,8 @@ export const STRIPE_PLANS: StripePlan[] = [
       "10 AI agents (voice + email)",
       "10 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
       "5,000 voice minutes / month",
+      "Wireline Wizard for agent building, simulations, and workflow edits",
+      "Director Mode for fleet QA, routing, and operations",
       "Outbound dialer + email campaigns",
       "All integrations included (Slack, Teams, HubSpot, DocuSign, Sheets, more)",
       "Up to 25 team seats",
@@ -187,6 +198,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "25 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
       "12,000 voice minutes / month",
       "Everything in Pro",
+      "Director Mode fleet operations + governance",
       "SSO + audit log export",
       "Up to 50 team seats",
       "Dedicated success manager",
@@ -211,6 +223,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "100 numbers INCLUDED — one per agent + BYO carrier option",
       "50,000+ voice minutes (custom volume)",
       "Everything in Business",
+      "Director Mode for enterprise fleet governance",
       "SAML SSO + advanced compliance",
       "Custom data retention + private model deployment",
       "Dedicated success manager",
