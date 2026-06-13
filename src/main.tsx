@@ -12,8 +12,6 @@ import "./styles/design-preview.css";
 // Authenticated-surface contrast hardening — must load AFTER the core CSS stack so its
 // theme-aware --color-brand-ink override and ghost-button rules win the cascade.
 import "./styles/auth-contrast.css";
-// Preview-only brand direction: dark command-center Wireline, no Aurora Cream / purple bleed.
-import "./styles/wireline-command-preview.css";
 // Open‑space preference – removed compact overrides
 
 // Global error + rejection safety net for voice + async surfaces.
