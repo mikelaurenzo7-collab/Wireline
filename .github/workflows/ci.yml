@@ -130,6 +130,8 @@ jobs:
         # Scope to chromium — we only install one browser to keep CI fast and
         # cheap. Firefox/WebKit coverage can be added when we have time to
         # fund the extra minutes.
+        env:
+          INTERNAL_JWT_SECRET: "e2e-test-internal-jwt-secret-that-is-at-least-32-chars-long"
         run: npx playwright test --project=chromium
 
       - name: Upload Playwright report
