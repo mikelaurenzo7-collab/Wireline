@@ -12,6 +12,8 @@ import "./styles/design-preview.css";
 // Authenticated-surface contrast hardening — must load AFTER the core CSS stack so its
 // theme-aware --color-brand-ink override and ghost-button rules win the cascade.
 import "./styles/auth-contrast.css";
+// Preview-only brand direction: dark command-center Wireline, no Aurora Cream / purple bleed.
+import "./styles/wireline-command-preview.css";
 // Open‑space preference – removed compact overrides
 
 // Global error + rejection safety net for voice + async surfaces.
@@ -82,23 +84,17 @@ if (typeof window !== "undefined") {
 
   window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
-    const msg = reason instanceof Error ? reason.message : String(reason);
+    const message = reason instanceof Error ? reason.message : String(reason || "");
     if (
-      msg &&
-      (msg.includes("Failed to fetch dynamically imported module") ||
-        msg.includes("error loading dynamically imported module"))
+      message &&
+      (message.includes("Failed to fetch dynamically imported module") ||
+        message.includes("error loading dynamically imported module"))
     ) {
       console.error("[wireline:preload] Dynamic import rejection, initiating safe reload...");
-      safeReload("unhandledrejection");
+      safeReload("unhandled rejection");
       return;
     }
     report("unhandled-rejection", reason);
-  });
-
-  // Handle Vite's custom preload error event
-  window.addEventListener("vite:preloadError", () => {
-    console.error("[wireline:preload] Vite preload error, initiating safe reload...");
-    safeReload("preloadError");
   });
 }
 
@@ -107,15 +103,3 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
-
-// Register Service Worker for Progressive Web App (PWA) support on production builds
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    // Only register in production to prevent caching issues during dev HMR
-    if (import.meta.env.PROD) {
-      navigator.serviceWorker.register("/sw.js").catch((err) => {
-        console.error("[wireline:sw] Registration failed:", err);
-      });
-    }
-  });
-}
