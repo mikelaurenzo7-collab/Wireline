@@ -4,6 +4,7 @@ import SwiftUI
 struct WingmanApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var auth = AuthService()
+    @StateObject private var router = WingmanRouter.shared
 
     var body: some Scene {
         WindowGroup {
@@ -15,7 +16,12 @@ struct WingmanApp: App {
                 }
             }
             .environmentObject(auth)
+            .environmentObject(router)
             .tint(Brand.purple)
+            .onOpenURL { url in
+                // wingman://ask (from a widget / Control Center) → Ask surface.
+                if url.host == "ask" { router.showAsk = true }
+            }
         }
     }
 }

@@ -201,4 +201,17 @@ describe("mobile-routes", () => {
       expect(res.body.calls[0].callId).toBe("call-1");
     });
   });
+
+  describe("GET /api/mobile/calls/recent", () => {
+    it("stringifies bigint ids and rolls up the follow-up count", async () => {
+      h.queue.push([
+        { id: 42, summary: "Booked a demo", outcomeTag: "followup", sentiment: "positive" },
+        { id: 43, summary: "Wrong number", outcomeTag: "other", sentiment: "neutral" },
+      ]);
+      const res = await request(app).get("/api/mobile/calls/recent");
+      expect(res.status).toBe(200);
+      expect(res.body.calls[0].id).toBe("42");
+      expect(res.body.needsAttention).toBe(1);
+    });
+  });
 });

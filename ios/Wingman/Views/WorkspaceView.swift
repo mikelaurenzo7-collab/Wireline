@@ -4,6 +4,7 @@ import SwiftUI
 /// agent picker + "add agent") or Business (the fleet roster + live calls).
 struct WorkspaceView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var router: WingmanRouter
     @State private var me: MobileMe?
     @State private var agents: [Agent] = []
     @State private var loadError: String?
@@ -14,11 +15,13 @@ struct WorkspaceView: View {
             Group {
                 if let me {
                     List {
+                        askSection
                         accountSection(me)
                         agentSection(me)
                         if me.account.mode == .business {
                             businessSection
                         }
+                        activationSection
                     }
                 } else if let loadError {
                     BrandEmptyState(title: "Couldn't load", message: loadError,
@@ -41,8 +44,30 @@ struct WorkspaceView: View {
                 }
             }
             .sheet(isPresented: $showingDialer) { OutboundCallView(agents: agents) }
+            .sheet(isPresented: $router.showAsk) { AskWingmanView(agents: agents) }
             .task { await load() }
             .refreshable { await load() }
+        }
+    }
+
+    /// The big "Ask Wingman" call-to-action — the on-screen twin of the Siri
+    /// phrase / Action button / Back Tap entry points.
+    private var askSection: some View {
+        Section {
+            Button { router.showAsk = true } label: {
+                Label("Ask Wingman", systemImage: "mic.fill")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private var activationSection: some View {
+        Section {
+            NavigationLink { ActivationSetupView() } label: {
+                Label("Activate Wingman everywhere", systemImage: "wand.and.stars")
+            }
         }
     }
 

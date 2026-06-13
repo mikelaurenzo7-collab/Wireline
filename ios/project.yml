@@ -36,6 +36,8 @@ targets:
     platform: iOS
     sources:
       - path: Wingman
+    dependencies:
+      - target: WingmanWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wireline.wingman
@@ -45,3 +47,16 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1" # iPhone (CarPlay rides the phone target)
         ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+  WingmanWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: WingmanWidgets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wireline.wingman.widgets
+        PRODUCT_NAME: WingmanWidgets
+        INFOPLIST_FILE: WingmanWidgets/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"

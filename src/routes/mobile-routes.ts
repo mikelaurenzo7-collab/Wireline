@@ -381,4 +381,46 @@ router.get(
   },
 );
 
+// ── GET /api/mobile/calls/recent — completed-call history + recaps ─────────
+// Powers the in-app Calls list and the Siri intents ("summarize my last call",
+// "what needs my attention"). callLogs.id is a bigint → stringify it so JSON
+// serialization doesn't choke on a BigInt.
+router.get(
+  "/api/mobile/calls/recent",
+  authenticateUser,
+  mobileRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const limitRaw = parseInt(String(req.query.limit ?? ""), 10);
+      const limit = Math.min(Math.max(1, Number.isNaN(limitRaw) ? 20 : limitRaw), 50);
+      const rows = await drizzle
+        .select({
+          id: schema.callLogs.id,
+          agentId: schema.callLogs.agentId,
+          direction: schema.callLogs.direction,
+          customerNumber: schema.callLogs.customerNumber,
+          durationSeconds: schema.callLogs.durationSeconds,
+          summary: schema.callLogs.summary,
+          sentiment: schema.callLogs.sentiment,
+          outcomeTag: schema.callLogs.outcomeTag,
+          intentLabel: schema.callLogs.intentLabel,
+          createdAt: schema.callLogs.createdAt,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.userId, req.user.id), eq(schema.callLogs.demo, false)))
+        .orderBy(desc(schema.callLogs.createdAt))
+        .limit(limit);
+
+      res.json({
+        calls: rows.map((r) => ({ ...r, id: String(r.id) })),
+        // Lightweight "needs attention" rollup the Siri digest reads.
+        needsAttention: rows.filter((r) => r.outcomeTag === "followup").length,
+      });
+    } catch (err) {
+      log.error("GET /api/mobile/calls/recent failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load recent calls.");
+    }
+  },
+);
+
 export default router;

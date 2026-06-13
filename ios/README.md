@@ -15,26 +15,48 @@ here. The phone is a remote control for the fleet.
 
 ```
 ios/
-├── project.yml                 XcodeGen spec → generates Wingman.xcodeproj.
-└── Wingman/
-    ├── WingmanApp.swift         App entry; sign-in gate; registers PushKit on launch.
-    ├── Info.plist               Background modes + usage strings.
-    ├── Wingman.entitlements     aps-environment (CarPlay entitlement deferred).
-    ├── Theme/WingmanTheme.swift Brand tokens (purple/cream) + .wingmanBrand().
-    ├── Models/Models.swift      Codable mirrors of the /api/mobile/* payloads.
-    ├── Auth/AuthService.swift   Sign-in → JWT from session cookie → Keychain.
-    ├── Networking/
-    │   ├── WingmanConfig.swift  Backend base URL + session-cookie name.
-    │   ├── WingmanAPI.swift     Bearer-auth REST client for /api/mobile/*.
-    │   └── KeychainStore.swift  JWT storage (kSecAttrAccessibleAfterFirstUnlock).
-    ├── Calls/CallManager.swift  CallKit provider + PushKit (VoIP) registry.
-    ├── Intents/CallAgentIntent.swift  App Intents: place / (Phase 2) delegate a call.
-    ├── Components/BrandComponents.swift  Medallion, AgentRow, CallCard, buttons.
-    └── Views/
-        ├── SignInView.swift     Branded sign-in.
-        ├── WorkspaceView.swift  Personal vs Business workspace + dialer.
-        └── OutboundCallView.swift  Manual outbound dial sheet.
+├── project.yml                 XcodeGen spec → app + widget targets.
+├── Wingman/
+│   ├── WingmanApp.swift         App entry; sign-in gate; PushKit + URL routing.
+│   ├── Info.plist               Background modes, usage strings, wingman:// scheme.
+│   ├── Wingman.entitlements     aps-environment (CarPlay entitlement deferred).
+│   ├── App/WingmanRouter.swift  Bridges App Intents / widgets → in-app surfaces.
+│   ├── Theme/WingmanTheme.swift Brand tokens (purple/cream) + .wingmanBrand().
+│   ├── Models/Models.swift      Codable mirrors of the /api/mobile/* payloads.
+│   ├── Auth/AuthService.swift   Sign-in → JWT from session cookie → Keychain.
+│   ├── Networking/              WingmanConfig, WingmanAPI (Bearer), KeychainStore.
+│   ├── Calls/CallManager.swift  CallKit provider + PushKit (VoIP) registry.
+│   ├── Intents/
+│   │   ├── CallAgentIntent.swift   "Have an agent place a call."
+│   │   └── WingmanIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
+│   ├── Components/BrandComponents.swift  Medallion, AgentRow, CallCard, buttons.
+│   └── Views/
+│       ├── SignInView.swift / WorkspaceView.swift / OutboundCallView.swift
+│       ├── AskWingmanView.swift      In-app "Ask Wingman" surface.
+│       └── ActivationSetupView.swift "Activate everywhere" setup screen.
+└── WingmanWidgets/             WidgetKit extension (Home/Lock-screen "Ask Wingman").
 ```
+
+## Activation everywhere (the off-CarPlay layer)
+
+The phone, not the car, is where most calls happen — so Wingman is reachable
+across the whole iOS surface, all powered by **App Intents + App Shortcuts**:
+
+| Entry point | How |
+|---|---|
+| **Siri** | "Ask Wingman", "…summarize my last call", "…what needs my attention". Auto-registered, zero setup. |
+| **Action button** (15 Pro+) | User assigns the *Ask Wingman* shortcut in Settings. |
+| **Back Tap** | User assigns a shortcut in Settings → Accessibility → Touch. |
+| **Home / Lock Screen widget** | `WingmanWidgets` deep-links to `wingman://ask`. |
+| **Control Center** | Deep-links via the same scheme. |
+| **In-app** | The big "Ask Wingman" button on the workspace. |
+| **Apple Watch** | Planned. |
+
+Honest constraint: apps **cannot** claim the Action button or Back Tap
+programmatically — those are user choices in Settings. `ActivationSetupView`
+walks the user through assigning them and links out to Settings / Shortcuts.
+The fully self-contained intents (Summarize, What-needs-attention) speak their
+answer back without launching the app.
 
 ### How a call flows
 

@@ -30,6 +30,10 @@ actor WingmanAPI {
         return list.calls
     }
 
+    func recentCalls(limit: Int = 20) async throws -> RecentCallsResponse {
+        try await get("/api/mobile/calls/recent?limit=\(limit)")
+    }
+
     // MARK: - Writes
 
     /// Register/refresh this device's APNs tokens so the backend can wake it

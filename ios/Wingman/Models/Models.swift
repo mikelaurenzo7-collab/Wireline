@@ -96,6 +96,24 @@ struct ActiveCallList: Codable {
     let calls: [ActiveCall]
 }
 
+struct RecentCall: Codable, Identifiable {
+    let id: String
+    let agentId: String?
+    let direction: String?
+    let customerNumber: String?
+    let durationSeconds: Int?
+    let summary: String?
+    let sentiment: String?
+    let outcomeTag: String?
+    let intentLabel: String?
+    let createdAt: String?
+}
+
+struct RecentCallsResponse: Codable {
+    let calls: [RecentCall]
+    let needsAttention: Int
+}
+
 /// Payload carried by an inbound-call VoIP push (see src/lib/apns-push.ts).
 struct IncomingCallPush: Codable {
     let callId: String

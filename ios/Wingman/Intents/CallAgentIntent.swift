@@ -42,17 +42,3 @@ struct CallAgentIntent: AppIntent {
         return .result(dialog: "\(agent.name) is calling \(phoneNumber) now.")
     }
 }
-
-struct WingmanShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: CallAgentIntent(),
-            phrases: [
-                "Tell \(.applicationName) to make a call",
-                "Have \(.applicationName) call someone",
-            ],
-            shortTitle: "Place a call",
-            systemImageName: "phone.arrow.up.right"
-        )
-    }
-}
