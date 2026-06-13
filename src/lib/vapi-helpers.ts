@@ -1071,6 +1071,49 @@ export const VAPI_TOOL_DEFS = {
       required: ["caller", "outcome", "details"],
     },
   },
+  navigate_to: {
+    name: "navigate_to",
+    description:
+      "Send turn-by-turn directions to a destination to the operator's phone. Use when the operator asks you to navigate somewhere (e.g. 'take me to the airport').",
+    parameters: {
+      type: "object",
+      properties: {
+        destination: {
+          type: "string",
+          description: "The place or address to navigate to (e.g. 'SFO airport', '123 Main St').",
+        },
+      },
+      required: ["destination"],
+    },
+  },
+  add_reminder: {
+    name: "add_reminder",
+    description:
+      "Create a calendar reminder on the operator's phone. Use when the operator asks to be reminded of something.",
+    parameters: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "What to be reminded about." },
+        datetime: {
+          type: "string",
+          description: "When, as an ISO 8601 timestamp if known (e.g. 2026-06-14T09:00:00).",
+        },
+      },
+      required: ["title"],
+    },
+  },
+  play_music: {
+    name: "play_music",
+    description:
+      "Open music playback for a song, artist, or playlist on the operator's phone. Use when the operator asks to play music.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Song, artist, or playlist to play." },
+      },
+      required: ["query"],
+    },
+  },
 } as const;
 
 export type VapiToolName = keyof typeof VAPI_TOOL_DEFS;

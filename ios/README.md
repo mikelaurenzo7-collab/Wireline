@@ -27,6 +27,7 @@ ios/
 │   ├── Networking/              WingmanConfig, WingmanAPI (Bearer), KeychainStore.
 │   ├── Calls/CallManager.swift  CallKit provider + PushKit (VoIP) registry.
 │   ├── CarPlay/CarPlaySceneDelegate.swift  CarPlay Communication template.
+│   ├── Device/DeviceActionHandler.swift  In-call actions: Maps / EventKit / Music.
 │   ├── Intents/
 │   │   ├── CallAgentIntent.swift   "Have an agent place a call."
 │   │   └── WingmanIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
@@ -126,8 +127,11 @@ restricts CarPlay template categories and Wingman is a communication app.
   (`CarPlay/CarPlaySceneDelegate.swift`) — call-back list + agents. Activates
   once Apple grants `carplay-communication`. (Calls already appear in CarPlay's
   native UI via CallKit regardless.)
-- **Phase 3:** in-call tool dispatch (Maps/Spotify/Calendar via alert push),
-  optional low-latency WebSocket channel, prepaid credit wallet UI.
+- **Phase 3 — started:** in-call **device actions** shipped — the agent can
+  `navigate_to` / `add_reminder` / `play_music`, dispatched to the phone via
+  push and executed by `Device/DeviceActionHandler` (opens Maps / writes
+  EventKit / opens Music). Opt-in per agent, never on a customer-facing role.
+  Remaining: optional low-latency WebSocket channel, prepaid credit wallet UI.
 
 ## Design
 

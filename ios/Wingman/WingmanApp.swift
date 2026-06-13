@@ -34,8 +34,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         // VoIP pushes (PushKit) wake us on inbound calls.
         CallManager.shared.registerForVoIPPushes()
-        // Standard alert pushes deliver call recaps when backgrounded.
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+        // Standard alert pushes deliver call recaps + device actions.
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
             guard granted else { return }
             DispatchQueue.main.async { application.registerForRemoteNotifications() }
         }
@@ -48,5 +50,26 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
         CallManager.shared.setAlertToken(token)
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    // Tapped notification → run the device action (open Maps, add reminder, …).
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        DeviceActionHandler.handle(response.notification.request.content.userInfo)
+        completionHandler()
+    }
+
+    // Foreground delivery: still show the banner so the user can tap to act.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }

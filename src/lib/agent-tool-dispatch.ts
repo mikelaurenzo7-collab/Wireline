@@ -12,6 +12,7 @@ import { handleXToolCall } from "../routes/vapi/tool-handlers-x";
 import { handleShopifyToolCall } from "../routes/vapi/tool-handlers-shopify";
 import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
 import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
+import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
 import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
 
 export async function dispatchAgentToolCall(
@@ -28,6 +29,7 @@ export async function dispatchAgentToolCall(
     handleWorkflowToolCall,
     handleShopifyToolCall,
     handleSquareToolCall,
+    handleDeviceToolCall,
   ];
 
   for (const handler of handlers) {

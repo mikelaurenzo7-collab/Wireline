@@ -318,3 +318,57 @@ export async function notifyCallRecap(
     return { sent: 0, devices: 0 };
   }
 }
+
+export interface DeviceAction {
+  /** "navigate" | "reminder" | "play_music" */
+  action: string;
+  args: Record<string, unknown>;
+  /** Spoken/notification-friendly label, e.g. "Directions to SFO". */
+  title: string;
+}
+
+/**
+ * Dispatch an in-call device action (navigate / reminder / play music) to a
+ * user's phone via an alert push. The app deep-links Maps / writes EventKit /
+ * opens music when the notification is delivered or tapped. Best-effort,
+ * env-gated, never throws.
+ */
+export async function notifyDeviceAction(
+  userId: string,
+  deviceAction: DeviceAction,
+): Promise<{ sent: number; devices: number }> {
+  if (!isApnsConfigured()) return { sent: 0, devices: 0 };
+  try {
+    const devices = await drizzle
+      .select({ id: schema.mobileDevices.id, token: schema.mobileDevices.apnsAlertToken })
+      .from(schema.mobileDevices)
+      .where(eq(schema.mobileDevices.userId, userId));
+
+    const targets = devices.filter((d) => !!d.token);
+    if (targets.length === 0) return { sent: 0, devices: 0 };
+
+    const payload = {
+      aps: {
+        alert: { title: "Wingman", body: deviceAction.title },
+        sound: "default",
+      },
+      type: "device_action",
+      action: deviceAction.action,
+      args: deviceAction.args,
+    };
+
+    let sent = 0;
+    await Promise.all(
+      targets.map(async (d) => {
+        const res = await sendApnsPush(d.token as string, payload, "alert");
+        if (res.ok) sent += 1;
+      }),
+    );
+    return { sent, devices: targets.length };
+  } catch (err) {
+    log.warn("notifyDeviceAction failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { sent: 0, devices: 0 };
+  }
+}

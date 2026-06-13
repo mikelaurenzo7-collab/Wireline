@@ -64,3 +64,22 @@ the two below are the only manual touches, and only the first is required.
 > Onboarding option (not yet built): prompt for the callback number on first
 > launch or the first "take this call" tap, so users never hunt for the
 > setting. Say the word and I'll add it.
+
+---
+
+## PART 3 — Decisions for you (not blocking)
+
+### Android support
+The **backend is already platform-neutral** — `/api/mobile/*` is REST + Bearer
+JWT, and `wireline_mobile_devices.platform` already exists. Android is a client
++ push problem, not a backend rewrite. To add it later:
+- Backend: add an **FCM** sender (`fcm-push.ts`) beside `apns-push.ts`, an
+  `fcm_token` column, and a `platform` branch in `notifyInboundCall` /
+  `notifyCallRecap`. (Small.)
+- App: native **Kotlin + Jetpack Compose** in a new `android/` folder, mirroring
+  the iOS screens; **Telecom/ConnectionService** for native call UI and
+  **high-priority FCM** for inbound wake; **Android Auto** instead of CarPlay.
+- Caveats to weigh: Android background wake is less bulletproof than iOS
+  PushKit (OEM battery managers); Android Auto is stricter for calling apps.
+- **Decision pending:** native Kotlin (recommended, symmetric with iOS) vs a
+  cross-platform framework. Nothing built yet — flagged for when you want it.
