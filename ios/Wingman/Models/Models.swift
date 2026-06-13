@@ -59,8 +59,15 @@ struct MobileMe: Codable {
         }
     }
 
+    struct Settings: Codable {
+        let handoffPhone: String?
+        enum CodingKeys: String, CodingKey { case handoffPhone = "handoff_phone" }
+    }
+
+    let settings: Settings?
+
     enum CodingKeys: String, CodingKey {
-        case user, account, agents
+        case user, account, agents, settings
         case extraAgent = "extra_agent"
     }
 }

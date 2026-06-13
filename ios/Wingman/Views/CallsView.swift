@@ -7,6 +7,7 @@ struct CallsView: View {
     @State private var live: [ActiveCall] = []
     @State private var recent: [RecentCall] = []
     @State private var loadError: String?
+    @State private var handoffError: String?
 
     var body: some View {
         NavigationStack {
@@ -17,7 +18,24 @@ struct CallsView: View {
                 } else {
                     List {
                         if !live.isEmpty {
-                            Section("Live") { ForEach(live) { CallCard(call: $0) } }
+                            Section("Live") {
+                                ForEach(live) { call in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        CallCard(call: call)
+                                        Button {
+                                            Task { await takeCall(call) }
+                                        } label: {
+                                            Label("Take this call", systemImage: "arrow.down.left.circle.fill")
+                                        }
+                                        .buttonStyle(.borderedProminent)
+                                        .tint(Brand.purple)
+                                        .controlSize(.small)
+                                    }
+                                }
+                            }
+                            if let handoffError {
+                                Text(handoffError).font(.caption).foregroundStyle(Brand.destructive)
+                            }
                         }
                         Section("Recent") {
                             if recent.isEmpty {
@@ -51,6 +69,20 @@ struct CallsView: View {
             loadError = nil
         } catch {
             loadError = error.localizedDescription
+        }
+    }
+
+    private func takeCall(_ call: ActiveCall) async {
+        handoffError = nil
+        do {
+            try await WingmanAPI.shared.handoffCall(callId: call.callId)
+            await load()
+        } catch let WingmanAPI.APIError.http(status, _) where status == 400 {
+            handoffError = "Set a callback number in Settings first, then try again."
+        } catch let WingmanAPI.APIError.http(status, _) where status == 409 {
+            handoffError = "This call can't be taken over yet — try again in a moment."
+        } catch {
+            handoffError = "Couldn't take the call. Try again."
         }
     }
 }

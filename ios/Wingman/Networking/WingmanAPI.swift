@@ -60,6 +60,22 @@ actor WingmanAPI {
         _ = try await send(makeRequest(path: "/api/mobile/devices/\(deviceId)", method: "DELETE"))
     }
 
+    /// Save the operator's callback number (for "take this call" handoffs).
+    func setHandoffPhone(_ phone: String?) async throws {
+        struct Body: Encodable { let handoffPhone: String? }
+        var req = try makeRequest(path: "/api/mobile/settings", method: "PUT")
+        req.httpBody = try JSONEncoder().encode(Body(handoffPhone: phone))
+        _ = try await send(req)
+    }
+
+    /// "Take this call" — transfer a live call to the saved callback number
+    /// (or `to` when provided). Throws APIError.http on 400/404/409 so the UI
+    /// can prompt for a number or explain why it can't take over yet.
+    func handoffCall(callId: String, to: String? = nil) async throws {
+        struct Body: Encodable { let to: String? }
+        _ = try await postRaw("/api/mobile/calls/\(callId)/handoff", body: Body(to: to))
+    }
+
     /// Place an outbound call through one of the user's agents.
     /// `context` is the free-text instruction ("running 5 minutes late").
     @discardableResult

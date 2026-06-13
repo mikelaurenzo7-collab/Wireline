@@ -9,6 +9,7 @@ struct WorkspaceView: View {
     @State private var agents: [Agent] = []
     @State private var loadError: String?
     @State private var showingDialer = false
+    @State private var showingSettings = false
 
     var body: some View {
         NavigationStack {
@@ -36,11 +37,13 @@ struct WorkspaceView: View {
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        Button { showingSettings = true } label: { Label("Settings", systemImage: "gearshape") }
                         Button("Sign out", role: .destructive) { auth.signOut() }
                     } label: { Image(systemName: "person.crop.circle") }
                 }
             }
             .sheet(isPresented: $showingDialer) { OutboundCallView(agents: agents) }
+            .sheet(isPresented: $showingSettings) { NavigationStack { SettingsView() } }
             .task { await load() }
             .refreshable { await load() }
         }

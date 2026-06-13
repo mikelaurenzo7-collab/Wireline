@@ -35,6 +35,7 @@ ios/
 │       ├── SignInView.swift / WorkspaceView.swift / OutboundCallView.swift
 │       ├── CallsView.swift / CallDetailView.swift  Activity + per-call recap.
 │       ├── AskWingmanView.swift      In-app "Ask Wingman" surface.
+│       ├── SettingsView.swift        Callback number for "take this call".
 │       └── ActivationSetupView.swift "Activate everywhere" setup screen.
 └── WingmanWidgets/             WidgetKit extension (Home/Lock-screen "Ask Wingman").
 ```
