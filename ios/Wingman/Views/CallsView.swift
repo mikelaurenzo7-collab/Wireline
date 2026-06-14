@@ -105,8 +105,8 @@ private struct RecentCallRow: View {
             if let tag = call.outcomeTag, tag != "other" {
                 Text(tag.capitalized)
                     .font(.caption2.weight(.semibold))
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .background(Brand.accentTint, in: Rectangle())
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Brand.accentTint, in: Capsule())
                     .foregroundStyle(Brand.purple)
             }
         }
