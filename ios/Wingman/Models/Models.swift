@@ -121,6 +121,25 @@ struct RecentCallsResponse: Codable {
     let needsAttention: Int
 }
 
+struct CallDetail: Codable {
+    let id: String
+    let agentId: String?
+    let direction: String?
+    let customerNumber: String?
+    let durationSeconds: Int?
+    let summary: String?
+    let transcript: String?
+    let sentiment: String?
+    let outcomeTag: String?
+    let intentLabel: String?
+    let recordingUrl: String?
+    let createdAt: String?
+}
+
+struct CallDetailResponse: Codable {
+    let call: CallDetail
+}
+
 struct WalletEntry: Codable, Identifiable {
     let id: String
     let deltaUsd: Double

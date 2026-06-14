@@ -4,6 +4,7 @@ import SwiftUI
 /// /api/mobile/calls/recent (summary, outcome, sentiment, duration, direction).
 struct CallDetailView: View {
     let call: RecentCall
+    @State private var full: CallDetail?
 
     var body: some View {
         List {
@@ -30,10 +31,17 @@ struct CallDetailView: View {
                     detail("Intent", intent.replacingOccurrences(of: "_", with: " ").capitalized)
                 }
             }
+
+            if let transcript = full?.transcript, !transcript.isEmpty {
+                Section("Transcript") {
+                    Text(transcript).font(.callout).textSelection(.enabled)
+                }
+            }
         }
         .navigationTitle("Call recap")
         .navigationBarTitleDisplayMode(.inline)
         .wingmanBrand()
+        .task { full = try? await WingmanAPI.shared.callDetail(id: call.id) }
     }
 
     private var durationSuffix: String {

@@ -261,4 +261,28 @@ describe("mobile-routes", () => {
       );
     });
   });
+
+  describe("GET /api/mobile/calls/:callId/detail", () => {
+    it("404s a non-numeric id without touching the DB", async () => {
+      const res = await request(app).get("/api/mobile/calls/active/detail");
+      expect(res.status).toBe(404);
+      expect(h.queue.length).toBe(0); // no query consumed
+    });
+
+    it("404s when the call isn't found for this user", async () => {
+      h.queue.push([]);
+      const res = await request(app).get("/api/mobile/calls/42/detail");
+      expect(res.status).toBe(404);
+    });
+
+    it("returns the full recap with transcript and a stringified id", async () => {
+      h.queue.push([
+        { id: 42, summary: "Booked a demo", transcript: "Hi there", sentiment: "positive" },
+      ]);
+      const res = await request(app).get("/api/mobile/calls/42/detail");
+      expect(res.status).toBe(200);
+      expect(res.body.call.id).toBe("42");
+      expect(res.body.call.transcript).toBe("Hi there");
+    });
+  });
 });

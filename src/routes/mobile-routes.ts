@@ -429,6 +429,47 @@ router.get(
   },
 );
 
+// ── GET /api/mobile/calls/:callId/detail — full recap incl. transcript ─────
+router.get(
+  "/api/mobile/calls/:callId/detail",
+  authenticateUser,
+  mobileRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { callId } = req.params;
+      // callLogs.id is a bigint — reject non-numeric ids before the PG cast.
+      if (!/^\d+$/.test(callId)) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
+      }
+      const [call] = await drizzle
+        .select({
+          id: schema.callLogs.id,
+          agentId: schema.callLogs.agentId,
+          direction: schema.callLogs.direction,
+          customerNumber: schema.callLogs.customerNumber,
+          durationSeconds: schema.callLogs.durationSeconds,
+          summary: schema.callLogs.summary,
+          transcript: schema.callLogs.transcript,
+          sentiment: schema.callLogs.sentiment,
+          outcomeTag: schema.callLogs.outcomeTag,
+          intentLabel: schema.callLogs.intentLabel,
+          recordingUrl: schema.callLogs.recordingUrl,
+          createdAt: schema.callLogs.createdAt,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)))
+        .limit(1);
+      if (!call) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
+      }
+      res.json({ call: { ...call, id: String(call.id) } });
+    } catch (err) {
+      log.error("GET /api/mobile/calls/:callId/detail failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load call.");
+    }
+  },
+);
+
 const e164 = z.string().regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)");
 
 // ── PUT /api/mobile/settings — operator's mobile-app preferences ───────────

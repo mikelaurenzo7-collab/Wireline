@@ -39,6 +39,11 @@ actor WingmanAPI {
         try await get("/api/mobile/wallet")
     }
 
+    func callDetail(id: String) async throws -> CallDetail {
+        let resp: CallDetailResponse = try await get("/api/mobile/calls/\(id)/detail")
+        return resp.call
+    }
+
     // MARK: - Writes
 
     /// Register/refresh this device's APNs tokens so the backend can wake it
