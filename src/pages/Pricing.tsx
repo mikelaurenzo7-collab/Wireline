@@ -401,13 +401,15 @@ export default function Pricing() {
       {/* Tier grid */}
       <section
         id="pricing-plans"
-        className="relative z-10 px-4 scroll-mt-28 sm:px-6 lg:px-10 max-w-7xl mx-auto pb-16"
+        className="relative z-10 px-4 scroll-mt-28 sm:px-6 lg:px-10 wl-measure-wide pb-16"
       >
         {/* Tier grid scales 1 → 2 → 3 → 5. Skipping the previous
             sm:grid-cols-2 jump because 360-390px in 2-col mode forced
             ~160px tier cards that were unreadable. Now: single column
-            until md (768px), then 3 across, 5 on wide desktop. */}
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            until md (768px), then 3 across, 5 on wide desktop. The
+            wl-measure-wide parent gives those 5 tiers real breathing room
+            at xl/2xl instead of cramming them into a 1280px column. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 2xl:gap-5">
           {TIERS.map((tier, i) => (
             <motion.div
               key={tier.id}
@@ -415,7 +417,9 @@ export default function Pricing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               className={`relative p-4 lg:p-5 flex flex-col ${
-                tier.highlight ? "wl-purple-ring tier-spotlight md:scale-[1.02] md:-my-1 md:z-10" : ""
+                tier.highlight
+                  ? "wl-purple-ring tier-spotlight md:scale-[1.02] md:-my-1 md:z-10"
+                  : ""
               }`}
             >
               <div
