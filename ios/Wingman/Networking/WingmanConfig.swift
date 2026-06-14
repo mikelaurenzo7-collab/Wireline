@@ -1,8 +1,8 @@
 import Foundation
 
 /// Single source of truth for the backend origin. Point this at your
-environment (local dev, preview, or production) — both the auth flow and
-the authenticated API client read from here.
+/// environment (local dev, preview, or production) — both the auth flow and
+/// the authenticated API client read from here.
 enum WingmanConfig {
     /// Production API origin for TestFlight/App Store builds.
     /// Override locally only in an uncommitted debug change.
