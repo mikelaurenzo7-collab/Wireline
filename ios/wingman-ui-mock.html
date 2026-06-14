@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wingman — iOS UI preview (SwiftUI approximation)</title>
+    <!--
+      A browser approximation of how the Wingman SwiftUI app, widgets, and
+      Live Activity render — so the design can be reviewed without Xcode/macOS.
+      This is a visual mock (HTML/CSS), NOT the compiled app. Brand tokens mirror
+      ios/Wingman/Theme/WingmanTheme.swift (purple #8B3FD6, cream paper).
+    -->
+    <style>
+      :root {
+        --purple: #8b3fd6;
+        --purple-deep: #6b2fa8;
+        --ink: #1a1614;
+        --paper: #f5f1e8;
+        --paper-2: #efe9dc;
+        --card: #ffffff;
+        --muted: #6b6057;
+        --hair: rgba(26, 22, 20, 0.1);
+        --green: #34c759;
+        --orange: #ff9f0a;
+        --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: var(--font);
+        background:
+          radial-gradient(1200px 600px at 20% -10%, #2a2440 0%, transparent 60%),
+          radial-gradient(1000px 500px at 100% 0%, #241c38 0%, transparent 55%), #121016;
+        color: #e9e4f5;
+        padding: 40px 24px 80px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1180px; margin: 0 auto; }
+      header.page { text-align: center; margin-bottom: 8px; }
+      header.page h1 { font-size: 30px; letter-spacing: -0.02em; font-weight: 700; }
+      header.page .accent { color: #c9a6ff; }
+      header.page p { color: #b3aacb; margin-top: 8px; font-size: 14.5px; }
+      .badge {
+        display: inline-block; margin-top: 14px; padding: 6px 12px; font-size: 11px;
+        letter-spacing: 0.12em; text-transform: uppercase; color: #d9c8ff;
+        border: 1px solid rgba(201, 166, 255, 0.35); border-radius: 999px;
+      }
+      h2.section {
+        font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;
+        color: #9a8fc0; margin: 56px 0 22px; padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .gallery { display: flex; flex-wrap: wrap; gap: 34px; justify-content: center; }
+      figure { width: 264px; }
+      figcaption { text-align: center; color: #a99fc9; font-size: 12.5px; margin-top: 12px; }
+
+      /* ---- iPhone frame ---- */
+      .phone {
+        width: 264px; height: 572px; border-radius: 44px; padding: 11px;
+        background: linear-gradient(160deg, #2b2b30, #131316);
+        box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.04) inset;
+        position: relative;
+      }
+      .screen {
+        position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden;
+        background: var(--paper); color: var(--ink); display: flex; flex-direction: column;
+      }
+      .island {
+        position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+        width: 86px; height: 26px; background: #000; border-radius: 16px; z-index: 30;
+      }
+      .statusbar {
+        height: 44px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 22px 0 24px; font-size: 12.5px; font-weight: 600; flex: 0 0 auto;
+      }
+      .statusbar .dots { letter-spacing: 1px; }
+      .nav { padding: 4px 18px 10px; flex: 0 0 auto; }
+      .nav .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--purple); font-weight: 700; }
+      .nav h3 { font-size: 26px; letter-spacing: -0.02em; margin-top: 2px; }
+      .body { flex: 1 1 auto; overflow: hidden; padding: 2px 16px 12px; }
+      .tabbar {
+        flex: 0 0 auto; height: 60px; display: flex; border-top: 1px solid var(--hair);
+        background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(8px);
+      }
+      .tabbar .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; color: var(--muted); }
+      .tabbar .tab.active { color: var(--purple); }
+      .tabbar .tab .ic { font-size: 17px; }
+
+      /* ---- shared components ---- */
+      .medallion {
+        width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+        background: linear-gradient(150deg, var(--purple), var(--purple-deep)); color: #fff;
+        font-size: 22px; box-shadow: 0 8px 22px -6px rgba(139, 63, 214, 0.6);
+      }
+      .card {
+        background: var(--card); border: 1px solid var(--hair); border-radius: 14px;
+        padding: 12px 13px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+      }
+      .row { display: flex; align-items: center; gap: 11px; }
+      .avatar { width: 38px; height: 38px; border-radius: 11px; background: var(--paper-2); display: grid; place-items: center; color: var(--purple); font-weight: 700; font-size: 14px; flex: 0 0 auto; }
+      .title { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+      .sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+      .pill { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: rgba(139, 63, 214, 0.12); color: var(--purple); }
+      .dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+      .btn-primary {
+        display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+        padding: 13px; border-radius: 13px; color: #fff; font-weight: 600; font-size: 14.5px;
+        background: linear-gradient(120deg, var(--purple), var(--purple-deep));
+        box-shadow: 0 10px 22px -8px rgba(139, 63, 214, 0.7);
+      }
+      .live-ring { position: relative; }
+      .live-ring::after {
+        content: ""; position: absolute; inset: -4px; border-radius: 14px;
+        border: 2px solid var(--green); opacity: 0.5;
+      }
+      .label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+      .stack > * + * { margin-top: 9px; }
+
+      /* ---- widgets ---- */
+      .widgets { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; }
+      .home-bg {
+        padding: 18px; border-radius: 26px;
+        background: linear-gradient(160deg, #3a2d5a, #1f1733);
+        box-shadow: 0 24px 50px -18px rgba(0, 0, 0, 0.7);
+      }
+      .w {
+        background: rgba(255, 255, 255, 0.92); color: var(--ink); border-radius: 22px;
+        box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.4); padding: 14px;
+        backdrop-filter: blur(4px);
+      }
+      .w.small { width: 150px; height: 150px; display: flex; flex-direction: column; }
+      .w.medium { width: 324px; height: 150px; }
+      .w .whead { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+      .w .whead .ic { color: var(--purple); }
+      .w .big { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; margin-top: auto; }
+      .w .crow { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hair); }
+      .w .crow:last-child { border-bottom: 0; }
+      .accessory { background: #000; color: #fff; border-radius: 18px; padding: 12px 16px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+      .accessory .ic { color: #c9a6ff; }
+
+      /* ---- live activity ---- */
+      .la-stage { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; align-items: center; }
+      .lockscreen {
+        width: 300px; border-radius: 26px; padding: 16px;
+        background: linear-gradient(160deg, rgba(40, 32, 64, 0.92), rgba(20, 16, 32, 0.92));
+        color: #fff; box-shadow: 0 20px 44px -16px rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .di {
+        background: #000; color: #fff; border-radius: 26px; padding: 12px 16px; width: 360px;
+        display: flex; align-items: center; gap: 10px; box-shadow: 0 0 0 1px rgba(201, 166, 255, 0.25);
+      }
+      .di.compact { width: 220px; border-radius: 22px; justify-content: space-between; }
+      .mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+      .ic { font-style: normal; }
+      .note { text-align: center; color: #8a80a6; font-size: 12px; margin-top: 40px; line-height: 1.6; }
+      a { color: #c9a6ff; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="page">
+        <h1>Wingman — <span class="accent">iOS UI preview</span></h1>
+        <p>A browser approximation of the SwiftUI app, widgets, and Live Activity — review the design without Xcode.</p>
+        <span class="badge">Visual mock · not the compiled app</span>
+      </header>
+
+      <!-- ============ APP SCREENS ============ -->
+      <h2 class="section">App screens</h2>
+      <div class="gallery">
+        <!-- Workspace / Home -->
+        <figure>
+          <div class="phone"><div class="screen">
+            <div class="island"></div>
+            <div class="statusbar"><span>9:41</span><span class="dots">5G&nbsp;&nbsp;▮▮▮</span></div>
+            <div class="nav"><div class="eyebrow">Your fleet</div><h3>Workspace</h3></div>
+            <div class="body stack">
+              <div class="row" style="gap:12px">
+                <div class="medallion">◆</div>
+                <div><div class="title">Acme Dental</div><div class="sub">Business · 3 of 3 agents live</div></div>
+              </div>
+              <div class="card live-ring">
+                <div class="row"><span class="dot" style="background:var(--green)"></span><div class="label" style="color:var(--green)">Live now</div></div>
+                <div class="title" style="margin-top:6px">Riley is on a call</div>
+                <div class="sub">(312) 555-0188 · 01:24 · tap to take</div>
+              </div>
+              <div class="label" style="margin-top:4px">Agents</div>
+              <div class="card row"><div class="avatar">R</div><div style="flex:1"><div class="title">Riley</div><div class="sub">Receptionist · voice + sms</div></div><span class="pill">on call</span></div>
+              <div class="card row"><div class="avatar">M</div><div style="flex:1"><div class="title">Morgan</div><div class="sub">Scheduler · voice</div></div><span class="pill" style="background:#eee;color:var(--muted)">idle</span></div>
+            </div>
+            <div class="tabbar"><div class="tab active"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">☎</span>Calls</div></div>
+          </div></div>
+          <figcaption>Workspace (Home)</figcaption>
+        </figure>
+
+        <!-- Calls -->
+        <figure>
+          <div class="phone"><div class="screen">
+            <div class="island"></div>
+            <div class="statusbar"><span>9:41</span><span class="dots">5G&nbsp;&nbsp;▮▮▮</span></div>
+            <div class="nav"><div class="eyebrow">Activity</div><h3>Calls</h3></div>
+            <div class="body stack">
+              <div class="card row"><div class="avatar" style="color:var(--green)">↑</div><div style="flex:1"><div class="title">Dr. Patel's office</div><div class="sub">Booked · 2m ago</div></div><span class="dot" style="background:var(--green)"></span></div>
+              <div class="card row"><div class="avatar" style="color:var(--orange)">↑</div><div style="flex:1"><div class="title">Westside Pharmacy</div><div class="sub">Left message · 1h ago</div></div><span class="dot" style="background:var(--purple)"></span></div>
+              <div class="card row"><div class="avatar">↓</div><div style="flex:1"><div class="title">(312) 555-0188</div><div class="sub">Missed · 3h ago</div></div><span class="dot" style="background:var(--purple)"></span></div>
+              <div class="card row"><div class="avatar" style="color:var(--green)">↑</div><div style="flex:1"><div class="title">Lincoln Elementary</div><div class="sub">Confirmed pickup · 5h ago</div></div></div>
+            </div>
+            <div class="tabbar"><div class="tab"><span class="ic">⌂</span>Home</div><div class="tab active"><span class="ic">☎</span>Calls</div></div>
+          </div></div>
+          <figcaption>Calls (history + follow-ups)</figcaption>
+        </figure>
+
+        <!-- Outbound composer -->
+        <figure>
+          <div class="phone"><div class="screen">
+            <div class="island"></div>
+            <div class="statusbar"><span>9:41</span><span class="dots">5G&nbsp;&nbsp;▮▮▮</span></div>
+            <div class="nav"><div class="eyebrow">New call</div><h3>Dispatch</h3></div>
+            <div class="body stack">
+              <div class="label">Agent</div>
+              <div class="card row"><div class="avatar">R</div><div style="flex:1"><div class="title">Riley</div><div class="sub">Receptionist</div></div><span class="ic" style="color:var(--muted)">⌄</span></div>
+              <div class="label" style="margin-top:4px">Call</div>
+              <div class="card"><div class="sub">Phone number</div><div class="title" style="margin-top:2px">+1 (312) 555-0188</div></div>
+              <div class="card"><div class="sub">Instruction (optional)</div><div class="title" style="margin-top:2px;font-weight:500">“Tell them I'm running 10 min late.”</div></div>
+              <div class="btn-primary" style="margin-top:6px"><span class="ic">☎</span> Place call</div>
+            </div>
+          </div></div>
+          <figcaption>Outbound composer (prefilled by widget)</figcaption>
+        </figure>
+
+        <!-- Ask Wingman -->
+        <figure>
+          <div class="phone"><div class="screen">
+            <div class="island"></div>
+            <div class="statusbar"><span>9:41</span><span class="dots">5G&nbsp;&nbsp;▮▮▮</span></div>
+            <div class="nav"><div class="eyebrow">Hands-free</div><h3>Ask Wingman</h3></div>
+            <div class="body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center">
+              <div class="medallion" style="width:84px;height:84px;border-radius:26px;font-size:34px">🎙</div>
+              <div class="title" style="font-size:17px">“Call the dentist and<br/>reschedule to Friday.”</div>
+              <div class="sub" style="max-width:200px">Wingman dials, handles the call, and texts you the recap.</div>
+              <div class="btn-primary" style="width:auto;padding:12px 24px;border-radius:999px"><span class="ic">●</span> Listening…</div>
+            </div>
+          </div></div>
+          <figcaption>Ask Wingman (Siri / Action button twin)</figcaption>
+        </figure>
+
+        <!-- Wallet -->
+        <figure>
+          <div class="phone"><div class="screen">
+            <div class="island"></div>
+            <div class="statusbar"><span>9:41</span><span class="dots">5G&nbsp;&nbsp;▮▮▮</span></div>
+            <div class="nav"><div class="eyebrow">Prepaid credit</div><h3>Wallet</h3></div>
+            <div class="body stack">
+              <div class="card" style="background:linear-gradient(150deg,#fff,#f3ecff)">
+                <div class="label">Balance</div>
+                <div style="font-size:42px;font-weight:800;letter-spacing:-0.02em;margin-top:2px">$12.50</div>
+                <div class="sub">Top up on the web · used for call overage</div>
+              </div>
+              <div class="label" style="margin-top:4px">Activity</div>
+              <div class="card row"><div style="flex:1"><div class="title">Call overage</div><div class="sub">Today · 9:02 AM</div></div><div class="title" style="color:#c53050">−$0.45</div></div>
+              <div class="card row"><div style="flex:1"><div class="title">Top-up (web)</div><div class="sub">Jun 12</div></div><div class="title" style="color:var(--green)">+$15.00</div></div>
+            </div>
+            <div class="tabbar"><div class="tab"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">☎</span>Calls</div></div>
+          </div></div>
+          <figcaption>Wallet (read-only — Apple-safe)</figcaption>
+        </figure>
+
+        <!-- Sign in -->
+        <figure>
+          <div class="phone"><div class="screen">
+            <div class="island"></div>
+            <div class="statusbar"><span>9:41</span><span class="dots">5G&nbsp;&nbsp;▮▮▮</span></div>
+            <div class="body" style="display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px">
+              <div class="medallion" style="margin:0 auto 6px">◆</div>
+              <div style="text-align:center"><div class="eyebrow" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);font-weight:700">Wingman</div><div class="title" style="font-size:22px;margin-top:4px">Your calls, handled.</div></div>
+              <div class="card"><div class="sub">Email</div><div class="title" style="font-weight:500;margin-top:2px">you@business.com</div></div>
+              <div class="card"><div class="sub">Password</div><div class="title" style="font-weight:500;margin-top:2px">••••••••</div></div>
+              <div class="btn-primary">Sign in</div>
+            </div>
+          </div></div>
+          <figcaption>Sign in</figcaption>
+        </figure>
+      </div>
+
+      <!-- ============ WIDGETS ============ -->
+      <h2 class="section">Home &amp; Lock Screen widgets</h2>
+      <div class="widgets">
+        <div class="home-bg">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;max-width:340px">
+            <!-- Recent calls small -->
+            <div class="w small">
+              <div class="whead"><span class="ic">☎</span> Recent calls <span style="margin-left:auto" class="pill">2</span></div>
+              <div style="margin-top:8px;font-size:12px">
+                <div style="display:flex;gap:6px;align-items:center;padding:4px 0"><span style="color:var(--green)">↑</span> Dr. Patel's…</div>
+                <div style="display:flex;gap:6px;align-items:center;padding:4px 0"><span style="color:var(--orange)">↑</span> Westside Ph…</div>
+              </div>
+            </div>
+            <!-- Needs attention small -->
+            <div class="w small">
+              <div class="whead"><span class="ic">🔔</span></div>
+              <div class="big">2</div>
+              <div class="sub">calls to follow up</div>
+            </div>
+            <!-- Recent calls medium -->
+            <div class="w medium">
+              <div class="whead"><span class="ic">☎</span> Recent calls <span style="margin-left:auto" class="pill">2 follow-ups</span></div>
+              <div style="margin-top:6px">
+                <div class="crow"><span style="color:var(--green)">↑</span><div style="flex:1"><div class="title" style="font-size:13px">Dr. Patel's office</div></div><span class="sub">Booked · 2m</span></div>
+                <div class="crow"><span style="color:var(--orange)">↑</span><div style="flex:1"><div class="title" style="font-size:13px">Westside Pharmacy</div></div><span class="dot" style="background:var(--purple)"></span></div>
+                <div class="crow"><span>↓</span><div style="flex:1"><div class="title" style="font-size:13px">(312) 555-0188</div></div><span class="sub">Missed · 3h</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:16px;align-items:center;flex-wrap:wrap">
+            <span class="accessory"><span class="ic">🔔</span> 2 to follow up</span>
+            <span class="accessory"><span class="ic">💳</span> $12.50</span>
+            <span class="accessory"><span class="ic">🎙</span> Ask Wingman</span>
+          </div>
+        </div>
+      </div>
+      <p class="note">Tapping a recent-call row deep-links into the app's outbound composer, prefilled to call them back — a tap never auto-dials.</p>
+
+      <!-- ============ LIVE ACTIVITY ============ -->
+      <h2 class="section">In-call Live Activity &amp; Dynamic Island</h2>
+      <div class="la-stage">
+        <!-- Lock screen -->
+        <div>
+          <div class="lockscreen">
+            <div class="row">
+              <div class="medallion" style="width:42px;height:42px;border-radius:13px;font-size:18px">☎</div>
+              <div style="flex:1">
+                <div class="title" style="color:#fff">(312) 555-0188</div>
+                <div style="display:flex;gap:6px;align-items:center;margin-top:2px"><span class="dot" style="background:var(--green)"></span><span style="font-size:11.5px;color:#c9bfe6">Live · Riley</span></div>
+              </div>
+              <div style="text-align:right"><div class="mono title" style="color:#fff">01:24</div><div style="font-size:10.5px;color:#c9a6ff">Tap to take</div></div>
+            </div>
+          </div>
+          <div style="text-align:center;color:#a99fc9;font-size:12.5px;margin-top:10px">Lock Screen banner</div>
+        </div>
+        <!-- Dynamic Island expanded -->
+        <div>
+          <div class="di">
+            <div class="medallion" style="width:34px;height:34px;border-radius:11px;font-size:15px">☎</div>
+            <div style="flex:1"><div class="title" style="color:#fff;font-size:13px">Riley · (312) 555-0188</div><div style="display:flex;gap:6px;align-items:center;margin-top:2px"><span class="dot" style="background:var(--green)"></span><span style="font-size:11px;color:#bdb2dd">Live · tap to take</span></div></div>
+            <div class="mono" style="color:#fff;font-weight:700">01:24</div>
+          </div>
+          <div style="text-align:center;color:#a99fc9;font-size:12.5px;margin-top:10px">Dynamic Island — expanded</div>
+        </div>
+        <!-- Dynamic Island compact -->
+        <div>
+          <div class="di compact">
+            <span style="color:#c9a6ff">☎</span>
+            <span class="mono" style="color:#fff;font-weight:700">01:24</span>
+          </div>
+          <div style="text-align:center;color:#a99fc9;font-size:12.5px;margin-top:10px">Dynamic Island — compact</div>
+        </div>
+      </div>
+
+      <p class="note">
+        Approximation of <code style="color:#c9a6ff">ios/Wingman</code> + <code style="color:#c9a6ff">ios/WingmanWidgets</code>.
+        Fonts, blur, and spring physics differ from the real SF Pro / SwiftUI render — this is for layout &amp; brand review.<br/>
+        Built without Xcode; the compiled app needs a Mac (or Xcode Cloud / a cloud-Mac CI) to build &amp; submit.
+      </p>
+    </div>
+  </body>
+</html>
