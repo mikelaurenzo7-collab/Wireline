@@ -25,8 +25,9 @@ struct WingmanApp: App {
                 // wingman://ask (from a widget / Control Center) → Ask surface.
                 case "ask": router.showAsk = true
                 // wingman://calls (from the recent-calls / needs-attention
-                // widgets) → bring the app forward on the Calls surface.
-                case "calls": router.route = .calls
+                // widgets) and wingman://call?id=… (from the in-call Live
+                // Activity) → bring the app forward on the Calls surface.
+                case "calls", "call": router.route = .calls
                 // wingman://callback?number=+1555… (tap a recent call) →
                 // open the outbound composer prefilled to call them back.
                 case "callback":

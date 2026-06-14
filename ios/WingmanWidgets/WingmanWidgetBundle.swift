@@ -10,5 +10,7 @@ struct WingmanWidgetBundle: WidgetBundle {
         RecentCallsWidget()
         NeedsAttentionWidget()
         WalletWidget()
+        // In-call Live Activity (Lock Screen + Dynamic Island).
+        CallLiveActivity()
     }
 }

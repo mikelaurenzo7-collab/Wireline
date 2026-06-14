@@ -11,6 +11,8 @@ enum WidgetSync {
     /// place rather than blanking the widget.
     static func refresh(signedIn: Bool) async {
         guard signedIn else {
+            // Sign-out tears down any in-call Live Activity too.
+            await CallActivityController.shared.end()
             WingmanWidgetStore.save(WingmanWidgetSnapshot(signedIn: false))
             WidgetCenter.shared.reloadAllTimelines()
             return
@@ -19,7 +21,20 @@ enum WidgetSync {
         async let recentTask = try? await WingmanAPI.shared.recentCalls(limit: 6)
         async let walletTask = try? await WingmanAPI.shared.wallet()
         async let activeTask = try? await WingmanAPI.shared.activeCalls()
-        let (recent, wallet, active) = await (recentTask, walletTask, activeTask)
+        async let agentsTask = try? await WingmanAPI.shared.agents()
+        let (recent, wallet, active, agents) = await (recentTask, walletTask, activeTask, agentsTask)
+
+        // Drive the in-call Live Activity off the same poll: start/update/end it
+        // to match the current active call (no-ops if Live Activities are off).
+        // Skipped only when the active-calls fetch itself failed (nil), so a
+        // transient error never tears down a live call's activity.
+        if let active {
+            let liveCall = active.first
+            let agentName = liveCall.flatMap { call in
+                agents?.first(where: { $0.id == call.agentId })?.name
+            } ?? "Wingman"
+            await CallActivityController.shared.reconcile(call: liveCall, agentName: agentName)
+        }
 
         // Nothing came back at all — keep whatever the widget already shows.
         if recent == nil, wallet == nil, active == nil { return }

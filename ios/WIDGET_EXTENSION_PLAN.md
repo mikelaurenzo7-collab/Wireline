@@ -65,11 +65,24 @@ calls `WidgetCenter.reloadAllTimelines()`.
   shared Keychain access group so the extension can call `/api/mobile/*`).
 - Next: iOS 18 **Control Center** `ControlWidget` (Ask Wingman quick action).
 
-## Phase W4 — Live Activity / Dynamic Island — next
+## Phase W4 — Live Activity / Dynamic Island ✅ (this PR)
 
-- `ActivityKit` `WingmanCallActivity`: live active-call status + one-tap
-  "Take this call" handoff (reuses `WingmanAPI.handoffCall`). Updated via APNs
-  Live Activity tokens (push infra already exists in `src/lib/apns-push.ts`).
+- `WingmanCallActivityAttributes` (shared) describes an in-progress call;
+  `CallLiveActivity` renders the Lock Screen banner + Dynamic Island
+  (expanded / compact / minimal) with agent, peer, a live timer, and a phase
+  dot (ringing / live / wrapping).
+- `CallActivityController` (app) starts / updates / ends the activity
+  idempotently; `WidgetSync` reconciles it against the active-calls poll, so a
+  live call surfaces on the Lock Screen + Dynamic Island automatically. No-ops
+  when Live Activities are disabled. `NSSupportsLiveActivities` added to the app
+  Info.plist.
+- Tapping the activity opens `wingman://call?id=…` → the app's Calls surface,
+  where the user can take the call over.
+
+> **Next refinement:** push-update the activity via APNs Live Activity tokens
+> (infra exists in `src/lib/apns-push.ts`) so it updates while backgrounded,
+> and drive start/end from `CallManager`/CallKit events rather than only the
+> foreground poll.
 
 ## Phase W5 — App Store submission
 

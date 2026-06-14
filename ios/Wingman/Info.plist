@@ -15,6 +15,10 @@
 	<key>UILaunchScreen</key>
 	<dict/>
 
+	<!-- In-call Live Activity (Lock Screen + Dynamic Island). -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+
 	<!-- Wake on inbound-call VoIP push, finish call audio in background, and
 	     receive non-call alerts. -->
 	<key>UIBackgroundModes</key>
