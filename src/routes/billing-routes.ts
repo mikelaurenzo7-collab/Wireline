@@ -19,6 +19,7 @@ import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
+import { addCredit } from "../lib/credit-wallet";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -86,6 +87,26 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
           await syncSubscriptionFromStripe(sub);
+        } else if (
+          session.mode === "payment" &&
+          session.payment_status === "paid" &&
+          session.metadata?.purpose === "credit_topup"
+        ) {
+          // Apple-safe wallet top-up: credit is purchased on the web, never
+          // in-app. Idempotent twice over — the event is deduped via
+          // wireline_stripe_events, and addCredit dedupes on the session id.
+          const userId = session.metadata.wireline_user_id;
+          const creditUsd = Number(session.metadata.credit_usd);
+          if (userId && Number.isFinite(creditUsd) && creditUsd > 0) {
+            await addCredit(userId, creditUsd, "web_topup", {
+              type: "stripe_session",
+              id: session.id,
+            });
+          } else {
+            log.warn("credit_topup session missing user id or amount", {
+              sessionId: session.id,
+            });
+          }
         }
         break;
       }
@@ -732,6 +753,109 @@ router.post(
     } catch (e: any) {
       log.error("Checkout creation failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Checkout failed");
+    }
+  },
+);
+
+// Prepaid credit top-up — a one-time Stripe payment on the WEB. Credits absorb
+// voice overage (see credit-wallet + voice-usage). Deliberately web-only: the
+// iOS app stays read-only on billing to remain clear of Apple's IAP rules.
+const CREDIT_MIN_USD = 10;
+const CREDIT_MAX_USD = 1000;
+
+router.post(
+  "/billing/credit-checkout",
+  authenticateUser,
+  enforceLaunchHardGate,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");
+      const amountUsd = Math.round(Number(req.body?.amount_usd));
+      if (
+        !Number.isInteger(amountUsd) ||
+        amountUsd < CREDIT_MIN_USD ||
+        amountUsd > CREDIT_MAX_USD
+      ) {
+        return res.status(400).json({
+          code: "INVALID_AMOUNT",
+          error: `amount_usd must be a whole number between ${CREDIT_MIN_USD} and ${CREDIT_MAX_USD}.`,
+        });
+      }
+
+      // Reuse (or lazily create) the tenant's Stripe customer.
+      const [existing] = await drizzle
+        .select({ stripeCustomerId: schema.subscriptions.stripeCustomerId })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, req.user.id))
+        .limit(1);
+      let customerId = existing?.stripeCustomerId || null;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: req.user.email,
+          metadata: { wireline_user_id: req.user.id },
+        });
+        customerId = customer.id;
+        await drizzle
+          .insert(schema.subscriptions)
+          .values({ userId: req.user.id, stripeCustomerId: customerId, updatedAt: new Date() })
+          .onConflictDoUpdate({
+            target: schema.subscriptions.userId,
+            set: { stripeCustomerId: customerId, updatedAt: new Date() },
+          });
+      }
+
+      const appUrl = resolveCanonicalAppUrl();
+      if ("error" in appUrl) {
+        return res
+          .status(503)
+          .json({ error: "Billing is unavailable: APP_URL is not configured." });
+      }
+      const base = appUrl.url;
+      const creditMeta = {
+        wireline_user_id: req.user.id,
+        purpose: "credit_topup",
+        credit_usd: String(amountUsd),
+      };
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer: customerId,
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: "usd",
+              unit_amount: amountUsd * 100,
+              product_data: {
+                name: "Wingman call credits",
+                description: `$${amountUsd} prepaid credit applied to voice usage`,
+              },
+            },
+          },
+        ],
+        success_url: `${base}/admin?credits=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${base}/admin?credits=canceled`,
+        // Mirror metadata onto the PaymentIntent too, for dashboard traceability.
+        payment_intent_data: { metadata: creditMeta },
+        metadata: creditMeta,
+      });
+      res.json({ url: session.url });
+      void auditLogger
+        .logBilling("checkout_started", {
+          userId: req.user.id,
+          customerId,
+          amountCents: amountUsd * 100,
+          ip: req.ip,
+        })
+        .catch((err) =>
+          log.warn("billing audit log failed", {
+            event: "credit_checkout_started",
+            error: getErrorMessage(err),
+          }),
+        );
+    } catch (e: any) {
+      log.error("Credit checkout creation failed", { error: getErrorMessage(e) });
+      throw AppError.fromHttpStatus(500, "Credit checkout failed");
     }
   },
 );

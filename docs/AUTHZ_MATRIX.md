@@ -137,6 +137,7 @@
 | auth-routes.ts | GET | `/api/auth/verify-email/:token` | — | — | yes | Public (allowlisted) |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
+| billing-routes.ts | POST | `/api/billing/credit-checkout` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/billing/plans` | — | — | yes | Public (allowlisted) |

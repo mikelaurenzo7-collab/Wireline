@@ -519,6 +519,26 @@ describe("billing routes integration", () => {
     expect(h.stripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
+  it("rejects an out-of-bounds credit top-up amount before calling Stripe", async () => {
+    const response = await request(await buildApp())
+      .post("/api/billing/credit-checkout")
+      .set("Authorization", ["Bearer", "valid-token"].join(" "))
+      .send({ amount_usd: 5 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("INVALID_AMOUNT");
+    expect(h.stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it("requires auth for credit top-up", async () => {
+    const response = await request(await buildApp())
+      .post("/api/billing/credit-checkout")
+      .send({ amount_usd: 50 });
+
+    expect(response.status).toBe(401);
+    expect(h.stripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
   it("lists the expected billing tiers", async () => {
     const response = await request(await buildApp()).get("/api/billing/plans");
 
