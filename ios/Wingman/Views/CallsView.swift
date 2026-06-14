@@ -8,6 +8,7 @@ struct CallsView: View {
     @State private var recent: [RecentCall] = []
     @State private var loadError: String?
     @State private var handoffError: String?
+    @State private var showingSettings = false
 
     var body: some View {
         NavigationStack {
@@ -55,6 +56,7 @@ struct CallsView: View {
             }
             .navigationTitle("Calls")
             .wingmanBrand()
+            .sheet(isPresented: $showingSettings) { NavigationStack { SettingsView() } }
             .task { await load() }
             .refreshable { await load() }
         }
@@ -78,7 +80,9 @@ struct CallsView: View {
             try await WingmanAPI.shared.handoffCall(callId: call.callId)
             await load()
         } catch let WingmanAPI.APIError.http(status, _) where status == 400 {
-            handoffError = "Set a callback number in Settings first, then try again."
+            // No callback number saved yet — take them straight to Settings.
+            handoffError = "Add a callback number, then tap Take again."
+            showingSettings = true
         } catch let WingmanAPI.APIError.http(status, _) where status == 409 {
             handoffError = "This call can't be taken over yet — try again in a moment."
         } catch {
