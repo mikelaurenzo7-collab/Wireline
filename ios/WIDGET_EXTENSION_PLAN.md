@@ -42,7 +42,10 @@ calls `WidgetCenter.reloadAllTimelines()`.
   direction + sentiment dot + follow-up marker; deep-links to Calls.
 - `NeedsAttentionWidget` (`systemSmall` + Lock Screen `accessoryRectangular` /
   `accessoryInline` / `accessoryCircular`): follow-up counter.
-- Both read the snapshot, degrade gracefully (signed-out / empty states), and
+- `WalletWidget` (`systemSmall` + Lock Screen accessories): prepaid credit
+  balance. Read-only — top-ups stay on the web (Stripe), so it never touches
+  Apple's IAP surface.
+- All read the snapshot, degrade gracefully (signed-out / empty states), and
   refresh on a 15-min backstop plus app-driven reloads.
 
 > **Build note:** authored against the repo's XcodeGen setup; verify in Xcode
@@ -85,6 +88,7 @@ ios/WingmanWidgets/SnapshotProvider.swift       # shared TimelineProvider
 ios/WingmanWidgets/WidgetTheme.swift            # accent + Color(hex:) for the extension
 ios/WingmanWidgets/RecentCallsWidget.swift      # W2
 ios/WingmanWidgets/NeedsAttentionWidget.swift   # W2
+ios/WingmanWidgets/WalletWidget.swift           # W2 (read-only balance)
 ios/WingmanWidgets/WingmanWidgetBundle.swift    # register new widgets
 ios/WingmanWidgets/WingmanWidgets.entitlements  # App Group (new)
 ios/Wingman/Wingman.entitlements                # App Group (added)

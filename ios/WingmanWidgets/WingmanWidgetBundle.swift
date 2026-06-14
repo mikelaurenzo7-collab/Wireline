@@ -9,5 +9,6 @@ struct WingmanWidgetBundle: WidgetBundle {
         // Data-backed glanceable widgets (read the App Group snapshot).
         RecentCallsWidget()
         NeedsAttentionWidget()
+        WalletWidget()
     }
 }
