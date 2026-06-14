@@ -163,7 +163,7 @@ export default function Showcase() {
           front of every curious visitor. Laid out 3-up so the 6 cards form
           a clean, even 3-on-3 block — pairs with Mira as the marquee card
           above. */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
         <div className="flex items-center gap-2 mb-6">
           <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand">
             Demo lines by industry
