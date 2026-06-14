@@ -13,6 +13,7 @@ import {
   Crown,
   Zap,
   Building2,
+  Plus,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
@@ -69,6 +70,7 @@ export default function StripeBillingCard() {
   const [signupPlanInterest, setSignupPlanInterest] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null); // plan_id | "portal"
+  const [creditBusy, setCreditBusy] = useState<number | null>(null); // credit amount in flight
   const [error, setError] = useState<string | null>(null);
 
   const refresh = async () => {
@@ -104,7 +106,7 @@ export default function StripeBillingCard() {
   // to reload by hand.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("billing") === "success") {
+    if (params.get("billing") === "success" || params.get("credits") === "success") {
       // Give the webhook a moment to land before re-fetching.
       const t = setTimeout(refresh, 1500);
       // Strip the query so a reload doesn't double-fire.
@@ -181,6 +183,24 @@ export default function StripeBillingCard() {
     }
   };
 
+  const startCreditCheckout = async (amountUsd: number) => {
+    setCreditBusy(amountUsd);
+    setError(null);
+    try {
+      const r = await authFetch("/api/billing/credit-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount_usd: amountUsd }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.url) throw new Error(d.error || "Could not start credit checkout");
+      window.location.href = d.url;
+    } catch (e: any) {
+      setError(e?.message || "Could not start credit checkout");
+      setCreditBusy(null);
+    }
+  };
+
   const openPortal = async () => {
     setBusy("portal");
     setError(null);
@@ -249,6 +269,9 @@ export default function StripeBillingCard() {
       {/* Voice-minute usage — only renders when there's an active plan */}
       {hasActive && <UsageMeter />}
 
+      {/* Prepaid credits — covers voice overage before it's billed at plan rate */}
+      {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
+
       {error && (
         <div
           role="alert"
@@ -313,6 +336,51 @@ export default function StripeBillingCard() {
             Terms
           </a>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CreditTopUpCard({
+  busy,
+  onBuy,
+}: {
+  busy: number | null;
+  onBuy: (amountUsd: number) => void;
+}) {
+  const amounts = [25, 50, 100];
+  return (
+    <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
+      <div className="border-b border-white/8 pb-5">
+        <h3 className="font-display italic text-2xl text-ink">Add call credits</h3>
+        <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+          Prepaid credit automatically covers voice-minute overage before it's billed at your plan's
+          rate. One-time purchase — your subscription doesn't change.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        {amounts.map((a) => (
+          <ShadButton
+            key={a}
+            type="button"
+            disableAnimations
+            variant="outline"
+            onClick={() => onBuy(a)}
+            disabled={busy !== null}
+            className="inline-flex gap-2 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+          >
+            {busy === a ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            ${a}
+          </ShadButton>
+        ))}
+        <span className="app-section-title/65 flex items-center gap-2">
+          <Shield className="w-3 h-3" />
+          Applied to overage automatically
+        </span>
       </div>
     </div>
   );
