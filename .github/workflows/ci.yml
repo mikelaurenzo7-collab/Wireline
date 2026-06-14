@@ -130,6 +130,12 @@ jobs:
         # Scope to chromium — we only install one browser to keep CI fast and
         # cheap. Firefox/WebKit coverage can be added when we have time to
         # fund the extra minutes.
+        env:
+          INTERNAL_JWT_SECRET: ${{ secrets.INTERNAL_JWT_SECRET || 'wireline-test-jwt-secret-minimum-32-chars-for-playwright-tests-to-pass' }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'fake-gemini-key' }}
+          VAPI_PRIVATE_KEY: ${{ secrets.VAPI_PRIVATE_KEY || 'fake-vapi-key' }}
+          VAPI_WEBHOOK_SECRET: ${{ secrets.VAPI_WEBHOOK_SECRET || 'fake-vapi-webhook-secret' }}
         run: npx playwright test --project=chromium
 
       - name: Upload Playwright report
