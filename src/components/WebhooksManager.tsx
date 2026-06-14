@@ -211,7 +211,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
 
       <div className="space-y-2">
         <label className="app-section-title">Events</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-1.5">
           {events.map((e) => {
             const on = picked.has(e);
             return (

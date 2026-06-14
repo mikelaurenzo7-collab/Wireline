@@ -66,7 +66,8 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Redirect authenticated users away from auth-only pages to Live Ops.
+  // Studio is home: redirect authenticated users off auth-only pages to the
+  // Agent Studio (the build-your-agent surface at /agents), not Live Ops.
   useEffect(() => {
     if (!user) return;
     const path = location.pathname;
@@ -77,15 +78,16 @@ function AppContent() {
       path === "/auth" ||
       path.startsWith("/auth/")
     ) {
-      navigate("/ops", { replace: true });
+      navigate("/agents", { replace: true });
     }
   }, [user, location.pathname, navigate]);
 
-  // Fail open: logged-in users who land on `/` after session hydrates go to the console.
+  // Fail open: logged-in users who land on `/` after session hydrates go to the
+  // Studio home (Live Ops stays one tap away under Command).
   useEffect(() => {
     if (loading || !user) return;
     if (isMarketingHomePath(location.pathname)) {
-      navigate("/ops", { replace: true });
+      navigate("/agents", { replace: true });
     }
   }, [loading, user, location.pathname, navigate]);
 
@@ -343,7 +345,7 @@ function AppContent() {
   // Legacy /auth/* aliases — old links and e2e specs; canonical gate is /signin.
   if (location.pathname === "/auth" || location.pathname.startsWith("/auth/")) {
     if (user) {
-      return <Navigate to="/ops" replace />;
+      return <Navigate to="/agents" replace />;
     }
     const legacySub = location.pathname.slice("/auth".length);
     const authTarget = legacySub === "/signup" ? "/signup" : "/signin";

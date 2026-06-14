@@ -58,7 +58,8 @@ export default function OAuthComplete() {
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        navigate("/ops", { replace: true });
+        // Studio is home — land OAuth sign-ins on the Agent Studio, not Live Ops.
+        navigate("/agents", { replace: true });
       } catch {
         setError("Sign-in failed. Please try again.");
       }
