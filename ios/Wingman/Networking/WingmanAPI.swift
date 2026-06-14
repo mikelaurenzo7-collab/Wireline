@@ -6,8 +6,6 @@ import Foundation
 actor WingmanAPI {
     static let shared = WingmanAPI()
 
-    private var baseURL: URL { WingmanConfig.baseURL }
-
     enum APIError: Error {
         case notAuthenticated
         case http(status: Int, body: String)
@@ -31,7 +29,10 @@ actor WingmanAPI {
     }
 
     func recentCalls(limit: Int = 20) async throws -> RecentCallsResponse {
-        try await get("/api/mobile/calls/recent?limit=\(limit)")
+        try await get(
+            "/api/mobile/calls/recent",
+            queryItems: [URLQueryItem(name: "limit", value: String(limit))]
+        )
     }
 
     func wallet() async throws -> WalletResponse {
@@ -102,17 +103,22 @@ actor WingmanAPI {
 
     // MARK: - Plumbing
 
-    private func makeRequest(path: String, method: String) throws -> URLRequest {
+    private func makeRequest(
+        path: String,
+        method: String,
+        queryItems: [URLQueryItem] = []
+    ) throws -> URLRequest {
         guard let token = KeychainStore.loadToken() else { throw APIError.notAuthenticated }
-        var req = URLRequest(url: baseURL.appendingPathComponent(path))
+        var req = URLRequest(url: WingmanConfig.url(path: path, queryItems: queryItems))
         req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
         return req
     }
 
-    private func get<T: Decodable>(_ path: String) async throws -> T {
-        let data = try await send(makeRequest(path: path, method: "GET"))
+    private func get<T: Decodable>(_ path: String, queryItems: [URLQueryItem] = []) async throws -> T {
+        let data = try await send(makeRequest(path: path, method: "GET", queryItems: queryItems))
         do { return try JSONDecoder().decode(T.self, from: data) }
         catch { throw APIError.decoding(error) }
     }
