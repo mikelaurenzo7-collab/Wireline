@@ -56,7 +56,7 @@ export default function Developers() {
       />
 
       {/* Hero */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-10 max-w-5xl mx-auto text-center">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-6 pb-10 max-w-6xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,7 +114,7 @@ export default function Developers() {
       </section>
 
       {/* Authentication */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-12">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-6xl mx-auto pb-12">
         <div className="wl-panel border border-white/8 p-6 sm:p-8">
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="w-5 h-5 text-brand" />
@@ -135,7 +135,7 @@ export default function Developers() {
       </section>
 
       {/* Getting Started */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-12">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-6xl mx-auto pb-12">
         <h2 className="font-display italic text-2xl text-ink mb-6 text-center">Getting Started</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {GETTING_STARTED.map((step) => {
@@ -152,7 +152,7 @@ export default function Developers() {
       </section>
 
       {/* Endpoint Reference */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-16">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-6xl mx-auto pb-16">
         <h2 className="font-display italic text-2xl text-ink mb-6 text-center">Key Endpoints</h2>
         <div className="wl-panel border border-white/8 divide-y divide-white/5">
           {ENDPOINTS.map((ep) => (
@@ -182,7 +182,7 @@ export default function Developers() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-5xl mx-auto pb-20 text-center">
+      <section className="relative z-10 px-4 sm:px-6 lg:px-10 max-w-6xl mx-auto pb-20 text-center">
         <div className="wl-panel border border-white/8 p-8">
           <h2 className="font-display italic text-2xl text-ink mb-3">Ready to integrate?</h2>
           <p className="text-muted/80 text-sm mb-6 max-w-md mx-auto">

@@ -53,7 +53,7 @@ export default function About() {
         sectionLinks={[...ABOUT_SECTION_LINKS]}
       >
         {/* Hero */}
-        <section className="relative z-10 max-w-5xl mx-auto pt-4 pb-16 sm:pt-8 sm:pb-20 text-center">
+        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-16 sm:pt-8 sm:pb-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
