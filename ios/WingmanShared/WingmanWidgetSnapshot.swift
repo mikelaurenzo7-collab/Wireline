@@ -26,6 +26,9 @@ public struct WingmanWidgetCall: Codable, Identifiable, Hashable {
     public let direction: String? // "inbound" | "outbound"
     public let sentiment: String? // "positive" | "neutral" | "negative"
     public let needsFollowUp: Bool
+    /// Raw dialable number (E.164), when known — powers the "call back"
+    /// deep link. Optional + defaulted so older snapshots still decode.
+    public let number: String?
 
     public init(
         id: String,
@@ -33,7 +36,8 @@ public struct WingmanWidgetCall: Codable, Identifiable, Hashable {
         subtitle: String,
         direction: String?,
         sentiment: String?,
-        needsFollowUp: Bool
+        needsFollowUp: Bool,
+        number: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -41,6 +45,7 @@ public struct WingmanWidgetCall: Codable, Identifiable, Hashable {
         self.direction = direction
         self.sentiment = sentiment
         self.needsFollowUp = needsFollowUp
+        self.number = number
     }
 }
 
@@ -80,7 +85,8 @@ public struct WingmanWidgetSnapshot: Codable, Hashable {
                 subtitle: "Booked · 2m ago",
                 direction: "outbound",
                 sentiment: "positive",
-                needsFollowUp: false
+                needsFollowUp: false,
+                number: "+13125550142"
             ),
             WingmanWidgetCall(
                 id: "2",
@@ -88,7 +94,8 @@ public struct WingmanWidgetSnapshot: Codable, Hashable {
                 subtitle: "Left message · 1h ago",
                 direction: "outbound",
                 sentiment: "neutral",
-                needsFollowUp: true
+                needsFollowUp: true,
+                number: "+13125550174"
             ),
             WingmanWidgetCall(
                 id: "3",
@@ -96,7 +103,8 @@ public struct WingmanWidgetSnapshot: Codable, Hashable {
                 subtitle: "Missed · 3h ago",
                 direction: "inbound",
                 sentiment: nil,
-                needsFollowUp: true
+                needsFollowUp: true,
+                number: "+13125550188"
             ),
         ],
         needsAttention: 2,

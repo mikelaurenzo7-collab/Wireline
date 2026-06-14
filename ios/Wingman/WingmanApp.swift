@@ -27,6 +27,12 @@ struct WingmanApp: App {
                 // wingman://calls (from the recent-calls / needs-attention
                 // widgets) → bring the app forward on the Calls surface.
                 case "calls": router.route = .calls
+                // wingman://callback?number=+1555… (tap a recent call) →
+                // open the outbound composer prefilled to call them back.
+                case "callback":
+                    let number = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                        .queryItems?.first(where: { $0.name == "number" })?.value
+                    if let number, !number.isEmpty { router.requestCallback(number: number) }
                 default: break
                 }
             }

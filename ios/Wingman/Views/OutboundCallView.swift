@@ -5,6 +5,9 @@ import SwiftUI
 /// the "Hey Siri, tell Wingman to call…" intent for users who'd rather tap.
 struct OutboundCallView: View {
     let agents: [Agent]
+    /// Optional prefill (e.g. tapping "call back" on a recent-call widget).
+    var prefillNumber: String? = nil
+    var prefillContext: String? = nil
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedAgentId: String = ""
@@ -45,7 +48,11 @@ struct OutboundCallView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .tint(Brand.purple)
-            .onAppear { if selectedAgentId.isEmpty { selectedAgentId = agents.first?.id ?? "" } }
+            .onAppear {
+                if selectedAgentId.isEmpty { selectedAgentId = agents.first?.id ?? "" }
+                if number.isEmpty, let prefillNumber { number = prefillNumber }
+                if context.isEmpty, let prefillContext { context = prefillContext }
+            }
         }
     }
 

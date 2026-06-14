@@ -31,6 +31,20 @@ private struct RecentCallsView: View {
         }
     }
 
+    private var visibleCalls: [WingmanWidgetCall] {
+        Array(snapshot.recentCalls.prefix(visibleCount))
+    }
+
+    /// `wingman://callback?number=…` for a call we can dial back. Encodes the
+    /// "+" so it survives the query string. Nil when there's no usable number.
+    private func callbackURL(_ call: WingmanWidgetCall) -> URL? {
+        guard
+            let number = call.number, !number.isEmpty,
+            let encoded = number.addingPercentEncoding(withAllowedCharacters: .alphanumerics)
+        else { return nil }
+        return URL(string: "wingman://callback?number=\(encoded)")
+    }
+
     var body: some View {
         if !snapshot.signedIn {
             signedOut
@@ -39,9 +53,15 @@ private struct RecentCallsView: View {
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 header
-                ForEach(snapshot.recentCalls.prefix(visibleCount)) { call in
-                    row(call)
-                    if call.id != snapshot.recentCalls.prefix(visibleCount).last?.id {
+                ForEach(visibleCalls) { call in
+                    // systemSmall can't host per-row links (one tap target only),
+                    // so it falls through to the whole-widget `wingman://calls`.
+                    if family != .systemSmall, let url = callbackURL(call) {
+                        Link(destination: url) { row(call) }
+                    } else {
+                        row(call)
+                    }
+                    if call.id != visibleCalls.last?.id {
                         Divider().opacity(0.4)
                     }
                 }

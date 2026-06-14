@@ -31,7 +31,8 @@ enum WidgetSync {
                 subtitle: subtitle(for: call),
                 direction: call.direction,
                 sentiment: call.sentiment,
-                needsFollowUp: (call.outcomeTag ?? "").lowercased().contains("follow")
+                needsFollowUp: (call.outcomeTag ?? "").lowercased().contains("follow"),
+                number: call.customerNumber
             )
         }
 

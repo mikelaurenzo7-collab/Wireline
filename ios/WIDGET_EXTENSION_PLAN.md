@@ -53,13 +53,17 @@ calls `WidgetCenter.reloadAllTimelines()`.
 > regenerating, the App Group must exist in the Apple Developer portal and be
 > selected in both targets' Signing & Capabilities.
 
-## Phase W3 — Interactive widgets (iOS 17 AppIntent buttons) — next
+## Phase W3 — Tap-to-act + interactive widgets — in progress
 
-- "Call back last missed" `AppIntent` button on `RecentCallsWidget` (no app
-  launch) — maps to the #1 future intent in the readiness doc.
-- "Mark last call followed up" toggle (one-tap status change via
-  `/api/mobile/*`).
-- iOS 18 **Control Center** `ControlWidget`: Ask Wingman + call-back toggles.
+- ✅ **Call back** — each `RecentCallsWidget` row (medium/large) deep-links
+  `wingman://callback?number=…`; the app opens the outbound composer
+  **prefilled** with that number. A widget tap never auto-dials — the user
+  still taps "Place call" (safe + Apple-friendly). This is the #1 everyday/
+  driving action in the readiness doc, done via a deep link (no Keychain
+  sharing, no call placed from the extension).
+- Next: "Mark last call followed up" toggle (interactive `AppIntent`, needs a
+  shared Keychain access group so the extension can call `/api/mobile/*`).
+- Next: iOS 18 **Control Center** `ControlWidget` (Ask Wingman quick action).
 
 ## Phase W4 — Live Activity / Dynamic Island — next
 

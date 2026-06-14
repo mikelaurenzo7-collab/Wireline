@@ -19,10 +19,21 @@ final class WingmanRouter: ObservableObject {
     /// observe this to select the Calls tab; until then it's a harmless flag.
     @Published var showCalls = false
 
+    /// "Call back" deep link (`wingman://callback?number=…`): presents the
+    /// outbound composer prefilled with this number. Nil clears it.
+    @Published var showCallback = false
+    var callbackNumber: String?
+
     var route: Route = .workspace {
         didSet {
             if route == .ask { showAsk = true }
             if route == .calls { showCalls = true }
         }
+    }
+
+    /// Open the outbound composer prefilled to call a number back.
+    func requestCallback(number: String) {
+        callbackNumber = number
+        showCallback = true
     }
 }
