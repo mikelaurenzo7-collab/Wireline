@@ -356,7 +356,7 @@ export default function CrmConnectionCard() {
         return (
           <div key={group} className="space-y-3">
             <div className="wl-label text-brand/70">{group} Integrations</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3">
               <AnimatePresence mode="popLayout">
                 {groupProviders.map(({ key, label, logo, beta }) => {
                   const styles = CONNECTED_STYLES;
@@ -498,9 +498,7 @@ export default function CrmConnectionCard() {
 
                       {key === "shopify" && !s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
-                          <div className="wl-label text-muted/90">
-                            Your store domain
-                          </div>
+                          <div className="wl-label text-muted/90">Your store domain</div>
                           <Input
                             type="text"
                             value={shopDomain}
@@ -524,9 +522,7 @@ export default function CrmConnectionCard() {
                       )}
                       {key === "slack" && s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                          <div className="wl-label text-muted/90">
-                            Default notify channel
-                          </div>
+                          <div className="wl-label text-muted/90">Default notify channel</div>
                           {slackChannelsLoading ? (
                             <div className="flex items-center gap-2 wl-micro-meta--muted">
                               <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
@@ -569,9 +565,7 @@ export default function CrmConnectionCard() {
                       )}
                       {key === "microsoft_teams" && s.connected && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
-                          <div className="wl-label text-muted/90">
-                            Notify team & channel
-                          </div>
+                          <div className="wl-label text-muted/90">Notify team & channel</div>
                           {teamsTargetsLoading ? (
                             <div className="flex items-center gap-2 wl-micro-meta--muted">
                               <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…

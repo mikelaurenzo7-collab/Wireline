@@ -164,7 +164,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
               <div className="h-px bg-brand/10 flex-1" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 stagger-children">
               {tools.map((tool) => {
                 const isEnabled = enabledTools.includes(tool.name);
                 const status = getIntegrationStatus(tool.integration);
