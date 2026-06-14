@@ -10,11 +10,19 @@ final class WingmanRouter: ObservableObject {
     enum Route {
         case workspace
         case ask
+        case calls
     }
 
     @Published var showAsk = false
 
+    /// Set when a widget deep-links to `wingman://calls`. `RootTabView` can
+    /// observe this to select the Calls tab; until then it's a harmless flag.
+    @Published var showCalls = false
+
     var route: Route = .workspace {
-        didSet { if route == .ask { showAsk = true } }
+        didSet {
+            if route == .ask { showAsk = true }
+            if route == .calls { showCalls = true }
+        }
     }
 }
