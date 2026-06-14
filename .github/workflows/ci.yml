@@ -131,12 +131,21 @@ jobs:
         # cheap. Firefox/WebKit coverage can be added when we have time to
         # fund the extra minutes.
         env:
-          INTERNAL_JWT_SECRET: ${{ secrets.INTERNAL_JWT_SECRET || 'wireline-test-jwt-secret-minimum-32-chars-for-playwright-tests-to-pass' }}
+          INTERNAL_JWT_SECRET: ${{ secrets.INTERNAL_JWT_SECRET || 'e473ada67ebe91e84e6736f144b509c2ba796502cdb84cf95b08c20e0e6248b9' }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'fake-gemini-key' }}
           VAPI_PRIVATE_KEY: ${{ secrets.VAPI_PRIVATE_KEY || 'fake-vapi-key' }}
           VAPI_WEBHOOK_SECRET: ${{ secrets.VAPI_WEBHOOK_SECRET || 'fake-vapi-webhook-secret' }}
-        run: npx playwright test --project=chromium
+        run: |
+          if [ -z "${POSTGRES_URL}" ]; then
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              echo "::error::POSTGRES_URL secret is required on main — E2E tests must not silently skip"
+              exit 1
+            fi
+            echo "Skipping E2E tests — POSTGRES_URL not configured for this ref"
+            exit 0
+          fi
+          npx playwright test --project=chromium
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
