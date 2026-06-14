@@ -71,8 +71,9 @@ export default function CookieConsent() {
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
             // Mobile: a slim, full-width pill that doesn't compete with hero copy.
-            // ≥sm: bottom-left compact card, never spans the screen.
-            "fixed z-[9999] left-3 right-3 sm:left-5 sm:right-auto sm:max-w-[320px]",
+            // ≥sm: bottom-RIGHT compact card — the landing hero copy + CTAs are
+            // left-aligned, so the right gutter is the clear, non-overlapping spot.
+            "fixed z-[9999] left-3 right-3 sm:right-5 sm:left-auto sm:max-w-[320px]",
             onAuthRoute
               ? "top-[max(0.75rem,env(safe-area-inset-top,0))]"
               : clearMarketingSticky
@@ -83,8 +84,8 @@ export default function CookieConsent() {
           role="dialog"
           aria-label="Cookie notice"
         >
-          {/* Compact contained card — bottom-left, never spans the screen or
-              overlaps a centered CTA. */}
+          {/* Compact contained card — bottom-right, never spans the screen or
+              overlaps the left-aligned hero CTAs. */}
           <div className="rounded-md border border-black/10 backdrop-blur-xl shadow-lg shadow-black/5 px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
             {/* Icon */}
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
