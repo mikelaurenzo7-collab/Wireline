@@ -42,8 +42,15 @@ New for Wingman push (optional — without them, push is a safe no-op):
       then TestFlight / App Store.
 
 ### Database
-- [x] Migrations `0055` (mobile devices) + `0056` (call handoff) are idempotent
-      and ship in `drizzle/migrations/`. Apply on deploy with your normal flow.
+- [x] Migrations `0055` (mobile devices) + `0056` (call handoff) + `0057`
+      (credit wallet) are idempotent and ship in `drizzle/migrations/`. Apply on
+      deploy with your normal flow.
+
+### Repo settings (CI)
+- [ ] **Enable Code Scanning** (GitHub → repo **Settings → Code security →
+      Code scanning → set up CodeQL**). The `Analyze TypeScript` check hard-fails
+      with *"Code scanning is not enabled for this repository"* until then — a
+      repo-admin toggle, not a code issue. (The `verify` gate is green.)
 
 ---
 
