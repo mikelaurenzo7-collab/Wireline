@@ -32,13 +32,13 @@ export default function MarketingFooter({
     <footer
       className={cn(
         "relative z-10 shrink-0 border-t border-black/6 bg-paper/80 backdrop-blur-sm",
-        compact ? "px-4 py-3" : "px-5 py-4 lg:px-8",
+        compact ? "px-4 py-3" : "px-5 py-4 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
       )}
     >
-      <div className="max-w-[1200px] mx-auto space-y-3">
-        <div className="flex flex-wrap gap-1.5">
+      <div className="wl-measure space-y-3 text-center">
+        <div className="flex flex-wrap justify-center gap-1.5">
           {TRUST.map((label) => (
             <span
               key={label}
@@ -49,7 +49,7 @@ export default function MarketingFooter({
           ))}
         </div>
         <nav
-          className="flex flex-wrap gap-x-4 gap-y-2 text-caption font-medium"
+          className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-caption font-medium"
           aria-label="Footer"
         >
           {LINKS.map((l) => (
