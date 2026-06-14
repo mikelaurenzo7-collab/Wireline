@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wingman — elevated brand components (SwiftUI preview)</title>
+    <!--
+      Visual approximation of ios/Wingman/Components/BrandComponents.swift after
+      the flair pass: gradient+depth primary button with spring press, haloed
+      specular medallion, animated live pulse, premium cream card surface.
+      This mirrors the SwiftUI; real SF Pro / spring physics differ slightly.
+    -->
+    <style>
+      :root {
+        --purple: #8b3fd6; --purple-deep: #3b154c; --ink: #1a1614;
+        --paper: #f5f1e8; --paper-warm: #ece6d9; --signal: #10b981;
+        --font: -apple-system, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: var(--font); background: var(--paper); color: var(--ink);
+        padding: 40px 24px 64px; -webkit-font-smoothing: antialiased; }
+      .wrap { max-width: 760px; margin: 0 auto; }
+      h1 { font-size: 24px; letter-spacing: -0.02em; }
+      .sub { color: #6b6057; font-size: 14px; margin-top: 6px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 28px; }
+      .panel { background: var(--paper-warm); border: 1px solid rgba(26,22,20,0.06);
+        border-radius: 16px; padding: 18px; box-shadow: 0 10px 24px -12px rgba(26,22,20,0.12); }
+      .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8078; font-weight: 700; margin-bottom: 12px; }
+      .row { display: flex; align-items: center; gap: 18px; }
+
+      /* medallion — specular rim + drop shadow + halo */
+      .med { position: relative; width: 60px; height: 60px; border-radius: 50%;
+        display: grid; place-items: center; color: #fff; font-size: 24px;
+        background: linear-gradient(150deg, var(--purple), var(--purple-deep));
+        box-shadow: 0 8px 18px -4px rgba(59,21,76,0.4), inset 0 1px 0 rgba(255,255,255,0.45); }
+      .med.halo::before { content: ""; position: absolute; inset: -10px; border-radius: 50%;
+        background: var(--purple); opacity: 0.35; filter: blur(16px); z-index: -1; transform: scale(1.4); }
+      .med.flat { background: linear-gradient(150deg, var(--purple), var(--purple-deep)); box-shadow: none; }
+
+      /* primary button — gradient + depth + press */
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; padding: 15px; border: 0; cursor: pointer; color: #fff; font-weight: 600; font-size: 16px;
+        font-family: var(--font); border-radius: 13px;
+        background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+        box-shadow: 0 14px 28px -8px rgba(139,63,214,0.34), inset 0 0 0 0.5px rgba(255,255,255,0.18);
+        transition: transform 0.18s cubic-bezier(0.2,0.9,0.3,1.2), box-shadow 0.18s ease; }
+      .btn:active { transform: scale(0.975); box-shadow: 0 5px 12px -4px rgba(139,63,214,0.2); }
+      .btn.flat { background: var(--purple); border-radius: 0; box-shadow: none; }
+
+      /* live pulse */
+      .live { position: relative; width: 12px; height: 12px; display: inline-grid; place-items: center; }
+      .live .core { width: 10px; height: 10px; border-radius: 50%; background: var(--signal); }
+      .live .ring { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--signal);
+        opacity: 0.55; animation: ping 1.4s cubic-bezier(0,0,0.2,1) infinite; }
+      @keyframes ping { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2.4); opacity: 0; } }
+
+      .callcard { display: flex; align-items: center; gap: 12px; }
+      .callcard .t { font-weight: 600; font-size: 16px; }
+      .callcard .s { font-size: 12px; color: #6b6057; }
+      .agent { display: flex; align-items: center; gap: 12px; }
+      .agent .nm { font-weight: 600; font-size: 16px; }
+      .agent .rl { font-size: 12px; color: #6b6057; }
+      .chips { margin-left: auto; color: var(--purple); font-size: 13px; display: flex; gap: 8px; }
+      .empty { text-align: center; padding: 12px 0; }
+      .empty .t { font-weight: 600; font-size: 18px; margin-top: 12px; }
+      .empty .m { font-size: 14px; color: #6b6057; margin-top: 4px; }
+      .cap { font-size: 11px; color: #8a8078; margin-top: 8px; }
+      .ba { display: flex; align-items: center; gap: 24px; }
+      .ba .t { font-size: 11px; color: #8a8078; text-transform: uppercase; letter-spacing: 0.1em; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Wingman — elevated brand components</h1>
+      <p class="sub">After the flair pass on <code>BrandComponents.swift</code>: gradient + depth + spring press, specular haloed medallion, animated live pulse, premium cream cards.</p>
+
+      <div class="grid">
+        <div class="panel">
+          <div class="label">Primary button — before · after</div>
+          <div class="ba">
+            <div style="flex:1"><div class="t">flat</div><button class="btn flat" style="margin-top:6px">Place call</button></div>
+          </div>
+          <div style="margin-top:14px"><div class="t" style="font-size:11px;color:#8a8078;text-transform:uppercase;letter-spacing:.1em">elevated (press me)</div>
+            <button class="btn" style="margin-top:6px">📞&nbsp; Place call</button></div>
+        </div>
+
+        <div class="panel">
+          <div class="label">Medallion — flat · specular + halo</div>
+          <div class="row" style="gap:40px;justify-content:center;padding:8px 0 18px">
+            <div class="med flat">◆</div>
+            <div class="med halo">◆</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="label">Live call card (animated pulse)</div>
+          <div class="callcard">
+            <span class="live"><span class="ring"></span><span class="core"></span></span>
+            <div><div class="t">+1 (312) 555-0188</div><div class="s">In-progress</div></div>
+            <span style="margin-left:auto;color:var(--purple)">∿</span>
+          </div>
+          <div class="callcard" style="margin-top:14px">
+            <span class="live"><span class="core" style="background:#9a8fc0"></span></span>
+            <div><div class="t">+1 (847) 555-0143</div><div class="s">Queued</div></div>
+            <span style="margin-left:auto;color:var(--purple)">∿</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="label">Agent row</div>
+          <div class="agent">
+            <div class="med" style="width:40px;height:40px;font-size:16px">☎</div>
+            <div><div class="nm">Ava</div><div class="rl">Customer Service</div></div>
+            <div class="chips">☎ ✉</div>
+          </div>
+          <div class="agent" style="margin-top:14px">
+            <div class="med" style="width:40px;height:40px;font-size:16px">↗</div>
+            <div><div class="nm">Morgan</div><div class="rl">Scheduler</div></div>
+            <div class="chips">☎</div>
+          </div>
+        </div>
+
+        <div class="panel" style="grid-column:1/-1">
+          <div class="label">Empty state — haloed medallion</div>
+          <div class="empty">
+            <div class="med halo" style="margin:0 auto">✦</div>
+            <div class="t">No agents yet</div>
+            <div class="m">Create your first agent on the web to get started.</div>
+          </div>
+        </div>
+      </div>
+      <p class="cap">Approximation of ios/Wingman/Components/BrandComponents.swift. Spring press + ping are CSS stand-ins for SwiftUI's <code>.spring()</code> and <code>repeatForever</code>.</p>
+    </div>
+  </body>
+</html>
