@@ -1,0 +1,3 @@
+## 2026-06-14 - Unmemoized Filtering on Renders
+**Learning:** In heavily used list components like `CallLogs`, `SmsThreads`, and `DncManager`, the list filtering (and sometimes mapping) logic happens on every single render. Since `calls` / `threads` arrays can be large, running `.filter()` string operations on every keystroke or selection change causes unnecessary CPU churn and React tree diffing operations, particularly when only the active selection changes but the search/filter criteria stay the same.
+**Action:** Wrap these heavy array filtering operations in `useMemo` with dependency arrays limiting their execution to when `search`, `filter`, or the source data (`calls`, `threads`, etc.) actually change.
