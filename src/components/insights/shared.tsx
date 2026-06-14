@@ -123,6 +123,7 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
   return (
     <EmptyState
       framed
+      fill
       density="compact"
       withHalo={false}
       icon={Icon}
