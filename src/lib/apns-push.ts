@@ -21,7 +21,7 @@
  */
 import http2 from "node:http2";
 import crypto from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { log, drizzle } from "./server-context";
 import * as schema from "../db/schema";
 
@@ -113,19 +113,29 @@ export async function sendApnsPush(
 
   return new Promise<ApnsSendResult>((resolve) => {
     let settled = false;
+    const client = http2.connect(cfg.host);
+    // Guard against a hung stream: if Apple never responds, resolve and tear
+    // down so we don't leak the h2 session or wedge a Promise.all caller.
+    const timer = setTimeout(() => {
+      done({ ok: false, status: 0, reason: "TIMEOUT" });
+    }, 10_000);
     const done = (r: ApnsSendResult) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timer);
+      try {
+        client.close();
+      } catch {
+        /* already closing */
+      }
       resolve(r);
     };
 
-    const client = http2.connect(cfg.host);
     client.on("error", (err) => {
       log.warn("APNs h2 connection error", {
         error: err instanceof Error ? err.message : String(err),
       });
       done({ ok: false, status: 0, reason: "CONNECTION_ERROR" });
-      client.close();
     });
 
     const req = client.request({
@@ -158,14 +168,12 @@ export async function sendApnsPush(
         }
       }
       done({ ok: status === 200, status, reason });
-      client.close();
     });
     req.on("error", (err) => {
       log.warn("APNs h2 request error", {
         error: err instanceof Error ? err.message : String(err),
       });
       done({ ok: false, status: 0, reason: "REQUEST_ERROR" });
-      client.close();
     });
 
     req.end(body);
@@ -231,17 +239,11 @@ export async function notifyInboundCall(
     );
 
     if (stale.length > 0) {
+      // Apple says these tokens will never work again — drop them in one query.
       await drizzle
         .update(schema.mobileDevices)
         .set({ apnsVoipToken: null })
-        .where(eq(schema.mobileDevices.id, stale[0]));
-      // Clear the rest individually to keep the query simple and index-friendly.
-      for (const id of stale.slice(1)) {
-        await drizzle
-          .update(schema.mobileDevices)
-          .set({ apnsVoipToken: null })
-          .where(eq(schema.mobileDevices.id, id));
-      }
+        .where(inArray(schema.mobileDevices.id, stale));
     }
 
     return { sent, devices: targets.length };
