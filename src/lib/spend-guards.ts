@@ -11,6 +11,7 @@ import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator";
+import { getErrorMessage } from "./server-utils";
 
 // ──────────────────────────────────────────────────────────────────────
 //  PER-USER monthly hard-cap
@@ -136,6 +137,7 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
     if (!(limit > 0)) return;
 
     const pct = (snap.mtdCost / limit) * 100;
+    const mtdCostUsd = Number(snap.mtdCost.toFixed(4));
     const warnPct = Math.max(1, Math.min(99, snap.budget.warn_threshold_pct));
     const thresholdsToFire: { pct: number; event: WebhookEvent }[] = [];
     if (pct >= 100) thresholdsToFire.push({ pct: 100, event: "spend.exceeded" });
@@ -154,7 +156,7 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
 
       await dispatchWebhook(userId, t.event, {
         period: snap.period,
-        month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
+        month_to_date_usd: mtdCostUsd,
         monthly_limit_usd: limit,
         threshold_pct: t.pct,
         percent_used: Number(pct.toFixed(1)),
@@ -166,13 +168,13 @@ export async function evaluateSpend(userId: string, deltaUsd: number) {
       if (t.event === "spend.exceeded") {
         SentryEvents.budgetExceeded({
           user_id: userId,
-          spent: Number(snap.mtdCost.toFixed(4)),
+          spent: mtdCostUsd,
           budget: limit,
         });
       }
     }
   } catch (err) {
-    log.error("evaluateSpend failed", { error: err instanceof Error ? err.message : String(err) });
+    log.error("evaluateSpend failed", { error: getErrorMessage(err) });
   }
 }
 
@@ -218,6 +220,9 @@ export function recordDailySpend(usd: number): void {
           accumulated_usd: Number(accumulated.toFixed(4)),
         });
       }
+    })
+    .catch(() => {
+      /* telemetry only — never surface a rejection */
     });
 }
 
