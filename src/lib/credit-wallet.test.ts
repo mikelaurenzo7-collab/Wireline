@@ -36,7 +36,7 @@ vi.mock("./server-context", () => ({
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-import { getCreditBalanceUsd, debitForOverage, addCredit } from "./credit-wallet";
+import { getCreditBalanceUsd, debitForOverage, addCredit, reverseCredit } from "./credit-wallet";
 
 describe("credit-wallet", () => {
   beforeEach(() => {
@@ -77,5 +77,22 @@ describe("credit-wallet", () => {
   it("ignores non-positive credit amounts", async () => {
     h.state.balance = 7;
     expect(await addCredit("u1", 0, "noop")).toBe(7);
+  });
+
+  it("reverses a credit (refund clawback) and can drive the balance negative", async () => {
+    h.state.balance = 30;
+    const balance = await reverseCredit("u1", 100, "web_topup_refund", {
+      type: "stripe_refund",
+      id: "ch_1",
+    });
+    expect(balance).toBe(-70);
+  });
+
+  it("reverseCredit is idempotent — a conflicting reversal returns the prior balance", async () => {
+    h.state.balance = 25;
+    h.state.inserted = []; // simulate ON CONFLICT DO NOTHING
+    expect(
+      await reverseCredit("u1", 10, "web_topup_refund", { type: "stripe_refund", id: "ch_1" }),
+    ).toBe(25);
   });
 });
