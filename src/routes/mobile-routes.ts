@@ -60,30 +60,32 @@ router.get(
     try {
       const userId = req.user.id;
 
-      const [profile] = await drizzle
-        .select({ fullName: schema.users.fullName, email: schema.users.email })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .limit(1);
-
-      const [row] = await drizzle
-        .select({
-          planId: schema.subscriptions.plan,
-          subscriptionStatus: schema.settings.subscriptionStatus,
-          maxAgents: schema.settings.maxAgents,
-          extraAgents: schema.settings.extraAgents,
-          businessName: schema.settings.businessName,
-          handoffPhone: schema.settings.handoffPhone,
-        })
-        .from(schema.settings)
-        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-        .where(eq(schema.settings.userId, userId))
-        .limit(1);
-
-      const [{ count }] = await drizzle
-        .select({ count: sql<number>`count(*)` })
-        .from(schema.agents)
-        .where(eq(schema.agents.userId, userId));
+      // These reads are independent — fetch them together to save round-trips
+      // on this app-bootstrap call.
+      const [[profile], [row], [{ count }]] = await Promise.all([
+        drizzle
+          .select({ fullName: schema.users.fullName, email: schema.users.email })
+          .from(schema.users)
+          .where(eq(schema.users.id, userId))
+          .limit(1),
+        drizzle
+          .select({
+            planId: schema.subscriptions.plan,
+            subscriptionStatus: schema.settings.subscriptionStatus,
+            maxAgents: schema.settings.maxAgents,
+            extraAgents: schema.settings.extraAgents,
+            businessName: schema.settings.businessName,
+            handoffPhone: schema.settings.handoffPhone,
+          })
+          .from(schema.settings)
+          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+          .where(eq(schema.settings.userId, userId))
+          .limit(1),
+        drizzle
+          .select({ count: sql<number>`count(*)` })
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, userId)),
+      ]);
       const agentCount = Number(count);
 
       const isOwner = isOwnerEmail(req.user.email);

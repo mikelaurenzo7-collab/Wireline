@@ -24,6 +24,7 @@ import crypto from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { log, drizzle } from "./server-context";
 import * as schema from "../db/schema";
+import { getErrorMessage } from "./server-utils";
 
 interface ApnsConfig {
   keyId: string;
@@ -133,7 +134,7 @@ export async function sendApnsPush(
 
     client.on("error", (err) => {
       log.warn("APNs h2 connection error", {
-        error: err instanceof Error ? err.message : String(err),
+        error: getErrorMessage(err),
       });
       done({ ok: false, status: 0, reason: "CONNECTION_ERROR" });
     });
@@ -171,7 +172,7 @@ export async function sendApnsPush(
     });
     req.on("error", (err) => {
       log.warn("APNs h2 request error", {
-        error: err instanceof Error ? err.message : String(err),
+        error: getErrorMessage(err),
       });
       done({ ok: false, status: 0, reason: "REQUEST_ERROR" });
     });
@@ -249,7 +250,7 @@ export async function notifyInboundCall(
     return { sent, devices: targets.length };
   } catch (err) {
     log.warn("notifyInboundCall failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorMessage(err),
     });
     return { sent: 0, devices: 0 };
   }
@@ -315,7 +316,7 @@ export async function notifyCallRecap(
     return { sent, devices: targets.length };
   } catch (err) {
     log.warn("notifyCallRecap failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorMessage(err),
     });
     return { sent: 0, devices: 0 };
   }
@@ -369,7 +370,7 @@ export async function notifyDeviceAction(
     return { sent, devices: targets.length };
   } catch (err) {
     log.warn("notifyDeviceAction failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorMessage(err),
     });
     return { sent: 0, devices: 0 };
   }
