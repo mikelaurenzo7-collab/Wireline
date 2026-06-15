@@ -27,7 +27,14 @@ interface UsageSnapshot {
 
 const REFRESH_MS = 60_000;
 
-export default function UsageMeter({ compact = false }: { compact?: boolean }) {
+export default function UsageMeter({
+  compact = false,
+  onUpgrade,
+}: {
+  compact?: boolean;
+  /** When provided, approaching/over states surface a one-click upgrade CTA. */
+  onUpgrade?: () => void;
+}) {
   const [snap, setSnap] = useState<UsageSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -166,9 +173,23 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.
+            Approaching your {included.toLocaleString()}-minute plan — upgrading adds headroom; past
+            it, overage bills at ${snap.overage_per_min_usd.toFixed(2)}/min.
           </span>
         </div>
+      )}
+
+      {/* Primary path when usage runs hot: upgrade for more included minutes
+          (cheaper than recurring overage/top-ups). Credits stay the safety net. */}
+      {(isWarn || isOver) && onUpgrade && (
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md wl-label font-semibold bg-brand/10 border border-brand/30 text-brand hover:bg-brand/15 transition-colors"
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          Upgrade for more included minutes
+        </button>
       )}
 
       {/* Prepaid credits — relevant when the operator holds a balance or is in
