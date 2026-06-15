@@ -19,7 +19,7 @@ import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
 import { planById, plansForClient } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
-import { addCredit } from "../lib/credit-wallet";
+import { addCredit, reverseCredit } from "../lib/credit-wallet";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -105,6 +105,30 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
           } else {
             log.warn("credit_topup session missing user id or amount", {
               sessionId: session.id,
+            });
+          }
+        }
+        break;
+      }
+      case "charge.refunded": {
+        // Claw back a refunded/disputed web credit top-up so a refund can't
+        // leave the purchased credit sitting in the wallet. Only top-ups carry
+        // purpose=credit_topup on their PaymentIntent. Idempotent via the
+        // stripe_events guard above + the (user, ref) ledger index.
+        const charge = event.data.object as Stripe.Charge;
+        const piId =
+          typeof charge.payment_intent === "string"
+            ? charge.payment_intent
+            : charge.payment_intent?.id;
+        if (!piId) break;
+        const pi = await stripe.paymentIntents.retrieve(piId);
+        if (pi.metadata?.purpose === "credit_topup") {
+          const userId = pi.metadata.wireline_user_id;
+          const refundedUsd = (charge.amount_refunded ?? 0) / 100;
+          if (userId && refundedUsd > 0) {
+            await reverseCredit(userId, refundedUsd, "web_topup_refund", {
+              type: "stripe_refund",
+              id: charge.id,
             });
           }
         }
