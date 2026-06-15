@@ -266,8 +266,9 @@ export default function StripeBillingCard() {
         />
       )}
 
-      {/* Voice-minute usage — only renders when there's an active plan */}
-      {hasActive && <UsageMeter />}
+      {/* Voice-minute usage — only renders when there's an active plan. Plan
+          changes for active subscribers go through the Stripe portal. */}
+      {hasActive && <UsageMeter onUpgrade={openPortal} />}
 
       {/* Prepaid credits — covers voice overage before it's billed at plan rate */}
       {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
