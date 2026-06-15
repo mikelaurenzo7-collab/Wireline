@@ -127,6 +127,7 @@ router.post("/dnc", authenticateUser, async (req: AuthenticatedRequest, res: Res
     }
     res.json({ success: true, added });
   } catch (e: any) {
+    if (e instanceof AppError) throw e; // preserve the 400s above
     log.error("DNC add failed", { error: getErrorMessage(e) });
     throw AppError.fromHttpStatus(500, "Failed to add to DNC list.");
   }
@@ -154,6 +155,7 @@ router.delete("/dnc/:id", authenticateUser, async (req: AuthenticatedRequest, re
       .catch((err) => log.warn("audit logDnc(removed) failed", { error: getErrorMessage(err) }));
     res.json({ success: true });
   } catch (e: any) {
+    if (e instanceof AppError) throw e; // preserve the 404 not-found above
     log.error("DNC delete failed", { error: getErrorMessage(e) });
     throw AppError.fromHttpStatus(500, "Failed to remove DNC entry.");
   }
@@ -213,9 +215,8 @@ router.get(
         consent_rule_version: CONSENT_RULE_VERSION,
       });
     } catch (err: any) {
-      log.error("GET /api/tcpa/consent-check failed", {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      if (err instanceof AppError) throw err; // preserve the 400 missing-phone above
+      log.error("GET /api/tcpa/consent-check failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Consent check failed");
     }
   },
