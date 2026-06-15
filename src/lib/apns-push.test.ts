@@ -59,7 +59,7 @@ function configureApns() {
   process.env.APNS_KEY_ID = "KEY123";
   process.env.APNS_TEAM_ID = "TEAM123";
   process.env.APNS_AUTH_KEY = PEM;
-  process.env.APNS_BUNDLE_ID = "com.wireline.wingman";
+  process.env.APNS_BUNDLE_ID = "com.wireline.app";
   process.env.APNS_ENV = "production";
 }
 
@@ -105,7 +105,7 @@ describe("apns-push", () => {
     expect(headers[":method"]).toBe("POST");
     expect(headers[":path"]).toBe("/3/device/abc123token");
     expect(headers["apns-push-type"]).toBe("voip");
-    expect(headers["apns-topic"]).toBe("com.wireline.wingman.voip");
+    expect(headers["apns-topic"]).toBe("com.wireline.app.voip");
     expect(headers["apns-priority"]).toBe("10");
     // bearer <header>.<payload>.<signature> — three base64url segments.
     expect(headers.authorization).toMatch(/^bearer [\w-]+\.[\w-]+\.[\w-]+$/);
@@ -114,7 +114,7 @@ describe("apns-push", () => {
   it("alert pushes target the bundle topic, not the voip topic", async () => {
     configureApns();
     await sendApnsPush("tok", { aps: { alert: "hi" } }, "alert");
-    expect(h2.state.lastHeaders!["apns-topic"]).toBe("com.wireline.wingman");
+    expect(h2.state.lastHeaders!["apns-topic"]).toBe("com.wireline.app");
     expect(h2.state.lastHeaders!["apns-push-type"]).toBe("alert");
   });
 

@@ -1,6 +1,6 @@
-# Wingman — setup checklist
+# Wireline — setup checklist
 
-Everything outside the code needed for Wingman to work end-to-end, split by
+Everything outside the code needed for Wireline to work end-to-end, split by
 **who** does it. Most of the work is yours (platform owner) and happens once;
 the last short section is done by **each end user** on their own iPhone.
 
@@ -22,22 +22,22 @@ these at runtime for auto number provisioning + outbound caller-ID + SMS:
   > "Take this call" handoff uses **Vapi live control, not Twilio**, so it works
   > even if Twilio creds are locked down. Provisioning and SMS still need Twilio.
 
-New for Wingman push (optional — without them, push is a safe no-op):
+New for Wireline push (optional — without them, push is a safe no-op):
 - [ ] `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_AUTH_KEY` (the `.p8` contents,
       newlines escaped as `\n` — never commit the .p8), `APNS_BUNDLE_ID`
-      (`com.wireline.wingman`), `APNS_ENV` (`production` or `sandbox`).
+      (`com.wireline.app`), `APNS_ENV` (`production` or `sandbox`).
 
 ### Apple Developer portal
-- [ ] App ID `com.wireline.wingman` with Push Notifications, Background Modes, SiriKit.
-- [ ] App ID `com.wireline.wingman.widgets` (widget extension).
+- [ ] App ID `com.wireline.app` with Push Notifications, Background Modes, SiriKit.
+- [ ] App ID `com.wireline.app.widgets` (widget extension).
 - [ ] APNs **Auth Key** (.p8) → feeds the `APNS_*` env vars.
 - [ ] **Request the CarPlay Communication entitlement** — Apple approval is
       slow, start early. (Phase 2; not needed for the iPhone app.)
 
 ### Xcode / build / ship
 - [ ] `brew install xcodegen` then `cd ios && xcodegen generate`.
-- [ ] Set your **Development Team** on both targets (`Wingman`, `WingmanWidgets`).
-- [ ] Point `WingmanConfig.baseURL` at your environment.
+- [ ] Set your **Development Team** on both targets (`Wireline`, `WirelineWidgets`).
+- [ ] Point `WirelineConfig.baseURL` at your environment.
 - [ ] Run on a **physical device** (PushKit VoIP + CarPlay need real hardware),
       then TestFlight / App Store.
 
@@ -64,7 +64,7 @@ the two below are the only manual touches, and only the first is required.
       "take this call" — it's *that user's own* number, where their live calls
       transfer. iOS hides the device's number from apps, so it must be typed
       once. (We can prompt for this during onboarding — see note below.)
-- [ ] **(Optional) Assign Action button / Back Tap** to the "Ask Wingman"
+- [ ] **(Optional) Assign Action button / Back Tap** to the "Ask Wireline"
       shortcut, in iOS **Settings** (not in our app — Apple only lets the device
       owner set these). The `ActivationSetupView` screen shows users how.
 

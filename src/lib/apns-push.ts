@@ -1,5 +1,5 @@
 /**
- * APNs push for the native Wingman iOS app.
+ * APNs push for the native Wireline iOS app.
  *
  * Two delivery shapes share one transport here:
  *   - VoIP pushes (PushKit) wake the app from suspended/terminated state so it
@@ -351,7 +351,7 @@ export async function notifyDeviceAction(
 
     const payload = {
       aps: {
-        alert: { title: "Wingman", body: deviceAction.title },
+        alert: { title: "Wireline", body: deviceAction.title },
         sound: "default",
       },
       type: "device_action",

@@ -1,5 +1,5 @@
 /**
- * Mobile surface for the native Wingman iOS app (`/api/mobile/*`).
+ * Mobile surface for the native Wireline iOS app (`/api/mobile/*`).
  *
  * This is a thin adapter layer: every handler delegates to the same backend
  * primitives the web app uses (entitlements, the Vapi outbound client, the
@@ -565,7 +565,7 @@ router.get(
 
 // ── GET /api/mobile/wallet — prepaid credit balance + recent ledger ────────
 // READ-ONLY. Top-ups happen on the web (Stripe); the app never sells credits
-// in-app, which keeps Wingman clear of Apple's IAP requirement.
+// in-app, which keeps Wireline clear of Apple's IAP requirement.
 router.get(
   "/api/mobile/wallet",
   authenticateUser,

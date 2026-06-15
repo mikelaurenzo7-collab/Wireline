@@ -1,9 +1,9 @@
-# Wingman (iOS)
+# Wireline (iOS)
 
-Native iOS + CarPlay client for the Wireline AI voice agent platform. Wingman is
+Native iOS + CarPlay client for the Wireline AI voice agent platform. Wireline is
 **voice-first**: it screens inbound calls and places outbound calls through your
 Wireline agents, is woken by VoIP push when a call arrives, and is driven by
-"Hey Siri, tell Wingman to…" App Intents. It is a thin client over the existing
+"Hey Siri, tell Wireline to…" App Intents. It is a thin client over the existing
 Wireline backend — no business logic, prompts, model selection, or billing lives
 here. The phone is a remote control for the fleet.
 
@@ -16,45 +16,45 @@ here. The phone is a remote control for the fleet.
 ```
 ios/
 ├── project.yml                 XcodeGen spec → app + widget targets.
-├── Wingman/
-│   ├── WingmanApp.swift         App entry; sign-in gate; PushKit + URL routing.
-│   ├── Info.plist               Background modes, usage strings, wingman:// scheme.
-│   ├── Wingman.entitlements     aps-environment (CarPlay entitlement deferred).
-│   ├── App/WingmanRouter.swift  Bridges App Intents / widgets → in-app surfaces.
-│   ├── Theme/WingmanTheme.swift Brand tokens (purple/cream) + .wingmanBrand().
+├── Wireline/
+│   ├── WirelineApp.swift         App entry; sign-in gate; PushKit + URL routing.
+│   ├── Info.plist               Background modes, usage strings, wireline:// scheme.
+│   ├── Wireline.entitlements     aps-environment (CarPlay entitlement deferred).
+│   ├── App/WirelineRouter.swift  Bridges App Intents / widgets → in-app surfaces.
+│   ├── Theme/WirelineTheme.swift Brand tokens (purple/cream) + .wirelineBrand().
 │   ├── Models/Models.swift      Codable mirrors of the /api/mobile/* payloads.
 │   ├── Auth/AuthService.swift   Sign-in → JWT from session cookie → Keychain.
-│   ├── Networking/              WingmanConfig, WingmanAPI (Bearer), KeychainStore.
+│   ├── Networking/              WirelineConfig, WirelineAPI (Bearer), KeychainStore.
 │   ├── Calls/CallManager.swift  CallKit provider + PushKit (VoIP) registry.
 │   ├── CarPlay/CarPlaySceneDelegate.swift  CarPlay Communication template.
 │   ├── Device/DeviceActionHandler.swift  In-call actions: Maps / EventKit / Music.
 │   ├── Intents/
 │   │   ├── CallAgentIntent.swift   "Have an agent place a call."
-│   │   └── WingmanIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
+│   │   └── WirelineIntents.swift     Ask / Summarize / Attention / Open + AppShortcuts.
 │   ├── Components/BrandComponents.swift  Medallion, AgentRow, CallCard, buttons.
 │   └── Views/
 │       ├── RootTabView.swift         Signed-in shell: Home + Calls tabs.
 │       ├── SignInView.swift / WorkspaceView.swift / OutboundCallView.swift
 │       ├── CallsView.swift / CallDetailView.swift  Activity + per-call recap.
-│       ├── AskWingmanView.swift      In-app "Ask Wingman" surface.
+│       ├── AskWirelineView.swift      In-app "Ask Wireline" surface.
 │       ├── SettingsView.swift        Callback number for "take this call".
 │       └── ActivationSetupView.swift "Activate everywhere" setup screen.
-└── WingmanWidgets/             WidgetKit extension (Home/Lock-screen "Ask Wingman").
+└── WirelineWidgets/             WidgetKit extension (Home/Lock-screen "Ask Wireline").
 ```
 
 ## Activation everywhere (the off-CarPlay layer)
 
-The phone, not the car, is where most calls happen — so Wingman is reachable
+The phone, not the car, is where most calls happen — so Wireline is reachable
 across the whole iOS surface, all powered by **App Intents + App Shortcuts**:
 
 | Entry point | How |
 |---|---|
-| **Siri** | "Ask Wingman", "…summarize my last call", "…what needs my attention". Auto-registered, zero setup. |
-| **Action button** (15 Pro+) | User assigns the *Ask Wingman* shortcut in Settings. |
+| **Siri** | "Ask Wireline", "…summarize my last call", "…what needs my attention". Auto-registered, zero setup. |
+| **Action button** (15 Pro+) | User assigns the *Ask Wireline* shortcut in Settings. |
 | **Back Tap** | User assigns a shortcut in Settings → Accessibility → Touch. |
-| **Home / Lock Screen widget** | `WingmanWidgets` deep-links to `wingman://ask`. |
+| **Home / Lock Screen widget** | `WirelineWidgets` deep-links to `wireline://ask`. |
 | **Control Center** | Deep-links via the same scheme. |
-| **In-app** | The big "Ask Wingman" button on the workspace. |
+| **In-app** | The big "Ask Wireline" button on the workspace. |
 | **Apple Watch** | Planned. |
 
 Honest constraint: apps **cannot** claim the Action button or Back Tap
@@ -72,7 +72,7 @@ and **immediately** calls `CXProvider.reportNewIncomingCall`. iOS shows the
 native call UI on the phone and in CarPlay. (Reporting immediately is mandatory:
 iOS terminates an app that takes a VoIP push without reporting a call.)
 
-**Outbound.** "Hey Siri, tell Wingman to call the doctor, I'll be 5 minutes
+**Outbound.** "Hey Siri, tell Wireline to call the doctor, I'll be 5 minutes
 late." → `CallAgentIntent` → `POST /api/mobile/calls/outbound`. The backend
 builds the agent's dynamic system prompt server-side and dials via Vapi; the app
 never sees prompt text.
@@ -92,11 +92,11 @@ skip-lists `/api/mobile/` in `assertSameOrigin`). Refresh via `POST /api/auth/re
 - **CallKit** + **PushKit** (frameworks; PushKit VoIP requires a real device).
 - **CarPlay**: request the **Communication (VoIP calling)** entitlement
   (`com.apple.developer.carplay-communication`) from Apple. This is the only
-  CarPlay category Wingman qualifies for.
+  CarPlay category Wireline qualifies for.
 - **SiriKit / App Intents**, **EventKit** (calendar reminders), **MapKit**
   (directions deep-link), **MusicKit** / Spotify SDK (playback deep-link).
 
-Bundle id: `com.wireline.wingman`. VoIP push topic: `com.wireline.wingman.voip`.
+Bundle id: `com.wireline.app`. VoIP push topic: `com.wireline.app.voip`.
 
 ### Backend env (APNs)
 
@@ -114,13 +114,13 @@ place).
 
 **NOT possible (don't promise it):** controlling another app's CarPlay UI or
 widgets, custom non-communication CarPlay templates, or driving Spotify's
-playback surface. Wingman *launches* those apps; it does not pilot them. Apple
-restricts CarPlay template categories and Wingman is a communication app.
+playback surface. Wireline *launches* those apps; it does not pilot them. Apple
+restricts CarPlay template categories and Wireline is a communication app.
 
 ## Roadmap
 
 - **Phase 1 — done:** Bearer auth, `/api/mobile/me|agents|devices|calls`,
-  outbound App Intent + the full activation layer (Siri/widgets/Ask Wingman),
+  outbound App Intent + the full activation layer (Siri/widgets/Ask Wireline),
   CallKit + PushKit VoIP inbound, recap pushes, Personal/Business workspace,
   Calls tab, and "take this call" handoff (`/api/mobile/calls/:id/handoff`).
 - **Phase 2 — in code, gated on entitlement:** CarPlay Communication scene
@@ -135,12 +135,12 @@ restricts CarPlay template categories and Wingman is a communication app.
 
 ## Design
 
-**Direction: iOS-native first, brand accent second.** Wingman keeps SF Pro,
+**Direction: iOS-native first, brand accent second.** Wireline keeps SF Pro,
 system materials, and standard controls — best HIG fit and the smoothest App
 Store review — and layers Wireline's "Rich Cream + Purple" identity on top as
-the accent tint (`#8B3FD6`) and cream surfaces (`#F5F1E8`). `Theme/WingmanTheme.swift`
+the accent tint (`#8B3FD6`) and cream surfaces (`#F5F1E8`). `Theme/WirelineTheme.swift`
 holds the tokens, mirrored from the web's `src/index.css`; apply them with
-`.tint(Brand.purple)` and the `.wingmanBrand()` view modifier. The CallKit and
+`.tint(Brand.purple)` and the `.wirelineBrand()` view modifier. The CallKit and
 CarPlay call surfaces are system-rendered (Apple's, not themeable) — we only
 contribute the app icon, accent tint, and call labels there.
 
@@ -151,12 +151,12 @@ This repo commits a **XcodeGen** spec (`ios/project.yml`) instead of a checked-i
 
 ```bash
 brew install xcodegen        # one-time
-cd ios && xcodegen generate  # writes Wingman.xcodeproj
-open Wingman.xcodeproj
+cd ios && xcodegen generate  # writes Wireline.xcodeproj
+open Wireline.xcodeproj
 ```
 
 Then set your Development Team in **Signing & Capabilities**, point
-`WingmanAPI.baseURL` at your environment, and run on a **physical device**
+`WirelineAPI.baseURL` at your environment, and run on a **physical device**
 (PushKit VoIP and CarPlay-on-device need real hardware; the CarPlay Simulator
 covers UI only). The CarPlay Communication entitlement is deferred to Phase 2 —
 see the note in `project.yml`.

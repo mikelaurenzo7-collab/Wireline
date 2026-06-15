@@ -1,5 +1,5 @@
 /**
- * Director capability catalog — grouped matrix of what the wingman can do.
+ * Director capability catalog — grouped matrix of what the co-pilot can do.
  * Used in empty state and composer popover so operators discover gen + execute paths.
  */
 import React, { useMemo, useState } from "react";

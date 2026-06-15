@@ -151,7 +151,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       vapiCallId: call?.id || "unknown",
     });
 
-    // Ping the operator's Wingman devices with a tap-to-open recap. Best-effort
+    // Ping the operator's Wireline devices with a tap-to-open recap. Best-effort
     // and env-gated (no-op without APNs creds); never blocks the webhook.
     void notifyCallRecap(userId, {
       callId: vapiCallId,
