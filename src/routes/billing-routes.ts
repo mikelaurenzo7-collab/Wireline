@@ -134,6 +134,29 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         }
         break;
       }
+      case "charge.dispute.created": {
+        // Chargeback on a credit top-up — claw the credit back so a disputed
+        // (often fraudulent) payment can't leave spendable balance behind.
+        // Mirrors charge.refunded; idempotent via stripe_events + (user, ref).
+        const dispute = event.data.object as Stripe.Dispute;
+        const piId =
+          typeof dispute.payment_intent === "string"
+            ? dispute.payment_intent
+            : dispute.payment_intent?.id;
+        if (!piId) break;
+        const pi = await stripe.paymentIntents.retrieve(piId);
+        if (pi.metadata?.purpose === "credit_topup") {
+          const userId = pi.metadata.wireline_user_id;
+          const disputedUsd = (dispute.amount ?? 0) / 100;
+          if (userId && disputedUsd > 0) {
+            await reverseCredit(userId, disputedUsd, "web_topup_dispute", {
+              type: "stripe_dispute",
+              id: dispute.id,
+            });
+          }
+        }
+        break;
+      }
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
