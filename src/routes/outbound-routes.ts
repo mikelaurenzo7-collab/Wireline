@@ -51,7 +51,7 @@ router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, 
       hasMore: offset + limit < count,
     });
   } catch (error: any) {
-    log.error("GET /api/outbound failed", { error: error.message });
+    log.error("GET /api/outbound failed", { error: getErrorMessage(error) });
     throw AppError.fromHttpStatus(500, "Failed to fetch leads");
   }
 });
@@ -99,11 +99,17 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const { id } = req.params;
+      // outboundLeads.id is a bigint — reject non-numeric ids before BigInt()
+      // throws (which would surface as a 500 instead of a clean not-found).
+      if (!/^\d+$/.test(id)) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "Lead not found." });
+      }
       await drizzle
         .delete(schema.outboundLeads)
         .where(
           and(
-            eq(schema.outboundLeads.id, BigInt(req.params.id)),
+            eq(schema.outboundLeads.id, BigInt(id)),
             eq(schema.outboundLeads.userId, req.user.id),
           ),
         );
@@ -319,6 +325,9 @@ router.post(
 
       res.json({ success: true, inserted: insertedLeads.length });
     } catch (err: any) {
+      // Preserve intentional 403/404s (inactive plan, agent/campaign ownership)
+      // instead of masking them as a generic 500.
+      if (err instanceof AppError) throw err;
       log.error("POST /api/outbound/bulk failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to import leads");
     }
