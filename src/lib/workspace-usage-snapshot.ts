@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import { getBudgetSnapshot, clearBudgetCache } from "./spend-guards";
 import { planById } from "./plan-catalog";
 import { getVoiceUsageSnapshot } from "./voice-usage";
+import { getCreditBalanceUsd } from "./credit-wallet";
 import {
   defaultAiSpendBudgetUsdForTier,
   openRouterAllowedForPlanId,
@@ -27,6 +28,8 @@ export interface WorkspaceUsageSnapshot {
   period_key: string;
   reset_at: string;
   stripe_metered: boolean;
+  /** Prepaid wallet balance — absorbs voice overage before Stripe metering. */
+  credit_balance_usd: number;
   ai_spend_usd: number;
   ai_spend_limit_usd: number;
   ai_spend_pct: number;
@@ -48,11 +51,12 @@ function pct(used: number, limit: number): number {
 
 export async function getWorkspaceUsageSnapshot(userId: string): Promise<WorkspaceUsageSnapshot> {
   // These four reads are independent — fetch them together to save round-trips.
-  const [voice, snap, { profile }, tokenUsed] = await Promise.all([
+  const [voice, snap, { profile }, tokenUsed, creditBalanceUsd] = await Promise.all([
     getVoiceUsageSnapshot(userId),
     getBudgetSnapshot(userId),
     quotaTracker.getProfile(userId),
     quotaTracker.getUsage(userId, "claude_tokens_daily"),
+    getCreditBalanceUsd(userId),
   ]);
   const plan = planById(voice.plan_id);
   const tier = subscriptionPlanToTier(voice.plan_id);
@@ -85,6 +89,7 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     period_key: voice.period_key,
     reset_at: voice.reset_at,
     stripe_metered: voice.stripe_metered,
+    credit_balance_usd: Number(creditBalanceUsd.toFixed(2)),
     ai_spend_usd: Number(aiSpend.toFixed(4)),
     ai_spend_limit_usd: aiLimit,
     ai_spend_pct: aiPct,
