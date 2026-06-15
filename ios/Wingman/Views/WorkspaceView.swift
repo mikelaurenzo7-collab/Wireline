@@ -16,7 +16,7 @@ struct WorkspaceView: View {
             Group {
                 if let me {
                     List {
-                        askSection
+                        heroSection
                         accountSection(me)
                         agentSection(me)
                         activationSection
@@ -32,12 +32,16 @@ struct WorkspaceView: View {
             .wingmanBrand()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingDialer = true } label: { Image(systemName: "phone.arrow.up.right") }
-                        .disabled(agents.isEmpty)
+                    Button { showingDialer = true } label: {
+                        Image(systemName: "phone.arrow.up.right")
+                    }
+                    .disabled(agents.isEmpty)
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
-                        Button { showingSettings = true } label: { Label("Settings", systemImage: "gearshape") }
+                        Button { showingSettings = true } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
                         Button("Sign out", role: .destructive) { auth.signOut() }
                     } label: { Image(systemName: "person.crop.circle") }
                 }
@@ -49,16 +53,49 @@ struct WorkspaceView: View {
         }
     }
 
-    /// The big "Ask Wingman" call-to-action — the on-screen twin of the Siri
-    /// phrase / Action button / Back Tap entry points.
-    private var askSection: some View {
+    // MARK: - Sections
+
+    /// Gradient "Ask Wingman" hero card — the primary on-screen entry point.
+    /// Mirrors the Siri phrase, Action button, and widget tap-through.
+    private var heroSection: some View {
         Section {
             Button { router.showAsk = true } label: {
-                Label("Ask Wingman", systemImage: "mic.fill")
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(.white.opacity(0.18))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Ask Wingman")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                        Text("Place calls, get recaps, and more")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.65))
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+                .padding(20)
+                .background(
+                    LinearGradient(
+                        colors: [Brand.purple, Brand.purpleDeep],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: 16)
+                )
+                .shadow(color: Brand.purple.opacity(0.3), radius: 14, y: 5)
             }
-            .buttonStyle(PrimaryButtonStyle())
-            .listRowInsets(EdgeInsets())
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         }
     }
 
@@ -76,32 +113,56 @@ struct WorkspaceView: View {
     @ViewBuilder
     private func accountSection(_ me: MobileMe) -> some View {
         Section {
-            HStack(spacing: 12) {
-                Medallion(systemImage: me.account.mode == .business ? "person.3.fill" : "person.fill")
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 14) {
+                Medallion(
+                    systemImage: me.account.mode == .business ? "person.3.fill" : "person.fill",
+                    size: 44
+                )
+                VStack(alignment: .leading, spacing: 3) {
                     Text(me.account.businessName ?? me.user.fullName ?? me.user.email)
                         .font(.headline)
-                    Text("\(me.account.planName) · \(agentCountLabel(me.agents))")
-                        .font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(me.account.planName)
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text("·").foregroundStyle(.tertiary).font(.caption)
+                        Text(agentCountLabel(me.agents))
+                            .font(.caption).foregroundStyle(.secondary)
+                        if me.account.subscriptionStatus != "active" {
+                            Text("⚠ Inactive")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(Brand.destructive)
+                        }
+                    }
                 }
             }
+            .padding(.vertical, 2)
         }
     }
 
     @ViewBuilder
     private func agentSection(_ me: MobileMe) -> some View {
-        Section("Agents") {
+        Section {
             if agents.isEmpty {
-                BrandEmptyState(title: "No agents yet",
-                                message: "Create your first agent on the web to start taking calls.",
-                                systemImage: "person.wave.2")
+                BrandEmptyState(
+                    title: "No agents yet",
+                    message: "Create your first agent on the web to start taking calls.",
+                    systemImage: "person.wave.2"
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             } else {
                 ForEach(agents) { AgentRow(agent: $0) }
             }
-            if me.agents.canAddMore, let price = me.extraAgent.priceUsd, me.extraAgent.configured {
+            if me.agents.canAddMore, let price = me.extraAgent.priceUsd,
+               me.extraAgent.configured {
                 Label("Add an agent · $\(Int(price))/mo", systemImage: "plus.circle")
                     .foregroundStyle(Brand.purple)
             }
+        } header: {
+            Text("Agents")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(nil)
         }
     }
 
@@ -113,10 +174,10 @@ struct WorkspaceView: View {
 
     private func load() async {
         do {
-            async let meCall = WingmanAPI.shared.me()
-            async let agentsCall = WingmanAPI.shared.agents()
-            self.me = try await meCall
-            self.agents = try await agentsCall
+            async let meReq = WingmanAPI.shared.me()
+            async let agentsReq = WingmanAPI.shared.agents()
+            self.me = try await meReq
+            self.agents = try await agentsReq
             self.loadError = nil
         } catch {
             self.loadError = error.localizedDescription

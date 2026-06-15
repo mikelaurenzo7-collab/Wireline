@@ -14,5 +14,10 @@ struct RootTabView: View {
         }
         .tint(Brand.purple)
         .sheet(isPresented: $router.showAsk) { AskWingmanView() }
+        // Covers the full screen when the operator answers a CallKit inbound call.
+        .fullScreenCover(isPresented: $router.showLiveCall) {
+            LiveCallView(callId: router.liveCallId)
+                .environmentObject(router)
+        }
     }
 }

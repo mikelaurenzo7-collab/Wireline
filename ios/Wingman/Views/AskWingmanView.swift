@@ -13,55 +13,88 @@ struct AskWingmanView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    Medallion(systemImage: "mic.fill", size: 64)
-                    Text("What can Wingman do?")
-                        .font(.title3.weight(.semibold))
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 10) {
+                        Medallion(systemImage: "mic.fill", size: 68)
+                            .shadow(color: Brand.purple.opacity(0.3), radius: 16)
+                        Text("What can Wingman do?")
+                            .font(.title3.weight(.semibold))
+                    }
+                    .padding(.top, 8)
 
+                    // Inline answer card
                     if let answer {
                         Text(answer)
                             .font(.callout)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(14)
-                            .background(Brand.paperWarm, in: Rectangle())
+                            .padding(16)
+                            .background(Brand.paperWarm, in: RoundedRectangle(cornerRadius: 12))
                     }
 
-                    VStack(spacing: 12) {
-                        action("Place a call", "phone.arrow.up.right") { showingDialer = true }
-                        action("Summarize my last call", "text.bubble") {
+                    // Action cards
+                    VStack(spacing: 10) {
+                        actionCard("Place a call", "phone.arrow.up.right") {
+                            showingDialer = true
+                        }
+                        actionCard("Summarize my last call", "text.bubble") {
                             await run { try await summary() }
                         }
-                        action("What needs my attention", "bell.badge") {
+                        actionCard("What needs my attention", "bell.badge") {
                             await run { try await attention() }
                         }
                     }
-                    if isWorking { ProgressView() }
-                    Spacer(minLength: 0)
+
+                    if isWorking {
+                        ProgressView().padding(.top, 4)
+                    }
                 }
-                .padding(24)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 32)
             }
             .background(Brand.paper.ignoresSafeArea())
             .navigationTitle("Ask Wingman")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
             .tint(Brand.purple)
             .sheet(isPresented: $showingDialer) { OutboundCallView(agents: agents) }
-            .task { if agents.isEmpty { agents = (try? await WingmanAPI.shared.agents()) ?? [] } }
+            .task {
+                if agents.isEmpty {
+                    agents = (try? await WingmanAPI.shared.agents()) ?? []
+                }
+            }
         }
     }
 
-    private func action(_ title: String, _ icon: String, _ run: @escaping () async -> Void) -> some View {
-        Button { Task { await run() } } label: {
-            HStack {
-                Image(systemName: icon)
+    private func actionCard(
+        _ title: String,
+        _ icon: String,
+        _ action: @escaping () async -> Void
+    ) -> some View {
+        Button { Task { await action() } } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle().fill(Brand.accentTint).frame(width: 40, height: 40)
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Brand.purple)
+                }
                 Text(title)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(.primary)
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity)
-            .background(.regularMaterial, in: Rectangle())
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
     }
@@ -69,7 +102,11 @@ struct AskWingmanView: View {
     private func run(_ work: @escaping () async throws -> String) async {
         isWorking = true
         defer { isWorking = false }
-        do { answer = try await work() } catch { answer = "Couldn't reach Wingman just now." }
+        do {
+            answer = try await work()
+        } catch {
+            answer = "Couldn't reach Wingman just now."
+        }
     }
 
     private func summary() async throws -> String {

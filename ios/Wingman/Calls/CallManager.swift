@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import CallKit
 import PushKit
 import AVFoundation
@@ -17,6 +18,10 @@ final class CallManager: NSObject {
     /// a VoIP-only or alert-only POST would null out the other column.
     private var lastVoipToken: String?
     private var lastAlertToken: String?
+    /// Maps the CallKit UUID iOS assigns to each reported call → the Wireline
+    /// callId from the VoIP push. Used in CXAnswerCallAction so the live-call
+    /// view can fetch the right call from /api/mobile/calls/active.
+    private var pendingCalls: [UUID: String] = [:]
 
     override init() {
         let config = CXProviderConfiguration()
@@ -103,6 +108,8 @@ extension CallManager: PKPushRegistryDelegate {
         update.hasVideo = false
 
         let uuid = UUID(uuidString: callId) ?? UUID()
+        // Store the mapping before reporting so CXAnswerCallAction can look it up.
+        pendingCalls[uuid] = callId
         provider.reportNewIncomingCall(with: uuid, update: update) { _ in
             completion()
         }
@@ -112,15 +119,27 @@ extension CallManager: PKPushRegistryDelegate {
 // MARK: - CXProviderDelegate
 
 extension CallManager: CXProviderDelegate {
-    func providerDidReset(_ provider: CXProvider) {}
+    func providerDidReset(_ provider: CXProvider) {
+        pendingCalls.removeAll()
+    }
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         configureAudioSession()
+        let callId = pendingCalls[action.callUUID]
         action.fulfill()
+        // Navigate into the in-app live-call view so the operator can take
+        // over or monitor — audio is already bridged by the AI agent.
+        Task { @MainActor in
+            WingmanRouter.shared.presentLiveCall(callId: callId)
+        }
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
+        pendingCalls.removeValue(forKey: action.callUUID)
         action.fulfill()
+        Task { @MainActor in
+            WingmanRouter.shared.dismissLiveCall()
+        }
     }
 
     func provider(_ provider: CXProvider, perform action: CXStartCallAction) {

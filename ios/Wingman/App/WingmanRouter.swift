@@ -7,14 +7,26 @@ import SwiftUI
 final class WingmanRouter: ObservableObject {
     static let shared = WingmanRouter()
 
-    enum Route {
-        case workspace
-        case ask
-    }
+    enum Route { case workspace, ask }
 
     @Published var showAsk = false
 
+    /// Driven by CallManager when the user answers a CallKit call. RootTabView
+    /// presents LiveCallView as a fullScreenCover while this is true.
+    @Published var showLiveCall = false
+    @Published var liveCallId: String?
+
     var route: Route = .workspace {
         didSet { if route == .ask { showAsk = true } }
+    }
+
+    func presentLiveCall(callId: String?) {
+        liveCallId = callId
+        showLiveCall = true
+    }
+
+    func dismissLiveCall() {
+        showLiveCall = false
+        liveCallId = nil
     }
 }
