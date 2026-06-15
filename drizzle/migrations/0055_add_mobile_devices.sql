@@ -1,12 +1,11 @@
--- Wingman mobile devices: APNs / PushKit VoIP push targets.
+-- Assistant mobile devices: APNs / PushKit VoIP push targets.
 --
--- One row per registered iOS device per user. The native Wingman app
--- registers its PushKit VoIP token after sign-in so the backend can wake the
--- device with a CallKit-reportable VoIP push when an inbound call arrives
--- (see src/lib/apns-push.ts). The separate alert token is used for non-call
--- notifications (e.g. mid-call tool dispatch). FK cascade removes rows when
--- the user is deleted; the (user_id, device_id) unique key makes token
--- refresh an idempotent upsert.
+-- One row per registered mobile device per user. iOS devices register APNs
+-- PushKit VoIP and alert tokens after sign-in so the backend can wake the
+-- app with a CallKit-reportable VoIP push when an inbound call arrives.
+-- Android devices are represented by platform + fcm_token in migration 0058.
+-- FK cascade removes rows when the user is deleted; the (user_id, device_id)
+-- unique key makes token refresh an idempotent upsert.
 --
 -- Idempotent: CREATE ... IF NOT EXISTS so this is safe to re-run.
 
