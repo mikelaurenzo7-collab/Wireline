@@ -201,12 +201,16 @@ router.get(
   },
 );
 
-// ── POST /api/mobile/devices — register/refresh APNs tokens ────────────────
+// ── POST /api/mobile/devices — register/refresh push tokens ────────────────
+// iOS registers a split APNs pair (voip + alert); Android registers a single
+// FCM token. The (user_id, device_id) unique key makes refresh an idempotent
+// upsert.
 const deviceSchema = z.object({
   device_id: z.string().min(1).max(200),
   apns_voip_token: z.string().min(1).max(512).optional(),
   apns_alert_token: z.string().min(1).max(512).optional(),
-  platform: z.literal("ios").default("ios"),
+  fcm_token: z.string().min(1).max(512).optional(),
+  platform: z.enum(["ios", "android"]).default("ios"),
   app_version: z.string().max(64).optional(),
 });
 
@@ -217,7 +221,8 @@ router.post(
   validate({ body: deviceSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { device_id, apns_voip_token, apns_alert_token, platform, app_version } = req.body;
+      const { device_id, apns_voip_token, apns_alert_token, fcm_token, platform, app_version } =
+        req.body;
       const now = new Date();
       await drizzle
         .insert(schema.mobileDevices)
@@ -226,6 +231,7 @@ router.post(
           deviceId: device_id,
           apnsVoipToken: apns_voip_token ?? null,
           apnsAlertToken: apns_alert_token ?? null,
+          fcmToken: fcm_token ?? null,
           platform,
           appVersion: app_version ?? null,
           lastSeenAt: now,
@@ -235,6 +241,8 @@ router.post(
           set: {
             apnsVoipToken: apns_voip_token ?? null,
             apnsAlertToken: apns_alert_token ?? null,
+            fcmToken: fcm_token ?? null,
+            platform,
             appVersion: app_version ?? null,
             lastSeenAt: now,
             updatedAt: now,

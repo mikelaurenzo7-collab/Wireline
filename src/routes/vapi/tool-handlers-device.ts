@@ -10,7 +10,7 @@
  * Opt-in per agent (not in any default role set), so a customer-facing agent
  * never gains control of someone's phone.
  */
-import { notifyDeviceAction } from "../../lib/apns-push";
+import { notifyDeviceAction } from "../../lib/mobile-push";
 import type { ToolCallContext, ToolCallResult } from "./types";
 
 export async function handleDeviceToolCall(

@@ -47,7 +47,7 @@ vi.mock("./server-context", () => ({
   drizzle: {},
 }));
 
-import { sendApnsPush, isApnsConfigured, notifyInboundCall, notifyCallRecap } from "./apns-push";
+import { sendApnsPush, isApnsConfigured, isStaleApnsReason } from "./apns-push";
 
 // A throwaway P-256 key in PKCS8 PEM — exactly the shape of an APNs .p8.
 const { privateKey } = crypto.generateKeyPairSync("ec", { namedCurve: "P-256" });
@@ -118,17 +118,11 @@ describe("apns-push", () => {
     expect(h2.state.lastHeaders!["apns-push-type"]).toBe("alert");
   });
 
-  it("notifyInboundCall short-circuits when APNs is unconfigured", async () => {
-    expect(isApnsConfigured()).toBe(false);
-    const res = await notifyInboundCall("user-1", { callId: "c1", fromNumber: "+15551234567" });
-    expect(res).toEqual({ sent: 0, devices: 0 });
-    expect(h2.connect).not.toHaveBeenCalled();
-  });
-
-  it("notifyCallRecap short-circuits when APNs is unconfigured", async () => {
-    const res = await notifyCallRecap("user-1", { callId: "c1", summary: "Booked a demo" });
-    expect(res).toEqual({ sent: 0, devices: 0 });
-    expect(h2.connect).not.toHaveBeenCalled();
+  it("flags only permanently-invalid reasons as stale", () => {
+    expect(isStaleApnsReason("BadDeviceToken")).toBe(true);
+    expect(isStaleApnsReason("Unregistered")).toBe(true);
+    expect(isStaleApnsReason("TooManyRequests")).toBe(false);
+    expect(isStaleApnsReason(undefined)).toBe(false);
   });
 
   it("maps an Apple error response to ok:false with the reason", async () => {

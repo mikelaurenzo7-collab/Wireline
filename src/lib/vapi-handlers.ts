@@ -27,7 +27,7 @@ import { trackVoiceMinutes } from "./voice-usage";
 import { runPostCallDigest } from "./post-call-digest";
 import { findCallLogByVapiCallId, isOutboundCallPlaceholder } from "./outbound-call-tracking";
 import { takeStagedReliabilityMetrics } from "./call-reliability-capture";
-import { notifyCallRecap } from "./apns-push";
+import { notifyCallRecap } from "./mobile-push";
 
 export interface CallReportPayload {
   message: {

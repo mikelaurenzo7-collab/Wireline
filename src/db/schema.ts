@@ -1308,6 +1308,10 @@ export const mobileDevices = pgTable(
     deviceId: text("device_id").notNull(),
     apnsVoipToken: text("apns_voip_token"),
     apnsAlertToken: text("apns_alert_token"),
+    // Android FCM registration token. One token per device handles both the
+    // wake (high-priority data message → ConnectionService incoming call) and
+    // alert (recap / device-action) shapes, unlike APNs' split voip/alert pair.
+    fcmToken: text("fcm_token"),
     platform: text("platform").default("ios").notNull(),
     appVersion: text("app_version"),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow(),

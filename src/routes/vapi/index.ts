@@ -21,7 +21,7 @@ import { handleEndOfCallReport } from "../../lib/vapi-handlers";
 import { shouldQueueWebhook } from "../../lib/vapi-webhook-queue";
 import { resolveVapiWebhookAgent } from "../../lib/vapi-webhook-agent";
 import { touchNavCounts } from "../../lib/nav-counts-invalidate";
-import { notifyInboundCall } from "../../lib/apns-push";
+import { notifyInboundCall } from "../../lib/mobile-push";
 import {
   isToolCallFailureResult,
   recordInboundWebhookHealth,
