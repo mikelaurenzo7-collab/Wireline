@@ -166,7 +166,8 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
         <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.
+            Approaching your {included.toLocaleString()}-minute plan — upgrading adds headroom; past
+            it, overage bills at ${snap.overage_per_min_usd.toFixed(2)}/min.
           </span>
         </div>
       )}

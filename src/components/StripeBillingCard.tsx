@@ -354,8 +354,9 @@ function CreditTopUpCard({
       <div className="border-b border-white/8 pb-5">
         <h3 className="font-display italic text-2xl text-ink">Add call credits</h3>
         <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
-          Prepaid credit automatically covers voice-minute overage before it's billed at your plan's
-          rate. One-time purchase — your subscription doesn't change.
+          Most months your plan's minutes are plenty — credits are an optional safety net for the
+          occasional spike. They cover overage at your plan rate before it's invoiced; if you're
+          regularly over, upgrading your plan is the more economical move.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
