@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, AlertTriangle, Loader2, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, Loader2, TrendingUp, Wallet } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Progress } from "./ui/shadcn/Progress";
@@ -22,6 +22,7 @@ interface UsageSnapshot {
   period_key: string;
   reset_at: string;
   stripe_metered: boolean;
+  credit_balance_usd?: number;
 }
 
 const REFRESH_MS = 60_000;
@@ -76,6 +77,8 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
   const usageState = isOver ? "over" : isWarn ? "warn" : "ok";
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const credit = snap.credit_balance_usd ?? 0;
+  const lowCredit = credit > 0 && credit < 5;
 
   if (compact) {
     return (
@@ -110,9 +113,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
               Voice minutes
             </h4>
-            <p className="wl-label text-ink/40 font-medium">
-              This month · resets {resetLabel}
-            </p>
+            <p className="wl-label text-ink/40 font-medium">This month · resets {resetLabel}</p>
           </div>
         </div>
         <div className="text-right">
@@ -122,9 +123,7 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
             </span>
             <span className="text-ink/40"> / {included.toLocaleString()}</span>
           </div>
-          <p className="wl-label text-brand font-semibold mt-0.5">
-            {pct}% used
-          </p>
+          <p className="wl-label text-brand font-semibold mt-0.5">{pct}% used</p>
         </div>
       </div>
 
@@ -169,6 +168,40 @@ export default function UsageMeter({ compact = false }: { compact?: boolean }) {
           <span>
             Approaching plan limit — overage rate kicks in at {included.toLocaleString()} min.
           </span>
+        </div>
+      )}
+
+      {/* Prepaid credits — relevant when the operator holds a balance or is in
+          overage, where credits absorb the cost before Stripe meters it. */}
+      {(credit > 0 || isOver) && (
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
+          <span className="flex items-center gap-2 wl-label text-ink/40 font-medium">
+            <Wallet className="w-3.5 h-3.5" />
+            Prepaid credits
+          </span>
+          {credit > 0 ? (
+            <span className="text-right leading-tight">
+              <span
+                className={cn(
+                  "tabular-nums font-bold text-[15px]",
+                  lowCredit ? "text-amber-500" : "text-ink",
+                )}
+              >
+                ${credit.toFixed(2)}
+              </span>
+              <span className="block wl-label text-ink/40 font-medium">
+                {isOver
+                  ? "auto-applied to overage"
+                  : lowCredit
+                    ? "running low — top up below"
+                    : "covers overage first"}
+              </span>
+            </span>
+          ) : (
+            <span className="wl-label text-amber-500 font-semibold text-right">
+              Add credits below to cover overage
+            </span>
+          )}
         </div>
       )}
     </motion.div>
