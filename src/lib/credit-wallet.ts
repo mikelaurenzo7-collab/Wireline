@@ -15,6 +15,7 @@
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, sql, desc } from "drizzle-orm";
+import { getErrorMessage } from "./server-utils";
 
 export interface LedgerEntry {
   id: string;
@@ -24,13 +25,18 @@ export interface LedgerEntry {
   createdAt: string | null;
 }
 
-/** Current balance in USD (sum of all deltas; 0 when there are no rows). */
-export async function getCreditBalanceUsd(userId: string): Promise<number> {
-  const [row] = await drizzle
+/** Sum the ledger to a USD balance. Works on the pool or a tx handle. */
+async function sumBalance(executor: any, userId: string): Promise<number> {
+  const [row] = await executor
     .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
     .from(schema.creditLedger)
     .where(eq(schema.creditLedger.userId, userId));
   return Number(row?.balance ?? 0);
+}
+
+/** Current balance in USD (sum of all deltas; 0 when there are no rows). */
+export async function getCreditBalanceUsd(userId: string): Promise<number> {
+  return sumBalance(drizzle, userId);
 }
 
 /** Recent ledger entries, newest first. */
@@ -71,11 +77,7 @@ async function appendLedger(
     // Serialize all wallet mutations for this user.
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
 
-    const [sumRow] = await tx
-      .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
-      .from(schema.creditLedger)
-      .where(eq(schema.creditLedger.userId, userId));
-    const balance = Number(sumRow?.balance ?? 0);
+    const balance = await sumBalance(tx, userId);
     const balanceAfter = cents(balance + deltaUsd);
 
     const inserted = await tx
@@ -115,7 +117,7 @@ export async function addCredit(
   } catch (err) {
     log.error("addCredit failed", {
       userId,
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorMessage(err),
     });
     return getCreditBalanceUsd(userId);
   }
@@ -137,11 +139,7 @@ export async function debitForOverage(
   try {
     return await drizzle.transaction(async (tx: any) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
-      const [sumRow] = await tx
-        .select({ balance: sql<string>`COALESCE(SUM(${schema.creditLedger.deltaUsd}), 0)` })
-        .from(schema.creditLedger)
-        .where(eq(schema.creditLedger.userId, userId));
-      const balance = Number(sumRow?.balance ?? 0);
+      const balance = await sumBalance(tx, userId);
       if (balance < cost) return 0; // can't fully cover → let Stripe meter it
 
       const inserted = await tx
@@ -161,7 +159,7 @@ export async function debitForOverage(
   } catch (err) {
     log.error("debitForOverage failed", {
       userId,
-      error: err instanceof Error ? err.message : String(err),
+      error: getErrorMessage(err),
     });
     return 0;
   }

@@ -47,13 +47,18 @@ function pct(used: number, limit: number): number {
 }
 
 export async function getWorkspaceUsageSnapshot(userId: string): Promise<WorkspaceUsageSnapshot> {
-  const voice = await getVoiceUsageSnapshot(userId);
+  // These four reads are independent — fetch them together to save round-trips.
+  const [voice, snap, { profile }, tokenUsed] = await Promise.all([
+    getVoiceUsageSnapshot(userId),
+    getBudgetSnapshot(userId),
+    quotaTracker.getProfile(userId),
+    quotaTracker.getUsage(userId, "claude_tokens_daily"),
+  ]);
   const plan = planById(voice.plan_id);
   const tier = subscriptionPlanToTier(voice.plan_id);
 
-  const snap = await getBudgetSnapshot(userId);
   let aiLimit = snap.budget?.enabled ? snap.budget.monthly_limit_usd : 0;
-  let aiSpend = snap.mtdCost;
+  const aiSpend = snap.mtdCost;
   let aiHardCap = !!snap.budget?.hard_cap;
 
   if (!(aiLimit > 0)) {
@@ -61,8 +66,6 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     aiHardCap = true;
   }
 
-  const { profile } = await quotaTracker.getProfile(userId);
-  const tokenUsed = await quotaTracker.getUsage(userId, "claude_tokens_daily");
   const tokenLimit = profile.claude_tokens_daily;
 
   const voicePct = pct(voice.voice_minutes_used, voice.voice_minutes_included);
