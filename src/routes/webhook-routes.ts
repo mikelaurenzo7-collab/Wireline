@@ -43,6 +43,7 @@ router.get("/", authenticateUser, async (req: AuthenticatedRequest, res: Respons
 
     res.json({ webhooks: webhooks || [], available_events: WEBHOOK_EVENTS });
   } catch (e: any) {
+    if (e instanceof AppError) throw e;
     log.error("Failed to load webhooks", { error: getErrorMessage(e) });
     throw AppError.fromHttpStatus(500, "Failed to load webhooks");
   }
@@ -106,6 +107,7 @@ router.post(
         .catch(() => {});
       res.json({ webhook: data });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Failed to create webhook", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to create webhook");
     }
@@ -185,6 +187,7 @@ router.patch(
         .catch(() => {});
       res.json({ webhook: data });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Failed to update", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to update");
     }
@@ -210,6 +213,7 @@ router.delete(
         .catch(() => {});
       res.json({ success: true });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Failed to delete", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to delete");
     }
@@ -243,6 +247,7 @@ router.post(
         .catch(() => {});
       res.json({ success: true, message: "Test dispatched. Check the URL." });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Test failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Test failed");
     }
@@ -283,6 +288,7 @@ router.get(
 
       res.json({ deliveries: deliveries || [] });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Failed to load deliveries", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load deliveries");
     }
@@ -322,6 +328,7 @@ router.post(
       );
       res.json({ success: true });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Retry failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Retry failed");
     }
@@ -345,6 +352,7 @@ router.delete(
         );
       res.json({ success: true });
     } catch (e: any) {
+      if (e instanceof AppError) throw e;
       log.error("Discard failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Discard failed");
     }
