@@ -1,36 +1,12 @@
 /**
- * Single source for Stripe-backed plan tiers: agent caps (voice-number slots
- * match the same cap), pricing surface, voice-minute caps + overage rate,
- * and price-id → plan resolution at runtime.
+ * Stripe-backed plan catalog.
  *
- * PRICING PHILOSOPHY (Mike's call): Overages should be RARE, not the default.
- * Each tier ships with ~2.5x the minutes a typical customer in that segment
- * actually burns per month, so hitting overage is a clear signal to upgrade
- * — not a monthly tax. Overage rates drop with tier to make upgrade math obvious.
- *
- * UNIT ECONOMICS: Variable cost per voice minute lands around $0.128
- * (Vapi $0.06 + 11labs $0.014 + Claude voice-mode $0.04 + Twilio $0.014).
- * Target gross margin: 70%+ across all tiers.
- *
- * OPTIMIZED MARGINS (May 2026):
- *   personal:    $0.20/min  (+56% margin)  — 400 min/month, $49 + $49/addon
- *   starter:     $0.18/min  (+41% margin)  — 1,200 min/month, $149 + $45/addon
- *   pro:         $0.15/min  (+17% margin)  — 5,000 min/month, $499 + $40/addon
- *   business:    $0.14/min  (+9% margin)   — 12,000 min/month, $1,499 + $35/addon
- *   enterprise:  Custom pricing — $0.11 breakeven, contracts cover margin
- *
- * MARGIN OPTIMIZATION STRATEGY:
- * - Reduced minute allocations 15-20% (still 2.5x typical usage)
- * - Raised add-on prices to push tier upgrades
- * - Added high-perceived-value features (voice cloning, AI coaching) to Pro+
- * - Enterprise remains custom-priced to ensure profitability
- *
- * Existing subscribers stay on their original Stripe Price IDs (Stripe
- * grandfathers automatically) — only new signups see the new rates.
- * Pricing.tsx renders these same numbers; keep in sync.
+ * max_agents is now the included agent bundle before paid add-ons, not a
+ * strategic hard limit. Customers can buy extra agents through Stripe add-on
+ * prices. Personal is intentionally much lower because personal users route
+ * fewer calls; business plans monetize volume, teams, routing, and coaching.
  */
 
-/** Documented variable COGS per voice minute — used by voice reliability dashboard. */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
 
 export type StripePlanId = "personal" | "starter" | "pro" | "business" | "enterprise";
@@ -40,50 +16,15 @@ export type StripePlan = {
   name: string;
   price_usd_monthly: number;
   max_agents: number;
-  /** Pooled monthly voice minutes across all agents in the workspace. */
   voice_minutes_monthly: number;
-  /** Per-minute overage rate when monthly cap is exceeded. */
   overage_per_min_usd: number;
-  /**
-   * How many Wireline-provisioned voice numbers the tier includes at
-   * no extra cost. Auto-provisioned from our Twilio pool on the
-   * tenant's first agent creation — they never see a Twilio bill.
-   * Phone-number COGS (~$1.15/mo per US local) is baked into the
-   * tier price.
-   */
   included_phone_numbers: number;
   features: string[];
-  /** Env var holding the Stripe price_… id for this tier. */
   priceIdEnv: string;
-  /**
-   * Per-agent overage pricing. Operators who exceed max_agents can
-   * purchase additional agents as a subscription line-item add-on
-   * instead of being forced to upgrade to the next tier. This is the
-   * "à la carte agents" promise on the Pricing page.
-   *
-   * USD per extra agent per month.
-   */
   extra_agent_price_usd?: number;
-  /**
-   * Env var holding the Stripe price_… id for the per-agent
-   * subscription line item (recurring, monthly). Operator creates this
-   * Price in the Stripe dashboard with `recurring: { usage_type: "licensed" }`
-   * so Stripe bills `quantity × unit_price` each cycle. Quantity is
-   * adjusted via the wireline_extra_agents column on settings.
-   */
   extraAgentPriceIdEnv?: string;
-  /**
-   * Annual price = monthly × 12 × 0.80 (20% discount for yearly commitment).
-   * 0 for Enterprise (contact sales).
-   */
   price_usd_annual: number;
-  /** Env var holding the Stripe price_… id for the annual billing interval. */
   annualPriceIdEnv: string;
-  /**
-   * Metered price for voice-minute overage (monthly interval, tied to
-   * STRIPE_VOICE_OVERAGE_METER_EVENT_NAME). Attached as a second checkout
-   * line item so Stripe invoices overage automatically.
-   */
   overagePriceIdEnv?: string;
 };
 
@@ -91,128 +32,130 @@ export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
     name: "Personal",
-    price_usd_monthly: 49,
+    price_usd_monthly: 9,
     max_agents: 1,
-    voice_minutes_monthly: 400,
-    overage_per_min_usd: 0.2,
+    voice_minutes_monthly: 30,
+    overage_per_min_usd: 0.25,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
-    extra_agent_price_usd: 49,
+    extra_agent_price_usd: 9,
     extraAgentPriceIdEnv: "STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 470,
+    price_usd_annual: 86,
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PERSONAL_OVERAGE_PRICE_ID",
     features: [
-      "1 AI voice agent (voice + email)",
-      "Dedicated voice number INCLUDED — no Twilio bill",
-      "400 voice minutes / month (covers most solo operators)",
-      "Unlimited inbound email",
-      "All integrations included (Slack, Teams, HubSpot, DocuSign, Sheets, more)",
-      "Call logs + transcripts + sentiment",
-      "Overage billed at $0.20 / min (rare on this volume)",
-      "Add more agents: $49/each/month",
+      "1 AI voice agent included — add more anytime",
+      "1 dedicated voice number included",
+      "30 voice minutes / month for light personal coverage",
+      "Default low-cost AI: Grok 4.3 or Gemini Flash",
+      "Agent Studio model picker: Grok, Gemini, OpenAI, Anthropic, OpenRouter",
+      "Call logs + transcripts + simple sentiment",
+      "Overage at $0.25 / min",
+      "Add more agents: $9/each/month",
     ],
   },
   {
     id: "starter",
-    name: "Starter",
-    price_usd_monthly: 149,
-    max_agents: 3,
-    voice_minutes_monthly: 1_200,
-    overage_per_min_usd: 0.18,
-    included_phone_numbers: 3,
+    name: "Business Starter",
+    price_usd_monthly: 79,
+    max_agents: 2,
+    voice_minutes_monthly: 300,
+    overage_per_min_usd: 0.21,
+    included_phone_numbers: 2,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
-    extra_agent_price_usd: 45,
+    extra_agent_price_usd: 19,
     extraAgentPriceIdEnv: "STRIPE_STARTER_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 1_430,
+    price_usd_annual: 758,
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_STARTER_OVERAGE_PRICE_ID",
     features: [
-      "3 AI agents (voice + email)",
-      "3 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
-      "1,200 voice minutes / month",
+      "2 AI agents included — add more anytime",
+      "2 dedicated voice numbers included",
+      "300 voice minutes / month",
+      "Default low-cost AI: Grok 4.3 or Gemini Flash",
+      "Full Agent Studio model picker on every paid plan",
       "Outbound dialer (CSV + auto-dial)",
       "Live call monitor + sentiment",
-      "All integrations included (Slack, Teams, HubSpot, DocuSign, Sheets, more)",
       "Up to 5 team seats",
-      "Overage billed at $0.18 / min",
-      "Add more agents: $45/each/month",
+      "Overage at $0.21 / min",
+      "Add more agents: $19/each/month",
     ],
   },
   {
     id: "pro",
-    name: "Pro",
-    price_usd_monthly: 499,
-    max_agents: 10,
-    voice_minutes_monthly: 5_000,
-    overage_per_min_usd: 0.15,
-    included_phone_numbers: 10,
+    name: "Business Pro",
+    price_usd_monthly: 249,
+    max_agents: 5,
+    voice_minutes_monthly: 1_000,
+    overage_per_min_usd: 0.18,
+    included_phone_numbers: 5,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
-    extra_agent_price_usd: 40,
+    extra_agent_price_usd: 29,
     extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 4_790,
+    price_usd_annual: 2_390,
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
-      "10 AI agents (voice + email)",
-      "10 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
-      "5,000 voice minutes / month",
+      "5 AI agents included — add more anytime",
+      "5 dedicated voice numbers included",
+      "1,000 voice minutes / month",
+      "Default low-cost AI with premium model override per agent",
       "Outbound dialer + email campaigns",
-      "All integrations included (Slack, Teams, HubSpot, DocuSign, Sheets, more)",
       "Up to 25 team seats",
       "Webhook + Action Engine",
-      "AI voice cloning + custom personalities",
       "Post-call coaching + agent training",
-      "Overage billed at $0.15 / min",
+      "Overage at $0.18 / min",
       "Priority support",
-      "Add more agents: $40/each/month",
+      "Add more agents: $29/each/month",
     ],
   },
   {
     id: "business",
-    name: "Business",
-    price_usd_monthly: 1_499,
-    max_agents: 25,
-    voice_minutes_monthly: 12_000,
-    overage_per_min_usd: 0.14,
-    included_phone_numbers: 25,
+    name: "Business Scale",
+    price_usd_monthly: 699,
+    max_agents: 10,
+    voice_minutes_monthly: 3_000,
+    overage_per_min_usd: 0.16,
+    included_phone_numbers: 10,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
-    extra_agent_price_usd: 35,
+    extra_agent_price_usd: 39,
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 14_390,
+    price_usd_annual: 6_710,
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
-      "25 AI agents (voice + email)",
-      "25 dedicated voice numbers INCLUDED — one per agent, no Twilio bill",
-      "12,000 voice minutes / month",
-      "Everything in Pro",
+      "10 AI agents included — add more anytime",
+      "10 dedicated voice numbers included",
+      "3,000 voice minutes / month",
+      "Everything in Business Pro",
+      "Admin model controls for Grok, Gemini, OpenAI, Anthropic, and OpenRouter",
       "SSO + audit log export",
       "Up to 50 team seats",
       "Dedicated success manager",
-      "Priority support · Slack channel",
-      "Overage billed at $0.14 / min",
-      "Add more agents: $35/each/month (best per-agent rate)",
+      "Priority support channel",
+      "Overage at $0.16 / min",
+      "Add more agents: $39/each/month",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price_usd_monthly: 0, // contact sales
-    max_agents: 100,
-    voice_minutes_monthly: 50_000,
-    overage_per_min_usd: 0.11,
-    included_phone_numbers: 100,
+    price_usd_monthly: 0,
+    max_agents: 25,
+    voice_minutes_monthly: 15_000,
+    overage_per_min_usd: 0.14,
+    included_phone_numbers: 25,
     priceIdEnv: "STRIPE_ENTERPRISE_PRICE_ID",
     price_usd_annual: 0,
     annualPriceIdEnv: "STRIPE_ENTERPRISE_ANNUAL_PRICE_ID",
     features: [
-      "Up to 100 agents (custom bundles)",
-      "100 numbers INCLUDED — one per agent + BYO carrier option",
-      "50,000+ voice minutes (custom volume)",
-      "Everything in Business",
+      "25+ agents with custom bundles",
+      "25+ numbers included + BYO carrier option",
+      "15,000+ voice minutes with contracted volume pricing",
+      "Everything in Business Scale",
+      "Custom model-routing policy and usage budget controls",
       "SAML SSO + advanced compliance",
-      "Custom data retention + private model deployment",
+      "Custom data retention",
       "Dedicated success manager",
       "99.95% uptime SLA",
     ],
@@ -235,10 +178,6 @@ export function planById(id: string | null | undefined): StripePlan | null {
 
 export function plansForClient() {
   return STRIPE_PLANS.map((p) => {
-    // price_usd_monthly === 0 is the "contact sales" sentinel for Enterprise.
-    // Never expose it as a checkout-able plan even if STRIPE_ENTERPRISE_PRICE_ID
-    // is still set from an older paid Enterprise tier — that would let anyone
-    // subscribe to Enterprise at $0/mo backed by a real Stripe price.
     const contactSales = p.price_usd_monthly === 0;
     return {
       id: p.id,
@@ -249,6 +188,7 @@ export function plansForClient() {
       voice_minutes_monthly: p.voice_minutes_monthly,
       overage_per_min_usd: p.overage_per_min_usd,
       included_phone_numbers: p.included_phone_numbers,
+      extra_agent_price_usd: p.extra_agent_price_usd ?? null,
       features: p.features,
       configured: !contactSales && !!process.env[p.priceIdEnv],
       annual_configured: !contactSales && !!process.env[p.annualPriceIdEnv],

@@ -6,10 +6,19 @@ export type DirectorChatModelSelection =
   | { provider: "wireline"; tier: WirelineDirectorTier }
   | { provider: "openrouter"; modelId: string };
 
-export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = {
-  provider: "wireline",
-  tier: "auto",
-};
+export const DEFAULT_DIRECTOR_OPENROUTER_MODEL =
+  process.env.WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL?.trim() || "x-ai/grok-4.3";
+
+export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = process.env
+  .OPENROUTER_API_KEY?.trim()
+  ? {
+      provider: "openrouter",
+      modelId: DEFAULT_DIRECTOR_OPENROUTER_MODEL,
+    }
+  : {
+      provider: "wireline",
+      tier: "sonnet",
+    };
 
 const WIRELINE_TIERS = new Set<WirelineDirectorTier>(["auto", "sonnet", "opus"]);
 
@@ -81,17 +90,12 @@ export function resolveDirectorLlm(input: {
   };
 }
 
-/**
- * Returns true if the given ID looks like a valid OpenRouter model ID.
- * Used by openrouter-models.ts to filter the live catalog.
- * OpenRouter IDs are typically in "provider/model" format.
- */
 export function isOpenRouterModelId(id: string): boolean {
   if (typeof id !== "string" || !id) return false;
   if (id.length > 160) return false;
   if (id.includes("..") || /\s/.test(id)) return false;
   const lower = id.toLowerCase();
-  if (lower.startsWith("wireline/") || lower.startsWith("xai/") || lower.startsWith("grok/")) {
+  if (lower.startsWith("wireline/") || lower.startsWith("grok/")) {
     return false;
   }
   return /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id);

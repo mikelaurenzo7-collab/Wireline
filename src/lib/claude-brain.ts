@@ -5,17 +5,18 @@
  * maintainability. This file preserves backward compatibility so
  * existing `import * as claudeBrain from "./claude-brain"` and
  * named imports continue to work without changes.
- *
- * Module map:
- *   claude-models.ts     — Model constants, pricing, tiering, Vapi selection
- *   claude-audit.ts      — AsyncLocalStorage audit capture, cost estimation
- *   claude-client.ts     — Anthropic client singleton, availability check
- *   claude-structured.ts — runStructured, runCompletion, runCompletionResilient
- *   claude-tools.ts      — All TOOLS schemas (25+ tool definitions)
- *   claude-recipes.ts    — Convenience wrappers (brief, qualify, coach, etc.)
  */
 
 export * from "./claude-models";
+export {
+  VAPI_PREMIUM_MODEL,
+  VAPI_SHOWCASE_MODEL,
+  VAPI_SHOWCASE_PROVIDER,
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_TENANT_DEFAULT_PROVIDER,
+  VAPI_VOICE_FALLBACK_MODEL,
+  VAPI_VOICE_FALLBACK_PROVIDER,
+} from "./voice-model-defaults";
 export * from "./claude-audit";
 export * from "./claude-client";
 export * from "./claude-structured";
