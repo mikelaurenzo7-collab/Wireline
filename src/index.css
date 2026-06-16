@@ -321,9 +321,9 @@
      lg/xl/2xl/3xl are banned per wireline-design/SKILL.md. */
 
   /* Gemini Tier Gradients */
-  --color-gemini-gradient-start: #4285F4;
-  --color-gemini-gradient-mid: #9b5ce0;
-  --color-gemini-gradient-end: #EA4335;
+  --color-gemini-gradient-start: #7c3aed;
+  --color-gemini-gradient-mid: #8b5cf6;
+  --color-gemini-gradient-end: #a78bfa;
 
   /* Keyframes for micro-animations */
   --animate-float: float 6s ease-in-out infinite;
@@ -367,5 +367,50 @@
   background-clip: padding-box, border-box;
   background-origin: padding-box, border-box;
   background-image: linear-gradient(to right, var(--color-paper), var(--color-paper)), linear-gradient(to right, var(--color-gemini-gradient-start), var(--color-gemini-gradient-mid), var(--color-gemini-gradient-end));
+}
+
+/* Scroll viewport utility — consistent scrollable containers with native feel */
+.scroll-viewport {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+/* Subtle custom scrollbar for WebKit browsers */
+.scroll-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-viewport::-webkit-scrollbar-thumb {
+  background: rgba(155, 92, 224, 0.3);
+  border-radius: 3px;
+}
+
+.scroll-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 92, 224, 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark .scroll-viewport::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+.dark .scroll-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+/* Hide scrollbar visually but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 

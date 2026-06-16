@@ -1,59 +1,81 @@
-node_modules/
+```
+# iOS build artifacts and derived data
+*.ipa
+*.app
+*.framework
+*.dylib
+*.a
+*.o
+*.dSYM
+DerivedData/
 build/
-dist/
-coverage/
-.DS_Store
+Build/
+
+# iOS specific
+*.entitlements.signed
+*.mobileprovision
+
+# Swift compilation
+*.swiftmodule
+*.swiftdoc
+*.swiftsourceinfo
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+*.xcuserstate
+xcuserdata/
+project.xcworkspace/
+xcshareddata/
+
+# General build artifacts
+*.so
+*.dll
+*.exe
+*.out
+*.class
+
+# Dependencies
+node_modules/
+Pods/
+Carthage/
+vendor/bundle/
+gems/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+htmlcov/
+.coversrc
+.pytest_cache/
+.mypy_cache/
+
+# Logs
 *.log
-.env*
-!.env.example
+*.tmp
 
-# IDE — committed .vscode is intentional (shared workspace settings)
-.gitconfig
-
-# Generated image assets — built from scripts/*.svg via `npm run assets`.
-# Don't commit PNGs to avoid binary churn; the build pipeline produces them.
-public/og-image.png
-public/apple-touch-icon.png
-public/wireline-icon-192.png
-
-# Playwright
-playwright-report/
-test-results/
-marketing-kit/videos/
-marketing-kit/**/*.webm
-marketing-kit/screenshots/
-marketing-kit/zoom-crops/
-e2e/screenshots/*.png
-!e2e/screenshots/.gitkeep
-.vercel
-.env*.local
+# Environment
 .env
+.env.local
 .env.*
-*.env
-!.env.example
-credentials.json
-*.pem
-*.key
-.credentials
-.local/
 
-# Local dogfood QA output (scripts write here; do not commit screenshots/reports)
-terminals/dogfood-prod/
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Ad-hoc pack tarballs from local experiments
-npm.tgz
-stitch-sdk.tgz
-
-# Bundle visualizer output
-stats.html
-
-# AI agent, scratch scripts, and local logs
-.cursor/skills/
-scratch/
-terminals/
-mcps/
-vapi_logs.jsonl.gz
-*.jsonl.gz
-
-# TypeScript incremental build state
-*.tsbuildinfo
+# OS
+.DS_Store
+Thumbs.db
+```

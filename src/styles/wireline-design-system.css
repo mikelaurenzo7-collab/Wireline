@@ -1028,6 +1028,19 @@ body,
     8px 0 14px -10px rgba(0, 0, 0, 0.5);
 }
 
+/* ── SCROLLBAR UTILITIES ──
+ * Hide scrollbars when needed (panels, modals) and prevent layout shift. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
 /* ── ISOLATED SCROLL VIEWPORT ──
  * Inner containers that own their scroll axis. Prevents scroll chaining
  * so the locked app shell stays rigid while content scrolls freely.
@@ -1041,8 +1054,8 @@ body,
   scrollbar-color: rgba(107, 43, 153, 0.35) transparent;
 }
 .scroll-viewport::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 .scroll-viewport::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.03);
