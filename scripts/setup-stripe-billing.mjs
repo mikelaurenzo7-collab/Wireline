@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /**
- * Idempotent Stripe catalog bootstrap for Wireline plan tiers.
+ * Idempotent Stripe catalog bootstrap for Wireline launch plan tiers.
  *
- * Creates (or reuses via lookup_key):
+ * Creates (or reuses via launch-v2 lookup_key):
  *   - Billing meter: voice_minutes_overage
- *   - Monthly + annual + extra-agent licensed prices
+ *   - Monthly + annual + extra-agent licensed prices on the existing Wireline products
  *   - Per-tier metered voice-overage prices
  *
  * Usage:
  *   $env:STRIPE_SECRET_KEY = "sk_live_..."
- *   node scripts/setup-stripe-billing.mjs
+ *   node scripts/setup-stripe-billing.mjs > scripts/.stripe-env.generated.json
+ *   node scripts/sync-stripe-env-to-vercel.mjs
  *
  * Outputs JSON mapping env var names → price IDs for Vercel sync.
  */
@@ -17,40 +18,46 @@
 import Stripe from "stripe";
 
 const API_VERSION = "2026-04-22.dahlia";
+const CATALOG_VERSION = "launch_v2";
 const METER_EVENT_NAME = "voice_minutes_overage";
+const DEFAULT_OPENROUTER_MODEL = "x-ai/grok-4.3";
 
 const TIERS = [
   {
     id: "personal",
     name: "Personal",
-    monthly: 4900,
-    annual: 47000,
-    extraAgent: 4900,
-    overagePerMinCents: 20,
+    productId: "prod_Ubra4guJCt6bWZ",
+    monthly: 900,
+    annual: 8600,
+    extraAgent: 900,
+    overagePerMinCents: 25,
   },
   {
     id: "starter",
-    name: "Starter",
-    monthly: 14900,
-    annual: 143000,
-    extraAgent: 4500,
-    overagePerMinCents: 18,
+    name: "Business Starter",
+    productId: "prod_UbraxB8Tgjie5S",
+    monthly: 7900,
+    annual: 75800,
+    extraAgent: 1900,
+    overagePerMinCents: 21,
   },
   {
     id: "pro",
-    name: "Pro",
-    monthly: 49900,
-    annual: 479000,
-    extraAgent: 4000,
-    overagePerMinCents: 15,
+    name: "Business Pro",
+    productId: "prod_UbraSm3B5C4eT1",
+    monthly: 24900,
+    annual: 239000,
+    extraAgent: 2900,
+    overagePerMinCents: 18,
   },
   {
     id: "business",
-    name: "Business",
-    monthly: 149900,
-    annual: 1439000,
-    extraAgent: 3500,
-    overagePerMinCents: 14,
+    name: "Business Scale",
+    productId: "prod_UbrauGc4x1nHpX",
+    monthly: 69900,
+    annual: 671000,
+    extraAgent: 3900,
+    overagePerMinCents: 16,
   },
 ];
 
@@ -78,11 +85,23 @@ async function priceByLookupKey(lookupKey) {
   return list.data[0] ?? null;
 }
 
+async function assertProductExists(productId, tierName) {
+  try {
+    const product = await stripe.products.retrieve(productId);
+    if (product.deleted) throw new Error("product is deleted");
+    return product;
+  } catch (error) {
+    throw new Error(
+      `Missing Stripe product for ${tierName}: ${productId}. Recreate it in Stripe or update productId in scripts/setup-stripe-billing.mjs. ${error.message}`,
+    );
+  }
+}
+
 async function ensureMeter(eventName) {
   const list = await stripe.billing.meters.list({ limit: 100 });
   const existing = list.data.find((m) => m.event_name === eventName);
   if (existing) {
-    console.log(`  ✓ reuse meter ${eventName} → ${existing.id}`);
+    console.error(`  ✓ reuse meter ${eventName} → ${existing.id}`);
     return existing;
   }
 
@@ -98,7 +117,7 @@ async function ensureMeter(eventName) {
       event_payload_key: "value",
     },
   });
-  console.log(`  + create meter ${eventName} → ${created.id}`);
+  console.error(`  + create meter ${eventName} → ${created.id}`);
   return created;
 }
 
@@ -113,47 +132,35 @@ async function ensureLicensedPrice({
 }) {
   const existing = await priceByLookupKey(lookupKey);
   if (existing) {
-    console.log(`  ✓ reuse ${lookupKey} → ${existing.id}`);
+    console.error(`  ✓ reuse ${lookupKey} → ${existing.id}`);
     return existing;
   }
 
-  const body = {
+  const created = await stripe.prices.create({
     currency: "usd",
     unit_amount: unitAmount,
     lookup_key: lookupKey,
     transfer_lookup_key: true,
     nickname: `${productName} — ${priceType.replace(/_/g, " ")}`,
+    product: productId,
     metadata: {
       wireline_tier: tier,
       wireline_price_type: priceType,
+      wireline_catalog_version: CATALOG_VERSION,
     },
     recurring: {
       interval,
       usage_type: "licensed",
     },
-  };
-
-  if (productId) {
-    body.product = productId;
-  } else {
-    body.product_data = {
-      name: `Wireline ${productName}`,
-      metadata: {
-        wireline_tier: tier,
-        wireline_price_type: priceType,
-      },
-    };
-  }
-
-  const created = await stripe.prices.create(body);
-  console.log(`  + create ${lookupKey} → ${created.id}`);
+  });
+  console.error(`  + create ${lookupKey} → ${created.id}`);
   return created;
 }
 
 async function ensureOveragePrice({ lookupKey, tier, unitAmountCents, meterId, productId, productName }) {
   const existing = await priceByLookupKey(lookupKey);
   if (existing) {
-    console.log(`  ✓ reuse ${lookupKey} → ${existing.id}`);
+    console.error(`  ✓ reuse ${lookupKey} → ${existing.id}`);
     return existing;
   }
 
@@ -167,6 +174,7 @@ async function ensureOveragePrice({ lookupKey, tier, unitAmountCents, meterId, p
     metadata: {
       wireline_tier: tier,
       wireline_price_type: "voice_overage",
+      wireline_catalog_version: CATALOG_VERSION,
     },
     recurring: {
       interval: "month",
@@ -174,57 +182,65 @@ async function ensureOveragePrice({ lookupKey, tier, unitAmountCents, meterId, p
       meter: meterId,
     },
   });
-  console.log(`  + create ${lookupKey} → ${created.id}`);
+  console.error(`  + create ${lookupKey} → ${created.id}`);
   return created;
+}
+
+function lookupKey(tier, priceType) {
+  return `wireline_${CATALOG_VERSION}_${tier}_${priceType}`;
 }
 
 async function main() {
   const envOut = {
+    WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL: DEFAULT_OPENROUTER_MODEL,
     STRIPE_VOICE_OVERAGE_METER_EVENT_NAME: METER_EVENT_NAME,
   };
 
-  console.log(`Wireline Stripe billing setup (API ${API_VERSION})\n`);
+  console.error(`Wireline Stripe billing setup (API ${API_VERSION}, ${CATALOG_VERSION})\n`);
 
-  console.log("Billing meter");
+  console.error("Billing meter");
   const meter = await ensureMeter(METER_EVENT_NAME);
 
   for (const tier of TIERS) {
-    console.log(`\n${tier.name} (${tier.id})`);
+    console.error(`\n${tier.name} (${tier.id})`);
+    await assertProductExists(tier.productId, tier.name);
+
     const monthly = await ensureLicensedPrice({
-      lookupKey: `wireline_${tier.id}_monthly`,
+      lookupKey: lookupKey(tier.id, "monthly"),
       tier: tier.id,
       priceType: "monthly",
       unitAmount: tier.monthly,
+      productId: tier.productId,
       productName: tier.name,
       interval: "month",
     });
 
     const annual = await ensureLicensedPrice({
-      lookupKey: `wireline_${tier.id}_annual`,
+      lookupKey: lookupKey(tier.id, "annual"),
       tier: tier.id,
       priceType: "annual",
       unitAmount: tier.annual,
-      productId: monthly.product,
+      productId: tier.productId,
       productName: tier.name,
       interval: "year",
     });
 
     const extra = await ensureLicensedPrice({
-      lookupKey: `wireline_${tier.id}_extra_agent`,
+      lookupKey: lookupKey(tier.id, "extra_agent"),
       tier: tier.id,
       priceType: "extra_agent",
       unitAmount: tier.extraAgent,
-      productId: monthly.product,
+      productId: tier.productId,
       productName: tier.name,
       interval: "month",
     });
 
     const overage = await ensureOveragePrice({
-      lookupKey: `wireline_${tier.id}_voice_overage`,
+      lookupKey: lookupKey(tier.id, "voice_overage"),
       tier: tier.id,
       unitAmountCents: tier.overagePerMinCents,
       meterId: meter.id,
-      productId: monthly.product,
+      productId: tier.productId,
       productName: tier.name,
     });
 
@@ -234,9 +250,8 @@ async function main() {
     envOut[ENV_MAP.overage(tier.id)] = overage.id;
   }
 
-  console.log("\n--- Stripe env mapping (copy to Vercel) ---\n");
   console.log(JSON.stringify(envOut, null, 2));
-  console.log("\nEnterprise is contact-sales — leave STRIPE_ENTERPRISE_* empty.");
+  console.error("\nEnterprise is contact-sales — leave STRIPE_ENTERPRISE_* empty.");
 }
 
 main().catch((err) => {
