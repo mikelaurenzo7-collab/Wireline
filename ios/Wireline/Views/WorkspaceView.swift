@@ -84,11 +84,8 @@ struct WorkspaceView: View {
                 }
                 .padding(20)
                 .background(
-                    LinearGradient(
-                        colors: [Brand.purple, Brand.purpleDeep],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: 16)
+                    Brand.purple, // Sharp solid brand purple (matches web editorial CTAs)
+                    in: RoundedRectangle(cornerRadius: 12)
                 )
                 .shadow(color: Brand.purple.opacity(0.3), radius: 14, y: 5)
             }

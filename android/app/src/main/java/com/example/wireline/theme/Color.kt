@@ -2,10 +2,20 @@ package com.example.wireline.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+/**
+ * Legacy Material tokens — replaced by WirelineColors.kt (exact match to src/index.css).
+ * Kept for compile compatibility only; do not use in new UI.
+ */
+@Deprecated("Use WirelineColors from the same package")
+val Purple80 = WirelineColors.BrandDark
+@Deprecated("Use WirelineColors from the same package")
+val PurpleGrey80 = WirelineColors.BorderDark
+@Deprecated("Use WirelineColors from the same package")
+val Pink80 = WirelineColors.DestructiveDark
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+@Deprecated("Use WirelineColors from the same package")
+val Purple40 = WirelineColors.Brand
+@Deprecated("Use WirelineColors from the same package")
+val PurpleGrey40 = WirelineColors.Border
+@Deprecated("Use WirelineColors from the same package")
+val Pink40 = WirelineColors.Destructive

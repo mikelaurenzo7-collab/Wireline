@@ -37,6 +37,7 @@ extension Color {
 extension View {
     /// Apply the Wireline brand: purple accent tint everywhere, cream grouped
     /// background under list/native surfaces. Keeps native control shapes.
+    /// Razor-edge: rectangular surfaces use 0 radius (system lists respect this).
     func wirelineBrand() -> some View {
         self.tint(Brand.purple)
             .scrollContentBackground(.hidden)

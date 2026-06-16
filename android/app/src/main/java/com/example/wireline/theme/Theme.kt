@@ -10,24 +10,38 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(primary = Purple80, secondary = PurpleGrey80, tertiary = Pink80)
+/**
+ * Wireline Rich Cream + Purple theme (Grok 4.3 + wireline-design contract).
+ * Dark (velvet) is the editorial default. Desktop web is the primary viewport;
+ * native iOS/Android are the canonical mobile surfaces.
+ */
+private val DarkColorScheme = darkColorScheme(
+    primary = WirelineColors.BrandDark,
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    secondary = WirelineColors.Velvet,
+    onSecondary = WirelineColors.InkDark,
+    tertiary = WirelineColors.SignalDark,
+    background = WirelineColors.BackgroundDark,
+    onBackground = WirelineColors.InkDark,
+    surface = WirelineColors.Velvet,
+    onSurface = WirelineColors.InkDark,
+    error = WirelineColors.DestructiveDark,
+    onError = androidx.compose.ui.graphics.Color.White,
+)
 
-private val LightColorScheme =
-  lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-  )
+private val LightColorScheme = lightColorScheme(
+    primary = WirelineColors.Brand,
+    onPrimary = androidx.compose.ui.graphics.Color.White,
+    secondary = WirelineColors.PaperWarm,
+    onSecondary = WirelineColors.Ink,
+    tertiary = WirelineColors.Signal,
+    background = WirelineColors.Paper,
+    onBackground = WirelineColors.Ink,
+    surface = WirelineColors.PaperWarm,
+    onSurface = WirelineColors.Ink,
+    error = WirelineColors.Destructive,
+    onError = androidx.compose.ui.graphics.Color.White,
+)
 
 @Composable
 fun WirelineTheme(
