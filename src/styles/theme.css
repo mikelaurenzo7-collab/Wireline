@@ -1,28 +1,27 @@
 /* =====================================================
-   WIRELINE DESIGN SYSTEM v2 - Grok Certified
-   Creative · Clever · Professional · Highly Readable
+   WIRELINE DESIGN SYSTEM v3 - Grok Certified
+   Immense attention to detail + creative vision
    ===================================================== */
 
 :root {
-  /* ==========================================
-     DARK MODE (Primary - Default)
-     ========================================== */
+  /* Dark Mode - Primary Experience */
   --wl-bg: #0a0a0f;
-  --wl-bg-elevated: #121217;
+  --wl-bg-elevated: #111114;
   --wl-surface: #18181f;
   --wl-surface-2: #202028;
+  --wl-surface-glass: rgba(24, 24, 31, 0.7);
 
-  --wl-border: rgba(255, 255, 255, 0.09);
-  --wl-border-strong: rgba(255, 255, 255, 0.16);
+  --wl-border: rgba(255, 255, 255, 0.08);
+  --wl-border-strong: rgba(255, 255, 255, 0.14);
 
-  /* Text - High Readability */
+  /* Text Hierarchy - Excellent Readability */
   --wl-text: #f4f4f8;
   --wl-text-primary: #f4f4f8;
   --wl-text-secondary: #b8b8c2;
   --wl-text-tertiary: #8a8a95;
   --wl-text-muted: #6b6b78;
 
-  /* Brand Accents */
+  /* Brand */
   --wl-cyan: #00f0ff;
   --wl-cyan-hover: #33f5ff;
   --wl-magenta: #ff00aa;
@@ -33,29 +32,28 @@
   --wl-danger: #ef4444;
 
   /* Typography */
-  --wl-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --wl-font-sans: 'Inter', system-ui, sans-serif;
   --wl-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Sizing */
+  /* Radius */
   --wl-radius-sm: 4px;
   --wl-radius-md: 8px;
   --wl-radius-lg: 12px;
-  --wl-radius-xl: 16px;
 
-  /* Shadows */
+  /* Shadows & Glass */
   --wl-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --wl-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
   --wl-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+  --wl-glass-blur: blur(20px);
 }
 
-/* ==========================================
-   LIGHT MODE - Elegant & Professional
-   ========================================== */
+/* Light Mode - Elegant & Professional */
 [data-theme="light"] {
   --wl-bg: #f8f8fc;
   --wl-bg-elevated: #ffffff;
   --wl-surface: #ffffff;
   --wl-surface-2: #f1f1f6;
+  --wl-surface-glass: rgba(255, 255, 255, 0.7);
 
   --wl-border: rgba(0, 0, 0, 0.08);
   --wl-border-strong: rgba(0, 0, 0, 0.14);
@@ -76,39 +74,45 @@
   --wl-danger: #b91c1c;
 }
 
-/* Base */
 body {
   background-color: var(--wl-bg);
   color: var(--wl-text);
   font-family: var(--wl-font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* ==========================================
-   COMPONENT TOKENS
-   ========================================== */
+/* Glassmorphism (Dark mode only) */
+.glass {
+  background: var(--wl-surface-glass);
+  backdrop-filter: var(--wl-glass-blur);
+  border: 1px solid var(--wl-border);
+}
 
+/* Cards */
 .card {
   background-color: var(--wl-surface);
   border: 1px solid var(--wl-border);
   border-radius: var(--wl-radius-md);
   box-shadow: var(--wl-shadow-sm);
-  transition: transform 0.1s cubic-bezier(0.23, 1, 0.32, 1),
-              box-shadow 0.1s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+              box-shadow 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+              border-color 0.15s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--wl-shadow-md);
+  border-color: var(--wl-border-strong);
 }
 
+/* Buttons */
 .btn {
   border-radius: var(--wl-radius-sm);
   font-weight: 600;
-  transition: all 0.1s cubic-bezier(0.23, 1.0, 0.32, 1);
+  transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
 }
 
@@ -123,29 +127,54 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-secondary {
+  background-color: var(--wl-surface-2);
+  border: 1px solid var(--wl-border-strong);
+  color: var(--wl-text);
+}
+
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--wl-border-strong);
-  color: var(--wl-text);
 }
 
 .btn-ghost:hover {
   background: var(--wl-surface-2);
 }
 
-/* Tabs */
+/* Inputs */
+.input {
+  background-color: var(--wl-bg-elevated);
+  border: 1px solid var(--wl-border);
+  border-radius: var(--wl-radius-sm);
+  color: var(--wl-text);
+  transition: all 0.1s ease;
+}
+
+.input:focus {
+  border-color: var(--wl-cyan);
+  box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.1);
+  outline: none;
+}
+
+/* Tabs - Clever & Professional */
 .tab {
   position: relative;
-  padding: 12px 20px;
+  padding: 14px 22px;
   font-weight: 500;
   color: var(--wl-text-secondary);
   border-bottom: 3px solid transparent;
   transition: all 0.1s ease;
 }
 
+.tab:hover {
+  color: var(--wl-text);
+}
+
 .tab.active {
   color: var(--wl-text);
   border-bottom-color: var(--wl-cyan);
+  font-weight: 600;
 }
 
 /* Sidebar */
@@ -154,12 +183,12 @@ body {
   border-right: 1px solid var(--wl-border);
 }
 
-/* Navigation */
+/* Navigation Links */
 .nav-link {
   color: var(--wl-text-secondary);
-  transition: color 0.1s ease;
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: var(--wl-radius-sm);
+  transition: all 0.1s ease;
 }
 
 .nav-link:hover {
@@ -173,26 +202,17 @@ body {
   font-weight: 600;
 }
 
-/* Input */
-.input {
-  background-color: var(--wl-bg-elevated);
-  border: 1px solid var(--wl-border);
-  border-radius: var(--wl-radius-sm);
-  color: var(--wl-text);
-  transition: border-color 0.1s ease, box-shadow 0.1s ease;
-}
-
-.input:focus {
-  border-color: var(--wl-cyan);
-  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
-  outline: none;
-}
-
-/* Status Pills */
-.status-pill {
+/* Status */
+.status {
   font-size: 12px;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 9999px;
+  font-weight: 700;
   letter-spacing: 0.5px;
+  padding: 3px 12px;
+  border-radius: 9999px;
+}
+
+/* Focus Visible - Accessibility */
+*:focus-visible {
+  outline: 2px solid var(--wl-cyan);
+  outline-offset: 2px;
 }
