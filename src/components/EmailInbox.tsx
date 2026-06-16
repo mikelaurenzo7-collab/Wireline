@@ -792,7 +792,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   );
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="dark bg-background text-foreground h-full flex flex-col min-h-0 paper-texture">
       <ClientToolbar
         left={
           <span className="app-toolbar-stat">

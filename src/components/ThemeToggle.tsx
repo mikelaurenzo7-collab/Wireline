@@ -6,6 +6,7 @@
  * moon = dark, monitor = system). Uses the shadcn token system so it
  * looks correct against both light and dark TopBars.
  */
+import React, { forwardRef } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { cn } from "../lib/utils";
@@ -30,33 +31,40 @@ export function buildThemeToggleLabel(
   return `Theme: ${currentMode}. Activate ${nextMode}.`;
 }
 
-export default function ThemeToggle({ className, variant = "inverse", compact = false }: Props) {
-  const { theme, toggleTheme, resolvedTheme } = useTheme();
+const ThemeToggle = forwardRef<HTMLButtonElement, Props>(
+  ({ className, variant = "inverse", compact = false }, ref) => {
+    const { theme, toggleTheme, resolvedTheme } = useTheme();
 
-  const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
-  const label = buildThemeToggleLabel(theme, resolvedTheme);
+    const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
+    const label = buildThemeToggleLabel(theme, resolvedTheme);
 
-  return (
-    <ShadButton
-      type="button"
-      variant="chrome"
-      size="icon"
-      onClick={toggleTheme}
-      aria-label={label}
-      title={label}
-      data-testid="theme-toggle"
-      disableAnimations
-      className={cn(
-        compact
-          ? "touch-press hover:scale-[1.05] h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
-          : "touch-press hover:scale-[1.05] md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
-        variant === "inverse"
-          ? "chrome-muted chrome-inverse-hover focus-visible:ring-offset-transparent"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent",
-        className,
-      )}
-    >
-      <Icon className="w-4 h-4" aria-hidden />
-    </ShadButton>
-  );
-}
+    return (
+      <ShadButton
+        ref={ref}
+        type="button"
+        variant="chrome"
+        size="icon"
+        onClick={toggleTheme}
+        aria-label={label}
+        title={label}
+        data-testid="theme-toggle"
+        disableAnimations
+        className={cn(
+          compact
+            ? "touch-press hover:scale-[1.05] h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
+            : "touch-press hover:scale-[1.05] md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
+          variant === "inverse"
+            ? "chrome-muted chrome-inverse-hover focus-visible:ring-offset-transparent"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent",
+          className,
+        )}
+      >
+        <Icon className="w-4 h-4" aria-hidden />
+      </ShadButton>
+    );
+  }
+);
+
+ThemeToggle.displayName = "ThemeToggle";
+
+export default ThemeToggle;

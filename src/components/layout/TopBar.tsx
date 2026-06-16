@@ -343,31 +343,9 @@ export default function TopBar({
               )}
             </AnimatePresence>
           </div>
+          {/* Tablet navigation is now delegated to the drawer. */}
 
-          {/* Tablet (md → lg-1): horizontal nav strip so users with hamburger
-              viewports still see groups inline. Hidden on phone (drawer carries
-              nav) and on lg+ (Sidebar does). */}
-          <nav className="hidden md:flex lg:hidden items-center gap-0.5 ml-3 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
-            {navGroups.map((group, gIdx) => {
-              const visibleItems = group.items.filter(
-                (item) => !item.ownerOnly || user?.is_owner === true,
-              );
-              if (visibleItems.length === 0) return null;
-              return (
-                <React.Fragment key={group.label}>
-                  {gIdx > 0 && (
-                    <span
-                      aria-hidden="true"
-                      className="mx-0.5 h-4 w-px bg-brand/10 dark:bg-white/10 shrink-0"
-                    />
-                  )}
-                  {visibleItems.map((item) => renderNavItem(item))}
-                </React.Fragment>
-              );
-            })}
-          </nav>
-
-          <div className="flex-1 md:hidden" />
+          <div className="flex-1 lg:hidden" />
 
           {/* Right cluster */}
           <div className="flex items-center gap-2 shrink-0">
@@ -400,7 +378,7 @@ export default function TopBar({
                 variant="chrome"
                 disableAnimations
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="touch-press flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-1.5 py-2.5 md:py-1 min-h-[44px] h-auto hover:scale-[1.02]"
+                className="touch-press flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 px-1.5 h-8 hit-area-44 hover:scale-[1.02]"
                 aria-label="Account menu"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
@@ -523,7 +501,7 @@ export default function TopBar({
               size="icon"
               disableAnimations
               onClick={() => onDrawerChange(true)}
-              className="touch-press flex lg:hidden w-10 h-10 rounded-md hover:bg-brand/5 dark:hover:bg-white/5 hover:scale-[1.05]"
+              className="touch-press flex lg:hidden w-8 h-8 rounded-md hover:bg-brand/5 dark:hover:bg-white/5 hit-area-44 hover:scale-[1.05]"
               aria-label="Open navigation"
               aria-expanded={drawerOpen}
               aria-controls={drawerId}
@@ -552,7 +530,7 @@ export default function TopBar({
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 340, damping: 30 }}
+              transition={{ type: "spring", stiffness: 340, damping: 32 }}
               className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] focus:outline-none"
               role="dialog"
               aria-modal="true"
@@ -582,7 +560,7 @@ export default function TopBar({
                   size="icon"
                   disableAnimations
                   onClick={() => onDrawerChange(false)}
-                  className="touch-press w-11 h-11 rounded-md text-ink/70 hover:text-ink hover:scale-[1.05]"
+                  className="touch-press w-8 h-8 rounded-md text-ink/70 hover:text-ink hit-area-44 hover:scale-[1.05]"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
@@ -656,7 +634,7 @@ export default function TopBar({
                     disableAnimations
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="touch-press w-11 h-11 rounded-md text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 hover:scale-[1.05]"
+                    className="touch-press w-8 h-8 rounded-md text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 hit-area-44 hover:scale-[1.05]"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </ShadButton>

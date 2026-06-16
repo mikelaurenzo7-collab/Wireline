@@ -73,19 +73,6 @@
     // Pure decision logic, covered by their *.test.ts peers.
     "src/lib/wireline-agent-escalation.ts",
     "src/lib/wireline-agent-objections.ts",
-    // ─── Added 2026-Q2 audit follow-up (client-safe pure helpers) ──
-    // Agent seat entitlement math — plan cap + purchased extras.
-    "src/lib/agent-entitlements.ts",
-    // Outbound dialer E.164 normalisation + DNC matching.
-    "src/lib/dialer-compliance.ts",
-    // DNC import/list caps — shared by browser + compliance routes.
-    "src/lib/dnc-import-limits.ts",
-    // External URL allowlisting (http/https only) for rendered anchors.
-    "src/lib/safe-external-url.ts",
-    // Platform-operator gating helpers (owner-only admin tabs).
-    "src/lib/admin-access.ts",
-    // Director chat thread-key parsing.
-    "src/lib/director-thread-keys.ts",
     // Test suites corresponding to the strict-clean modules
     "src/lib/agent-runtime.test.ts",
     "src/lib/personality-vibes.test.ts",
@@ -106,11 +93,62 @@
     "src/lib/secret-vault.test.ts",
     "src/lib/tenant-quotas.test.ts",
     "src/lib/soc2-controls.test.ts",
+    // ─── Added 2026 Mobile & Pure-Helper hardening ───
+    "src/lib/agent-entitlements.ts",
+    "src/lib/dialer-compliance.ts",
+    "src/lib/dnc-import-limits.ts",
+    "src/lib/safe-external-url.ts",
+    "src/lib/admin-access.ts",
+    "src/lib/director-thread-keys.ts",
+    "src/lib/marketing-mobile.ts",
+    "src/lib/nav-counts-invalidate.ts",
+    "src/lib/wireline-app-chrome.ts",
+    "src/lib/wireline-signal-design.ts",
+    "src/lib/credit-wallet.ts",
+    "src/lib/apns-push.ts",
     "src/lib/agent-entitlements.test.ts",
     "src/lib/dialer-compliance.test.ts",
     "src/lib/dnc-import-limits.test.ts",
     "src/lib/safe-external-url.test.ts",
     "src/lib/admin-access.test.ts",
-    "src/lib/director-thread-keys.test.ts"
+    "src/lib/director-thread-keys.test.ts",
+    "src/lib/marketing-mobile.test.ts",
+    "src/lib/nav-counts-invalidate.test.ts",
+    "src/lib/wireline-app-chrome.test.ts",
+    "src/lib/wireline-signal-design.test.ts",
+    "src/lib/credit-wallet.test.ts",
+    "src/lib/apns-push.test.ts",
+    // ─── Added 2026-Q2 audit (Pure-Helper candidates check) ───────
+    "src/lib/app-url.ts",
+    "src/lib/brand-token.ts",
+    "src/lib/utils.ts",
+    "src/lib/wireline-painter-design.ts",
+    "src/lib/claude-response-helpers.ts",
+    "src/lib/client-design-brief-helpers.ts",
+    "src/lib/qa-constants.ts",
+    "src/lib/vapi-tool-call-utils.ts",
+    "src/lib/contact-profile.ts",
+    "src/lib/wireline-onboarding-copy.ts",
+    "src/lib/app-url.test.ts",
+    "src/lib/brand-token.test.ts",
+    "src/lib/utils.test.ts",
+    "src/lib/wireline-painter-design.test.ts",
+    "src/lib/vapi-tool-call-utils.test.ts",
+    "src/lib/contact-profile.test.ts",
+    "src/lib/director-feature-flags.ts",
+    "src/lib/internal-jwt-secret.ts",
+    "src/lib/action-types.ts",
+    "src/lib/api-row.ts",
+    "src/lib/apply-dom-layout.ts",
+    "src/lib/audit-summary.ts",
+    "src/lib/claude-brain.ts",
+    "src/lib/claude-supervisor-tools.ts",
+    "src/lib/demo-funnel-shared.ts",
+    "src/lib/design-preview-route.ts",
+    "src/lib/director-feature-flags.test.ts",
+    "src/lib/internal-jwt-secret.test.ts",
+    "src/lib/action-types.test.ts",
+    "src/lib/api-row.test.ts",
+    "src/lib/audit-summary.test.ts"
   ]
 }

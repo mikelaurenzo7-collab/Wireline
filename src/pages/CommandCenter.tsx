@@ -428,7 +428,7 @@ export default function LiveOps() {
       <ClientRouteViewport>
         <div
           className={clsx(
-            "flex flex-col flex-1 min-h-0 h-full max-w-[1680px] mx-auto w-full bg-paper paper-texture",
+            "dark bg-background text-foreground flex flex-col flex-1 min-h-0 h-full max-w-[1680px] mx-auto w-full paper-texture",
             WL_OPS_CLASSES.canvas,
           )}
         >

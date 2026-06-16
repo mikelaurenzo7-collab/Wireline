@@ -10,6 +10,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Crown, LifeBuoy, LogOut, Search, Settings } from "lucide-react";
 import { motion } from "motion/react";
 import WirelineMark from "../WirelineMark";
+import ThemeToggle from "../ThemeToggle";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAccount } from "../../contexts/AccountContext";
 import { useBranding } from "../../contexts/BrandingContext";
@@ -186,6 +187,19 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
           <Tooltip>
             <TooltipTrigger asChild>
+              <ThemeToggle
+                variant="default"
+                compact
+                className="w-full h-8 justify-center px-2 rounded-md text-white/60 hover:text-white hover:bg-white/[0.08] touch-press hover:scale-[1.02]"
+              />
+            </TooltipTrigger>
+            <TooltipContent side="right" className="ml-1">
+              Switch Theme
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
               <ShadButton
                 type="button"
                 variant="ghost"
@@ -237,7 +251,7 @@ function RailItem({ item, active, badge, shortcut }: RailItemProps) {
         <motion.span
           layoutId="rail-active-stripe"
           aria-hidden="true"
-          className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
+          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       )}
@@ -348,7 +362,7 @@ function FooterItem({ to, icon: Icon, label, active, dataTour }: FooterItemProps
         <motion.span
           layoutId="rail-footer-stripe"
           aria-hidden="true"
-          className="absolute -left-2 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
+          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand shadow-[0_0_10px] shadow-brand/50"
           transition={{ type: "spring", stiffness: 380, damping: 32 }}
         />
       )}

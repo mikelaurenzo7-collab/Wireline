@@ -319,7 +319,7 @@ export default function AppShell() {
   return (
     <div
       data-testid="client-console"
-      className="client-console flex flex-col min-h-dvh md:h-dvh md:max-h-dvh md:min-h-0 text-ink font-sans overflow-x-hidden overflow-y-auto md:overflow-hidden relative"
+      className="client-console flex flex-col h-dvh max-h-dvh text-ink font-sans overflow-hidden relative"
     >
       <a
         href="#main-content"
@@ -385,7 +385,7 @@ export default function AppShell() {
         id="main-content"
         tabIndex={-1}
         aria-labelledby={showPageContext ? "workspace-page-title" : undefined}
-        className="client-console__main flex-1 min-h-0 overflow-x-hidden overflow-y-auto md:overflow-hidden overscroll-y-contain relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+        className="client-console__main flex-1 min-h-0 overflow-hidden overscroll-y-contain relative flex flex-col z-10 focus:outline-none lg:pl-[var(--wireline-rail-w,56px)] transition-[padding-left] duration-[240ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
       >
         <EmailVerifyBanner />
         <TrialBanner />
@@ -405,7 +405,7 @@ export default function AppShell() {
         <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0 bg-paper/30 dark:bg-black/20">
           <div
             ref={stageRef}
-            className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-0 md:px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-4"
+            className="client-console__stage workspace-stage scroll-viewport flex-1 overflow-x-hidden overflow-y-auto relative z-10 min-h-0 px-0 md:px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-4"
           >
             <div
               className={cn(
