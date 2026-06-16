@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resetOwnerEmailCacheForTests } from "./auth-service";
+import { planById } from "./plan-catalog";
 import {
   defaultAiSpendBudgetUsdForTier,
   effectivePlanIdForEntitlements,
@@ -41,7 +42,9 @@ describe("plan-entitlements", () => {
     const proDaily = voiceMinutesDailyQuotaForTier("pro");
     const starterDaily = voiceMinutesDailyQuotaForTier("starter");
     expect(proDaily).toBeGreaterThan(starterDaily);
-    expect(proDaily).toBe(Math.ceil((5000 / 30) * 3.6));
+    // Mirrors voiceMinutesDailyQuotaForTier: max(10, ceil(monthly/30 * 3.6)).
+    const proMonthly = planById("pro")!.voice_minutes_monthly;
+    expect(proDaily).toBe(Math.max(10, Math.ceil((proMonthly / 30) * 3.6)));
   });
 
   it("assigns default AI spend budgets by tier", () => {

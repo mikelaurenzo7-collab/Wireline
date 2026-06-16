@@ -2,18 +2,13 @@
  * are the heterogeneous snake_case JSON rows from /api/agents and the per-agent
  * config endpoints, mirrored from FleetSettings. Shared client types belong in
  * contracts/api-types.ts and are tracked separately. */
-import type { ComponentType } from "react";
 import {
   BadgeCheck,
   Brain,
   CheckCircle2,
-  FileText,
-  Mail,
-  MessageCircle,
   Mic2,
   Phone,
   PlugZap,
-  Route,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -23,16 +18,28 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { computeAgentReadiness } from "./agent-readiness";
+import type { AccountType } from "../../lib/account-type";
 
 type TuningRailMapProps = {
   selectedAgent: any | null;
   agentConfig: any;
   integrationStatus: Record<string, { connected: boolean }> | null;
+  accountType?: AccountType;
 };
+
+// Sections a Personal account sees — a calm, essentials-only setup. The number
+// is optional (personal assistants are reached via the phone widget / Siri /
+// routing a live call), and there's no fleet/CRM/compliance surface.
+const PERSONAL_SECTION_IDS = new Set(["identity", "voice", "knowledge", "phone", "launch"]);
+// On Personal, the number is optional rather than a launch requirement, so it
+// never shows a "needs setup" nag.
+const PERSONAL_OPTIONAL_IDS = new Set(["phone"]);
 
 // Unified Tuning Rail sections (Studio consolidation 2026-06).
 // Training surfaces (Pronunciation, Flow, Simulator) now live here alongside
-// Identity/Voice/Knowledge — one rail, one workspace.
+// Identity / Voice / Knowledge — one rail, one workspace. This compact index is
+// a scannable table-of-contents + live readiness map; the detailed controls for
+// each section render in AgentConfigPanel directly below it.
 const sections = [
   {
     id: "identity",
@@ -50,7 +57,7 @@ const sections = [
     id: "phone",
     label: "Phone Number",
     icon: Phone,
-    hint: "Dedicated line, transfer number, routing, and fallback behavior.",
+    hint: "Dedicated line, transfer number, routing, and fallback.",
   },
   {
     id: "voice",
@@ -63,7 +70,7 @@ const sections = [
     id: "knowledge",
     label: "Knowledge",
     icon: Brain,
-    hint: "Website, FAQs, documents, policies, and product/service facts.",
+    hint: "Website, FAQs, documents, policies, and product facts.",
   },
   {
     id: "pronunciation",
@@ -75,13 +82,13 @@ const sections = [
     id: "integrations",
     label: "Integrations",
     icon: PlugZap,
-    hint: "CRM, calendar, email, SMS, Slack, Shopify, and role tools.",
+    hint: "CRM, calendar, email, SMS, Slack, Shopify, role tools.",
   },
   {
     id: "rules",
     label: "Rules",
     icon: ShieldCheck,
-    hint: "Escalation, compliance, do-not-say, approvals, and handoffs.",
+    hint: "Escalation, compliance, do-not-say, approvals, handoffs.",
   },
   {
     id: "flow",
@@ -103,168 +110,116 @@ const sections = [
   },
 ] as const;
 
-const voiceTuningIdeas = [
-  "Opening line",
-  "Silence timeout",
-  "Interruption style",
-  "Speaking speed",
-  "Empathy level",
-  "Objection tone",
-  "Transfer phrase",
-  "Compliance phrasing",
-] as const;
-
 export default function TuningRailMap({
   selectedAgent,
   agentConfig,
   integrationStatus,
+  accountType = "business",
 }: TuningRailMapProps) {
-  // Readiness is computed by the shared helper so the rail's X/6 score and the
-  // center canvas readiness stage can never disagree.
-  const { flags, score: launchScore } = computeAgentReadiness(
-    selectedAgent,
-    agentConfig,
-    integrationStatus,
-  );
-  // hasPhone feeds the launch score (inside the helper) but has no dedicated
-  // SignalTile, so it isn't destructured here.
-  const { hasVoice, hasKnowledge, hasRules, connectedIntegrations } = flags;
+  const isPersonal = accountType === "personal";
+  // Readiness is computed by the shared helper so the rail's X/Y score and the
+  // center canvas readiness ribbon can never disagree. The personal gate is
+  // shorter (no number / CRM requirement).
+  const {
+    score: launchScore,
+    total,
+    checks,
+    flags,
+    ready,
+  } = computeAgentReadiness(selectedAgent, agentConfig, integrationStatus, { accountType });
+  const { hasAgent, hasVoice, hasPhone, hasKnowledge, hasRules, connectedIntegrations } = flags;
+
+  // Live status per section — "done" lights the brand dot, "todo" shows a hollow
+  // ring, and "none" (informational or optional sections) shows nothing. This
+  // folds the old signal-tile grid into the index itself so the rail stays
+  // compact.
+  const statusFor: Record<string, "done" | "todo" | "none"> = {
+    identity: hasAgent ? "done" : "todo",
+    role: "none",
+    phone: isPersonal ? "none" : hasPhone ? "done" : "todo",
+    voice: hasVoice ? "done" : "todo",
+    knowledge: hasKnowledge ? "done" : "todo",
+    pronunciation: "none",
+    integrations: connectedIntegrations > 0 ? "done" : "todo",
+    rules: hasRules ? "done" : "todo",
+    flow: "none",
+    simulator: "none",
+    launch: ready ? "done" : "todo",
+  };
+
+  const visibleSections = isPersonal
+    ? sections.filter((s) => PERSONAL_SECTION_IDS.has(s.id))
+    : sections;
 
   return (
-    <div className="shrink-0 border-b border-border/80 bg-paper/75 dark:bg-velvet/45 px-3 py-3 space-y-3">
+    <div className="shrink-0 border-b border-border/80 bg-paper/75 px-3 py-3 dark:bg-velvet/45">
+      {/* Readiness header — the one number that matters + a calm progress bar. */}
       <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="wl-label text-brand tracking-[0.18em]">Agent tuning map</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted">
-              Voice-first setup for building an AI employee: identity, phone, voice, knowledge,
-              tools, rules, and final launch readiness.
-            </p>
-          </div>
-          <div className="shrink-0 rounded-full border border-brand/20 bg-brand/10 px-2 py-1 text-[11px] font-mono tabular-nums text-brand">
-            {launchScore}/6 ready
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-1.5">
-        {sections.map((section) => {
-          const Icon = section.icon;
-          return (
-            <div
-              key={section.id}
-              className={cn(
-                "rounded-md border px-2.5 py-2 transition-colors",
-                "featured" in section && section.featured
-                  ? "border-brand/25 bg-brand/[0.07]"
-                  : "border-border/80 bg-background/45 hover:border-brand/20",
-              )}
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Icon className="w-3 h-3 shrink-0 text-brand" />
-                <span className="wl-label text-ink truncate">{section.label}</span>
-              </div>
-              <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2">
-                {section.hint}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="rounded-md border border-border/80 bg-background/50 p-2.5 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 wl-label text-brand">
-            <Sparkles className="w-3 h-3" /> Voice lab
-          </span>
-          <span className="text-[11px] text-muted">primary surface</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {voiceTuningIdeas.map((idea) => (
-            <span
-              key={idea}
-              className="rounded-full border border-brand/15 bg-brand/[0.045] px-2 py-1 text-[11px] leading-none text-ink/75"
-            >
-              {idea}
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-brand" />
+            <span className="wl-label text-brand tracking-[0.18em]">
+              {isPersonal ? "Setup" : "Build index"}
             </span>
+          </span>
+          <span className="shrink-0 rounded-full border border-brand/20 bg-brand/10 px-2 py-0.5 font-mono text-[11px] tabular-nums text-brand">
+            {launchScore}/{total} ready
+          </span>
+        </div>
+        <div
+          className="mt-2 flex items-center gap-1"
+          role="img"
+          aria-label={`${launchScore} of ${total} launch checks complete`}
+        >
+          {checks.map((c) => (
+            <span
+              key={c.id}
+              className={cn("h-1 flex-1 rounded-full", c.done ? "bg-brand" : "bg-ink/[0.1]")}
+            />
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-        <SignalTile
-          icon={Phone}
-          label="Voice"
-          value={hasVoice ? "armed" : "needs setup"}
-          active={hasVoice}
-        />
-        <SignalTile
-          icon={MessageCircle}
-          label="SMS"
-          value="routing"
-          active={!!selectedAgent?.sms_enabled}
-        />
-        <SignalTile
-          icon={Mail}
-          label="Email"
-          value="relay"
-          active={selectedAgent?.channel === "email"}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-        <SignalTile
-          icon={FileText}
-          label="Knowledge"
-          value={hasKnowledge ? "loaded" : "empty"}
-          active={hasKnowledge}
-        />
-        <SignalTile
-          icon={PlugZap}
-          label="Tools"
-          value={connectedIntegrations > 0 ? `${connectedIntegrations} connected` : "not connected"}
-          active={connectedIntegrations > 0}
-        />
-        <SignalTile
-          icon={ShieldCheck}
-          label="Rules"
-          value={hasRules ? "defined" : "draft"}
-          active={hasRules}
-        />
-        <SignalTile
-          icon={Route}
-          label="Launch"
-          value={launchScore >= 5 ? "close" : "building"}
-          active={launchScore >= 5}
-        />
-      </div>
-    </div>
-  );
-}
-
-function SignalTile({
-  icon: Icon,
-  label,
-  value,
-  active,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  active?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-md border px-2 py-1.5 bg-background/45",
-        active ? "border-brand/25 text-ink" : "border-border/70 text-muted",
-      )}
-    >
-      <div className="flex items-center gap-1.5">
-        <Icon className={cn("w-2.5 h-2.5", active ? "text-brand" : "text-muted")} />
-        <span className="wl-label leading-none">{label}</span>
-      </div>
-      <p className="mt-1 font-mono tabular-nums uppercase tracking-[0.08em]">{value}</p>
+      {/* Section index — a tight, scannable map of everything you can tune, each
+          row carrying its live readiness state. */}
+      <ul className="mt-3 grid grid-cols-2 gap-1.5">
+        {visibleSections.map((section) => {
+          const Icon = section.icon;
+          const status = statusFor[section.id] ?? "none";
+          const featured = "featured" in section && section.featured;
+          const optional = isPersonal && PERSONAL_OPTIONAL_IDS.has(section.id);
+          return (
+            <li
+              key={section.id}
+              title={section.hint}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-2 transition-colors",
+                featured
+                  ? "border-brand/25 bg-brand/[0.07]"
+                  : "border-border/80 bg-background/45 hover:border-brand/25",
+              )}
+            >
+              <Icon className="h-3 w-3 shrink-0 text-brand" />
+              <span className="wl-label flex-1 truncate text-ink">
+                {optional ? "Number" : section.label}
+              </span>
+              {optional ? (
+                <span className="wl-label-muted shrink-0 normal-case tracking-normal text-[10px]">
+                  optional
+                </span>
+              ) : status !== "none" ? (
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 shrink-0 rounded-full",
+                    status === "done" ? "bg-brand" : "bg-ink/10 ring-1 ring-ink/15",
+                  )}
+                  aria-label={status === "done" ? "ready" : "needs setup"}
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

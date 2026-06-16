@@ -72,12 +72,18 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
         data-testid="site-header"
         className={cn(
           "fixed top-0 inset-x-0 z-50 transition-all duration-500",
-          scrolled ? "glass border-b border-ink/[0.06] shadow-sm shadow-brand/10" : "bg-transparent",
+          scrolled
+            ? "bg-paper/75 backdrop-blur-md border-b border-ink/[0.06] shadow-sm shadow-brand/10"
+            : "bg-transparent",
           className,
         )}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 lg:px-12 h-16">
-          <Link to={homeTo} className="flex items-center gap-2.5 group shrink-0" data-testid="header-logo">
+          <Link
+            to={homeTo}
+            className="flex items-center gap-2.5 group shrink-0"
+            data-testid="header-logo"
+          >
             <div className="w-8 h-8 flex items-center justify-center shrink-0 bg-brand">
               <WirelineMark className="w-4 h-4 text-white" strokeWidth={130} />
             </div>
@@ -86,9 +92,13 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             </span>
           </Link>
 
-          <nav className={cn("hidden md:flex items-center gap-1 shrink-0", isAuth && "md:hidden")} aria-label="Site">
+          <nav
+            className={cn("hidden md:flex items-center gap-1 shrink-0", isAuth && "md:hidden")}
+            aria-label="Site"
+          >
             {NAV_LINKS.map((link) => {
-              const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+              const isActive =
+                location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
               return (
                 <Link
                   key={link.to}
@@ -158,10 +168,17 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
       </header>
 
       {menuOpen && (
-        <div id="public-mobile-nav" className="md:hidden fixed inset-0 z-50 flex flex-col" role="dialog" aria-modal="true">
-          <button
+        <div
+          id="public-mobile-nav"
+          className="md:hidden fixed inset-0 z-50 flex flex-col"
+          role="dialog"
+          aria-modal="true"
+        >
+          <ShadButton
             type="button"
-            className="absolute inset-0 bg-ink/20 backdrop-blur-sm"
+            variant="ghost"
+            disableAnimations
+            className="absolute inset-0 h-auto w-full rounded-none bg-ink/20 backdrop-blur-sm hover:bg-ink/20"
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           />
@@ -171,13 +188,22 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 <p className="wl-label text-brand">Explore Wireline</p>
                 <h2 className="text-sm font-medium text-ink">Site navigation</h2>
               </div>
-              <ShadButton type="button" disableAnimations variant="ghost" size="icon" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="h-10 w-10 text-ink after:hidden">
+              <ShadButton
+                type="button"
+                disableAnimations
+                variant="ghost"
+                size="icon"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Close menu"
+                className="h-10 w-10 text-ink after:hidden"
+              >
                 <X aria-hidden="true" className="w-4 h-4" />
               </ShadButton>
             </div>
             <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
               {MOBILE_LINKS.map((link) => {
-                const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+                const isActive =
+                  location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
                 return (
                   <Link
                     key={link.to}
@@ -185,7 +211,9 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "flex items-center min-h-[48px] px-5 text-[15px] font-medium border-l-2 transition-colors touch-press",
-                      isActive ? "text-ink border-brand bg-brand/[0.06]" : "text-ink/80 border-transparent hover:bg-ink/[0.03]",
+                      isActive
+                        ? "text-ink border-brand bg-brand/[0.06]"
+                        : "text-ink/80 border-transparent hover:bg-ink/[0.03]",
                     )}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -196,16 +224,29 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             </nav>
             <div className="shrink-0 border-t border-ink/[0.08] p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-2.5">
               {signedIn && !isAuth ? (
-                <Link to="/agents" data-testid="header-dashboard-mobile" className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors" onClick={() => setMenuOpen(false)}>
+                <Link
+                  to="/agents"
+                  data-testid="header-dashboard-mobile"
+                  className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
                   Open the Studio
                   <ArrowRight aria-hidden="true" className="w-4 h-4" />
                 </Link>
               ) : (
                 <>
-                  <Link to="/signin" className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors" onClick={() => setMenuOpen(false)}>
+                  <Link
+                    to="/signin"
+                    className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
                     Sign in
                   </Link>
-                  <Link to="/pricing" className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors" onClick={() => setMenuOpen(false)}>
+                  <Link
+                    to="/pricing"
+                    className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
                     Start at $9
                     <ArrowRight aria-hidden="true" className="w-4 h-4" />
                   </Link>

@@ -8,7 +8,7 @@ import React from "react";
 
 import { Link, useLocation } from "react-router-dom";
 
-import { LayoutGrid, Users, Phone } from "lucide-react";
+import { LayoutGrid, Users, Phone, MoreHorizontal } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 

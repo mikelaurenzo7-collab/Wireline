@@ -34,11 +34,16 @@ describe("FleetSettings shell", () => {
     expect(SRC.indexOf("<DirectorWorkspace")).toBeLessThan(SRC.indexOf("<AgentConfigPanel"));
   });
 
-  it("anchors the canvas with an identity hero and docks the co-pilot smaller", () => {
-    // Identity (name + vitals) lives up top in the center canvas; the co-pilot
-    // is a focused chat docked at the bottom, not the whole center column.
+  it("anchors the canvas with an identity hero + readiness ribbon above the docked Assistant", () => {
+    // Identity (name + vitals) and a compact launch-readiness ribbon live up top
+    // in the center canvas; the Assistant is a focused chat docked below them and
+    // grows to fill the remaining height (no fixed cap, so it never clips on
+    // laptop/desktop viewports).
     expect(SRC).toContain("<AgentIdentityVitals");
-    expect(SRC.indexOf("<AgentIdentityVitals")).toBeLessThan(SRC.indexOf("<DirectorWorkspace"));
-    expect(SRC).toContain("max-h-[560px]");
+    expect(SRC).toContain("<AgentReadinessStage");
+    expect(SRC.indexOf("<AgentIdentityVitals")).toBeLessThan(SRC.indexOf("<AgentReadinessStage"));
+    expect(SRC.indexOf("<AgentReadinessStage")).toBeLessThan(SRC.indexOf("<DirectorWorkspace"));
+    // The Assistant dock grows to fill the canvas rather than a fixed-height pane.
+    expect(SRC).toContain("flex flex-1 flex-col min-h-0");
   });
 });

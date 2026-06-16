@@ -12,10 +12,9 @@ import "./styles/design-preview.css";
 // Authenticated-surface contrast hardening — must load AFTER the core CSS stack so its
 // theme-aware --color-brand-ink override and ghost-button rules win the cascade.
 import "./styles/auth-contrast.css";
-// Studio-specific desktop/laptop viewport corrections load last so they can
-// override the app shell's fixed-height split-pane defaults on /agents.
-import "./styles/studio-desktop-fix.css";
-// Open‑space preference – removed compact overrides
+// Studio desktop/laptop fit is now handled natively in the component layout
+// (proper min-h-0 flex chain + per-pane internal scroll), so the old
+// studio-desktop-fix.css override layer was removed.
 
 // Global error + rejection safety net for voice + async surfaces.
 // Vapi WebSocket drops, ElevenLabs streaming failures, recipe promise

@@ -22,6 +22,8 @@ interface Props {
   isDeletingAgent: string | null;
   agentStats: Record<string, any>;
   subscription: { status: string; max_agents: number | null };
+  /** Personal accounts get a single-assistant framing (no fleet/seed language). */
+  isPersonal?: boolean;
   onSelectAgent: (agent: any) => void;
   onDeleteAgent: (agent: { id: string; name: string }) => void;
   onCreateAgent: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
@@ -40,6 +42,7 @@ export default function AgentListPanel({
   isDeletingAgent,
   agentStats,
   subscription,
+  isPersonal = false,
   onSelectAgent,
   onDeleteAgent,
   onCreateAgent,
@@ -102,16 +105,18 @@ export default function AgentListPanel({
   return (
     <aside
       className={cn(
-        "w-full md:w-[350px] lg:w-[420px] border-b md:border-b-0 md:border-r border-black/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden bg-paper/40",
+        "w-full md:w-[300px] lg:w-[340px] border-b md:border-b-0 md:border-r border-black/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden bg-paper/40",
         selectedAgent && "hidden md:flex",
       )}
     >
       <div className="px-4 py-3 border-b border-black/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
-          <p className="app-section-title mb-0.5">Fleet · Agents</p>
+          <p className="app-section-title mb-0.5">
+            {isPersonal ? "Personal · Assistant" : "Fleet · Agents"}
+          </p>
           <h2 className="font-display italic text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
-            Your agents
+            {isPersonal ? "Your assistant" : "Your agents"}
           </h2>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -234,6 +239,7 @@ export default function AgentListPanel({
           isCreating={isCreating}
           agents={agents}
           subscription={subscription}
+          isPersonal={isPersonal}
           onCreate={onCreateAgent}
           onSeedFleet={onSeedFleet}
         />

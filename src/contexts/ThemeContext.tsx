@@ -4,7 +4,10 @@
  * `<html>` so the shadcn token system flips between the Rich Cream
  * light palette and the deep purple dark palette.
  *
- * Defaults to "dark" (editorial deep mode first) per 2026-06 Grok 4.3 audit.
+ * Defaults to "light" — Rich Cream is the primary, first-class mode. Dark and
+ * system preference remain one tap away via the theme toggle. This matches the
+ * pre-paint bootstrap in index.html (no stored preference → light), so there is
+ * no first-load theme flash.
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
@@ -22,14 +25,14 @@ const STORAGE_KEY = "wireline.theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === "light" || raw === "dark" || raw === "system") return raw;
   } catch {
-    /* localStorage unavailable — fall back to dark */
+    /* localStorage unavailable — fall back to light */
   }
-  return "dark";
+  return "light";
 }
 
 function resolveTheme(theme: Theme): "light" | "dark" {

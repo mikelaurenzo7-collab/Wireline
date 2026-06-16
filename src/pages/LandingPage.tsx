@@ -308,7 +308,7 @@ export default function LandingPage() {
                 <Link
                   to="/showcase"
                   data-testid="hero-showcase-link"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] glass px-8 py-3 rounded-full text-[14px] font-semibold text-ink transition-all duration-300 hover:bg-white/60 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)] active:scale-95"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] bg-paper/55 backdrop-blur-md px-8 py-3 rounded-full text-[14px] font-semibold text-ink transition-all duration-300 hover:bg-white/60 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)] active:scale-95"
                 >
                   Hear live demos
                   <ArrowUpRight className="h-4 w-4 shrink-0" />
@@ -789,7 +789,7 @@ export default function LandingPage() {
                       className={`mt-6 inline-flex min-h-11 items-center justify-center text-[13px] font-semibold transition-all duration-300 rounded-full hover:-translate-y-1 active:scale-95 ${
                         highlight
                           ? "bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] animate-pulse-glow"
-                          : "border border-ink/[0.16] glass text-ink hover:bg-white/60 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)]"
+                          : "border border-ink/[0.16] bg-paper/55 backdrop-blur-md text-ink hover:bg-white/60 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)]"
                       }`}
                     >
                       Start free trial
