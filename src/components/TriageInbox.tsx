@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Grok Certified - Unified design tokens
 const tokens = {
   darkBase: '#0a0a0f',
   cyan: '#00F5FF',
@@ -16,7 +15,7 @@ interface TriageItem {
   subject: string;
   preview: string;
   priority: 'high' | 'medium' | 'low';
-  status: 'new' | 'in_progress' | 'needs_review';
+  status: 'new' | 'in_progress' | 'resolved';
 }
 
 export function TriageInbox() {
@@ -29,9 +28,25 @@ export function TriageInbox() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  // Keyboard navigation
+  const updateItemStatus = (id: string, newStatus: TriageItem['status']) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, status: newStatus } : item
+    ));
+  };
+
+  const archiveItem = (id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+    if (selectedIndex >= items.length - 1) {
+      setSelectedIndex(Math.max(0, items.length - 2));
+    }
+  };
+
+  // Enhanced keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const currentItem = items[selectedIndex];
+      if (!currentItem) return;
+
       if (e.key === 'j' || e.key === 'ArrowDown') {
         setSelectedIndex(prev => Math.min(prev + 1, items.length - 1));
       }
@@ -39,15 +54,16 @@ export function TriageInbox() {
         setSelectedIndex(prev => Math.max(prev - 1, 0));
       }
       if (e.key.toLowerCase() === 'e') {
-        // Escalate
-        console.log('Escalate item', items[selectedIndex].id);
+        updateItemStatus(currentItem.id, 'in_progress');
       }
-      if (e.key.toLowerCase() === 'a') {
-        // Assign to agent
-        console.log('Assign to agent', items[selectedIndex].id);
+      if (e.key.toLowerCase() === 'r') {
+        updateItemStatus(currentItem.id, 'resolved');
+      }
+      if (e.key.toLowerCase() === 'x') {
+        archiveItem(currentItem.id);
       }
       if (e.key === ' ' || e.key === 'Enter') {
-        toggleSelect(items[selectedIndex].id);
+        toggleSelect(currentItem.id);
       }
     };
 
@@ -69,15 +85,29 @@ export function TriageInbox() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-4xl font-semibold tracking-tighter">Triage Inbox</h1>
-            <p className="text-white/60 text-sm mt-1">j/k to navigate • Space to select • e = escalate • a = assign to agent</p>
+            <p className="text-white/60 text-sm mt-1">
+              j/k ↓↑ • Space select • e = in progress • r = resolved • x = archive
+            </p>
           </div>
           
           {selectedItems.length > 0 && (
             <div className="flex gap-3">
-              <button className="px-5 py-2 rounded-[4px] bg-[#00F5FF] text-black font-medium text-sm">
-                Bulk Assign ({selectedItems.length})
+              <button 
+                onClick={() => {
+                  selectedItems.forEach(id => updateItemStatus(id, 'in_progress'));
+                  setSelectedItems([]);
+                }}
+                className="px-5 py-2 rounded-[4px] bg-[#00F5FF] text-black font-medium text-sm"
+              >
+                Bulk In Progress
               </button>
-              <button className="px-5 py-2 rounded-[4px] border border-white/20 text-sm">
+              <button 
+                onClick={() => {
+                  selectedItems.forEach(id => archiveItem(id));
+                  setSelectedItems([]);
+                }}
+                className="px-5 py-2 rounded-[4px] border border-white/20 text-sm"
+              >
                 Archive Selected
               </button>
             </div>
@@ -121,7 +151,7 @@ export function TriageInbox() {
                     <p className="text-white/60 text-sm line-clamp-2 pl-1">{item.preview}</p>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2 text-right">
+                  <div className="flex flex-col items-end gap-2 text-right min-w-[90px]">
                     <div className={`text-xs px-3 py-1 rounded-full whitespace-nowrap
                       ${item.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70'}
                     `}>
@@ -136,7 +166,7 @@ export function TriageInbox() {
         </div>
 
         <div className="mt-8 text-xs text-white/40">
-          Keyboard shortcuts active • This is a high-fidelity shell ready for real data connection
+          Fully functional keyboard-driven triage. Ready for real backend connection.
         </div>
       </div>
     </div>
