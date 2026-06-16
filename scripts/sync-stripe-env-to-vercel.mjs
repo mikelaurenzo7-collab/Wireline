@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 /**
- * Push Stripe price-ID env vars to the Wireline Vercel project.
+ * Push Stripe launch price-ID env vars to the Wireline Vercel project.
  * Sets type=plain (not sensitive) on production, preview, and development.
  *
  * Usage:
  *   $env:VERCEL_TOKEN = "<token>"
- *   node scripts/sync-stripe-env-to-vercel.mjs [path-to-env-json]
+ *   node scripts/setup-stripe-billing.mjs > scripts/.stripe-env.generated.json
+ *   node scripts/sync-stripe-env-to-vercel.mjs
  *
  * Default JSON path: scripts/.stripe-env.generated.json
- * Generate that file with: node scripts/setup-stripe-billing.mjs > scripts/.stripe-env.generated.json
- * Or pass inline mapping from setup output.
+ *
+ * Safety: the fallback intentionally leaves Stripe price IDs blank. The prior
+ * committed generated file pointed at the old $49/$149 catalog; syncing stale
+ * IDs would silently overcharge launch customers. Run stripe:setup first.
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -23,25 +26,25 @@ const TARGETS = ["production", "preview", "development"];
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const defaultJsonPath = join(__dirname, ".stripe-env.generated.json");
 
-/** Live catalog created 2026-05-29 — idempotent fallback if JSON missing. */
 const FALLBACK_ENV = {
-  STRIPE_PERSONAL_PRICE_ID: "price_1TcdrHJohDtfy3IkI1pBOd66",
-  STRIPE_PERSONAL_ANNUAL_PRICE_ID: "price_1TcdrMJohDtfy3IkrUn891Vn",
-  STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID: "price_1TcdrOJohDtfy3IkclTUxzyu",
-  STRIPE_STARTER_PRICE_ID: "price_1TcdrIJohDtfy3IkCCvhRnIW",
-  STRIPE_STARTER_ANNUAL_PRICE_ID: "price_1TcdrOJohDtfy3IkPSKs9Qoy",
-  STRIPE_STARTER_EXTRA_AGENT_PRICE_ID: "price_1TcdrOJohDtfy3IkS4KYbURB",
-  STRIPE_PRO_PRICE_ID: "price_1TcdrIJohDtfy3IkKn7YpKUh",
-  STRIPE_PRO_ANNUAL_PRICE_ID: "price_1TcdrOJohDtfy3Ike0CGfLfR",
-  STRIPE_PRO_EXTRA_AGENT_PRICE_ID: "price_1TcdrPJohDtfy3Ik8n5hwE3E",
-  STRIPE_BUSINESS_PRICE_ID: "price_1TcdrIJohDtfy3IkQf1qUHZ8",
-  STRIPE_BUSINESS_ANNUAL_PRICE_ID: "price_1TcdrOJohDtfy3Ik4UwJZBKO",
-  STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID: "price_1TcdrPJohDtfy3IkvqQiSAZM",
-  STRIPE_PERSONAL_OVERAGE_PRICE_ID: "price_1TceCFJohDtfy3Ikw1rM2JOD",
-  STRIPE_STARTER_OVERAGE_PRICE_ID: "price_1TceCGJohDtfy3IkbZDp6W0B",
-  STRIPE_PRO_OVERAGE_PRICE_ID: "price_1TceCHJohDtfy3IkRwAkG6h5",
-  STRIPE_BUSINESS_OVERAGE_PRICE_ID: "price_1TceCHJohDtfy3IkqFvoKTnu",
+  WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL: "x-ai/grok-4.3",
   STRIPE_VOICE_OVERAGE_METER_EVENT_NAME: "voice_minutes_overage",
+  STRIPE_PERSONAL_PRICE_ID: "",
+  STRIPE_PERSONAL_ANNUAL_PRICE_ID: "",
+  STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID: "",
+  STRIPE_STARTER_PRICE_ID: "",
+  STRIPE_STARTER_ANNUAL_PRICE_ID: "",
+  STRIPE_STARTER_EXTRA_AGENT_PRICE_ID: "",
+  STRIPE_PRO_PRICE_ID: "",
+  STRIPE_PRO_ANNUAL_PRICE_ID: "",
+  STRIPE_PRO_EXTRA_AGENT_PRICE_ID: "",
+  STRIPE_BUSINESS_PRICE_ID: "",
+  STRIPE_BUSINESS_ANNUAL_PRICE_ID: "",
+  STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID: "",
+  STRIPE_PERSONAL_OVERAGE_PRICE_ID: "",
+  STRIPE_STARTER_OVERAGE_PRICE_ID: "",
+  STRIPE_PRO_OVERAGE_PRICE_ID: "",
+  STRIPE_BUSINESS_OVERAGE_PRICE_ID: "",
 };
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
@@ -160,11 +163,11 @@ async function upsertEnv(key, value) {
 async function main() {
   const envMap = loadEnvMap(process.argv[2]);
   writeFileSync(defaultJsonPath, JSON.stringify(envMap, null, 2) + "\n");
-  console.log("Syncing Stripe env vars to Vercel (plain · all targets)…\n");
+  console.log("Syncing Stripe launch env vars to Vercel (plain · all targets)…\n");
 
   for (const [key, value] of Object.entries(envMap)) {
     if (!value) {
-      console.log(`  · skip ${key} (empty)`);
+      console.log(`  · skip ${key} (empty — run stripe:setup to generate a launch price ID)`);
       continue;
     }
     await upsertEnv(key, value);
