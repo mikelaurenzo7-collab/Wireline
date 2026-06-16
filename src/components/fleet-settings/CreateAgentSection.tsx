@@ -17,6 +17,8 @@ interface Props {
   isCreating: boolean;
   agents: any[];
   subscription: { status: string; max_agents: number | null };
+  /** Personal accounts create a single assistant — no fleet/seed language. */
+  isPersonal?: boolean;
   onCreate: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
   onSeedFleet: () => void;
 }
@@ -25,6 +27,7 @@ export default function CreateAgentSection({
   isCreating,
   agents: _agents,
   subscription: _subscription,
+  isPersonal = false,
   onCreate,
   onSeedFleet,
 }: Props) {
@@ -43,19 +46,23 @@ export default function CreateAgentSection({
   return (
     <motion.div layout className="pt-4 mt-4 border-t border-black/8 border-dashed space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="wl-label text-ink normal-case tracking-[0.18em]">Create a new agent</h3>
+        <h3 className="wl-label text-ink normal-case tracking-[0.18em]">
+          {isPersonal ? "Create your assistant" : "Create a new agent"}
+        </h3>
         <div className="flex items-center gap-1.5">
           <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
-          <ShadButton
-            type="button"
-            variant="outline"
-            size="sm"
-            disableAnimations
-            onClick={onSeedFleet}
-            className="rounded-full wl-label normal-case tracking-[0.18em] touch-press hover:scale-[1.02]"
-          >
-            <Sparkles className="w-3 h-3" /> Seed
-          </ShadButton>
+          {!isPersonal && (
+            <ShadButton
+              type="button"
+              variant="outline"
+              size="sm"
+              disableAnimations
+              onClick={onSeedFleet}
+              className="rounded-full wl-label normal-case tracking-[0.18em] touch-press hover:scale-[1.02]"
+            >
+              <Sparkles className="w-3 h-3" /> Seed
+            </ShadButton>
+          )}
         </div>
       </div>
 
@@ -75,7 +82,8 @@ export default function CreateAgentSection({
       <div className="space-y-3">
         <div className="space-y-1.5">
           <label className="wl-label-muted flex items-center gap-1.5">
-            <Briefcase className="w-2.5 h-2.5 text-brand" /> Business role
+            <Briefcase className="w-2.5 h-2.5 text-brand" />{" "}
+            {isPersonal ? "What it handles" : "Business role"}
           </label>
           <div className="relative">
             <Select value={newAgentRole} onValueChange={(v) => setNewAgentRole(v as RoleValue)}>

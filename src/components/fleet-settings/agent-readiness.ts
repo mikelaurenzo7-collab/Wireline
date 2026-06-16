@@ -9,14 +9,9 @@
  * map (right rail) consume this so the X/6 score and the per-capability state
  * can never drift apart.
  */
+import type { AccountType } from "../../lib/account-type";
 
-export type ReadinessCheckId =
-  | "agent"
-  | "voice"
-  | "phone"
-  | "knowledge"
-  | "rules"
-  | "integrations";
+export type ReadinessCheckId = "agent" | "voice" | "phone" | "knowledge" | "rules" | "integrations";
 
 export interface ReadinessCheck {
   id: ReadinessCheckId;
@@ -55,12 +50,13 @@ export function computeAgentReadiness(
   selectedAgent: any | null,
   agentConfig: any,
   integrationStatus: Record<string, { connected: boolean }> | null,
+  options?: { accountType?: AccountType },
 ): AgentReadiness {
+  const isPersonal = options?.accountType === "personal";
   const hasAgent = !!selectedAgent;
   const hasVoice = !!selectedAgent?.voice_id || selectedAgent?.channel === "email";
   const hasPhone = !!selectedAgent?.phone_number || !!selectedAgent?.transfer_phone;
-  const hasKnowledge =
-    !!selectedAgent?.website_url || (agentConfig?.knowledge?.length ?? 0) > 0;
+  const hasKnowledge = !!selectedAgent?.website_url || (agentConfig?.knowledge?.length ?? 0) > 0;
   const hasRules = (agentConfig?.directives?.length ?? 0) > 0 || !!agentConfig?.personality;
   const connectedIntegrations = Object.values(integrationStatus ?? {}).filter(
     (item) => item.connected,
@@ -81,13 +77,21 @@ export function computeAgentReadiness(
       todo: "Pick a voice",
       copilotHint: "Give this agent a warm, professional voice.",
     },
-    {
-      id: "phone",
-      label: "Number",
-      done: hasPhone,
-      todo: "Assign a phone number",
-      copilotHint: "Assign a dedicated phone number so callers can reach this agent.",
-    },
+    // A dedicated number is a Business concept. Personal assistants are reached
+    // by routing your own live call to them (widget / Siri / App Intents) or by
+    // having them place calls on your behalf — a number is optional, so it's not
+    // part of the personal readiness gate.
+    ...(isPersonal
+      ? []
+      : [
+          {
+            id: "phone" as const,
+            label: "Number",
+            done: hasPhone,
+            todo: "Assign a phone number",
+            copilotHint: "Assign a dedicated phone number so callers can reach this agent.",
+          },
+        ]),
     {
       id: "knowledge",
       label: "Knowledge",
@@ -102,13 +106,22 @@ export function computeAgentReadiness(
       todo: "Set the rules",
       copilotHint: "Set escalation rules and a do-not-say list for compliance.",
     },
-    {
-      id: "integrations",
-      label: "Tools",
-      done: connectedIntegrations > 0,
-      todo: "Connect a tool",
-      copilotHint: "Connect our CRM or calendar so it can take real action.",
-    },
+    // Connecting a CRM/calendar is a business move. A Personal account runs on
+    // its own line and rarely wires external tools — including this check would
+    // cap a personal agent below "ready" forever, so it's dropped from the
+    // personal gate. The connectedIntegrations flag is still computed for any
+    // surface that wants to display it.
+    ...(isPersonal
+      ? []
+      : [
+          {
+            id: "integrations" as const,
+            label: "Tools",
+            done: connectedIntegrations > 0,
+            todo: "Connect a tool",
+            copilotHint: "Connect our CRM or calendar so it can take real action.",
+          },
+        ]),
   ];
 
   const score = checks.filter((c) => c.done).length;

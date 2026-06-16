@@ -1,51 +1,55 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- agent + agentConfig are the
  * untyped snake_case API rows mirrored from FleetSettings. */
 /**
- * AgentReadinessStage — the focal center of the Studio canvas.
+ * AgentReadinessStage — the launch-readiness ribbon at the top of the Studio
+ * canvas.
  *
- * Sits between the identity hero and the docked co-pilot. Where there used to
- * be one muted sentence (hidden entirely on mobile), this gives the operator a
- * calm, always-visible read on where the focused agent stands: how close it is
- * to going live, the one thing to do next, and a nudge that the co-pilot below
- * can do it in plain English. Readiness comes from the shared
+ * Sits between the identity hero and the docked Assistant. A calm, always-visible
+ * read on where the focused agent stands: how close it is to going live, and the
+ * single next thing to do — without stealing the vertical space the Assistant
+ * needs to be the hero of the canvas. Readiness comes from the shared
  * `computeAgentReadiness` helper, so it always matches the rail's X/6 score.
  */
-import { ArrowDown, Check, Sparkles } from "lucide-react";
+import { ArrowDown, Check, Smartphone, Sparkles } from "lucide-react";
 import { computeAgentReadiness } from "./agent-readiness";
 import { cn } from "../../lib/utils";
+import type { AccountType } from "../../lib/account-type";
 
 interface AgentReadinessStageProps {
   agent: any;
   agentConfig: any;
   integrationStatus: Record<string, { connected: boolean }> | null;
+  accountType?: AccountType;
 }
 
 export default function AgentReadinessStage({
   agent,
   agentConfig,
   integrationStatus,
+  accountType = "business",
 }: AgentReadinessStageProps) {
+  const isPersonal = accountType === "personal";
   const { score, total, checks, nextStep, ready } = computeAgentReadiness(
     agent,
     agentConfig,
     integrationStatus,
+    { accountType },
   );
-  const name = agent?.name || "this agent";
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col items-center justify-center gap-5 px-6 py-6 text-center">
-      {/* Focal readiness — the one number that matters, with a calm segmented
-          bar instead of a heavy progress ring. */}
-      <div className="w-full max-w-sm">
-        <div className="flex items-baseline justify-center gap-2">
-          <span className="font-display text-4xl leading-none text-ink/90 tabular-nums">
+    <div className="shrink-0 border-b border-border/50 bg-paper/30 px-4 py-3 dark:bg-velvet/20">
+      <div className="flex items-center gap-4">
+        {/* The one number that matters. */}
+        <div className="flex shrink-0 items-baseline gap-1.5">
+          <span className="font-display text-2xl leading-none text-ink/90 tabular-nums">
             {score}
           </span>
-          <span className="text-sm text-muted/70">of {total} ready to go live</span>
+          <span className="text-[11px] text-muted/70">/ {total} ready</span>
         </div>
 
+        {/* Calm segmented bar — one segment per launch check. */}
         <div
-          className="mt-3 flex items-center justify-center gap-1.5"
+          className="flex min-w-0 flex-1 items-center gap-1"
           role="img"
           aria-label={`${score} of ${total} launch checks complete`}
         >
@@ -59,37 +63,34 @@ export default function AgentReadinessStage({
             />
           ))}
         </div>
+
+        {/* Status / next best action. */}
+        {ready ? (
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-brand/20 bg-brand/[0.06] px-2.5 py-1 wl-label text-brand">
+            <Check className="h-3.5 w-3.5" />
+            Ready to go live
+          </span>
+        ) : nextStep ? (
+          <span className="inline-flex shrink-0 items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-2.5 py-1">
+            <span className="wl-label text-brand">Next</span>
+            <span className="max-w-[220px] truncate text-[12px] text-ink/85">{nextStep.todo}</span>
+          </span>
+        ) : null}
       </div>
 
-      {ready ? (
-        // Fully armed — a confident, earned moment rather than a chore list.
-        <div className="flex flex-col items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand/12 text-brand">
-            <Check className="h-4 w-4" />
-          </span>
-          <p className="max-w-xs text-sm leading-relaxed text-ink/75">
-            <span className="text-ink/90">{name}</span> is fully configured and ready to take
-            live calls.
-          </p>
-        </div>
-      ) : (
-        // Next best action — names the single thing to do, and points at the
-        // co-pilot that can do it in plain English.
-        <div className="flex flex-col items-center gap-2.5">
-          {nextStep && (
-            <div className="inline-flex items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-3 py-1.5">
-              <span className="wl-label text-brand">Next</span>
-              <span className="text-sm text-ink/85">{nextStep.todo}</span>
-            </div>
-          )}
-          <p className="flex max-w-sm items-center justify-center gap-1.5 text-sm leading-relaxed text-muted/75">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand/60" />
-            Tell your co-pilot
-            <ArrowDown className="h-3.5 w-3.5 shrink-0 text-muted/50" />
-            or fine-tune in the rail
-          </p>
-        </div>
-      )}
+      {!ready ? (
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] leading-relaxed text-muted/75">
+          <Sparkles className="h-3 w-3 shrink-0 text-brand/60" />
+          Ask the Assistant below to handle it
+          <ArrowDown className="h-3 w-3 shrink-0 text-muted/50" />
+          or fine-tune it yourself in the rail on the right.
+        </p>
+      ) : isPersonal ? (
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] leading-relaxed text-muted/75">
+          <Smartphone className="h-3 w-3 shrink-0 text-brand/60" />
+          Use it from your phone — tap the widget, ask Siri, or route a live call to your assistant.
+        </p>
+      ) : null}
     </div>
   );
 }

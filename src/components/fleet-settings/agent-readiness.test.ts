@@ -79,4 +79,23 @@ describe("computeAgentReadiness", () => {
     expect(r.ready).toBe(true);
     expect(r.nextStep).toBeNull();
   });
+
+  it("uses a shorter personal gate (no number or tools requirement)", () => {
+    const r = computeAgentReadiness({ id: "a1", channel: "voice" }, {}, null, {
+      accountType: "personal",
+    });
+    expect(r.total).toBe(4);
+    expect(r.checks.map((c) => c.id)).toEqual(["agent", "voice", "knowledge", "rules"]);
+  });
+
+  it("reaches ready for a personal agent without a number or connected tool", () => {
+    const r = computeAgentReadiness(
+      { id: "a1", channel: "voice", voice_id: "v1" },
+      { personality: "warm", knowledge: [{ q: "y" }] },
+      null,
+      { accountType: "personal" },
+    );
+    expect(r.ready).toBe(true);
+    expect(r.score).toBe(4);
+  });
 });

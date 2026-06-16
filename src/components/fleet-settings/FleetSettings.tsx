@@ -11,6 +11,7 @@ import { clientLog } from "../../lib/client-log";
 import { AGENTS_CHANGED_EVENT } from "../../contexts/AgentsContext";
 import ConfirmModal from "../ConfirmModal";
 import { useToast } from "../../contexts/ToastContext";
+import { useAccount } from "../../contexts/AccountContext";
 import AgentTemplates from "../AgentTemplates";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
@@ -51,6 +52,12 @@ export default function FleetSettings() {
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // Personal vs Business Studio. A Personal account ($9, one agent, your own
+  // line) gets a calm two-pane, single-agent surface driven by the Assistant —
+  // no fleet switcher, no seed-fleet, and an essentials-only tuning index.
+  // Every other plan gets the full three-pane fleet cockpit.
+  const { accountType } = useAccount();
+  const isPersonal = accountType === "personal";
   // The Studio is one open canvas, not a tab wall. Default view is the build
   // canvas (your agents); templates are a starting point you summon, not the
   // front door. A template deploy lands back on the canvas (see ?agent= below).
@@ -431,7 +438,9 @@ export default function FleetSettings() {
             <span className="app-toolbar-stat wl-label text-muted/80 tracking-[0.28em]">
               {view === "templates"
                 ? "Start from a template"
-                : OPS_CHANNEL_TOOLBAR.fleet.agentsStat(agents.length)}
+                : isPersonal
+                  ? "Your assistant"
+                  : OPS_CHANNEL_TOOLBAR.fleet.agentsStat(agents.length)}
             </span>
           }
           actions={
@@ -476,26 +485,31 @@ export default function FleetSettings() {
             hidden={view !== "canvas"}
             className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden"
           >
-            {/* Left: fleet switcher. Collapsed once an agent is selected so the
-                co-pilot conversation and tuning controls get the prime space. */}
-            <AgentListPanel
-              agents={agents}
-              selectedAgent={selectedAgent}
-              isLoading={isLoading}
-              isCreating={isCreating}
-              isDeletingAgent={isDeletingAgent}
-              agentStats={agentStats}
-              subscription={subscription}
-              onSelectAgent={setSelectedAgent}
-              onDeleteAgent={(agent) => setDeleteConfirm(agent)}
-              onCreateAgent={({ id, name, channel, role }) => {
-                handleCreateAgent({ id, name, channel, role });
-              }}
-              onSeedFleet={() => setSeedConfirmOpen(true)}
-              onFetchPerformance={fetchAgentPerformance}
-              collapsed={listCollapsed && !!selectedAgent}
-              onToggleCollapse={() => setListCollapsed((v) => !v)}
-            />
+            {/* Left: fleet switcher (Business). Collapsed once an agent is
+                selected so the Assistant conversation and tuning controls get the
+                prime space. A Personal account has one agent, so the switcher only
+                surfaces for first-run creation, then steps out of the way. */}
+            {(!isPersonal || !selectedAgent) && (
+              <AgentListPanel
+                agents={agents}
+                selectedAgent={selectedAgent}
+                isLoading={isLoading}
+                isCreating={isCreating}
+                isDeletingAgent={isDeletingAgent}
+                agentStats={agentStats}
+                subscription={subscription}
+                isPersonal={isPersonal}
+                onSelectAgent={setSelectedAgent}
+                onDeleteAgent={(agent) => setDeleteConfirm(agent)}
+                onCreateAgent={({ id, name, channel, role }) => {
+                  handleCreateAgent({ id, name, channel, role });
+                }}
+                onSeedFleet={() => setSeedConfirmOpen(true)}
+                onFetchPerformance={fetchAgentPerformance}
+                collapsed={!isPersonal && listCollapsed && !!selectedAgent}
+                onToggleCollapse={isPersonal ? undefined : () => setListCollapsed((v) => !v)}
+              />
+            )}
 
             {/* Middle: the agent canvas. Identity up top, an open stage in the
                 center, and the Director co-pilot docked as a focused chat at the
@@ -503,7 +517,7 @@ export default function FleetSettings() {
                 controls live in the right rail. */}
             <section
               data-testid="studio-director-center"
-              className="min-h-[560px] md:min-h-0 md:flex-1 min-w-0 flex flex-col border-y md:border-y-0 md:border-x border-border/70 bg-background/45"
+              className="relative min-h-[60dvh] md:min-h-0 min-w-0 md:flex-1 flex flex-col border-y md:border-y-0 md:border-x border-border/70 bg-background/45"
               aria-label="Agent canvas"
             >
               {selectedAgent && (
@@ -513,7 +527,9 @@ export default function FleetSettings() {
                   <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border/50">
                     <div className="flex items-center gap-3 mb-3 min-w-0">
                       <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand/12 text-brand text-base font-semibold uppercase">
-                        {String(selectedAgent.name ?? "A").trim().charAt(0) || "A"}
+                        {String(selectedAgent.name ?? "A")
+                          .trim()
+                          .charAt(0) || "A"}
                       </div>
                       <div className="min-w-0">
                         <h2 className="truncate text-lg font-semibold leading-tight text-ink/90">
@@ -535,17 +551,20 @@ export default function FleetSettings() {
                     agent={selectedAgent}
                     agentConfig={agentConfig}
                     integrationStatus={integrationStatus}
+                    accountType={accountType}
                   />
                 </>
               )}
-              {/* Co-pilot — the Director, docked as a focused chat. Fills the
-                  canvas until an agent is selected, then anchors the bottom. */}
+              {/* The Wireline Assistant, docked as a focused chat. Fills the
+                  canvas as the first-run surface, then anchors below the
+                  identity + readiness ribbon once an agent is selected. It
+                  always grows to fill the remaining height and scrolls
+                  internally, so the canvas fits any laptop/desktop viewport
+                  without clipping. */}
               <div
                 className={cn(
-                  "flex flex-col min-h-0",
-                  selectedAgent
-                    ? "shrink-0 h-[46%] md:h-[44%] min-h-[300px] max-h-[560px] border-t border-border/60 bg-background/60"
-                    : "flex-1",
+                  "flex flex-1 flex-col min-h-0",
+                  selectedAgent && "border-t border-border/60 bg-background/60",
                 )}
               >
                 <DirectorWorkspace
@@ -559,20 +578,27 @@ export default function FleetSettings() {
                 the middle, and clients can still manually customize everything. */}
             <aside
               data-testid="studio-tuning-rail"
-              className="min-h-[620px] md:min-h-0 md:w-[420px] lg:w-[480px] 2xl:w-[560px] shrink-0 flex flex-col bg-paper/70 dark:bg-velvet/35"
+              className="shrink-0 flex min-h-0 flex-col overflow-hidden border-t md:border-t-0 border-border/70 bg-paper/70 dark:bg-velvet/35 md:w-[clamp(360px,30vw,420px)] xl:w-[clamp(380px,27vw,460px)]"
               aria-label="Agent tuning rail"
             >
-              <div className="shrink-0 border-b border-border/80 px-3 py-2.5 bg-paper/80 dark:bg-velvet/50">
-                <p className="wl-label text-brand tracking-[0.2em]">Tuning rail</p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
-                  Fine tune identity, role, phone, voice, SMS, email, knowledge, integrations,
-                  rules, and launch readiness.
+              <div className="shrink-0 border-b border-border/80 px-4 py-3 bg-paper/85 dark:bg-velvet/50">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="wl-label text-brand tracking-[0.22em]">
+                    {isPersonal ? "Personalize" : "Tune"}
+                  </p>
+                  <span className="wl-label-muted">Manual controls</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted">
+                  {isPersonal
+                    ? "Anything the Assistant sets up, you can adjust by hand — voice, what it knows, your number, and going live."
+                    : "Everything the Assistant can change, you can fine-tune by hand — identity, voice, model, knowledge, tools, rules, and launch readiness."}
                 </p>
               </div>
               <TuningRailMap
                 selectedAgent={selectedAgent}
                 agentConfig={agentConfig}
                 integrationStatus={integrationStatus}
+                accountType={accountType}
               />
               <AgentConfigPanel
                 selectedAgent={selectedAgent}
