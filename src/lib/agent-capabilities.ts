@@ -51,7 +51,7 @@ export const AGENT_TOOL_NAME_VALUES = [
   "crm_update_deal_stage",
   "shopify_apply_discount",
   "square_send_invoice",
-  // Device actions (Wingman personal-assistant tools — dispatched to the
+  // Device actions (Wireline personal-assistant tools — dispatched to the
   // operator's phone via push; opt-in per agent, never in a customer-facing
   // default role set).
   "navigate_to",
@@ -467,7 +467,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "ecommerce",
     integration: "square",
   },
-  // Device actions — Wingman personal-assistant tools. No integration; they
+  // Device actions — Wireline personal-assistant tools. No integration; they
   // dispatch a push to the operator's phone, which deep-links Maps / writes a
   // calendar event / opens music. Opt-in per agent via enabledTools.
   {

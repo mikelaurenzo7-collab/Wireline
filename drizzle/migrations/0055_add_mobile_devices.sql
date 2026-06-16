@@ -1,6 +1,6 @@
--- Wingman mobile devices: APNs / PushKit VoIP push targets.
+-- Assistant mobile devices: APNs / PushKit VoIP push targets.
 --
--- One row per registered iOS device per user. The native Wingman app
+-- One row per registered iOS device per user. The native Assistant app
 -- registers its PushKit VoIP token after sign-in so the backend can wake the
 -- device with a CallKit-reportable VoIP push when an inbound call arrives
 -- (see src/lib/apns-push.ts). The separate alert token is used for non-call

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- APNs environment for PushKit VoIP + alert pushes. Xcode flips this to
+	     "production" for release/TestFlight builds automatically. -->
+	<key>aps-environment</key>
+	<string>development</string>
+
+	<!-- Phase 2 (requires Apple approval before it can be signed; add then):
+	<key>com.apple.developer.carplay-communication</key>
+	<true/>
+	-->
+</dict>
+</plist>

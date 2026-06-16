@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Vapi tool args are vendor-defined JSON. */
 /**
- * Device-action tool handlers — Wingman's personal-assistant tools. When the
+ * Device-action tool handlers — Wireline's personal-assistant tools. When the
  * operator talks to their agent and asks it to navigate, set a reminder, or
  * play music, the agent calls one of these; we dispatch the action to the
  * operator's phone via push (the app deep-links Maps / writes EventKit / opens
@@ -10,7 +10,7 @@
  * Opt-in per agent (not in any default role set), so a customer-facing agent
  * never gains control of someone's phone.
  */
-import { notifyDeviceAction } from "../../lib/apns-push";
+import { notifyDeviceAction } from "../../lib/mobile-push";
 import type { ToolCallContext, ToolCallResult } from "./types";
 
 export async function handleDeviceToolCall(

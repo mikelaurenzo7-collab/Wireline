@@ -285,4 +285,13 @@ describe("mobile-routes", () => {
       expect(res.body.call.transcript).toBe("Hi there");
     });
   });
+
+  describe("GET /api/mobile/wallet", () => {
+    it("returns balance and ledger shape", async () => {
+      const res = await request(app).get("/api/mobile/wallet");
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty("balance_usd");
+      expect(res.body).toHaveProperty("ledger");
+    });
+  });
 });

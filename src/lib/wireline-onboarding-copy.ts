@@ -76,7 +76,7 @@ export const AUTH_PORTAL_SHOWCASE = {
     },
     {
       id: "director",
-      label: "Director wingman",
+      label: "Director co-pilot",
       detail: "Plan hires, coach agents, draft deliverables, and approve actions in one thread.",
     },
     {

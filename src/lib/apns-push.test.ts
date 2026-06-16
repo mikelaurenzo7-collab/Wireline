@@ -47,7 +47,7 @@ vi.mock("./server-context", () => ({
   drizzle: {},
 }));
 
-import { sendApnsPush, isApnsConfigured, notifyInboundCall, notifyCallRecap } from "./apns-push";
+import { sendApnsPush, isApnsConfigured, isStaleApnsReason } from "./apns-push";
 
 // A throwaway P-256 key in PKCS8 PEM — exactly the shape of an APNs .p8.
 const { privateKey } = crypto.generateKeyPairSync("ec", { namedCurve: "P-256" });
@@ -59,7 +59,7 @@ function configureApns() {
   process.env.APNS_KEY_ID = "KEY123";
   process.env.APNS_TEAM_ID = "TEAM123";
   process.env.APNS_AUTH_KEY = PEM;
-  process.env.APNS_BUNDLE_ID = "com.wireline.wingman";
+  process.env.APNS_BUNDLE_ID = "com.wireline.app";
   process.env.APNS_ENV = "production";
 }
 
@@ -105,7 +105,7 @@ describe("apns-push", () => {
     expect(headers[":method"]).toBe("POST");
     expect(headers[":path"]).toBe("/3/device/abc123token");
     expect(headers["apns-push-type"]).toBe("voip");
-    expect(headers["apns-topic"]).toBe("com.wireline.wingman.voip");
+    expect(headers["apns-topic"]).toBe("com.wireline.app.voip");
     expect(headers["apns-priority"]).toBe("10");
     // bearer <header>.<payload>.<signature> — three base64url segments.
     expect(headers.authorization).toMatch(/^bearer [\w-]+\.[\w-]+\.[\w-]+$/);
@@ -114,21 +114,15 @@ describe("apns-push", () => {
   it("alert pushes target the bundle topic, not the voip topic", async () => {
     configureApns();
     await sendApnsPush("tok", { aps: { alert: "hi" } }, "alert");
-    expect(h2.state.lastHeaders!["apns-topic"]).toBe("com.wireline.wingman");
+    expect(h2.state.lastHeaders!["apns-topic"]).toBe("com.wireline.app");
     expect(h2.state.lastHeaders!["apns-push-type"]).toBe("alert");
   });
 
-  it("notifyInboundCall short-circuits when APNs is unconfigured", async () => {
-    expect(isApnsConfigured()).toBe(false);
-    const res = await notifyInboundCall("user-1", { callId: "c1", fromNumber: "+15551234567" });
-    expect(res).toEqual({ sent: 0, devices: 0 });
-    expect(h2.connect).not.toHaveBeenCalled();
-  });
-
-  it("notifyCallRecap short-circuits when APNs is unconfigured", async () => {
-    const res = await notifyCallRecap("user-1", { callId: "c1", summary: "Booked a demo" });
-    expect(res).toEqual({ sent: 0, devices: 0 });
-    expect(h2.connect).not.toHaveBeenCalled();
+  it("flags only permanently-invalid reasons as stale", () => {
+    expect(isStaleApnsReason("BadDeviceToken")).toBe(true);
+    expect(isStaleApnsReason("Unregistered")).toBe(true);
+    expect(isStaleApnsReason("TooManyRequests")).toBe(false);
+    expect(isStaleApnsReason(undefined)).toBe(false);
   });
 
   it("maps an Apple error response to ok:false with the reason", async () => {

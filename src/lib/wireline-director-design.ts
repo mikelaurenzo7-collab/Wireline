@@ -638,7 +638,7 @@ export type DirectorStreamPhase = "connecting" | "preparing" | "thinking" | "rep
 export const DIRECTOR_PHASE_COPY: Record<DirectorStreamPhase, { headline: string; sub: string }> = {
   connecting: {
     headline: "Opening fleet coach",
-    sub: "Secure channel to your fleet wingman",
+    sub: "Secure channel to your fleet co-pilot",
   },
   preparing: {
     headline: "Loading fleet context",
@@ -649,7 +649,7 @@ export const DIRECTOR_PHASE_COPY: Record<DirectorStreamPhase, { headline: string
     sub: "Fleet context · integrations · operator intent",
   },
   replying: {
-    headline: "Packaging your wingman reply",
+    headline: "Packaging your co-pilot reply",
     sub: "Actions, approvals, and deliverables",
   },
   done: {
@@ -806,12 +806,12 @@ export const DIRECTOR_LIVE_STEP_COPY = {
   contextSub: "Thread history · settings · recent calls",
   integrationsOn: "Arming connected integrations",
   integrationsOnSub: "Shopify · CRM · Slack · calendar paths",
-  integrationsOff: "Core wingman mode",
+  integrationsOff: "Core co-pilot mode",
   integrationsOffSub: "Strategy · docs · orchestration — no OAuth required",
   executeTitle: "Staging approval cards",
   executeSub: "Calls · texts · emails · integration jobs",
   composeCoach: "Tailoring coach recommendations",
-  composeFleet: "Composing wingman response",
+  composeFleet: "Composing co-pilot response",
   composeSub: "Clear · actionable · ready to approve",
 } as const;
 

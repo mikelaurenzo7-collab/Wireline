@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Wireline Assistant</string>
+	<key>CFBundleName</key>
+	<string>Wireline</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<!-- Wake on inbound-call VoIP push, finish call audio in background, and
+	     receive non-call alerts. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>voip</string>
+		<string>audio</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Permission prompts (App Store rejects missing usage strings). -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Wireline needs the microphone so you can speak on calls your agents place or hand to you.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Wireline adds reminders to your calendar when an agent schedules a follow-up.</string>
+	<key>NSSiriUsageDescription</key>
+	<string>Wireline lets you ask Siri to place or hand off calls through your agents.</string>
+
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+		<!-- CarPlay Communication scene. The phone UI stays on SwiftUI's
+		     default scene; this only adds the CarPlay template surface, and it
+		     activates once Apple grants the carplay-communication entitlement. -->
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>WirelineCarPlay</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+
+	<!-- Deep-link scheme used by widgets / Control Center to open the app at a
+	     specific surface (e.g. wireline://ask). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.wireline.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wireline</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Allow checking whether the Shortcuts app is installed. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>shortcuts</string>
+	</array>
+</dict>
+</plist>

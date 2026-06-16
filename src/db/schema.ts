@@ -138,7 +138,7 @@ export const settings = pgTable("wireline_settings", {
   twilioManagerAlertNumber: text("twilio_manager_alert_number"),
   vapiPhoneInboundAgentId: text("vapi_phone_inbound_agent_id"),
   // Operator's personal callback number (E.164). When they "take" a live call
-  // from the Wingman app, the agent warm-transfers the caller here. iOS can't
+  // from the Wireline app, the agent warm-transfers the caller here. iOS can't
   // read the device's own number, so the user sets this once.
   handoffPhone: text("handoff_phone"),
   prospectingEnabled: boolean("prospecting_enabled").default(false),
@@ -1289,9 +1289,9 @@ export const intakeKeys = pgTable(
   }),
 );
 
-// 3.7 MOBILE DEVICES (Wingman — APNs / PushKit VoIP push targets)
+// 3.7 MOBILE DEVICES (Wireline — APNs / PushKit VoIP push targets)
 //
-// One row per registered iOS device per user. The native Wingman app
+// One row per registered iOS device per user. The native Wireline app
 // registers its PushKit VoIP token here after sign-in so the backend can
 // wake the device with a CallKit-reportable VoIP push when an inbound call
 // arrives (see src/lib/apns-push.ts). The separate alert token is used for
@@ -1308,6 +1308,10 @@ export const mobileDevices = pgTable(
     deviceId: text("device_id").notNull(),
     apnsVoipToken: text("apns_voip_token"),
     apnsAlertToken: text("apns_alert_token"),
+    // Android FCM registration token. One token per device handles both the
+    // wake (high-priority data message → ConnectionService incoming call) and
+    // alert (recap / device-action) shapes, unlike APNs' split voip/alert pair.
+    fcmToken: text("fcm_token"),
     platform: text("platform").default("ios").notNull(),
     appVersion: text("app_version"),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow(),
@@ -1320,7 +1324,7 @@ export const mobileDevices = pgTable(
   }),
 );
 
-// 3.8 PREPAID CREDIT WALLET (Wingman)
+// 3.8 PREPAID CREDIT WALLET (Wireline)
 //
 // Append-only ledger of USD credit movements. Positive deltas are top-ups
 // (purchased on the WEB via Stripe — never in-app, to stay clear of Apple's

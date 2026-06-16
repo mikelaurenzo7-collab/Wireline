@@ -120,9 +120,9 @@ describe("Wireline Director design contract", () => {
     expect(WL_APP_CLASSES.settingsPanel).not.toContain("aurora");
   });
 
-  it("phase copy stays Wireline-native (wingman / fleet, not generic chatbot)", () => {
+  it("phase copy stays Wireline-native (co-pilot / fleet, not generic chatbot)", () => {
     expect(DIRECTOR_PHASE_COPY.connecting.headline.toLowerCase()).toContain("coach");
-    expect(DIRECTOR_PHASE_COPY.replying.headline.toLowerCase()).toContain("wingman");
+    expect(DIRECTOR_PHASE_COPY.replying.headline.toLowerCase()).toContain("co-pilot");
     const coached = directorPhaseCopy({
       phase: "thinking",
       coachAgentName: "Ava",

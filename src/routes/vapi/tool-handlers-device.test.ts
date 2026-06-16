@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { ToolCallContext } from "./types";
 
 const notifyDeviceAction = vi.fn(async () => ({ sent: 0, devices: 0 }));
-vi.mock("../../lib/apns-push", () => ({
+vi.mock("../../lib/mobile-push", () => ({
   notifyDeviceAction: (...a: unknown[]) => notifyDeviceAction(...a),
 }));
 

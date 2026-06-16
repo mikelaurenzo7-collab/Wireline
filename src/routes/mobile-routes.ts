@@ -1,5 +1,5 @@
 /**
- * Mobile surface for the native Wingman iOS app (`/api/mobile/*`).
+ * Mobile surface for the native Wireline iOS app (`/api/mobile/*`).
  *
  * This is a thin adapter layer: every handler delegates to the same backend
  * primitives the web app uses (entitlements, the Vapi outbound client, the
@@ -60,8 +60,7 @@ router.get(
     try {
       const userId = req.user.id;
 
-      // These reads are independent — fetch them together to save round-trips
-      // on this app-bootstrap call.
+      // Three independent reads — run them concurrently.
       const [[profile], [row], [{ count }]] = await Promise.all([
         drizzle
           .select({ fullName: schema.users.fullName, email: schema.users.email })
@@ -202,12 +201,16 @@ router.get(
   },
 );
 
-// ── POST /api/mobile/devices — register/refresh APNs tokens ────────────────
+// ── POST /api/mobile/devices — register/refresh push tokens ────────────────
+// iOS registers a split APNs pair (voip + alert); Android registers a single
+// FCM token. The (user_id, device_id) unique key makes refresh an idempotent
+// upsert.
 const deviceSchema = z.object({
   device_id: z.string().min(1).max(200),
   apns_voip_token: z.string().min(1).max(512).optional(),
   apns_alert_token: z.string().min(1).max(512).optional(),
-  platform: z.literal("ios").default("ios"),
+  fcm_token: z.string().min(1).max(512).optional(),
+  platform: z.enum(["ios", "android"]).default("ios"),
   app_version: z.string().max(64).optional(),
 });
 
@@ -218,7 +221,8 @@ router.post(
   validate({ body: deviceSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { device_id, apns_voip_token, apns_alert_token, platform, app_version } = req.body;
+      const { device_id, apns_voip_token, apns_alert_token, fcm_token, platform, app_version } =
+        req.body;
       const now = new Date();
       await drizzle
         .insert(schema.mobileDevices)
@@ -227,6 +231,7 @@ router.post(
           deviceId: device_id,
           apnsVoipToken: apns_voip_token ?? null,
           apnsAlertToken: apns_alert_token ?? null,
+          fcmToken: fcm_token ?? null,
           platform,
           appVersion: app_version ?? null,
           lastSeenAt: now,
@@ -236,6 +241,8 @@ router.post(
           set: {
             apnsVoipToken: apns_voip_token ?? null,
             apnsAlertToken: apns_alert_token ?? null,
+            fcmToken: fcm_token ?? null,
+            platform,
             appVersion: app_version ?? null,
             lastSeenAt: now,
             updatedAt: now,
@@ -431,47 +438,6 @@ router.get(
   },
 );
 
-// ── GET /api/mobile/calls/:callId/detail — full recap incl. transcript ─────
-router.get(
-  "/api/mobile/calls/:callId/detail",
-  authenticateUser,
-  mobileRateLimiter,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { callId } = req.params;
-      // callLogs.id is a bigint — reject non-numeric ids before the PG cast.
-      if (!/^\d+$/.test(callId)) {
-        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
-      }
-      const [call] = await drizzle
-        .select({
-          id: schema.callLogs.id,
-          agentId: schema.callLogs.agentId,
-          direction: schema.callLogs.direction,
-          customerNumber: schema.callLogs.customerNumber,
-          durationSeconds: schema.callLogs.durationSeconds,
-          summary: schema.callLogs.summary,
-          transcript: schema.callLogs.transcript,
-          sentiment: schema.callLogs.sentiment,
-          outcomeTag: schema.callLogs.outcomeTag,
-          intentLabel: schema.callLogs.intentLabel,
-          recordingUrl: schema.callLogs.recordingUrl,
-          createdAt: schema.callLogs.createdAt,
-        })
-        .from(schema.callLogs)
-        .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)))
-        .limit(1);
-      if (!call) {
-        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
-      }
-      res.json({ call: { ...call, id: String(call.id) } });
-    } catch (err) {
-      log.error("GET /api/mobile/calls/:callId/detail failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Failed to load call.");
-    }
-  },
-);
-
 const e164 = z.string().regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)");
 
 // ── PUT /api/mobile/settings — operator's mobile-app preferences ───────────
@@ -564,9 +530,50 @@ router.post(
   },
 );
 
+// ── GET /api/mobile/calls/:callId/detail — full recap incl. transcript ─────
+router.get(
+  "/api/mobile/calls/:callId/detail",
+  authenticateUser,
+  mobileRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { callId } = req.params;
+      // callLogs.id is a bigint — reject non-numeric ids before the PG cast.
+      if (!/^\d+$/.test(callId)) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
+      }
+      const [call] = await drizzle
+        .select({
+          id: schema.callLogs.id,
+          agentId: schema.callLogs.agentId,
+          direction: schema.callLogs.direction,
+          customerNumber: schema.callLogs.customerNumber,
+          durationSeconds: schema.callLogs.durationSeconds,
+          summary: schema.callLogs.summary,
+          transcript: schema.callLogs.transcript,
+          sentiment: schema.callLogs.sentiment,
+          outcomeTag: schema.callLogs.outcomeTag,
+          intentLabel: schema.callLogs.intentLabel,
+          recordingUrl: schema.callLogs.recordingUrl,
+          createdAt: schema.callLogs.createdAt,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.id, callId), eq(schema.callLogs.userId, req.user.id)))
+        .limit(1);
+      if (!call) {
+        return res.status(404).json({ code: "NOT_FOUND", error: "Call not found." });
+      }
+      res.json({ call: { ...call, id: String(call.id) } });
+    } catch (err) {
+      log.error("GET /api/mobile/calls/:callId/detail failed", { error: getErrorMessage(err) });
+      throw AppError.fromHttpStatus(500, "Failed to load call.");
+    }
+  },
+);
+
 // ── GET /api/mobile/wallet — prepaid credit balance + recent ledger ────────
 // READ-ONLY. Top-ups happen on the web (Stripe); the app never sells credits
-// in-app, which keeps Wingman clear of Apple's IAP requirement.
+// in-app, which keeps Wireline clear of Apple's IAP requirement.
 router.get(
   "/api/mobile/wallet",
   authenticateUser,

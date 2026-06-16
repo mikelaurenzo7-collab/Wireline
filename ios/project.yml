@@ -1,22 +1,22 @@
-# XcodeGen spec for the Wingman iOS app.
+# XcodeGen spec for the Wireline iOS app.
 #
 # Generate the Xcode project from this file (keeps a giant .pbxproj out of git
 # and pins signing to YOUR Apple team):
 #
 #   brew install xcodegen      # one-time
 #   cd ios && xcodegen generate
-#   open Wingman.xcodeproj
+#   open Wireline.xcodeproj
 #
 # Then set your Development Team in Signing & Capabilities and run on a real
 # device (PushKit VoIP needs hardware). Bump the deployment target if you like.
 #
 # NOTE: the CarPlay Communication entitlement
 # (com.apple.developer.carplay-communication) is intentionally NOT in
-# Wingman.entitlements — it must be granted by Apple before it can be signed,
+# Wireline.entitlements — it must be granted by Apple before it can be signed,
 # and including it un-granted breaks the build. Add it (and a CarPlay scene
 # delegate) in Phase 2 once Apple approves the request.
 
-name: Wingman
+name: Wireline
 options:
   bundleIdPrefix: com.wireline
   deploymentTarget:
@@ -31,35 +31,32 @@ settings:
     DEVELOPMENT_TEAM: "" # ← set your 10-char Apple Team ID
 
 targets:
-  Wingman:
+  Wireline:
     type: application
     platform: iOS
     sources:
-      - path: Wingman
-      - path: WingmanShared # snapshot types shared with the widget extension
+      - path: Wireline
     dependencies:
-      - target: WingmanWidgets
+      - target: WirelineWidgets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.wireline.wingman
-        PRODUCT_NAME: Wingman
-        INFOPLIST_FILE: Wingman/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Wingman/Wingman.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.wireline.app
+        PRODUCT_NAME: Wireline
+        INFOPLIST_FILE: Wireline/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Wireline/Wireline.entitlements
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1" # iPhone (CarPlay rides the phone target)
         ENABLE_USER_SCRIPT_SANDBOXING: YES
 
-  WingmanWidgets:
+  WirelineWidgets:
     type: app-extension
     platform: iOS
     sources:
-      - path: WingmanWidgets
-      - path: WingmanShared # same snapshot types, read-only in the extension
+      - path: WirelineWidgets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.wireline.wingman.widgets
-        PRODUCT_NAME: WingmanWidgets
-        INFOPLIST_FILE: WingmanWidgets/Info.plist
-        CODE_SIGN_ENTITLEMENTS: WingmanWidgets/WingmanWidgets.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.wireline.app.widgets
+        PRODUCT_NAME: WirelineWidgets
+        INFOPLIST_FILE: WirelineWidgets/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1"

@@ -1,7 +1,7 @@
 /**
  * account-type.ts — Personal vs Business account mode.
  *
- * A Wingman account is one of two shapes:
+ * A Wireline account is one of two shapes:
  *   - "personal"  — one agent on your own line. You shape it in the Studio and
  *                   reach people over your Channels (phone, email, text). No
  *                   fleet, no supervisor cockpit, no SDR pipeline.
@@ -20,7 +20,7 @@ export type AccountType = "personal" | "business";
 /**
  * Nav groups that only make sense for a business. "Command" is the fleet run
  * surface — supervisor cockpit, cross-agent intelligence, and the SDR pipeline
- * — none of which a personal, single-agent Wingman needs. Studio, Channels, and
+ * — none of which a personal, single-agent Wireline needs. Studio, Channels, and
  * Admin are shared by both modes.
  */
 const BUSINESS_ONLY_GROUPS = new Set<string>(["Command"]);

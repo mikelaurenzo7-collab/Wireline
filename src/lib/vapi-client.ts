@@ -676,7 +676,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
 /**
  * Transfer an in-progress call to a phone number via Vapi's live call-control
  * URL (monitor.controlUrl). This is how the operator "takes" a call from the
- * Wingman app: the agent warm-transfers the live caller to the operator's
+ * Wireline app: the agent warm-transfers the live caller to the operator's
  * number. Uses Vapi only — no Twilio. The control URL is pre-authenticated by
  * Vapi (token embedded), so no Bearer is attached.
  *
