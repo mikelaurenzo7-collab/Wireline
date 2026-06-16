@@ -5,5 +5,6 @@ import SwiftUI
 struct WirelineWidgetBundle: WidgetBundle {
     var body: some Widget {
         AskWirelineWidget()
+        AssistantWidget()
     }
 }

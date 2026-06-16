@@ -2,14 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- APNs environment for PushKit VoIP + alert pushes. Xcode flips this to
-	     "production" for release/TestFlight builds automatically. -->
-	<key>aps-environment</key>
-	<string>development</string>
+        <!-- APNs environment for PushKit VoIP + alert pushes. Xcode flips this to
+             "production" for release/TestFlight builds automatically. -->
+        <key>aps-environment</key>
+        <string>development</string>
 
-	<!-- Phase 2 (requires Apple approval before it can be signed; add then):
-	<key>com.apple.developer.carplay-communication</key>
-	<true/>
-	-->
+        <!-- App Group shared with the WirelineWidgets extension. The app writes a
+             snapshot here (recent calls, follow-up count, balance) that the widgets
+             read. Must match WirelineWidgets.entitlements and
+             WirelineWidgetShared.appGroupId. -->
+        <key>com.apple.security.application-groups</key>
+        <array>
+                <string>group.com.wireline.assistant</string>
+        </array>
+
+        <!-- Phase 2: add the CarPlay Communication entitlement only after Apple
+             grants it in the Developer portal; ungranted entitlements break signing. -->
 </dict>
 </plist>
