@@ -46,7 +46,9 @@ describe("STRIPE_PLANS catalog shape", () => {
   it("enterprise is gated as 'contact sales' (price 0 sentinel)", () => {
     const ent = STRIPE_PLANS.find((p) => p.id === "enterprise")!;
     expect(ent.price_usd_monthly).toBe(0);
-    expect(ent.max_agents).toBeGreaterThanOrEqual(100);
+    // Enterprise is the top of the ladder — at least the Scale agent count,
+    // with custom bundles negotiated via sales.
+    expect(ent.max_agents).toBeGreaterThanOrEqual(25);
   });
 });
 

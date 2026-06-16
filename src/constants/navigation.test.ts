@@ -1,21 +1,19 @@
 /**
  * navigation.test.ts
- * Locks the authenticated app IA: Studio, Command, Channels, Admin.
- * Studio leads — the build-first pivot (the Studio is also the authed home).
+ * Locks the authenticated app IA: Build, Run, Channels, Admin.
+ * Build leads — the build-first pivot (the Studio is also the authed home).
  */
 import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
   it("ships exactly four logical groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Studio", "Command", "Channels", "Admin"]);
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Build", "Run", "Channels", "Admin"]);
   });
 
   it("desktop rail is a single flat list without Admin footer items", () => {
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).toEqual([
       "/agents",
-      "/chat",
-      "/training",
       "/ops",
       "/insights",
       "/pipeline",
@@ -24,21 +22,19 @@ describe("Top-bar navigation IA", () => {
       "/sms",
     ]);
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
-      "Studio",
-      "Studio",
-      "Studio",
-      "Command",
-      "Command",
-      "Command",
+      "Build",
+      "Run",
+      "Run",
+      "Run",
       "Channels",
       "Channels",
       "Channels",
     ]);
   });
 
-  it("Command group holds the cockpit, intelligence, and pipeline surfaces", () => {
-    const command = NAV_GROUPS.find((g) => g.label === "Command")!;
-    expect(command.items.map((i) => i.path)).toEqual(["/ops", "/insights", "/pipeline"]);
+  it("Run group holds the cockpit, intelligence, and pipeline surfaces", () => {
+    const run = NAV_GROUPS.find((g) => g.label === "Run")!;
+    expect(run.items.map((i) => i.path)).toEqual(["/ops", "/insights", "/pipeline"]);
   });
 
   it("Channels group has Phone, Email, SMS", () => {
@@ -46,10 +42,10 @@ describe("Top-bar navigation IA", () => {
     expect(channels.items.map((i) => i.path)).toEqual(["/phone", "/email", "/sms"]);
   });
 
-  it("Studio group leads with the canvas, chat coaching, and training", () => {
-    const studio = NAV_GROUPS.find((g) => g.label === "Studio")!;
-    expect(studio.items.map((i) => i.path)).toEqual(["/agents", "/chat", "/training"]);
-    expect(NAV_GROUPS[0].label).toBe("Studio");
+  it("Build group leads with the agent canvas", () => {
+    const build = NAV_GROUPS.find((g) => g.label === "Build")!;
+    expect(build.items.map((i) => i.path)).toEqual(["/agents"]);
+    expect(NAV_GROUPS[0].label).toBe("Build");
   });
 
   it("Admin group keeps Settings in footer-only navigation", () => {
@@ -82,9 +78,10 @@ describe("Top-bar navigation IA", () => {
     expect(paths).not.toContain("/triage");
   });
 
-  it("Training matches legacy /knowledge route", () => {
-    const training = SIDEBAR_NAV_ITEMS.find((i) => i.path === "/training")!;
-    expect(training.matches).toContain("/knowledge");
+  it("Training/Knowledge are route redirects, not standalone rail items", () => {
+    const paths = SIDEBAR_NAV_ITEMS.map((i) => i.path);
+    expect(paths).not.toContain("/training");
+    expect(paths).not.toContain("/knowledge");
   });
 
   it("Cockpit is not a separate sidebar item (merged into Live Ops)", () => {
@@ -93,9 +90,9 @@ describe("Top-bar navigation IA", () => {
   });
 
   it("keyboard shortcuts align with primary nav paths", () => {
+    expect(APP_KEYBOARD_SHORTCUTS.A).toBe("/agents");
     expect(APP_KEYBOARD_SHORTCUTS.D).toBe("/ops");
     expect(APP_KEYBOARD_SHORTCUTS.T).toBe("/ops?tab=triage");
-    expect(APP_KEYBOARD_SHORTCUTS.N).toBe("/training");
     expect(APP_KEYBOARD_SHORTCUTS.P).toBe("/phone");
   });
 

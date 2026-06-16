@@ -2,6 +2,9 @@
  * voice-usage.billing-matrix.test.ts
  * Money-path math for voice-minute overage — must match getVoiceUsageSnapshot
  * and trackVoiceMinutes delta logic in voice-usage.ts.
+ *
+ * All boundary values are derived from plan-catalog (the single source of truth
+ * for pricing) so this matrix can never drift when the price ladder is retuned.
  */
 import { describe, expect, it } from "vitest";
 import { planById, type StripePlanId } from "./plan-catalog";
@@ -31,42 +34,45 @@ function incrementalOverageMinutes(
   return Math.max(0, newUsed - Math.max(included, previousUsed));
 }
 
-describe("voice overage at tier boundaries", () => {
-  it.each([
-    { plan: "personal" as const, included: 400, rate: 0.2 },
-    { plan: "starter" as const, included: 1200, rate: 0.18 },
-    { plan: "pro" as const, included: 5000, rate: 0.15 },
-    { plan: "business" as const, included: 12000, rate: 0.14 },
-  ])("$plan — zero overage at exactly included minutes", ({ plan, included, rate }) => {
-    const snap = usageOverageFields(included, plan);
-    expect(snap.voice_minutes_remaining).toBe(0);
-    expect(snap.overage_minutes).toBe(0);
-    expect(snap.overage_cost_usd).toBe(0);
-    expect(snap.overage_per_min_usd).toBe(rate);
-    expect(planById(plan)?.voice_minutes_monthly).toBe(included);
-  });
+const PAID_TIERS = (["personal", "starter", "pro", "business"] as const).map((plan) => {
+  const p = planById(plan)!;
+  return { plan, included: p.voice_minutes_monthly, rate: p.overage_per_min_usd };
+});
 
-  it.each([
-    { plan: "personal" as const, used: 401, overage: 1, cost: 0.2 },
-    { plan: "starter" as const, used: 1201, overage: 1, cost: 0.18 },
-    { plan: "pro" as const, used: 5001, overage: 1, cost: 0.15 },
-    { plan: "business" as const, used: 12001, overage: 1, cost: 0.14 },
-  ])("$plan — first minute over included bills at tier rate", ({ plan, used, overage, cost }) => {
-    const snap = usageOverageFields(used, plan);
-    expect(snap.overage_minutes).toBe(overage);
-    expect(snap.overage_cost_usd).toBe(cost);
-  });
+describe("voice overage at tier boundaries", () => {
+  it.each(PAID_TIERS)(
+    "$plan — zero overage at exactly included minutes",
+    ({ plan, included, rate }) => {
+      const snap = usageOverageFields(included, plan);
+      expect(snap.voice_minutes_remaining).toBe(0);
+      expect(snap.overage_minutes).toBe(0);
+      expect(snap.overage_cost_usd).toBe(0);
+      expect(snap.overage_per_min_usd).toBe(rate);
+      expect(planById(plan)?.voice_minutes_monthly).toBe(included);
+    },
+  );
+
+  it.each(PAID_TIERS)(
+    "$plan — first minute over included bills at tier rate",
+    ({ plan, included, rate }) => {
+      const snap = usageOverageFields(included + 1, plan);
+      expect(snap.overage_minutes).toBe(1);
+      expect(snap.overage_cost_usd).toBe(Math.round(rate * 100) / 100);
+    },
+  );
 
   it("personal — one minute below included has full remaining allowance", () => {
-    const snap = usageOverageFields(399, "personal");
+    const included = planById("personal")!.voice_minutes_monthly;
+    const snap = usageOverageFields(included - 1, "personal");
     expect(snap.overage_minutes).toBe(0);
     expect(snap.voice_minutes_remaining).toBe(1);
   });
 
   it("large overage cost rounds to two decimal places", () => {
-    const snap = usageOverageFields(5400, "pro"); // 400 min × $0.15
+    const pro = planById("pro")!;
+    const snap = usageOverageFields(pro.voice_minutes_monthly + 400, "pro"); // 400 min over
     expect(snap.overage_minutes).toBe(400);
-    expect(snap.overage_cost_usd).toBe(60);
+    expect(snap.overage_cost_usd).toBe(Math.round(400 * pro.overage_per_min_usd * 100) / 100);
   });
 
   it("no plan → zero included, zero rate (unsubscribed operator)", () => {
@@ -78,23 +84,23 @@ describe("voice overage at tier boundaries", () => {
 });
 
 describe("trackVoiceMinutes incremental overage delta", () => {
-  const included = 1200; // starter
+  const included = planById("starter")!.voice_minutes_monthly; // starter
 
   it("emits no delta when call stays within included bucket", () => {
-    expect(incrementalOverageMinutes(800, 750, included)).toBe(0);
-    expect(incrementalOverageMinutes(1200, 1100, included)).toBe(0);
+    expect(incrementalOverageMinutes(included - 100, included - 150, included)).toBe(0);
+    expect(incrementalOverageMinutes(included, included - 100, included)).toBe(0);
   });
 
   it("emits only the minutes that cross the included threshold on first overage call", () => {
-    // Was 1190, +15 min call → 1205; only 5 min are overage.
-    expect(incrementalOverageMinutes(1205, 1190, included)).toBe(5);
+    // Was included-10, +15 min call → included+5; only 5 min are overage.
+    expect(incrementalOverageMinutes(included + 5, included - 10, included)).toBe(5);
   });
 
   it("emits full call minutes when already in overage territory", () => {
-    expect(incrementalOverageMinutes(1300, 1250, included)).toBe(50);
+    expect(incrementalOverageMinutes(included + 100, included + 50, included)).toBe(50);
   });
 
   it("never under-counts when a single call jumps from under to deep overage", () => {
-    expect(incrementalOverageMinutes(1500, 1000, included)).toBe(300);
+    expect(incrementalOverageMinutes(included + 300, included - 200, included)).toBe(300);
   });
 });

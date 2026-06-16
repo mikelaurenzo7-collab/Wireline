@@ -6,6 +6,31 @@ vi.mock("./server-context", () => ({
   drizzle: {},
 }));
 
+const h = vi.hoisted(() => ({
+  authState: {
+    script: { status: 200, body: undefined as unknown },
+    lastSendBody: null as any,
+    sendCalls: 0,
+  },
+}));
+
+// The implementation authenticates via google-auth-library and sends with
+// `auth.request(...)` (gaxios), which bypasses a global fetch stub — so mock the
+// auth client directly and script its responses.
+vi.mock("google-auth-library", () => ({
+  GoogleAuth: class {
+    async request({ data }: { url: string; method: string; data: unknown }) {
+      h.authState.sendCalls += 1;
+      h.authState.lastSendBody = data;
+      const { status, body } = h.authState.script;
+      if (status >= 200 && status < 300) return { status, data: body };
+      throw Object.assign(new Error("FCM send failed"), {
+        response: { status, data: body },
+      });
+    }
+  },
+}));
+
 import { sendFcmPush, isFcmConfigured, isStaleFcmReason } from "./fcm-push";
 
 // A throwaway RSA key in PKCS8 PEM — the shape of a service-account key.
@@ -21,28 +46,14 @@ function configureFcm() {
 }
 
 /**
- * URL-aware fetch stub: token endpoint hands back an access token; the FCM
- * send endpoint returns the scripted status/body. Captures the last send body.
+ * Scripts the mocked GoogleAuth send: it returns the given status/body and
+ * captures the last `{ message }` payload sent.
  */
 function installFetch(send: { status: number; body?: unknown }) {
-  const state = { lastSendBody: null as any, sendCalls: 0 };
-  const stub = vi.fn(async (url: string, init?: RequestInit) => {
-    if (url.includes("oauth2.googleapis.com/token") || url.includes("/token")) {
-      return new Response(JSON.stringify({ access_token: "ya29.test", expires_in: 3600 }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }
-    // messages:send
-    state.sendCalls += 1;
-    state.lastSendBody = init?.body ? JSON.parse(String(init.body)) : null;
-    return new Response(send.body !== undefined ? JSON.stringify(send.body) : "", {
-      status: send.status,
-      headers: { "content-type": "application/json" },
-    });
-  });
-  vi.stubGlobal("fetch", stub);
-  return state;
+  h.authState.script = { status: send.status, body: send.body };
+  h.authState.lastSendBody = null;
+  h.authState.sendCalls = 0;
+  return h.authState;
 }
 
 describe("fcm-push", () => {

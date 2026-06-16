@@ -29,6 +29,8 @@
 	<string>Wireline needs the microphone so you can speak on calls your agents place or hand to you.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Wireline adds reminders to your calendar when an agent schedules a follow-up.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Wireline adds events to your calendar when an agent books an appointment or follow-up for you.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Wireline lets you ask Siri to place or hand off calls through your agents.</string>
 
