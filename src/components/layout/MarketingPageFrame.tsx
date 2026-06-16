@@ -64,7 +64,7 @@ export default function MarketingPageFrame({
         )}
       >
         {sectionLinks && sectionLinks.length > 0 && (
-          <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-ink/[0.08] glass px-5 py-2.5 md:-mx-8 md:px-8">
+          <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-ink/[0.08] bg-paper/80 backdrop-blur-md px-5 py-2.5 md:-mx-8 md:px-8">
             <nav
               aria-label="On this page"
               className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"

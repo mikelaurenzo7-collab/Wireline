@@ -1,170 +1,301 @@
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+/* eslint-disable @typescript-eslint/no-explicit-any -- /api/triage returns five
+ * heterogeneous snake_case row shapes (call logs, fleet tasks, agent lessons).
+ * They're read defensively here; shared client types belong in
+ * contracts/api-types.ts and are tracked separately. */
+/**
+ * TriagePanel — the live triage inbox inside the Ops cockpit (`/ops?tab=triage`).
+ *
+ * Reads the real `/api/triage` feed (escalations, hot leads, compliance reviews,
+ * pending tasks, and knowledge gaps) and lays them out as a calm, scannable set
+ * of category columns on the Rich Cream + Purple system. It honors the embed
+ * contract from CommandCenter: it reports its loading state, publishes an
+ * attention count for the toolbar badge, and exposes a refresh handle.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "motion/react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Flame,
+  ListChecks,
+  ShieldCheck,
+  Bot,
+  RefreshCw,
+} from "lucide-react";
+import { authFetch } from "../lib/api";
+import { cn } from "../lib/utils";
+import { ShadButton } from "./ui/shadcn/ShadButton";
+import { EmptyState } from "./ui/EmptyState";
+import ClientRouteLoading from "./layout/ClientRouteLoading";
 
-const tokens = {
-  darkBase: '#0a0a0f',
-  cyan: '#00F5FF',
-  magenta: '#FF00AA',
-};
-
-interface TriageItem {
-  id: string;
-  type: 'call' | 'email';
-  from: string;
-  subject: string;
-  preview: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'new' | 'in_progress' | 'resolved';
-  notes?: string;
+interface TriagePanelProps {
+  embedded?: boolean;
+  refreshRef?: React.RefObject<(() => void) | null>;
+  onAttentionChange?: (count: number) => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-export function TriageInbox() {
-  const [items, setItems] = useState<TriageItem[]>([
-    { id: '1', type: 'call', from: 'Acme Corp', subject: 'Follow-up on proposal', preview: 'They want to move forward but need pricing clarification...', priority: 'high', status: 'new' },
-    { id: '2', type: 'email', from: 'Sarah Chen', subject: 'Contract review', preview: 'Can we schedule a quick call this week?', priority: 'high', status: 'new' },
-    { id: '3', type: 'call', from: 'Delta Logistics', subject: 'Demo feedback', preview: 'Really liked the agent demo...', priority: 'medium', status: 'in_progress', notes: 'Pricing adjustment suggested' },
-    { id: '4', type: 'email', from: 'Vanguard Inc', subject: 'Q3 renewal discussion', preview: 'Looking to expand the partnership...', priority: 'low', status: 'resolved' },
-  ]);
+type CategoryKey = "escalations" | "hot_leads" | "compliance" | "pending_tasks" | "knowledge_gaps";
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | TriageItem['status']>('all');
-  const [priorityFilter, setPriorityFilter] = useState<'all' | TriageItem['priority']>('all');
+interface TriageData {
+  escalations: any[];
+  hot_leads: any[];
+  compliance: any[];
+  pending_tasks: any[];
+  knowledge_gaps: any[];
+  counts: Record<CategoryKey, number>;
+}
 
-  const selectedItem = items.find(i => i.id === selectedId);
+const EMPTY: TriageData = {
+  escalations: [],
+  hot_leads: [],
+  compliance: [],
+  pending_tasks: [],
+  knowledge_gaps: [],
+  counts: {
+    escalations: 0,
+    hot_leads: 0,
+    compliance: 0,
+    pending_tasks: 0,
+    knowledge_gaps: 0,
+  },
+};
 
-  const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      const matchesSearch = 
-        item.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.subject.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      const matchesPriority = priorityFilter === 'all' || item.priority === priorityFilter;
+const CATEGORIES: {
+  key: CategoryKey;
+  label: string;
+  icon: typeof Flame;
+  accent: boolean;
+}[] = [
+  { key: "escalations", label: "Escalations", icon: AlertTriangle, accent: true },
+  { key: "hot_leads", label: "Hot leads", icon: Flame, accent: true },
+  { key: "compliance", label: "Compliance review", icon: ShieldCheck, accent: false },
+  { key: "pending_tasks", label: "Pending tasks", icon: ListChecks, accent: false },
+  { key: "knowledge_gaps", label: "Knowledge gaps", icon: BookOpen, accent: false },
+];
 
-      return matchesSearch && matchesStatus && matchesPriority;
-    });
-  }, [items, searchTerm, statusFilter, priorityFilter]);
+function relativeTime(value: any): string {
+  if (!value) return "";
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return "";
+  const secs = Math.max(1, Math.floor((Date.now() - then) / 1000));
+  if (secs < 60) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
-  const updateStatus = (id: string, status: TriageItem['status']) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, status } : item));
+/** Derive a human title/subtitle/meta from a heterogeneous triage row. */
+function describe(key: CategoryKey, row: any): { title: string; subtitle?: string; meta?: string } {
+  if (key === "knowledge_gaps") {
+    return {
+      title: String(row?.lesson ?? "Knowledge gap").replace(/^\[KNOWLEDGE GAP\]\s*/i, ""),
+      subtitle: row?.agent_id ? `Agent ${row.agent_id}` : undefined,
+      meta: relativeTime(row?.created_at),
+    };
+  }
+  if (key === "compliance" || key === "pending_tasks") {
+    return {
+      title: String(row?.description || row?.task_type || "Task").replace(/_/g, " "),
+      subtitle: row?.priority ? `${row.priority} priority` : row?.task_type?.replace(/_/g, " "),
+      meta: relativeTime(row?.created_at),
+    };
+  }
+  // escalations + hot_leads (call logs)
+  return {
+    title: String(row?.summary || row?.intent_label || "Call").replace(/_/g, " "),
+    subtitle: row?.customer_number || (row?.agent_id ? `Agent ${row.agent_id}` : undefined),
+    meta:
+      [row?.lead_score != null ? `score ${row.lead_score}` : "", relativeTime(row?.created_at)]
+        .filter(Boolean)
+        .join(" · ") || undefined,
   };
+}
 
-  const archiveItem = (id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  };
+export function TriageInbox({
+  refreshRef,
+  onAttentionChange,
+  onLoadingChange,
+}: TriagePanelProps = {}) {
+  const [data, setData] = useState<TriageData>(EMPTY);
+  const [loading, setLoading] = useState(true);
+  const [errored, setErrored] = useState(false);
+  const onAttentionRef = useRef(onAttentionChange);
+  const onLoadingRef = useRef(onLoadingChange);
+  onAttentionRef.current = onAttentionChange;
+  onLoadingRef.current = onLoadingChange;
 
-  const assignToAgent = (id: string) => {
-    alert('Assigned to best available agent! (Demo)');
-    updateStatus(id, 'in_progress');
-  };
+  const load = useCallback(async () => {
+    setLoading(true);
+    onLoadingRef.current?.(true);
+    try {
+      const r = await authFetch("/api/triage");
+      if (!r.ok) throw new Error(String(r.status));
+      const json = (await r.json()) as Partial<TriageData>;
+      const next: TriageData = { ...EMPTY, ...json, counts: { ...EMPTY.counts, ...json.counts } };
+      setData(next);
+      setErrored(false);
+      const attention = Object.values(next.counts).reduce((a, b) => a + (Number(b) || 0), 0);
+      onAttentionRef.current?.(attention);
+    } catch {
+      setErrored(true);
+      onAttentionRef.current?.(0);
+    } finally {
+      setLoading(false);
+      onLoadingRef.current?.(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Expose refresh to the embedding CommandCenter toolbar.
+  useEffect(() => {
+    if (!refreshRef) return;
+    refreshRef.current = load;
+    return () => {
+      if (refreshRef.current === load) refreshRef.current = null;
+    };
+  }, [refreshRef, load]);
+
+  const total = useMemo(
+    () => Object.values(data.counts).reduce((a, b) => a + (Number(b) || 0), 0),
+    [data.counts],
+  );
+
+  if (loading && total === 0) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center">
+        <ClientRouteLoading icon={<ListChecks className="h-6 w-6" />} label="Loading triage" />
+      </div>
+    );
+  }
+
+  if (errored && total === 0) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center px-6">
+        <EmptyState
+          icon={AlertTriangle}
+          eyebrow="Triage"
+          title="Couldn't load triage"
+          description="We couldn't reach the triage feed. Refresh to try again."
+          density="compact"
+          withHalo={false}
+          actions={[{ label: "Retry", onClick: load, primary: true }]}
+        />
+      </div>
+    );
+  }
+
+  if (total === 0) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center px-6">
+        <EmptyState
+          icon={ShieldCheck}
+          eyebrow="All clear"
+          title="Nothing to triage"
+          description="Escalations, hot leads, compliance reviews, and knowledge gaps will surface here as your agents take calls."
+          density="compact"
+          withHalo={false}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-[#0a0a0f] text-white">
-      {/* Sidebar List */}
-      <div className="w-2/5 border-r border-white/10 flex flex-col">
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-semibold tracking-tighter">Triage</h1>
-            <div className="text-xs px-3 py-1 rounded-full bg-white/10">{filteredItems.length} / {items.length}</div>
-          </div>
-
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="Search name or subject..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm placeholder:text-white/40 focus:outline-none focus:border-[#00F5FF] mb-3"
-          />
-
-          {/* Filters */}
-          <div className="flex gap-2 text-xs">
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5"
-            >
-              <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-            </select>
-
-            <select 
-              value={priorityFilter} 
-              onChange={(e) => setPriorityFilter(e.target.value as any)}
-              className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5"
-            >
-              <option value="all">All Priority</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto p-6 space-y-3">
-          {filteredItems.length > 0 ? (
-            filteredItems.map(item => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedId(item.id)}
-                className={`p-4 rounded-2xl border cursor-pointer transition-all ${selectedId === item.id ? 'border-[#00F5FF] bg-white/5' : 'border-white/10 hover:border-white/30 bg-black/30'}`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium flex items-center gap-2">
-                      {item.from}
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.type === 'call' ? 'bg-[#00F5FF] text-black' : 'bg-white/20'}`}>{item.type}</span>
-                    </div>
-                    <div className="text-sm text-white/70 mt-0.5 line-clamp-1">{item.subject}</div>
-                  </div>
-                  <div className={`text-xs px-2.5 py-0.5 rounded-full self-start ${item.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10'}`}>{item.priority}</div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center text-white/40 py-12">No items match your filters</div>
-          )}
-        </div>
-      </div>
-
-      {/* Detail Panel */}
-      <div className="flex-1 p-8 overflow-auto">
-        <AnimatePresence mode="wait">
-          {selectedItem ? (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="mb-8">
-                <div className="text-sm text-white/50 tracking-[2px]">{selectedItem.type.toUpperCase()} • {selectedItem.from}</div>
-                <h1 className="text-4xl font-semibold tracking-tighter mt-2 pr-10">{selectedItem.subject}</h1>
-              </div>
-
-              <div className="text-lg text-white/80 leading-relaxed mb-10">
-                {selectedItem.preview}
-              </div>
-
-              {selectedItem.notes && (
-                <div className="mb-8 p-5 bg-white/5 rounded-2xl border border-white/10">
-                  <div className="text-xs tracking-widest text-white/50 mb-2">AGENT NOTES</div>
-                  <div>{selectedItem.notes}</div>
-                </div>
+    <div className="flex-1 min-h-0 overflow-y-auto scroll-viewport px-1 pb-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+        {CATEGORIES.map((cat) => {
+          const items = (data[cat.key] as any[]) || [];
+          const Icon = cat.icon;
+          return (
+            <section
+              key={cat.key}
+              className={cn(
+                "flex min-h-[180px] flex-col rounded-md border bg-paper/40",
+                cat.accent ? "border-brand/20" : "border-border/70",
               )}
+              aria-label={cat.label}
+            >
+              <header className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2.5">
+                <span className="inline-flex items-center gap-2 min-w-0">
+                  <Icon
+                    className={cn("h-3.5 w-3.5 shrink-0", cat.accent ? "text-brand" : "text-muted")}
+                  />
+                  <span className="wl-label truncate text-ink">{cat.label}</span>
+                </span>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full border px-2 py-0.5 font-mono text-[11px] tabular-nums",
+                    items.length > 0
+                      ? "border-brand/25 bg-brand/10 text-brand"
+                      : "border-border/70 text-muted",
+                  )}
+                >
+                  {items.length}
+                </span>
+              </header>
 
-              <div className="flex flex-wrap gap-4">
-                <button onClick={() => updateStatus(selectedItem.id, 'in_progress')} className="px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/20 transition">Mark In Progress</button>
-                <button onClick={() => assignToAgent(selectedItem.id)} className="px-8 py-4 rounded-2xl bg-[#00F5FF] text-black font-semibold">Assign to Best Agent</button>
-                <button onClick={() => updateStatus(selectedItem.id, 'resolved')} className="px-8 py-4 rounded-2xl border border-white/20 hover:bg-white/5 transition">Mark Resolved</button>
-                <button onClick={() => archiveItem(selectedItem.id)} className="px-8 py-4 rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition ml-auto">Archive</button>
+              <div className="flex-1 min-h-0 space-y-1.5 overflow-y-auto scroll-viewport p-2">
+                {items.length === 0 ? (
+                  <p className="px-1 py-6 text-center text-[12px] text-muted/70">Clear</p>
+                ) : (
+                  items.slice(0, 12).map((row, i) => {
+                    const d = describe(cat.key, row);
+                    return (
+                      <motion.div
+                        key={row?.id ?? `${cat.key}-${i}`}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, delay: Math.min(i * 0.015, 0.2) }}
+                        className="rounded-md border border-border/60 bg-background/50 px-2.5 py-2 transition-colors hover:border-brand/25"
+                      >
+                        <p className="line-clamp-2 text-[13px] leading-snug text-ink/90">
+                          {d.title}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted">
+                          {d.subtitle && (
+                            <span className="inline-flex items-center gap-1 truncate">
+                              <Bot className="h-2.5 w-2.5 shrink-0 text-muted/70" />
+                              {d.subtitle}
+                            </span>
+                          )}
+                          {d.meta && (
+                            <span className="font-mono tabular-nums text-muted/80">{d.meta}</span>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+                {items.length > 12 && (
+                  <p className="px-1 pt-1 text-center text-[11px] text-muted/70">
+                    +{items.length - 12} more
+                  </p>
+                )}
               </div>
-            </motion.div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-white/40 text-center">
-              Select an item from the list
-            </div>
-          )}
-        </AnimatePresence>
+            </section>
+          );
+        })}
+
+        {/* Refresh affordance, aligned to the grid rhythm. */}
+        <div className="flex items-center justify-center rounded-md border border-dashed border-border/60 bg-paper/20 p-4 lg:col-span-2 2xl:col-span-3">
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            disableAnimations
+            onClick={load}
+            disabled={loading}
+            className="rounded-full wl-label text-muted hover:text-brand"
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            Refresh triage
+          </ShadButton>
+        </div>
       </div>
     </div>
   );

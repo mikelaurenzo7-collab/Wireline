@@ -4,6 +4,7 @@ import { Activity, AlertTriangle, Loader2, TrendingUp, Wallet } from "lucide-rea
 import { authFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Progress } from "./ui/shadcn/Progress";
+import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface UsageSnapshot {
   plan_id: string | null;
@@ -182,14 +183,16 @@ export default function UsageMeter({
       {/* Primary path when usage runs hot: upgrade for more included minutes
           (cheaper than recurring overage/top-ups). Credits stay the safety net. */}
       {(isWarn || isOver) && onUpgrade && (
-        <button
+        <ShadButton
           type="button"
+          variant="ghost"
+          disableAnimations
           onClick={onUpgrade}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md wl-label font-semibold bg-brand/10 border border-brand/30 text-brand hover:bg-brand/15 transition-colors"
+          className="w-full h-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md wl-label font-semibold bg-brand/10 border border-brand/30 text-brand hover:bg-brand/15 transition-colors"
         >
           <TrendingUp className="w-3.5 h-3.5" />
           Upgrade for more included minutes
-        </button>
+        </ShadButton>
       )}
 
       {/* Prepaid credits — relevant when the operator holds a balance or is in
