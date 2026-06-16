@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const tokens = {
   darkBase: '#0a0a0f',
   cyan: '#00F5FF',
   magenta: '#FF00AA',
-  sharp: '4px',
 };
 
 interface TriageItem {
@@ -16,81 +15,98 @@ interface TriageItem {
   preview: string;
   priority: 'high' | 'medium' | 'low';
   status: 'new' | 'in_progress' | 'resolved';
+  notes?: string;
 }
 
-// Main component
 export function TriageInbox() {
-  // ... (same implementation as before)
   const [items, setItems] = useState<TriageItem[]>([
     { id: '1', type: 'call', from: 'Acme Corp', subject: 'Follow-up on proposal', preview: 'They want to move forward but need pricing clarification...', priority: 'high', status: 'new' },
     { id: '2', type: 'email', from: 'Sarah Chen', subject: 'Contract review', preview: 'Can we schedule a quick call this week?', priority: 'high', status: 'new' },
-    { id: '3', type: 'call', from: 'Delta Logistics', subject: 'Demo feedback', preview: 'Really liked the agent demo...', priority: 'medium', status: 'in_progress' },
+    { id: '3', type: 'call', from: 'Delta Logistics', subject: 'Demo feedback', preview: 'Really liked the agent demo...', priority: 'medium', status: 'in_progress', notes: 'Agent suggested pricing adjustment' },
   ]);
 
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedItem = items.find(i => i.id === selectedId);
 
-  const updateItemStatus = (id: string, newStatus: TriageItem['status']) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, status: newStatus } : item
-    ));
+  const updateStatus = (id: string, status: TriageItem['status']) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, status } : item));
   };
 
   const archiveItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
+    setItems(prev => prev.filter(i => i.id !== id));
+    if (selectedId === id) setSelectedId(null);
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const currentItem = items[selectedIndex];
-      if (!currentItem) return;
-
-      if (e.key === 'j' || e.key === 'ArrowDown') setSelectedIndex(prev => Math.min(prev + 1, items.length - 1));
-      if (e.key === 'k' || e.key === 'ArrowUp') setSelectedIndex(prev => Math.max(prev - 1, 0));
-      if (e.key.toLowerCase() === 'e') updateItemStatus(currentItem.id, 'in_progress');
-      if (e.key.toLowerCase() === 'r') updateItemStatus(currentItem.id, 'resolved');
-      if (e.key.toLowerCase() === 'x') archiveItem(currentItem.id);
-      if (e.key === ' ' || e.key === 'Enter') {
-        setSelectedItems(prev => prev.includes(currentItem.id) ? prev.filter(i => i !== currentItem.id) : [...prev, currentItem.id]);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex, items]);
-
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-semibold tracking-tighter">Triage Inbox</h1>
-            <p className="text-white/60 text-sm mt-1">j/k ↓↑ • e = in progress • r = resolved • x = archive</p>
-          </div>
+    <div className="flex h-screen bg-[#0a0a0f] text-white">
+      {/* List */}
+      <div className="w-2/5 border-r border-white/10 overflow-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-semibold tracking-tighter">Triage</h1>
+          <p className="text-white/50 text-sm mt-1">Click or use keyboard to manage</p>
         </div>
 
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div key={item.id} className="flex items-start gap-4 p-5 rounded-[8px] border border-white/10 bg-black/40">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className={`text-xs px-2.5 py-0.5 rounded-full ${item.type === 'call' ? 'bg-[#00F5FF] text-black' : 'bg-white/20'}`}>{item.type.toUpperCase()}</span>
-                  <span className="font-medium">{item.from}</span>
-                  <span className="text-white/50">•</span>
-                  <span className="text-white/70 text-sm">{item.subject}</span>
+        <div className="space-y-3">
+          {items.map(item => (
+            <div
+              key={item.id}
+              onClick={() => setSelectedId(item.id)}
+              className={`p-4 rounded-xl border cursor-pointer transition ${selectedId === item.id ? 'border-[#00F5FF] bg-white/5' : 'border-white/10 hover:border-white/30 bg-black/30'}`}
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-medium flex items-center gap-2">
+                    {item.from}
+                    <span className={`text-[10px] px-2 py-0.5 rounded ${item.type === 'call' ? 'bg-[#00F5FF] text-black' : 'bg-white/20'}`}>{item.type}</span>
+                  </div>
+                  <div className="text-sm text-white/70 mt-0.5 line-clamp-1">{item.subject}</div>
                 </div>
-                <p className="text-white/60 text-sm line-clamp-2">{item.preview}</p>
-              </div>
-              <div className="text-right text-xs">
-                <div className={item.priority === 'high' ? 'text-red-400' : 'text-white/60'}>{item.priority}</div>
-                <div className="text-white/40 mt-1">{item.status}</div>
+                <div className={`text-xs px-2 py-0.5 rounded ${item.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10'}`}>{item.priority}</div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Detail Panel */}
+      <div className="flex-1 p-8 overflow-auto">
+        <AnimatePresence mode="wait">
+          {selectedItem ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="text-sm text-white/50">{selectedItem.type.toUpperCase()} • {selectedItem.from}</div>
+                  <h2 className="text-3xl font-semibold tracking-tight mt-1">{selectedItem.subject}</h2>
+                </div>
+                <div className={`px-4 py-1 text-sm rounded-full ${selectedItem.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10'}`}>{selectedItem.priority} priority</div>
+              </div>
+
+              <div className="prose prose-invert text-white/80 mb-8">
+                {selectedItem.preview}
+              </div>
+
+              {selectedItem.notes && (
+                <div className="mb-8 p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="text-xs text-white/50 mb-1">AGENT NOTES</div>
+                  <div>{selectedItem.notes}</div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                <button onClick={() => updateStatus(selectedItem.id, 'in_progress')} className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition">Mark In Progress</button>
+                <button onClick={() => updateStatus(selectedItem.id, 'resolved')} className="px-6 py-3 rounded-xl bg-[#00F5FF] text-black font-medium">Mark Resolved</button>
+                <button onClick={() => archiveItem(selectedItem.id)} className="px-6 py-3 rounded-xl border border-white/20 hover:bg-white/5 transition text-red-400">Archive</button>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-white/40">
+              Select an item from the list to view details and take action
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-// Alias export for existing imports in pages/CommandCenter.tsx
 export const TriagePanel = TriageInbox;
