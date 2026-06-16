@@ -18,6 +18,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -116,10 +117,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const accountType = override ?? resolveAccountType(planId);
 
+  const value = useMemo(
+    () => ({ accountType, planId, loading, overridden: override !== null, setAccountType }),
+    [accountType, planId, loading, override, setAccountType],
+  );
+
   return (
-    <AccountContext.Provider
-      value={{ accountType, planId, loading, overridden: override !== null, setAccountType }}
-    >
+    <AccountContext.Provider value={value}>
       {children}
     </AccountContext.Provider>
   );

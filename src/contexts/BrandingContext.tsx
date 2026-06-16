@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- shared context values bridge typed and untyped sub-systems. */
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { authFetch } from "../lib/api";
 import { useAuth } from "./AuthContext";
 
@@ -73,12 +73,17 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, [user]);
 
-  const updateBranding = (newSettings: Partial<BrandingSettings>) => {
+  const updateBranding = useCallback((newSettings: Partial<BrandingSettings>) => {
     setBranding((prev) => ({ ...prev, ...newSettings }));
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ branding, updateBranding, isLoading }),
+    [branding, updateBranding, isLoading],
+  );
 
   return (
-    <BrandingContext.Provider value={{ branding, updateBranding, isLoading }}>
+    <BrandingContext.Provider value={value}>
       {children}
     </BrandingContext.Provider>
   );
