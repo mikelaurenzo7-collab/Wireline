@@ -10,13 +10,13 @@ Built by [Michael Laurenzo](https://trywireline.com/about). Powered by Claude.
 
 ## Plans & pricing
 
-| Plan | Price/mo | Included operators | Included minutes/mo | Overage rate | Included voice agents |
+| Plan | Price/mo | Included minutes/mo | Overage rate | Included voice agents | Extra agent |
 | --- | --- | --- | --- | --- | --- |
-| **Personal** | $19 | 1 | 100 | $0.24 | 1 |
-| **Starter** | $89 | 3 | 500 | $0.22 | 3 |
-| **Pro** | $299 | 10 | 1,500 | $0.19 | 10 |
-| **Business** | $899 | 25 | 5,000 | $0.16 | 25 |
-| **Enterprise** | Custom | Custom | Custom | Custom | Custom |
+| **Personal** | $9 | 30 | $0.25 | 1 | +$9/mo |
+| **Business Starter** | $79 | 300 | $0.21 | 2 | +$19/mo |
+| **Business Pro** | $249 | 1,000 | $0.18 | 5 | +$29/mo |
+| **Business Scale** | $699 | 3,000 | $0.16 | 10 | +$39/mo |
+| **Enterprise** | Custom | 15,000+ | $0.14 | 25+ | Custom |
 
 Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this README table in sync with the catalog; `npm run docs:check` fails when pricing or Claude model copy drifts.
 

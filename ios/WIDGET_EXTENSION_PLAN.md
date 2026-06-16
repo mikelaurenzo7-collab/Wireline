@@ -1,26 +1,26 @@
-# Wingman — Widget Extension plan
+# Wireline — Widget Extension plan
 
-Turn the `WingmanWidgets` extension from a single static launcher into a
+Turn the `WirelineWidgets` extension from a single static launcher into a
 glanceable, live, eventually-interactive surface — the iPhone payoff that earns
-Wingman its Home/Lock Screen spot. Grounded in the existing iOS app
-(`ios/Wingman`), the `/api/mobile/*` backend, and the App Store / CarPlay
-runbook in `APP_STORE_CARPLAY_READINESS.md`.
+Wireline its Home/Lock Screen spot. Grounded in the existing iOS app
+(`ios/Wireline`), the `/api/mobile/*` backend, and the App Store / CarPlay
+readiness runbook in `APP_STORE_CARPLAY_READINESS.md`.
 
 ## Architecture
 
 The widget extension has **no auth and no network of its own**. The app fetches
 `/api/mobile/*` and writes a small snapshot into a shared **App Group**
-(`group.com.wireline.wingman`); the widgets only read it.
+(`group.com.wireline.assistant`); the widgets only read it.
 
 ```
 app  ──fetch /api/mobile/{calls/recent,wallet,calls/active}──►  WidgetSync
 WidgetSync ──save snapshot──►  App Group (UserDefaults suite)
-                                   ▲                 │
-                                   │ load            ▼
-WingmanWidgetStore  ◄────────  WingmanWidgets (SnapshotProvider → views)
+                                    ▲                 │
+                                    │ load            ▼
+WirelineWidgetStore  ◄────────  WirelineWidgets (SnapshotProvider → views)
 ```
 
-Shared types live in `ios/WingmanShared/WingmanWidgetSnapshot.swift`, compiled
+Shared types live in `ios/WirelineShared/WirelineWidgetSnapshot.swift`, compiled
 into **both** targets (see `project.yml` source membership). The app refreshes
 on launch, on foreground (`scenePhase == .active`), and on sign-in/out, then
 calls `WidgetCenter.reloadAllTimelines()`.
@@ -28,13 +28,13 @@ calls `WidgetCenter.reloadAllTimelines()`.
 ## Phase W1 — Shared-data foundation ✅ (this PR)
 
 - App Group capability on the app + widget entitlements
-  (`Wingman.entitlements`, `WingmanWidgets.entitlements`).
-- `WingmanWidgetSnapshot` + `WingmanWidgetStore` (Codable, App Group suite).
+  (`Wireline.entitlements`, `WirelineWidgets.entitlements`).
+- `WirelineWidgetSnapshot` + `WirelineWidgetStore` (Codable, App Group suite).
 - `WidgetSync` (app-side) fetches recent calls + wallet + active calls and
   writes the snapshot; pre-formats display strings so the widget stays a dumb
   renderer.
-- `wingman://calls` deep link wired through `WingmanApp.onOpenURL` →
-  `WingmanRouter`.
+- `wireline://calls` deep link wired through `WirelineApp.onOpenURL` →
+  `WirelineRouter`.
 
 ## Phase W2 — Live glanceable widgets ✅ (this PR)
 
@@ -59,12 +59,12 @@ calls `WidgetCenter.reloadAllTimelines()`.
   launch) — maps to the #1 future intent in the readiness doc.
 - "Mark last call followed up" toggle (one-tap status change via
   `/api/mobile/*`).
-- iOS 18 **Control Center** `ControlWidget`: Ask Wingman + call-back toggles.
+- iOS 18 **Control Center** `ControlWidget`: Ask Wireline + call-back toggles.
 
 ## Phase W4 — Live Activity / Dynamic Island — next
 
-- `ActivityKit` `WingmanCallActivity`: live active-call status + one-tap
-  "Take this call" handoff (reuses `WingmanAPI.handoffCall`). Updated via APNs
+- `ActivityKit` `WirelineCallActivity`: live active-call status + one-tap
+  "Take this call" handoff (reuses `WirelineAPI.handoffCall`). Updated via APNs
   Live Activity tokens (push infra already exists in `src/lib/apns-push.ts`).
 
 ## Phase W5 — App Store submission
@@ -82,17 +82,17 @@ calls `WidgetCenter.reloadAllTimelines()`.
 ## Files in this PR
 
 ```
-ios/WingmanShared/WingmanWidgetSnapshot.swift   # shared snapshot + App Group store
-ios/Wingman/Widgets/WidgetSync.swift            # app-side fetch → snapshot → reload
-ios/WingmanWidgets/SnapshotProvider.swift       # shared TimelineProvider
-ios/WingmanWidgets/WidgetTheme.swift            # accent + Color(hex:) for the extension
-ios/WingmanWidgets/RecentCallsWidget.swift      # W2
-ios/WingmanWidgets/NeedsAttentionWidget.swift   # W2
-ios/WingmanWidgets/WalletWidget.swift           # W2 (read-only balance)
-ios/WingmanWidgets/WingmanWidgetBundle.swift    # register new widgets
-ios/WingmanWidgets/WingmanWidgets.entitlements  # App Group (new)
-ios/Wingman/Wingman.entitlements                # App Group (added)
-ios/Wingman/App/WingmanRouter.swift             # wingman://calls route
-ios/Wingman/WingmanApp.swift                    # refresh hook + deep link
+ios/WirelineShared/WirelineWidgetSnapshot.swift   # shared snapshot + App Group store
+ios/Wireline/Widgets/WidgetSync.swift            # app-side fetch → snapshot → reload
+ios/WirelineWidgets/SnapshotProvider.swift       # shared TimelineProvider
+ios/WirelineWidgets/WidgetTheme.swift            # accent + Color(hex:) for the extension
+ios/WirelineWidgets/RecentCallsWidget.swift      # W2
+ios/WirelineWidgets/NeedsAttentionWidget.swift   # W2
+ios/WirelineWidgets/WalletWidget.swift           # W2 (read-only balance)
+ios/WirelineWidgets/WirelineWidgetBundle.swift    # register new widgets
+ios/WirelineWidgets/WirelineWidgets.entitlements  # App Group (new)
+ios/Wireline/Wireline.entitlements                # App Group (added)
+ios/Wireline/App/WirelineRouter.swift             # wireline://calls route
+ios/Wireline/WirelineApp.swift                    # refresh hook + deep link
 ios/project.yml                                 # shared sources + widget entitlements
 ```

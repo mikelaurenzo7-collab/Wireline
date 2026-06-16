@@ -30,18 +30,18 @@ export default function WorkspaceTopBar({
   return (
     <header
       className={cn(
-        "workspace-top-bar sticky top-0 z-30 shrink-0 border-b border-black/[0.07] bg-paper/97 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.65)_inset]",
+        "workspace-top-bar sticky top-0 z-30 shrink-0 border-b border-black/[0.07] bg-paper/85 dark:bg-velvet/85 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.65)_inset] dark:shadow-[0_1px_0_rgba(255,255,255,0.05)_inset] transition-colors duration-200",
         className,
       )}
     >
       {/* Desktop: title · tabs · tools in one row. Mobile: title + tools, then full-width tabs (no overlap). */}
       <div
         className={cn(
-          "px-3 lg:px-4 py-1.5 sm:py-1",
-          subtitle ? "min-h-[3.5rem] sm:min-h-[3.25rem]" : "min-h-[3rem] sm:min-h-[2.75rem]",
+          "px-3 md:px-6 lg:px-10 py-2 md:py-3",
+          subtitle ? "min-h-[3.75rem] md:min-h-[4rem]" : "min-h-[3.25rem] md:min-h-[3.5rem]",
         )}
       >
-        <div className="flex items-center gap-2 lg:gap-2.5">
+        <div className="flex items-center gap-2 lg:gap-3">
           <div
             className={cn(
               "min-w-0 flex-1 lg:flex-none flex flex-col justify-center gap-0.5 sm:max-w-[14rem] lg:max-w-[18rem]",
@@ -63,7 +63,7 @@ export default function WorkspaceTopBar({
           </div>
           <span
             aria-hidden="true"
-            className="hidden lg:block w-px h-5 bg-black/10 shrink-0 self-center"
+            className="hidden lg:block w-px h-6 bg-black/10 dark:bg-white/10 shrink-0 self-center mx-2"
           />
           <div className="hidden lg:flex flex-1 min-w-0 self-center overflow-x-auto tab-strip-scroll">
             <AppChromeSubTabs density="compact" instanceId="desktop" />

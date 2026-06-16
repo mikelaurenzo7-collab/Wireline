@@ -402,15 +402,15 @@ export default function AppShell() {
           />
         )}
 
-        <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0">
+        <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0 bg-paper/30 dark:bg-black/20">
           <div
             ref={stageRef}
-            className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:px-3 md:pb-2.5 lg:px-3 lg:pb-3"
+            className="client-console__stage workspace-stage flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden relative z-10 min-h-0 px-0 md:px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-4"
           >
             <div
               className={cn(
-                "app-surface max-w-[1840px] mx-auto w-full px-2.5 md:px-3 lg:px-4 pb-0 md:pb-3 lg:pb-3 flex flex-col flex-1 min-h-0 mobile-page-canvas",
-                showPageContext ? "pt-0.5 md:pt-1" : "pt-1 md:pt-1.5",
+                "app-surface max-w-[1600px] mx-auto w-full px-3 md:px-6 lg:px-10 xl:px-12 pb-4 md:pb-6 flex flex-col flex-1 min-h-0 mobile-page-canvas",
+                showPageContext ? "pt-2 md:pt-4 lg:pt-6" : "pt-4 md:pt-6 lg:pt-8",
               )}
             >
               <ErrorBoundary key={location.pathname}>

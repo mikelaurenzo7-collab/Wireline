@@ -11,6 +11,10 @@ struct RootTabView: View {
                 .tabItem { Label("Home", systemImage: "house.fill") }
             CallsView()
                 .tabItem { Label("Calls", systemImage: "phone.fill") }
+            NavigationStack { WalletView() }
+                .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
+            NavigationStack { SettingsView() }
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .tint(Brand.purple)
         .sheet(isPresented: $router.showAsk) { AskWirelineView() }

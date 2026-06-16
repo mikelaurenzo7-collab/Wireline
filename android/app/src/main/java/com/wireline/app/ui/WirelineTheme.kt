@@ -1,13 +1,13 @@
 package com.wireline.app.ui
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+/**
+ * Legacy re-export — all new code should import from `com.wireline.app.ui.theme.WirelineTheme`.
+ * This file exists only so old imports don't break during the migration.
+ */
 import androidx.compose.runtime.Composable
+import com.wireline.app.ui.theme.WirelineTheme as ThemedWireline
 
 @Composable
 fun WirelineTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(), // Basic dark theme for now
-        content = content
-    )
+    ThemedWireline(content = content)
 }

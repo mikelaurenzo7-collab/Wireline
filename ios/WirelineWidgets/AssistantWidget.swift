@@ -36,39 +36,55 @@ struct AssistantWidget: Widget {
 private struct AssistantWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
-    var body: some View {
-        let geminiGradient = LinearGradient(
-            gradient: Gradient(colors: [
-                Color(red: 0.28, green: 0.52, blue: 0.93), // Gemini Blue
-                Color(red: 0.59, green: 0.35, blue: 0.88), // Gemini Purple
-                Color(red: 0.89, green: 0.40, blue: 0.40)  // Gemini Pink
-            ]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+    /// Wireline brand gradient — matches the web and iOS app's Rich Cream + Purple
+    /// design system. The old Gemini blue/purple/pink gradient was off-brand.
+    private let brandGradient = LinearGradient(
+        gradient: Gradient(colors: [
+            Color(red: 0.545, green: 0.247, blue: 0.839), // #8B3FD6 Brand Purple
+            Color(red: 0.231, green: 0.082, blue: 0.298), // #3B154C Brand Deep
+        ]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 
+    var body: some View {
         switch family {
         case .accessoryCircular:
-            Image(systemName: "sparkles").font(.title2)
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "sparkles")
+                    .font(.title2.weight(.semibold))
+            }
         case .accessoryRectangular:
-            Label("Assistant", systemImage: "sparkles").font(.headline)
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.headline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Assistant")
+                        .font(.headline.weight(.bold))
+                    Text("Tap to route call")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         default:
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.title)
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(.white)
                 Spacer()
                 Text("Send call to Assistant")
-                    .font(.headline)
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(.white)
                     .minimumScaleFactor(0.8)
                     .lineLimit(2)
                 Text("Tap to route")
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.white.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(geminiGradient)
+            .padding(16)
+            .background(brandGradient)
         }
     }
 }

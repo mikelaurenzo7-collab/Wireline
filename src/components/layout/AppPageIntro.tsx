@@ -49,21 +49,21 @@ export default function AppPageIntro({
 
   return (
     <>
-      <div className={cn("flex flex-col items-center text-center gap-2 pb-2 md:pb-3", className)}>
-        <div className="min-w-0 w-full max-w-2xl">
-          <div className="lg:hidden">
-            {eyebrow && <p className="wl-label text-brand/80 mb-1 wl-reveal">{eyebrow}</p>}
-            <h1 className="wl-page-title font-display italic text-xl sm:text-2xl md:text-[1.65rem] leading-tight tracking-tight text-balance hero-headline-glow">
+      <div className={cn("flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 md:pb-8", className)}>
+        <div className="min-w-0 w-full max-w-3xl flex-1 text-left">
+          <div>
+            {eyebrow && <p className="chrome-eyebrow text-brand/80 mb-2 wl-reveal tracking-[0.2em] uppercase text-xs font-semibold">{eyebrow}</p>}
+            <h1 className="wl-page-title font-display italic text-2xl md:text-4xl lg:text-5xl leading-tight tracking-tight text-balance hero-headline-glow pb-1">
               {title}
             </h1>
           </div>
           {subtitle && (
-            <div className="mt-1.5 lg:mt-0 text-caption max-w-2xl text-pretty">{subtitle}</div>
+            <div className="mt-2 text-muted-resolved text-base max-w-2xl text-pretty leading-relaxed">{subtitle}</div>
           )}
         </div>
         {actions && (
-          <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
-            <div className="hidden md:flex flex-wrap items-center gap-2">{actions}</div>
+          <div className="flex flex-wrap items-center justify-start md:justify-end gap-2 shrink-0 mt-2 md:mt-0">
+            <div className="hidden md:flex flex-wrap items-center gap-3">{actions}</div>
             <ShadButton
               type="button"
               disableAnimations
