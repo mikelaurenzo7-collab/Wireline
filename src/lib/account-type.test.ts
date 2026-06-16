@@ -22,34 +22,32 @@ describe("account-type", () => {
 
   it("business mode sees the full nav unchanged", () => {
     expect(accountNavGroups("business").map((g) => g.label)).toEqual([
-      "Studio",
-      "Command",
+      "Build",
+      "Run",
       "Channels",
       "Admin",
     ]);
   });
 
-  it("personal mode hides the business-only Command group", () => {
+  it("personal mode hides the business-only Run group", () => {
     expect(accountNavGroups("personal").map((g) => g.label)).toEqual([
-      "Studio",
+      "Build",
       "Channels",
       "Admin",
     ]);
   });
 
-  it("personal rail keeps Studio + Channels, drops Command's run surfaces", () => {
+  it("personal rail keeps Build + Channels, drops Run's surfaces", () => {
     const paths = accountSidebarItems("personal").map((i) => i.path);
-    expect(paths).toEqual(["/agents", "/chat", "/training", "/phone", "/email", "/sms"]);
+    expect(paths).toEqual(["/agents", "/phone", "/email", "/sms"]);
     expect(paths).not.toContain("/ops");
     expect(paths).not.toContain("/insights");
     expect(paths).not.toContain("/pipeline");
   });
 
-  it("business rail is the full nine-item list", () => {
+  it("business rail is the full run + channels list", () => {
     expect(accountSidebarItems("business").map((i) => i.path)).toEqual([
       "/agents",
-      "/chat",
-      "/training",
       "/ops",
       "/insights",
       "/pipeline",

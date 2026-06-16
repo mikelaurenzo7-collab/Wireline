@@ -18,12 +18,15 @@ import { NAV_GROUPS, SIDEBAR_NAV_ITEMS, type NavItem } from "../constants/naviga
 export type AccountType = "personal" | "business";
 
 /**
- * Nav groups that only make sense for a business. "Command" is the fleet run
- * surface — supervisor cockpit, cross-agent intelligence, and the SDR pipeline
- * — none of which a personal, single-agent Wireline needs. Studio, Channels, and
- * Admin are shared by both modes.
+ * Nav groups that only make sense for a business. The "Run" group is the fleet
+ * run surface — supervisor cockpit (Live Ops), cross-agent intelligence
+ * (Insights), and the SDR pipeline — none of which a personal, single-agent
+ * Wireline needs. Build (Studio), Channels, and Admin are shared by both modes.
+ *
+ * NOTE: this must track the group label/section names in constants/navigation.ts
+ * (renamed Studio→Build, Command→Run). The account-type contract test guards it.
  */
-const BUSINESS_ONLY_GROUPS = new Set<string>(["Command"]);
+const BUSINESS_ONLY_GROUPS = new Set<string>(["Run"]);
 
 /**
  * Resolve the account mode from the billing plan id. Only the "personal" tier
