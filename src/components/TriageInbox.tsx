@@ -22,7 +22,7 @@ export function TriageInbox() {
   const [items, setItems] = useState<TriageItem[]>([
     { id: '1', type: 'call', from: 'Acme Corp', subject: 'Follow-up on proposal', preview: 'They want to move forward but need pricing clarification...', priority: 'high', status: 'new' },
     { id: '2', type: 'email', from: 'Sarah Chen', subject: 'Contract review', preview: 'Can we schedule a quick call this week?', priority: 'high', status: 'new' },
-    { id: '3', type: 'call', from: 'Delta Logistics', subject: 'Demo feedback', preview: 'Really liked the agent demo...', priority: 'medium', status: 'in_progress', notes: 'Agent suggested pricing adjustment' },
+    { id: '3', type: 'call', from: 'Delta Logistics', subject: 'Demo feedback', preview: 'Really liked the agent demo...', priority: 'medium', status: 'in_progress', notes: 'Pricing adjustment suggested' },
   ]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -37,13 +37,22 @@ export function TriageInbox() {
     if (selectedId === id) setSelectedId(null);
   };
 
+  const assignToAgent = (id: string) => {
+    // In real app this would open agent selector or call API
+    alert('Assigned to best available agent! (Demo)');
+    updateStatus(id, 'in_progress');
+  };
+
   return (
     <div className="flex h-screen bg-[#0a0a0f] text-white">
-      {/* List */}
+      {/* List Panel */}
       <div className="w-2/5 border-r border-white/10 overflow-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-semibold tracking-tighter">Triage</h1>
-          <p className="text-white/50 text-sm mt-1">Click or use keyboard to manage</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tighter">Triage</h1>
+            <p className="text-white/50 text-sm">Click item for details & actions</p>
+          </div>
+          <div className="text-xs px-3 py-1 rounded-full bg-white/10">{items.length} items</div>
         </div>
 
         <div className="space-y-3">
@@ -51,56 +60,78 @@ export function TriageInbox() {
             <div
               key={item.id}
               onClick={() => setSelectedId(item.id)}
-              className={`p-4 rounded-xl border cursor-pointer transition ${selectedId === item.id ? 'border-[#00F5FF] bg-white/5' : 'border-white/10 hover:border-white/30 bg-black/30'}`}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${selectedId === item.id ? 'border-[#00F5FF] bg-white/5' : 'border-white/10 hover:border-white/30 bg-black/30'}`}
             >
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between">
                 <div>
                   <div className="font-medium flex items-center gap-2">
                     {item.from}
-                    <span className={`text-[10px] px-2 py-0.5 rounded ${item.type === 'call' ? 'bg-[#00F5FF] text-black' : 'bg-white/20'}`}>{item.type}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.type === 'call' ? 'bg-[#00F5FF] text-black' : 'bg-white/20 text-white'}`}>{item.type}</span>
                   </div>
                   <div className="text-sm text-white/70 mt-0.5 line-clamp-1">{item.subject}</div>
                 </div>
-                <div className={`text-xs px-2 py-0.5 rounded ${item.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10'}`}>{item.priority}</div>
+                <div className={`text-xs self-start px-2.5 py-0.5 rounded-full ${item.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10'}`}>{item.priority}</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Detail Panel */}
+      {/* Detail + Action Panel */}
       <div className="flex-1 p-8 overflow-auto">
         <AnimatePresence mode="wait">
           {selectedItem ? (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <div className="text-sm text-white/50">{selectedItem.type.toUpperCase()} • {selectedItem.from}</div>
-                  <h2 className="text-3xl font-semibold tracking-tight mt-1">{selectedItem.subject}</h2>
-                </div>
-                <div className={`px-4 py-1 text-sm rounded-full ${selectedItem.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-white/10'}`}>{selectedItem.priority} priority</div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl">
+              <div className="mb-8">
+                <div className="text-sm text-white/50 tracking-widest">{selectedItem.type.toUpperCase()} FROM {selectedItem.from.toUpperCase()}</div>
+                <h1 className="text-4xl font-semibold tracking-tighter mt-2 pr-12">{selectedItem.subject}</h1>
               </div>
 
-              <div className="prose prose-invert text-white/80 mb-8">
+              <div className="text-lg text-white/80 leading-relaxed mb-10">
                 {selectedItem.preview}
               </div>
 
               {selectedItem.notes && (
-                <div className="mb-8 p-4 bg-white/5 rounded-xl border border-white/10">
-                  <div className="text-xs text-white/50 mb-1">AGENT NOTES</div>
-                  <div>{selectedItem.notes}</div>
+                <div className="mb-8 p-5 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="uppercase text-xs tracking-[2px] text-white/50 mb-2">Agent Notes</div>
+                  <div className="text-white/90">{selectedItem.notes}</div>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-3">
-                <button onClick={() => updateStatus(selectedItem.id, 'in_progress')} className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition">Mark In Progress</button>
-                <button onClick={() => updateStatus(selectedItem.id, 'resolved')} className="px-6 py-3 rounded-xl bg-[#00F5FF] text-black font-medium">Mark Resolved</button>
-                <button onClick={() => archiveItem(selectedItem.id)} className="px-6 py-3 rounded-xl border border-white/20 hover:bg-white/5 transition text-red-400">Archive</button>
+              <div className="flex flex-wrap gap-4">
+                <button 
+                  onClick={() => updateStatus(selectedItem.id, 'in_progress')}
+                  className="px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/20 active:bg-white/30 transition font-medium"
+                >
+                  Mark In Progress
+                </button>
+                
+                <button 
+                  onClick={() => assignToAgent(selectedItem.id)}
+                  className="px-8 py-4 rounded-2xl bg-[#00F5FF] text-black font-semibold flex items-center gap-2 active:opacity-90 transition"
+                >
+                  Assign to Best Agent
+                </button>
+
+                <button 
+                  onClick={() => updateStatus(selectedItem.id, 'resolved')}
+                  className="px-8 py-4 rounded-2xl border border-white/20 hover:bg-white/5 transition"
+                >
+                  Mark Resolved
+                </button>
+
+                <button 
+                  onClick={() => archiveItem(selectedItem.id)}
+                  className="px-8 py-4 rounded-2xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition ml-auto"
+                >
+                  Archive
+                </button>
               </div>
             </motion.div>
           ) : (
-            <div className="h-full flex items-center justify-center text-white/40">
-              Select an item from the list to view details and take action
+            <div className="h-full flex flex-col items-center justify-center text-center text-white/40">
+              <div className="text-6xl mb-4 opacity-30">←</div>
+              <div>Select an item to view details and take action</div>
             </div>
           )}
         </AnimatePresence>
