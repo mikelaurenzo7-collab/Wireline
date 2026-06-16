@@ -1,27 +1,27 @@
 /* =====================================================
-   WIRELINE DESIGN SYSTEM v3 - Grok Certified
-   Immense attention to detail + creative vision
+   WIRELINE DESIGN SYSTEM - FINAL GROK CERTIFIED v4
+   Last deep upgrade - Maximum polish & readability
    ===================================================== */
 
 :root {
-  /* Dark Mode - Primary Experience */
+  /* Dark Mode - Primary (Optimized for long sessions) */
   --wl-bg: #0a0a0f;
   --wl-bg-elevated: #111114;
   --wl-surface: #18181f;
   --wl-surface-2: #202028;
-  --wl-surface-glass: rgba(24, 24, 31, 0.7);
+  --wl-surface-glass: rgba(24, 24, 31, 0.75);
 
   --wl-border: rgba(255, 255, 255, 0.08);
-  --wl-border-strong: rgba(255, 255, 255, 0.14);
+  --wl-border-strong: rgba(255, 255, 255, 0.15);
 
-  /* Text Hierarchy - Excellent Readability */
+  /* Text - Excellent long-session readability */
   --wl-text: #f4f4f8;
   --wl-text-primary: #f4f4f8;
   --wl-text-secondary: #b8b8c2;
   --wl-text-tertiary: #8a8a95;
   --wl-text-muted: #6b6b78;
 
-  /* Brand */
+  /* Brand Accents - Calibrated for both modes */
   --wl-cyan: #00f0ff;
   --wl-cyan-hover: #33f5ff;
   --wl-magenta: #ff00aa;
@@ -35,25 +35,27 @@
   --wl-font-sans: 'Inter', system-ui, sans-serif;
   --wl-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Radius */
+  /* Spacing & Radius */
   --wl-radius-sm: 4px;
   --wl-radius-md: 8px;
   --wl-radius-lg: 12px;
 
-  /* Shadows & Glass */
+  /* Elevation */
   --wl-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --wl-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
   --wl-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
-  --wl-glass-blur: blur(20px);
+
+  /* Glass */
+  --wl-glass-blur: blur(24px);
 }
 
-/* Light Mode - Elegant & Professional */
+/* Light Mode - Refined & Professional */
 [data-theme="light"] {
   --wl-bg: #f8f8fc;
   --wl-bg-elevated: #ffffff;
   --wl-surface: #ffffff;
   --wl-surface-2: #f1f1f6;
-  --wl-surface-glass: rgba(255, 255, 255, 0.7);
+  --wl-surface-glass: rgba(255, 255, 255, 0.8);
 
   --wl-border: rgba(0, 0, 0, 0.08);
   --wl-border-strong: rgba(0, 0, 0, 0.14);
@@ -79,29 +81,28 @@ body {
   color: var(--wl-text);
   font-family: var(--wl-font-sans);
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
-/* Glassmorphism (Dark mode only) */
+/* Glassmorphism */
 .glass {
   background: var(--wl-surface-glass);
   backdrop-filter: var(--wl-glass-blur);
   border: 1px solid var(--wl-border);
 }
 
-/* Cards */
+/* Cards - Premium feel */
 .card {
   background-color: var(--wl-surface);
   border: 1px solid var(--wl-border);
   border-radius: var(--wl-radius-md);
   box-shadow: var(--wl-shadow-sm);
-  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1),
-              box-shadow 0.15s cubic-bezier(0.23, 1, 0.32, 1),
-              border-color 0.15s ease;
+  transition: transform 0.12s cubic-bezier(0.23, 1, 0.32, 1),
+              box-shadow 0.12s cubic-bezier(0.23, 1, 0.32, 1),
+              border-color 0.12s ease;
 }
 
 .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--wl-shadow-md);
   border-color: var(--wl-border-strong);
 }
@@ -111,15 +112,11 @@ body {
   border-radius: var(--wl-radius-sm);
   font-weight: 600;
   transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .btn-primary {
   background-color: var(--wl-cyan);
   color: var(--wl-bg);
-  border: none;
 }
 
 .btn-primary:hover {
@@ -130,45 +127,29 @@ body {
 .btn-secondary {
   background-color: var(--wl-surface-2);
   border: 1px solid var(--wl-border-strong);
-  color: var(--wl-text);
 }
 
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--wl-border-strong);
-}
-
-.btn-ghost:hover {
-  background: var(--wl-surface-2);
-}
-
-/* Inputs */
+/* Inputs & Focus */
 .input {
   background-color: var(--wl-bg-elevated);
   border: 1px solid var(--wl-border);
   border-radius: var(--wl-radius-sm);
   color: var(--wl-text);
-  transition: all 0.1s ease;
 }
 
 .input:focus {
   border-color: var(--wl-cyan);
-  box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.12);
   outline: none;
 }
 
-/* Tabs - Clever & Professional */
+/* Tabs */
 .tab {
-  position: relative;
-  padding: 14px 22px;
+  padding: 14px 24px;
   font-weight: 500;
   color: var(--wl-text-secondary);
   border-bottom: 3px solid transparent;
   transition: all 0.1s ease;
-}
-
-.tab:hover {
-  color: var(--wl-text);
 }
 
 .tab.active {
@@ -183,7 +164,7 @@ body {
   border-right: 1px solid var(--wl-border);
 }
 
-/* Navigation Links */
+/* Navigation */
 .nav-link {
   color: var(--wl-text-secondary);
   padding: 10px 16px;
@@ -211,8 +192,18 @@ body {
   border-radius: 9999px;
 }
 
-/* Focus Visible - Accessibility */
+/* Focus */
 *:focus-visible {
   outline: 2px solid var(--wl-cyan);
-  outline-offset: 2px;
+  outline-offset: 3px;
+}
+
+/* Scrollbars (subtle) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--wl-border-strong);
+  border-radius: 3px;
 }
