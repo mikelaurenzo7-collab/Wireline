@@ -1,13 +1,25 @@
 import Foundation
 
-/// Single source of truth for the backend origin. Point this at your
-/// environment (local dev, preview, or production) — both the auth flow and
-/// the authenticated API client read from here.
+/// Single source of truth for the Wireline backend origin.
+/// Production-ready with clear dev/preview/prod handling.
 enum WirelineConfig {
-    /// e.g. http://localhost:3000 for the dev server, or your Vercel URL.
-    static var baseURL = URL(string: "https://app.wireline.example")!
+    private static let productionURL = URL(string: "https://trywireline.com")!
+    private static let previewURL = URL(string: "https://wireline-chi.vercel.app")!
+    private static let localURL = URL(string: "http://localhost:3000")!
 
-    /// The httpOnly session cookie the backend sets on sign-in. Its value is
-    /// the JWT we reuse as the `Authorization: Bearer` token on /api/mobile/*.
-    static let sessionCookieName = "wireline_session"
+    static var baseURL: URL {
+        #if DEBUG
+        if let envURL = ProcessInfo.processInfo.environment["WIRELINE_BASE_URL"],
+           let url = URL(string: envURL) {
+            return url
+        }
+        return previewURL
+        #else
+        return productionURL
+        #endif
+    }
+
+    static var mobileAPIBase: URL {
+        baseURL.appendingPathComponent("/api/mobile")
+    }
 }
