@@ -12,6 +12,9 @@ import "./styles/design-preview.css";
 // Authenticated-surface contrast hardening — must load AFTER the core CSS stack so its
 // theme-aware --color-brand-ink override and ghost-button rules win the cascade.
 import "./styles/auth-contrast.css";
+// Studio clarity layer — loaded last so the first authenticated surface keeps
+// the Assistant composer visible on laptop/desktop viewports.
+import "./styles/studio-clarity.css";
 // Studio desktop/laptop fit is now handled natively in the component layout
 // (proper min-h-0 flex chain + per-pane internal scroll), so the old
 // studio-desktop-fix.css override layer was removed.
