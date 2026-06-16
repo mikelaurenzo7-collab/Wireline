@@ -180,8 +180,8 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                         Transactional support mailbox
                       </p>
                       <p className="wl-micro-meta--muted">
-                        Resend SMTP configured with inbound redirects to support
-                        trywireline@yahoo.com.
+                        Resend SMTP configured with inbound redirects to
+                        support@trywireline.com.
                       </p>
                     </div>
                   </div>

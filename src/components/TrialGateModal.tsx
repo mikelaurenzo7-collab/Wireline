@@ -297,7 +297,7 @@ export default function TrialGateModal() {
                 <span>Cancel anytime</span>
                 <span>·</span>
                 <a
-                  href="mailto:trywireline@yahoo.com?subject=Enterprise%20pricing"
+                  href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
                   className="text-brand hover:text-brand/80 transition-colors"
                 >
                   Need Enterprise? →

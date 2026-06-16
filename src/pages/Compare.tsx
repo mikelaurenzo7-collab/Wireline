@@ -340,7 +340,7 @@ export default function Compare() {
             / limited &nbsp;·&nbsp;
             <X className="w-3 h-3 text-rose-400/70 inline-block mr-1" aria-hidden="true" /> not
             available. Scoring reflects publicly-available product as of May 2026. Competitors'
-            product surfaces change frequently — corrections welcome at trywireline@yahoo.com.
+            product surfaces change frequently — corrections welcome at support@trywireline.com.
           </p>
         </section>
 

@@ -14,15 +14,15 @@ Wireline should therefore remain a hybrid product at the company level:
 
 ## Current repo read
 
-The repo is already pointed in the right direction. The iOS README explicitly defines Wingman as a thin native client over the existing backend and states that no business logic, prompts, model selection, or billing lives on device. That is the correct architecture for security, speed, and product consistency.
+The repo is already pointed in the right direction. The iOS README explicitly defines Wireline as a thin native client over the existing backend and states that no business logic, prompts, model selection, or billing lives on device. That is the correct architecture for security, speed, and product consistency.
 
 The web app remains the primary operations surface. The root package uses React, Vite, TypeScript, Express, Drizzle, Supabase/Postgres, Vapi, Twilio, Stripe, and verification scripts. The mobile route layer exposes a dedicated `/api/mobile/*` contract while delegating to existing backend primitives instead of duplicating business logic.
 
 ## Immediate engineering findings
 
-1. iOS API URL construction needed hardening. Query strings should not be passed as part of a path component. A shared `WingmanConfig.url(path:queryItems:)` builder was added, and `WingmanAPI.recentCalls(limit:)` now sends `limit` as a true query item.
+1. iOS API URL construction needed hardening. Query strings should not be passed as part of a path component. A shared `WirelineConfig.url(path:queryItems:)` builder was added, and `WirelineAPI.recentCalls(limit:)` now sends `limit` as a true query item.
 
-2. The iOS app should stay native-first. SwiftUI gives the product first-class access to App Intents, widgets, CallKit, PushKit, system navigation, accessibility, and CarPlay. React Native is not the best first move for Wingman because the product advantage is deep OS integration, not generic cross-platform screens.
+2. The iOS app should stay native-first. SwiftUI gives the product first-class access to App Intents, widgets, CallKit, PushKit, system navigation, accessibility, and CarPlay. React Native is not the best first move for Wireline because the product advantage is deep OS integration, not generic cross-platform screens.
 
 3. The backend/mobile contract is the moat. The iOS app should remain a premium remote control for the same fleet the web app manages. The server should own prompts, model policy, spend controls, TCPA/DNC compliance, entitlements, device registration, and every mutating action.
 

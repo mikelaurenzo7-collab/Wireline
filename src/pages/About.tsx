@@ -110,11 +110,11 @@ export default function About() {
                 morning are usually fixed by lunch.
               </p>
               <a
-                href="mailto:trywireline@yahoo.com"
+                href="mailto:support@trywireline.com"
                 className="inline-flex items-center gap-2 mt-4 font-mono text-[11px] uppercase tracking-[0.2em] text-brand hover:text-brand-deep transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />
-                trywireline@yahoo.com
+                support@trywireline.com
               </a>
             </div>
           </motion.div>

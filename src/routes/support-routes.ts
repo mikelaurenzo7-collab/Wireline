@@ -61,7 +61,7 @@ async function sendSupportEmail(args: {
 
 const router = Router();
 
-const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "trywireline@yahoo.com";
+const SUPPORT_RECIPIENT = process.env.SUPPORT_INBOX || "support@trywireline.com";
 
 const ISSUE_TYPES = new Set(["billing", "tech", "feature", "agent", "account", "other"]);
 
@@ -128,7 +128,7 @@ router.post("/api/support/ticket", ticketRateLimiter, async (req: Request, res: 
     log.error("Support ticket route failed", { error: getErrorMessage(e) });
     return res
       .status(500)
-      .json({ error: "Couldn't submit ticket — please email trywireline@yahoo.com directly." });
+      .json({ error: "Couldn't submit ticket — please email support@trywireline.com directly." });
   }
 });
 

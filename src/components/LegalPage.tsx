@@ -101,7 +101,7 @@ export function PrivacyPolicy() {
         <p>
           <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
           AI-powered omnichannel agent fleet for businesses. Questions about this policy can be sent
-          to <strong>trywireline@yahoo.com</strong>. This policy explains what data we collect, why,
+          to <strong>support@trywireline.com</strong>. This policy explains what data we collect, why,
           and your rights over it.
         </p>
       </Section>
@@ -226,7 +226,7 @@ export function PrivacyPolicy() {
         </p>
         <p>
           To exercise your California privacy rights, contact us at{" "}
-          <strong>trywireline@yahoo.com</strong> or use the Delete Account option in Settings. We
+          <strong>support@trywireline.com</strong> or use the Delete Account option in Settings. We
           will respond to verified requests within 45 days.
         </p>
       </Section>
@@ -274,7 +274,7 @@ export function PrivacyPolicy() {
 
       <Section title="12. Contact">
         <p>
-          Privacy questions or requests: <strong>trywireline@yahoo.com</strong>
+          Privacy questions or requests: <strong>support@trywireline.com</strong>
         </p>
       </Section>
     </LegalLayout>
@@ -352,7 +352,7 @@ export function TermsOfService() {
         <p>
           <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
           for any reason within 30 days of your first paid invoice, email{" "}
-          <strong>trywireline@yahoo.com</strong> with the subject "Refund request" and we'll refund
+          <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll refund
           that month's charge in full — no forms, no escalation, no questions about your reason. The
           30-day window starts on the date of your first paid invoice (not the trial start).
           Outbound call minutes consumed prior to the refund request are not separately deducted —
@@ -435,7 +435,7 @@ export function TermsOfService() {
 
       <Section title="13. Contact">
         <p>
-          Legal notices: <strong>trywireline@yahoo.com</strong>
+          Legal notices: <strong>support@trywireline.com</strong>
         </p>
       </Section>
     </LegalLayout>
@@ -467,7 +467,7 @@ export function DataDeletion() {
       </Section>
       <Section title="Don't have access to your account?">
         <p>
-          Email <strong>trywireline@yahoo.com</strong> from the address tied to the account with the
+          Email <strong>support@trywireline.com</strong> from the address tied to the account with the
           subject line <em>"Data deletion request"</em>. We verify the request out of band (text or
           call to a phone number on file) and then run the same deletion job manually. We confirm by
           email when the purge completes; SLA is 7 business days.
@@ -495,7 +495,7 @@ export function DataDeletion() {
       </Section>
       <Section title="Questions">
         <p>
-          Reach us at <strong>trywireline@yahoo.com</strong> with any data deletion question and
+          Reach us at <strong>support@trywireline.com</strong> with any data deletion question and
           we'll respond within 2 business days.
         </p>
       </Section>
@@ -720,7 +720,7 @@ export function ZoomDocs() {
 
       <Section title="Support">
         <p>
-          For any issue with the Zoom integration, contact <strong>trywireline@yahoo.com</strong> or
+          For any issue with the Zoom integration, contact <strong>support@trywireline.com</strong> or
           visit{" "}
           <a
             href="https://trywireline.com/support"

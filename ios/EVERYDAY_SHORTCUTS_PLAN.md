@@ -1,26 +1,26 @@
-# Wingman — everyday Siri + Shortcuts plan
+# Wireline — everyday Siri + Shortcuts plan
 
-Wingman's primary consumer promise is simple: **ask Wingman to handle everyday phone work for you**. Business calling remains supported, but the default product posture is personal delegation:
+Wireline's primary consumer promise is simple: **ask Wireline to handle everyday phone work for you**. Business calling remains supported, but the default product posture is personal delegation:
 
-- "Have Wingman call the doctor and tell them I'm running late."
-- "Siri, have Wingman take this."
-- "Ask Wingman to call the pharmacy and check if my prescription is ready."
-- "Tell Wingman to call the restaurant and move my reservation to 7:30."
-- "Ask Wingman what calls need my attention."
+- "Have Wireline call the doctor and tell them I'm running late."
+- "Siri, have Wireline take this."
+- "Ask Wireline to call the pharmacy and check if my prescription is ready."
+- "Tell Wireline to call the restaurant and move my reservation to 7:30."
+- "Ask Wireline what calls need my attention."
 
 The implementation should make these flows feel native across Siri, App Shortcuts, widgets, the Action button, Back Tap, Control Center, Spotlight, and the app. CarPlay is only the low-distraction calling surface for a subset of the same personal call actions.
 
 ## Product north star
 
-Wingman is an **everyday call concierge**. It makes, receives, summarizes, and hands off routine phone calls with the user's explicit intent. The app should lead with personal scenarios first:
+Wireline is an **everyday call concierge**. It makes, receives, summarizes, and hands off routine phone calls with the user's explicit intent. The app should lead with personal scenarios first:
 
 | Everyday job | Example user wording | Product behavior |
 | --- | --- | --- |
-| Notify someone | "Call the doctor and say I'm running 10 minutes late." | Place an outbound call through the selected/default Wingman agent with the user's message. |
+| Notify someone | "Call the doctor and say I'm running 10 minutes late." | Place an outbound call through the selected/default Wireline agent with the user's message. |
 | Reschedule | "Call the dentist and move my cleaning to next week." | Place a call with the rescheduling goal and save a follow-up if unresolved. |
 | Check status | "Call the pharmacy and check if my prescription is ready." | Place a call, summarize the answer, and flag if the user must act. |
 | Wait on hold | "Call support and get me when a human is on." | Start the call and offer handoff when the live person is ready. |
-| Take over | "Have Wingman take this." | Transfer an eligible live call to the user's callback number. |
+| Take over | "Have Wireline take this." | Transfer an eligible live call to the user's callback number. |
 | Remember outcomes | "What happened on my last call?" | Speak a short recap and open the call detail for longer notes if needed. |
 | Triage | "What calls need my attention?" | Speak a count/short digest of unresolved calls. |
 
@@ -29,14 +29,14 @@ Wingman is an **everyday call concierge**. It makes, receives, summarizes, and h
 | Surface | Everyday promise | Implementation posture |
 | --- | --- | --- |
 | Siri / App Shortcuts | Natural language entry for outbound calls, handoff, recaps, and triage. | Auto-register App Shortcuts; keep phrases broad and parameterized where iOS allows. |
-| Shortcuts app | Power-user automations like "When I leave work, ask Wingman to call home." | Expose small, composable App Intents with clear parameters and no hidden side effects. |
-| Action button | One-press "Ask Wingman" for iPhone 15 Pro+ users. | User-assigned only; app explains setup but cannot claim the hardware button. |
-| Back Tap | Accessibility-friendly shortcut to Ask Wingman. | User-assigned only through iOS Settings. |
-| Lock Screen / Home widgets | Fast launch into Ask Wingman and recent call follow-up. | Widgets deep-link into `wingman://ask` and call details. |
-| Control Center | Fast launch for Ask Wingman. | Deep-link through the same URL route when user adds a shortcut. |
-| Spotlight | Discoverable "Open Wingman" and suggested shortcuts. | Provided by App Shortcuts metadata. |
+| Shortcuts app | Power-user automations like "When I leave work, ask Wireline to call home." | Expose small, composable App Intents with clear parameters and no hidden side effects. |
+| Action button | One-press "Ask Wireline" for iPhone 15 Pro+ users. | User-assigned only; app explains setup but cannot claim the hardware button. |
+| Back Tap | Accessibility-friendly shortcut to Ask Wireline. | User-assigned only through iOS Settings. |
+| Lock Screen / Home widgets | Fast launch into Ask Wireline and recent call follow-up. | Widgets deep-link into `wireline://ask` and call details. |
+| Control Center | Fast launch for Ask Wireline. | Deep-link through the same URL route when user adds a shortcut. |
+| Spotlight | Discoverable "Open Wireline" and suggested shortcuts. | Provided by App Shortcuts metadata. |
 | CarPlay | Safe callbacks, live handoff, and agent visibility while driving. | Communication templates only; show active-call/live-ops status and agents, but no dashboards, setup, or free-form reading/composing in the car UI. |
-| Apple Watch | Future glanceable trigger for Ask Wingman / take this call. | Roadmap; mirror the same App Intents. |
+| Apple Watch | Future glanceable trigger for Ask Wireline / take this call. | Roadmap; mirror the same App Intents. |
 
 ## Intent catalog
 
@@ -44,12 +44,12 @@ Wingman is an **everyday call concierge**. It makes, receives, summarizes, and h
 
 | Intent | User-facing examples | Required parameters | Should launch app? | Notes |
 | --- | --- | --- | --- | --- |
-| Ask Wingman | "Ask Wingman", "Siri, ask Wingman for help." | Optional free-text request in future. | Yes | Opens the general composer today. |
-| Place a call | "Have Wingman call the doctor and say I'm late." | Contact or phone number, optional instruction, optional agent. | No | Core everyday action. Should support default agent/contact resolution over time. |
-| Take this call | "Have Wingman take this." | Infers the latest eligible live call. | No | Shipped as `TakeThisCallIntent`; transfers to the user's saved callback number and reports setup/conflict states. |
+| Ask Wireline | "Ask Wireline", "Siri, ask Wireline for help." | Optional free-text request in future. | Yes | Opens the general composer today. |
+| Place a call | "Have Wireline call the doctor and say I'm late." | Contact or phone number, optional instruction, optional agent. | No | Core everyday action. Should support default agent/contact resolution over time. |
+| Take this call | "Have Wireline take this." | Infers the latest eligible live call. | No | Shipped as `TakeThisCallIntent`; transfers to the user's saved callback number and reports setup/conflict states. |
 | Summarize last call | "What happened on my last call?" | Optional contact filter in future. | No | Keep spoken output short; longer detail opens in app. |
 | What needs attention | "What calls need my attention?" | Optional timeframe/category in future. | No | Speak counts first, then the top follow-up. |
-| Open Wingman | "Open Wingman." | None. | Yes | Standard launch. |
+| Open Wireline | "Open Wireline." | None. | Yes | Standard launch. |
 
 ### High-value future intents
 
@@ -68,7 +68,7 @@ Wingman is an **everyday call concierge**. It makes, receives, summarizes, and h
 
 - Require explicit user initiation for outbound calls; do not let background automations place surprise calls.
 - Confirm before calls that may create costs, bookings, cancellations, medical/legal/financial commitments, or irreversible changes.
-- Never present Wingman as emergency calling or as a substitute for 911/local emergency services.
+- Never present Wireline as emergency calling or as a substitute for 911/local emergency services.
 - Keep Lock Screen, Siri, and CarPlay responses privacy-preserving: short, no sensitive transcript dumps, and open the app for details.
 - Keep healthcare, school, finance, and government calls framed as user-directed communication assistance, not professional advice.
 - Make callback-number setup personal and upfront so "take this call" works for everyday users without hunting through settings.
@@ -77,11 +77,11 @@ Wingman is an **everyday call concierge**. It makes, receives, summarizes, and h
 
 Lead with consumer copy:
 
-> Wingman is your personal call concierge. Ask it to call the doctor, pharmacy, restaurant, school, landlord, airline, or support line with a clear message; it reports back with the outcome and lets you take over when needed.
+> Wireline is your personal call concierge. Ask it to call the doctor, pharmacy, restaurant, school, landlord, airline, or support line with a clear message; it reports back with the outcome and lets you take over when needed.
 
 Business users still fit as a secondary audience:
 
-> Teams can also use Wingman for business lines, missed-call follow-up, live-ops handoff, and customer callbacks through the same calling workflow. In CarPlay, business mode can show active calls and agents as communication status, not as an operations dashboard.
+> Teams can also use Wireline for business lines, missed-call follow-up, live-ops handoff, and customer callbacks through the same calling workflow. In CarPlay, business mode can show active calls and agents as communication status, not as an operations dashboard.
 
 Avoid App Store claims that imply unsupported autonomy: guaranteed bookings, emergency response, legal/medical/financial decisions, or control of other apps' CarPlay experiences.
 

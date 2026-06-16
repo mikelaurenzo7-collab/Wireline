@@ -15,7 +15,7 @@
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 
 export const WIRELINE_URL = "https://trywireline.com";
-export const WIRELINE_SUPPORT_EMAIL = "trywireline@yahoo.com";
+export const WIRELINE_SUPPORT_EMAIL = "support@trywireline.com";
 
 export const WIRELINE_ONE_LINER =
   "Wireline runs your inbound support, outbound sales, and email follow-ups across one fleet of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";

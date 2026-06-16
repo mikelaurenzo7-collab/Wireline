@@ -1,6 +1,6 @@
-# Wingman — App Store + CarPlay readiness plan
+# Wireline — App Store + CarPlay readiness plan
 
-This is the launch plan for shipping Wingman on the iOS App Store and then
+This is the launch plan for shipping Wireline on the iOS App Store and then
 unlocking the CarPlay Communication surface once Apple grants the entitlement.
 It is intentionally strict: every claim must map to code in `ios/`, backend
 routes under `/api/mobile/*`, or an App Review note. If a feature is aspirational,
@@ -14,10 +14,10 @@ label it as a roadmap item, not a shipped capability.
 
 ## North star
 
-Wingman is an **everyday call concierge for regular people first**, with business calling as an optional workspace mode. The iPhone app is the primary product; CarPlay is the safe in-car companion for a narrow subset of the same calling workflow. The App Store story is not "AI in your car" or "business-only phone ops" — it is:
+Wireline is an **everyday call concierge for regular people first**, with business calling as an optional workspace mode. The iPhone app is the primary product; CarPlay is the safe in-car companion for a narrow subset of the same calling workflow. The App Store story is not "AI in your car" or "business-only phone ops" — it is:
 
-1. Ask Wingman to place routine personal calls: doctors, pharmacies, restaurants, schools, landlords, airlines, support lines, family, and local services.
-2. Give Wingman a short user-directed message or goal, such as "tell them I'm running late" or "check whether my prescription is ready."
+1. Ask Wireline to place routine personal calls: doctors, pharmacies, restaurants, schools, landlords, airlines, support lines, family, and local services.
+2. Give Wireline a short user-directed message or goal, such as "tell them I'm running late" or "check whether my prescription is ready."
 3. Use CallKit/PushKit for native inbound-call presentation and handoff.
 4. Use App Intents and App Shortcuts for fast, user-initiated voice actions across Siri, Shortcuts, widgets, Action button, Back Tap, Control Center, and Spotlight.
 5. Use CarPlay only for Communication-category call surfaces: recent callbacks, call status, and agent line visibility.
@@ -27,7 +27,7 @@ Wingman is an **everyday call concierge for regular people first**, with busines
 - App Review expects complete metadata, a live backend, demo access for
   account-gated apps, review notes for non-obvious features, and tested builds.
 - CarPlay requires category-specific entitlement approval before signing with
-  the CarPlay capability. Wingman should request **Communication** only.
+  the CarPlay capability. Wireline should request **Communication** only.
 - CarPlay is not a separate iOS app extension in this repo. It is a CarPlay scene
   connected from the phone app via `CPTemplateApplicationSceneDelegate`; CallKit
   still owns the native incoming/outgoing call UI.
@@ -39,14 +39,14 @@ Wingman is an **everyday call concierge for regular people first**, with busines
 
 ### Phase 0 — entitlement packet, before binary submission
 
-- [ ] Apple Developer account has App IDs for `com.wireline.wingman` and
-      `com.wireline.wingman.widgets`.
+- [ ] Apple Developer account has App IDs for `com.wireline.app` and
+      `com.wireline.app.widgets`.
 - [ ] Push Notifications, Background Modes, App Groups if added later, and
       Siri/App Intents are configured for the app target.
 - [ ] Submit the CarPlay entitlement request for
       `com.apple.developer.carplay-communication` with this explanation:
 
-> Wingman is a personal communication app for user-initiated calling tasks. It lets authenticated users receive calls via CallKit/PushKit, ask Wingman to place everyday outbound calls such as doctor/pharmacy/restaurant/support calls with a user-provided message, and call recent contacts back while driving. The CarPlay UI is limited to Apple's Communication
+> Wireline is a personal communication app for user-initiated calling tasks. It lets authenticated users receive calls via CallKit/PushKit, ask Wireline to place everyday outbound calls such as doctor/pharmacy/restaurant/support calls with a user-provided message, and call recent contacts back while driving. The CarPlay UI is limited to Apple's Communication
 > templates: recent calls, callback actions, and agent line visibility. It does
 > not provide browsing, free-form AI chat, marketing dashboards, payments, or
 > non-driving tasks in the car.
@@ -71,7 +71,7 @@ Wingman is an **everyday call concierge for regular people first**, with busines
 ### Phase 2 — CarPlay entitlement build
 
 - [ ] Add `com.apple.developer.carplay-communication` to
-      `Wingman/Wingman.entitlements` only after Apple grants it and provisioning
+      `Wireline/Wireline.entitlements` only after Apple grants it and provisioning
       profiles contain the capability.
 - [ ] Regenerate the Xcode project and archive with a provisioning profile that
       includes the CarPlay Communication entitlement.
@@ -97,7 +97,7 @@ Allowed in car:
 
 Not allowed in car:
 
-- Ask Wingman free-form composer.
+- Ask Wireline free-form composer.
 - Long call summaries or transcripts.
 - Training, settings, billing, wallet, onboarding, analytics, or admin dashboards.
 - Device-action setup for Maps/Music/Calendar.
@@ -107,12 +107,12 @@ Not allowed in car:
 
 | Intent | Launches app? | Review posture | CarPlay posture |
 | --- | --- | --- | --- |
-| Ask Wingman | Yes | Safe iPhone entry point; user initiates | Do not expose in CarPlay |
+| Ask Wireline | Yes | Safe iPhone entry point; user initiates | Do not expose in CarPlay |
 | Place a call | No/voice flow | Core communication action | OK only as a call action, not free-form browsing |
 | Take this call | No | Explicit user-requested live-call handoff | OK as active-call handoff from Live ops |
 | Summarize last call | No | Keep spoken response short and sourced from recent call data | Do not put long summary text in CarPlay |
 | What needs attention | No | Spoken digest only; no sensitive details in lock-screen text | Do not expose as car reading list |
-| Open Wingman | Yes | Standard app launch | Not needed in CarPlay |
+| Open Wireline | Yes | Standard app launch | Not needed in CarPlay |
 
 Future intent candidates, in priority order:
 
@@ -128,7 +128,7 @@ Future intent candidates, in priority order:
 ## App Review notes template
 
 ```text
-Wingman is a personal call concierge. It uses account sign-in, CallKit/PushKit for inbound calls, App Intents for user-initiated Siri and Shortcuts actions, and a backend API at /api/mobile/*. Business workspaces are supported, but the default review path is an everyday user asking Wingman to make or summarize routine calls.
+Wireline is a personal call concierge. It uses account sign-in, CallKit/PushKit for inbound calls, App Intents for user-initiated Siri and Shortcuts actions, and a backend API at /api/mobile/*. Business workspaces are supported, but the default review path is an everyday user asking Wireline to make or summarize routine calls.
 
 Demo account:
 Email: <review-demo-email>
@@ -146,7 +146,7 @@ Non-obvious features:
 Test path:
 1. Sign in with the demo account.
 2. Open Calls to see recent everyday calls.
-3. Use Siri/App Shortcuts: "Ask Wingman to summarize my last call" and "Have Wingman take this" when a seeded live call is available.
+3. Use Siri/App Shortcuts: "Ask Wireline to summarize my last call" and "Have Wireline take this" when a seeded live call is available.
 4. Place an outbound call to the supplied test number with a personal instruction such as "tell the doctor I am running late".
 5. If reviewing CarPlay, connect the CarPlay Simulator and confirm the signed-in
    live ops, recent callbacks, and agents list.
@@ -155,7 +155,7 @@ Test path:
 ## Screenshot set
 
 - iPhone 6.7": signed-in workspace, calls list, call detail, outbound call,
-  Ask Wingman, settings callback number, activation setup.
+  Ask Wireline, settings callback number, activation setup.
 - iPhone 6.1": workspace, calls list, outbound call.
 - Widget screenshots: Home widget and Lock Screen accessory if configured.
 - CarPlay entitlement packet: signed-out prompt, loading/empty, live ops active-call handoff, business workspace, recent callbacks, agents list, native incoming call via CallKit.

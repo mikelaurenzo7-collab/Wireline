@@ -237,7 +237,7 @@ export default function Pricing() {
                   )}
                   {isEnterprise ? (
                     <a
-                      href="mailto:trywireline@yahoo.com?subject=Enterprise%20inquiry"
+                      href="mailto:sales@trywireline.com?subject=Enterprise%20inquiry"
                       className="group flex w-full min-h-[48px] items-center justify-center text-center py-3.5 text-[11px] uppercase tracking-[0.32em] font-medium transition-colors duration-300 mb-6 border border-ink/15 text-ink hover:border-brand/30 hover:bg-ink/[0.03]"
                     >
                       <span className="inline-flex items-center gap-2">

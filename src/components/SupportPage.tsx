@@ -6,7 +6,7 @@
  * to nothing erodes confidence. This page gives every visitor a clear
  * triage path:
  *   1. Wireline team line — Sarah picks up immediately
- *   2. Email — trywireline@yahoo.com with structured templates per
+ *   2. Email — support@trywireline.com with structured templates per
  *      issue type (faster resolution + better signal for us)
  *   3. In-app — if signed in, "Ask your agent" via per-agent Workspace
  *   4. Status — link to the in-app SystemStatusBadge or future
@@ -72,7 +72,7 @@ export function SupportPage() {
     } catch {
       // Graceful fallback: pre-fill mailto with the operator's content
       // so they don't lose what they typed.
-      const fallback = `mailto:trywireline@yahoo.com?subject=${encodeURIComponent(
+      const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(
         `[Support / ${issueType}] ${subject || "(no subject)"}`,
       )}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
       window.location.href = fallback;
@@ -127,7 +127,7 @@ export function SupportPage() {
             </p>
           </a>
           <a
-            href="mailto:trywireline@yahoo.com"
+            href="mailto:support@trywireline.com"
             className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(107,43,153,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
@@ -135,7 +135,7 @@ export function SupportPage() {
             </div>
             <p className="text-sm font-semibold text-ink mb-1">Email us</p>
             <p className="text-caption leading-relaxed">
-              trywireline@yahoo.com — 1 business day response, faster on billing + access issues.
+              support@trywireline.com — 1 business day response, faster on billing + access issues.
             </p>
           </a>
           <Link

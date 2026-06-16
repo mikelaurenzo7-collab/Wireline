@@ -61,7 +61,7 @@ export function ContactPage() {
         (window as any).plausible("ContactMessageSubmitted", { props: { inquiryType } });
       }
     } catch {
-      const fallback = `mailto:trywireline@yahoo.com?subject=${encodeURIComponent(
+      const fallback = `mailto:sales@trywireline.com?subject=${encodeURIComponent(
         `[Contact / ${inquiryType}] ${subject || "(no subject)"}`,
       )}&body=${encodeURIComponent(`From: ${email}\n\n${composedBody}`)}`;
       window.location.href = fallback;
@@ -118,7 +118,7 @@ export function ContactPage() {
             </p>
           </a>
           <a
-            href="mailto:trywireline@yahoo.com"
+            href="mailto:sales@trywireline.com"
             className="marketing-panel p-4 min-h-[88px] hover:border-brand/30 hover:shadow-[0_8px_24px_-16px_rgba(107,43,153,0.25)] transition-all group"
           >
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
@@ -126,7 +126,7 @@ export function ContactPage() {
             </div>
             <p className="text-sm font-semibold text-ink mb-1">Email us</p>
             <p className="text-caption leading-relaxed">
-              trywireline@yahoo.com — sales, partnerships, and press. 1 business day response.
+              sales@trywireline.com — sales, partnerships, and press. 1 business day response.
             </p>
           </a>
           <Link
