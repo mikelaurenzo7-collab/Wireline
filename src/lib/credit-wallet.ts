@@ -122,6 +122,32 @@ export async function addCredit(
 }
 
 /**
+ * Reverse a prior credit — e.g. a refunded or disputed web top-up. Idempotent
+ * per `ref`. The resulting balance may go negative (the operator spent credit
+ * that's now been clawed back); that simply means future overage isn't covered
+ * until they top up again. Returns the new balance.
+ */
+export async function reverseCredit(
+  userId: string,
+  amountUsd: number,
+  reason: string,
+  ref?: { type: string; id: string },
+): Promise<number> {
+  const amount = cents(amountUsd);
+  if (!(amount > 0)) return getCreditBalanceUsd(userId);
+  try {
+    const { balance } = await appendLedger(userId, -amount, reason, ref);
+    return balance;
+  } catch (err) {
+    log.error("reverseCredit failed", {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return getCreditBalanceUsd(userId);
+  }
+}
+
+/**
  * Debit the wallet to absorb a voice-overage charge, but ONLY when the balance
  * covers the full cost — partial coverage is skipped so we never both debit
  * credits AND meter the same minutes to Stripe (no double-charge). Idempotent
