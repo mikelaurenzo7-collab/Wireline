@@ -1,4 +1,4 @@
--- Wingman prepaid credit wallet (append-only USD ledger).
+-- Assistant prepaid credit wallet (append-only USD ledger).
 --
 -- Positive deltas = top-ups (purchased on the WEB via Stripe; never in-app, to
 -- stay clear of Apple IAP). Negative deltas = debits that absorb voice-minute
