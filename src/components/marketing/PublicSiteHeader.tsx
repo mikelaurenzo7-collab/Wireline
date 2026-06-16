@@ -133,7 +133,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     data-testid="header-cta"
                     className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
                   >
-                    Start at $19
+                    Start at $9
                   </Link>
                 )}
               </>
@@ -206,7 +206,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     Sign in
                   </Link>
                   <Link to="/pricing" className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors" onClick={() => setMenuOpen(false)}>
-                    Start at $19
+                    Start at $9
                     <ArrowRight aria-hidden="true" className="w-4 h-4" />
                   </Link>
                 </>
