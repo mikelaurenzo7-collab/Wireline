@@ -48,6 +48,12 @@ const required = [
 
 const recommended = [
   ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
+  ["OPENROUTER_API_KEY", "OpenRouter — required for default Grok tenant voice routing"],
+  [
+    "WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL",
+    "Default tenant voice model via OpenRouter; launch default is x-ai/grok-4.3",
+  ],
+  ["GEMINI_API_KEY", "Gemini Flash fallback when OpenRouter/Grok is unavailable"],
   ["VITE_VAPI_PUBLIC_KEY", "Vapi — required for browser-side test calls from the dashboard"],
   ["VAPI_PRIVATE_KEY", "Vapi — required for outbound/inbound voice agents"],
   [
@@ -72,10 +78,6 @@ const recommended = [
   ["STRIPE_BUSINESS_PRICE_ID", "Stripe monthly price — Business"],
   ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Stripe annual price — Business"],
   ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Stripe extra-agent add-on — Business"],
-  [
-    "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
-    "Stripe extra-agent add-on — Business",
-  ],
   ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Personal"],
   ["STRIPE_STARTER_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Starter"],
   ["STRIPE_PRO_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Pro"],
@@ -92,7 +94,6 @@ const recommended = [
 ];
 
 const optional = [
-  ["GEMINI_API_KEY", "Gemini fallback for legacy paths"],
   ["OPENAI_API_KEY", "Optional GPT second-tier fallback / degraded-mode recovery"],
   ["GOOGLE_CLIENT_ID", "Gmail OAuth — disables email integration when unset"],
   ["GOOGLE_CLIENT_SECRET", "Gmail OAuth"],
