@@ -546,10 +546,10 @@ describe("billing routes integration", () => {
     expect(response.body.stripe_configured).toBe(true);
     expect(response.body.plans).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: "personal", price_usd_monthly: 49 }),
-        expect.objectContaining({ id: "starter", price_usd_monthly: 149 }),
-        expect.objectContaining({ id: "pro", price_usd_monthly: 499 }),
-        expect.objectContaining({ id: "business", price_usd_monthly: 1499 }),
+        expect.objectContaining({ id: "personal", price_usd_monthly: 9 }),
+        expect.objectContaining({ id: "starter", price_usd_monthly: 79 }),
+        expect.objectContaining({ id: "pro", price_usd_monthly: 249 }),
+        expect.objectContaining({ id: "business", price_usd_monthly: 699 }),
         expect.objectContaining({ id: "enterprise", price_usd_monthly: 0, contact_sales: true }),
       ]),
     );
@@ -569,15 +569,15 @@ describe("billing routes integration", () => {
     expect(getResponse.status).toBe(200);
     expect(getResponse.body).toEqual({
       plan_id: "starter",
-      plan_name: "Starter",
-      included_agents: 3,
+      plan_name: "Business Starter",
+      included_agents: 2,
       extra_agents: 2,
-      extra_agent_price_usd: 45,
+      extra_agent_price_usd: 19,
       configured: true,
     });
 
     expect(postResponse.status).toBe(200);
-    expect(postResponse.body).toEqual({ ok: true, extra_agents: 4, agents_total: 7 });
+    expect(postResponse.body).toEqual({ ok: true, extra_agents: 4, agents_total: 6 });
     expect(h.stripe.subscriptions.retrieve).toHaveBeenCalledWith("sub_live");
     expect(h.stripe.subscriptionItems.create).toHaveBeenCalledWith({
       subscription: "sub_live",
