@@ -11,9 +11,9 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   "/api/intake/leads",
   "/api/health",
   "/api/public-stats",
-  // Native Wireline iOS app: Bearer-token only, sends no Origin/Referer, and
-  // never accepts cookies — structurally not CSRF-reachable. Listed explicitly
-  // so the intent is durable rather than relying on the header-less fall-through.
+  // Native Wireline apps send Authorization: Bearer and usually omit
+  // Origin/Referer. A dedicated bearer gate below rejects cookie-only mobile
+  // requests before this same-origin exemption is applied.
   "/api/mobile/",
 ];
 
@@ -40,16 +40,31 @@ function originFromReferer(referer: string): string | null {
   }
 }
 
+function hasBearerAuthorization(req: Request): boolean {
+  const header = req.headers.authorization;
+  return typeof header === "string" && /^Bearer\s+\S+/i.test(header);
+}
+
 /**
  * Reject cross-site mutating API requests when Origin/Referer do not match
  * APP_URL or CORS_ORIGINS. Complements SameSite=Lax session cookies.
  */
 export function assertSameOrigin(req: Request, res: Response, next: NextFunction): void {
+  const path = req.path || req.url || "";
+
+  if (path.startsWith("/api/mobile/") && !hasBearerAuthorization(req)) {
+    res.status(401).json({
+      error: "Mobile API requires Authorization: Bearer token.",
+      code: "MOBILE_BEARER_REQUIRED",
+      requestId: res.locals?.requestId,
+    });
+    return;
+  }
+
   if (!MUTATING.has(req.method)) {
     next();
     return;
   }
-  const path = req.path || req.url || "";
   if (!path.startsWith("/api/")) {
     next();
     return;
