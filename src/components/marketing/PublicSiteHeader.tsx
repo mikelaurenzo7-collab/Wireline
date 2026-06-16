@@ -115,7 +115,9 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
         data-testid="site-header"
         className={cn(
           "fixed top-0 inset-x-0 z-50 transition-all duration-500",
-          scrolled ? "glass border-b border-ink/[0.06] shadow-sm shadow-brand/10" : "bg-transparent",
+          scrolled
+            ? "glass border-b border-ink/[0.06] shadow-sm shadow-brand/10"
+            : "bg-transparent",
           className,
         )}
       >
@@ -165,11 +167,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               to avoid redundancy with the inline auth card. */}
           <div className="flex items-center gap-3 shrink-0">
             {signedIn && !isAuth ? (
-                <Link
-                  to="/agents"
-                  data-testid="header-dashboard"
-                  className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
-                >
+              <Link
+                to="/agents"
+                data-testid="header-dashboard"
+                className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
+              >
                 Open the Studio
               </Link>
             ) : (
@@ -294,7 +296,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                   <Link
                     to="/agents"
                     data-testid="header-dashboard-mobile"
-                    className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
+                    className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     Open the Studio
@@ -311,7 +313,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     </Link>
                     <Link
                       to="/signup"
-                      className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-gradient-to-r from-brand to-brand-deep text-white hover:opacity-90 transition-colors"
+                      className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors"
                       onClick={() => setMenuOpen(false)}
                     >
                       Start free trial

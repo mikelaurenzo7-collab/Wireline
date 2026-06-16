@@ -810,7 +810,11 @@ export default function DirectorWorkspace({
           break;
         case "open_training": {
           const target = s.agentId || focusAgentId || agents[0]?.id;
-          navigate(target ? `/training?agent=${encodeURIComponent(target)}` : "/training");
+          navigate(
+            target
+              ? `/agents?agent=${encodeURIComponent(target)}&rail=training`
+              : "/agents?rail=training",
+          );
           break;
         }
         case "open_insights":
@@ -1287,7 +1291,7 @@ export default function DirectorWorkspace({
             </span>
             <div className="min-w-0">
               <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em] truncate">
-                Director
+                Assistant
               </p>
               <p className="wl-label text-muted leading-tight truncate">
                 {isSending ? (

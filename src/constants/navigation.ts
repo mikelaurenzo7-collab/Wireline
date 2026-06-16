@@ -1,10 +1,8 @@
 import {
-  MessagesSquare,
   BarChart3,
   LayoutGrid,
   Kanban,
   SlidersHorizontal,
-  GraduationCap,
   Phone,
   Mail,
   MessageCircle,
@@ -42,32 +40,20 @@ function withSection(items: NavItem[], section: string): NavItem[] {
   return items.map((item) => ({ ...item, section }));
 }
 
-// Studio-first IA. Studio leads — the build pivot: shape and tune agents on the
-// canvas with the embedded Wireline Wizard co-pilot, coach them in the
-// standalone Wireline Wizard chat, and teach them in Training. Command is the
-// run surface (cockpit, intelligence, pipeline). Channels are the wires.
-// Integrations now live in the agent tuning rail, not the primary nav.
+// Unified Studio IA (Opus-approved 2026-06 audit).
+// Studio is the single build surface: fleet list + agent canvas + embedded
+// Assistant co-pilot + Tuning Rail (Identity, Voice, Knowledge, Pronunciation,
+// Rules, Tools, Flow, Simulator, Integrations). Training and standalone Wizard
+// have been consolidated into the Studio canvas + rail.
+// Command is the run surface (cockpit, intelligence, pipeline).
+// Channels are the wires. Integrations live in the agent tuning rail.
 const STUDIO_NAV: NavItem[] = [
   {
-    label: "Agent Studio",
+    label: "Studio",
     path: "/agents",
     icon: Users,
     dataTour: "agents",
     matches: ["/agents"],
-  },
-  {
-    label: "Wireline Wizard",
-    path: "/chat",
-    icon: MessagesSquare,
-    dataTour: "chat",
-    matches: ["/chat"],
-  },
-  {
-    label: "Training",
-    path: "/training",
-    icon: GraduationCap,
-    dataTour: "training",
-    matches: ["/knowledge"],
   },
 ];
 
@@ -118,16 +104,16 @@ const ADMIN_NAV: NavItem[] = [
 
 /** Logical IA groups - used for mobile drawer sections and docs; labels are not shown on desktop rail. */
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
-  { label: "Studio", items: withSection(STUDIO_NAV, "Studio") },
-  { label: "Command", items: withSection(COMMAND_NAV, "Command") },
+  { label: "Build", items: withSection(STUDIO_NAV, "Build") },
+  { label: "Run", items: withSection(COMMAND_NAV, "Run") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
   { label: "Admin", items: withSection(ADMIN_NAV, "Admin") },
 ];
 
 /** Single continuous desktop rail - no section headers, fits without scroll on typical viewports. */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
-  ...withSection(STUDIO_NAV, "Studio"),
-  ...withSection(COMMAND_NAV, "Command"),
+  ...withSection(STUDIO_NAV, "Build"),
+  ...withSection(COMMAND_NAV, "Run"),
   ...withSection(CHANNELS_NAV, "Channels"),
 ];
 
@@ -152,9 +138,9 @@ export const PAGE_TITLES: Record<string, string> = {
   "/insights": "Insights",
   "/cockpit": "Live Ops",
   "/knowledge": "Knowledge",
-  "/agents": "Agent Studio",
-  "/chat": "Wireline Wizard",
-  "/training": "Training",
+  "/agents": "Studio",
+  "/chat": "Assistant",
+  "/training": "Studio",
   "/founder": "Founder",
   "/integrations": "Integrations",
   "/admin": "Settings",
@@ -169,8 +155,6 @@ export const PAGE_TITLES: Record<string, string> = {
 /** g+key shortcuts - keep in sync with AppShell and Sidebar hints. */
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   A: "/agents",
-  C: "/chat",
-  N: "/training",
   D: "/ops",
   T: "/ops?tab=triage",
   I: "/insights",
@@ -183,8 +167,6 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/agents": "g a",
-  "/chat": "g c",
-  "/training": "g n",
   "/ops": "g d",
   "/insights": "g i",
   "/pipeline": "g l",

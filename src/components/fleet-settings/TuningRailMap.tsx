@@ -17,6 +17,9 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  Mic,
+  Workflow,
+  PlayCircle,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { computeAgentReadiness } from "./agent-readiness";
@@ -27,6 +30,9 @@ type TuningRailMapProps = {
   integrationStatus: Record<string, { connected: boolean }> | null;
 };
 
+// Unified Tuning Rail sections (Studio consolidation 2026-06).
+// Training surfaces (Pronunciation, Flow, Simulator) now live here alongside
+// Identity/Voice/Knowledge — one rail, one workspace.
 const sections = [
   {
     id: "identity",
@@ -60,6 +66,12 @@ const sections = [
     hint: "Website, FAQs, documents, policies, and product/service facts.",
   },
   {
+    id: "pronunciation",
+    label: "Pronunciation",
+    icon: Mic,
+    hint: "Custom pronunciations, phonetics, brand names, jargon.",
+  },
+  {
     id: "integrations",
     label: "Integrations",
     icon: PlugZap,
@@ -70,6 +82,18 @@ const sections = [
     label: "Rules",
     icon: ShieldCheck,
     hint: "Escalation, compliance, do-not-say, approvals, and handoffs.",
+  },
+  {
+    id: "flow",
+    label: "Conversation Flow",
+    icon: Workflow,
+    hint: "Dialog trees, intent handling, escalation paths.",
+  },
+  {
+    id: "simulator",
+    label: "Simulator",
+    icon: PlayCircle,
+    hint: "Test calls, dry runs, scenario validation.",
   },
   {
     id: "launch",
@@ -140,7 +164,9 @@ export default function TuningRailMap({
                 <Icon className="w-3 h-3 shrink-0 text-brand" />
                 <span className="wl-label text-ink truncate">{section.label}</span>
               </div>
-              <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2">{section.hint}</p>
+              <p className="mt-1 text-[11px] leading-snug text-muted line-clamp-2">
+                {section.hint}
+              </p>
             </div>
           );
         })}
@@ -166,21 +192,51 @@ export default function TuningRailMap({
       </div>
 
       <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-        <SignalTile icon={Phone} label="Voice" value={hasVoice ? "armed" : "needs setup"} active={hasVoice} />
-        <SignalTile icon={MessageCircle} label="SMS" value="routing" active={!!selectedAgent?.sms_enabled} />
-        <SignalTile icon={Mail} label="Email" value="relay" active={selectedAgent?.channel === "email"} />
+        <SignalTile
+          icon={Phone}
+          label="Voice"
+          value={hasVoice ? "armed" : "needs setup"}
+          active={hasVoice}
+        />
+        <SignalTile
+          icon={MessageCircle}
+          label="SMS"
+          value="routing"
+          active={!!selectedAgent?.sms_enabled}
+        />
+        <SignalTile
+          icon={Mail}
+          label="Email"
+          value="relay"
+          active={selectedAgent?.channel === "email"}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-        <SignalTile icon={FileText} label="Knowledge" value={hasKnowledge ? "loaded" : "empty"} active={hasKnowledge} />
+        <SignalTile
+          icon={FileText}
+          label="Knowledge"
+          value={hasKnowledge ? "loaded" : "empty"}
+          active={hasKnowledge}
+        />
         <SignalTile
           icon={PlugZap}
           label="Tools"
           value={connectedIntegrations > 0 ? `${connectedIntegrations} connected` : "not connected"}
           active={connectedIntegrations > 0}
         />
-        <SignalTile icon={ShieldCheck} label="Rules" value={hasRules ? "defined" : "draft"} active={hasRules} />
-        <SignalTile icon={Route} label="Launch" value={launchScore >= 5 ? "close" : "building"} active={launchScore >= 5} />
+        <SignalTile
+          icon={ShieldCheck}
+          label="Rules"
+          value={hasRules ? "defined" : "draft"}
+          active={hasRules}
+        />
+        <SignalTile
+          icon={Route}
+          label="Launch"
+          value={launchScore >= 5 ? "close" : "building"}
+          active={launchScore >= 5}
+        />
       </div>
     </div>
   );

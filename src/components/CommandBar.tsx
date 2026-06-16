@@ -110,13 +110,12 @@ export default function CommandBar() {
       action: () => navigate("/agents"),
     },
     {
-      id: "chat",
-      label: "Chat",
-      description: "Direct your agents — the main control surface",
+      id: "assistant",
+      label: "Assistant",
+      description: "Direct your agents — embedded co-pilot in Studio",
       icon: MessagesSquare,
       category: "Navigation",
-      shortcut: "C",
-      action: () => navigate("/chat"),
+      action: () => navigate("/agents"),
     },
     {
       id: "dash",
@@ -219,7 +218,7 @@ export default function CommandBar() {
       description: "Cross-agent fact manager",
       icon: Database,
       category: "Navigation",
-      action: () => navigate("/training?tab=database"),
+      action: () => navigate("/agents?rail=knowledge"),
     },
     {
       id: "integrations",

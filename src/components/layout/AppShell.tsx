@@ -38,11 +38,11 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/insights": "Performance analytics, topics & trend discovery",
   "/pipeline": "Leads across the funnel — scored and staged",
   "/admin": "Account configuration & integrations",
-  "/agents": "Build, voice & tune your agents",
+  "/agents": "Build, voice, tune & coach your agents — one unified workspace",
   "/integrations": "Email, CRM & third-party connections",
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
-  "/chat": "Fleet coach — plan, coach agents, and approve from one thread",
+  "/chat": "Assistant — plan, coach agents, and approve from one thread",
   "/founder": "Owner command center, launch posture & growth controls",
   "/help": "Team lines, demos & quick paths into the product",
 };
@@ -119,26 +119,17 @@ function getPageContext(
             subtitle: "Configure and manage deployed agents",
           };
         return {
-          eyebrow: section ?? "Studio",
+          eyebrow: section ?? "Build",
           title: "Studio",
           subtitle: ROUTE_SUBTITLES["/agents"],
         };
       }
       if (pathname === "/training") {
-        const trainingTab = params.get("tab");
-        const trainingMeta: Record<string, { title: string; subtitle: string }> = {
-          voices: { title: "Voices", subtitle: "Voice library and cloning" },
-          pronunciation: { title: "Pronunciation", subtitle: "Industry terms and brand names" },
-          simulator: { title: "Simulator", subtitle: "Test calls before customers dial in" },
-          flow: { title: "Flow", subtitle: "Conversation stages and transitions" },
-        };
-        if (trainingTab && trainingMeta[trainingTab]) {
-          return { eyebrow: section ?? "Studio", ...trainingMeta[trainingTab] };
-        }
+        // Legacy route — redirects to /agents?rail=training in AppRoutes
         return {
-          eyebrow: section ?? "Studio",
-          title: "Training",
-          subtitle: ROUTE_SUBTITLES["/training"],
+          eyebrow: "Build",
+          title: "Studio",
+          subtitle: ROUTE_SUBTITLES["/agents"],
         };
       }
       if (pathname === "/insights") {

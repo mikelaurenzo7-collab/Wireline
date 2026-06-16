@@ -4,7 +4,7 @@
  * `<html>` so the shadcn token system flips between the Rich Cream
  * light palette and the deep purple dark palette.
  *
- * Defaults to "light" for a consistent, branded first experience.
+ * Defaults to "dark" (editorial deep mode first) per 2026-06 Grok 4.3 audit.
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
@@ -22,14 +22,14 @@ const STORAGE_KEY = "wireline.theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === "light" || raw === "dark" || raw === "system") return raw;
   } catch {
-    /* localStorage unavailable — fall back to light */
+    /* localStorage unavailable — fall back to dark */
   }
-  return "light";
+  return "dark";
 }
 
 function resolveTheme(theme: Theme): "light" | "dark" {

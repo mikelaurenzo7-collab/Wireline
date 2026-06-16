@@ -8,13 +8,23 @@ import React from "react";
 
 import { Link, useLocation } from "react-router-dom";
 
-import { LayoutGrid, MessagesSquare, MoreHorizontal, Phone } from "lucide-react";
+import { LayoutGrid, Users, Phone } from "lucide-react";
 
 import { cn } from "../../lib/utils";
 
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 const QUICK_TABS = [
+  {
+    label: "Studio",
+
+    path: "/agents",
+
+    icon: Users,
+
+    matches: ["/agents"],
+  },
+
   {
     label: "Ops",
 
@@ -23,16 +33,6 @@ const QUICK_TABS = [
     icon: LayoutGrid,
 
     matches: ["/ops", "/dashboard", "/command", "/live", "/cockpit"],
-  },
-
-  {
-    label: "Chat",
-
-    path: "/chat",
-
-    icon: MessagesSquare,
-
-    matches: ["/chat"],
   },
 
   {

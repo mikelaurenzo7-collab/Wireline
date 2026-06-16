@@ -25,8 +25,8 @@ const Security = lazyRoute(() => import("../components/Security"));
 const TrustPackPage = lazyRoute(() => import("../components/TrustPackPage"));
 const Pipeline = lazyRoute(() => import("../components/Pipeline"));
 const FounderDashboard = lazyRoute(() => import("../components/FounderDashboard"));
-const AgentChat = lazyRoute(() => import("../pages/AgentChat"));
-const Training = lazyRoute(() => import("../pages/Training"));
+const _AgentChat = lazyRoute(() => import("../pages/AgentChat"));
+const _Training = lazyRoute(() => import("../pages/Training"));
 const PhonePage = lazyRoute(() => import("../pages/PhonePage"));
 const EmailPage = lazyRoute(() => import("../pages/EmailPage"));
 const SmsPage = lazyRoute(() => import("../pages/SmsPage"));
@@ -123,8 +123,8 @@ export default function AppRoutes() {
           <Route path="/inbox" element={<Navigate to="/email" replace />} />
           <Route path="/outbound" element={<Navigate to="/phone?tab=outbound" replace />} />
           <Route path="/cockpit" element={<Navigate to="/ops?tab=floor" replace />} />
-          <Route path="/director" element={<Navigate to="/chat" replace />} />
-          <Route path="/director/*" element={<Navigate to="/chat" replace />} />
+          <Route path="/director" element={<Navigate to="/agents" replace />} />
+          <Route path="/director/*" element={<Navigate to="/agents" replace />} />
           <Route path="/account" element={<Navigate to="/admin?tab=subscription" replace />} />
           <Route path="/account/*" element={<Navigate to="/admin?tab=subscription" replace />} />
           <Route path="/billing" element={<Navigate to="/admin?tab=subscription" replace />} />
@@ -132,44 +132,23 @@ export default function AppRoutes() {
           <Route path="/ops/actions" element={<Navigate to="/ops?tab=intel" replace />} />
           <Route path="/appointments" element={<Navigate to="/phone?tab=appointments" replace />} />
           <Route path="/activity" element={<ActivityRedirect />} />
-          <Route path="/knowledge" element={<Navigate to="/training?tab=database" replace />} />
-          <Route path="/train" element={<Navigate to="/training" replace />} />
+          {/* Legacy Training deep links → redirect to Studio with rail query param */}
+          <Route path="/knowledge" element={<Navigate to="/agents?rail=knowledge" replace />} />
+          <Route path="/train" element={<Navigate to="/agents?rail=training" replace />} />
+          <Route path="/training" element={<Navigate to="/agents?rail=training" replace />} />
           <Route
-            path="/training"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <Training />
-                </ErrorBoundary>
-              </PageTransition>
-            }
+            path="/training?tab=database"
+            element={<Navigate to="/agents?rail=knowledge" replace />}
           />
+          {/* Legacy Wizard/Chat deep links → redirect to unified Studio */}
+          <Route path="/chat" element={<Navigate to="/agents" replace />} />
+          <Route path="/chat/:id" element={<Navigate to="/agents" replace />} />
           <Route
             path="/agents"
             element={
               <PageTransition>
                 <ErrorBoundary>
                   <FleetSettings />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <AgentChat />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/chat/:id"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <AgentChat />
                 </ErrorBoundary>
               </PageTransition>
             }

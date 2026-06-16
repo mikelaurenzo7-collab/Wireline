@@ -28,11 +28,10 @@ const buttonVariants = cva(
           "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white/90 transition-colors",
 
         // Editorial — the highest-fidelity print-like button. Flat, zero-radius
-        // (or very tight), rich depth via inner light + deep shadow. Use for
-        // primary conversion moments where we want the button to feel like a
-        // physical object on the page.
+        // (or very tight), rich depth via inner light + deep shadow.
+        // Sharp solid brand purple (no gradient) — Grok 4.3 2026-06 audit.
         editorial:
-          "bg-gradient-to-b from-brand to-brand-deep text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_2px_0_#3B154C,0_8px_18px_rgba(59,21,76,0.35)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#3B154C] border border-brand-deep/60",
+          "bg-brand text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_2px_0_#3B154C,0_8px_18px_rgba(59,21,76,0.35)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#3B154C] border border-brand-deep/60",
       },
       size: {
         // Premium density: compact visual heights with invisible hit-area expansion.

@@ -737,7 +737,7 @@ export default function AgentConfigPanel({
                             className="shrink-0 rounded-full wl-label touch-press hover:scale-[1.02]"
                           >
                             <Link
-                              to={`/training?agent=${encodeURIComponent(selectedAgent.id)}&tab=flow`}
+                              to={`/agents?agent=${encodeURIComponent(selectedAgent.id)}&rail=flow`}
                             >
                               Edit flow
                               <ArrowUpRight className="w-3 h-3" />

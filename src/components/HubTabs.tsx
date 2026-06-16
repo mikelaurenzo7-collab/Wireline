@@ -104,12 +104,10 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
 // the same strip without drifting.
 // ──────────────────────────────────────────────────────────────────────────
 
-import { MessageSquare, MessageCircle, GraduationCap, History, Mail } from "lucide-react";
+import { MessageCircle, History, Mail } from "lucide-react";
 
-export const TRAINING_HUB: HubTabDef[] = [
-  { label: "Chat", path: "/chat", icon: MessageSquare },
-  { label: "Training", path: "/training", icon: GraduationCap },
-];
+// TRAINING_HUB removed in 2026-06 IA audit — Chat + Training consolidated into Studio.
+// Training sub-tabs now live inside the Studio Tuning Rail (Knowledge, Pronunciation, Flow, Simulator).
 
 export const CHANNELS_HUB: HubTabDef[] = [
   { label: "Phone", path: "/phone", icon: History },
