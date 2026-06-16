@@ -301,14 +301,14 @@ export default function LandingPage() {
                 <Link
                   to="/signup"
                   data-testid="hero-primary-cta"
-                  className="inline-flex min-h-12 items-center justify-center bg-ink px-6 text-[14px] font-semibold text-paper transition-transform duration-200 hover:-translate-y-px"
+                  className="inline-flex min-h-12 items-center justify-center bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white px-8 py-3 rounded-full font-semibold animate-pulse-glow hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] active:scale-95 transition-all duration-300"
                 >
                   Start free trial
                 </Link>
                 <Link
                   to="/showcase"
                   data-testid="hero-showcase-link"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] bg-white/[0.28] px-6 text-[14px] font-semibold text-ink transition-colors hover:bg-white/60"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] glass px-8 py-3 rounded-full text-[14px] font-semibold text-ink transition-all duration-300 hover:bg-white/60 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)] active:scale-95"
                 >
                   Hear live demos
                   <ArrowUpRight className="h-4 w-4 shrink-0" />
@@ -537,7 +537,7 @@ export default function LandingPage() {
             <motion.div {...REVEAL} className="mt-12 text-center">
               <Link
                 to="/signup"
-                className="inline-flex min-h-12 items-center justify-center gap-2 bg-ink px-7 text-[14px] font-semibold text-paper transition-transform duration-200 hover:-translate-y-px"
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white px-8 py-3 rounded-full text-[14px] font-semibold transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] active:scale-95 animate-pulse-glow"
               >
                 Deploy your first agent
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -786,10 +786,10 @@ export default function LandingPage() {
                     </ul>
                     <Link
                       to={`/signup?plan=${plan.id}`}
-                      className={`mt-6 inline-flex min-h-11 items-center justify-center text-[13px] font-semibold transition-transform duration-200 hover:-translate-y-px ${
+                      className={`mt-6 inline-flex min-h-11 items-center justify-center text-[13px] font-semibold transition-all duration-300 rounded-full hover:-translate-y-1 active:scale-95 ${
                         highlight
-                          ? "bg-paper text-ink"
-                          : "border border-ink/[0.16] bg-white/[0.35] text-ink hover:bg-white/60"
+                          ? "bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] animate-pulse-glow"
+                          : "border border-ink/[0.16] glass text-ink hover:bg-white/60 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)]"
                       }`}
                     >
                       Start free trial

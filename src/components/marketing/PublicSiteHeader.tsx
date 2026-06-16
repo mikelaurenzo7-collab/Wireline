@@ -114,8 +114,8 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
       <header
         data-testid="site-header"
         className={cn(
-          "fixed top-0 inset-x-0 z-50 transition-all duration-300",
-          scrolled ? "bg-paper/80 backdrop-blur-xl border-b border-ink/[0.06]" : "bg-transparent",
+          "fixed top-0 inset-x-0 z-50 transition-all duration-500",
+          scrolled ? "glass border-b border-ink/[0.06] shadow-sm shadow-brand/10" : "bg-transparent",
           className,
         )}
       >
@@ -165,11 +165,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               to avoid redundancy with the inline auth card. */}
           <div className="flex items-center gap-3 shrink-0">
             {signedIn && !isAuth ? (
-              <Link
-                to="/agents"
-                data-testid="header-dashboard"
-                className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-brand/25 hover:-translate-y-px"
-              >
+                <Link
+                  to="/agents"
+                  data-testid="header-dashboard"
+                  className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
+                >
                 Open the Studio
               </Link>
             ) : (
@@ -187,7 +187,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                   <Link
                     to="/signup"
                     data-testid="header-cta"
-                    className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-deep text-white text-[13px] font-medium px-5 py-2 hover:opacity-90 transition-all duration-300 hover:shadow-lg hover:shadow-brand/25 hover:-translate-y-px"
+                    className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
                   >
                     Start trial
                   </Link>

@@ -315,11 +315,59 @@
   --color-orange-600: #8b3fd6;
   --color-orange-700: #8b3fd6;
 
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
-  --radius-2xl: 0;
-  --radius-3xl: 0;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 3rem;
+
+  /* Gemini Tier Gradients */
+  --color-gemini-gradient-start: #4285F4;
+  --color-gemini-gradient-mid: #9b5ce0;
+  --color-gemini-gradient-end: #EA4335;
+
+  /* Keyframes for micro-animations */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-sweep: sweep 2s linear infinite;
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(155, 92, 224, 0.2); }
+    50% { opacity: 0.8; box-shadow: 0 0 30px rgba(155, 92, 224, 0.5); }
+  }
+
+  @keyframes sweep {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+}
+
+/* Glassmorphism Utilities */
+@utility glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@utility glass-dark {
+  background: rgba(20, 15, 32, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(155, 92, 224, 0.2);
+}
+
+@utility gemini-border {
+  border: 2px solid transparent;
+  background-clip: padding-box, border-box;
+  background-origin: padding-box, border-box;
+  background-image: linear-gradient(to right, var(--color-paper), var(--color-paper)), linear-gradient(to right, var(--color-gemini-gradient-start), var(--color-gemini-gradient-mid), var(--color-gemini-gradient-end));
 }
 
