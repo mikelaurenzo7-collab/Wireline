@@ -25,17 +25,41 @@ export interface OpenRouterModelOption {
 /** Hand-picked models that map well to Director workloads. */
 export const CURATED_OPENROUTER_MODELS: OpenRouterModelOption[] = [
   {
+    id: "x-ai/grok-4.3",
+    label: "Grok 4.3",
+    description: "Wireline default for general assistant turns",
+    category: "wireline_recommended",
+    inputPerMillion: 1.25,
+    outputPerMillion: 2.5,
+  },
+  {
+    id: "google/gemini-3.5-flash",
+    label: "Gemini 3.5 Flash",
+    description: "Fast default for summaries, routing, and coaching drafts",
+    category: "wireline_recommended",
+    inputPerMillion: 1.5,
+    outputPerMillion: 9,
+  },
+  {
+    id: "google/gemini-3.1-flash-lite",
+    label: "Gemini 3.1 Flash-Lite",
+    description: "High-volume utility model for extraction and tags",
+    category: "fast",
+    inputPerMillion: 0.25,
+    outputPerMillion: 1.5,
+  },
+  {
     id: "anthropic/claude-sonnet-4.6",
     label: "Claude Sonnet 4.6",
-    description: "Balanced strategy, writing, and tool use (Wireline voice tier)",
-    category: "wireline_recommended",
+    description: "Balanced strategy, writing, and tool use",
+    category: "reasoning",
     inputPerMillion: 3,
     outputPerMillion: 15,
   },
   {
-    id: "anthropic/claude-opus-4.7",
-    label: "Claude Opus 4.7",
-    description: "Deep reasoning and complex plans (Wireline reasoning tier)",
+    id: "anthropic/claude-opus-4.8",
+    label: "Claude Opus 4.8",
+    description: "Deep reasoning and complex plans",
     category: "reasoning",
     inputPerMillion: 5,
     outputPerMillion: 25,
@@ -57,14 +81,6 @@ export const CURATED_OPENROUTER_MODELS: OpenRouterModelOption[] = [
     outputPerMillion: 4.4,
   },
   {
-    id: "google/gemini-2.5-pro-preview",
-    label: "Gemini 2.5 Pro",
-    description: "Long-context research and synthesis",
-    category: "research",
-    inputPerMillion: 1.25,
-    outputPerMillion: 10,
-  },
-  {
     id: "deepseek/deepseek-chat-v3-0324",
     label: "DeepSeek V3",
     description: "Strong coding and technical drafts",
@@ -79,14 +95,6 @@ export const CURATED_OPENROUTER_MODELS: OpenRouterModelOption[] = [
     category: "coding",
     inputPerMillion: 0.14,
     outputPerMillion: 0.6,
-  },
-  {
-    id: "perplexity/sonar-pro",
-    label: "Sonar Pro",
-    description: "Web-grounded research answers",
-    category: "research",
-    inputPerMillion: 3,
-    outputPerMillion: 15,
   },
   {
     id: "meta-llama/llama-3.3-70b-instruct",
@@ -117,8 +125,8 @@ export function estimateOpenRouterCostUsd(
   usage: { input_tokens: number; output_tokens: number },
 ): number {
   const meta = catalogLookup().get(modelId);
-  const inRate = meta?.inputPerMillion ?? 3;
-  const outRate = meta?.outputPerMillion ?? 15;
+  const inRate = meta?.inputPerMillion ?? 1.5;
+  const outRate = meta?.outputPerMillion ?? 9;
   return (usage.input_tokens * inRate) / 1_000_000 + (usage.output_tokens * outRate) / 1_000_000;
 }
 
