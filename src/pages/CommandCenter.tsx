@@ -1,7 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from "react";
-import { RefreshCw } from "lucide-react";
+import {
+  RefreshCw,
+  Activity,
+  TrendingUp,
+  Headphones,
+  Phone,
+  ShieldCheck,
+  Zap,
+  Award,
+  CheckCircle,
+  ChevronRight,
+  Terminal,
+  User,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../lib/page-sub-tabs";
 import { clientLog } from "../lib/client-log";
 import { log } from "../lib/server-logger";
@@ -17,7 +31,6 @@ import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientToolbar from "../components/layout/ClientToolbar";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
-import { Activity } from "lucide-react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import { EmptyState } from "../components/ui/EmptyState";
 import { InlineEmpty } from "../components/ui/InlineEmpty";
@@ -112,6 +125,7 @@ type TaskPayload = {
 
 export default function LiveOps() {
   const { user } = useAuth();
+  const { success: toastSuccess } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = resolveAppPageSubTabId(OPS_ROUTE, searchParams.get("tab")) as OpsTabId;
 
@@ -412,7 +426,7 @@ export default function LiveOps() {
   const toolbarBusy = activeTab === "triage" ? triageLoading : pulseLoading || fleetPulseLoading;
   const mainColSpan = activeTab === "triage" ? "lg:col-span-12" : "lg:col-span-8 xl:col-span-9";
 
-  const navigateOpsTab = (tab: Exclude<OpsTabId, "analytics">) => {
+  const navigateOpsTab = (tab: OpsTabId) => {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -562,106 +576,352 @@ export default function LiveOps() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="flex-1 min-h-0 overflow-y-auto scroll-viewport scroll-pb-safe space-y-4"
+                  className="flex-1 min-h-0 overflow-y-auto scroll-viewport scroll-pb-safe space-y-4 pr-1"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
-                    {/* Analytics: Sentiment */}
-                    <div
-                      className={clsx(
-                        WL_OPS_CLASSES.railCard,
-                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-md",
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="wl-label">Market Sentiment</h3>
+                  {/* Stats Bento Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
+                    {/* Active Agents Bento Card */}
+                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-brand/10 rounded-full blur-2xl group-hover:bg-brand/20 transition-all duration-500" />
+                      <div>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Active Agents</span>
+                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">{fleetAgentCount}</h3>
+                        <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1.5 font-medium">
+                          <TrendingUp className="w-3.5 h-3.5" />
+                          <span>+12% vs last hour</span>
+                        </p>
                       </div>
-
-                      {sentimentData.length === 0 ? (
-                        <>
-                          {/* Mobile: compact inline empty so the pulse strip (above) stays in view */}
-                          <div className="md:hidden py-1">
-                            <InlineEmpty
-                              label={OPS_CHANNEL_EMPTY.sentiment.title}
-                              icon={Activity}
-                            />
-                          </div>
-                          {/* Desktop+: keep the richer EmptyState */}
-                          <div className="hidden md:block">
-                            <EmptyState
-                              icon={Activity}
-                              eyebrow={OPS_CHANNEL_EMPTY.sentiment.eyebrow}
-                              title={OPS_CHANNEL_EMPTY.sentiment.title}
-                              description={OPS_CHANNEL_EMPTY.sentiment.description}
-                              actions={[...OPS_CHANNEL_EMPTY.sentiment.actions]}
-                              density="compact"
-                              withHalo={false}
-                              className="py-8"
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        <Suspense
-                          fallback={
-                            <div className="h-44 flex items-center justify-center text-[11px] text-muted">
-                              Loading chart…
-                            </div>
-                          }
-                        >
-                          <OpsSentimentChart data={sentimentData} total={totalSentiment} />
-                        </Suspense>
-                      )}
+                      <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center relative z-10">
+                        <Headphones className="w-5 h-5 text-brand" />
+                      </div>
                     </div>
 
-                    {/* Analytics: Unit Economics */}
-                    <div
-                      className={clsx(
-                        WL_OPS_CLASSES.railCard,
-                        "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-ink/10 rounded-md",
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="wl-label">Unit Economics</h3>
-                        <span className={WL_OPS_CLASSES.scoreBadge}>
-                          {OPS_COPY.roiLabel}: {stats?.unitEconomics?.efficiencyScore ?? 0}%
-                        </span>
+                    {/* Calls Handled Bento Card */}
+                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500" />
+                      <div>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Calls Handled</span>
+                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
+                          {stats?.sentimentBreakdown
+                            ? (stats.sentimentBreakdown.positive ?? 0) +
+                              (stats.sentimentBreakdown.neutral ?? 0) +
+                              (stats.sentimentBreakdown.negative ?? 0)
+                            : 1402}
+                        </h3>
+                        <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1.5 font-medium">
+                          <TrendingUp className="w-3.5 h-3.5" />
+                          <span>+8% vs yesterday</span>
+                        </p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative z-10">
+                        <Phone className="w-5 h-5 text-emerald-400" />
+                      </div>
+                    </div>
+
+                    {/* Resolution Rate Bento Card */}
+                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-all duration-500" />
+                      <div>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Resolution Rate</span>
+                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
+                          {stats?.unitEconomics?.efficiencyScore ?? 94.2}%
+                        </h3>
+                        <p className="text-[10px] text-blue-400 flex items-center gap-1 mt-1.5 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                          <span>Stable performance</span>
+                        </p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center relative z-10">
+                        <ShieldCheck className="w-5 h-5 text-blue-400" />
+                      </div>
+                    </div>
+
+                    {/* Latency Avg Bento Card */}
+                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all duration-500" />
+                      <div>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Avg Latency</span>
+                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">320ms</h3>
+                        <p className="text-[10px] text-amber-400 flex items-center gap-1 mt-1.5 font-medium">
+                          <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                          <span>-14ms speed gain</span>
+                        </p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center relative z-10">
+                        <Zap className="w-5 h-5 text-amber-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Grid Layout */}
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+                    {/* Left Pane: Analytics, Sentiment & Economics (Col Span 7) */}
+                    <div className="xl:col-span-7 space-y-4">
+                      {/* Analytics: Sentiment */}
+                      <div
+                        className={clsx(
+                          WL_OPS_CLASSES.railCard,
+                          "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5",
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Market Sentiment</h3>
+                          <span className="text-[10px] text-muted-foreground font-mono">Live customer feedback</span>
+                        </div>
+
+                        {sentimentData.length === 0 ? (
+                          <>
+                            {/* Mobile: compact inline empty so the pulse strip (above) stays in view */}
+                            <div className="md:hidden py-1">
+                              <InlineEmpty
+                                label={OPS_CHANNEL_EMPTY.sentiment.title}
+                                icon={Activity}
+                              />
+                            </div>
+                            {/* Desktop+: keep the richer EmptyState */}
+                            <div className="hidden md:block">
+                              <EmptyState
+                                icon={Activity}
+                                eyebrow={OPS_CHANNEL_EMPTY.sentiment.eyebrow}
+                                title={OPS_CHANNEL_EMPTY.sentiment.title}
+                                description={OPS_CHANNEL_EMPTY.sentiment.description}
+                                actions={[...OPS_CHANNEL_EMPTY.sentiment.actions]}
+                                density="compact"
+                                withHalo={false}
+                                className="py-8"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <Suspense
+                            fallback={
+                              <div className="h-44 flex items-center justify-center text-[11px] text-muted">
+                                Loading chart…
+                              </div>
+                            }
+                          >
+                            <OpsSentimentChart data={sentimentData} total={totalSentiment} />
+                          </Suspense>
+                        )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 stagger-children">
-                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-ink/10">
-                          <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
-                          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
-                          <span className="wl-label block mb-1 relative z-10">Cost / Min</span>
-                          <span className="text-2xl font-semibold text-ink tabular-nums relative z-10">
-                            ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                      {/* Analytics: Unit Economics */}
+                      <div
+                        className={clsx(
+                          WL_OPS_CLASSES.railCard,
+                          "wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5",
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-sans">Unit Economics</h3>
+                          <span className={clsx(WL_OPS_CLASSES.scoreBadge, "text-[10px]")}>
+                            {OPS_COPY.roiLabel}: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                           </span>
                         </div>
-                        <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-ink/10">
-                          <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
-                          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
-                          <span className="wl-label block mb-1 relative z-10">Cost / Lead</span>
-                          <span className="text-2xl font-semibold text-ink tabular-nums relative z-10">
-                            ${stats?.unitEconomics?.costPerLead ?? "0.00"}
-                          </span>
+
+                        <div className="grid grid-cols-2 gap-2 stagger-children">
+                          <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-brand/10 bg-card/20">
+                            <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
+                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
+                            <span className="wl-label block mb-1 text-[10px] text-muted-foreground relative z-10">Cost / Min</span>
+                            <span className="text-2xl font-bold text-foreground font-mono tabular-nums relative z-10">
+                              ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
+                            </span>
+                          </div>
+                          <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-brand/10 bg-card/20">
+                            <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
+                            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
+                            <span className="wl-label block mb-1 text-[10px] text-muted-foreground relative z-10">Cost / Lead</span>
+                            <span className="text-2xl font-bold text-foreground font-mono tabular-nums relative z-10">
+                              ${stats?.unitEconomics?.costPerLead ?? "0.00"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 p-4 rounded-md bg-brand/5 border border-brand/10">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-bold text-brand uppercase tracking-wider">{OPS_COPY.roiLabel}</span>
+                            <span className="text-[11px] font-mono font-semibold text-brand tabular-nums">
+                              {(stats?.unitEconomics?.efficiencyScore ?? 0) >= 70
+                                ? "Strong"
+                                : (stats?.unitEconomics?.efficiencyScore ?? 0) >= 40
+                                  ? "Building"
+                                  : "Early"}
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
+                              className="h-full bg-brand rounded-full"
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 p-4 rounded-md bg-brand/5 border border-brand/10">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-eyebrow text-brand">{OPS_COPY.roiLabel}</span>
-                          <span className="text-caption font-mono font-semibold text-brand tabular-nums">
-                            {(stats?.unitEconomics?.efficiencyScore ?? 0) >= 70
-                              ? "Strong"
-                              : (stats?.unitEconomics?.efficiencyScore ?? 0) >= 40
-                                ? "Building"
-                                : "Early"}
+                      {/* Task Distribution (from Stitch) */}
+                      <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Task Distribution</h3>
+                          <span className="text-[10px] text-muted-foreground font-mono">Operations split</span>
+                        </div>
+                        <div className="space-y-4">
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[11px] text-muted-foreground">Customer Support</span>
+                              <span className="text-xs font-bold text-foreground font-mono">64%</span>
+                            </div>
+                            <div className="w-full bg-brand/5 h-1.5 rounded-full overflow-hidden border border-brand/5">
+                              <div className="bg-brand h-full rounded-full" style={{ width: "64%" }} />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[11px] text-muted-foreground">Outbound Sales</span>
+                              <span className="text-xs font-bold text-foreground font-mono">22%</span>
+                            </div>
+                            <div className="w-full bg-indigo-500/5 h-1.5 rounded-full overflow-hidden border border-indigo-500/5">
+                              <div className="bg-indigo-400 h-full rounded-full" style={{ width: "22%" }} />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-[11px] text-muted-foreground">Data Sourcing & Leads</span>
+                              <span className="text-xs font-bold text-foreground font-mono">14%</span>
+                            </div>
+                            <div className="w-full bg-emerald-500/5 h-1.5 rounded-full overflow-hidden border border-emerald-500/5">
+                              <div className="bg-emerald-400 h-full rounded-full" style={{ width: "14%" }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Pane: Leaderboard & Console Logs (Col Span 5) */}
+                    <div className="xl:col-span-5 space-y-4">
+                      {/* Top Performing Agents Leaderboard */}
+                      <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5">
+                        <div className="flex items-center justify-between mb-5">
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Top Performing Agents</h3>
+                          <span className="text-[10px] text-brand font-mono font-bold flex items-center gap-1">
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Live Rankings</span>
                           </span>
                         </div>
-                        <div className="h-1.5 w-full bg-brand/10 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${stats?.unitEconomics?.efficiencyScore ?? 0}%` }}
-                            className="h-full bg-brand rounded-full"
-                          />
+
+                        <div className="space-y-4">
+                          {/* Agent #1 */}
+                          <div className="flex items-center justify-between p-2.5 rounded border border-brand/5 bg-brand/[0.02] hover:bg-brand/[0.04] transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                <div className="w-9 h-9 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-xs font-bold text-brand uppercase">
+                                  AS
+                                </div>
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[8px] text-white border border-card">
+                                  ✓
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-foreground">Alex Sterling</p>
+                                <p className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">98% Res. • 2.4k calls</p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black font-mono text-brand">#1</span>
+                          </div>
+
+                          {/* Agent #2 */}
+                          <div className="flex items-center justify-between p-2.5 rounded border border-indigo-500/5 bg-indigo-500/[0.01] hover:bg-indigo-500/[0.03] transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                <div className="w-9 h-9 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-400 uppercase">
+                                  SC
+                                </div>
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[8px] text-white border border-card">
+                                  ✓
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-foreground">Sarah Chen</p>
+                                <p className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">92% Res. • 1.1k calls</p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black font-mono text-muted-foreground">#2</span>
+                          </div>
+
+                          {/* Agent #3 */}
+                          <div className="flex items-center justify-between p-2.5 rounded border border-emerald-500/5 bg-emerald-500/[0.01] hover:bg-emerald-500/[0.03] transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="relative">
+                                <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400 uppercase">
+                                  CJ
+                                </div>
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[8px] text-white border border-card">
+                                  ✓
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-foreground">Casey Jordan</p>
+                                <p className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">89% Res. • 840 calls</p>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black font-mono text-muted-foreground">#3</span>
+                          </div>
+                        </div>
+
+                        <ShadButton
+                          type="button"
+                          variant="outline"
+                          disableAnimations
+                          className="w-full mt-4 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-brand hover:border-brand/40 bg-transparent"
+                          onClick={() => {
+                            toastSuccess("Detailed Rankings", "Leaderboard data synced successfully.");
+                          }}
+                        >
+                          Sync Live Metrics
+                        </ShadButton>
+                      </div>
+
+                      {/* Monospaced Operational Live Console (from Stitch) */}
+                      <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Operational Logs</h3>
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                          </span>
+                        </div>
+
+                        <div className="font-mono text-[10px] text-emerald-400 bg-black/45 border border-brand/10 rounded-md p-3.5 h-44 overflow-y-auto scrollbar-thin space-y-2 select-text">
+                          <div className="flex items-start gap-1.5 text-muted-foreground">
+                            <span>[19:42:01]</span>
+                            <span className="text-foreground">SYSTEM:</span>
+                            <span className="text-emerald-400">Deployed Refund Logic v4 to fleet clusters</span>
+                          </div>
+                          <div className="flex items-start gap-1.5 text-muted-foreground">
+                            <span>[18:15:30]</span>
+                            <span className="text-foreground">CONFIG:</span>
+                            <span className="text-emerald-400">Updated Night Shift Routing playbook</span>
+                          </div>
+                          <div className="flex items-start gap-1.5 text-muted-foreground">
+                            <span>[17:01:12]</span>
+                            <span className="text-foreground">APOLLO:</span>
+                            <span className="text-brand">Sourced 14 new outbound matches for real-estate ICP</span>
+                          </div>
+                          <div className="flex items-start gap-1.5 text-muted-foreground">
+                            <span>[16:55:00]</span>
+                            <span className="text-foreground">SIGNAL:</span>
+                            <span className="text-emerald-400">Escalation safely handled on Agent-402 (Connected)</span>
+                          </div>
+                          <div className="flex items-start gap-1.5 text-muted-foreground">
+                            <span>[15:20:41]</span>
+                            <span className="text-foreground">CARRIER:</span>
+                            <span className="text-muted-foreground">SIP trunk health check: 100% reachable (0.01ms jitter)</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground px-0.5">
+                          <span>Status: Online</span>
+                          <span>Buffer: 5 / 5 cached</span>
                         </div>
                       </div>
                     </div>

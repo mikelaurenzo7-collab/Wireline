@@ -13,7 +13,7 @@ type OpsPulseStripProps = {
   fleetAgents: number;
   escalations: number;
   activeTab?: OpsTabId;
-  onMetricNavigate?: (tab: Exclude<OpsTabId, "analytics">) => void;
+  onMetricNavigate?: (tab: OpsTabId) => void;
   /** Core ops metrics (live calls, actions, escalations) */
   loading?: boolean;
   /** Fleet roster count — can load after presence without blocking other metrics */
@@ -136,6 +136,13 @@ export function OpsPulseStrip({
         value={fleetAgents}
         mono
         loading={fleetBusy}
+        active={activeTab === "analytics"}
+        onClick={nav ? () => nav("analytics") : undefined}
+        ariaLabel={
+          nav
+            ? `${fleetAgents} fleet agent${fleetAgents === 1 ? "" : "s"} — open overview & analytics`
+            : undefined
+        }
       />
       <PulseMetric
         label={OPS_PULSE_METRICS.escalations.label}
