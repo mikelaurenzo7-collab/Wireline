@@ -32,6 +32,41 @@
   line-height: 1.45 !important;
 }
 
+/* Launch UX: an empty Studio thread used to render as a blank pane above the
+   composer. That made the first authenticated page feel unfinished and hid the
+   obvious starting point. Render a CSS-only first-run guide so no API/data path
+   changes are required for tomorrow's launch. */
+[data-testid="director-workspace"] .wl-director-thread-scroll:empty {
+  display: flex;
+  align-items: flex-end;
+  min-height: 12rem;
+}
+
+[data-testid="director-workspace"] .wl-director-thread-scroll:empty::before {
+  content: "Start here: tell the Assistant what kind of agent you want, then approve the setup steps it proposes.";
+  display: block;
+  width: min(100%, 54rem);
+  margin: 0 auto 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-brand, #8b3fd6) 18%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--paper, #f5f1e8) 88%, white), color-mix(in srgb, var(--paper, #f5f1e8) 96%, white)),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--color-brand, #8b3fd6) 10%, transparent), transparent 48%);
+  color: color-mix(in srgb, var(--ink, #1a1614) 82%, var(--color-brand, #8b3fd6));
+  font-size: 0.78rem;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 30px -24px rgba(26, 22, 20, 0.4);
+}
+
+.dark [data-testid="director-workspace"] .wl-director-thread-scroll:empty::before {
+  background:
+    linear-gradient(180deg, rgba(26, 18, 37, 0.92), rgba(15, 12, 23, 0.95)),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--color-brand, #8b3fd6) 18%, transparent), transparent 48%);
+  color: color-mix(in srgb, var(--foreground, #f3e8ff) 86%, var(--color-brand, #8b3fd6));
+  box-shadow: 0 14px 34px -24px rgba(0, 0, 0, 0.75);
+}
+
 /* Give the Assistant the primary canvas; precision controls stay available but
    should not crowd the conversation on 13–14 inch laptops. */
 @media (min-width: 768px) {
@@ -57,6 +92,23 @@
 @media (min-width: 1024px) and (max-width: 1439px) {
   [data-testid="studio-tuning-rail"] {
     width: clamp(280px, 23vw, 340px) !important;
+  }
+}
+
+/* 13-inch launch safety: preserve a usable Assistant column on narrower laptop
+   widths instead of letting the manual tuning rail dominate the canvas. */
+@media (min-width: 768px) and (max-width: 1180px) {
+  [data-testid="studio-tuning-rail"] {
+    width: clamp(248px, 24vw, 292px) !important;
+  }
+
+  [data-testid="director-workspace"] > div:last-child {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  [data-testid="director-composer"] {
+    min-height: 3.75rem !important;
   }
 }
 
