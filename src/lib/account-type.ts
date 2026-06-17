@@ -26,7 +26,8 @@ export type AccountType = "personal" | "business";
  * NOTE: this must track the group label/section names in constants/navigation.ts
  * (renamed Studio→Build, Command→Run). The account-type contract test guards it.
  */
-const BUSINESS_ONLY_GROUPS = new Set<string>(["Run"]);
+const BUSINESS_ONLY_GROUPS = new Set<string>(["Run", "Channels"]);
+const PERSONAL_ONLY_GROUPS = new Set<string>(["Personal"]);
 
 /**
  * Resolve the account mode from the billing plan id. Only the "personal" tier
@@ -43,6 +44,10 @@ export function isBusinessOnlySection(section: string | undefined): boolean {
   return !!section && BUSINESS_ONLY_GROUPS.has(section);
 }
 
+export function isPersonalOnlySection(section: string | undefined): boolean {
+  return !!section && PERSONAL_ONLY_GROUPS.has(section);
+}
+
 /** True when a route path is offered in the given account mode. */
 export function isRouteAvailableForAccount(type: AccountType, path: string): boolean {
   if (type === "business") return true;
@@ -54,12 +59,16 @@ export function isRouteAvailableForAccount(type: AccountType, path: string): boo
 
 /** NAV_GROUPS filtered for the account mode (drops business-only groups for personal). */
 export function accountNavGroups(type: AccountType): typeof NAV_GROUPS {
-  if (type === "business") return NAV_GROUPS;
+  if (type === "business") {
+    return NAV_GROUPS.filter((group) => !PERSONAL_ONLY_GROUPS.has(group.label));
+  }
   return NAV_GROUPS.filter((group) => !BUSINESS_ONLY_GROUPS.has(group.label));
 }
 
 /** SIDEBAR_NAV_ITEMS filtered for the account mode. */
 export function accountSidebarItems(type: AccountType): NavItem[] {
-  if (type === "business") return SIDEBAR_NAV_ITEMS;
+  if (type === "business") {
+    return SIDEBAR_NAV_ITEMS.filter((item) => !isPersonalOnlySection(item.section));
+  }
   return SIDEBAR_NAV_ITEMS.filter((item) => !isBusinessOnlySection(item.section));
 }

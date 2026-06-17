@@ -7,6 +7,7 @@ import PageTransition from "../components/layout/PageTransition";
 import RouteFallback from "../components/layout/RouteFallback";
 import NotFound from "../components/layout/NotFound";
 import OwnerOnlyRoute from "../components/OwnerOnlyRoute";
+import { useAccount } from "../contexts/AccountContext";
 
 import { ActivityRedirect } from "./LegacyRedirects";
 
@@ -30,16 +31,34 @@ const Training = lazyRoute(() => import("../pages/Training"));
 const PhonePage = lazyRoute(() => import("../pages/PhonePage"));
 const EmailPage = lazyRoute(() => import("../pages/EmailPage"));
 const SmsPage = lazyRoute(() => import("../pages/SmsPage"));
+const PersonalDashboard = lazyRoute(() => import("../pages/PersonalDashboard"));
 
 export default function AppRoutes() {
+  const { accountType } = useAccount();
+
   return (
     <AnimatePresence>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          {/* Live Ops is the default landing surface for signed-in operators. */}
-          {/* Studio is home: the build-your-agent surface is the landing page.
-              Live Ops remains one tap away under Command (and via its aliases). */}
-          <Route path="/" element={<Navigate to="/agents" replace />} />
+          {/* Default Route based on account type */}
+          <Route
+            path="/"
+            element={
+              <Navigate to={accountType === "personal" ? "/personal-home" : "/ops"} replace />
+            }
+          />
+
+          <Route
+            path="/personal-home"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <PersonalDashboard />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+
           <Route
             path="/ops"
             element={

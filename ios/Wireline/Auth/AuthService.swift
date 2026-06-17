@@ -15,14 +15,16 @@ final class AuthService: ObservableObject {
     @Published var isSignedIn: Bool = KeychainStore.loadToken() != nil
     @Published var isWorking = false
     @Published var errorMessage: String?
+    @Published var accountType: String = "business" // "personal" or "business"
 
     func signIn(email: String, password: String) async {
         isWorking = true
         errorMessage = nil
         defer { isWorking = false }
         do {
-            let token = try await Self.requestSessionToken(email: email, password: password)
+            let (token, accType) = try await Self.requestSessionToken(email: email, password: password)
             KeychainStore.saveToken(token)
+            self.accountType = accType
             isSignedIn = true
             await CallManager.shared.refreshDeviceRegistration()
         } catch {
@@ -51,7 +53,7 @@ final class AuthService: ObservableObject {
     }
 
     /// POST /api/auth/signin and extract the session JWT from the Set-Cookie header.
-    private static func requestSessionToken(email: String, password: String) async throws -> String {
+    private static func requestSessionToken(email: String, password: String) async throws -> (String, String) {
         var req = URLRequest(url: WirelineConfig.baseURL.appendingPathComponent("/api/auth/signin"))
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -66,18 +68,24 @@ final class AuthService: ObservableObject {
             throw AuthError.server("Sign-in failed (\(http.statusCode)).")
         }
 
+        var accountType = "business"
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let user = json["user"] as? [String: Any],
+           let mode = user["account_type"] as? String {
+            accountType = mode
+        }
+
         // Pull the session JWT out of the Set-Cookie response headers.
         let headers = http.allHeaderFields as? [String: String] ?? [:]
         let cookies = HTTPCookie.cookies(withResponseHeaderFields: headers, for: WirelineConfig.baseURL)
         if let session = cookies.first(where: { $0.name == WirelineConfig.sessionCookieName }) {
-            return session.value
+            return (session.value, accountType)
         }
         // Fall back to the shared cookie storage, which URLSession also populates.
         if let session = HTTPCookieStorage.shared.cookies(for: WirelineConfig.baseURL)?
             .first(where: { $0.name == WirelineConfig.sessionCookieName }) {
-            return session.value
+            return (session.value, accountType)
         }
-        _ = data
         throw AuthError.noSessionCookie
     }
 }

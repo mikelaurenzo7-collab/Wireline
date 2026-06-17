@@ -81,18 +81,22 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                     icon = { Icon(Icons.Default.Home, contentDescription = null) },
                     label = { Text("Home") },
                 )
-                NavigationBarItem(
-                    selected = tab == Tab.Calls,
-                    onClick = { tab = Tab.Calls },
-                    icon = { Icon(Icons.Default.Call, contentDescription = null) },
-                    label = { Text("Calls") },
-                )
-                NavigationBarItem(
-                    selected = tab == Tab.Wallet,
-                    onClick = { tab = Tab.Wallet },
-                    icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
-                    label = { Text("Wallet") },
-                )
+                
+                if (state.me?.account?.mode != "personal") {
+                    NavigationBarItem(
+                        selected = tab == Tab.Calls,
+                        onClick = { tab = Tab.Calls },
+                        icon = { Icon(Icons.Default.Call, contentDescription = null) },
+                        label = { Text("Calls") },
+                    )
+                    NavigationBarItem(
+                        selected = tab == Tab.Wallet,
+                        onClick = { tab = Tab.Wallet },
+                        icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
+                        label = { Text("Wallet") },
+                    )
+                }
+
                 NavigationBarItem(
                     selected = tab == Tab.Settings,
                     onClick = { tab = Tab.Settings },
@@ -104,8 +108,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     ) { padding ->
         when (tab) {
             Tab.Home -> HomeScreen(padding, state, model)
-            Tab.Calls -> CallsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
-            Tab.Wallet -> WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
+            Tab.Calls -> if (state.me?.account?.mode != "personal") CallsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall) else HomeScreen(padding, state, model)
+            Tab.Wallet -> if (state.me?.account?.mode != "personal") WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty()) else HomeScreen(padding, state, model)
             Tab.Settings -> SettingsScreen(padding, state, model)
         }
     }

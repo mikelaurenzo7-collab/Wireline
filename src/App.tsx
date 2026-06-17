@@ -23,6 +23,7 @@ import { isMarketingHomePath, isSessionOptionalPublicPath } from "./lib/public-r
 const Features = lazy(() => import("./pages/Features"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const OnboardingSelection = lazy(() => import("./components/onboarding/OnboardingSelection"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 const Compare = lazy(() => import("./pages/Compare"));
@@ -79,7 +80,11 @@ function AppContent() {
       path === "/auth" ||
       path.startsWith("/auth/")
     ) {
-      navigate("/agents", { replace: true });
+      if (!localStorage.getItem("wl_onboarded")) {
+        navigate("/onboarding", { replace: true });
+      } else {
+        navigate("/agents", { replace: true });
+      }
     }
   }, [user, location.pathname, navigate]);
 
@@ -88,9 +93,24 @@ function AppContent() {
   useEffect(() => {
     if (loading || !user) return;
     if (isMarketingHomePath(location.pathname)) {
-      navigate("/agents", { replace: true });
+      if (!localStorage.getItem("wl_onboarded")) {
+        navigate("/onboarding", { replace: true });
+      } else {
+        navigate("/agents", { replace: true });
+      }
     }
   }, [loading, user, location.pathname, navigate]);
+
+  // Handle /onboarding standalone screen for authenticated users
+  if (user && location.pathname === "/onboarding") {
+    return (
+      <AccountProvider>
+        <Suspense fallback={<MarketingRouteFallback />}>
+          <OnboardingSelection />
+        </Suspense>
+      </AccountProvider>
+    );
+  }
 
   // Public pages — accessible before auth.
   if (location.pathname === "/privacy") {

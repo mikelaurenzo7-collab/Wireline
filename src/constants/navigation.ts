@@ -8,6 +8,7 @@ import {
   Mail,
   MessageCircle,
   Users,
+  User,
 } from "lucide-react";
 import {
   ROUTE_ACCENT_DEFAULT,
@@ -61,6 +62,15 @@ const STUDIO_NAV: NavItem[] = [
   },
 ];
 
+const PERSONAL_HOME_NAV: NavItem[] = [
+  {
+    label: "Assistant",
+    path: "/personal-home",
+    icon: User,
+    matches: ["/personal-home"],
+  },
+];
+
 const COMMAND_NAV: NavItem[] = [
   {
     label: "Live Ops",
@@ -108,6 +118,7 @@ const ADMIN_NAV: NavItem[] = [
 
 /** Logical IA groups - used for mobile drawer sections and docs; labels are not shown on desktop rail. */
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  { label: "Personal", items: withSection(PERSONAL_HOME_NAV, "Personal") },
   { label: "Build", items: withSection(STUDIO_NAV, "Build") },
   { label: "Run", items: withSection(COMMAND_NAV, "Run") },
   { label: "Channels", items: withSection(CHANNELS_NAV, "Channels") },
@@ -116,6 +127,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 
 /** Single continuous desktop rail - no section headers, fits without scroll on typical viewports. */
 export const SIDEBAR_NAV_ITEMS: NavItem[] = [
+  ...withSection(PERSONAL_HOME_NAV, "Personal"),
   ...withSection(STUDIO_NAV, "Build"),
   ...withSection(COMMAND_NAV, "Run"),
   ...withSection(CHANNELS_NAV, "Channels"),
