@@ -36,6 +36,15 @@ const PRODUCT_POINTS = [
   },
 ] as const;
 
+const MODEL_PROVIDERS = [
+  { name: "OpenRouter", note: "300+ models, one API" },
+  { name: "Anthropic", note: "Claude family" },
+  { name: "OpenAI", note: "GPT family" },
+  { name: "Google", note: "Gemini family" },
+  { name: "xAI", note: "Grok family" },
+  { name: "Meta", note: "Llama family" },
+] as const;
+
 export default function LandingPage() {
   const csDemo = LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jordan") || LANDING_PUBLIC_DEMO_AGENTS[0];
 
@@ -129,6 +138,40 @@ export default function LandingPage() {
                 <p className="mt-3 text-sm leading-7 text-ink/66">{body}</p>
               </motion.article>
             ))}
+          </section>
+
+          <section className="rounded-md border border-ink/10 bg-paper-warm/25 px-6 py-12 sm:px-10">
+            <motion.div {...REVEAL} className="mx-auto max-w-3xl text-center">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
+                No model lock-in
+              </p>
+              <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-[-0.03em] text-ink text-balance">
+                Hundreds of models. <span className="italic text-brand">One agent.</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink/66">
+                Route every conversation to the right model — from frontier reasoning to fast, low-cost
+                responders — across OpenRouter, Anthropic, OpenAI, Google, xAI, and Meta. Pick a model per
+                agent in Agent Studio, or let Wireline auto-route for you.
+              </p>
+            </motion.div>
+
+            <motion.div
+              {...REVEAL}
+              transition={{ ...REVEAL.transition, delay: 0.08 }}
+              className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+            >
+              {MODEL_PROVIDERS.map((provider) => (
+                <div
+                  key={provider.name}
+                  className="rounded-md border border-ink/10 bg-paper p-4 text-left shadow-[0_12px_32px_-30px_rgba(26,22,20,0.55)]"
+                >
+                  <p className="font-display text-base text-ink">{provider.name}</p>
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/45">
+                    {provider.note}
+                  </p>
+                </div>
+              ))}
+            </motion.div>
           </section>
 
           <section className="rounded-md border border-ink/10 bg-paper-warm/25 px-6 py-10 text-center">
