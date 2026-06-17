@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Loader2, Lock, Mail } from "lucide-react";
 
@@ -19,7 +20,7 @@ function Logo({ light = false }: { light?: boolean }) {
   );
 }
 
-function Chip({ children, className }: { children: React.ReactNode; className?: string }) {
+function Chip({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span className={cn("inline-flex w-fit items-center gap-1.5 border border-brand bg-brand/8 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-brand", className)}>
       {children}
@@ -44,7 +45,7 @@ async function readJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-const providers: Array<{ id: OAuthProvider; label: string; sub: string; mark: React.ReactNode }> = [
+const providers: Array<{ id: OAuthProvider; label: string; sub: string; mark: ReactNode }> = [
   { id: "google", label: "Google", sub: "Gmail and Google Workspace", mark: <span className="font-semibold text-brand">G</span> },
   {
     id: "microsoft",
@@ -121,7 +122,7 @@ function OAuthButtons({ disabled, onError }: { disabled?: boolean; onError: (mes
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-paper lg:flex">
@@ -130,7 +131,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="relative z-10 max-w-xl">
           <Chip className="border-paper/20 bg-paper/5 text-paper/70">OAuth restored</Chip>
           <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">The new Wireline look, with the real login rails back underneath.</h1>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">Google, Yahoo, and Microsoft/Outlook sign-in now use the existing production OAuth endpoints while staying inside the Figma overhaul.</p>
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">Google, Yahoo, and Microsoft/Outlook sign-in use the existing production OAuth endpoints while staying inside the Figma overhaul.</p>
         </div>
         <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-paper/10 text-center">
           {[["Google", "Workspace"], ["Outlook", "Microsoft 365"], ["Yahoo", "Mail"]].map(([a, b]) => (
@@ -169,7 +170,7 @@ export default function FigmaAuthPortal() {
   const isSignup = mode === "signup";
   const isReset = mode === "reset";
 
-  const submit = async (event: React.FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
     setMessage(null);
