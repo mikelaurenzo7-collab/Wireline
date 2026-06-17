@@ -1,4 +1,5 @@
 /* Wireline Studio clarity pass — keeps the Assistant visible and reduces desktop/laptop cognitive load. */
+@import "./wireline-desktop-redesign.css";
 @reference "../index.css";
 
 /* The Studio is the first authenticated impression. Keep the conversation dock
