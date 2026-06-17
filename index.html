@@ -2,30 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- viewport-fit=cover ensures the page paints under iOS notches/Dynamic Island
-         (we use env(safe-area-inset-*) in critical surfaces like the toast stack
-         to keep tap targets out of the cutouts). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="stylesheet" href="/app-shell.css" />
 
-    <!-- Prevent iOS Safari from auto-linking phone numbers, emails, and dates.
-         CRITICAL for this app — call logs contain thousands of phone numbers
-         that should never be rendered as tappable tel: links.
-         Each property is in its own tag for maximum compatibility. -->
     <meta name="format-detection" content="telephone=no" />
     <meta name="format-detection" content="email=no" />
     <meta name="format-detection" content="date=no" />
     <meta name="format-detection" content="address=no" />
 
-    <!-- Primary meta — keywords-rich for B2B SaaS / AI agents search intent -->
-    <title>Wireline — AI Voice &amp; Email Agents for Every Business · Call 24/7</title>
+    <title>Wireline — Personal Assistant + Business AI Voice Agents</title>
     <meta
       name="description"
-      content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Wireline handles inbound calls, qualifies leads, books appointments, sends SMS follow-ups, and syncs with HubSpot, Salesforce, Gmail, and Outlook. Try a live demo agent now — no signup required."
+      content="Wireline handles personal calls and runs business AI voice, SMS, and email agents with Studio, Training, Live Ops, model choice, integrations, and safe handoff rules."
     />
     <meta
       name="keywords"
-      content="AI voice agent, AI receptionist, AI phone agent, voice AI for business, AI customer service, automated phone answering, AI SDR, AI appointment booking, AI sales agent, virtual receptionist, voice AI SaaS, business phone AI, 24/7 AI call handling"
+      content="AI voice agent, personal AI assistant, AI receptionist, AI phone agent, voice AI for business, AI call screening, AI appointment booking, AI front desk, AI sales agent, virtual receptionist, Siri call assistant, business phone AI, 24/7 AI call handling"
     />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large" />
@@ -46,25 +38,13 @@
     <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
     <meta name="color-scheme" content="light dark" />
 
-    <!-- Canonical — points to the live production URL (was wireline.app, now trywireline.com).
-         Keeping this in sync with the served domain prevents SEO juice fragmentation. -->
     <link rel="canonical" href="https://trywireline.com/" />
 
-    <!-- Plausible Analytics — privacy-first, no cookies, GDPR-clean
-         out of the box. defer keeps it off the critical render path;
-         data-domain matches whatever's configured in the Plausible
-         dashboard. Sign up at plausible.io, add `trywireline.com`,
-         done. If we ever switch hosts (self-host, fly.io, PostHog),
-         just swap src + leave the existing custom events firing. -->
     <script
       defer
       data-domain="trywireline.com"
       src="https://plausible.io/js/script.tagged-events.js"
     ></script>
-    <!-- Custom event helper. Calling plausible('SignupComplete') from
-         anywhere in the app fires a tagged event so we can see funnel
-         steps in the dashboard. Falls through silently if Plausible
-         is blocked (some users have privacy extensions on). -->
     <script>
       window.plausible =
         window.plausible ||
@@ -73,12 +53,10 @@
         };
     </script>
 
-    <!-- GTM & Meta Pixel (Production-only loader to prevent dev clutter) -->
     <script>
       (function() {
         var isProd = window.location.hostname === "trywireline.com" || window.location.hostname === "www.trywireline.com";
         if (isProd) {
-          // Meta Pixel Code
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
           n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -87,22 +65,17 @@
           t.src=v;s=b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t,s)}(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
-          
-          fbq('init', '1683492795830248'); // Wireline Meta Pixel ID
+          fbq('init', '1683492795830248');
           fbq('track', 'PageView');
-
-          // Google Tag Manager Code
           (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
           new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
           j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-          })(window,document,'script','dataLayer','GTM-K2M2L84B'); // Wireline GTM Container ID
+          })(window,document,'script','dataLayer','GTM-K2M2L84B');
         } else {
-          // Mock pixel for dev logs
           window.fbq = function(action, event, data) {
             console.log("[wireline:dev-pixel] fbq('" + action + "', '" + event + "')", data || "");
           };
-          // Mock dataLayer for dev logs
           window.dataLayer = {
             push: function(data) {
               console.log("[wireline:dev-gtm] dataLayer.push()", data);
@@ -112,14 +85,13 @@
       })();
     </script>
 
-    <!-- Open Graph — how the site appears when shared on LinkedIn, Slack, FB, iMessage, etc. -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://trywireline.com/" />
     <meta property="og:site_name" content="Wireline" />
-    <meta property="og:title" content="Wireline — AI Voice &amp; Email Agents for Every Business" />
+    <meta property="og:title" content="Wireline — Personal Assistant + Business AI Voice Agents" />
     <meta
       property="og:description"
-      content="Deploy AI voice + email agents on real phone numbers in under 10 minutes. Call (630) 581-1834 right now to hear Liam answer in real time. "
+      content="Personal call coverage and business AI agent fleets with Studio, Training, Live Ops, model choice, integrations, and safe handoff rules."
     />
     <meta property="og:image" content="https://trywireline.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
@@ -127,25 +99,21 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Wireline — AI voice and email agents for every business"
+      content="Wireline — personal assistant and business AI voice agents"
     />
     <meta property="og:locale" content="en_US" />
 
-    <!-- Twitter / X — large-image card with full product framing -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@wirelineapp" />
     <meta name="twitter:creator" content="@wirelineapp" />
-    <meta name="twitter:title" content="Wireline — AI Voice &amp; Email Agents · Try Live Now" />
+    <meta name="twitter:title" content="Wireline — Personal Assistant + Business AI Agents" />
     <meta
       name="twitter:description"
-      content="AI agents on real phone numbers. Call (630) 581-1834 to hear it answer. Setup in 10 min. "
+      content="AI call coverage for personal life and business front desks. Studio, Training, Live Ops, model routing, and safe handoff rules."
     />
     <meta name="twitter:image" content="https://trywireline.com/og-image.png" />
     <meta name="twitter:image:alt" content="Wireline AI voice agents" />
 
-    <!-- JSON-LD: Organization + SoftwareApplication so Google can show
-         rich result cards. Validated against schema.org and the Google
-         Rich Results test. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -158,8 +126,8 @@
             "url": "https://trywireline.com/",
             "logo": "https://trywireline.com/wireline-icon-1024.png",
             "image": "https://trywireline.com/og-image.png",
-            "description": "AI voice and email agents that deploy on real phone numbers for businesses.",
-            "slogan": "AI voice and email agents on real phone numbers. Live in 10 minutes.",
+            "description": "Personal call coverage and business AI voice, SMS, and email agents.",
+            "slogan": "Your phone, finally working for you.",
             "foundingDate": "2024",
             "email": "support@trywireline.com",
             "founder": {
@@ -191,41 +159,41 @@
             "@id": "https://trywireline.com/#software",
             "name": "Wireline",
             "applicationCategory": "BusinessApplication",
-            "operatingSystem": "Web",
+            "operatingSystem": "Web, iOS, Android",
             "url": "https://trywireline.com/",
-            "description": "Deploy AI voice and email agents on real phone numbers. Handle inbound calls, qualify leads, book appointments, and sync with your CRM — all in under 10 minutes.",
+            "description": "Wireline handles personal calls and runs business AI voice, SMS, and email agents with Studio, Training, Live Ops, model choice, integrations, and safe handoff rules.",
             "offers": [
               {
                 "@type": "Offer",
                 "name": "Personal",
-                "price": "49",
+                "price": "9",
                 "priceCurrency": "USD",
                 "billingDuration": "P1M",
-                "url": "https://trywireline.com/signup?plan=personal"
+                "url": "https://trywireline.com/get-started?plan=personal&wedge=personal"
               },
               {
                 "@type": "Offer",
-                "name": "Starter",
-                "price": "149",
+                "name": "Personal+",
+                "price": "19",
                 "priceCurrency": "USD",
                 "billingDuration": "P1M",
-                "url": "https://trywireline.com/signup?plan=starter"
+                "url": "https://trywireline.com/get-started?plan=personal-plus&wedge=personal"
               },
               {
                 "@type": "Offer",
-                "name": "Pro",
-                "price": "499",
+                "name": "Business Growth",
+                "price": "249",
                 "priceCurrency": "USD",
                 "billingDuration": "P1M",
-                "url": "https://trywireline.com/signup?plan=pro"
+                "url": "https://trywireline.com/get-started?plan=starter&wedge=business"
               },
               {
                 "@type": "Offer",
-                "name": "Business",
-                "price": "1499",
+                "name": "Scale",
+                "price": "699",
                 "priceCurrency": "USD",
                 "billingDuration": "P1M",
-                "url": "https://trywireline.com/signup?plan=business"
+                "url": "https://trywireline.com/get-started?plan=scale&wedge=business"
               }
             ],
             "publisher": { "@id": "https://trywireline.com/#organization" }
@@ -241,61 +209,17 @@
       }
     </script>
 
-    <!-- Preconnect to Google design resources and analytics. -->
     <link rel="preconnect" href="https://plausible.io" crossorigin />
     <link rel="dns-prefetch" href="https://api.anthropic.com" />
     <link rel="dns-prefetch" href="https://api.vapi.ai" />
 
-    <!-- Favicons &amp; PWA -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- mask-icon: Safari pinned-tab uses a single-color SVG. We reuse
-         the favicon since the mark is already mono-stroke on a solid
-         tile; the color attribute overrides the SVG fill in Safari. -->
     <link rel="mask-icon" href="/favicon.svg" color="#8B3FD6" />
-    <!-- apple-touch-icon: iOS uses this for the home-screen icon. The 180px
-         PNG is generated at build time by scripts/render-image-assets.mjs
-         from scripts/apple-touch-icon.svg — the exact resolution iOS wants,
-         so it never has to downscale the 1024px source. -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <!-- humans.txt — credits, stack, and "who built this" -->
-    <link rel="author" type="text/plain" href="/humans.txt" />
-
-    <!-- Theme checker: executes synchronously before body render to prevent theme flashing -->
-    <script>
-      (function() {
-        try {
-          var t = localStorage.getItem('wireline.theme');
-          var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (dark) {
-            document.documentElement.classList.add('dark');
-          }
-        } catch (e) {}
-      })();
-    </script>
   </head>
   <body>
-    <div id="root">
-      <!-- Zero-Latency App Shell (Overwritten by React on mount) -->
-      <div class="app-shell-skeleton">
-        <div class="shell-sidebar">
-          <div class="shell-logo"></div>
-          <div class="shell-nav-item shell-nav-item--dim"></div>
-          <div class="shell-nav-item"></div>
-          <div class="shell-nav-item"></div>
-          <div class="shell-nav-item"></div>
-        </div>
-        <div class="shell-main">
-          <div class="shell-header">
-            <div class="shell-title"></div>
-          </div>
-          <div class="shell-content">
-            <div class="shell-card"></div>
-            <div class="shell-card"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
