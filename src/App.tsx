@@ -1,6 +1,7 @@
 import FigmaOverhaul from "./FigmaOverhaul";
 import PersonalWorkspace from "./PersonalWorkspace";
 import { AuthProvider } from "./contexts/AuthContext";
+import "./studio-hotfix.css";
 
 export default function App() {
   const path = location.pathname;
