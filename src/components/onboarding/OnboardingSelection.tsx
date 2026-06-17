@@ -37,7 +37,7 @@ export default function OnboardingSelection() {
             <h1 className="font-display text-4xl md:text-5xl text-ink tracking-tight mb-4">
               How will you use Wireline?
             </h1>
-            <p className="text-ink/60 text-lg max-w-xl mx-auto">
+            <p className="text-ink/70 text-lg max-w-xl mx-auto leading-relaxed">
               Select your primary use case to tailor your workspace. You can always switch between
               modes later from the command menu.
             </p>
@@ -58,7 +58,7 @@ export default function OnboardingSelection() {
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
                   Personal Assistant
                 </h2>
-                <p className="text-ink/70 leading-relaxed text-sm">
+                <p className="text-ink/80 leading-relaxed text-sm">
                   A streamlined workspace focused on setting up a single AI agent for your personal
                   number. Connect to your iOS or Android app, configure Siri Shortcuts, and
                   seamlessly route calls.
@@ -84,7 +84,7 @@ export default function OnboardingSelection() {
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
                   Business Fleet
                 </h2>
-                <p className="text-ink/70 leading-relaxed text-sm">
+                <p className="text-ink/80 leading-relaxed text-sm">
                   The heavy-duty command center. Build complex workflows, manage multiple agent
                   roles, monitor live floor operations, and handle escalations for your business or
                   enterprise.

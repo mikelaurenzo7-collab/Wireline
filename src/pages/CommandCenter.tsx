@@ -580,8 +580,8 @@ export default function LiveOps() {
                   {/* Stats Bento Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
                     {/* Active Agents Bento Card */}
-                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-brand/10 rounded-full blur-2xl group-hover:bg-brand/20 transition-all duration-500" />
+                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-brand/10 bg-paper-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-brand/30">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-brand/5 rounded-full blur-2xl group-hover:bg-brand/15 transition-all duration-500 pointer-events-none" />
                       <div>
                         <span className="wl-label text-[10px] text-muted-foreground block mb-1">
                           Active Agents
@@ -600,8 +600,8 @@ export default function LiveOps() {
                     </div>
 
                     {/* Calls Handled Bento Card */}
-                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500" />
+                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-emerald-500/10 bg-paper-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-emerald-500/30">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/15 transition-all duration-500 pointer-events-none" />
                       <div>
                         <span className="wl-label text-[10px] text-muted-foreground block mb-1">
                           Calls Handled
@@ -624,8 +624,8 @@ export default function LiveOps() {
                     </div>
 
                     {/* Resolution Rate Bento Card */}
-                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-all duration-500" />
+                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-blue-500/10 bg-paper-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-blue-500/30">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/15 transition-all duration-500 pointer-events-none" />
                       <div>
                         <span className="wl-label text-[10px] text-muted-foreground block mb-1">
                           Resolution Rate
@@ -644,8 +644,8 @@ export default function LiveOps() {
                     </div>
 
                     {/* Latency Avg Bento Card */}
-                    <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all duration-500" />
+                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-amber-500/10 bg-paper-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-amber-500/30">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/15 transition-all duration-500 pointer-events-none" />
                       <div>
                         <span className="wl-label text-[10px] text-muted-foreground block mb-1">
                           Avg Latency

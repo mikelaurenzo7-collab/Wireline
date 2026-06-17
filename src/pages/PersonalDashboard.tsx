@@ -26,7 +26,7 @@ export default function PersonalDashboard() {
             </div>
             <h1 className="font-display text-3xl font-semibold text-ink">My Assistant</h1>
           </div>
-          <p className="text-ink/60 text-lg ml-13">
+          <p className="text-ink/70 text-lg ml-13 leading-relaxed">
             Manage your personal AI, phone number, and mobile integrations.
           </p>
         </header>
@@ -73,10 +73,10 @@ export default function PersonalDashboard() {
                   </div>
                 </div>
                 <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/40 mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/50 mb-3">
                     Greeting
                   </p>
-                  <div className="p-4 rounded-md bg-ink/5 text-ink/80 italic border-l-2 border-brand/50">
+                  <div className="pl-4 py-1 text-ink/90 italic border-l-[3px] border-brand/40 text-sm leading-relaxed">
                     "Hi, you've reached Michael's personal AI assistant. He's unavailable right now,
                     but how can I help you?"
                   </div>
@@ -98,7 +98,7 @@ export default function PersonalDashboard() {
                 <h2 className="font-semibold text-lg">Mobile Ecosystem</h2>
               </div>
               <div className="p-6">
-                <p className="text-ink/70 mb-6">
+                <p className="text-ink/80 leading-relaxed mb-6">
                   Take your assistant everywhere. Setup Siri Shortcuts and download the native apps
                   for a seamless experience.
                 </p>
@@ -161,14 +161,16 @@ export default function PersonalDashboard() {
                 <h2 className="font-semibold">Call Routing</h2>
               </div>
               <div className="p-5">
-                <p className="text-sm text-ink/60 mb-4">
+                <p className="text-sm text-ink/80 leading-relaxed mb-4">
                   Forward unanswered calls from your personal cell directly to your AI assistant.
                 </p>
-                <div className="p-3 bg-ink/5 rounded-md border border-ink/10 text-center mb-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/40 mb-1">
+                <div className="p-4 bg-brand/5 rounded-md border border-brand/10 text-center mb-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-brand/70 mb-1.5">
                     Your Wireline Number
                   </p>
-                  <p className="font-mono text-lg font-medium text-ink">+1 (555) 019-8472</p>
+                  <p className="font-mono text-xl font-semibold text-brand tracking-tight">
+                    +1 (555) 019-8472
+                  </p>
                 </div>
                 <button className="w-full py-2 bg-brand text-white rounded-md text-sm font-semibold shadow-sm hover:bg-brand-deep transition-colors">
                   Setup Conditional Forwarding
@@ -192,16 +194,16 @@ export default function PersonalDashboard() {
               <div className="p-5">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-ink/60">Calls Handled Today</span>
-                    <span className="font-semibold">3</span>
+                    <span className="text-sm text-ink/80">Calls Handled Today</span>
+                    <span className="font-semibold text-ink">3</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-ink/60">Average Duration</span>
-                    <span className="font-semibold">1m 12s</span>
+                    <span className="text-sm text-ink/80">Average Duration</span>
+                    <span className="font-semibold text-ink">1m 12s</span>
                   </div>
                   <Link
                     to="/contact"
-                    className="block text-center w-full py-2 mt-2 bg-ink/5 text-ink hover:bg-ink/10 rounded-md text-sm font-semibold transition-colors"
+                    className="block text-center w-full py-2.5 mt-3 bg-paper-warm text-ink border border-ink/10 hover:border-brand/30 hover:bg-brand/5 rounded-md text-sm font-semibold transition-colors"
                   >
                     View Call Logs
                   </Link>
