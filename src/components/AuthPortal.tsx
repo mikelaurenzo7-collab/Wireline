@@ -193,8 +193,8 @@ function OAuthSignInButtons({
   ];
 
   return (
-    <div className="space-y-3 mb-5">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+    <div className="space-y-4 mb-6">
+      <div className="flex gap-4">
         {providers.map((p) => (
           <ShadButton
             key={p.id}
@@ -204,15 +204,18 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="oauth-btn min-h-[52px] py-2.5 h-auto flex-col gap-1.5 border-ink/[0.08] bg-paper/70 text-ink text-[11px] font-semibold touch-press hover:scale-[1.02] hover:border-brand/30 hover:bg-paper/90 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand/40"
+            className="flex-1 h-10 bg-transparent border border-white/10 hover:border-primary/50 hover:bg-white/5 text-muted-foreground hover:text-foreground font-sans transition-all flex justify-center items-center gap-2 rounded-none group focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            {pending === p.id ? <Loader2 className="w-5 h-5 animate-spin" /> : p.icon}
-            <span>{p.label}</span>
+            {pending === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : p.icon}
+            <span className="hidden sm:inline">{p.label}</span>
           </ShadButton>
         ))}
       </div>
-      <div className="wl-form-divider" aria-hidden="true">
-        <span>Or email</span>
+      <div className="relative flex items-center justify-center pt-2">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/10"></div>
+        </div>
+        <span className="relative px-3 bg-velvet font-mono text-[10px] text-muted-foreground uppercase tracking-widest">Operator Authorization</span>
       </div>
     </div>
   );
@@ -384,7 +387,7 @@ export default function AuthPortal() {
   return (
     <>
       <PageMeta
-        title={isSignUp ? "Create Account — Wireline" : "Sign In — Wireline"}
+        title={isSignUp ? "Identity · Session Verification — Wireline" : "Identity · Session Verification — Wireline"}
         description={
           isSignUp
             ? "Start your 14-day free Wireline trial — deploy an AI voice agent in under 10 minutes."
@@ -393,316 +396,253 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <div className="marketing-surface auth-portal-canvas min-h-dvh flex flex-col relative">
+      <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden dark">
+        {/* Background Brand Halo (Stealth Signal Focus) */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] pointer-events-none opacity-60 mix-blend-screen"></div>
+        {/* Decorative Grid Background (Micro-detail) */}
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: "linear-gradient(#f3e8ff 1px, transparent 1px), linear-gradient(90deg, #f3e8ff 1px, transparent 1px)", backgroundSize: "40px 40px" }}></div>
+
         <PublicSiteHeader
           active={isSignUp ? "signup" : "signin"}
-          className="bg-paper/92 backdrop-blur-xl border-b border-ink/[0.06]"
         />
 
-        <div className="relative z-10 flex flex-1 min-h-0 items-center justify-center px-4 sm:px-6 py-8 pt-20 sm:pt-24 pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-[420px] mx-auto"
-          >
-            <div className="wl-auth-card rounded-md">
-              <div className="p-6 sm:p-8">
-                <AnimatePresence mode="wait">
+        <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-20 pb-32">
+          <main className="w-full max-w-[420px] relative">
+            <div className="mb-10 text-center">
+              <h1 className="font-display text-4xl text-primary tracking-tight mb-2">WIRELINE</h1>
+              <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">
+                {isReset
+                    ? "Authorization Recovery"
+                    : isSignUp
+                    ? "Secure Session Registration"
+                    : "Secure Session Verification"}
+              </p>
+              {isSignUp && intentLabel && (
+                <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-primary/80 bg-primary/10 py-1 px-3 border border-primary/20 inline-block">
+                  INTENT: {intentLabel}
+                </p>
+              )}
+            </div>
+
+            <div className="relative bg-velvet border border-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_40px_rgba(0,0,0,0.5)] p-8 flex flex-col gap-6 backdrop-blur-xl">
+              
+              {!isReset && (
+                <div className="flex bg-card/50 border border-white/5 p-1 mb-2 relative">
                   <motion.div
-                    key={mode}
-                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <div className="wl-auth-card-header mb-6">
-                      <div className="wl-auth-brand-chip" aria-hidden="true">
-                        <WirelineMark className="w-5 h-5" stroke="white" strokeWidth={120} />
-                      </div>
-                      <div>
-                        <h1 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
-                          {isReset
-                            ? "Reset password"
-                            : isSignUp
-                              ? "Create account"
-                              : "Welcome back"}
-                        </h1>
-                        <p className="text-caption mt-1.5">
-                          {isReset
-                            ? "We'll email you a secure reset link."
-                            : isSignUp
-                              ? "14-day trial · no credit card"
-                              : "Sign in to your operator console"}
-                        </p>
-                        {isSignUp && intentLabel && (
-                          <p className="mt-2 inline-flex rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-eyebrow !text-brand">
-                            From your visit · {intentLabel}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {!isReset && (
-                      <div className="mb-5">
-                        <div className="relative flex p-1 bg-ink/[0.04] border border-ink/[0.06]">
-                          <motion.div
-                            layout
-                            className={cn(
-                              "absolute inset-y-1 w-[calc(50%-4px)] bg-brand/10 border border-brand/20",
-                              isSignUp ? "left-[calc(50%+2px)]" : "left-1",
-                            )}
-                            transition={{ type: "spring", stiffness: 400, damping: 34 }}
-                          />
-                          {[
-                            { label: "Sign in", value: false },
-                            { label: "Sign up", value: true },
-                          ].map((opt) => (
-                            <ShadButton
-                              key={String(opt.value)}
-                              type="button"
-                              variant="ghost"
-                              disableAnimations
-                              onClick={() => setIsSignUp(opt.value)}
-                              className={cn(
-                                "relative z-10 flex-1 h-auto py-2.5 text-sm font-semibold rounded-none",
-                                isSignUp === opt.value ? "text-ink" : "text-muted hover:text-ink",
-                              )}
-                            >
-                              {opt.label}
-                            </ShadButton>
-                          ))}
-                        </div>
-                      </div>
+                    layout
+                    className={cn(
+                      "absolute inset-y-1 w-[calc(50%-4px)] bg-primary/20 border border-primary/30",
+                      isSignUp ? "left-[calc(50%+2px)]" : "left-1",
                     )}
-
-                    {!isReset && (
-                      <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />
-                    )}
-
-                    <form onSubmit={handleAuth} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor="auth-email"
-                          className="text-eyebrow flex items-center gap-1.5"
-                        >
-                          <Mail className="w-3.5 h-3.5 text-brand" />
-                          Email
-                        </Label>
-                        <Input
-                          id="auth-email"
-                          type="email"
-                          required
-                          autoComplete="email"
-                          inputMode="email"
-                          spellCheck={false}
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="auth-input"
-                          placeholder="you@company.com"
-                        />
-                      </div>
-
-                      {!isReset && (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <Label
-                              htmlFor="auth-password"
-                              className="text-eyebrow flex items-center gap-1.5"
-                            >
-                              <Lock className="w-3.5 h-3.5 text-brand" />
-                              Password
-                            </Label>
-                            {!isSignUp && (
-                              <ShadButton
-                                type="button"
-                                variant="link"
-                                disableAnimations
-                                onClick={() => {
-                                  setMode("reset");
-                                  setError(null);
-                                }}
-                                className="text-caption font-medium text-brand h-auto p-0"
-                              >
-                                Forgot?
-                              </ShadButton>
-                            )}
-                          </div>
-                          <div className="relative">
-                            <Input
-                              id="auth-password"
-                              type={showPassword ? "text" : "password"}
-                              required
-                              minLength={isSignUp ? 8 : undefined}
-                              autoComplete={isSignUp ? "new-password" : "current-password"}
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              className="auth-input pr-11"
-                              placeholder="••••••••••••"
-                            />
-                            <ShadButton
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              disableAnimations
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-1 top-1/2 -translate-y-1/2 text-muted hover:text-ink h-8 w-8"
-                              aria-label={showPassword ? "Hide password" : "Show password"}
-                              tabIndex={-1}
-                            >
-                              {showPassword ? (
-                                <EyeOff className="w-4 h-4" />
-                              ) : (
-                                <Eye className="w-4 h-4" />
-                              )}
-                            </ShadButton>
-                          </div>
-                          {isSignUp && password.length > 0 && pwStrength && (
-                            <>
-                              <div
-                                className="pw-strength-bar mt-1.5"
-                                data-pw-pct={`${(pwStrength.score / 4) * 100}%`}
-                                data-accent={pwStrength.color}
-                              >
-                                <div className="pw-strength-fill pw-strength-fill--accent" />
-                              </div>
-                              <p className="text-caption wl-accent-text">{pwStrength.label}</p>
-                            </>
-                          )}
-                          {isSignUp && (
-                            <ul
-                              className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-caption text-muted/80"
-                              aria-label="Password requirements"
-                            >
-                              <li className={password.length >= 8 ? "text-brand" : ""}>
-                                {password.length >= 8 ? "✓" : "•"} 8+ characters
-                              </li>
-                              <li className={/[A-Z]/.test(password) ? "text-brand" : ""}>
-                                {/[A-Z]/.test(password) ? "✓" : "•"} Uppercase letter
-                              </li>
-                              <li className={/[a-z]/.test(password) ? "text-brand" : ""}>
-                                {/[a-z]/.test(password) ? "✓" : "•"} Lowercase letter
-                              </li>
-                              <li className={/[0-9]/.test(password) ? "text-brand" : ""}>
-                                {/[0-9]/.test(password) ? "✓" : "•"} Number
-                              </li>
-                            </ul>
-                          )}
-                        </div>
+                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                  />
+                  {[
+                    { label: "Verify", value: false },
+                    { label: "Register", value: true },
+                  ].map((opt) => (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={() => {
+                        setIsSignUp(opt.value);
+                        setError(null);
+                        setMessage(null);
+                      }}
+                      className={cn(
+                        "relative z-10 flex-1 py-2 text-xs font-mono uppercase tracking-widest transition-colors",
+                        isSignUp === opt.value ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                       )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                      {isReset && (
-                        <ShadButton
+              {!isReset && (
+                <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />
+              )}
+
+              <form onSubmit={handleAuth} className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2 relative group">
+                  <label className="font-mono text-[10px] text-muted-foreground uppercase transition-colors group-focus-within:text-primary" htmlFor="auth-email">
+                    Operator ID (Email)
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 group-focus-within:text-primary transition-colors" />
+                    <input
+                      id="auth-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      spellCheck={false}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full h-[40px] bg-card/50 border border-white/5 text-foreground font-sans pl-10 pr-3 rounded-none focus:outline-none focus:border-primary focus:shadow-[0_0_0_4px_rgba(139,63,214,0.12)] transition-all placeholder:text-muted-foreground/50"
+                      placeholder="SYS-OP-ALPHA"
+                    />
+                  </div>
+                </div>
+
+                {!isReset && (
+                  <div className="flex flex-col gap-2 relative group">
+                    <div className="flex justify-between items-center">
+                      <label className="font-mono text-[10px] text-muted-foreground uppercase transition-colors group-focus-within:text-primary" htmlFor="auth-password">
+                        Authorization Key
+                      </label>
+                      {!isSignUp && (
+                        <button
                           type="button"
-                          variant="link"
-                          disableAnimations
                           onClick={() => {
-                            setMode("signin");
+                            setMode("reset");
                             setError(null);
                           }}
-                          className="text-caption font-medium text-brand h-auto p-0 justify-start"
+                          className="font-mono text-[10px] text-muted-foreground hover:text-primary transition-colors uppercase"
                         >
-                          ← Back to sign in
-                        </ShadButton>
+                          Recover?
+                        </button>
                       )}
-
-                      <AnimatePresence mode="wait">
-                        {error && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                          >
-                            <Alert
-                              variant="destructive"
-                              className="flex items-start gap-2 p-3 [&>svg]:static [&>svg+div]:translate-y-0 [&>svg~*]:pl-0"
-                            >
-                              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                              <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                          </motion.div>
-                        )}
-                        {message && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                          >
-                            <Alert className="flex items-start gap-2 p-3 border-brand/25 bg-brand/10 text-brand [&>svg]:static [&>svg]:text-brand [&>svg+div]:translate-y-0 [&>svg~*]:pl-0">
-                              <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                              <AlertDescription className="text-brand">{message}</AlertDescription>
-                            </Alert>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {isSignUp && (
-                        <label className="flex items-start gap-2 text-caption cursor-pointer">
-                          <Checkbox
-                            checked={agreedToTerms}
-                            onChange={(e) => setAgreedToTerms(e.target.checked)}
-                            className="mt-1 accent-brand"
-                            required
-                          />
-                          <span>
-                            I agree to the{" "}
-                            <Link to="/terms" className="text-brand underline">
-                              Terms
-                            </Link>{" "}
-                            and{" "}
-                            <Link to="/privacy" className="text-brand underline">
-                              Privacy
-                            </Link>
-                            .
-                          </span>
-                        </label>
-                      )}
-
-                      <ShadButton
-                        type="submit"
-                        variant="editorial"
-                        disableAnimations
-                        disabled={loading || (isSignUp && !agreedToTerms)}
-                        className="w-full min-h-[48px] py-3.5 text-sm font-semibold touch-press-deep hover:scale-[1.01] hover:shadow-md hover:shadow-brand/10"
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 group-focus-within:text-primary transition-colors" />
+                      <input
+                        id="auth-password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={isSignUp ? 8 : undefined}
+                        autoComplete={isSignUp ? "new-password" : "current-password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full h-[40px] bg-card/50 border border-white/5 text-foreground font-sans pl-10 pr-10 rounded-none focus:outline-none focus:border-primary focus:shadow-[0_0_0_4px_rgba(139,63,214,0.12)] transition-all placeholder:text-muted-foreground/50"
+                        placeholder="••••••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground w-6 h-6 flex items-center justify-center transition-colors"
+                        tabIndex={-1}
                       >
-                        {loading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Connecting…
-                          </>
-                        ) : isReset ? (
-                          <>
-                            <Mail className="w-4 h-4" /> Send reset link
-                          </>
-                        ) : isSignUp ? (
-                          <>
-                            <UserPlus className="w-4 h-4" /> Create account{" "}
-                            <ArrowRight className="w-4 h-4" />
-                          </>
-                        ) : (
-                          <>
-                            Sign in <ArrowRight className="w-4 h-4" />
-                          </>
-                        )}
-                      </ShadButton>
-                    </form>
-                  </motion.div>
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+
+                    {isSignUp && password.length > 0 && pwStrength && (
+                      <div className="mt-2">
+                        <div className="flex h-1 gap-1 w-full opacity-60">
+                          {[1, 2, 3, 4].map((level) => (
+                            <div key={level} className={cn("flex-1 h-full", level <= pwStrength.score ? "bg-primary" : "bg-white/10")} />
+                          ))}
+                        </div>
+                        <p className="font-mono text-[10px] uppercase text-primary mt-2">{pwStrength.label}</p>
+                      </div>
+                    )}
+                    {isSignUp && (
+                      <ul className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 font-mono text-[10px] text-muted-foreground uppercase opacity-70">
+                        <li className={password.length >= 8 ? "text-primary opacity-100" : ""}>{password.length >= 8 ? "✓" : "•"} 8+ chars</li>
+                        <li className={/[A-Z]/.test(password) ? "text-primary opacity-100" : ""}>{/[A-Z]/.test(password) ? "✓" : "•"} Uppercase</li>
+                        <li className={/[a-z]/.test(password) ? "text-primary opacity-100" : ""}>{/[a-z]/.test(password) ? "✓" : "•"} Lowercase</li>
+                        <li className={/[0-9]/.test(password) ? "text-primary opacity-100" : ""}>{/[0-9]/.test(password) ? "✓" : "•"} Number</li>
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {isReset && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signin");
+                      setError(null);
+                    }}
+                    className="text-left font-mono text-[10px] text-primary uppercase hover:underline"
+                  >
+                    ← Cancel Recovery
+                  </button>
+                )}
+
+                <AnimatePresence mode="wait">
+                  {error && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                      <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-sm font-sans mb-4">
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div>{error}</div>
+                      </div>
+                    </motion.div>
+                  )}
+                  {message && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                      <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary/20 text-primary text-sm font-sans mb-4">
+                        <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div>{message}</div>
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
-              </div>
+
+                {isSignUp && (
+                  <label className="flex items-start gap-2 font-mono text-[10px] uppercase text-muted-foreground cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-0.5 appearance-none w-3.5 h-3.5 border border-white/20 checked:bg-primary checked:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 relative
+                        after:content-[''] after:absolute after:hidden checked:after:block after:left-[4px] after:top-[1px] after:w-1.5 after:h-2 after:border-r-[2px] after:border-b-[2px] after:border-white after:rotate-45"
+                      required
+                    />
+                    <span className="leading-relaxed">
+                      I accept the <Link to="/terms" className="text-primary hover:underline">Terms</Link> & <Link to="/privacy" className="text-primary hover:underline">Privacy</Link>
+                    </span>
+                  </label>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading || (isSignUp && !agreedToTerms)}
+                  className="w-full h-[44px] mt-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-sans font-bold flex justify-center items-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all duration-150 relative overflow-hidden group border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] rounded-none disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  <span className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-200"></span>
+                  <span className="relative z-10 flex items-center gap-2">
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Synchronizing...
+                      </>
+                    ) : isReset ? (
+                      <>
+                        <Mail className="w-4 h-4" /> Issue Recovery Command
+                      </>
+                    ) : isSignUp ? (
+                      <>
+                        Register Session <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    ) : (
+                      <>
+                        Verify Session <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </span>
+                </button>
+              </form>
             </div>
 
-            <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-caption">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 font-medium text-ink/80 hover:text-ink"
-              >
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground/70">
+              <Link to="/" className="inline-flex items-center gap-1.5 hover:text-primary transition-colors">
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Back to home
+                Abort
               </Link>
-              <Link to="/showcase" className="font-medium text-brand hover:underline">
-                Try live demo lines
+              <Link to="/showcase" className="hover:text-primary transition-colors hover:underline">
+                Bypass to Demo
               </Link>
             </div>
-          </motion.div>
+          </main>
+
+          {/* Footer Status Indicator */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-card/50 border border-white/5 px-4 py-2 backdrop-blur-sm z-10">
+            <div className="relative flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(139,63,214,0.8)] z-10"></div>
+              <div className="w-3 h-3 bg-primary/30 rounded-full absolute animate-ping"></div>
+            </div>
+            <span className="font-mono text-[10px] text-primary uppercase tracking-widest">Status: Nominal</span>
+          </div>
         </div>
       </div>
     </>

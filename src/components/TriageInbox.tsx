@@ -346,7 +346,7 @@ export function TriagePanel({
   }
 
   return (
-    <ClientRouteViewport className="dark bg-background text-foreground paper-texture">
+    <ClientRouteViewport className="bg-background text-foreground paper-texture">
       <ClientToolbar
         left={
           <span className="app-toolbar-stat">

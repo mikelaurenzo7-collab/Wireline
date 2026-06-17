@@ -27,8 +27,7 @@ import { OpsIntelligenceRail } from "../components/CommandCenter/OpsIntelligence
 import { TriagePanel } from "../components/TriageInbox";
 import CsvExportButton from "../components/CsvExportButton";
 import PageTransition from "../components/layout/PageTransition";
-import ClientRouteViewport from "../components/layout/ClientRouteViewport";
-import ClientToolbar from "../components/layout/ClientToolbar";
+import DirectorLayout from "../components/layout/DirectorLayout";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
@@ -439,10 +438,10 @@ export default function LiveOps() {
 
   return (
     <PageTransition>
-      <ClientRouteViewport>
+      <DirectorLayout title={`Director Sync // Protocol 7 — ${activeTab.toUpperCase()}`} showArtifacts={false}>
         <div
           className={clsx(
-            "dark bg-background text-foreground flex flex-col flex-1 min-h-0 h-full max-w-[1680px] mx-auto w-full paper-texture",
+            "bg-transparent text-foreground flex flex-col flex-1 min-h-0 h-full mx-auto w-full",
             WL_OPS_CLASSES.canvas,
           )}
         >
@@ -940,7 +939,7 @@ export default function LiveOps() {
             )}
           </div>
         </div>
-      </ClientRouteViewport>
+      </DirectorLayout>
     </PageTransition>
   );
 }

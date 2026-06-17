@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Check, Phone, ShieldCheck, Sparkles, Zap, HelpCircle } from "lucide-react";
+import { Activity, ArrowRight, Check, Phone, ShieldCheck, Sparkles, Zap, HelpCircle } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
 import { Input } from "../components/ui/shadcn/Input";

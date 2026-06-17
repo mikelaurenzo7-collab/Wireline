@@ -347,7 +347,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           </div>
 
                           {/* Date/time */}
-                          <div className="text-right shrink-0">
+                          <div className="text-right shrink-0 font-mono">
                             <div className="wl-micro-meta--muted">
                               {formatDate(call.created_at)}
                             </div>
@@ -621,7 +621,7 @@ function CallDetail({
               </ShadButton>
             );
           })}
-          <div className="ml-auto flex items-center gap-2 wl-label-muted">
+          <div className="ml-auto flex items-center gap-2 wl-label-muted font-mono">
             <Clock className="w-3 h-3" />
             <span>{formatDuration(call.duration_seconds || 0)}</span>
             <span className="w-1 h-1 rounded-full bg-white/15" />

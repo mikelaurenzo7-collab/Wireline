@@ -264,7 +264,7 @@ export default function DncManager() {
 
   return (
     <AdminHubViewport scroll>
-      <div className="dark bg-background text-foreground paper-texture h-full">
+      <div className="bg-background text-foreground paper-texture h-full">
         <PageShell title="" eyebrow="" subtitle="" scrollable>
         <div className="flex flex-col flex-1 min-h-0 gap-3 h-full">
           <ClientToolbar

@@ -103,7 +103,7 @@ export default function DailyBrief() {
             <Brain className="w-7 h-7 text-on-brand" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-ink leading-tight">Daily Brief is offline</h3>
+            <h3 className="text-xl font-display italic text-ink leading-tight">Daily Brief is offline</h3>
             <p className="text-sm text-ink/65">
               Contact your administrator to enable the Wireline Daily Brief.
             </p>
@@ -245,7 +245,7 @@ export default function DailyBrief() {
         <div className="relative z-10 p-7 space-y-7">
           {/* Headline */}
           <div className="space-y-3">
-            <h2 className="text-2xl md:text-3xl font-semibold text-ink leading-tight tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-display italic text-ink leading-tight tracking-tight">
               {brief.headline}
             </h2>
             <p className="text-ink/70 text-sm md:text-base leading-relaxed max-w-3xl">
@@ -345,7 +345,7 @@ function Quick({
     <div className={cn(WL_STAT_CLASSES.tile, "p-4")}>
       <div className={cn(WL_STAT_CLASSES.label, "mb-2 mt-0")}>{label}</div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className={cn(WL_STAT_CLASSES.valueInk, "text-3xl font-semibold")}>{value}</span>
+        <span className={cn(WL_STAT_CLASSES.valueInk, "text-3xl font-display italic")}>{value}</span>
         {showDelta && (
           <span
             className={cn(
@@ -460,7 +460,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="px-7 py-5 border-b border-white/8 bg-black/20 space-y-4">
+    <div className="px-7 py-5 border-b border-border bg-muted/30 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 wl-label text-brand">
           <Mail className="w-3 h-3" /> Email this brief on a schedule

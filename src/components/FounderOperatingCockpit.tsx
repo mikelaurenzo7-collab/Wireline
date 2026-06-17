@@ -72,7 +72,7 @@ function QuestionCard({
           >
             <Icon className="w-4 h-4" />
           </span>
-          <h3 className="text-sm font-semibold text-ink">{title}</h3>
+          <h3 className="text-sm font-display italic text-ink">{title}</h3>
         </div>
         {ok ? (
           <CheckCircle2 className="w-4 h-4 text-[color:var(--wl-signal,#10B981)] shrink-0" />

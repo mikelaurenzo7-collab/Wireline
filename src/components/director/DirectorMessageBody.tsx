@@ -198,14 +198,14 @@ function renderBlock(block: string, bi: number): React.ReactNode {
 
   if (first.startsWith("### ")) {
     return (
-      <h4 key={bi} className="font-semibold text-ink tracking-[-0.01em] pt-0.5">
+      <h4 key={bi} className="font-display font-semibold text-ink tracking-[-0.01em] pt-0.5">
         {renderInline(stripOperatorStatusEmoji(first.slice(4)))}
       </h4>
     );
   }
   if (first.startsWith("## ")) {
     return (
-      <h3 key={bi} className="font-bold text-ink tracking-[-0.02em] pt-0.5">
+      <h3 key={bi} className="font-display font-bold text-ink tracking-[-0.02em] pt-0.5">
         {renderInline(stripOperatorStatusEmoji(first.slice(3)))}
         {lines.slice(1).map((l, i) => (
           <span key={i} className="block font-normal text-ink/90 mt-0.5">
@@ -217,7 +217,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   }
   if (first.startsWith("# ")) {
     return (
-      <h2 key={bi} className="font-bold text-ink tracking-[-0.02em]">
+      <h2 key={bi} className="font-display font-bold text-ink tracking-[-0.02em]">
         {renderInline(first.slice(2))}
       </h2>
     );
@@ -248,7 +248,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
         {lines
           .filter((l) => /^[-*•]\s/.test(l.trim()))
           .map((l, i) => (
-            <li key={i} className="text-ink/90 flex gap-1.5 leading-normal">
+            <li key={i} className="font-display text-[13px] text-ink/90 flex gap-1.5 leading-relaxed">
               <span className="text-brand/50 shrink-0">•</span>
               <span>{renderInline(l.replace(/^[-*•]\s*/, ""))}</span>
             </li>
@@ -266,7 +266,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
           .map((l, i) => {
             const text = l.replace(/^\d+\.\s*/, "");
             return (
-              <li key={i} className="text-ink/90 flex gap-1.5 leading-normal">
+              <li key={i} className="font-display text-[13px] text-ink/90 flex gap-1.5 leading-relaxed">
                 <span className="text-brand/60 shrink-0 font-mono wl-micro-badge w-4">{i + 1}.</span>
                 <span>{renderInline(text)}</span>
               </li>
@@ -322,7 +322,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
           <p className={cn("text-eyebrow font-bold tracking-[0.12em] mb-1", cp.label)}>
             {cTitle}
           </p>
-          {cBody && <p className="text-[12px] text-ink/85 leading-normal">{renderInline(cBody)}</p>}
+          {cBody && <p className="font-display text-[13px] text-ink/85 leading-relaxed">{renderInline(cBody)}</p>}
         </div>
       );
     }
@@ -330,7 +330,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
     return (
       <blockquote key={bi} className="border-l-2 border-brand/25 pl-3.5 py-0.5">
         {quoteLines.map((l, i) => (
-          <p key={i} className="text-[12px] text-ink/70 italic leading-normal">
+          <p key={i} className="font-display text-[13px] text-ink/70 italic leading-relaxed">
             {renderInline(l.replace(/^>\s*/, ""))}
           </p>
         ))}
@@ -339,7 +339,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   }
 
   return (
-    <p key={bi} className="text-ink/90 leading-normal whitespace-pre-wrap">
+    <p key={bi} className="font-display text-[13px] text-ink/90 leading-relaxed whitespace-pre-wrap">
       {renderInline(trimmed)}
     </p>
   );

@@ -830,7 +830,7 @@ export default function AppointmentsView({ embedded = false }: { embedded?: bool
 
   return (
     <>
-      <div className="dark bg-background text-foreground h-full flex flex-col min-h-0 paper-texture">
+      <div className="bg-background text-foreground h-full flex flex-col min-h-0 paper-texture">
         <ClientToolbar
           left={
             <span className="app-toolbar-stat">

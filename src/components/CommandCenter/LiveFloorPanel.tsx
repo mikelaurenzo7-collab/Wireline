@@ -586,13 +586,13 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
         <div className={cn(WL_OPS_CLASSES.railCard, "shrink-0 grid grid-cols-2 gap-3")}>
           <div>
             <p className="wl-label text-muted">On call</p>
-            <p className="text-2xl font-semibold text-ink tabular-nums tracking-tight">
+            <p className="text-2xl font-display italic text-ink tabular-nums tracking-tight">
               {busyAgentIds.size}
             </p>
           </div>
           <div>
             <p className="wl-label text-muted">Available</p>
-            <p className="text-2xl font-semibold text-ink tabular-nums tracking-tight">
+            <p className="text-2xl font-display italic text-ink tabular-nums tracking-tight">
               {availableAgents.length}
             </p>
           </div>
