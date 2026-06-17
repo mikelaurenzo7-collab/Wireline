@@ -13,6 +13,12 @@ import {
   Shield,
   Activity,
   Zap,
+  Wand2,
+  Mic,
+  LayoutGrid,
+  Ban,
+  Calendar,
+  PhoneForwarded,
 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
@@ -20,9 +26,43 @@ import { ShadButton } from "../components/ui/shadcn/ShadButton";
 
 const FEATURES_SECTION_LINKS = [
   { id: "features-hero", label: "Overview" },
+  { id: "features-personal", label: "Personal" },
   { id: "features-multichannel", label: "Multi-Channel" },
   { id: "features-siri", label: "Siri & iOS" },
   { id: "features-capabilities", label: "Capabilities" },
+] as const;
+
+const PERSONAL_FEATURES = [
+  {
+    icon: Wand2,
+    title: "Plain-language intents",
+    body: 'Tell Aria what to do in plain English — "Screen work calls after 6pm" just works. No config menus.',
+  },
+  {
+    icon: Mic,
+    title: "Siri & CarPlay",
+    body: '"Hey Siri, ask Wireline" from your lock screen, AirPods, or car dash. Hands-free, always.',
+  },
+  {
+    icon: LayoutGrid,
+    title: "Home-screen widget",
+    body: "Today's handled calls, quick DND toggle, and Aria's live status at a glance — no app launch required.",
+  },
+  {
+    icon: Ban,
+    title: "Spam guard",
+    body: "Robocalls declined politely. Family always rings through. You set the rules once; Aria enforces them every time.",
+  },
+  {
+    icon: Calendar,
+    title: "Appointment handling",
+    body: "Aria confirms, reschedules, and sends you a summary — no hold music, no calendar juggling, ever.",
+  },
+  {
+    icon: PhoneForwarded,
+    title: "Conditional forwarding",
+    body: "Unanswered calls route to Aria only when you don't pick up. You stay in control; Aria only steps in when needed.",
+  },
 ] as const;
 
 export default function Features() {
@@ -83,8 +123,9 @@ export default function Features() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="text-ink/75 text-lg leading-relaxed max-w-2xl mx-auto mb-10"
         >
-          A sovereign stack for Phone, SMS, and Email. Experience true technical independence with a
-          vertically integrated communication layer.
+          A sovereign stack for Phone, SMS, and Email — for your personal line and your entire
+          business floor. Experience true technical independence with a vertically integrated
+          communication layer.
         </motion.p>
 
         <motion.div
@@ -104,6 +145,71 @@ export default function Features() {
             </Link>
           </ShadButton>
         </motion.div>
+      </section>
+
+      {/* ── For you, personally ── */}
+      <section
+        id="features-personal"
+        className="relative z-10 px-6 lg:px-12 py-20 scroll-mt-28 border-t border-ink/[0.08] max-w-6xl mx-auto"
+      >
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between mb-12">
+          <div className="max-w-xl">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold mb-2">
+              For you, personally
+            </p>
+            <h2 className="font-display italic text-3xl sm:text-4xl text-ink leading-tight">
+              Your line on autopilot.
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-ink/70 leading-relaxed">
+              Aria handles the calls you can't, shouldn't, or don't want to take — so your phone
+              stays quiet and nothing slips.
+            </p>
+          </div>
+          <ShadButton variant="outline" size="default" asChild>
+            <Link to="/signup?plan=personal" className="inline-flex items-center gap-2 shrink-0">
+              Set up personal line <ArrowRight className="w-4 h-4" />
+            </Link>
+          </ShadButton>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {PERSONAL_FEATURES.map(({ icon: Icon, title, body }, i) => (
+            <motion.article
+              key={title}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ delay: i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-md border border-ink/10 bg-paper p-6 shadow-[0_18px_48px_-42px_rgba(26,22,20,0.55)] hover:border-brand/30 transition-colors flex flex-col gap-4"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-brand/15 bg-brand/8 text-brand">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl italic text-ink">{title}</h3>
+              <p className="text-sm leading-7 text-ink/66">{body}</p>
+            </motion.article>
+          ))}
+        </div>
+
+        {/* Scenario strip */}
+        <div className="mt-10 flex flex-wrap gap-3">
+          {[
+            { label: "Hey Siri, have Wireline call the pharmacy", outcome: "Done in 40s" },
+            { label: "Dr. Allen's office calling", outcome: "Rescheduled Thu 2pm" },
+            { label: "Unknown caller — work hours", outcome: "Screened + summary texted" },
+            { label: "DoorDash driver calling", outcome: "Gave gate code #4821" },
+            { label: "Mom called twice", outcome: "Rang through immediately" },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="rounded-sm border border-ink/10 bg-paper-warm/30 px-4 py-2.5 text-sm"
+            >
+              <span className="text-ink/75 italic">"{s.label}"</span>
+              <span className="mx-2 text-ink/30">→</span>
+              <span className="font-semibold text-brand text-xs">{s.outcome}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Multi-Channel Timeline & Grid Section */}
@@ -241,7 +347,6 @@ export default function Features() {
               <h4 className="font-display italic text-xl text-ink">Single Customer Thread</h4>
 
               <div className="relative border-l-2 border-brand/25 ml-4 pl-6 space-y-8 py-2">
-                {/* Step 1: Phone */}
                 <div className="relative">
                   <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white ring-4 ring-paper shadow-sm">
                     <Phone className="w-3 h-3" />
@@ -260,13 +365,11 @@ export default function Features() {
                       requested a quote.
                     </p>
                     <div className="bg-black/5 p-2.5 mt-2 rounded-sm text-xs italic text-ink/65 border border-ink/[0.05]">
-                      "Sure, I'll send that quote over right now via SMS and email. What's your best
-                      address?"
+                      "Sure, I'll send that quote over right now via SMS and email."
                     </div>
                   </div>
                 </div>
 
-                {/* Step 2: SMS */}
                 <div className="relative">
                   <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white ring-4 ring-paper shadow-sm">
                     <MessageSquare className="w-3 h-3" />
@@ -280,10 +383,6 @@ export default function Features() {
                         SMS Agent
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-ink/70 mt-1">
-                      Platform dispatched a secure link containing the quote payload, matching the
-                      voice request.
-                    </p>
                     <div className="bg-brand/5 p-2.5 mt-2 rounded-sm text-xs text-brand/90 border border-brand/10">
                       <strong>Outgoing SMS:</strong> "Hi Michael, here's your personalized quote:
                       wl.net/q/8b3f. Tap to approve."
@@ -291,7 +390,6 @@ export default function Features() {
                   </div>
                 </div>
 
-                {/* Step 3: Email */}
                 <div className="relative">
                   <div className="absolute -left-[35px] top-0.5 w-6 h-6 rounded-full bg-brand flex items-center justify-center text-white ring-4 ring-paper shadow-sm">
                     <Mail className="w-3 h-3" />
@@ -336,65 +434,22 @@ export default function Features() {
                 </span>
               </div>
 
-              {/* Animated Siri SVG embedded */}
               <div className="relative w-full aspect-[4/3] max-w-md mx-auto mb-6 rounded-md overflow-hidden border border-brand/10 shadow-md">
-                <svg
-                  fill="none"
-                  viewBox="0 0 400 300"
-                  className="w-full h-full"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect fill="#f5f1e8" height="300" rx="8" width="400"></rect>
-                  <circle
-                    cx="200"
-                    cy="120"
-                    r="40"
-                    stroke="#8b3fd6"
-                    strokeDasharray="4 4"
-                    strokeWidth="2"
-                  ></circle>
-                  <path
-                    d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z"
-                    stroke="#8b3fd6"
-                    strokeWidth="3"
-                  >
-                    <animate
-                      attributeName="stroke-width"
-                      dur="2s"
-                      repeatCount="indefinite"
-                      values="3;5;3"
-                    ></animate>
+                <svg fill="none" viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <rect fill="#f5f1e8" height="300" rx="8" width="400" />
+                  <circle cx="200" cy="120" r="40" stroke="#8b3fd6" strokeDasharray="4 4" strokeWidth="2" />
+                  <path d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z" stroke="#8b3fd6" strokeWidth="3">
+                    <animate attributeName="stroke-width" dur="2s" repeatCount="indefinite" values="3;5;3" />
                   </path>
-                  <rect
-                    height="40"
-                    rx="4"
-                    stroke="#1a1614"
-                    strokeWidth="1.5"
-                    width="60"
-                    x="80"
-                    y="200"
-                  ></rect>
-                  <path
-                    d="M260 200V240M240 220H280"
-                    stroke="#8b3fd6"
-                    strokeLinecap="round"
-                    strokeWidth="3"
-                  ></path>
-                  <text
-                    fill="#1a1614"
-                    fontFamily="sans-serif"
-                    fontSize="12"
-                    textAnchor="middle"
-                    x="200"
-                    y="270"
-                  >
+                  <rect height="40" rx="4" stroke="#1a1614" strokeWidth="1.5" width="60" x="80" y="200" />
+                  <path d="M260 200V240M240 220H280" stroke="#8b3fd6" strokeLinecap="round" strokeWidth="3" />
+                  <text fill="#1a1614" fontFamily="sans-serif" fontSize="12" textAnchor="middle" x="200" y="270">
                     Hands-Free Siri Voice Protocol
                   </text>
                 </svg>
               </div>
 
               <div className="space-y-6">
-                {/* CarPlay interactive HUD */}
                 <div className="bg-ink p-5 text-white font-sans rounded-md border border-white/10 space-y-4">
                   <div className="flex items-center justify-between border-b border-white/10 pb-3">
                     <div className="flex items-center gap-2">
@@ -411,49 +466,19 @@ export default function Features() {
                   <div className="space-y-3">
                     <div className="p-3 bg-zinc-900 border border-white/10 flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-brand">
-                          Siri Trigger Event
-                        </p>
-                        <p className="text-xs font-semibold mt-0.5">
-                          "Siri, ask Wireline to dial pharmacy..."
-                        </p>
+                        <p className="text-[10px] uppercase tracking-wider text-brand">Siri Trigger Event</p>
+                        <p className="text-xs font-semibold mt-0.5">"Siri, ask Wireline to dial pharmacy..."</p>
                       </div>
                       <div className="w-2 h-2 rounded-full bg-brand animate-ping" />
                     </div>
-
                     <div className="p-3 bg-brand/10 border border-brand/30 flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-brand font-semibold">
-                          Active Outbound Dispatch
-                        </p>
+                        <p className="text-[10px] uppercase tracking-wider text-brand font-semibold">Active Outbound Dispatch</p>
                         <p className="text-xs font-semibold mt-0.5">Calling Walgreens #4032</p>
-                        <p className="text-[10px] text-white/70 mt-1">
-                          Instruction: "Confirm prescription refilled"
-                        </p>
+                        <p className="text-[10px] text-white/70 mt-1">Instruction: "Confirm prescription refilled"</p>
                       </div>
                       <span className="font-mono text-[10px] text-brand">Pending...</span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-paper-warm/20 border border-brand/10 rounded-sm">
-                    <h5 className="font-display italic text-base text-ink mb-1">
-                      Interactive Widgets
-                    </h5>
-                    <p className="text-xs text-ink/70 leading-relaxed">
-                      Check your lock screen or home screen widget to see active call states and
-                      live transcripts while driving.
-                    </p>
-                  </div>
-                  <div className="p-4 bg-paper-warm/20 border border-brand/10 rounded-sm">
-                    <h5 className="font-display italic text-base text-ink mb-1">
-                      Direct Carrier Routing
-                    </h5>
-                    <p className="text-xs text-ink/70 leading-relaxed">
-                      Zero middleware jank. Direct-to-carrier routing ensures crisp, HD audio with
-                      sub-second model response times.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -470,12 +495,12 @@ export default function Features() {
             <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
               Designed for high-stakes environments — from critical surgical theaters to the
               driver's seat. Our voice engine interfaces directly with Apple's Siri, allowing
-              medical professionals and logistics teams to trigger workflows entirely by voice.
+              professionals and logistics teams to trigger workflows entirely by voice.
             </p>
             <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
-              Ask Siri to trigger a custom Wireline workflow. Your fleet automatically places the
-              call, coordinates with the client, updates your CRM, and displays the outcome on your
-              iOS Widget immediately when you park.
+              Ask Siri to trigger a custom Wireline workflow. Your agent automatically places the
+              call, coordinates with the recipient, and displays the outcome on your iOS Widget
+              the moment you park.
             </p>
 
             <ul className="space-y-3 pt-2">
@@ -484,14 +509,8 @@ export default function Features() {
                 "Biometric-gated voice triggers",
                 "Offline-first voice processing",
               ].map((point) => (
-                <li
-                  key={point}
-                  className="flex items-center gap-2.5 text-xs sm:text-sm text-ink/80 font-medium"
-                >
-                  <div
-                    className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0"
-                    aria-hidden="true"
-                  >
+                <li key={point} className="flex items-center gap-2.5 text-xs sm:text-sm text-ink/80 font-medium">
+                  <div className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0" aria-hidden="true">
                     <Check className="w-3.5 h-3.5 text-brand" />
                   </div>
                   <span>{point}</span>
@@ -569,15 +588,10 @@ export default function Features() {
                 className="wl-panel border border-ink/[0.08] bg-paper hover:border-brand/30 transition-all p-6 rounded-md group relative overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  <div
-                    className="w-10 h-10 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mb-4 text-brand"
-                    aria-hidden="true"
-                  >
+                  <div className="w-10 h-10 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mb-4 text-brand" aria-hidden="true">
                     <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-display italic text-lg text-ink leading-tight mb-2">
-                    {item.title}
-                  </h3>
+                  <h3 className="font-display italic text-lg text-ink leading-tight mb-2">{item.title}</h3>
                   <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">{item.body}</p>
                 </div>
               </div>
@@ -585,13 +599,9 @@ export default function Features() {
           })}
         </div>
 
-        {/* Footer Call to Action */}
         <div className="mt-16 text-center">
           <ShadButton variant="editorial" size="lg" asChild>
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] font-semibold"
-            >
+            <Link to="/signup" className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] font-semibold">
               Deploy Your First Agent <ArrowUpRight className="w-4 h-4" />
             </Link>
           </ShadButton>
