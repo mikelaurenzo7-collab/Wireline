@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- AgentConfigPanel consumes loosely typed /api/agents rows. */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -21,7 +21,6 @@ import {
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
-import { InlineEmpty } from "../ui/InlineEmpty";
 import AgentModelSelector from "../AgentModelSelector";
 import { AGENT_ROLES, PREMIUM_VOICES, RoleBadge } from "../fleet/helpers";
 import { Input } from "../ui/shadcn/Input";
@@ -51,12 +50,6 @@ function numberLabel(agent: any): string {
   return agent?.phone_number || agent?.phone || "Not assigned";
 }
 
-function modelLabel(agent: any): string {
-  if (!agent?.llm_model) return "Workspace default";
-  const model = String(agent.llm_model);
-  return model.includes("/") ? model.split("/").pop()! : model;
-}
-
 function countRows(rows: unknown): number {
   return Array.isArray(rows) ? rows.length : 0;
 }
@@ -68,7 +61,7 @@ function QuickLink({
   description,
 }: {
   to: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   description: string;
 }) {
@@ -94,7 +87,6 @@ export default function AgentConfigPanel({
   setSelectedAgent,
   agentConfig,
   isConfigLoading,
-  fetchAgentConfig,
   updateAgentMeta,
   integrationStatus,
 }: AgentConfigPanelProps) {
