@@ -33,12 +33,12 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/phone": "Call history, outbound campaigns & appointments",
   "/email": "Manage threads, drafts & automated responses",
   "/sms": "Two-way conversations & automated follow-ups",
-  "/training": "Teach, tune & refine your agents",
+  "/training": "Teach agents your knowledge, workflows, voice rules & test scenarios",
   "/ops": "Live callers, supervisor tools & fleet pulse",
   "/insights": "Performance analytics, topics & trend discovery",
   "/pipeline": "Leads across the funnel — scored and staged",
   "/admin": "Account configuration & integrations",
-  "/agents": "Build, voice, tune & coach your agents — one unified workspace",
+  "/agents": "Create the agent basics, choose a model, then ask the Assistant what to do next",
   "/integrations": "Email, CRM & third-party connections",
   "/dnc": "Do-not-call list & TCPA compliance",
   "/audit": "Security events & compliance ledger",
@@ -114,9 +114,9 @@ function getPageContext(
         const agentsTab = params.get("tab");
         if (agentsTab === "fleet")
           return {
-            eyebrow: section ?? "Studio",
-            title: "My Fleet",
-            subtitle: "Configure and manage deployed agents",
+            eyebrow: section ?? "Build",
+            title: "Agents",
+            subtitle: "Manage deployed agents and choose who to edit",
           };
         return {
           eyebrow: section ?? "Build",
@@ -125,11 +125,23 @@ function getPageContext(
         };
       }
       if (pathname === "/training") {
-        // Legacy route — redirects to /agents?rail=training in AppRoutes
+        const trainingTab = params.get("tab");
+        const trainingMeta: Record<string, { title: string; subtitle: string }> = {
+          database: {
+            title: "Knowledge",
+            subtitle: "Facts, FAQs, policies, services, prices, and business context",
+          },
+          voice: { title: "Voice", subtitle: "Voice selection, speaking style, and pronunciation" },
+          simulator: { title: "Simulator", subtitle: "Test scenarios before customers reach the agent" },
+          flow: { title: "Workflows", subtitle: "Call steps, handoffs, qualification, and escalation paths" },
+        };
+        if (trainingTab && trainingMeta[trainingTab]) {
+          return { eyebrow: section ?? "Build", ...trainingMeta[trainingTab] };
+        }
         return {
-          eyebrow: "Build",
-          title: "Studio",
-          subtitle: ROUTE_SUBTITLES["/agents"],
+          eyebrow: section ?? "Build",
+          title: "Training",
+          subtitle: ROUTE_SUBTITLES["/training"],
         };
       }
       if (pathname === "/insights") {
