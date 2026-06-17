@@ -6,7 +6,7 @@ import PublicMarketingWorkspace from "./PublicMarketingWorkspace";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./studio-hotfix.css";
 
-const publicPaths = new Set(["/", "/features", "/pricing", "/showcase", "/developers", "/compare", "/training", "/about", "/blog"]);
+const publicPaths = new Set(["/", "/features", "/pricing", "/showcase", "/developers", "/compare", "/training", "/about", "/blog", "/terms", "/privacy", "/security", "/contact"]);
 
 function cleanPath(path: string) {
   if (path === "/") return path;
