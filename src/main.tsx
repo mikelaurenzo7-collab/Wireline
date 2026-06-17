@@ -3,29 +3,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-// CSS layer order: base tokens first, then shell layout, compatibility aliases,
-// design utilities, and preview-specific classes before auth hardening.
-import "./styles/app-shell.css";
-import "./styles/legacy-aliases.css";
-import "./styles/wireline-design-system.css";
-import "./styles/design-preview.css";
-// Authenticated-surface contrast hardening — must load AFTER the core CSS stack so its
-// theme-aware --color-brand-ink override and ghost-button rules win the cascade.
-import "./styles/auth-contrast.css";
-// Studio clarity layer — loaded last so the first authenticated surface keeps
-// the Assistant composer visible on laptop/desktop viewports.
-import "./styles/studio-clarity.css";
-// Studio desktop/laptop fit is now handled natively in the component layout
-// (proper min-h-0 flex chain + per-pane internal scroll), so the old
-// studio-desktop-fix.css override layer was removed.
+
+// Figma overhaul migration: legacy shell/style layers are intentionally not
+// imported here. They carried old Tailwind @apply contracts and color tokens
+// that blocked Vercel from compiling the new Make-based surface.
 
 // Global error + rejection safety net for voice + async surfaces.
-// Vapi WebSocket drops, ElevenLabs streaming failures, recipe promise
-// rejections, and any uncaught third-party widget errors all land here.
-// This prevents silent white screens or broken agent states for SMB operators
-// who expect the console to "just work" even when the network hiccups.
 if (typeof window !== "undefined") {
-  // Clear preload reload loop state flags on successful initialization
   try {
     sessionStorage.removeItem("wireline:preload-reload-count");
     sessionStorage.removeItem("wireline:last-preload-reload");
@@ -56,10 +40,7 @@ if (typeof window !== "undefined") {
   };
 
   const report = (kind: string, err: unknown, extra?: Record<string, unknown>) => {
-    // Always surface in console for local debugging
     console.error(`[wireline:${kind}]`, err, extra);
-    // Plausible already loaded via index.html — tag the event so we see
-    // production error volume without adding another analytics vendor.
     if (typeof window.plausible === "function") {
       window.plausible("Error", {
         props: { kind, message: err instanceof Error ? err.message : String(err) },
@@ -78,32 +59,11 @@ if (typeof window !== "undefined") {
       safeReload("error event");
       return;
     }
-    report("window-error", event.error || event.message, {
-      filename: event.filename,
-      lineno: event.lineno,
-      colno: event.colno,
-    });
+    report("error", event.error ?? message, { filename: event.filename, lineno: event.lineno });
   });
 
   window.addEventListener("unhandledrejection", (event) => {
-    const reason = event.reason;
-    const msg = reason instanceof Error ? reason.message : String(reason);
-    if (
-      msg &&
-      (msg.includes("Failed to fetch dynamically imported module") ||
-        msg.includes("error loading dynamically imported module"))
-    ) {
-      console.error("[wireline:preload] Dynamic import rejection, initiating safe reload...");
-      safeReload("unhandledrejection");
-      return;
-    }
-    report("unhandled-rejection", reason);
-  });
-
-  // Handle Vite's custom preload error event
-  window.addEventListener("vite:preloadError", () => {
-    console.error("[wireline:preload] Vite preload error, initiating safe reload...");
-    safeReload("preloadError");
+    report("unhandledrejection", event.reason);
   });
 }
 
@@ -112,15 +72,3 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
-
-// Register Service Worker for Progressive Web App (PWA) support on production builds
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    // Only register in production to prevent caching issues during dev HMR
-    if (import.meta.env.PROD) {
-      navigator.serviceWorker.register("/sw.js").catch((err) => {
-        console.error("[wireline:sw] Registration failed:", err);
-      });
-    }
-  });
-}
