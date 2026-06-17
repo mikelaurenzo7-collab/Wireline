@@ -33,11 +33,6 @@ export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
     captureDemoSourceFromLocation();
-    // Force dark mode for the premium design
-    document.documentElement.classList.add("dark");
-    return () => {
-      document.documentElement.classList.remove("dark");
-    }
   }, []);
 
   return (
@@ -48,11 +43,11 @@ export default function LandingPage() {
         image="/og-image.jpg"
       />
 
-      <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary/20 selection:text-white overflow-x-hidden">
+      <div className="marketing-launch min-h-screen bg-paper font-sans text-ink selection:bg-primary/20 selection:text-ink overflow-x-hidden">
         <PublicSiteHeader active="home" />
 
         {/* ─── Hero Section ─── */}
-        <main className="relative pt-48 pb-32 px-6 md:px-12 max-w-7xl mx-auto space-y-32">
+        <main id="main-content" className="relative pt-48 pb-32 px-6 md:px-12 max-w-7xl mx-auto space-y-32">
           
           <section className="flex flex-col items-center justify-center text-center relative z-10">
             <motion.div {...REVEAL} className="max-w-4xl mx-auto flex flex-col items-center gap-6">
@@ -85,9 +80,9 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   to="/features"
-                  className="w-full sm:w-auto inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground border border-border px-8 py-4 rounded-md hover:text-foreground hover:bg-white/5 glass-dark transition-all duration-300"
+                  className="w-full sm:w-auto inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground border border-border px-8 py-4 rounded-md hover:text-foreground hover:bg-black/5 transition-all duration-300"
                 >
-                  Explore Telemetry
+                  Explore Features
                 </Link>
               </div>
             </motion.div>
@@ -139,19 +134,19 @@ export default function LandingPage() {
 
             {/* Live Supervisor Cockpit */}
             <motion.div {...REVEAL} transition={{ delay: 0.2 }} className="md:col-span-12 bg-card border border-border rounded-xl min-h-[500px] flex flex-col md:flex-row relative overflow-hidden shadow-1">
-              <div className="p-8 md:w-1/3 flex flex-col justify-center z-10 glass-dark border-r border-border">
+              <div className="p-8 md:w-1/3 flex flex-col justify-center z-10 border-r border-border">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="w-2 h-2 rounded-full bg-destructive animate-pulse"></span>
                   <span className="font-mono text-xs text-destructive uppercase tracking-widest">Live Telemetry</span>
                 </div>
                 <h2 className="font-display text-3xl text-foreground mb-4">Live Supervisor Cockpit</h2>
                 <p className="text-muted-foreground mb-8">Monitor fleet health in real-time. Jump into active calls, view the exact reasoning steps of agents, and override actions instantly.</p>
-                <Link to="/features" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-primary hover:text-primary-foreground transition-colors">
+                <Link to="/features" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-primary hover:text-primary transition-colors">
                   Explore Telemetry <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
               <div className="md:w-2/3 h-64 md:h-auto relative bg-velvet flex items-center justify-center">
-                 <div className="w-3/4 h-3/4 border border-primary/20 flex flex-col relative glass-dark shadow-glow rounded-lg overflow-hidden">
+                 <div className="w-3/4 h-3/4 border border-primary/20 flex flex-col relative bg-card shadow-glow rounded-lg overflow-hidden">
                     <div className="p-4 border-b border-primary/20 font-mono text-xs text-primary">NODE_ID: ALPHA-09 // ACTIVE_SESSION</div>
                     <div className="p-4 flex-1 flex flex-col items-center justify-center font-mono text-sm text-muted-foreground space-y-2">
                         <Activity className="w-8 h-8 text-primary animate-pulse mb-4" />
