@@ -1,12 +1,12 @@
+import type { ReactNode } from "react";
 import { BrowserRouter, Link, NavLink, Route, Routes } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BarChart3, Bot, Check, Code2, Database, Headphones, Lock, Mail, MessageSquare, Mic, Phone, Plug, Radio, ShieldCheck, Smartphone, Sparkles, Workflow } from "lucide-react";
 
 type Tone = "light" | "dark";
-
-type CardItem = { icon: typeof Sparkles; title: string; text: string; tag?: string };
+type CardItem = { icon: LucideIcon; title: string; text: string; tag?: string };
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
-
 const nav = ["features", "pricing", "showcase", "developers", "compare", "training", "about"];
 
 const tiers = [
@@ -20,16 +20,21 @@ function Logo({ light = false }: { light?: boolean }) {
   return <span className="inline-flex items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper shadow-[0_18px_50px_-18px_rgba(79,30,123,.8)]">W</span><span className={cn("font-display text-[20px] font-semibold tracking-[-0.03em]", light ? "text-paper" : "text-ink")}>Wireline</span></span>;
 }
 
-function Pill({ children, tone = "light" }: { children: React.ReactNode; tone?: Tone }) {
+function Pill({ children, tone = "light" }: { children: ReactNode; tone?: Tone }) {
   return <span className={cn("inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]", tone === "dark" ? "border-white/10 bg-white/5 text-white/65" : "border-brand/20 bg-brand/10 text-brand")}>{children}</span>;
 }
 
-function Button({ to, children, variant = "primary" }: { to: string; children: React.ReactNode; variant?: "primary" | "secondary" | "dark" }) {
+function Button({ to, children, variant = "primary" }: { to: string; children: ReactNode; variant?: "primary" | "secondary" | "dark" }) {
   return <Link to={to} className={cn("inline-flex h-11 items-center justify-center gap-2 rounded-[14px] px-5 text-sm font-semibold transition active:scale-[.98]", variant === "primary" && "bg-brand text-paper shadow-[0_24px_50px_-22px_rgba(79,30,123,.8)] hover:bg-brand-deep", variant === "secondary" && "border border-ink/12 bg-card text-ink hover:border-brand/40", variant === "dark" && "border border-white/10 bg-white/5 text-paper hover:bg-white/10")}>{children}</Link>;
 }
 
-function Layout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-dvh overflow-x-clip bg-background text-ink wl-overhaul-surface"><header className="sticky top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5 sm:px-8"><Link to="/"><Logo /></Link><nav className="hidden items-center gap-1 xl:flex">{nav.map((item) => <NavLink key={item} to={`/${item}`} className={({ isActive }) => cn("rounded-[12px] px-3 py-2 text-[13px] font-medium capitalize transition", isActive ? "bg-ink/5 text-ink" : "text-muted-foreground hover:text-ink")}>{item}</NavLink>)}</nav><div className="hidden items-center gap-2 lg:flex"><Button to="/signin" variant="secondary">Sign in</Button><Button to="/get-started">Get started</Button></div><Link to="/get-started" className="rounded-[12px] bg-brand px-3 py-2 text-xs font-semibold text-paper lg:hidden">Start</Link></div></header>{children}<footer className="border-t border-border bg-card"><div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_2fr]"><div className="space-y-4"><Logo /><p className="max-w-sm text-sm leading-6 text-muted-foreground">AI voice, SMS, and email agents for every conversation at home and at work.</p><Pill><ShieldCheck size={12} /> Launch-safe guardrails</Pill></div><div className="grid grid-cols-2 gap-8 md:grid-cols-4">{["Product", "Solutions", "Developers", "Company"].map((col) => <div key={col} className="space-y-3"><p className="text-[11px] font-bold uppercase tracking-[.16em] text-ink">{col}</p>{["Features", "Pricing", "Security", "Contact"].map((x) => <p key={x} className="text-sm text-muted-foreground">{x}</p>)}</div>)}</div></div></footer></div>;
+function Layout({ children }: { children: ReactNode }) {
+  return <div className="min-h-dvh overflow-x-clip bg-background text-ink wl-overhaul-surface"><header className="sticky top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5 sm:px-8"><Link to="/"><Logo /></Link><nav className="hidden items-center gap-1 xl:flex">{nav.map((item) => <NavLink key={item} to={`/${item}`} className={({ isActive }) => cn("rounded-[12px] px-3 py-2 text-[13px] font-medium capitalize transition", isActive ? "bg-ink/5 text-ink" : "text-muted-foreground hover:text-ink")}>{item}</NavLink>)}</nav><div className="hidden items-center gap-2 lg:flex"><Button to="/signin" variant="secondary">Sign in</Button><Button to="/get-started">Get started</Button></div><Link to="/get-started" className="rounded-[12px] bg-brand px-3 py-2 text-xs font-semibold text-paper lg:hidden">Start</Link></div></header>{children}<footer className="border-t border-border bg-card"><div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_2fr]"><div className="space-y-4"><Logo /><p className="max-w-sm text-sm leading-6 text-muted-foreground">AI voice, SMS, and email agents for every conversation at home and at work.</p><Pill><ShieldCheck size={12} /> Launch-safe guardrails</Pill></div><div className="grid grid-cols-2 gap-8 md:grid-cols-4"><FooterCol title="Product" links={["Features", "Pricing", "Showcase", "Training"]} /><FooterCol title="Trust" links={["Security", "Privacy", "Terms", "Contact"]} /><FooterCol title="Developers" links={["Developers", "Compare", "Blog", "Contact"]} /><FooterCol title="Company" links={["About", "Blog", "Security", "Contact"]} /></div></div></footer></div>;
+}
+
+function FooterCol({ title, links }: { title: string; links: string[] }) {
+  const path = (label: string) => `/${label.toLowerCase().replace(/\s+/g, "-")}`;
+  return <div className="space-y-3"><p className="text-[11px] font-bold uppercase tracking-[.16em] text-ink">{title}</p>{links.map((link) => <Link key={link} to={path(link)} className="block text-sm text-muted-foreground hover:text-ink">{link}</Link>)}</div>;
 }
 
 function SectionHeader({ eyebrow, title, text, dark = false }: { eyebrow: string; title: string; text: string; dark?: boolean }) {
@@ -63,7 +68,7 @@ function FeatureRows() {
 }
 
 function ModelSection() {
-  return <section className="border-b border-border bg-ink text-paper"><div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-18 sm:px-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHeader dark eyebrow="Model marketplace" title="Pick the model per agent." text="Default to fast, affordable Grok/Gemini paths, upgrade critical agents to premium reasoning models, and keep OpenRouter available for routing." /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{["Grok 4.3", "Gemini Flash", "Claude Sonnet", "GPT-5.5 Thinking", "OpenRouter Auto", "Custom provider"].map((p, i) => <div key={p} className="rounded-[22px] border border-white/10 bg-white/[.045] p-4"><p className="text-sm font-semibold">{p}</p><p className="mt-2 text-xs text-white/45">{i < 2 ? "Efficient default" : i < 4 ? "Premium reasoning" : "Advanced routing"}</p></div>)}</div></div></section>;
+  return <section className="border-b border-border bg-ink text-paper"><div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHeader dark eyebrow="Model marketplace" title="Pick the model per agent." text="Default to fast, affordable Grok/Gemini paths, upgrade critical agents to premium reasoning models, and keep OpenRouter available for routing." /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{["Grok 4.3", "Gemini Flash", "Claude Sonnet", "GPT-5.5 Thinking", "OpenRouter Auto", "Custom provider"].map((p, i) => <div key={p} className="rounded-[22px] border border-white/10 bg-white/[.045] p-4"><p className="text-sm font-semibold">{p}</p><p className="mt-2 text-xs text-white/45">{i < 2 ? "Efficient default" : i < 4 ? "Premium reasoning" : "Advanced routing"}</p></div>)}</div></div></section>;
 }
 
 function Pricing() {
@@ -137,12 +142,23 @@ function Blog() {
   return <Page eyebrow="Blog" title="Wireline build notes." text="A launch-ready blog should explain product direction, operational strategy, and practical AI phone workflows.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
 }
 
-function Page({ eyebrow, title, text, children }: { eyebrow: string; title: string; text: string; children: React.ReactNode }) {
+function LegalPage({ kind }: { kind: "terms" | "privacy" | "security" | "contact" }) {
+  const copy = {
+    terms: ["Terms", "Clear commercial terms for personal and business workspaces.", ["Personal and business workspaces are scoped separately.", "Automated calls and actions require enabled tools and user-approved guardrails.", "Billing, usage, and launch support depend on the selected plan."]],
+    privacy: ["Privacy", "Personal context and business workspace data stay separated by design.", ["Personal email, calendar, contacts, and reminders are not training material for business agents.", "Business integrations are scoped to workspace permissions.", "Sensitive summaries should open in-app instead of exposing full details in lock-screen surfaces."]],
+    security: ["Security", "Wireline is designed around scoped tools, approvals, and audit-friendly behavior.", ["OAuth connectors should remain workspace-scoped.", "High-risk actions require confirmation before commitment.", "Agent outcomes should keep actor, workspace, confidence, and approval state." ]],
+    contact: ["Contact", "Reach Wireline for launch setup, support, or partnership questions.", ["Support: support@trywireline.com", "Sales: use the get-started flow for plan selection.", "Business launch support is included in higher-volume onboarding."]],
+  }[kind];
+  const items = copy[2] as string[];
+  return <Layout><main className="mx-auto max-w-[1100px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Trust" title={copy[0] as string} text={copy[1] as string} /><div className="mt-10 grid gap-4 md:grid-cols-3">{items.map((item) => <div key={item} className="rounded-[24px] border border-border bg-card p-5 text-sm leading-6 text-muted-foreground"><Check className="mb-4 h-5 w-5 text-brand" />{item}</div>)}</div><div className="mt-10"><Button to="/get-started">Get started</Button></div></main></Layout>;
+}
+
+function Page({ eyebrow, title, text, children }: { eyebrow: string; title: string; text: string; children: ReactNode }) {
   return <Layout><main className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow={eyebrow} title={title} text={text} /><div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{children}</div><div className="mt-12 rounded-[34px] border border-border bg-card p-6 sm:p-8"><div className="grid gap-6 lg:grid-cols-[1fr_auto]"><div><h2 className="font-display text-3xl">Ready to wire this into your workflow?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Start personal, launch business, or connect the agent fleet to real phone, calendar, inbox, and CRM systems.</p></div><div className="flex flex-wrap items-center gap-3"><Button to="/get-started">Get started</Button><Button to="/pricing" variant="secondary">View pricing</Button></div></div></div></main></Layout>;
 }
 
 function PublicRoutes() {
-  return <Routes><Route path="/" element={<Landing />} /><Route path="/features" element={<Features />} /><Route path="/pricing" element={<Layout><main><Pricing /></main></Layout>} /><Route path="/showcase" element={<Showcase />} /><Route path="/developers" element={<Developers />} /><Route path="/compare" element={<Compare />} /><Route path="/training" element={<Training />} /><Route path="/about" element={<About />} /><Route path="/blog" element={<Blog />} /></Routes>;
+  return <Routes><Route path="/" element={<Landing />} /><Route path="/features" element={<Features />} /><Route path="/pricing" element={<Layout><main><Pricing /></main></Layout>} /><Route path="/showcase" element={<Showcase />} /><Route path="/developers" element={<Developers />} /><Route path="/compare" element={<Compare />} /><Route path="/training" element={<Training />} /><Route path="/about" element={<About />} /><Route path="/blog" element={<Blog />} /><Route path="/terms" element={<LegalPage kind="terms" />} /><Route path="/privacy" element={<LegalPage kind="privacy" />} /><Route path="/security" element={<LegalPage kind="security" />} /><Route path="/contact" element={<LegalPage kind="contact" />} /></Routes>;
 }
 
 export default function PublicMarketingWorkspace() {
