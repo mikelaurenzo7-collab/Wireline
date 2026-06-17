@@ -1,5 +1,6 @@
 import FigmaOverhaul from "./FigmaOverhaul";
 import PersonalWorkspace from "./PersonalWorkspace";
+import AgentStudioWorkspace from "./AgentStudioWorkspace";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./studio-hotfix.css";
 
