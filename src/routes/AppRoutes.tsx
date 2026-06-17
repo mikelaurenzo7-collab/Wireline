@@ -26,7 +26,7 @@ const TrustPackPage = lazyRoute(() => import("../components/TrustPackPage"));
 const Pipeline = lazyRoute(() => import("../components/Pipeline"));
 const FounderDashboard = lazyRoute(() => import("../components/FounderDashboard"));
 const _AgentChat = lazyRoute(() => import("../pages/AgentChat"));
-const _Training = lazyRoute(() => import("../pages/Training"));
+const Training = lazyRoute(() => import("../pages/Training"));
 const PhonePage = lazyRoute(() => import("../pages/PhonePage"));
 const EmailPage = lazyRoute(() => import("../pages/EmailPage"));
 const SmsPage = lazyRoute(() => import("../pages/SmsPage"));
@@ -132,14 +132,9 @@ export default function AppRoutes() {
           <Route path="/ops/actions" element={<Navigate to="/ops?tab=intel" replace />} />
           <Route path="/appointments" element={<Navigate to="/phone?tab=appointments" replace />} />
           <Route path="/activity" element={<ActivityRedirect />} />
-          {/* Legacy Training deep links → redirect to Studio with rail query param */}
-          <Route path="/knowledge" element={<Navigate to="/agents?rail=knowledge" replace />} />
-          <Route path="/train" element={<Navigate to="/agents?rail=training" replace />} />
-          <Route path="/training" element={<Navigate to="/agents?rail=training" replace />} />
-          <Route
-            path="/training?tab=database"
-            element={<Navigate to="/agents?rail=knowledge" replace />}
-          />
+          {/* Legacy training aliases → dedicated Training page */}
+          <Route path="/knowledge" element={<Navigate to="/training?tab=database" replace />} />
+          <Route path="/train" element={<Navigate to="/training" replace />} />
           {/* Legacy Wizard/Chat deep links → redirect to unified Studio */}
           <Route path="/chat" element={<Navigate to="/agents" replace />} />
           <Route path="/chat/:id" element={<Navigate to="/agents" replace />} />
@@ -149,6 +144,16 @@ export default function AppRoutes() {
               <PageTransition>
                 <ErrorBoundary>
                   <FleetSettings />
+                </ErrorBoundary>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/training"
+            element={
+              <PageTransition>
+                <ErrorBoundary>
+                  <Training />
                 </ErrorBoundary>
               </PageTransition>
             }
@@ -234,7 +239,7 @@ export default function AppRoutes() {
             }
           />
           <Route
-            path="/trust/:vertical"
+            path="/trust"
             element={
               <PageTransition>
                 <ErrorBoundary>
@@ -243,24 +248,7 @@ export default function AppRoutes() {
               </PageTransition>
             }
           />
-          <Route
-            path="/pipeline"
-            element={
-              <PageTransition>
-                <ErrorBoundary>
-                  <Pipeline />
-                </ErrorBoundary>
-              </PageTransition>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <PageTransition>
-                <NotFound />
-              </PageTransition>
-            }
-          />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </AnimatePresence>
