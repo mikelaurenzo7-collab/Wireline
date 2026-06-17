@@ -8,11 +8,16 @@ import "./studio-hotfix.css";
 
 const publicPaths = new Set(["/", "/features", "/pricing", "/showcase", "/developers", "/compare", "/training", "/about", "/blog"]);
 
+function cleanPath(path: string) {
+  if (path === "/") return path;
+  return path.replace(/\/+$/, "") || "/";
+}
+
 function useCurrentPath() {
-  const [path, setPath] = useState(location.pathname);
+  const [path, setPath] = useState(cleanPath(location.pathname));
 
   useEffect(() => {
-    const update = () => setPath(location.pathname);
+    const update = () => setPath(cleanPath(location.pathname));
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
     history.pushState = function pushState(...args) {
