@@ -1,4 +1,4 @@
-/* Self-hosted fonts — bundled at build time (no render-blocking Google Fonts CSS). */
+/* Wireline Figma UI/UX Overhaul — design source: Figma Make P3ESVszYd8FarNQNJvMnfa */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "@fontsource-variable/fraunces/wght.css";
 @import "@fontsource/jetbrains-mono/400.css";
@@ -6,248 +6,49 @@
 @import "@fontsource/jetbrains-mono/600.css";
 @import "tailwindcss";
 
-@layer base {
-  html, body, #root {
-    height: 100dvh;
-    overflow: hidden;
-    overscroll-behavior: none;
-    margin: 0;
-    padding: 0;
-  }
-  
-  * {
-    border-radius: 0 !important;
-  }
-  .rounded-md {
-    border-radius: var(--radius-md) !important;
-  }
-  .rounded-full,
-  .dot-status,
-  .live-ring,
-  [data-circular],
-  .wl-orbit {
-    border-radius: 9999px !important;
-  }
-}
+@custom-variant dark (&:is(.dark *));
 
-/* ══════════════════════════════════════════════════════════════════
-   SHADCN/UI THEME — Wireline Rich Cream + Purple
-   CSS custom properties for shadcn components, layered alongside
-   the existing @theme block. Public-facing pages retain their
-   original glass / brand-purple design system intact.
-   ══════════════════════════════════════════════════════════════════ */
 :root {
-  --radius: 0.75rem;
-  --wl-signal: #10b981;
-  /* Brand cream — consumed by the rail wordmark, ambience washes, and
-   * sticker slots. Was referenced in 6 places but never defined, so
-   * fallback-less `var(--wl-cream)` consumers (sidebar wordmark) silently
-   * inherited low-contrast purple.
-   *
-   * Lightened (June 2026): the canvas was a rich warm tan (#f0e6d4) that
-   * muddied muted text, hairline borders, and panel separation. Shifted to
-   * a lighter, less-yellow cream (#f5f1e8 — red/blue gap 28 → 13) so ink and
-   * brand purple read cleanly. The "rich" character now lives in the purple,
-   * not the paper. */
-  --wl-cream: #efe9dc;
-
-  /* Surface colors */
+  --font-size: 16px;
+  --paper: #efe9dc;
+  --paper-deep: #e6dccb;
+  --ink: #1a1614;
+  --brand: #4f1e7b;
+  --brand-deep: #3b154c;
+  --brand-bright: #6a2da3;
   --background: #efe9dc;
   --foreground: #1a1614;
-  --card: color-mix(in srgb, #efe9dc 92%, #e5dece);
+  --card: #f6f1e7;
   --card-foreground: #1a1614;
-  --popover: color-mix(in srgb, #efe9dc 96%, white);
+  --popover: #f6f1e7;
   --popover-foreground: #1a1614;
-
-  /* Brand primary — Silky Purple. The core brand accent. */
   --primary: #4f1e7b;
-  --primary-foreground: #ffffff;
-
-  /* Secondary */
-  --secondary: #3b154c;
-  --secondary-foreground: #ffffff;
-
-  /* Muted */
-  --muted: rgba(26, 22, 20, 0.05);
-  --muted-foreground: #5a534a;
-
-  /* Accent */
-  --accent: rgba(139, 63, 214, 0.06);
-  --accent-foreground: #8b3fd6;
-
-  /* Destructive */
-  --destructive: #e8466a;
-  --destructive-foreground: #ffffff;
-
-  /* Borders & inputs */
-  --border: rgba(26, 22, 20, 0.1);
-  --input: rgba(26, 22, 20, 0.12);
-  --ring: rgba(139, 63, 214, 0.35);
-
-  /* Sidebar */
-  --sidebar-background: rgba(59, 21, 76, 0.96);
-  --sidebar-foreground: rgba(245, 240, 230, 0.9);
-  --sidebar-primary: #8b3fd6;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(245, 240, 230, 0.06);
-  --sidebar-accent-foreground: rgba(245, 240, 230, 0.85);
-  --sidebar-border: rgba(245, 240, 230, 0.08);
-  --sidebar-ring: rgba(139, 63, 214, 0.4);
-
-  /* Charts */
+  --primary-foreground: #f6f1e7;
+  --secondary: #e6dccb;
+  --secondary-foreground: #1a1614;
+  --muted: #e6dccb;
+  --muted-foreground: #6b5f54;
+  --accent: #ede4f3;
+  --accent-foreground: #3b154c;
+  --destructive: #a8341f;
+  --destructive-foreground: #f6f1e7;
+  --border: rgba(26, 22, 20, 0.12);
+  --input: transparent;
+  --input-background: #f6f1e7;
+  --switch-background: #cbbfae;
+  --ring: #4f1e7b;
   --chart-1: #4f1e7b;
-  --chart-2: #4f1e7b;
-  --chart-3: #8b6fa8;
-  --chart-4: #3b154c;
-  --chart-5: #d4c9b8;
-
-  /* Core theme variables — LIGHT cream canvas + warm paper accent.
-   * Paper lightened from the old rich tan #f0e6d4 → #f5f1e8 for readability;
-   * paper-warm tracks it (#e8dcc8 → #ece6d9) so cards stay a hair warmer. */
-  --ink: #1a1614;
-  --paper: #efe9dc;
-  --paper-warm: #e5dece;
-  /** Elevated dark panels — composer, artifacts, live session fades */
-  --velvet: #1a1225;
-  --chrome-glow: #4f1e7b;
-
-  /* Muted typography — resolves to the warm cream-ink fades on light
-   * and the cool zinc fades on dark. Referenced by --color-muted /
-   * --color-muted-soft in the @theme block below so `text-muted` and
-   * `text-muted-soft` flip automatically when the .dark class lands on
-   * <html>. */
-  --muted-resolved: #5a534a;
-  --muted-soft-resolved: #5c574f;
-
-  /* ═══════════════════════════════════════════════════════════════
-     REFINED EDITORIAL FOUNDATION — Rich Cream + Purple
-     Extreme attention to depth, rhythm, light, and tactility.
-     ═══════════════════════════════════════════════════════════════ */
-
-  /* Elevation — luxurious, paper-aware shadows. Never harsh. */
-  --shadow-0: none;
-  --shadow-1: 0 1px 2px rgba(26, 22, 20, 0.04), 0 1px 1px rgba(26, 22, 20, 0.03);
-  --shadow-2: 0 4px 12px rgba(26, 22, 20, 0.06), 0 1px 3px rgba(26, 22, 20, 0.05);
-  --shadow-3: 0 10px 30px rgba(26, 22, 20, 0.08), 0 3px 8px rgba(26, 22, 20, 0.06);
-  --shadow-glow: 0 0 0 1px rgba(139, 63, 214, 0.08), 0 8px 32px rgba(139, 63, 214, 0.06);
-  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(26, 22, 20, 0.04);
-
-  /* Motion language — consistent editorial springs */
-  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-soft: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-snappy: cubic-bezier(0.32, 0, 0.67, 0);
-  --spring-gentle: 400 25 1;
-  --spring-lux: 320 28 1;
-
-  /* Focus — refined, generous, brand-tinted, never harsh */
-  --focus-ring: 0 0 0 3px rgba(139, 63, 214, 0.12);
-  --focus-ring-dark: 0 0 0 3px rgba(199, 125, 255, 0.18);
-
-  /* Paper tactility — extremely subtle warm grain (performance safe) */
-  --paper-grain:
-    radial-gradient(circle at 25% 30%, rgba(26, 22, 20, 0.012) 0.6px, transparent 0.8px),
-    radial-gradient(circle at 70% 65%, rgba(26, 22, 20, 0.009) 0.5px, transparent 0.7px);
-}
-
-.dark {
-  /* Dark mode surface colors — deep velvet editorial purple-black */
-  --velvet: #1a1225;
-  --chrome-glow: #c77dff;
-  --background: #0f0c17;
-  --foreground: #f3e8ff;
-  --card: rgba(24, 18, 38, 0.92);
-  --card-foreground: #f3e8ff;
-  --popover: rgba(20, 15, 32, 0.97);
-  --popover-foreground: #f3e8ff;
-
-  /* Brand primary — slightly more luminous for velvet contrast */
-  --primary: #9b5ce0;
-  --primary-foreground: #ffffff;
-
-  /* Secondary — richer velvet */
-  --secondary: #261a38;
-  --secondary-foreground: #f3e8ff;
-
-  /* Muted — softer, more atmospheric */
-  --muted: rgba(155, 92, 224, 0.12);
-  --muted-foreground: #b89ad9;
-
-  /* Accent — luminous velvet highlight */
-  --accent: rgba(155, 92, 224, 0.22);
-  --accent-foreground: #d4b3ff;
-
-  /* Destructive */
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-
-  /* Borders & inputs — finer, more luxurious */
-  --border: rgba(155, 92, 224, 0.18);
-  --input: rgba(155, 92, 224, 0.12);
-  --ring: rgba(155, 92, 224, 0.45);
-
-  /* Sidebar — deeper velvet */
-  --sidebar-background: rgba(22, 15, 36, 0.98);
-  --sidebar-foreground: #f3e8ff;
-  --sidebar-primary: #9b5ce0;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(155, 92, 224, 0.14);
-  --sidebar-accent-foreground: #d4b3ff;
-  --sidebar-border: rgba(155, 92, 224, 0.22);
-  --sidebar-ring: rgba(155, 92, 224, 0.45);
-
-  /* Charts — refined for velvet dark */
-  --chart-1: #9b5ce0;
-  --chart-2: #9b5ce0;
-  --chart-3: #8b6fa8;
-  --chart-4: #6b2b99;
+  --chart-2: #6a2da3;
+  --chart-3: #8b5cb8;
+  --chart-4: #b08fce;
   --chart-5: #3b154c;
-
-  /* Dark mode theme re-mappings */
-  --ink: #f3e8ff;
-  --paper: #0f0c17;
-
-  /* Muted resolves to soft purple-tinted text */
-  --muted-resolved: #b89ad9;
-  --muted-soft-resolved: #9370b5;
-
-  /* Dark elevation — deeper, velvet shadows with purple undertone */
-  --shadow-0: none;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.42), 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.52), 0 6px 16px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 0 1px rgba(155, 92, 224, 0.28), 0 12px 48px rgba(155, 92, 224, 0.18);
-  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
-
-  /* Dark paper grain — cooler, more velvety, higher tactility */
-  --paper-grain:
-    radial-gradient(circle at 22% 28%, rgba(255, 255, 255, 0.018) 0.6px, transparent 0.8px),
-    radial-gradient(circle at 72% 68%, rgba(255, 255, 255, 0.012) 0.5px, transparent 0.7px);
+  --radius: 0px;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* ------------------------------------------------------------------------
-   RICH CREAM + PURPLE — a warm, editorial light system.
-   Inspired by the parchment warmth of Claude/Anthropic's palette.
-   Soft rich-cream backgrounds with single-hue brand-purple gradients as
-   accents (no multi-color washes), frosted cream glass surfaces, and
-   dark warm-ink typography on an editorial Fraunces upright display face.
-   Existing utility class names continue to work automatically.
-   -------------------------------------------------------------------- */
-
-@theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces", "Georgia", "Times New Roman", serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-
-  /* Readable muted copy — wired to CSS vars defined in :root / .dark
-   * so the legacy `text-muted` / `text-muted-soft` utility classes flip
-   * with theme. */
-  --color-muted: var(--muted-resolved);
-  --color-muted-soft: var(--muted-soft-resolved);
-
-  /* Brand ink */
-  --color-brand-ink: #f3e8ff;
-
-  /* Shadcn standard theme color mappings for Tailwind v4 */
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -258,6 +59,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -265,212 +67,102 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
-
-  /* Core palette */
-  --color-brand: var(--primary);
-  --color-brand-2: #8b3fd6;
-  --color-brand-3: #8b6fa8;
-  --color-brand-deep: #6b2b99;
-  --color-ink: var(--ink);
   --color-paper: var(--paper);
-  --color-paper-warm: var(--paper-warm, #ece6d9);
-  --color-velvet: var(--velvet);
-  --color-chrome-glow: var(--chrome-glow);
-  --color-on-brand: #ffffff;
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-bright: var(--brand-bright);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+}
 
-  /* Tailwind base overrides */
-  --color-white: #ffffff;
-  --color-black: #000000;
-
-  /* Zinc warm-cream scale (50 = lightest, 950 = darkest) */
-  --color-zinc-50: #f2ede4;
-  --color-zinc-100: #ebe5da;
-  --color-zinc-200: #e0d8cc;
-  --color-zinc-300: #8a8078;
-  --color-zinc-400: #6b6057;
-  --color-zinc-500: #5c5248;
-  --color-zinc-600: #4a4038;
-  --color-zinc-700: #3a3028;
-  --color-zinc-800: #efe9de;
-  --color-zinc-900: #ede6da;
-  --color-zinc-950: #e8e1d4;
-
-  /* Refined accents — remapped to purple/cream so legacy utility classes
-   * (bg-emerald-500, text-amber-600, border-sky-500, etc.) never bleed
-   * off-brand blues, oranges, or teals on client-facing surfaces. */
-  --color-rose-500: #e8466a;
-  --color-rose-600: #c53050;
-
-  --color-emerald-50: #f5f0f8;
-  --color-emerald-100: #ede4f2;
-  --color-emerald-200: #d9cce8;
-  --color-emerald-300: #b399d1;
-  --color-emerald-400: #8b6fa8;
-  --color-emerald-500: #8b3fd6;
-  --color-emerald-600: #8b3fd6;
-  --color-emerald-700: #3b154c;
-  --color-emerald-800: #2e0f4a;
-
-  --color-amber-50: #f7f3ec;
-  --color-amber-100: #ede6da;
-  --color-amber-200: #d4c9b8;
-  --color-amber-300: #c4b5a0;
-  --color-amber-400: #a988c4;
-  --color-amber-500: #8b6fa8;
-  --color-amber-600: #8b3fd6;
-  --color-amber-700: #8b3fd6;
-  --color-amber-800: #3b154c;
-
-  --color-blue-50: #f5f0f8;
-  --color-blue-100: #ede4f2;
-  --color-blue-200: #d9cce8;
-  --color-blue-300: #b399d1;
-  --color-blue-400: #8b6fa8;
-  --color-blue-500: #8b3fd6;
-  --color-blue-600: #8b3fd6;
-  --color-blue-700: #3b154c;
-
-  --color-sky-50: #f5f0f8;
-  --color-sky-100: #ede4f2;
-  --color-sky-200: #d9cce8;
-  --color-sky-300: #b399d1;
-  --color-sky-400: #8b6fa8;
-  --color-sky-500: #8b3fd6;
-  --color-sky-600: #8b3fd6;
-  --color-sky-700: #3b154c;
-
-  --color-cyan-50: #f5f0ec;
-  --color-cyan-100: #ede6da;
-  --color-cyan-200: #d4c9b8;
-  --color-cyan-300: #c4b5a0;
-  --color-cyan-400: #a988c4;
-  --color-cyan-500: #8b3fd6;
-  --color-cyan-600: #8b3fd6;
-  --color-cyan-700: #8b3fd6;
-
-  --color-orange-50: #f7f3ec;
-  --color-orange-100: #ede6da;
-  --color-orange-200: #d4c9b8;
-  --color-orange-300: #c4b5a0;
-  --color-orange-400: #a988c4;
-  --color-orange-500: #8b6fa8;
-  --color-orange-600: #8b3fd6;
-  --color-orange-700: #8b3fd6;
-
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  /* RADIUS RATCHET — only --radius (0.75rem) and rounded-md allowed.
-     lg/xl/2xl/3xl are banned per wireline-design/SKILL.md. */
-
-  /* Gemini Tier Gradients */
-  --color-gemini-gradient-start: #7c3aed;
-  --color-gemini-gradient-mid: #8b5cf6;
-  --color-gemini-gradient-end: #a78bfa;
-
-  /* Keyframes for micro-animations */
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-pulse-glow: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-sweep: sweep 2s linear infinite;
-
-  @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
   }
 
-  @keyframes pulse-glow {
-    0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(155, 92, 224, 0.2); }
-    50% { opacity: 0.8; box-shadow: 0 0 30px rgba(155, 92, 224, 0.5); }
+  html {
+    font-size: var(--font-size);
+    scroll-behavior: smooth;
+    background: var(--background);
   }
 
-  @keyframes sweep {
-    0% { background-position: 200% center; }
-    100% { background-position: -200% center; }
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--border);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+
+  ::selection {
+    background: var(--brand);
+    color: var(--paper);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
   }
 }
 
-/* Glassmorphism Utilities */
-@utility glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
+@layer utilities {
+  .wl-overhaul-surface {
+    background:
+      radial-gradient(circle at 92% 0%, rgba(79, 30, 123, 0.08), transparent 30rem),
+      radial-gradient(circle at 5% 18%, rgba(79, 30, 123, 0.045), transparent 24rem),
+      var(--background);
+  }
 
-@utility glass-dark {
-  background: rgba(20, 15, 32, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(155, 92, 224, 0.2);
-}
+  .wl-grain {
+    background-image: radial-gradient(rgba(26, 22, 20, 0.025) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
 
-@utility gemini-border {
-  border: 2px solid transparent;
-  background-clip: padding-box, border-box;
-  background-origin: padding-box, border-box;
-  background-image: linear-gradient(to right, var(--color-paper), var(--color-paper)), linear-gradient(to right, var(--color-gemini-gradient-start), var(--color-gemini-gradient-mid), var(--color-gemini-gradient-end));
-}
+  .touch-press { transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease, border-color 0.12s ease; }
+  .touch-press:active { transform: scale(0.98); }
 
-/* Scroll viewport utility — consistent scrollable containers with native feel */
-.scroll-viewport {
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-gutter: stable;
+  .text-balance { text-wrap: balance; }
 }
-
-/* Subtle custom scrollbar for WebKit browsers */
-.scroll-viewport::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scroll-viewport::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scroll-viewport::-webkit-scrollbar-thumb {
-  background: rgba(139, 63, 214, 0.25);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-.scroll-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 63, 214, 0.45);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-/* Dark mode scrollbar */
-.dark .scroll-viewport::-webkit-scrollbar-thumb {
-  background: rgba(199, 125, 255, 0.25);
-}
-
-.dark .scroll-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(199, 125, 255, 0.45);
-}
-
-/* Hide scrollbar visually but keep functionality */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   GLOBAL SELECTION STYLING
-   ═══════════════════════════════════════════════════════════════ */
-::selection {
-  background-color: rgba(139, 63, 214, 0.2);
-  color: inherit;
-}
-
-.dark ::selection {
-  background-color: rgba(155, 92, 224, 0.35);
-  color: #ffffff;
-}
-
