@@ -1,17 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  PhoneCall,
-  Smartphone,
-  Settings,
-  User,
-  Mic,
-  Globe,
-  Activity,
-  ArrowRight,
+  PhoneCall, Smartphone, Settings, User, Mic, Globe, Activity,
+  ArrowRight, Ban, Calendar, Package, Copy, Check,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
+import { ShadButton } from "../components/ui/shadcn/ShadButton";
+
+const SCENARIOS = [
+  { icon: Mic, label: "Hey Siri, have Wireline call the pharmacy", outcome: "Done in 40s", color: "text-brand" },
+  { icon: Calendar, label: "Dr. Allen's office calling", outcome: "Rescheduled Thu 2pm", color: "text-brand" },
+  { icon: Ban, label: "Unknown caller — spam likely", outcome: "Blocked politely", color: "text-brand" },
+  { icon: Package, label: "DoorDash driver calling", outcome: "Gave gate code #4821", color: "text-brand" },
+] as const;
+
+function SiriUrlChip() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex items-center gap-2">
+      <code className="flex-1 block bg-ink/5 px-3 py-2 rounded-sm text-xs font-mono text-ink/80 break-all select-all">
+        wireline://ask
+      </code>
+      <ShadButton
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          navigator.clipboard?.writeText("wireline://ask");
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        }}
+        className="shrink-0"
+        aria-label="Copy URL scheme"
+      >
+        {copied ? <Check className="w-4 h-4 text-brand" /> : <Copy className="w-4 h-4" />}
+      </ShadButton>
+    </div>
+  );
+}
 
 export default function PersonalDashboard() {
   return (
@@ -26,10 +52,34 @@ export default function PersonalDashboard() {
             </div>
             <h1 className="font-display text-3xl font-semibold text-ink">My Assistant</h1>
           </div>
-          <p className="text-ink/70 text-lg ml-13 leading-relaxed">
+          <p className="text-ink/70 text-lg leading-relaxed mt-1">
             Manage your personal AI, phone number, and mobile integrations.
           </p>
         </header>
+
+        {/* Scenario strip */}
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 wl-panel border border-ink/10 bg-paper rounded-md overflow-hidden shadow-sm"
+        >
+          <div className="px-6 py-4 border-b border-ink/10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand">
+              What Aria handled
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-ink/8">
+            {SCENARIOS.map(({ icon: Icon, label, outcome }) => (
+              <div key={label} className="px-5 py-4 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 text-brand">
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink/50">{outcome}</span>
+                </div>
+                <p className="text-sm text-ink/80 italic leading-snug">"{label}"</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Column */}
@@ -38,7 +88,7 @@ export default function PersonalDashboard() {
             <motion.section
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-paper border border-ink/10 rounded-md overflow-hidden shadow-sm"
             >
               <div className="p-6 border-b border-ink/10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -49,7 +99,7 @@ export default function PersonalDashboard() {
                 </div>
                 <Link
                   to="/agents"
-                  className="text-brand text-sm font-semibold hover:underline flex items-center gap-1"
+                  className="text-brand text-sm font-semibold hover:underline flex items-center gap-1 transition-colors"
                 >
                   Edit in Studio <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -68,7 +118,7 @@ export default function PersonalDashboard() {
                     </p>
                     <div className="flex items-center gap-2">
                       <Mic className="w-4 h-4 text-ink/50" />
-                      <span className="text-ink font-medium">ElevenLabs - Professional</span>
+                      <span className="text-ink font-medium">ElevenLabs — Professional</span>
                     </div>
                   </div>
                 </div>
@@ -77,8 +127,8 @@ export default function PersonalDashboard() {
                     Greeting
                   </p>
                   <div className="pl-4 py-1 text-ink/90 italic border-l-[3px] border-brand/40 text-sm leading-relaxed">
-                    "Hi, you've reached Michael's personal AI assistant. He's unavailable right now,
-                    but how can I help you?"
+                    "Hi, you've reached Michael's personal AI assistant. He's unavailable right
+                    now — how can I help you?"
                   </div>
                 </div>
               </div>
@@ -89,7 +139,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-paper border border-ink/10 rounded-md overflow-hidden shadow-sm"
             >
               <div className="p-6 border-b border-ink/10 flex items-center gap-3">
                 <div className="p-2 rounded-md bg-brand/5 text-brand">
@@ -99,25 +149,26 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-6">
                 <p className="text-ink/80 leading-relaxed mb-6">
-                  Take your assistant everywhere. Setup Siri Shortcuts and download the native apps
-                  for a seamless experience.
+                  Take your assistant everywhere. Set up Siri Shortcuts and download the native
+                  apps for a seamless experience.
                 </p>
 
                 <div className="space-y-4">
                   {/* Siri Setup */}
-                  <div className="flex items-start gap-4 p-4 rounded-lg border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
+                  <div className="flex items-start gap-4 p-4 rounded-md border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
                     <div className="mt-1 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center shrink-0">
                       <Mic className="w-4 h-4 text-ink/60" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-ink mb-1">Siri Shortcuts</h3>
                       <p className="text-sm text-ink/60 mb-3">
-                        Say "Hey Siri, Ask Wireline" to instantly talk to your agent from your lock
-                        screen, AirPods, or CarPlay.
+                        Say{" "}
+                        <span className="italic font-medium text-ink/80">
+                          "Hey Siri, Ask Wireline"
+                        </span>{" "}
+                        to instantly talk to your agent from your lock screen, AirPods, or CarPlay.
                       </p>
-                      <code className="block bg-ink/5 px-3 py-2 rounded text-xs font-mono text-ink/80 break-all select-all">
-                        wireline://ask
-                      </code>
+                      <SiriUrlChip />
                       <p className="text-[11px] text-ink/50 mt-2">
                         Create a new shortcut in the Apple Shortcuts app using this URL scheme.
                       </p>
@@ -125,20 +176,20 @@ export default function PersonalDashboard() {
                   </div>
 
                   {/* App Download */}
-                  <div className="flex items-start gap-4 p-4 rounded-lg border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
+                  <div className="flex items-start gap-4 p-4 rounded-md border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
                     <div className="mt-1 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center shrink-0">
                       <Globe className="w-4 h-4 text-ink/60" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-ink mb-1">Native Apps & Widgets</h3>
                       <p className="text-sm text-ink/60">
-                        Download the iOS or Android app to get interactive lock screen widgets, push
-                        notifications for important calls, and instant access to transcripts.
+                        Download the iOS or Android app to get interactive lock screen widgets,
+                        push notifications for important calls, and instant access to transcripts.
                       </p>
                     </div>
-                    <button className="px-4 py-2 bg-ink/5 hover:bg-ink/10 rounded-md text-sm font-semibold transition-colors shrink-0">
+                    <ShadButton variant="outline" size="sm" className="shrink-0">
                       Send Link
-                    </button>
+                    </ShadButton>
                   </div>
                 </div>
               </div>
@@ -152,7 +203,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-paper border border-ink/10 rounded-md overflow-hidden shadow-sm"
             >
               <div className="p-5 border-b border-ink/10 flex items-center gap-3">
                 <div className="p-2 rounded-md bg-brand/5 text-brand">
@@ -162,7 +213,8 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-5">
                 <p className="text-sm text-ink/80 leading-relaxed mb-4">
-                  Forward unanswered calls from your personal cell directly to your AI assistant.
+                  Unanswered calls from your personal cell forward to Jordan automatically — only
+                  when you don't pick up.
                 </p>
                 <div className="p-4 bg-brand/5 rounded-md border border-brand/10 text-center mb-5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-brand/70 mb-1.5">
@@ -172,9 +224,9 @@ export default function PersonalDashboard() {
                     +1 (555) 019-8472
                   </p>
                 </div>
-                <button className="w-full py-2 bg-brand text-white rounded-md text-sm font-semibold shadow-sm hover:bg-brand-deep transition-colors">
+                <ShadButton variant="editorial" className="w-full">
                   Setup Conditional Forwarding
-                </button>
+                </ShadButton>
               </div>
             </motion.section>
 
@@ -183,7 +235,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-paper border border-ink/10 rounded-md overflow-hidden shadow-sm"
             >
               <div className="p-5 border-b border-ink/10 flex items-center gap-3">
                 <div className="p-2 rounded-md bg-brand/5 text-brand">
@@ -196,6 +248,10 @@ export default function PersonalDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-ink/80">Calls Handled Today</span>
                     <span className="font-semibold text-ink">3</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-ink/80">Spam Blocked This Month</span>
+                    <span className="font-semibold text-ink">41</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-ink/80">Average Duration</span>
