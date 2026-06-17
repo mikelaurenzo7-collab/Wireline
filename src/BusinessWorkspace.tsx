@@ -1,10 +1,9 @@
+import type { ReactNode } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Activity, BarChart3, Bell, Bot, CalendarClock, Check, ChevronRight, Database, Headphones, Home, Lock, LogOut, Mail, Phone, Plug, Radio, Search, ShieldCheck, Sparkles, Users, Workflow } from "lucide-react";
+import { BarChart3, Bell, Check, ChevronRight, Database, LogOut, Phone, Plug, Radio, Search, ShieldCheck, Sparkles, Users, Workflow } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext";
 
 type BusinessPage = "assistant" | "live" | "fleet" | "training" | "analytics" | "team" | "integrations" | "settings";
-
-type CardItem = { title: string; text: string; status?: string; metric?: string };
 
 const nav: Array<[BusinessPage, string, string]> = [
   ["assistant", "Assistant", "/app/business"],
@@ -41,7 +40,7 @@ const connectors = [
   ["Webhook API", "Coming", "Custom launch integrations"],
 ];
 
-const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
+const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
 function pageFromPath(path: string): BusinessPage {
   if (path.includes("/live")) return "live";
@@ -54,15 +53,15 @@ function pageFromPath(path: string): BusinessPage {
   return "assistant";
 }
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <section className={cn("rounded-[28px] border border-white/10 bg-white/[.045] p-5 shadow-[0_24px_80px_-62px_rgba(0,0,0,.9)]", className)}>{children}</section>;
+function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <section className={cx("rounded-[28px] border border-white/10 bg-white/[.045] p-5 shadow-[0_24px_80px_-62px_rgba(0,0,0,.9)]", className)}>{children}</section>;
 }
 
-function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "brand" | "warn" }) {
-  return <span className={cn("inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.15em]", tone === "brand" && "border-brand/35 bg-brand/15 text-brand-bright", tone === "warn" && "border-amber-300/25 bg-amber-300/10 text-amber-100", tone === "default" && "border-white/10 bg-white/[.045] text-paper/55")}>{children}</span>;
+function Pill({ children, tone = "default" }: { children: ReactNode; tone?: "default" | "brand" }) {
+  return <span className={cx("inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.15em]", tone === "brand" ? "border-brand/35 bg-brand/15 text-brand-bright" : "border-white/10 bg-white/[.045] text-paper/55")}>{children}</span>;
 }
 
-function RequireBusiness({ children }: { children: React.ReactNode }) {
+function RequireBusiness({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) return <div className="grid min-h-screen place-items-center bg-ink text-paper"><Sparkles className="h-5 w-5 animate-pulse text-brand-bright" /></div>;
@@ -70,16 +69,12 @@ function RequireBusiness({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function BusinessShell({ children }: { children: React.ReactNode }) {
+function BusinessShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const active = pageFromPath(location.pathname);
-
-  return <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-ink text-paper">
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 2xl:flex"><Link to="/" className="mb-8 inline-flex items-center gap-2 px-2 pt-2"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">W</span><span className="font-display text-[20px] font-semibold">Wireline</span></Link><Pill>Business workspace</Pill><nav className="mt-5 flex flex-1 flex-col gap-1">{nav.map(([id, label, path]) => <Link key={id} to={path} className={cn("rounded-[14px] px-3 py-2.5 text-[13px] font-semibold transition", active === id ? "bg-brand text-paper" : "text-paper/55 hover:bg-paper/5 hover:text-paper")}>{label}</Link>)}</nav><div className="border-t border-paper/10 pt-4 text-xs text-paper/45"><div className="truncate">{user?.email ?? "Owner"}</div><button onClick={() => { void signOut(); navigate("/"); }} className="mt-3 inline-flex items-center gap-2 hover:text-paper"><LogOut size={14} /> Sign out</button></div></aside>
-    <div className="min-w-0 flex-1"><header className="sticky top-0 z-40 border-b border-white/10 bg-ink/92 backdrop-blur-xl"><div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8"><div className="flex items-center gap-3"><Link to="/" className="2xl:hidden"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">W</span></Link><Pill tone="brand"><Radio size={12} /> Business live</Pill></div><div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-[14px] border border-white/10 px-3 py-2 md:flex"><Search size={14} className="text-paper/35" /><span className="text-xs text-paper/35">Search calls, agents, contacts…</span></div><Bell size={17} className="text-paper/55" /><span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-xs text-paper">{user?.email?.[0]?.toUpperCase() ?? "W"}</span></div></div><nav className="flex gap-1 overflow-x-auto border-t border-white/10 px-3 py-2 2xl:hidden">{nav.map(([id, label, path]) => <Link key={id} to={path} className={cn("shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold", active === id ? "bg-brand text-paper" : "text-paper/45")}>{label}</Link>)}</nav></header><main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main></div>
-  </div>;
+  return <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-ink text-paper"><aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 2xl:flex"><Link to="/" className="mb-8 inline-flex items-center gap-2 px-2 pt-2"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">W</span><span className="font-display text-[20px] font-semibold">Wireline</span></Link><Pill>Business workspace</Pill><nav className="mt-5 flex flex-1 flex-col gap-1">{nav.map(([id, label, path]) => <Link key={id} to={path} className={cx("rounded-[14px] px-3 py-2.5 text-[13px] font-semibold transition", active === id ? "bg-brand text-paper" : "text-paper/55 hover:bg-paper/5 hover:text-paper")}>{label}</Link>)}</nav><div className="border-t border-paper/10 pt-4 text-xs text-paper/45"><div className="truncate">{user?.email ?? "Owner"}</div><button onClick={() => { void signOut(); navigate("/"); }} className="mt-3 inline-flex items-center gap-2 hover:text-paper"><LogOut size={14} /> Sign out</button></div></aside><div className="min-w-0 flex-1"><header className="sticky top-0 z-40 border-b border-white/10 bg-ink/92 backdrop-blur-xl"><div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8"><div className="flex items-center gap-3"><Link to="/" className="2xl:hidden"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">W</span></Link><Pill tone="brand"><Radio size={12} /> Business live</Pill></div><div className="flex items-center gap-3"><div className="hidden items-center gap-2 rounded-[14px] border border-white/10 px-3 py-2 md:flex"><Search size={14} className="text-paper/35" /><span className="text-xs text-paper/35">Search calls, agents, contacts…</span></div><Bell size={17} className="text-paper/55" /><span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-xs text-paper">{user?.email?.[0]?.toUpperCase() ?? "W"}</span></div></div><nav className="flex gap-1 overflow-x-auto border-t border-white/10 px-3 py-2 2xl:hidden">{nav.map(([id, label, path]) => <Link key={id} to={path} className={cx("shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold", active === id ? "bg-brand text-paper" : "text-paper/45")}>{label}</Link>)}</nav></header><main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main></div></div>;
 }
 
 function Title({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
@@ -95,7 +90,7 @@ function AssistantPage() {
 }
 
 function LiveOpsPage() {
-  return <div className="space-y-6"><div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><Title eyebrow="Live Operations" title="The cockpit for calls in motion." text="Track active calls, coaching moments, escalations, and quality pulse without crowding Studio." /><button className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold">Start outbound</button></div><div className="grid gap-4 md:grid-cols-3"><Metric value="281" label="Calls today" /><Metric value="3m 41s" label="Avg handle" /><Metric value="8" label="Open escalations" /></div><Card><h2 className="font-display text-2xl">Calls in progress</h2><div className="mt-5 divide-y divide-white/10 border border-white/10">{liveCalls.map(([topic, agent, detail, time]) => <div key={topic} className="grid gap-3 p-4 text-sm lg:grid-cols-[1fr_160px_1fr_80px]\"><div className="font-semibold">{topic}</div><div className="text-paper/55">{agent}</div><div className="text-paper/45">{detail}</div><div className="font-mono text-paper/35">{time}</div></div>)}</div></Card></div>;
+  return <div className="space-y-6"><div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><Title eyebrow="Live Operations" title="The cockpit for calls in motion." text="Track active calls, coaching moments, escalations, and quality pulse without crowding Studio." /><button className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold">Start outbound</button></div><div className="grid gap-4 md:grid-cols-3"><Metric value="281" label="Calls today" /><Metric value="3m 41s" label="Avg handle" /><Metric value="8" label="Open escalations" /></div><Card><h2 className="font-display text-2xl">Calls in progress</h2><div className="mt-5 divide-y divide-white/10 border border-white/10">{liveCalls.map(([topic, agent, detail, time]) => <div key={topic} className="grid gap-3 p-4 text-sm lg:grid-cols-[1fr_160px_1fr_80px]"><div className="font-semibold">{topic}</div><div className="text-paper/55">{agent}</div><div className="text-paper/45">{detail}</div><div className="font-mono text-paper/35">{time}</div></div>)}</div></Card></div>;
 }
 
 function FleetPage() {
@@ -103,13 +98,8 @@ function FleetPage() {
 }
 
 function TrainingPage() {
-  const items: CardItem[] = [
-    { title: "Knowledge", text: "Policies, pricing, hours, FAQs, allowed claims, and document sources." },
-    { title: "Workflows", text: "Bookings, refunds, escalations, routing, SMS follow-ups, and approvals." },
-    { title: "Voice", text: "Tone, pronunciation, brevity, response length, and banned phrases." },
-    { title: "Simulator", text: "Run difficult scenarios before customers experience the agent." },
-  ];
-  return <div className="space-y-6"><Title eyebrow="Training" title="Teach once. Improve forever." text="Training is now the deep work surface. Studio stays simple because scripts, docs, scenarios, and simulations live here." /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">{items.map((item) => <Card key={item.title}><Database className="text-brand-bright" /><h3 className="mt-4 font-display text-2xl">{item.title}</h3><p className="mt-2 text-sm leading-6 text-paper/52">{item.text}</p></Card>)}</div><Card><h3 className="font-display text-2xl">Launch checklist</h3><div className="mt-5 grid gap-3 md:grid-cols-3">{["Upload policies", "Run 5 simulations", "Approve escalation rules"].map((x) => <div key={x} className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-paper/65"><Check className="mb-3 h-4 w-4 text-brand-bright" />{x}</div>)}</div></Card></div>;
+  const items = [[Database, "Knowledge", "Policies, pricing, hours, FAQs, allowed claims, and document sources."], [Workflow, "Workflows", "Bookings, refunds, escalations, routing, SMS follow-ups, and approvals."], [Phone, "Voice", "Tone, pronunciation, brevity, response length, and banned phrases."], [BarChart3, "Simulator", "Run difficult scenarios before customers experience the agent."]] as const;
+  return <div className="space-y-6"><Title eyebrow="Training" title="Teach once. Improve forever." text="Training is now the deep work surface. Studio stays simple because scripts, docs, scenarios, and simulations live here." /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">{items.map(([Icon, title, text]) => <Card key={title}><Icon className="text-brand-bright" /><h3 className="mt-4 font-display text-2xl">{title}</h3><p className="mt-2 text-sm leading-6 text-paper/52">{text}</p></Card>)}</div><Card><h3 className="font-display text-2xl">Launch checklist</h3><div className="mt-5 grid gap-3 md:grid-cols-3">{["Upload policies", "Run 5 simulations", "Approve escalation rules"].map((x) => <div key={x} className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-paper/65"><Check className="mb-3 h-4 w-4 text-brand-bright" />{x}</div>)}</div></Card></div>;
 }
 
 function AnalyticsPage() {
