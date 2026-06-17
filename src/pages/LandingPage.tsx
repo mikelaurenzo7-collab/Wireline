@@ -1,10 +1,8 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, type MotionProps } from "motion/react";
-import {
-  Activity,
-  ArrowRight,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, PhoneCall, ShieldCheck } from "lucide-react";
+
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
@@ -13,12 +11,6 @@ import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
-const STATS = [
-  { value: "300ms", label: "Avg Latency" },
-  { value: "Instant", label: "SMS Hand-off" },
-  { value: "Shared", label: "Context" },
-] as const;
-
 const REVEAL: MotionProps = {
   initial: { opacity: 0, y: 16 },
   whileInView: { opacity: 1, y: 0 },
@@ -26,9 +18,26 @@ const REVEAL: MotionProps = {
   transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
 };
 
+const PRODUCT_POINTS = [
+  {
+    icon: PhoneCall,
+    title: "Answer every call",
+    body: "Give every lead a live-sounding voice agent that can qualify, route, book, and follow up.",
+  },
+  {
+    icon: Clock3,
+    title: "Launch quickly",
+    body: "Start with a real phone number, a role, and a script. Refine behavior from Agent Studio.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Stay in control",
+    body: "Review calls, adjust training, and keep escalation rules clear before customers hit dead ends.",
+  },
+] as const;
+
 export default function LandingPage() {
-  // Use the inbound CS demo (Jordan) instead of primary, since primary doesn't exist
-  const csDemo = LANDING_PUBLIC_DEMO_AGENTS.find(a => a.name === "Jordan") || LANDING_PUBLIC_DEMO_AGENTS[0];
+  const csDemo = LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jordan") || LANDING_PUBLIC_DEMO_AGENTS[0];
 
   useEffect(() => {
     captureSignupIntentFromLocation();
@@ -38,151 +47,111 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="Wireline | Enterprise AI Agent Platform"
-        description="Deploy reasoning-native voice agents that sound human, negotiate complex workflows, and integrate flawlessly."
+        title="Wireline | AI Voice Agents for Business"
+        description="Deploy AI voice agents that answer calls, qualify leads, book appointments, and follow up from one simple workspace."
         image="/og-image.jpg"
       />
 
       <div className="marketing-launch min-h-screen bg-paper font-sans text-ink selection:bg-primary/20 selection:text-ink overflow-x-hidden">
         <PublicSiteHeader active="home" />
 
-        {/* ─── Hero Section ─── */}
-        <main id="main-content" className="relative pt-48 pb-32 px-6 md:px-12 max-w-7xl mx-auto space-y-32">
-          
-          <section className="flex flex-col items-center justify-center text-center relative z-10">
-            <motion.div {...REVEAL} className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-              
-              <div className="inline-flex items-center gap-2 px-3 py-1 mb-2 border border-primary/20 bg-primary/5 text-primary font-mono text-xs uppercase tracking-widest rounded-full">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                System Online
+        <main id="main-content" className="relative mx-auto max-w-7xl space-y-24 px-5 pb-24 pt-36 sm:px-6 sm:pt-40 md:px-12">
+          <section className="relative z-10 grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+            <motion.div {...REVEAL} className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/8 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
+                <span className="h-2 w-2 rounded-full bg-brand" />
+                Live agent platform
               </div>
-              
-              <h1 className="font-display text-[clamp(2.5rem,5vw,5rem)] leading-tight text-foreground">
-                The AI agent platform for businesses that <span className="text-primary italic font-light">pick up the phone.</span>
+
+              <h1 className="font-display text-[clamp(3rem,8vw,6rem)] leading-[0.98] tracking-[-0.045em] text-ink text-balance">
+                AI voice agents that pick up the phone.
               </h1>
-              
-              <p className="text-xl text-muted-foreground max-w-2xl font-light">
-                Deploy reasoning-native voice agents that sound human, negotiate complex workflows, and integrate flawlessly.
+
+              <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-ink/70 lg:mx-0">
+                Wireline gives businesses a simple way to deploy phone agents that answer, qualify, book, escalate, and send follow-ups without sounding like a menu tree.
               </p>
 
-              {/* Interactive Prompt Demo Wrapper */}
-              <div className="mt-8 w-full max-w-lg relative overflow-hidden transition-all duration-500 group rounded-xl border border-border bg-card p-6 shadow-2">
-                <BrowserCallWidget agentName={csDemo.name} />
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
                 <Link
                   to="/signup"
-                  className="w-full sm:w-auto inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest bg-primary text-primary-foreground px-8 py-4 rounded-md hover:brightness-110 transition-all duration-300 shadow-glow"
+                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-md bg-brand px-7 text-sm font-semibold text-white shadow-[0_18px_50px_-28px_rgba(139,63,214,0.9)] transition hover:bg-brand-deep"
                 >
                   Start free trial
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  to="/features"
-                  className="w-full sm:w-auto inline-flex items-center justify-center font-mono text-xs uppercase tracking-widest text-muted-foreground border border-border px-8 py-4 rounded-md hover:text-foreground hover:bg-black/5 transition-all duration-300"
+                  to="/showcase"
+                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-md border border-ink/12 bg-paper px-7 text-sm font-semibold text-ink transition hover:border-brand/30 hover:bg-paper-warm/50"
                 >
-                  Explore Features
+                  Call a demo agent
+                  <PhoneCall className="h-4 w-4" />
                 </Link>
               </div>
-            </motion.div>
-          </section>
 
-          {/* ─── Bento Grid Section ─── */}
-          <section className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-20 border-t border-border">
-            
-            {/* One fleet, every channel */}
-            <motion.div {...REVEAL} className="md:col-span-8 bg-card border border-border rounded-xl p-8 flex flex-col justify-between min-h-[400px] relative overflow-hidden group shadow-1 hover:shadow-2 transition-shadow">
-              <div className="z-10">
-                <h2 className="font-display text-3xl text-foreground mb-4">One fleet, every channel</h2>
-                <p className="text-lg text-muted-foreground max-w-md">Orchestrate complex customer journeys across Voice, SMS, and Email simultaneously. Agents maintain context perfectly.</p>
-              </div>
-              <div className="z-10 mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {STATS.map((stat, i) => (
-                  <div key={stat.label} className="border-l-2 border-primary pl-4 py-2">
-                    <div className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</div>
-                    <div className="font-sans font-bold text-xl text-foreground">{stat.value}</div>
-                  </div>
+              <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-ink/62 lg:justify-start">
+                {[
+                  "Real phone numbers",
+                  "Agent Studio included",
+                  "Call logs and coaching",
+                ].map((item) => (
+                  <span key={item} className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-brand" />
+                    {item}
+                  </span>
                 ))}
               </div>
             </motion.div>
 
-            {/* The Moat */}
-            <motion.div {...REVEAL} transition={{ delay: 0.1 }} className="md:col-span-4 bg-card border border-border rounded-xl p-8 flex flex-col justify-between min-h-[400px] relative shadow-1 hover:shadow-2 transition-shadow">
-              <div className="z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 bg-primary"></span>
-                  <span className="font-mono text-xs text-primary uppercase tracking-widest">Architecture</span>
+            <motion.div {...REVEAL} transition={{ ...REVEAL.transition, delay: 0.08 }} className="mx-auto w-full max-w-xl">
+              <div className="rounded-md border border-ink/10 bg-paper shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)]">
+                <div className="border-b border-ink/10 px-5 py-4">
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">Try it in browser</p>
+                  <p className="mt-1 text-sm text-ink/62">Talk to a live Wireline demo agent before creating an account.</p>
                 </div>
-                <h2 className="font-display text-3xl text-foreground mb-4">The Moat</h2>
-                <p className="text-muted-foreground">Sonnet 4.6 for near-zero latency voice generation. Opus 4.8 for deep reasoning and complex tool execution in the background.</p>
-              </div>
-              <div className="mt-8 bg-background border border-border p-4 relative rounded-md">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-secondary rounded-l-md"></div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center border-b border-border pb-2">
-                    <span className="font-mono text-xs text-muted-foreground">VOICE LAYER</span>
-                    <span className="font-mono text-xs font-bold text-primary">SONNET-4.6</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-mono text-xs text-muted-foreground">REASONING LAYER</span>
-                    <span className="font-mono text-xs font-bold text-secondary-foreground">OPUS-4.8</span>
-                  </div>
+                <div className="p-5 sm:p-6">
+                  <BrowserCallWidget agentName={csDemo.name} />
                 </div>
               </div>
             </motion.div>
-
-            {/* Live Supervisor Cockpit */}
-            <motion.div {...REVEAL} transition={{ delay: 0.2 }} className="md:col-span-12 bg-card border border-border rounded-xl min-h-[500px] flex flex-col md:flex-row relative overflow-hidden shadow-1">
-              <div className="p-8 md:w-1/3 flex flex-col justify-center z-10 border-r border-border">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 rounded-full bg-destructive animate-pulse"></span>
-                  <span className="font-mono text-xs text-destructive uppercase tracking-widest">Live Telemetry</span>
-                </div>
-                <h2 className="font-display text-3xl text-foreground mb-4">Live Supervisor Cockpit</h2>
-                <p className="text-muted-foreground mb-8">Monitor fleet health in real-time. Jump into active calls, view the exact reasoning steps of agents, and override actions instantly.</p>
-                <Link to="/features" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-primary hover:text-primary transition-colors">
-                  Explore Telemetry <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="md:w-2/3 h-64 md:h-auto relative bg-velvet flex items-center justify-center">
-                 <div className="w-3/4 h-3/4 border border-primary/20 flex flex-col relative bg-card shadow-glow rounded-lg overflow-hidden">
-                    <div className="p-4 border-b border-primary/20 font-mono text-xs text-primary">NODE_ID: ALPHA-09 // ACTIVE_SESSION</div>
-                    <div className="p-4 flex-1 flex flex-col items-center justify-center font-mono text-sm text-muted-foreground space-y-2">
-                        <Activity className="w-8 h-8 text-primary animate-pulse mb-4" />
-                        <div>[Telemetry Stream Encrypted]</div>
-                        <div className="text-xs opacity-50">Awaiting supervisor override...</div>
-                    </div>
-                 </div>
-              </div>
-            </motion.div>
-
           </section>
 
-          {/* Social Proof */}
-          <section className="py-24 text-center">
-            <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-12">
-              Trusted by Next-Generation AI Operators
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {PRODUCT_POINTS.map(({ icon: Icon, title, body }) => (
+              <motion.article
+                key={title}
+                {...REVEAL}
+                className="rounded-md border border-ink/10 bg-paper p-6 shadow-[0_18px_48px_-42px_rgba(26,22,20,0.55)]"
+              >
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-md border border-brand/15 bg-brand/8 text-brand">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h2 className="font-display text-2xl italic text-ink">{title}</h2>
+                <p className="mt-3 text-sm leading-7 text-ink/66">{body}</p>
+              </motion.article>
+            ))}
+          </section>
+
+          <section className="rounded-md border border-ink/10 bg-paper-warm/25 px-6 py-10 text-center">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
+              Works with the tools your team already uses
             </p>
-            <div className="opacity-50 hover:opacity-100 transition-opacity duration-500 filter grayscale hover:grayscale-0">
-               <IntegrationLogos />
+            <div className="mt-8 opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0">
+              <IntegrationLogos />
             </div>
           </section>
-
         </main>
-        
-        {/* ─── Footer ─── */}
-        <footer className="border-t border-border bg-card py-12 px-6">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-xs text-muted-foreground">
-            <div>© {new Date().getFullYear()} WIRELINE SYSTEMS INC.</div>
+
+        <footer className="border-t border-ink/10 bg-paper px-5 py-10">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-ink/55 md:flex-row">
+            <div>© {new Date().getFullYear()} Wireline</div>
             <div className="flex gap-6">
-              <Link className="hover:text-primary transition-colors" to="/terms">TERMS</Link>
-              <Link className="hover:text-primary transition-colors" to="/privacy">PRIVACY</Link>
-              <Link className="hover:text-primary transition-colors" to="#">STATUS</Link>
+              <Link className="hover:text-brand" to="/terms">Terms</Link>
+              <Link className="hover:text-brand" to="/privacy">Privacy</Link>
+              <Link className="hover:text-brand" to="/status">Status</Link>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-primary rounded-full"></span>
-              ALL SYSTEMS OPERATIONAL
+            <div className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-brand" />
+              Systems online
             </div>
           </div>
         </footer>
