@@ -15,7 +15,7 @@ import { PageMeta } from "../lib/page-meta";
 
 export default function PersonalDashboard() {
   return (
-    <div className="min-h-full bg-paper pt-8 pb-20 px-6 sm:px-10 lg:px-12">
+    <div className="flex-1 min-h-0 scroll-viewport bg-paper pt-8 pb-20 px-6 sm:px-10 lg:px-12">
       <PageMeta title="Personal Assistant — Wireline" />
 
       <div className="max-w-5xl mx-auto">
