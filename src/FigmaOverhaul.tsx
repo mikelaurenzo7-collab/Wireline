@@ -6,15 +6,12 @@ import {
   BarChart3,
   Bell,
   Bot,
-  Building2,
-  Calendar,
   Check,
   ChevronRight,
   Database,
   FileText,
   Headphones,
   Home,
-  LayoutGrid,
   Lock,
   Mail,
   MessageSquare,
@@ -22,20 +19,21 @@ import {
   Phone,
   PhoneCall,
   Plug,
+  Plus,
   Radio,
   ShieldCheck,
   Sliders,
   Sparkles,
   Smartphone,
-  Users,
   Workflow,
-  Zap,
 } from "lucide-react";
 
 import FigmaAuthPortal, { FigmaOAuthComplete } from "./FigmaAuthPortal";
 
 type Tab = "ops" | "studio" | "training" | "personal" | "integrations" | "analytics" | "admin";
 type Agent = { name: string; role: string; model: string; voice: string; status: "Live" | "Training" | "Paused"; calls: number; csat: number };
+type AppIcon = typeof Home;
+type Tier = { name: string; price: string; cadence: string; audience: string; summary: string; features: string[]; featured?: boolean };
 
 const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
@@ -45,7 +43,7 @@ const agents: Agent[] = [
   { name: "Tyler", role: "Technical triage", model: "Claude Sonnet", voice: "Calm neutral", status: "Training", calls: 34, csat: 91 },
 ];
 
-const appNav: Array<{ to: string; tab: Tab; label: string; icon: typeof Home }> = [
+const appNav: Array<{ to: string; tab: Tab; label: string; icon: AppIcon }> = [
   { to: "/personal-home", tab: "personal", label: "Personal", icon: Home },
   { to: "/business", tab: "ops", label: "Live Ops", icon: Radio },
   { to: "/agents", tab: "studio", label: "Studio", icon: Sliders },
@@ -60,6 +58,42 @@ const marketing = [
   { to: "/showcase", label: "Showcase" },
   { to: "/developers", label: "Developers" },
   { to: "/about", label: "About" },
+];
+
+const tiers: Tier[] = [
+  {
+    name: "Personal",
+    price: "$9",
+    cadence: "/mo",
+    audience: "For one person",
+    summary: "Screen calls, block spam, summarize errands, and trigger mobile intents without running a business console.",
+    features: ["AI phone screening", "Spam guard", "Call summaries", "Siri and widget intents"],
+  },
+  {
+    name: "Personal+",
+    price: "$19",
+    cadence: "/mo",
+    audience: "For heavier personal use",
+    summary: "More handled calls, deeper calendar/email help, and personal automations for appointments and errands.",
+    features: ["More monthly minutes", "Calendar and email actions", "Pharmacy and appointment workflows", "Priority personal memory"],
+  },
+  {
+    name: "Business Growth",
+    price: "$249",
+    cadence: "/mo",
+    audience: "For SMB front desks",
+    summary: "A real AI front desk with Studio, Training, Live Ops, analytics, and business-only integrations.",
+    features: ["Agent Studio and Training", "Live call cockpit", "CRM and calendar routing", "Model choice per agent"],
+    featured: true,
+  },
+  {
+    name: "Scale",
+    price: "$699",
+    cadence: "/mo+",
+    audience: "For higher call volume",
+    summary: "Higher volume, more workflows, advanced approvals, audit logs, and custom integration support.",
+    features: ["Advanced workspace controls", "Webhook API", "Custom routing", "Launch support"],
+  },
 ];
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -111,18 +145,27 @@ function MarketingFrame({ children }: { children: ReactNode }) {
 
 function HeroPhone({ mode }: { mode: "personal" | "business" }) {
   const personal = mode === "personal";
+  const actionSteps = personal
+    ? ["Screened pharmacy hold", "Confirmed doctor appointment", "Sent reminder to phone widget"]
+    : ["Qualified inbound lead", "Booked estimate for Friday", "Logged CRM summary"];
+  const stats = personal
+    ? [["41", "Spam calls blocked"], ["Thu 2pm", "Appointment confirmed"], ["Ready", "Siri + CarPlay handoff"]]
+    : [["142", "Calls handled today"], ["96%", "Quality score"], ["4", "Demos booked"]];
   return (
-    <div className="relative mx-auto w-full max-w-[500px]">
+    <div className="relative mx-auto w-full max-w-[520px]">
       <div className="absolute inset-6 -z-10 rounded-[40px] bg-brand/12 blur-3xl" aria-hidden="true" />
       <div className="rounded-[32px] border border-border bg-paper-deep p-3 shadow-[0_40px_120px_-70px_rgba(26,22,20,.65)]">
         <div className="rounded-[26px] border border-border bg-card p-5">
-          <div className="flex items-center justify-between"><Logo /><Pill>{personal ? "Personal line" : "Live floor"}</Pill></div>
-          <div className="mt-8 rounded-[24px] bg-ink p-5 text-paper">
-            <div className="flex items-center justify-between text-xs text-white/50"><span>Live conversation</span><span className="inline-flex items-center gap-1"><span className="h-2 w-2 animate-pulse rounded-full bg-brand-bright" /> 00:48</span></div>
-            <div className="mt-6 flex items-center gap-4"><div className="grid h-14 w-14 place-items-center rounded-full bg-brand"><PhoneCall size={22} /></div><div><p className="font-display text-2xl font-medium">{personal ? "Aria" : "Sarah"}</p><p className="text-sm text-white/55">{personal ? "Calling Dr. Allen's office" : "Resolving customer refund"}</p></div></div>
-            <div className="mt-6 space-y-2">{[personal ? "Rescheduled appointment to Thursday 2pm" : "Verified customer and order", personal ? "Sent confirmation text" : "Issued refund under policy", personal ? "Added reminder to widget" : "Logged outcome to CRM"].map((item) => <div key={item} className="flex items-center gap-2 rounded-[14px] bg-white/[.06] px-3 py-2 text-sm"><Check size={15} className="text-brand-bright" />{item}</div>)}</div>
+          <div className="flex items-center justify-between gap-4"><Logo /><Pill>{personal ? "Personal line" : "Live floor"}</Pill></div>
+          <div className="mt-6 rounded-[24px] bg-ink p-5 text-paper">
+            <div className="flex items-center justify-between text-xs text-white/50"><span>{personal ? "Aria is handling it" : "Sarah is live"}</span><span className="inline-flex items-center gap-1"><span className="h-2 w-2 animate-pulse rounded-full bg-brand-bright" /> 00:48</span></div>
+            <div className="mt-6 flex items-center gap-4"><div className="grid h-14 w-14 place-items-center rounded-full bg-brand"><PhoneCall size={22} /></div><div><p className="font-display text-2xl font-medium">{personal ? "Appointment call" : "New sales call"}</p><p className="text-sm text-white/55">{personal ? "No interruption needed" : "Lead captured and routed"}</p></div></div>
+            <div className="mt-6 space-y-2">{actionSteps.map((item) => <div key={item} className="flex items-center gap-2 rounded-[14px] bg-white/[.06] px-3 py-2 text-sm"><Check size={15} className="text-brand-bright" />{item}</div>)}</div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">{[(personal ? "41" : "142"), (personal ? "spam blocked" : "calls today"), (personal ? "CarPlay" : "96% CSAT")].map((x, i) => <div key={x} className="rounded-[18px] bg-paper-deep px-3 py-3"><p className={cx("font-display text-xl", i === 0 ? "text-brand" : "text-ink")}>{x}</p></div>)}</div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            {stats.map(([value, label], i) => <div key={`${value}-${label}`} className="rounded-[18px] border border-border bg-paper-deep px-3 py-3"><p className={cx("font-display text-2xl font-medium leading-none", i === 0 ? "text-brand" : "text-ink")}>{value}</p><p className="mt-2 min-h-[2rem] text-[10px] font-bold uppercase leading-4 tracking-[.14em] text-muted-foreground">{label}</p></div>)}
+          </div>
+          <div className="mt-4 rounded-[18px] border border-brand/15 bg-brand/5 p-3 text-xs leading-5 text-muted-foreground"><span className="font-semibold text-brand">Next action:</span> {personal ? "Ask before calling any new contact." : "Send booked-demo summary to the owner and CRM."}</div>
         </div>
       </div>
     </div>
@@ -134,7 +177,7 @@ function Landing() {
   return (
     <MarketingFrame>
       <main>
-        <section className="relative overflow-x-clip border-b border-border"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_.95fr] lg:py-28"><div className="flex flex-col justify-center gap-7"><Pill><Sparkles size={12} /> Hundreds of models · no lock-in</Pill><h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.02] tracking-[-0.055em] text-ink md:text-7xl">Your phone, finally <span className="italic text-brand">working for you.</span></h1><p className="max-w-xl text-[16px] leading-7 text-muted-foreground">Wireline handles personal calls so you never miss what matters, and runs a fleet of AI agents that answer your business floor around the clock. Human-fast. Never off-script.</p><div className="flex w-fit rounded-full border border-border bg-paper-deep p-1">{(["personal", "business"] as const).map((m) => <button key={m} onClick={() => setMode(m)} className={cx("rounded-full px-4 py-2 text-xs font-bold capitalize transition", mode === m ? "bg-brand text-paper" : "text-muted-foreground")}>{m}</button>)}</div><div className="flex flex-wrap gap-3"><ButtonLink to="/get-started">Get started free <ArrowRight size={16} /></ButtonLink><ButtonLink to="/showcase" variant="secondary"><Phone size={16} /> Hear a live demo</ButtonLink></div><div className="grid max-w-xl grid-cols-3 overflow-hidden rounded-[20px] border border-border bg-border">{[(mode === "personal" ? "40s" : "142"), (mode === "personal" ? "Thu 2pm" : "$189"), (mode === "personal" ? "41" : "4 demos")].map((k, i) => <div key={k} className="bg-background p-4"><p className="font-display text-2xl font-medium text-brand">{k}</p><p className="mt-1 text-[11px] font-bold uppercase tracking-[.14em] text-muted-foreground">{i === 0 ? "handled" : i === 1 ? "confirmed" : "won"}</p></div>)}</div></div><HeroPhone mode={mode} /></div></section>
+        <section className="relative overflow-x-clip border-b border-border"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_.95fr] lg:py-28"><div className="flex flex-col justify-center gap-7"><Pill><Sparkles size={12} /> Hundreds of models · no lock-in</Pill><h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.02] tracking-[-0.055em] text-ink md:text-7xl">Your phone, finally <span className="italic text-brand">working for you.</span></h1><p className="max-w-xl text-[16px] leading-7 text-muted-foreground">Wireline handles personal calls so you never miss what matters, and runs a fleet of AI agents that answer your business floor around the clock. Human-fast. Never off-script.</p><div className="flex w-fit rounded-full border border-border bg-paper-deep p-1">{(["personal", "business"] as const).map((m) => <button key={m} onClick={() => setMode(m)} className={cx("rounded-full px-4 py-2 text-xs font-bold capitalize transition", mode === m ? "bg-brand text-paper" : "text-muted-foreground")}>{m}</button>)}</div><div className="flex flex-wrap gap-3"><ButtonLink to="/get-started">Get started free <ArrowRight size={16} /></ButtonLink><ButtonLink to="/showcase" variant="secondary"><Phone size={16} /> Hear a live demo</ButtonLink></div><div className="grid max-w-xl gap-px overflow-hidden rounded-[20px] border border-border bg-border sm:grid-cols-3">{[(mode === "personal" ? ["40s", "Avg errand call"] : ["142", "Calls handled"]), (mode === "personal" ? ["Thu 2pm", "Appointment set"] : ["$189", "Refund resolved"]), (mode === "personal" ? ["41", "Spam blocked"] : ["4", "Demos booked"])].map(([k, label]) => <div key={k} className="bg-background p-4"><p className="font-display text-2xl font-medium text-brand">{k}</p><p className="mt-1 text-[11px] font-bold uppercase tracking-[.14em] text-muted-foreground">{label}</p></div>)}</div></div><HeroPhone mode={mode} /></div></section>
         <FeatureBand /><ModelBand /><PricingPreview />
       </main>
     </MarketingFrame>
@@ -147,28 +190,30 @@ function DarkCard({ children, className = "" }: { children: ReactNode; className
 
 function FeatureBand() { const items = [[Mic, "Voice agents", "Natural turn-taking, branded voices, and escalation rules."], [Mail, "Email follow-up", "Drafts, approvals, customer replies, and CRM notes."], [MessageSquare, "SMS workflows", "Two-way confirmations, reminders, and post-call summaries."], [Smartphone, "iOS + Android", "Widgets, Siri shortcuts, CarPlay, and glanceable control."], [Database, "Training hub", "Policies, scripts, prices, objections, and scenario tests."], [Lock, "Guardrails", "Never claims an action without an enabled tool and audit trail."]] as const; return <section className="border-b border-border bg-card"><div className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><SectionHeader eyebrow="Platform" title="Personal simplicity. Business-grade control." text="The overhaul separates personal and business paths while keeping one premium Wireline system." /><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{items.map(([Icon, t, d]) => <Card key={t}><div className="mb-5 grid h-11 w-11 place-items-center rounded-full bg-brand text-paper"><Icon size={20} /></div><h3 className="font-display text-xl font-medium text-ink">{t}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{d}</p></Card>)}</div></div></section>; }
 function ModelBand() { const providers = ["OpenRouter", "Anthropic", "OpenAI", "Google Gemini", "xAI Grok", "Meta Llama"]; return <section className="border-b border-border bg-ink text-paper"><div className="mx-auto max-w-7xl px-5 py-16 sm:px-8"><div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr]"><SectionHeader dark eyebrow="Model marketplace" title="Pick the model per agent." text="Default to fast, affordable Grok/Gemini paths, upgrade critical agents to premium models, and keep Anthropic/OpenAI available where they matter." /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{providers.map((p, i) => <div key={p} className="rounded-[22px] border border-white/10 bg-white/[.045] p-4"><p className="text-sm font-semibold">{p}</p><p className="mt-2 text-xs text-white/45">{i === 0 ? "300+ models" : i === 1 ? "Opus/Sonnet" : "Selectable routing"}</p></div>)}</div></div></div></section>; }
-function PricingPreview() { return <section className="bg-background"><div className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><SectionHeader eyebrow="Pricing" title="No hard agent limits. Add capacity when it pays for itself." text="Personal starts low. Business scales by minutes, integrations, and advanced controls." /><div className="mt-10 grid gap-4 lg:grid-cols-4">{[["Personal", "$9", "Siri, widgets, call screening"], ["Personal+", "$19", "More minutes and errands"], ["Business Growth", "$249", "Fleet, live ops, studio"], ["Scale", "$699", "High-volume operations"]].map(([n, p, d], i) => <Card key={n} className={i === 2 ? "bg-ink text-paper" : ""}><p className="text-sm font-semibold">{n}</p><p className="mt-4 font-display text-4xl font-medium">{p}</p><p className={cx("mt-2 text-sm", i === 2 ? "text-white/55" : "text-muted-foreground")}>{d}</p><div className="mt-6 space-y-2 text-sm"><p className="flex items-center gap-2"><Check size={15} className="text-brand-bright" /> Voice + SMS + email</p><p className="flex items-center gap-2"><Check size={15} className="text-brand-bright" /> Choose model stack</p></div></Card>)}</div></div></section>; }
 
-function MarketingPage({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) { return <MarketingFrame><main className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><SectionHeader eyebrow={eyebrow} title={title} text={text} /><div className="mt-10 grid gap-4 md:grid-cols-3"><Card><Sparkles className="text-brand" /><h3 className="mt-4 font-display text-2xl">Premium surface</h3><p className="mt-2 text-sm text-muted-foreground">Clean hierarchy, calm cream/purple palette, and desktop-first spacing.</p></Card><Card><Workflow className="text-brand" /><h3 className="mt-4 font-display text-2xl">Operational depth</h3><p className="mt-2 text-sm text-muted-foreground">Personal and business flows stay separate but share a single account layer.</p></Card><Card><ShieldCheck className="text-brand" /><h3 className="mt-4 font-display text-2xl">Launch-ready rails</h3><p className="mt-2 text-sm text-muted-foreground">OAuth, integrations, Studio, Training, and analytics are mapped into the redesign.</p></Card></div></main></MarketingFrame>; }
-
-function ConsoleShell({ initial = "ops" }: { initial?: Tab }) {
-  const [tab, setTab] = useState<Tab>(initial);
-  const active = initial === "personal" ? "personal" : tab;
+function TierCard({ tier }: { tier: Tier }) {
   return (
-    <div className="flex h-dvh overflow-hidden bg-[#120b1b] text-paper">
-      <aside className="hidden w-[268px] shrink-0 border-r border-white/10 bg-[#160f24] p-4 lg:flex lg:flex-col">
-        <Link to="/" className="mb-8"><Logo light /></Link>
-        <nav className="space-y-1">{appNav.map((item) => { const Icon = item.icon; const on = item.tab === active; return <button key={item.to} onClick={() => setTab(item.tab)} className={cx("flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm transition", on ? "bg-white/10 text-white" : "text-white/48 hover:bg-white/[.06] hover:text-white/80")}><Icon size={17} />{item.label}</button>; })}</nav>
-        <div className="mt-auto rounded-[22px] border border-white/10 bg-white/[.045] p-4"><Pill dark><Sparkles size={12} /> Assistant</Pill><p className="mt-3 text-sm text-white/58">Ask Wireline to simplify setup, add workflows, or audit agent training.</p></div>
-      </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4 sm:px-6"><div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-brand-bright">{active === "personal" ? "Personal" : "Business"}</p><h1 className="font-display text-xl font-medium">{active === "studio" ? "Agent Studio" : active === "training" ? "Training" : active === "integrations" ? "Integrations" : active === "analytics" ? "Analytics" : active === "admin" ? "Admin" : active === "personal" ? "Personal Wireline" : "Live Ops"}</h1></div><div className="flex items-center gap-2"><span className="hidden rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/55 sm:inline-flex">trywireline.com</span><Bell size={18} className="text-white/55" /></div></header>
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip p-4 sm:p-6 lg:p-8">{active === "personal" ? <PersonalConsole /> : active === "studio" ? <Studio /> : active === "training" ? <TrainingConsole /> : active === "integrations" ? <Integrations /> : active === "analytics" ? <Analytics /> : active === "admin" ? <Admin /> : <Ops />}</div>
-      </main>
+    <div className={cx("flex min-h-[420px] flex-col rounded-[30px] border p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]", tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-ink")}>
+      <div className="flex items-start justify-between gap-3">
+        <div><p className={cx("text-sm font-semibold", tier.featured ? "text-paper" : "text-ink")}>{tier.name}</p><p className={cx("mt-1 text-xs", tier.featured ? "text-white/55" : "text-muted-foreground")}>{tier.audience}</p></div>
+        {tier.featured && <Pill dark>Best for launch</Pill>}
+      </div>
+      <div className="mt-6 flex items-end gap-1"><span className="font-display text-5xl font-medium leading-none">{tier.price}</span><span className={cx("pb-1 text-sm", tier.featured ? "text-white/50" : "text-muted-foreground")}>{tier.cadence}</span></div>
+      <p className={cx("mt-4 min-h-[4.5rem] text-sm leading-6", tier.featured ? "text-white/62" : "text-muted-foreground")}>{tier.summary}</p>
+      <div className="mt-6 space-y-3 text-sm">
+        {tier.features.map((feature) => <p key={feature} className={cx("flex items-start gap-2", tier.featured ? "text-white/82" : "text-ink")}><Check size={15} className={cx("mt-0.5 shrink-0", tier.featured ? "text-brand-bright" : "text-brand")} /> {feature}</p>)}
+      </div>
+      <Link to="/get-started" className={cx("mt-auto inline-flex h-11 items-center justify-center rounded-[14px] px-4 text-sm font-semibold", tier.featured ? "bg-paper text-ink hover:bg-white" : "border border-border bg-background text-ink hover:border-brand")}>Start with {tier.name}</Link>
     </div>
   );
 }
 
+function PricingPreview() { return <section className="bg-background"><div className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><SectionHeader eyebrow="Pricing" title="No hard agent limits. Add capacity when it pays for itself." text="Personal starts low. Business scales by minutes, integrations, and advanced controls." /><div className="mt-10 grid gap-4 lg:grid-cols-4">{tiers.map((tier) => <TierCard key={tier.name} tier={tier} />)}</div></div></section>; }
+function PricingPage() { return <MarketingFrame><main><section className="border-b border-border"><div className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><SectionHeader eyebrow="Pricing" title="Personal and business pricing, separated cleanly." text="Start with a low-cost personal agent or launch a business fleet. No empty boxes, no fake tier limits, and no confusing blended packaging." /><div className="mt-10 grid gap-4 lg:grid-cols-4">{tiers.map((tier) => <TierCard key={tier.name} tier={tier} />)}</div></div></section><section className="bg-card"><div className="mx-auto grid max-w-7xl gap-4 px-5 py-14 sm:px-8 lg:grid-cols-3"><Card><Pill>Personal boundary</Pill><h3 className="mt-4 font-display text-2xl">Private by default.</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Personal email, calendar, mobile intents, and call screening do not train business agents unless explicitly connected.</p></Card><Card><Pill>Business boundary</Pill><h3 className="mt-4 font-display text-2xl">Workspace scoped.</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Business CRM, billing, phone, webhooks, and team workflows live under business workspace controls.</p></Card><Card><Pill>Model choice</Pill><h3 className="mt-4 font-display text-2xl">Pick per agent.</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Default economical models for most work, then upgrade critical agents or workflows when quality demands it.</p></Card></div></section></main></MarketingFrame>; }
+
+function MarketingPage({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) { return <MarketingFrame><main className="mx-auto max-w-7xl px-5 py-20 sm:px-8"><SectionHeader eyebrow={eyebrow} title={title} text={text} /><div className="mt-10 grid gap-4 md:grid-cols-3"><Card><Sparkles className="text-brand" /><h3 className="mt-4 font-display text-2xl">Premium surface</h3><p className="mt-2 text-sm text-muted-foreground">Clean hierarchy, calm cream/purple palette, and desktop-first spacing.</p></Card><Card><Workflow className="text-brand" /><h3 className="mt-4 font-display text-2xl">Operational depth</h3><p className="mt-2 text-sm text-muted-foreground">Personal and business flows stay separate but share a single account layer.</p></Card><Card><ShieldCheck className="text-brand" /><h3 className="mt-4 font-display text-2xl">Launch-ready rails</h3><p className="mt-2 text-sm text-muted-foreground">OAuth, integrations, Studio, Training, and analytics are mapped into the redesign.</p></Card></div></main></MarketingFrame>; }
+
+function ConsoleShell({ initial = "ops" }: { initial?: Tab }) { const [tab, setTab] = useState<Tab>(initial); const active = initial === "personal" ? "personal" : tab; return <div className="flex h-dvh overflow-hidden bg-[#120b1b] text-paper"><aside className="hidden w-[268px] shrink-0 border-r border-white/10 bg-[#160f24] p-4 lg:flex lg:flex-col"><Link to="/" className="mb-8"><Logo light /></Link><nav className="space-y-1">{appNav.map((item) => { const Icon = item.icon; const on = item.tab === active; return <button key={item.to} onClick={() => setTab(item.tab)} className={cx("flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm transition", on ? "bg-white/10 text-white" : "text-white/48 hover:bg-white/[.06] hover:text-white/80")}><Icon size={17} />{item.label}</button>; })}</nav><div className="mt-auto rounded-[22px] border border-white/10 bg-white/[.045] p-4"><Pill dark><Sparkles size={12} /> Assistant</Pill><p className="mt-3 text-sm text-white/58">Ask Wireline to simplify setup, add workflows, or audit agent training.</p></div></aside><main className="flex min-w-0 flex-1 flex-col"><header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-4 sm:px-6"><div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-brand-bright">{active === "personal" ? "Personal" : "Business"}</p><h1 className="font-display text-xl font-medium">{active === "studio" ? "Agent Studio" : active === "training" ? "Training" : active === "integrations" ? "Integrations" : active === "analytics" ? "Analytics" : active === "admin" ? "Admin" : active === "personal" ? "Personal Wireline" : "Live Ops"}</h1></div><div className="flex items-center gap-2"><span className="hidden rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/55 sm:inline-flex">trywireline.com</span><Bell size={18} className="text-white/55" /></div></header><div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip p-4 sm:p-6 lg:p-8">{active === "personal" ? <PersonalConsole /> : active === "studio" ? <Studio /> : active === "training" ? <TrainingConsole /> : active === "integrations" ? <Integrations /> : active === "analytics" ? <Analytics /> : active === "admin" ? <Admin /> : <Ops />}</div></main></div>; }
 function AssistantPanel() { return <DarkCard><Pill dark><Bot size={12} /> Wireline Assistant</Pill><h3 className="mt-4 font-display text-2xl">What should improve next?</h3><div className="mt-5 space-y-3 text-sm text-white/65"><p>Sarah is ready for production. Tyler needs one escalation workflow before launch.</p><p>Connect Google Calendar and Outlook before enabling appointment booking.</p><p>Training gaps: refund policy, after-hours pricing, lead qualification.</p></div><div className="mt-5 rounded-[18px] border border-white/10 bg-black/20 p-3 text-sm text-white/45">Ask Wireline…</div></DarkCard>; }
 function Ops() { return <div className="grid gap-5 xl:grid-cols-[1fr_380px]"><div className="space-y-5"><div className="grid gap-4 md:grid-cols-4">{[["Live calls", "18"], ["Handled today", "142"], ["CSAT", "96%"], ["Avg latency", "248ms"]].map(([k, v]) => <DarkCard key={k}><p className="text-xs text-white/40">{k}</p><p className="mt-2 font-display text-3xl font-medium">{v}</p></DarkCard>)}</div><DarkCard><div className="flex items-center justify-between"><h2 className="font-display text-2xl font-medium">Live floor</h2><Pill dark><Radio size={12} /> active</Pill></div><div className="mt-5 space-y-3">{["Refund request — Sarah", "Demo request — Liam", "Webhook timeout — Tyler", "Appointment change — Sarah"].map((x, i) => <div key={x} className="flex items-center justify-between rounded-[18px] border border-white/10 bg-white/[.04] p-4"><div className="flex items-center gap-3"><span className={cx("h-2.5 w-2.5 rounded-full", i === 2 ? "bg-red-400" : "bg-brand-bright")} /><div><p className="text-sm font-semibold">{x}</p><p className="text-xs text-white/42">+1 (312) 555-01{i}7 · {i + 1}:4{i}</p></div></div><ChevronRight size={18} className="text-white/35" /></div>)}</div></DarkCard></div><AssistantPanel /></div>; }
 function Studio() { const [agent, setAgent] = useState(agents[0]); return <div className="grid gap-5 xl:grid-cols-[320px_1fr_360px]"><DarkCard><h2 className="font-display text-2xl">Fleet</h2><div className="mt-5 space-y-2">{agents.map((a) => <button key={a.name} onClick={() => setAgent(a)} className={cx("w-full rounded-[18px] border p-3 text-left transition", agent.name === a.name ? "border-brand-bright bg-brand/15" : "border-white/10 bg-white/[.035] hover:bg-white/[.06]")}><p className="font-semibold">{a.name}</p><p className="mt-1 text-xs text-white/45">{a.role}</p></button>)}</div><button className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-[14px] border border-white/10 text-sm text-white/65"><Plus size={15} /> Add agent</button></DarkCard><DarkCard><Pill dark>Basic setup</Pill><h2 className="mt-4 font-display text-4xl">{agent.name}</h2><div className="mt-6 grid gap-4 md:grid-cols-2"><Field label="Role" value={agent.role} /><Field label="Model" value={agent.model} /><Field label="Voice" value={agent.voice} /><Field label="Phone number" value="(312) 555-0198" /></div><div className="mt-6 rounded-[22px] border border-white/10 bg-black/20 p-4"><p className="text-sm font-semibold">Simple first. Training lives separately.</p><p className="mt-2 text-sm text-white/50">Studio now handles name, role, model, voice, number, handoff, and workflow selection. Scripts, docs, scenarios, and simulations live on Training.</p></div></DarkCard><AssistantPanel /></div>; }
@@ -179,7 +224,6 @@ function Connector({ name, scope }: { name: string; scope: "Personal" | "Busines
 function Integrations() { const business = ["Google Workspace", "Microsoft 365", "HubSpot CRM", "Stripe", "Twilio", "Vapi", "Slack", "Webhook API"]; const personal = ["Gmail", "Google Calendar", "Outlook", "Yahoo Mail", "iOS Shortcuts", "Android Intents"]; return <div className="space-y-5"><DarkCard><Pill dark><Plug size={12} /> Separated integration architecture</Pill><h2 className="mt-4 font-display text-4xl">Personal and business connectors stay separated.</h2><p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">Personal connectors power your private assistant. Business connectors power workspace agents, CRM, billing, telephony, analytics, and team workflows. Same account, separate scopes, separate training context, separate approval rules.</p></DarkCard><div className="grid gap-5 xl:grid-cols-2"><DarkCard><h3 className="font-display text-2xl">Personal connectors</h3><p className="mt-2 text-sm text-white/45">For one user: calls, calendar, email, mobile intents, reminders.</p><div className="mt-5 grid gap-3 md:grid-cols-2">{personal.map((x) => <Connector key={x} name={x} scope="Personal" />)}</div></DarkCard><DarkCard><h3 className="font-display text-2xl">Business workspace connectors</h3><p className="mt-2 text-sm text-white/45">For teams: CRM, billing, calendars, phone stack, Slack, webhooks, audit logs.</p><div className="mt-5 grid gap-3 md:grid-cols-2">{business.map((x) => <Connector key={x} name={x} scope="Business" />)}</div></DarkCard></div></div>; }
 function Analytics() { return <div className="grid gap-5 lg:grid-cols-4">{[["Calls", "1,842"], ["Booked", "214"], ["Revenue assisted", "$48k"], ["Containment", "83%"]].map(([k, v]) => <DarkCard key={k}><p className="text-xs text-white/40">{k}</p><p className="mt-2 font-display text-4xl">{v}</p></DarkCard>)}</div>; }
 function Admin() { return <div className="grid gap-5 lg:grid-cols-3">{["Workspace", "Team", "Billing", "Security", "Data boundaries", "Audit logs"].map((x) => <DarkCard key={x}><ShieldCheck className="text-brand-bright" /><h3 className="mt-4 font-display text-2xl">{x}</h3><p className="mt-2 text-sm text-white/50">Configured for launch migration.</p></DarkCard>)}</div>; }
-
 function NotFound() { return <MarketingFrame><main className="mx-auto flex max-w-3xl flex-col items-center px-6 py-24 text-center"><Pill>404</Pill><h1 className="mt-5 font-display text-5xl">Page not found</h1><p className="mt-4 text-muted-foreground">This route was not included in the migration map.</p><ButtonLink to="/">Back home</ButtonLink></main></MarketingFrame>; }
 
 export default function FigmaOverhaul() {
@@ -188,7 +232,7 @@ export default function FigmaOverhaul() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/features" element={<MarketingPage eyebrow="Features" title="Every front-line conversation in one system." text="Voice, SMS, email, mobile intents, Studio, Training, analytics, integrations, and model choice." />} />
-        <Route path="/pricing" element={<MarketingPage eyebrow="Pricing" title="Personal starts low. Business scales cleanly." text="No hard agent limits. Add capacity, integrations, and advanced models when they pay for themselves." />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/showcase" element={<MarketingPage eyebrow="Showcase" title="Preview the agents before launch." text="Reception, sales, support, scheduling, personal errands, handoffs, and post-call summaries." />} />
         <Route path="/developers" element={<MarketingPage eyebrow="Developers" title="API-first where it matters." text="OAuth, webhooks, CRM sync, audit logs, and provider controls for production teams." />} />
         <Route path="/about" element={<MarketingPage eyebrow="About" title="Wireline makes phones useful again." text="A premium AI-native operating layer for personal life and business front-line operations." />} />
@@ -199,8 +243,8 @@ export default function FigmaOverhaul() {
         <Route path="/signin" element={<FigmaAuthPortal />} />
         <Route path="/login" element={<FigmaAuthPortal />} />
         <Route path="/auth" element={<FigmaAuthPortal />} />
-        <Route path="/auth/*" element={<FigmaAuthPortal />} />
         <Route path="/auth/oauth-complete" element={<FigmaOAuthComplete />} />
+        <Route path="/auth/*" element={<FigmaAuthPortal />} />
         <Route path="/oauth-complete" element={<Navigate to="/auth/oauth-complete" replace />} />
         <Route path="/personal-home" element={<ConsoleShell initial="personal" />} />
         <Route path="/app/personal" element={<ConsoleShell initial="personal" />} />
