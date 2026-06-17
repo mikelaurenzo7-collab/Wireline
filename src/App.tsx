@@ -1,5 +1,5 @@
-import FigmaOverhaulApp from "./FigmaOverhaulApp";
+import FigmaOverhaul from "./FigmaOverhaul";
 
 export default function App() {
-  return <FigmaOverhaulApp />;
+  return <FigmaOverhaul />;
 }
