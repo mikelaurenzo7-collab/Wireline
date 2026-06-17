@@ -1,15 +1,45 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Loader2, Lock, Mail } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Building2, Check, Loader2, Lock, Mail, User } from "lucide-react";
 
 import { useAuth } from "./contexts/AuthContext";
-import { getStoredSignupIntent, syncSignupIntent } from "./lib/signup-intent";
+import {
+  captureSignupIntentFromLocation,
+  getStoredSignupIntent,
+  persistSignupIntent,
+  recommendedPlanFromIntent,
+  syncSignupIntent,
+  type SignupIntent,
+} from "./lib/signup-intent";
 
 type AuthMode = "signin" | "signup" | "reset";
 type OAuthProvider = "google" | "microsoft" | "yahoo";
+type WorkspaceMode = "personal" | "business";
+
+const WORKSPACE_MODE_KEY = "wireline.mode";
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
+
+function workspaceFromIntent(intent: SignupIntent | null | undefined): WorkspaceMode {
+  const plan = intent ? recommendedPlanFromIntent(intent) : null;
+  return plan === "personal" || intent?.signupWedge === "personal" ? "personal" : "business";
+}
+
+function readStoredWorkspaceMode(): WorkspaceMode {
+  if (typeof window === "undefined") return "business";
+  const stored = window.localStorage.getItem(WORKSPACE_MODE_KEY);
+  return stored === "personal" || stored === "business" ? stored : "business";
+}
+
+function persistWorkspaceMode(mode: WorkspaceMode) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(WORKSPACE_MODE_KEY, mode);
+}
+
+function targetFor(mode: WorkspaceMode) {
+  return mode === "personal" ? "/app/personal" : "/app/business";
+}
 
 function Logo({ light = false }: { light?: boolean }) {
   return (
@@ -46,7 +76,7 @@ async function readJson(res: Response): Promise<Record<string, unknown>> {
 }
 
 const providers: Array<{ id: OAuthProvider; label: string; sub: string; mark: ReactNode }> = [
-  { id: "google", label: "Google", sub: "Gmail and Google Workspace", mark: <span className="font-semibold text-brand">G</span> },
+  { id: "google", label: "Google", sub: "Gmail, Calendar, and Workspace", mark: <span className="font-semibold text-brand">G</span> },
   {
     id: "microsoft",
     label: "Microsoft / Outlook",
@@ -63,14 +93,17 @@ const providers: Array<{ id: OAuthProvider; label: string; sub: string; mark: Re
   { id: "yahoo", label: "Yahoo", sub: "Yahoo Mail", mark: <span className="font-semibold text-brand">Y</span> },
 ];
 
-function OAuthButtons({ disabled, onError }: { disabled?: boolean; onError: (message: string | null) => void }) {
+function OAuthButtons({ disabled, mode, intent, onError }: { disabled?: boolean; mode: WorkspaceMode; intent: SignupIntent | null; onError: (message: string | null) => void }) {
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 
   const start = async (provider: OAuthProvider) => {
     if (disabled || pending) return;
     setPending(provider);
     onError(null);
+    persistWorkspaceMode(mode);
+    persistSignupIntent(intent);
     try {
+      await syncSignupIntent(intent).catch(() => {});
       const res = await fetch(`/api/auth/${provider}/url`, {
         headers: { Accept: "application/json" },
         credentials: "include",
@@ -122,16 +155,21 @@ function OAuthButtons({ disabled, onError }: { disabled?: boolean; onError: (mes
   );
 }
 
-function Shell({ children }: { children: ReactNode }) {
+function Shell({ children, mode }: { children: ReactNode; mode: WorkspaceMode }) {
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-paper lg:flex">
         <div className="absolute right-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-brand/30 blur-3xl" />
         <div className="relative z-10"><Link to="/"><Logo light /></Link></div>
         <div className="relative z-10 max-w-xl">
-          <Chip className="border-paper/20 bg-paper/5 text-paper/70">OAuth restored</Chip>
-          <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">The new Wireline look, with the real login rails back underneath.</h1>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">Google, Yahoo, and Microsoft/Outlook sign-in use the existing production OAuth endpoints while staying inside the Figma overhaul.</p>
+          <Chip className="border-paper/20 bg-paper/5 text-paper/70">{mode === "personal" ? "Personal workspace" : "Business workspace"}</Chip>
+          <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">{mode === "personal" ? "Your private phone chief of staff." : "Run the front line from one cockpit."}</h1>
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
+            {mode === "personal"
+              ? "Screen calls, kill spam, set mobile intents, and keep your day moving without opening a business console."
+              : "Deploy AI voice, SMS, and email agents with real OAuth, training, integrations, and operator controls."
+            }
+          </p>
         </div>
         <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-paper/10 text-center">
           {[["Google", "Workspace"], ["Outlook", "Microsoft 365"], ["Yahoo", "Mail"]].map(([a, b]) => (
@@ -149,12 +187,39 @@ function Shell({ children }: { children: ReactNode }) {
   );
 }
 
+function WorkspaceSelector({ mode, setMode }: { mode: WorkspaceMode; setMode: (mode: WorkspaceMode) => void }) {
+  const options: Array<{ id: WorkspaceMode; title: string; text: string; icon: ReactNode }> = [
+    { id: "personal", title: "Personal", text: "One private assistant for calls, reminders, Siri, CarPlay, and widgets.", icon: <User className="h-4 w-4" /> },
+    { id: "business", title: "Business", text: "A workspace for agent fleets, training, integrations, analytics, and teams.", icon: <Building2 className="h-4 w-4" /> },
+  ];
+  return (
+    <div className="grid gap-2">
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          onClick={() => setMode(option.id)}
+          className={cn("flex items-start gap-3 border p-4 text-left transition", mode === option.id ? "border-brand bg-brand/10" : "border-border bg-background hover:border-brand/40")}
+        >
+          <span className={cn("mt-0.5 flex h-8 w-8 items-center justify-center rounded-full", mode === option.id ? "bg-brand text-paper" : "bg-secondary text-ink")}>{option.icon}</span>
+          <span className="flex-1">
+            <span className="flex items-center gap-2 text-sm font-semibold text-ink">{option.title}{mode === option.id && <Check className="h-4 w-4 text-brand" />}</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.text}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function FigmaAuthPortal() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn } = useAuth();
-  const initialMode: AuthMode = location.pathname === "/signup" || location.pathname === "/get-started" ? "signup" : "signin";
+  const capturedIntent = useMemo(() => captureSignupIntentFromLocation(), [location.search]);
+  const initialMode: AuthMode = location.pathname === "/signup" || location.pathname === "/get-started" ? "signup" : location.pathname === "/reset" ? "reset" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [workspaceMode, setWorkspaceModeState] = useState<WorkspaceMode>(() => workspaceFromIntent(capturedIntent) || readStoredWorkspaceMode());
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -162,13 +227,25 @@ export default function FigmaAuthPortal() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const setWorkspaceMode = (next: WorkspaceMode) => {
+    setWorkspaceModeState(next);
+    persistWorkspaceMode(next);
+    persistSignupIntent({ capturedAt: new Date().toISOString(), preferredPlanId: next === "personal" ? "personal" : "starter", signupWedge: next === "personal" ? "personal" : undefined });
+  };
+
   useEffect(() => {
     if (location.pathname === "/signup" || location.pathname === "/get-started") setMode("signup");
+    else if (location.pathname === "/reset") setMode("reset");
     else if (location.pathname === "/signin" || location.pathname === "/login" || location.pathname === "/auth") setMode("signin");
   }, [location.pathname]);
 
+  useEffect(() => {
+    persistWorkspaceMode(workspaceMode);
+  }, [workspaceMode]);
+
   const isSignup = mode === "signup";
   const isReset = mode === "reset";
+  const intent = getStoredSignupIntent() ?? capturedIntent;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -180,6 +257,7 @@ export default function FigmaAuthPortal() {
     if (isSignup && !agreed) return setError("Accept the Terms and Privacy Policy to create your account.");
 
     setLoading(true);
+    persistWorkspaceMode(workspaceMode);
     try {
       if (isReset) {
         const res = await fetch("/api/auth/forgot-password", {
@@ -192,19 +270,20 @@ export default function FigmaAuthPortal() {
         if (!res.ok) throw new Error(cleanServerError(data) || "Password reset request failed.");
         setMessage(typeof data.message === "string" ? data.message : "If that email is registered, a reset link is on its way.");
       } else {
+        const payload = isSignup ? { email: trimmedEmail, password, workspaceMode } : { email: trimmedEmail, password };
         const res = await fetch(isSignup ? "/api/auth/signup" : "/api/auth/signin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ email: trimmedEmail, password }),
+          body: JSON.stringify(payload),
         });
         const data = await readJson(res);
         if (!res.ok) throw new Error(cleanServerError(data) || "Authentication failed.");
         const user = data.user as { id?: string; email?: string; full_name?: string; is_owner?: boolean } | undefined;
         if (!user?.id || !user.email) throw new Error("Authentication succeeded but user payload was missing.");
-        await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
+        await syncSignupIntent(intent).catch(() => {});
         signIn({ user: { id: user.id, email: user.email, full_name: user.full_name, is_owner: user.is_owner } });
-        navigate(isSignup ? "/app/business" : "/agents", { replace: true });
+        navigate(targetFor(workspaceMode), { replace: true });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed. Please try again.");
@@ -214,10 +293,10 @@ export default function FigmaAuthPortal() {
   };
 
   const title = isReset ? "Reset your password" : isSignup ? "Create your Wireline account" : "Sign in to Wireline";
-  const subtitle = isReset ? "Enter your email and Wireline will send a secure reset link." : isSignup ? "Choose OAuth or email to start your personal or business workspace." : "Use OAuth or email to return to your workspace.";
+  const subtitle = isReset ? "Enter your email and Wireline will send a secure reset link." : isSignup ? "Choose personal or business, then use OAuth or email to create your workspace." : "Use OAuth or email to return to your workspace.";
 
   return (
-    <Shell>
+    <Shell mode={workspaceMode}>
       <Link to="/" className="mb-8 inline-flex lg:hidden"><Logo /></Link>
       <Chip>{isReset ? "Account recovery" : "Wireline account"}</Chip>
       <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-ink">{title}</h1>
@@ -231,7 +310,8 @@ export default function FigmaAuthPortal() {
       )}
 
       <section className="mt-4 border border-border bg-card p-5 shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)] sm:p-6">
-        {!isReset && <OAuthButtons disabled={loading} onError={setError} />}
+        {isSignup && <div className="mb-5"><WorkspaceSelector mode={workspaceMode} setMode={setWorkspaceMode} /></div>}
+        {!isReset && <OAuthButtons disabled={loading} mode={workspaceMode} intent={intent} onError={setError} />}
         <form onSubmit={submit} className="mt-5 space-y-4">
           <label className="block space-y-2 text-sm font-semibold text-ink">
             <span>Email address</span>
@@ -262,7 +342,7 @@ export default function FigmaAuthPortal() {
           {error && <div className="flex items-start gap-2 border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}</div>}
           {message && <div className="flex items-start gap-2 border border-brand/25 bg-brand/10 p-3 text-sm text-brand"><Check className="mt-0.5 h-4 w-4 shrink-0" /> {message}</div>}
           <button type="submit" disabled={loading || (isSignup && !agreed)} className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 bg-brand px-5 text-base font-semibold text-paper transition hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-55">
-            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Working…</> : isReset ? <>Send reset link <ArrowRight className="h-4 w-4" /></> : isSignup ? <>Create account <ArrowRight className="h-4 w-4" /></> : <>Sign in <ArrowRight className="h-4 w-4" /></>}
+            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Working…</> : isReset ? <>Send reset link <ArrowRight className="h-4 w-4" /></> : isSignup ? <>Create {workspaceMode} workspace <ArrowRight className="h-4 w-4" /></> : <>Sign in <ArrowRight className="h-4 w-4" /></>}
           </button>
         </form>
       </section>
@@ -277,6 +357,7 @@ export function FigmaOAuthComplete() {
   const location = useLocation();
   const handledRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const workspaceMode = readStoredWorkspaceMode();
 
   useEffect(() => {
     if (handledRef.current) return;
@@ -312,7 +393,7 @@ export function FigmaOAuthComplete() {
         if (!user.id || !user.email) throw new Error("Sign-in response was incomplete. Please try again.");
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        navigate("/agents", { replace: true });
+        navigate(targetFor(readStoredWorkspaceMode()), { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
       }
@@ -321,7 +402,7 @@ export function FigmaOAuthComplete() {
   }, [location.search, navigate, signIn]);
 
   return (
-    <Shell>
+    <Shell mode={workspaceMode}>
       <Chip>{error ? "Sign-in failed" : "Completing sign-in"}</Chip>
       <h1 className="mt-5 font-display text-4xl text-ink">{error ? "We could not finish sign-in." : "Finishing OAuth sign-in."}</h1>
       <div className="mt-7 border border-border bg-card p-6 text-sm text-muted-foreground">
