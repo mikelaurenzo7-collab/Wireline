@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  GraduationCap,
   LayoutGrid,
   Kanban,
   SlidersHorizontal,
@@ -40,13 +41,9 @@ function withSection(items: NavItem[], section: string): NavItem[] {
   return items.map((item) => ({ ...item, section }));
 }
 
-// Unified Studio IA (Opus-approved 2026-06 audit).
-// Studio is the single build surface: fleet list + agent canvas + embedded
-// Assistant co-pilot + Tuning Rail (Identity, Voice, Knowledge, Pronunciation,
-// Rules, Tools, Flow, Simulator, Integrations). Training and standalone Wizard
-// have been consolidated into the Studio canvas + rail.
-// Command is the run surface (cockpit, intelligence, pipeline).
-// Channels are the wires. Integrations live in the agent tuning rail.
+// Studio is intentionally simple: create the agent, pick the basics, and use
+// the Assistant. Deep knowledge, voices, pronunciation, simulator, and flow now
+// live in Training so the Studio rail does not become an overloaded admin panel.
 const STUDIO_NAV: NavItem[] = [
   {
     label: "Studio",
@@ -54,6 +51,13 @@ const STUDIO_NAV: NavItem[] = [
     icon: Users,
     dataTour: "agents",
     matches: ["/agents"],
+  },
+  {
+    label: "Training",
+    path: "/training",
+    icon: GraduationCap,
+    dataTour: "training",
+    matches: ["/training", "/knowledge", "/train"],
   },
 ];
 
@@ -140,7 +144,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/knowledge": "Knowledge",
   "/agents": "Studio",
   "/chat": "Assistant",
-  "/training": "Studio",
+  "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",
   "/admin": "Settings",
@@ -155,6 +159,7 @@ export const PAGE_TITLES: Record<string, string> = {
 /** g+key shortcuts - keep in sync with AppShell and Sidebar hints. */
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   A: "/agents",
+  R: "/training",
   D: "/ops",
   T: "/ops?tab=triage",
   I: "/insights",
@@ -167,6 +172,7 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
 
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/agents": "g a",
+  "/training": "g r",
   "/ops": "g d",
   "/insights": "g i",
   "/pipeline": "g l",
