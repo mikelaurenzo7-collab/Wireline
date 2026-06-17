@@ -1,0 +1,150 @@
+import { BrowserRouter, Link, NavLink, Route, Routes } from "react-router-dom";
+import { ArrowRight, BarChart3, Bot, Check, Code2, Database, Headphones, Lock, Mail, MessageSquare, Mic, Phone, Plug, Radio, ShieldCheck, Smartphone, Sparkles, Workflow } from "lucide-react";
+
+type Tone = "light" | "dark";
+
+type CardItem = { icon: typeof Sparkles; title: string; text: string; tag?: string };
+
+const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
+
+const nav = ["features", "pricing", "showcase", "developers", "compare", "training", "about"];
+
+const tiers = [
+  { name: "Personal", price: "$9", note: "For one person", text: "Personal call screening, summaries, spam guard, Siri/widget triggers, and lightweight errand calls.", items: ["Assistant call screening", "Spam guard", "Call summaries", "Siri and widget triggers"] },
+  { name: "Personal+", price: "$19", note: "For heavier personal use", text: "More handled calls, deeper calendar/email context, and appointment/status-check automations.", items: ["Higher monthly usage", "Calendar/email context", "Appointment workflows", "Priority personal memory"] },
+  { name: "Business Growth", price: "$249", note: "For SMB front desks", text: "A real AI front desk with Studio, Training, Live Ops, analytics, integrations, and model selection.", items: ["Agent Studio", "Training console", "Live Ops", "CRM/calendar routing"], featured: true },
+  { name: "Scale", price: "$699+", note: "For high volume teams", text: "Advanced approvals, webhooks, audit logs, custom routing, and launch support for higher call volume.", items: ["Advanced controls", "Webhook API", "Audit logs", "Launch support"] },
+];
+
+function Logo({ light = false }: { light?: boolean }) {
+  return <span className="inline-flex items-center gap-2.5"><span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper shadow-[0_18px_50px_-18px_rgba(79,30,123,.8)]">W</span><span className={cn("font-display text-[20px] font-semibold tracking-[-0.03em]", light ? "text-paper" : "text-ink")}>Wireline</span></span>;
+}
+
+function Pill({ children, tone = "light" }: { children: React.ReactNode; tone?: Tone }) {
+  return <span className={cn("inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]", tone === "dark" ? "border-white/10 bg-white/5 text-white/65" : "border-brand/20 bg-brand/10 text-brand")}>{children}</span>;
+}
+
+function Button({ to, children, variant = "primary" }: { to: string; children: React.ReactNode; variant?: "primary" | "secondary" | "dark" }) {
+  return <Link to={to} className={cn("inline-flex h-11 items-center justify-center gap-2 rounded-[14px] px-5 text-sm font-semibold transition active:scale-[.98]", variant === "primary" && "bg-brand text-paper shadow-[0_24px_50px_-22px_rgba(79,30,123,.8)] hover:bg-brand-deep", variant === "secondary" && "border border-ink/12 bg-card text-ink hover:border-brand/40", variant === "dark" && "border border-white/10 bg-white/5 text-paper hover:bg-white/10")}>{children}</Link>;
+}
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-dvh overflow-x-clip bg-background text-ink wl-overhaul-surface"><header className="sticky top-0 z-50 border-b border-border bg-background/88 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5 sm:px-8"><Link to="/"><Logo /></Link><nav className="hidden items-center gap-1 xl:flex">{nav.map((item) => <NavLink key={item} to={`/${item}`} className={({ isActive }) => cn("rounded-[12px] px-3 py-2 text-[13px] font-medium capitalize transition", isActive ? "bg-ink/5 text-ink" : "text-muted-foreground hover:text-ink")}>{item}</NavLink>)}</nav><div className="hidden items-center gap-2 lg:flex"><Button to="/signin" variant="secondary">Sign in</Button><Button to="/get-started">Get started</Button></div><Link to="/get-started" className="rounded-[12px] bg-brand px-3 py-2 text-xs font-semibold text-paper lg:hidden">Start</Link></div></header>{children}<footer className="border-t border-border bg-card"><div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_2fr]"><div className="space-y-4"><Logo /><p className="max-w-sm text-sm leading-6 text-muted-foreground">AI voice, SMS, and email agents for every conversation at home and at work.</p><Pill><ShieldCheck size={12} /> Launch-safe guardrails</Pill></div><div className="grid grid-cols-2 gap-8 md:grid-cols-4">{["Product", "Solutions", "Developers", "Company"].map((col) => <div key={col} className="space-y-3"><p className="text-[11px] font-bold uppercase tracking-[.16em] text-ink">{col}</p>{["Features", "Pricing", "Security", "Contact"].map((x) => <p key={x} className="text-sm text-muted-foreground">{x}</p>)}</div>)}</div></div></footer></div>;
+}
+
+function SectionHeader({ eyebrow, title, text, dark = false }: { eyebrow: string; title: string; text: string; dark?: boolean }) {
+  return <div className="max-w-3xl"><p className={cn("text-[11px] font-bold uppercase tracking-[.18em]", dark ? "text-brand-bright" : "text-brand")}>{eyebrow}</p><h1 className={cn("mt-3 font-display text-4xl font-medium leading-[1.03] tracking-[-.05em] md:text-6xl", dark ? "text-paper" : "text-ink")}>{title}</h1><p className={cn("mt-5 max-w-2xl text-[16px] leading-7", dark ? "text-white/60" : "text-muted-foreground")}>{text}</p></div>;
+}
+
+function Card({ item, dark = false }: { item: CardItem; dark?: boolean }) {
+  const Icon = item.icon;
+  return <div className={cn("rounded-[28px] border p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]", dark ? "border-paper/12 bg-paper/[0.035] text-paper" : "border-border bg-card text-ink")}><div className={cn("mb-5 grid h-11 w-11 place-items-center rounded-full", dark ? "bg-white/8 text-brand-bright" : "bg-brand text-paper")}><Icon size={20} /></div>{item.tag && <p className={cn("mb-2 text-[10px] font-bold uppercase tracking-[.16em]", dark ? "text-white/35" : "text-muted-foreground")}>{item.tag}</p>}<h3 className="font-display text-2xl font-medium">{item.title}</h3><p className={cn("mt-2 text-sm leading-6", dark ? "text-white/55" : "text-muted-foreground")}>{item.text}</p></div>;
+}
+
+function HeroMockup() {
+  const rows = ["Assistant screened pharmacy hold", "Sarah booked a demo for Friday", "Refund call escalated to billing", "Calendar hold created after call"];
+  return <div className="relative"><div className="absolute inset-8 -z-10 rounded-[48px] bg-brand/15 blur-3xl" /><div className="rounded-[34px] border border-border bg-card p-4 shadow-[0_40px_120px_-72px_rgba(26,22,20,.75)]"><div className="rounded-[26px] bg-ink p-5 text-paper"><div className="flex items-center justify-between"><Logo light /><Pill tone="dark">Live system</Pill></div><div className="mt-8 grid gap-3 sm:grid-cols-3">{[["142", "calls"], ["96%", "quality"], ["4", "need review"]].map(([v,l]) => <div key={l} className="rounded-[18px] bg-white/[.06] p-4"><p className="font-display text-3xl">{v}</p><p className="text-[10px] uppercase tracking-[.15em] text-white/35">{l}</p></div>)}</div><div className="mt-5 space-y-2">{rows.map((row) => <div key={row} className="flex items-center gap-2 rounded-[14px] bg-white/[.055] px-3 py-2 text-sm text-white/70"><Check size={14} className="text-brand-bright" />{row}</div>)}</div></div></div></div>;
+}
+
+function Landing() {
+  return <Layout><main><section className="border-b border-border"><div className="mx-auto grid max-w-[1500px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_.95fr] lg:py-28"><div className="flex flex-col justify-center gap-7"><Pill><Sparkles size={12} /> Personal assistant + business agent fleet</Pill><h1 className="max-w-4xl font-display text-5xl font-medium leading-[1.01] tracking-[-0.06em] md:text-7xl">Your phone, finally <span className="italic text-brand">working for you.</span></h1><p className="max-w-2xl text-[17px] leading-8 text-muted-foreground">Wireline handles personal calls and runs business AI agents with Studio, Training, Live Ops, model choice, and real integrations. One product system. Separate personal and business boundaries.</p><div className="flex flex-wrap gap-3"><Button to="/get-started">Get started <ArrowRight size={16} /></Button><Button to="/showcase" variant="secondary"><Phone size={16} /> Preview agents</Button></div></div><HeroMockup /></div></section><FeatureRows /><ModelSection /><Pricing /></main></Layout>;
+}
+
+function FeatureRows() {
+  const items: CardItem[] = [
+    { icon: Mic, title: "Voice agents", text: "Natural call handling, call summaries, escalation rules, and human handoff." },
+    { icon: MessageSquare, title: "SMS workflows", text: "Confirmations, reminders, follow-up links, and post-call summaries." },
+    { icon: Mail, title: "Email follow-up", text: "Drafts, approvals, customer replies, and CRM notes." },
+    { icon: Smartphone, title: "Mobile surfaces", text: "Siri, widgets, Action Button, Control Center, CarPlay, and Android-ready surfaces." },
+    { icon: Database, title: "Training hub", text: "Policies, scripts, scenarios, objections, and simulations outside Studio." },
+    { icon: Lock, title: "Guardrails", text: "Approval rules, confidence thresholds, audit logs, and scoped integrations." },
+  ];
+  return <section className="border-b border-border bg-card"><div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Platform" title="Personal simplicity. Business-grade control." text="The product now separates personal setup, business Studio, Training, and Live Ops into clear surfaces." /><div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map((item) => <Card key={item.title} item={item} />)}</div></div></section>;
+}
+
+function ModelSection() {
+  return <section className="border-b border-border bg-ink text-paper"><div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-18 sm:px-8 lg:grid-cols-[.8fr_1.2fr]"><SectionHeader dark eyebrow="Model marketplace" title="Pick the model per agent." text="Default to fast, affordable Grok/Gemini paths, upgrade critical agents to premium reasoning models, and keep OpenRouter available for routing." /><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{["Grok 4.3", "Gemini Flash", "Claude Sonnet", "GPT-5.5 Thinking", "OpenRouter Auto", "Custom provider"].map((p, i) => <div key={p} className="rounded-[22px] border border-white/10 bg-white/[.045] p-4"><p className="text-sm font-semibold">{p}</p><p className="mt-2 text-xs text-white/45">{i < 2 ? "Efficient default" : i < 4 ? "Premium reasoning" : "Advanced routing"}</p></div>)}</div></div></section>;
+}
+
+function Pricing() {
+  return <section className="bg-background"><div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Pricing" title="Personal and business pricing, separated cleanly." text="Start low for personal use. Launch business agents when the front desk starts paying for itself." /><div className="mt-10 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">{tiers.map((tier) => <div key={tier.name} className={cn("flex min-h-[430px] flex-col rounded-[30px] border p-6", tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-ink")}><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{tier.name}</p><p className={cn("mt-1 text-xs", tier.featured ? "text-white/55" : "text-muted-foreground")}>{tier.note}</p></div>{tier.featured && <Pill tone="dark">Best launch tier</Pill>}</div><div className="mt-6 flex items-end gap-1"><span className="font-display text-5xl leading-none">{tier.price}</span><span className={cn("pb-1 text-sm", tier.featured ? "text-white/50" : "text-muted-foreground")}>/mo</span></div><p className={cn("mt-4 text-sm leading-6", tier.featured ? "text-white/60" : "text-muted-foreground")}>{tier.text}</p><div className="mt-6 space-y-3 text-sm">{tier.items.map((item) => <p key={item} className="flex items-start gap-2"><Check size={15} className={cn("mt-0.5 shrink-0", tier.featured ? "text-brand-bright" : "text-brand")} />{item}</p>)}</div><Button to="/get-started" variant={tier.featured ? "dark" : "secondary"}>Start with {tier.name}</Button></div>)}</div></div></section>;
+}
+
+function Features() {
+  const items: CardItem[] = [
+    { icon: Phone, title: "Inbound voice", text: "Handle routine calls, extract intent, summarize outcomes, and transfer when needed.", tag: "Calls" },
+    { icon: Workflow, title: "Workflow permissions", text: "Enable booking, SMS follow-up, CRM notes, refunds, routing, and approval thresholds.", tag: "Studio" },
+    { icon: Database, title: "Training console", text: "Keep scripts, policies, FAQs, and simulations out of basic setup.", tag: "Training" },
+    { icon: BarChart3, title: "Quality pulse", text: "See coaching opportunities, containment, escalation, and agent-specific performance.", tag: "Ops" },
+    { icon: Smartphone, title: "Personal automations", text: "Assistant can call, screen, wait on hold, summarize, and trigger from Siri/widgets.", tag: "Personal" },
+    { icon: ShieldCheck, title: "Human-safe defaults", text: "Sensitive commitments require confirmation and scoped integration access.", tag: "Trust" },
+  ];
+  return <Page eyebrow="Features" title="A complete operating layer for calls." text="Each surface has one job: Personal for one user, Studio for setup, Training for knowledge, Live Ops for monitoring, and integrations for real work.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function Showcase() {
+  const items: CardItem[] = [
+    { icon: Bot, title: "Front desk Sarah", text: "Books appointments, answers FAQs, transfers urgent calls, and summarizes every call." },
+    { icon: Headphones, title: "Sales Liam", text: "Qualifies inbound leads, books demos, collects context, and logs notes." },
+    { icon: Phone, title: "Personal Assistant", text: "Calls pharmacies, waits on hold, screens unknown callers, and updates you after." },
+  ];
+  return <Page eyebrow="Showcase" title="Preview the agent fleet before launch." text="Wireline should feel like a command center, not a phone tree. These are the demo stories users should understand immediately.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function Developers() {
+  const items: CardItem[] = [
+    { icon: Plug, title: "OAuth connectors", text: "Google, Microsoft, and Yahoo flows remain scoped by personal vs business workspace." },
+    { icon: Code2, title: "Webhook API", text: "Push call outcomes, escalation events, and status updates into downstream tools." },
+    { icon: Lock, title: "Audit-safe actions", text: "Every tool action should know its actor, scope, confidence, and approval state." },
+  ];
+  return <Page eyebrow="Developers" title="API-first where it matters." text="Wireline’s integration story should be practical: connect identity, calendars, phones, CRM, billing, and custom workflows without exposing personal context to business agents.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function Compare() {
+  const items: CardItem[] = [
+    { icon: Radio, title: "Not a phone tree", text: "Wireline routes real conversations, understands outcomes, and escalates based on confidence." },
+    { icon: Database, title: "Not a script dump", text: "Training separates knowledge from setup and adds simulation before production calls." },
+    { icon: Sparkles, title: "Not one assistant for everything", text: "Personal and business stay scoped, with different integrations and approvals." },
+  ];
+  return <Page eyebrow="Compare" title="A live AI operating layer, not legacy call-center sprawl." text="The design goal is simple: premium control for the owner, obvious setup for the operator, and safe outcomes for the caller.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function Training() {
+  const items: CardItem[] = [
+    { icon: Database, title: "Knowledge", text: "Policies, pricing, hours, FAQs, documents, and allowed claims." },
+    { icon: Mic, title: "Voice behavior", text: "Tone, pronunciation, brevity, escalation language, and banned phrases." },
+    { icon: Headphones, title: "Simulator", text: "Run difficult scenarios before real customers experience the agent." },
+    { icon: Workflow, title: "Approvals", text: "Refunds, discounts, cancellations, and bookings can require human confirmation." },
+  ];
+  return <Page eyebrow="Training" title="Teach agents before they touch real customers." text="Studio stays simple because Training owns the deep work: scripts, scenarios, docs, simulations, and policy guardrails.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function About() {
+  const items: CardItem[] = [
+    { icon: Phone, title: "Phones should work for people", text: "Personal users need less interruption. Businesses need reliable frontline coverage." },
+    { icon: ShieldCheck, title: "Trust over flash", text: "The product should never pretend an action is completed without the right tool and audit trail." },
+    { icon: Sparkles, title: "AI-native, operator-ready", text: "The interface should feel premium, calm, and obvious at desktop and laptop sizes." },
+  ];
+  return <Page eyebrow="About" title="Wireline makes phones useful again." text="The product vision is a single AI-native line for life and work, with strong boundaries between personal context and business operations.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function Blog() {
+  const items: CardItem[] = [
+    { icon: Sparkles, title: "Launch notes", text: "How the Personal/Business split, Studio, Training, and Live Ops evolved." },
+    { icon: Workflow, title: "Operator playbooks", text: "What every SMB should train before letting an AI answer calls." },
+    { icon: BarChart3, title: "Model routing", text: "When to use efficient defaults and when to escalate to premium reasoning." },
+  ];
+  return <Page eyebrow="Blog" title="Wireline build notes." text="A launch-ready blog should explain product direction, operational strategy, and practical AI phone workflows.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
+}
+
+function Page({ eyebrow, title, text, children }: { eyebrow: string; title: string; text: string; children: React.ReactNode }) {
+  return <Layout><main className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow={eyebrow} title={title} text={text} /><div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{children}</div><div className="mt-12 rounded-[34px] border border-border bg-card p-6 sm:p-8"><div className="grid gap-6 lg:grid-cols-[1fr_auto]"><div><h2 className="font-display text-3xl">Ready to wire this into your workflow?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Start personal, launch business, or connect the agent fleet to real phone, calendar, inbox, and CRM systems.</p></div><div className="flex flex-wrap items-center gap-3"><Button to="/get-started">Get started</Button><Button to="/pricing" variant="secondary">View pricing</Button></div></div></div></main></Layout>;
+}
+
+function PublicRoutes() {
+  return <Routes><Route path="/" element={<Landing />} /><Route path="/features" element={<Features />} /><Route path="/pricing" element={<Layout><main><Pricing /></main></Layout>} /><Route path="/showcase" element={<Showcase />} /><Route path="/developers" element={<Developers />} /><Route path="/compare" element={<Compare />} /><Route path="/training" element={<Training />} /><Route path="/about" element={<About />} /><Route path="/blog" element={<Blog />} /></Routes>;
+}
+
+export default function PublicMarketingWorkspace() {
+  return <BrowserRouter><PublicRoutes /></BrowserRouter>;
+}
