@@ -17,6 +17,12 @@ class WirelineCallConnection(
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    init {
+        connectionProperties = PROPERTY_SELF_MANAGED
+        connectionCapabilities = CAPABILITY_MUTE or CAPABILITY_SUPPORT_HOLD
+        audioModeIsVoip = true
+    }
+
     override fun onAnswer() {
         setActive()
         scope.launch {

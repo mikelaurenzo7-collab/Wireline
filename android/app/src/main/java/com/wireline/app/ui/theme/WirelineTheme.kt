@@ -21,18 +21,18 @@ import androidx.core.view.WindowCompat
  */
 object Brand {
     // ── Core brand ──────────────────────────────────────────────────────
-    /** Primary purple (`--primary` #8B3FD6). Global accent / tint. */
-    val Purple = Color(0xFF8B3FD6)
+    /** Primary purple (`--primary` #4F1E7B). Global accent / tint. */
+    val Purple = Color(0xFF4F1E7B)
     /** Deep purple (`--color-brand-deep` #3B154C). Pressed states, gradient end. */
     val PurpleDeep = Color(0xFF3B154C)
     /** Muted purple for tertiary accents. */
     val PurpleMuted = Color(0xFF8B6FA8)
 
     // ── Paper / Ink ─────────────────────────────────────────────────────
-    /** Warm cream paper (`--paper` #F5F1E8). Light mode canvas. */
-    val Paper = Color(0xFFF5F1E8)
-    /** Slightly warmer cream for cards (`--paper-warm` #ECE6D9). */
-    val PaperWarm = Color(0xFFECE6D9)
+    /** Warm cream paper (`--paper` #EFE9DC). Light mode canvas. */
+    val Paper = Color(0xFFEFE9DC)
+    /** Slightly warmer cream for cards (`--paper-warm` #E5DECE). */
+    val PaperWarm = Color(0xFFE5DECE)
     /** Near-black ink (`--ink` #1A1614). Light mode text. */
     val Ink = Color(0xFF1A1614)
 
@@ -97,6 +97,24 @@ private val DarkColors = darkColorScheme(
     onError = Color.White,
 )
 
+private val AppTypography = Typography(
+    displayLarge = Typography().displayLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
+    displayMedium = Typography().displayMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
+    displaySmall = Typography().displaySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
+    headlineLarge = Typography().headlineLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
+    headlineMedium = Typography().headlineMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
+    headlineSmall = Typography().headlineSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
+    titleLarge = Typography().titleLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    titleMedium = Typography().titleMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    titleSmall = Typography().titleSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    bodyLarge = Typography().bodyLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    bodyMedium = Typography().bodyMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    bodySmall = Typography().bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    labelLarge = Typography().labelLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+    labelMedium = Typography().labelMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+    labelSmall = Typography().labelSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+)
+
 @Composable
 fun WirelineTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -123,6 +141,7 @@ fun WirelineTheme(
             large = RoundedCornerShape(12.dp),
             extraLarge = RoundedCornerShape(16.dp),
         ),
+        typography = AppTypography,
         content = content,
     )
 }

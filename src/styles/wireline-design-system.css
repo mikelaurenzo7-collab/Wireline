@@ -934,7 +934,7 @@ body,
  * GPU-driven active feedback that bypasses the paint cycle.
  * Hardware-accelerated micro-transforms for instant physical response. */
 .touch-press {
-  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   will-change: transform;
 }
 .touch-press:active {
@@ -944,8 +944,8 @@ body,
 /* Deeper press for larger interactive surfaces */
 .touch-press-deep {
   transition:
-    transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.12s ease;
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.18s ease;
   will-change: transform;
 }
 .touch-press-deep:active {

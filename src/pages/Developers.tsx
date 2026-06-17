@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "motion/react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
@@ -12,7 +10,6 @@ import {
   KeyRound,
   ShieldCheck,
   TerminalSquare,
-  Activity,
   Copy,
   Terminal,
 } from "lucide-react";
@@ -20,17 +17,20 @@ import {
 const GETTING_STARTED = [
   {
     title: "1. Generate an API key",
-    description: "Sign in, open Settings → API Access, and create a key for your integration environment.",
+    description:
+      "Sign in, open Settings → API Access, and create a key for your integration environment.",
     icon: KeyRound,
   },
   {
     title: "2. Make your first request",
-    description: "Send the key in the Authorization header and call an endpoint like /api/agents or /api/calls.",
+    description:
+      "Send the key in the Authorization header and call an endpoint like /api/agents or /api/calls.",
     icon: TerminalSquare,
   },
   {
     title: "3. Explore the schema",
-    description: "Use the OpenAPI spec or Swagger UI to inspect request and response shapes before you automate.",
+    description:
+      "Use the OpenAPI spec or Swagger UI to inspect request and response shapes before you automate.",
     icon: BookOpen,
   },
 ];
@@ -52,7 +52,8 @@ export default function Developers() {
   ]);
   const [copied, setCopied] = useState(false);
 
-  const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://trywireline.com";
+  const appOrigin =
+    typeof window !== "undefined" ? window.location.origin : "https://trywireline.com";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const swaggerUrl = `https://petstore.swagger.io/?url=${encodeURIComponent(openApiUrl)}`;
 
@@ -100,20 +101,32 @@ export default function Developers() {
                 Peering Gateways
               </h1>
               <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
-                Establish low-latency interconnects between private peering points and the Wireline global backbone. Our editorial-grade API allows for programmatic route management and real-time egress optimization.
+                Establish low-latency interconnects between private peering points and the Wireline
+                global backbone. Our editorial-grade API allows for programmatic route management
+                and real-time egress optimization.
               </p>
             </div>
 
             {/* OpenAPI & Swagger buttons */}
             <div className="flex flex-wrap items-center gap-3">
               <ShadButton variant="outline" size="sm" asChild>
-                <a href={openApiUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-ink">
+                <a
+                  href={openApiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-ink"
+                >
                   <BookOpen className="w-4 h-4" /> OpenAPI Spec
                   <ExternalLink className="w-3 h-3 opacity-55" />
                 </a>
               </ShadButton>
               <ShadButton variant="editorial" size="sm" asChild>
-                <a href={swaggerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                <a
+                  href={swaggerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
                   Try in Swagger UI
                   <ArrowRight className="w-4 h-4" />
                 </a>
@@ -127,12 +140,14 @@ export default function Developers() {
                 <h2 className="font-display italic text-xl text-ink">Authentication</h2>
               </div>
               <p className="text-ink/75 text-xs sm:text-sm leading-relaxed mb-4">
-                Every API request must include a Bearer token in the <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[11px] text-brand">Authorization</code> header. Tokens are created in your dashboard under Settings → API Access.
+                Every API request must include a Bearer token in the{" "}
+                <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[11px] text-brand">
+                  Authorization
+                </code>{" "}
+                header. Tokens are created in your dashboard under Settings → API Access.
               </p>
               <div className="bg-ink p-4 rounded-sm font-mono text-[11px] text-white/90 overflow-x-auto border border-white/10">
-                <code>
-                  Authorization: Bearer wl_YOUR_API_KEY
-                </code>
+                <code>Authorization: Bearer wl_YOUR_API_KEY</code>
               </div>
             </div>
 
@@ -143,7 +158,10 @@ export default function Developers() {
                 {GETTING_STARTED.map((step) => {
                   const Icon = step.icon;
                   return (
-                    <div key={step.title} className="wl-panel border border-ink/[0.08] p-4 bg-paper rounded-sm">
+                    <div
+                      key={step.title}
+                      className="wl-panel border border-ink/[0.08] p-4 bg-paper rounded-sm"
+                    >
                       <Icon className="w-5 h-5 text-brand mb-3" />
                       <h3 className="font-display italic text-base text-ink mb-1">{step.title}</h3>
                       <p className="text-[11px] text-ink/70 leading-relaxed">{step.description}</p>
@@ -158,7 +176,10 @@ export default function Developers() {
               <h2 className="font-display italic text-2xl text-ink mb-6">Key Endpoints</h2>
               <div className="border border-outline-variant/40 divide-y divide-outline-variant/30 rounded-md overflow-hidden bg-paper shadow-sm">
                 {ENDPOINTS.map((ep) => (
-                  <div key={ep.path} className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4">
+                  <div
+                    key={ep.path}
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4"
+                  >
                     <code className="text-[11px] font-mono text-brand font-semibold shrink-0 bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-sm">
                       {ep.path}
                     </code>
@@ -168,7 +189,12 @@ export default function Developers() {
               </div>
               <p className="text-center text-[10px] text-ink/50 mt-4 uppercase tracking-wider font-semibold">
                 Full endpoint list available in the{" "}
-                <a href={openApiUrl} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">
+                <a
+                  href={openApiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand hover:underline"
+                >
                   OpenAPI spec
                 </a>
                 .
@@ -180,10 +206,13 @@ export default function Developers() {
         {/* Right Pane: Interactive Terminal */}
         <section className="w-full md:w-1/2 h-1/2 md:h-full bg-ink relative overflow-hidden flex flex-col border-t md:border-t-0 border-outline-variant/30">
           {/* Terminal Grid Background Overlay */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
-            backgroundSize: "24px 24px"
-          }} />
+          <div
+            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{
+              backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+          />
 
           {/* Terminal Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-black/40 border-b border-white/5 z-10 backdrop-blur-sm">
@@ -211,7 +240,9 @@ export default function Developers() {
             <div>
               <div className="flex items-center gap-2 mb-2 text-brand">
                 <Terminal className="w-3.5 h-3.5" />
-                <span className="font-bold text-[10px] uppercase tracking-wider">Request Input</span>
+                <span className="font-bold text-[10px] uppercase tracking-wider">
+                  Request Input
+                </span>
               </div>
               <div className="bg-black/35 p-4 rounded-md border border-white/5 overflow-x-auto">
                 <pre className="text-white/80 leading-relaxed">{curlCommand}</pre>
@@ -223,7 +254,12 @@ export default function Developers() {
               <ShadButton variant="editorial" size="sm" onClick={handleRunRequest}>
                 RUN REQUEST
               </ShadButton>
-              <ShadButton variant="outline" size="sm" onClick={handleCopy} className="text-white bg-transparent border-white/20 hover:bg-white/5">
+              <ShadButton
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                className="text-white bg-transparent border-white/20 hover:bg-white/5"
+              >
                 <Copy className="w-3.5 h-3.5 mr-1" />
                 {copied ? "COPIED" : "COPY cURL"}
               </ShadButton>
@@ -242,9 +278,7 @@ export default function Developers() {
                   if (log.includes("[WARN]")) badgeColor = "text-yellow-500";
                   return (
                     <p key={i} className="text-white/70 leading-relaxed font-mono text-xs">
-                      <span className={badgeColor}>
-                        {log.substring(0, 7)}
-                      </span>
+                      <span className={badgeColor}>{log.substring(0, 7)}</span>
                       {log.substring(7)}
                     </p>
                   );

@@ -6,6 +6,30 @@
 @import "@fontsource/jetbrains-mono/600.css";
 @import "tailwindcss";
 
+@layer base {
+  html, body, #root {
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  * {
+    border-radius: 0 !important;
+  }
+  .rounded-md {
+    border-radius: var(--radius-md) !important;
+  }
+  .rounded-full,
+  .dot-status,
+  .live-ring,
+  [data-circular],
+  .wl-orbit {
+    border-radius: 9999px !important;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════════
    SHADCN/UI THEME — Wireline Rich Cream + Purple
    CSS custom properties for shadcn components, layered alongside
@@ -25,19 +49,18 @@
    * a lighter, less-yellow cream (#f5f1e8 — red/blue gap 28 → 13) so ink and
    * brand purple read cleanly. The "rich" character now lives in the purple,
    * not the paper. */
-  --wl-cream: #f5f1e8;
+  --wl-cream: #efe9dc;
 
   /* Surface colors */
-  --background: #f5f1e8;
+  --background: #efe9dc;
   --foreground: #1a1614;
-  --card: color-mix(in srgb, #f5f1e8 92%, #ece6d9);
+  --card: color-mix(in srgb, #efe9dc 92%, #e5dece);
   --card-foreground: #1a1614;
-  --popover: color-mix(in srgb, #f5f1e8 96%, white);
+  --popover: color-mix(in srgb, #efe9dc 96%, white);
   --popover-foreground: #1a1614;
 
-  /* Brand primary — lighter editorial violet that matches the hero accent.
-   * The previous deeper #6B2B99 now lives on as --color-brand-deep (hover). */
-  --primary: #8b3fd6;
+  /* Brand primary — Silky Purple. The core brand accent. */
+  --primary: #4f1e7b;
   --primary-foreground: #ffffff;
 
   /* Secondary */
@@ -72,8 +95,8 @@
   --sidebar-ring: rgba(139, 63, 214, 0.4);
 
   /* Charts */
-  --chart-1: #8b3fd6;
-  --chart-2: #8b3fd6;
+  --chart-1: #4f1e7b;
+  --chart-2: #4f1e7b;
   --chart-3: #8b6fa8;
   --chart-4: #3b154c;
   --chart-5: #d4c9b8;
@@ -82,11 +105,11 @@
    * Paper lightened from the old rich tan #f0e6d4 → #f5f1e8 for readability;
    * paper-warm tracks it (#e8dcc8 → #ece6d9) so cards stay a hair warmer. */
   --ink: #1a1614;
-  --paper: #f5f1e8;
-  --paper-warm: #ece6d9;
+  --paper: #efe9dc;
+  --paper-warm: #e5dece;
   /** Elevated dark panels — composer, artifacts, live session fades */
   --velvet: #1a1225;
-  --chrome-glow: #8b3fd6;
+  --chrome-glow: #4f1e7b;
 
   /* Muted typography — resolves to the warm cream-ink fades on light
    * and the cool zinc fades on dark. Referenced by --color-muted /

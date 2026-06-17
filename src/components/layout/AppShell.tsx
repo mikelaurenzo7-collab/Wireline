@@ -131,9 +131,19 @@ function getPageContext(
             title: "Knowledge",
             subtitle: "Facts, FAQs, policies, services, prices, and business context",
           },
-          voice: { title: "Voice", subtitle: "Voice selection, speaking style, and pronunciation" },
-          simulator: { title: "Simulator", subtitle: "Test scenarios before customers reach the agent" },
-          flow: { title: "Workflows", subtitle: "Call steps, handoffs, qualification, and escalation paths" },
+          voices: { title: "Voice", subtitle: "Voice selection, speaking style, and library" },
+          pronunciation: {
+            title: "Pronunciation",
+            subtitle: "Custom dictionary rules for complex terms and jargon",
+          },
+          simulator: {
+            title: "Simulator",
+            subtitle: "Test scenarios before customers reach the agent",
+          },
+          flow: {
+            title: "Workflows",
+            subtitle: "Call steps, handoffs, qualification, and escalation paths",
+          },
         };
         if (trainingTab && trainingMeta[trainingTab]) {
           return { eyebrow: section ?? "Build", ...trainingMeta[trainingTab] };

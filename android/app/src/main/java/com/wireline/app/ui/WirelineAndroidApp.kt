@@ -55,8 +55,24 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     }
 
     var tab by rememberSaveable { mutableStateOf(Tab.Home) }
+    var showAskWireline by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         topBar = { WirelineTopBar(state.me?.account?.businessName ?: "Wireline") },
+        floatingActionButton = {
+            if (tab == Tab.Home) {
+                androidx.compose.material3.FloatingActionButton(
+                    onClick = { showAskWireline = true },
+                    containerColor = com.wireline.app.ui.theme.Brand.Purple
+                ) {
+                    Icon(
+                        Icons.Default.Call, // fallback icon, could use sparkles
+                        contentDescription = "Ask Wireline",
+                        tint = androidx.compose.ui.graphics.Color.White
+                    )
+                }
+            }
+        },
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
@@ -91,6 +107,15 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             Tab.Calls -> CallsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
             Tab.Wallet -> WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
             Tab.Settings -> SettingsScreen(padding, state, model)
+        }
+    }
+    
+    if (showAskWireline) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showAskWireline = false },
+            containerColor = com.wireline.app.ui.theme.Brand.Paper
+        ) {
+            com.wireline.app.ui.ask.AskWirelineScreen(onBack = { showAskWireline = false })
         }
     }
 }

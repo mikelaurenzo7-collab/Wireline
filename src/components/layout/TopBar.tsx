@@ -11,7 +11,10 @@ import {
   PlugZap,
   LifeBuoy,
   Search,
+  User,
+  Building,
 } from "lucide-react";
+import { useToast } from "../../contexts/ToastContext";
 import WirelineMark from "../WirelineMark";
 import ThemeToggle from "../ThemeToggle";
 import { motion, AnimatePresence } from "motion/react";
@@ -49,7 +52,8 @@ export default function TopBar({
   const location = useLocation();
   const { theme } = useTheme();
   const { user, signOut } = useAuth();
-  const { accountType } = useAccount();
+  const { accountType, setAccountType } = useAccount();
+  const { success: toastSuccess } = useToast();
   const navGroups = accountNavGroups(accountType);
   const { branding } = useBranding();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -418,6 +422,60 @@ export default function TopBar({
                         {user?.email || "—"}
                       </p>
                     </div>
+
+                    {/* Workspace Switcher Card */}
+                    <div className="px-4 py-3 border-b border-black/8 bg-black/[0.015] dark:bg-white/[0.01]">
+                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[9px]">
+                        Workspace Context
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (accountType !== "personal") {
+                              setAccountType("personal");
+                              toastSuccess(
+                                "Workspace Switched",
+                                "Switched to Personal Mode (Single-Agent focus).",
+                              );
+                              setUserMenuOpen(false);
+                            }
+                          }}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
+                            accountType === "personal"
+                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
+                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                          )}
+                        >
+                          <User className="w-4 h-4 mb-1" />
+                          <span className="text-[11px] leading-tight block">Personal</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (accountType !== "business") {
+                              setAccountType("business");
+                              toastSuccess(
+                                "Workspace Switched",
+                                "Switched to Business Mode (Fleet Cockpit).",
+                              );
+                              setUserMenuOpen(false);
+                            }
+                          }}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
+                            accountType === "business"
+                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
+                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                          )}
+                        >
+                          <Building className="w-4 h-4 mb-1" />
+                          <span className="text-[11px] leading-tight block">Business</span>
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="py-1">
                       <Link
                         to="/admin?tab=subscription"

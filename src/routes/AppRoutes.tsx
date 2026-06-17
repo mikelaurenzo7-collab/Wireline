@@ -23,7 +23,7 @@ const Status = lazyRoute(() => import("../components/Status"));
 const PublicChangelog = lazyRoute(() => import("../components/PublicChangelog"));
 const Security = lazyRoute(() => import("../components/Security"));
 const TrustPackPage = lazyRoute(() => import("../components/TrustPackPage"));
-const Pipeline = lazyRoute(() => import("../components/Pipeline"));
+const _Pipeline = lazyRoute(() => import("../components/Pipeline"));
 const FounderDashboard = lazyRoute(() => import("../components/FounderDashboard"));
 const _AgentChat = lazyRoute(() => import("../pages/AgentChat"));
 const Training = lazyRoute(() => import("../pages/Training"));

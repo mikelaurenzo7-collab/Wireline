@@ -1,16 +1,5 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  DynamicFeed,
-  RecordVoiceOver,
-  AlternateEmail,
-  Hub,
-  Inventory2,
-  Help,
-  Terminal,
-  Person,
-  Sensors
-} from "@mui/icons-material"; // Wait, I don't have Material Icons, I have Lucide!
 
 import {
   FormInput,
@@ -22,7 +11,7 @@ import {
   SquareTerminal,
   User,
   Radio,
-  FileText
+  FileText,
 } from "lucide-react";
 
 interface DirectorLayoutProps {
@@ -31,7 +20,11 @@ interface DirectorLayoutProps {
   showArtifacts?: boolean;
 }
 
-export default function DirectorLayout({ children, title = "Director Sync // Protocol 7", showArtifacts = true }: DirectorLayoutProps) {
+export default function DirectorLayout({
+  children,
+  title = "Director Sync // Protocol 7",
+  showArtifacts = true,
+}: DirectorLayoutProps) {
   const location = useLocation();
 
   const navItems = [
@@ -57,8 +50,12 @@ export default function DirectorLayout({ children, title = "Director Sync // Pro
               <User className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-2xl text-primary leading-none tracking-tighter">OP-ALPHA</h1>
-              <p className="font-mono text-[10px] text-primary mt-1 uppercase tracking-widest">Verified Session</p>
+              <h1 className="font-display text-2xl text-primary leading-none tracking-tighter">
+                OP-ALPHA
+              </h1>
+              <p className="font-mono text-[10px] text-primary mt-1 uppercase tracking-widest">
+                Verified Session
+              </p>
             </div>
           </div>
           <button className="w-full mt-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-sans font-bold text-sm py-2 rounded-none hover:brightness-110 transition-all flex items-center justify-center gap-2 relative overflow-hidden group border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
@@ -69,7 +66,8 @@ export default function DirectorLayout({ children, title = "Director Sync // Pro
 
         <div className="flex-1 overflow-y-auto flex flex-col gap-1 mt-4 scrollbar-hide">
           {navItems.map((item) => {
-            const isActive = location.search.includes(item.path.split("?")[1]) || location.pathname === item.path;
+            const isActive =
+              location.search.includes(item.path.split("?")[1]) || location.pathname === item.path;
             const Icon = item.icon;
             return (
               <Link
@@ -81,8 +79,12 @@ export default function DirectorLayout({ children, title = "Director Sync // Pro
                     : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 }`}
               >
-                <Icon className={`w-5 h-5 ${!isActive && "group-hover:scale-110 transition-transform"}`} />
-                <span className={`font-mono text-xs uppercase tracking-wider ${isActive ? "font-bold" : ""}`}>
+                <Icon
+                  className={`w-5 h-5 ${!isActive && "group-hover:scale-110 transition-transform"}`}
+                />
+                <span
+                  className={`font-mono text-xs uppercase tracking-wider ${isActive ? "font-bold" : ""}`}
+                >
                   {item.name}
                 </span>
               </Link>
@@ -125,16 +127,16 @@ export default function DirectorLayout({ children, title = "Director Sync // Pro
           </header>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto scroll-viewport relative z-10">
-            {children}
-          </div>
+          <div className="flex-1 overflow-y-auto scroll-viewport relative z-10">{children}</div>
         </div>
 
         {/* Artifacts Rail (Right Panel) */}
         {showArtifacts && (
           <aside className="hidden xl:flex w-80 flex-col h-full bg-velvet border-l border-white/5 shrink-0 z-20 shadow-[-10px_0_40px_rgba(0,0,0,0.2)]">
             <header className="h-14 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
-              <h3 className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider">Active Artifacts</h3>
+              <h3 className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider">
+                Active Artifacts
+              </h3>
               <FileText className="w-4 h-4 text-muted-foreground" />
             </header>
             <div className="flex-1 scroll-viewport p-6 flex flex-col gap-4">
@@ -143,19 +145,28 @@ export default function DirectorLayout({ children, title = "Director Sync // Pro
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 text-primary">
                     <FileText className="w-4 h-4" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest">PRD-882-ALPHA</span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest">
+                      PRD-882-ALPHA
+                    </span>
                   </div>
                   <span className="font-mono text-[9px] text-muted-foreground">14:05</span>
                 </div>
-                <h4 className="font-sans text-sm font-bold text-foreground mb-1">Voice Core Integration</h4>
-                <p className="font-sans text-xs text-muted-foreground line-clamp-2">Detailed specification for wiring the new Opus 4.8 reasoning engine into the legacy telephony database via GraphQL endpoints.</p>
+                <h4 className="font-sans text-sm font-bold text-foreground mb-1">
+                  Voice Core Integration
+                </h4>
+                <p className="font-sans text-xs text-muted-foreground line-clamp-2">
+                  Detailed specification for wiring the new Opus 4.8 reasoning engine into the
+                  legacy telephony database via GraphQL endpoints.
+                </p>
               </div>
 
               <div className="bg-[#15111b] border border-white/10 p-4 rounded-none hover:border-primary/50 transition-colors cursor-pointer group shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
                     <Network className="w-4 h-4" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest">DB_SCHEMA_V4.JSON</span>
+                    <span className="font-mono text-[10px] uppercase tracking-widest">
+                      DB_SCHEMA_V4.JSON
+                    </span>
                   </div>
                   <span className="font-mono text-[9px] text-muted-foreground">14:03</span>
                 </div>

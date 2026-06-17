@@ -63,7 +63,9 @@ private struct NeedsAttentionWidgetView: View {
 
     @Environment(\.widgetFamily) private var family
 
-    private let brandPurple = Color(red: 0.545, green: 0.247, blue: 0.839)
+    private let brandPurple = Color(red: 0.310, green: 0.118, blue: 0.482) // #4F1E7B
+    private let richCream = Color(red: 0.937, green: 0.914, blue: 0.863) // #EFE9DC
+    private let deepInk = Color(red: 0.102, green: 0.086, blue: 0.078) // #1A1614
 
     var body: some View {
         if !signedIn {
@@ -101,20 +103,30 @@ private struct NeedsAttentionWidgetView: View {
             default: // .systemSmall
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(count == 0 ? .green : brandPurple)
+                        ZStack {
+                            if count > 0 {
+                                Circle()
+                                    .fill(brandPurple.opacity(0.2))
+                                    .blur(radius: 12)
+                                    .scaleEffect(1.5)
+                            }
+                            Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(count == 0 ? .green : brandPurple)
+                        }
                         Spacer()
                     }
                     Spacer()
                     Text("\(count)")
-                        .font(.system(size: 48, weight: .heavy, design: .rounded))
-                        .foregroundStyle(count == 0 ? .secondary : .primary)
+                        .font(Font.system(size: 48, design: .serif).weight(.bold))
+                        .foregroundStyle(count == 0 ? .secondary : brandPurple)
                     Text(count == 1 ? "needs follow-up" : "need follow-up")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(count == 0 ? .secondary : deepInk.opacity(0.8))
                 }
                 .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .background(richCream)
             }
         }
     }

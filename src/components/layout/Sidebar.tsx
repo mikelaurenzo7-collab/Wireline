@@ -5,15 +5,26 @@
  * in the mobile/tablet drawer and the command bar; desktop keeps a permanent
  * 56px icon strip with tooltips only.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Crown, LifeBuoy, LogOut, Search, Settings } from "lucide-react";
-import { motion } from "motion/react";
+import {
+  Crown,
+  LifeBuoy,
+  LogOut,
+  Search,
+  Settings,
+  User,
+  Building,
+  CreditCard,
+  PlugZap,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import ThemeToggle from "../ThemeToggle";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAccount } from "../../contexts/AccountContext";
 import { useBranding } from "../../contexts/BrandingContext";
+import { useToast } from "../../contexts/ToastContext";
 import { type NavItem, NAV_SHORTCUT_HINTS } from "../../constants/navigation";
 import { accountSidebarItems } from "../../lib/account-type";
 import { BRAND } from "../../constants/brand-colors";
@@ -35,9 +46,30 @@ interface SidebarProps {
 export default function Sidebar({ navBadges }: SidebarProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { accountType } = useAccount();
+  const { accountType, setAccountType } = useAccount();
+  const { success: toastSuccess } = useToast();
   const { branding } = useBranding();
   const liveCalls = useLivePresence();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close avatar dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
+        setUserMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [userMenuOpen]);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--wireline-rail-w", `${RAIL_COLLAPSED}px`);
@@ -122,8 +154,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           <div className="space-y-px">
             {accountSidebarItems(accountType)
               .filter((item) => !item.ownerOnly || user?.is_owner === true)
-              .map(
-              (item, index, items) => {
+              .map((item, index, items) => {
                 const prev = items[index - 1];
                 const clusterBreak = prev && prev.section !== item.section;
                 return (
@@ -137,8 +168,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                     />
                   </React.Fragment>
                 );
-              },
-            )}
+              })}
           </div>
         </nav>
 
@@ -146,29 +176,187 @@ export default function Sidebar({ navBadges }: SidebarProps) {
           <LivePulse count={liveCalls} />
 
           {user && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/admin?tab=subscription"
-                  className="h-8 flex items-center justify-center rounded-md hover:bg-white/[0.08] dark:hover:bg-white/[0.06] transition-all"
-                  aria-label="Account"
-                  title={user.email}
-                >
-                  <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] wl-avatar-cream">
-                    {user.email?.slice(0, 1).toUpperCase() ?? "?"}
-                  </div>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="ml-1">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium">Account</p>
-                  <TierInline />
-                </div>
-              </TooltipContent>
-            </Tooltip>
+            <div ref={userMenuRef} className="relative z-[95]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                    className="h-8 w-full flex items-center justify-center rounded-md hover:bg-white/[0.08] dark:hover:bg-white/[0.06] transition-all touch-press hover:scale-[1.02]"
+                    aria-label="Account menu"
+                    aria-expanded={userMenuOpen}
+                    title={user.email}
+                  >
+                    <div className="avatar-ring w-7 h-7 rounded-full flex items-center justify-center font-semibold text-[11px] wl-avatar-cream">
+                      {user.email?.slice(0, 1).toUpperCase() ?? "?"}
+                    </div>
+                  </button>
+                </TooltipTrigger>
+                {!userMenuOpen && (
+                  <TooltipContent side="right" className="ml-1">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium">Account</p>
+                      <TierInline />
+                    </div>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: -8, scale: 0.97 }}
+                    transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
+                    role="menu"
+                    aria-label="Account menu"
+                    className="absolute left-[48px] bottom-0 min-w-[240px] w-64 md:w-72 rounded-md border border-black/10 bg-paper dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[99]"
+                  >
+                    {/* Account header — brand-tinted */}
+                    <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden text-left">
+                      <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.04] to-transparent pointer-events-none" />
+                      <p className="wl-label-muted mb-1">Signed in as</p>
+                      <p className="text-[12px] font-semibold text-ink truncate relative z-10">
+                        {user.email || "—"}
+                      </p>
+                    </div>
+
+                    {/* Workspace Switcher Card */}
+                    <div className="px-4 py-3 border-b border-black/8 bg-black/[0.015] dark:bg-white/[0.01]">
+                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[9px] text-left">
+                        Workspace Context
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (accountType !== "personal") {
+                              setAccountType("personal");
+                              toastSuccess(
+                                "Workspace Switched",
+                                "Switched to Personal Mode (Single-Agent focus).",
+                              );
+                              setUserMenuOpen(false);
+                            }
+                          }}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
+                            accountType === "personal"
+                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
+                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                          )}
+                        >
+                          <User className="w-4 h-4 mb-1" />
+                          <span className="text-[11px] leading-tight block font-medium">
+                            Personal
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (accountType !== "business") {
+                              setAccountType("business");
+                              toastSuccess(
+                                "Workspace Switched",
+                                "Switched to Business Mode (Fleet Cockpit).",
+                              );
+                              setUserMenuOpen(false);
+                            }
+                          }}
+                          className={cn(
+                            "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
+                            accountType === "business"
+                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
+                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                          )}
+                        >
+                          <Building className="w-4 h-4 mb-1" />
+                          <span className="text-[11px] leading-tight block font-medium">
+                            Business
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="py-1 text-left">
+                      <Link
+                        to="/admin?tab=subscription"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        role="menuitem"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
+                        Billing &amp; subscription
+                      </Link>
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        role="menuitem"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
+                        Settings
+                      </Link>
+                      <Link
+                        to="/integrations"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        role="menuitem"
+                      >
+                        <PlugZap className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
+                        Integrations
+                      </Link>
+                      <Link
+                        to="/help"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        role="menuitem"
+                      >
+                        <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
+                        Help &amp; support
+                      </Link>
+                      {/* Founder Dashboard — only visible to the platform founder */}
+                      {user?.is_owner && (
+                        <Link
+                          to="/founder"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                          role="menuitem"
+                        >
+                          <Crown className="w-3.5 h-3.5 text-brand/50 group-hover:text-brand transition-colors" />
+                          Founder Dashboard
+                        </Link>
+                      )}
+                    </div>
+                    <div className="border-t border-black/8 py-1 text-left">
+                      <ShadButton
+                        type="button"
+                        variant="ghost"
+                        disableAnimations
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          signOut();
+                        }}
+                        className="w-full justify-start gap-2.5 px-4 py-2 h-auto text-[12px] font-medium text-rose-600 hover:bg-rose-500/[0.06] hover:text-rose-600"
+                        role="menuitem"
+                      >
+                        <LogOut className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        Sign out
+                      </ShadButton>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
 
-          <FooterItem to="/help" icon={LifeBuoy} label="Help" active={location.pathname === "/help"} />
+          <FooterItem
+            to="/help"
+            icon={LifeBuoy}
+            label="Help"
+            active={location.pathname === "/help"}
+          />
           <FooterItem
             to="/admin"
             icon={Settings}
@@ -182,7 +370,12 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             }
           />
           {user?.is_owner && (
-            <FooterItem to="/founder" icon={Crown} label="Founder" active={location.pathname === "/founder"} />
+            <FooterItem
+              to="/founder"
+              icon={Crown}
+              label="Founder"
+              active={location.pathname === "/founder"}
+            />
           )}
 
           <Tooltip>
@@ -262,9 +455,7 @@ function RailItem({ item, active, badge, shortcut }: RailItemProps) {
         )}
         strokeWidth={active ? 2.5 : 1.75}
       />
-      {item.betaLabel && (
-        <span className="sr-only"> {item.betaLabel}</span>
-      )}
+      {item.betaLabel && <span className="sr-only"> {item.betaLabel}</span>}
       {badge > 0 && (
         <span
           aria-label={`${badge} item${badge === 1 ? "" : "s"} need attention in ${item.label}`}
@@ -315,7 +506,9 @@ function LivePulse({ count }: { count: number }) {
           title={live ? `${count} live call${count === 1 ? "" : "s"}` : "Floor is quiet"}
         >
           <span className="relative inline-flex w-2.5 h-2.5 shrink-0 items-center justify-center">
-            {live && <span className="absolute inset-0 rounded-full animate-ping bg-purple-400/55" />}
+            {live && (
+              <span className="absolute inset-0 rounded-full animate-ping bg-purple-400/55" />
+            )}
             <span
               className={cn(
                 "relative w-2 h-2 rounded-full",
@@ -429,7 +622,10 @@ function TierInline() {
     >
       {tier.plan_name}
       {cap > 0 && (
-        <span className="font-mono normal-case tracking-normal"> · {fmt(used)}/{fmt(cap)}</span>
+        <span className="font-mono normal-case tracking-normal">
+          {" "}
+          · {fmt(used)}/{fmt(cap)}
+        </span>
       )}
     </p>
   );

@@ -38,14 +38,18 @@ private struct AssistantWidgetView: View {
 
     /// Wireline brand gradient — matches the web and iOS app's Rich Cream + Purple
     /// design system. The old Gemini blue/purple/pink gradient was off-brand.
-    private let brandGradient = LinearGradient(
-        gradient: Gradient(colors: [
-            Color(red: 0.545, green: 0.247, blue: 0.839), // #8B3FD6 Brand Purple
-            Color(red: 0.231, green: 0.082, blue: 0.298), // #3B154C Brand Deep
-        ]),
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    private let brandPurple = Color(red: 0.310, green: 0.118, blue: 0.482) // #4F1E7B
+    private let brandDeep = Color(red: 0.231, green: 0.082, blue: 0.298) // #3B154C
+    private let richCream = Color(red: 0.937, green: 0.914, blue: 0.863) // #EFE9DC
+    private let deepInk = Color(red: 0.102, green: 0.086, blue: 0.078) // #1A1614
+
+    private var brandGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [brandPurple, brandDeep]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
 
     var body: some View {
         switch family {
@@ -69,22 +73,28 @@ private struct AssistantWidgetView: View {
             }
         default:
             VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(.white)
+                ZStack {
+                    Circle()
+                        .fill(brandPurple.opacity(0.2))
+                        .blur(radius: 12)
+                        .scaleEffect(1.5)
+                    Image(systemName: "sparkles")
+                        .font(.title.weight(.semibold))
+                        .foregroundStyle(brandPurple)
+                }
                 Spacer()
                 Text("Send call to Assistant")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
+                    .font(Font.system(.headline, design: .serif).weight(.bold))
+                    .foregroundStyle(deepInk)
                     .minimumScaleFactor(0.8)
                     .lineLimit(2)
                 Text("Tap to route")
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(deepInk.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
-            .background(brandGradient)
+            .background(richCream)
         }
     }
 }

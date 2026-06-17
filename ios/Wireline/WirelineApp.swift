@@ -18,7 +18,7 @@ struct WirelineApp: App {
             }
             .environmentObject(auth)
             .environmentObject(router)
-            .tint(Brand.purple)
+            .wirelineBrand()
             .onOpenURL { url in
                 // wireline://ask (from a widget / Control Center) → Ask surface.
                 if url.host == "ask" { router.showAsk = true }

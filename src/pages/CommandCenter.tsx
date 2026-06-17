@@ -8,10 +8,6 @@ import {
   ShieldCheck,
   Zap,
   Award,
-  CheckCircle,
-  ChevronRight,
-  Terminal,
-  User,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -28,6 +24,7 @@ import { TriagePanel } from "../components/TriageInbox";
 import CsvExportButton from "../components/CsvExportButton";
 import PageTransition from "../components/layout/PageTransition";
 import DirectorLayout from "../components/layout/DirectorLayout";
+import ClientToolbar from "../components/layout/ClientToolbar";
 import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { ShadButton } from "../components/ui/shadcn/ShadButton";
@@ -438,7 +435,10 @@ export default function LiveOps() {
 
   return (
     <PageTransition>
-      <DirectorLayout title={`Director Sync // Protocol 7 — ${activeTab.toUpperCase()}`} showArtifacts={false}>
+      <DirectorLayout
+        title={`Director Sync // Protocol 7 — ${activeTab.toUpperCase()}`}
+        showArtifacts={false}
+      >
         <div
           className={clsx(
             "bg-transparent text-foreground flex flex-col flex-1 min-h-0 h-full mx-auto w-full",
@@ -583,8 +583,12 @@ export default function LiveOps() {
                     <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
                       <div className="absolute -top-12 -right-12 w-24 h-24 bg-brand/10 rounded-full blur-2xl group-hover:bg-brand/20 transition-all duration-500" />
                       <div>
-                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Active Agents</span>
-                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">{fleetAgentCount}</h3>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">
+                          Active Agents
+                        </span>
+                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
+                          {fleetAgentCount}
+                        </h3>
                         <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1.5 font-medium">
                           <TrendingUp className="w-3.5 h-3.5" />
                           <span>+12% vs last hour</span>
@@ -599,7 +603,9 @@ export default function LiveOps() {
                     <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
                       <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500" />
                       <div>
-                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Calls Handled</span>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">
+                          Calls Handled
+                        </span>
                         <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
                           {stats?.sentimentBreakdown
                             ? (stats.sentimentBreakdown.positive ?? 0) +
@@ -621,7 +627,9 @@ export default function LiveOps() {
                     <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
                       <div className="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-all duration-500" />
                       <div>
-                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Resolution Rate</span>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">
+                          Resolution Rate
+                        </span>
                         <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
                           {stats?.unitEconomics?.efficiencyScore ?? 94.2}%
                         </h3>
@@ -639,8 +647,12 @@ export default function LiveOps() {
                     <div className="wl-card-lift hover:border-brand/35 transition-all duration-300 wl-panel border border-brand/10 bg-card/20 backdrop-blur-md rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
                       <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-all duration-500" />
                       <div>
-                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">Avg Latency</span>
-                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">320ms</h3>
+                        <span className="wl-label text-[10px] text-muted-foreground block mb-1">
+                          Avg Latency
+                        </span>
+                        <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
+                          320ms
+                        </h3>
                         <p className="text-[10px] text-amber-400 flex items-center gap-1 mt-1.5 font-medium">
                           <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                           <span>-14ms speed gain</span>
@@ -664,8 +676,12 @@ export default function LiveOps() {
                         )}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Market Sentiment</h3>
-                          <span className="text-[10px] text-muted-foreground font-mono">Live customer feedback</span>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">
+                            Market Sentiment
+                          </h3>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            Live customer feedback
+                          </span>
                         </div>
 
                         {sentimentData.length === 0 ? (
@@ -712,7 +728,9 @@ export default function LiveOps() {
                         )}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Unit Economics</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">
+                            Unit Economics
+                          </h3>
                           <span className={clsx(WL_OPS_CLASSES.scoreBadge, "text-[10px]")}>
                             {OPS_COPY.roiLabel}: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                           </span>
@@ -722,7 +740,9 @@ export default function LiveOps() {
                           <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-brand/10 bg-card/20">
                             <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand/8 blur-xl -translate-y-4 translate-x-4" />
                             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
-                            <span className="wl-label block mb-1 text-[10px] text-muted-foreground relative z-10">Cost / Min</span>
+                            <span className="wl-label block mb-1 text-[10px] text-muted-foreground relative z-10">
+                              Cost / Min
+                            </span>
                             <span className="text-2xl font-bold text-foreground font-mono tabular-nums relative z-10">
                               ${stats?.unitEconomics?.costPerMinute ?? "0.00"}
                             </span>
@@ -730,7 +750,9 @@ export default function LiveOps() {
                           <div className="p-4 rounded-md wl-panel relative overflow-hidden group hover:-translate-y-px transition-transform border border-brand/10 bg-card/20">
                             <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-brand-deep/8 blur-xl -translate-y-4 translate-x-4" />
                             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-deep/40 to-transparent" />
-                            <span className="wl-label block mb-1 text-[10px] text-muted-foreground relative z-10">Cost / Lead</span>
+                            <span className="wl-label block mb-1 text-[10px] text-muted-foreground relative z-10">
+                              Cost / Lead
+                            </span>
                             <span className="text-2xl font-bold text-foreground font-mono tabular-nums relative z-10">
                               ${stats?.unitEconomics?.costPerLead ?? "0.00"}
                             </span>
@@ -739,7 +761,9 @@ export default function LiveOps() {
 
                         <div className="mt-4 p-4 rounded-md bg-brand/5 border border-brand/10">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold text-brand uppercase tracking-wider">{OPS_COPY.roiLabel}</span>
+                            <span className="text-[11px] font-bold text-brand uppercase tracking-wider">
+                              {OPS_COPY.roiLabel}
+                            </span>
                             <span className="text-[11px] font-mono font-semibold text-brand tabular-nums">
                               {(stats?.unitEconomics?.efficiencyScore ?? 0) >= 70
                                 ? "Strong"
@@ -761,35 +785,60 @@ export default function LiveOps() {
                       {/* Task Distribution (from Stitch) */}
                       <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5 space-y-4">
                         <div className="flex justify-between items-center">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Task Distribution</h3>
-                          <span className="text-[10px] text-muted-foreground font-mono">Operations split</span>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">
+                            Task Distribution
+                          </h3>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            Operations split
+                          </span>
                         </div>
                         <div className="space-y-4">
                           <div>
                             <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-[11px] text-muted-foreground">Customer Support</span>
-                              <span className="text-xs font-bold text-foreground font-mono">64%</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Customer Support
+                              </span>
+                              <span className="text-xs font-bold text-foreground font-mono">
+                                64%
+                              </span>
                             </div>
                             <div className="w-full bg-brand/5 h-1.5 rounded-full overflow-hidden border border-brand/5">
-                              <div className="bg-brand h-full rounded-full" style={{ width: "64%" }} />
+                              <div
+                                className="bg-brand h-full rounded-full"
+                                style={{ width: "64%" }}
+                              />
                             </div>
                           </div>
                           <div>
                             <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-[11px] text-muted-foreground">Outbound Sales</span>
-                              <span className="text-xs font-bold text-foreground font-mono">22%</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Outbound Sales
+                              </span>
+                              <span className="text-xs font-bold text-foreground font-mono">
+                                22%
+                              </span>
                             </div>
                             <div className="w-full bg-indigo-500/5 h-1.5 rounded-full overflow-hidden border border-indigo-500/5">
-                              <div className="bg-indigo-400 h-full rounded-full" style={{ width: "22%" }} />
+                              <div
+                                className="bg-indigo-400 h-full rounded-full"
+                                style={{ width: "22%" }}
+                              />
                             </div>
                           </div>
                           <div>
                             <div className="flex justify-between items-center mb-1.5">
-                              <span className="text-[11px] text-muted-foreground">Data Sourcing & Leads</span>
-                              <span className="text-xs font-bold text-foreground font-mono">14%</span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Data Sourcing & Leads
+                              </span>
+                              <span className="text-xs font-bold text-foreground font-mono">
+                                14%
+                              </span>
                             </div>
                             <div className="w-full bg-emerald-500/5 h-1.5 rounded-full overflow-hidden border border-emerald-500/5">
-                              <div className="bg-emerald-400 h-full rounded-full" style={{ width: "14%" }} />
+                              <div
+                                className="bg-emerald-400 h-full rounded-full"
+                                style={{ width: "14%" }}
+                              />
                             </div>
                           </div>
                         </div>
@@ -801,7 +850,9 @@ export default function LiveOps() {
                       {/* Top Performing Agents Leaderboard */}
                       <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5">
                         <div className="flex items-center justify-between mb-5">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Top Performing Agents</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">
+                            Top Performing Agents
+                          </h3>
                           <span className="text-[10px] text-brand font-mono font-bold flex items-center gap-1">
                             <Award className="w-3.5 h-3.5" />
                             <span>Live Rankings</span>
@@ -822,7 +873,9 @@ export default function LiveOps() {
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-foreground">Alex Sterling</p>
-                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">98% Res. • 2.4k calls</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">
+                                  98% Res. • 2.4k calls
+                                </p>
                               </div>
                             </div>
                             <span className="text-xs font-black font-mono text-brand">#1</span>
@@ -841,10 +894,14 @@ export default function LiveOps() {
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-foreground">Sarah Chen</p>
-                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">92% Res. • 1.1k calls</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">
+                                  92% Res. • 1.1k calls
+                                </p>
                               </div>
                             </div>
-                            <span className="text-xs font-black font-mono text-muted-foreground">#2</span>
+                            <span className="text-xs font-black font-mono text-muted-foreground">
+                              #2
+                            </span>
                           </div>
 
                           {/* Agent #3 */}
@@ -860,10 +917,14 @@ export default function LiveOps() {
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-foreground">Casey Jordan</p>
-                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">89% Res. • 840 calls</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">
+                                  89% Res. • 840 calls
+                                </p>
                               </div>
                             </div>
-                            <span className="text-xs font-black font-mono text-muted-foreground">#3</span>
+                            <span className="text-xs font-black font-mono text-muted-foreground">
+                              #3
+                            </span>
                           </div>
                         </div>
 
@@ -873,7 +934,10 @@ export default function LiveOps() {
                           disableAnimations
                           className="w-full mt-4 py-2 text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-brand hover:border-brand/40 bg-transparent"
                           onClick={() => {
-                            toastSuccess("Detailed Rankings", "Leaderboard data synced successfully.");
+                            toastSuccess(
+                              "Detailed Rankings",
+                              "Leaderboard data synced successfully.",
+                            );
                           }}
                         >
                           Sync Live Metrics
@@ -883,7 +947,9 @@ export default function LiveOps() {
                       {/* Monospaced Operational Live Console (from Stitch) */}
                       <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5 space-y-3">
                         <div className="flex items-center justify-between">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Operational Logs</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">
+                            Operational Logs
+                          </h3>
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
@@ -894,27 +960,37 @@ export default function LiveOps() {
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[19:42:01]</span>
                             <span className="text-foreground">SYSTEM:</span>
-                            <span className="text-emerald-400">Deployed Refund Logic v4 to fleet clusters</span>
+                            <span className="text-emerald-400">
+                              Deployed Refund Logic v4 to fleet clusters
+                            </span>
                           </div>
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[18:15:30]</span>
                             <span className="text-foreground">CONFIG:</span>
-                            <span className="text-emerald-400">Updated Night Shift Routing playbook</span>
+                            <span className="text-emerald-400">
+                              Updated Night Shift Routing playbook
+                            </span>
                           </div>
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[17:01:12]</span>
                             <span className="text-foreground">APOLLO:</span>
-                            <span className="text-brand">Sourced 14 new outbound matches for real-estate ICP</span>
+                            <span className="text-brand">
+                              Sourced 14 new outbound matches for real-estate ICP
+                            </span>
                           </div>
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[16:55:00]</span>
                             <span className="text-foreground">SIGNAL:</span>
-                            <span className="text-emerald-400">Escalation safely handled on Agent-402 (Connected)</span>
+                            <span className="text-emerald-400">
+                              Escalation safely handled on Agent-402 (Connected)
+                            </span>
                           </div>
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[15:20:41]</span>
                             <span className="text-foreground">CARRIER:</span>
-                            <span className="text-muted-foreground">SIP trunk health check: 100% reachable (0.01ms jitter)</span>
+                            <span className="text-muted-foreground">
+                              SIP trunk health check: 100% reachable (0.01ms jitter)
+                            </span>
                           </div>
                         </div>
 

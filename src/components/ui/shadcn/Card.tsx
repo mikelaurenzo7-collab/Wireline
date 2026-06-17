@@ -11,7 +11,12 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, elevation = "1", interactive = false, ...props }, ref) => {
-    const elevClass = `elev-${elevation}`;
+    const isElevated = elevation === "3" || elevation === "glow";
+    const panelClass = isElevated
+      ? "wl-panel-elevated"
+      : elevation === "0"
+        ? "bg-card border"
+        : "wl-panel";
 
     if (interactive) {
       const MotionDiv = motion.div as React.ComponentType<
@@ -25,8 +30,8 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
             transition: { type: "spring", stiffness: 380, damping: 28 },
           }}
           className={cn(
-            "rounded-md border bg-card text-card-foreground cursor-pointer transition-all duration-200 wl-card-shine",
-            elevClass,
+            "rounded-md text-card-foreground cursor-pointer transition-all duration-200 wl-card-shine",
+            panelClass,
             className,
           )}
           {...(props as HTMLMotionProps<"div">)}
@@ -37,7 +42,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn("rounded-md border bg-card text-card-foreground", elevClass, className)}
+        className={cn("rounded-md text-card-foreground", panelClass, className)}
         {...props}
       />
     );

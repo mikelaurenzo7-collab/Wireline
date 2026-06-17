@@ -30,7 +30,8 @@ export default function Features() {
     "@context": "https://schema.org",
     "@type": "Product",
     name: "Wireline Voice & Messaging Platform",
-    description: "Multi-channel AI agent network with unified communication timelines and deep iOS/Siri integrations.",
+    description:
+      "Multi-channel AI agent network with unified communication timelines and deep iOS/Siri integrations.",
     offers: {
       "@type": "Offer",
       price: "9.00",
@@ -82,7 +83,8 @@ export default function Features() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="text-ink/75 text-lg leading-relaxed max-w-2xl mx-auto mb-10"
         >
-          A sovereign stack for Phone, SMS, and Email. Experience true technical independence with a vertically integrated communication layer.
+          A sovereign stack for Phone, SMS, and Email. Experience true technical independence with a
+          vertically integrated communication layer.
         </motion.p>
 
         <motion.div
@@ -123,48 +125,66 @@ export default function Features() {
           {/* Phone Step */}
           <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-paper flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
             <div>
-              <div className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand" aria-hidden="true">
+              <div
+                className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand"
+                aria-hidden="true"
+              >
                 <Phone className="w-5 h-5" />
               </div>
               <h3 className="font-display italic text-xl text-ink mb-3">01. Phone</h3>
               <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">
-                Encrypted voice peering with zero-hop routing between carrier gateways. Sub-30ms latency for crystal-clear fidelity.
+                Encrypted voice peering with zero-hop routing between carrier gateways. Sub-30ms
+                latency for crystal-clear fidelity.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-outline-variant/20">
-              <span className="font-mono text-[10px] text-brand font-semibold uppercase tracking-wider">LAYER: CORE CARRIER</span>
+              <span className="font-mono text-[10px] text-brand font-semibold uppercase tracking-wider">
+                LAYER: CORE CARRIER
+              </span>
             </div>
           </div>
 
           {/* SMS Step */}
           <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-paper flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
             <div>
-              <div className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand" aria-hidden="true">
+              <div
+                className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand"
+                aria-hidden="true"
+              >
                 <MessageSquare className="w-5 h-5" />
               </div>
               <h3 className="font-display italic text-xl text-ink mb-3">02. SMS</h3>
               <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">
-                High-throughput messaging without the middleware tax. Direct SMPP binds ensure delivery certainty in milliseconds.
+                High-throughput messaging without the middleware tax. Direct SMPP binds ensure
+                delivery certainty in milliseconds.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-outline-variant/20">
-              <span className="font-mono text-[10px] text-brand font-semibold uppercase tracking-wider">LAYER: P2P MESSAGING</span>
+              <span className="font-mono text-[10px] text-brand font-semibold uppercase tracking-wider">
+                LAYER: P2P MESSAGING
+              </span>
             </div>
           </div>
 
           {/* Email Step */}
           <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-paper flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
             <div>
-              <div className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand" aria-hidden="true">
+              <div
+                className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand"
+                aria-hidden="true"
+              >
                 <Mail className="w-5 h-5" />
               </div>
               <h3 className="font-display italic text-xl text-ink mb-3">03. Email</h3>
               <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">
-                Sovereign SMTP infrastructure with dedicated IP warming and custom DKIM/SPF signatures for maximum inboxing.
+                Sovereign SMTP infrastructure with dedicated IP warming and custom DKIM/SPF
+                signatures for maximum inboxing.
               </p>
             </div>
             <div className="mt-8 pt-4 border-t border-outline-variant/20">
-              <span className="font-mono text-[10px] text-brand font-semibold uppercase tracking-wider">LAYER: AUTHENTICATED SMTP</span>
+              <span className="font-mono text-[10px] text-brand font-semibold uppercase tracking-wider">
+                LAYER: AUTHENTICATED SMTP
+              </span>
             </div>
           </div>
         </div>
@@ -179,10 +199,13 @@ export default function Features() {
               The Shared Interaction Timeline
             </h2>
             <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
-              In a traditional setup, if a customer calls a business and then sends an SMS, those are treated as separate tickets by separate software packages. Conversations get dropped, and customers have to repeat themselves.
+              In a traditional setup, if a customer calls a business and then sends an SMS, those
+              are treated as separate tickets by separate software packages. Conversations get
+              dropped, and customers have to repeat themselves.
             </p>
             <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
-              With Wireline, a customer profile maintains a single unified timeline. The agent that handles their email knows what they said on their phone call five minutes ago.
+              With Wireline, a customer profile maintains a single unified timeline. The agent that
+              handles their email knows what they said on their phone call five minutes ago.
             </p>
 
             <div className="space-y-3 pt-2">
@@ -191,8 +214,14 @@ export default function Features() {
                 "Automatic context-handover without system gaps",
                 "Instant database syncing for zero repetition",
               ].map((point) => (
-                <div key={point} className="flex items-start gap-2.5 text-xs sm:text-sm text-ink/80">
-                  <div className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true">
+                <div
+                  key={point}
+                  className="flex items-start gap-2.5 text-xs sm:text-sm text-ink/80"
+                >
+                  <div
+                    className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mt-0.5"
+                    aria-hidden="true"
+                  >
                     <Check className="w-3.5 h-3.5 text-brand" />
                   </div>
                   <span>{point}</span>
@@ -219,16 +248,20 @@ export default function Features() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="font-semibold text-xs sm:text-sm text-ink">10:04 AM · Inbound Call</span>
+                      <span className="font-semibold text-xs sm:text-sm text-ink">
+                        10:04 AM · Inbound Call
+                      </span>
                       <span className="font-mono text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-sm">
                         Voice Agent
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-ink/70 mt-1">
-                      Customer called Jordan (sales rep). Confirmed interest in Premium Fleet and requested a quote.
+                      Customer called Jordan (sales rep). Confirmed interest in Premium Fleet and
+                      requested a quote.
                     </p>
                     <div className="bg-black/5 p-2.5 mt-2 rounded-sm text-xs italic text-ink/65 border border-ink/[0.05]">
-                      "Sure, I'll send that quote over right now via SMS and email. What's your best address?"
+                      "Sure, I'll send that quote over right now via SMS and email. What's your best
+                      address?"
                     </div>
                   </div>
                 </div>
@@ -240,16 +273,20 @@ export default function Features() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="font-semibold text-xs sm:text-sm text-ink">10:05 AM · Auto-SMS Delivery</span>
+                      <span className="font-semibold text-xs sm:text-sm text-ink">
+                        10:05 AM · Auto-SMS Delivery
+                      </span>
                       <span className="font-mono text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-sm">
                         SMS Agent
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-ink/70 mt-1">
-                      Platform dispatched a secure link containing the quote payload, matching the voice request.
+                      Platform dispatched a secure link containing the quote payload, matching the
+                      voice request.
                     </p>
                     <div className="bg-brand/5 p-2.5 mt-2 rounded-sm text-xs text-brand/90 border border-brand/10">
-                      <strong>Outgoing SMS:</strong> "Hi Michael, here's your personalized quote: wl.net/q/8b3f. Tap to approve."
+                      <strong>Outgoing SMS:</strong> "Hi Michael, here's your personalized quote:
+                      wl.net/q/8b3f. Tap to approve."
                     </div>
                   </div>
                 </div>
@@ -261,13 +298,16 @@ export default function Features() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="font-semibold text-xs sm:text-sm text-ink">10:06 AM · Contract Delivered</span>
+                      <span className="font-semibold text-xs sm:text-sm text-ink">
+                        10:06 AM · Contract Delivered
+                      </span>
                       <span className="font-mono text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-sm">
                         Email Agent
                       </span>
                     </div>
                     <p className="text-xs sm:text-sm text-ink/70 mt-1">
-                      Comprehensive proposal delivered with Stripe checkout link. Context inherited from voice conversation.
+                      Comprehensive proposal delivered with Stripe checkout link. Context inherited
+                      from voice conversation.
                     </p>
                   </div>
                 </div>
@@ -298,15 +338,58 @@ export default function Features() {
 
               {/* Animated Siri SVG embedded */}
               <div className="relative w-full aspect-[4/3] max-w-md mx-auto mb-6 rounded-md overflow-hidden border border-brand/10 shadow-md">
-                <svg fill="none" viewBox="0 0 400 300" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  fill="none"
+                  viewBox="0 0 400 300"
+                  className="w-full h-full"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <rect fill="#f5f1e8" height="300" rx="8" width="400"></rect>
-                  <circle cx="200" cy="120" r="40" stroke="#8b3fd6" strokeDasharray="4 4" strokeWidth="2"></circle>
-                  <path d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z" stroke="#8b3fd6" strokeWidth="3">
-                    <animate attributeName="stroke-width" dur="2s" repeatCount="indefinite" values="3;5;3"></animate>
+                  <circle
+                    cx="200"
+                    cy="120"
+                    r="40"
+                    stroke="#8b3fd6"
+                    strokeDasharray="4 4"
+                    strokeWidth="2"
+                  ></circle>
+                  <path
+                    d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z"
+                    stroke="#8b3fd6"
+                    strokeWidth="3"
+                  >
+                    <animate
+                      attributeName="stroke-width"
+                      dur="2s"
+                      repeatCount="indefinite"
+                      values="3;5;3"
+                    ></animate>
                   </path>
-                  <rect height="40" rx="4" stroke="#1a1614" strokeWidth="1.5" width="60" x="80" y="200"></rect>
-                  <path d="M260 200V240M240 220H280" stroke="#8b3fd6" strokeLinecap="round" strokeWidth="3"></path>
-                  <text fill="#1a1614" fontFamily="sans-serif" fontSize="12" textAnchor="middle" x="200" y="270">Hands-Free Siri Voice Protocol</text>
+                  <rect
+                    height="40"
+                    rx="4"
+                    stroke="#1a1614"
+                    strokeWidth="1.5"
+                    width="60"
+                    x="80"
+                    y="200"
+                  ></rect>
+                  <path
+                    d="M260 200V240M240 220H280"
+                    stroke="#8b3fd6"
+                    strokeLinecap="round"
+                    strokeWidth="3"
+                  ></path>
+                  <text
+                    fill="#1a1614"
+                    fontFamily="sans-serif"
+                    fontSize="12"
+                    textAnchor="middle"
+                    x="200"
+                    y="270"
+                  >
+                    Hands-Free Siri Voice Protocol
+                  </text>
                 </svg>
               </div>
 
@@ -328,17 +411,25 @@ export default function Features() {
                   <div className="space-y-3">
                     <div className="p-3 bg-zinc-900 border border-white/10 flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-brand">Siri Trigger Event</p>
-                        <p className="text-xs font-semibold mt-0.5">"Siri, ask Wireline to dial pharmacy..."</p>
+                        <p className="text-[10px] uppercase tracking-wider text-brand">
+                          Siri Trigger Event
+                        </p>
+                        <p className="text-xs font-semibold mt-0.5">
+                          "Siri, ask Wireline to dial pharmacy..."
+                        </p>
                       </div>
                       <div className="w-2 h-2 rounded-full bg-brand animate-ping" />
                     </div>
 
                     <div className="p-3 bg-brand/10 border border-brand/30 flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-brand font-semibold">Active Outbound Dispatch</p>
+                        <p className="text-[10px] uppercase tracking-wider text-brand font-semibold">
+                          Active Outbound Dispatch
+                        </p>
                         <p className="text-xs font-semibold mt-0.5">Calling Walgreens #4032</p>
-                        <p className="text-[10px] text-white/70 mt-1">Instruction: "Confirm prescription refilled"</p>
+                        <p className="text-[10px] text-white/70 mt-1">
+                          Instruction: "Confirm prescription refilled"
+                        </p>
                       </div>
                       <span className="font-mono text-[10px] text-brand">Pending...</span>
                     </div>
@@ -347,15 +438,21 @@ export default function Features() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 bg-paper-warm/20 border border-brand/10 rounded-sm">
-                    <h5 className="font-display italic text-base text-ink mb-1">Interactive Widgets</h5>
+                    <h5 className="font-display italic text-base text-ink mb-1">
+                      Interactive Widgets
+                    </h5>
                     <p className="text-xs text-ink/70 leading-relaxed">
-                      Check your lock screen or home screen widget to see active call states and live transcripts while driving.
+                      Check your lock screen or home screen widget to see active call states and
+                      live transcripts while driving.
                     </p>
                   </div>
                   <div className="p-4 bg-paper-warm/20 border border-brand/10 rounded-sm">
-                    <h5 className="font-display italic text-base text-ink mb-1">Direct Carrier Routing</h5>
+                    <h5 className="font-display italic text-base text-ink mb-1">
+                      Direct Carrier Routing
+                    </h5>
                     <p className="text-xs text-ink/70 leading-relaxed">
-                      Zero middleware jank. Direct-to-carrier routing ensures crisp, HD audio with sub-second model response times.
+                      Zero middleware jank. Direct-to-carrier routing ensures crisp, HD audio with
+                      sub-second model response times.
                     </p>
                   </div>
                 </div>
@@ -371,10 +468,14 @@ export default function Features() {
               Siri Hands-Free Integration
             </h2>
             <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
-              Designed for high-stakes environments — from critical surgical theaters to the driver's seat. Our voice engine interfaces directly with Apple's Siri, allowing medical professionals and logistics teams to trigger workflows entirely by voice.
+              Designed for high-stakes environments — from critical surgical theaters to the
+              driver's seat. Our voice engine interfaces directly with Apple's Siri, allowing
+              medical professionals and logistics teams to trigger workflows entirely by voice.
             </p>
             <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
-              Ask Siri to trigger a custom Wireline workflow. Your fleet automatically places the call, coordinates with the client, updates your CRM, and displays the outcome on your iOS Widget immediately when you park.
+              Ask Siri to trigger a custom Wireline workflow. Your fleet automatically places the
+              call, coordinates with the client, updates your CRM, and displays the outcome on your
+              iOS Widget immediately when you park.
             </p>
 
             <ul className="space-y-3 pt-2">
@@ -383,8 +484,14 @@ export default function Features() {
                 "Biometric-gated voice triggers",
                 "Offline-first voice processing",
               ].map((point) => (
-                <li key={point} className="flex items-center gap-2.5 text-xs sm:text-sm text-ink/80 font-medium">
-                  <div className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0" aria-hidden="true">
+                <li
+                  key={point}
+                  className="flex items-center gap-2.5 text-xs sm:text-sm text-ink/80 font-medium"
+                >
+                  <div
+                    className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0"
+                    aria-hidden="true"
+                  >
                     <Check className="w-3.5 h-3.5 text-brand" />
                   </div>
                   <span>{point}</span>
@@ -417,7 +524,8 @@ export default function Features() {
             A Core Voice Carrier & Software Layer
           </h2>
           <p className="text-ink/65 text-sm sm:text-base mt-3 leading-relaxed">
-            Wireline is built on top of our own direct voice network. We cut out Twilio middleware to deliver premium call-center infrastructure directly to small shops and large fleets.
+            Wireline is built on top of our own direct voice network. We cut out Twilio middleware
+            to deliver premium call-center infrastructure directly to small shops and large fleets.
           </p>
         </div>
 
@@ -453,7 +561,7 @@ export default function Features() {
               body: "A lower-cost personal assistant lane that routes calls, schedules calendars, and answers simple queries.",
               icon: Phone,
             },
-          ].map((item, index) => {
+          ].map((item) => {
             const Icon = item.icon;
             return (
               <div
@@ -461,7 +569,10 @@ export default function Features() {
                 className="wl-panel border border-ink/[0.08] bg-paper hover:border-brand/30 transition-all p-6 rounded-md group relative overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-10 h-10 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mb-4 text-brand" aria-hidden="true">
+                  <div
+                    className="w-10 h-10 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mb-4 text-brand"
+                    aria-hidden="true"
+                  >
                     <Icon className="w-5 h-5" />
                   </div>
                   <h3 className="font-display italic text-lg text-ink leading-tight mb-2">

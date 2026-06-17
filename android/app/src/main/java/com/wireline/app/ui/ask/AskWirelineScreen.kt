@@ -39,11 +39,50 @@ fun AskWirelineScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Button(
-                onClick = { /* TODO: Call backend */ },
-                modifier = Modifier.fillMaxWidth()
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = androidx.compose.ui.Alignment.Center
             ) {
-                Text("Send to Wireline")
+                // Blur halo
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .androidx.compose.ui.draw.scale(1.05f)
+                        .androidx.compose.ui.draw.blur(24.dp)
+                        .androidx.compose.foundation.background(
+                            com.wireline.app.ui.theme.Brand.Purple.copy(alpha = 0.4f),
+                            androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                )
+                
+                Button(
+                    onClick = { /* TODO: Call backend */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                    contentPadding = PaddingValues(0.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .androidx.compose.foundation.background(
+                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                    colors = listOf(
+                                        com.wireline.app.ui.theme.Brand.Purple,
+                                        com.wireline.app.ui.theme.Brand.PurpleDeep
+                                    )
+                                )
+                            )
+                            .padding(16.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        Text(
+                            "Send to Wireline",
+                            color = androidx.compose.ui.graphics.Color.White,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(32.dp))

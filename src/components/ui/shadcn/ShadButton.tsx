@@ -1,11 +1,10 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { motion } from "motion/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../../lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold tracking-wider touch-press transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -39,8 +38,8 @@ const buttonVariants = cva(
         default:
           "h-9 px-4 py-2 after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:min-h-[44px] after:h-full",
         // Secondary compact: 32px visual, 44px hit area.
-        sm: "h-8 rounded-md px-3 text-xs after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:min-h-[44px] after:h-full",
-        lg: "h-10 rounded-md px-8",
+        sm: "h-8 px-3 text-xs after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:min-h-[44px] after:h-full",
+        lg: "h-10 px-8",
         // Icon: 20px visual icon within 36px visual button, 44px hit area.
         icon: "h-9 w-9 [&_svg]:size-5 after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:min-h-[44px] after:min-w-[44px]",
       },
@@ -56,42 +55,22 @@ export interface ShadButtonProps
 }
 
 const ShadButton = React.forwardRef<HTMLButtonElement, ShadButtonProps>(
-  ({ className, variant, size, asChild = false, disableAnimations = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      disableAnimations: _disableAnimations = false,
+      ...props
+    },
+    ref,
+  ) => {
     const Comp = asChild ? Slot : "button";
 
-    // If animations are disabled or we're using Slot, use a regular button
-    if (disableAnimations || asChild) {
-      return (
-        <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-      );
-    }
-
-    // Cast to avoid motion/react type complexity with ButtonHTMLAttributes
-    const MotionButton = motion.button as React.ComponentType<
-      Omit<
-        React.ButtonHTMLAttributes<HTMLButtonElement>,
-        "onAnimationStart" | "onDrag" | "onDragEnd" | "onDragStart"
-      > & {
-        whileHover?: object;
-        whileTap?: object;
-        transition?: object;
-      } & React.RefAttributes<HTMLButtonElement>
-    >;
-
-    // Premium micro-interactions — spring physics for buttery smoothness
+    // touch-press class handles the physics zero-latency natively
     return (
-      <MotionButton
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{
-          type: "spring",
-          stiffness: 400,
-          damping: 25,
-        }}
-        {...props}
-      />
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     );
   },
 );
