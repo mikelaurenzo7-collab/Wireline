@@ -39,7 +39,7 @@ export function logFetchError(label: string, e: unknown): void {
   if (isAbortError(e)) return;
 
   // Dev-only — production surfaces errors via toasts / boundaries.
-  if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {
+  if (typeof import.meta !== "undefined" && (import.meta as any).env?.DEV) {
     console.error(label, e);
   }
 }

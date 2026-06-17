@@ -245,8 +245,8 @@ export default function ContactProfile() {
           />
         </div>
 
-        <section className="wl-panel border border-black/8 rounded-md sm:rounded-md overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-black/6 flex items-center justify-between gap-3">
+        <section className="wl-panel rounded-md sm:rounded-md overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between gap-3">
             <h2 className="font-display italic text-xl sm:text-2xl flex items-center gap-2 text-ink">
               <Activity className="w-5 h-5 text-brand shrink-0" />
               Timeline
@@ -266,8 +266,8 @@ export default function ContactProfile() {
               />
             </div>
           ) : (
-            <div className="relative md:pl-8 md:before:absolute md:before:left-[1.65rem] md:before:top-4 md:before:bottom-4 md:before:w-px md:before:bg-black/8">
-              <div className="divide-y divide-black/5 md:divide-y-0 md:space-y-0">
+            <div className="relative md:pl-8 md:before:absolute md:before:left-[1.65rem] md:before:top-4 md:before:bottom-4 md:before:w-px md:before:bg-border">
+              <div className="divide-y divide-border md:divide-y-0 md:space-y-0">
                 {timeline.map((e) => (
                   <TimelineRow key={`${e.type}-${e.id}`} event={e} />
                 ))}
@@ -297,7 +297,7 @@ function StatCard({
 }) {
   return (
     <div
-      className="relative rounded-md sm:rounded-md wl-panel border border-black/8 p-4 sm:p-5 overflow-hidden"
+      className="relative rounded-md sm:rounded-md wl-panel p-4 sm:p-5 overflow-hidden"
       data-accent={accent}
     >
       <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
@@ -375,7 +375,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                     ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
                     : event.lead_score >= 50
                       ? "bg-brand/15 text-brand border border-brand/30"
-                      : "bg-black/[0.06] text-ink/50 border border-black/12",
+                      : "bg-muted/20 text-muted border border-border",
                 )}
               >
                 {event.lead_score}/100

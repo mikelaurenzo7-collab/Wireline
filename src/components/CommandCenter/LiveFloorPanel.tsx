@@ -351,7 +351,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                               {Math.round(call.urgency * 10)}%
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
+                          <div className="h-1.5 w-full bg-border/60 rounded-full overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min(100, call.urgency * 10)}%` }}
@@ -440,7 +440,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                 value={whisperText}
                                 onChange={(e) => setWhisperText(e.target.value)}
                                 placeholder="Whisper to agent…"
-                                className="flex-1 min-h-[40px] text-sm px-3 rounded-md bg-paper border border-black/10 focus:border-brand/40 outline-none"
+                                className="flex-1 min-h-[40px] text-sm px-3 rounded-md bg-paper border border-border focus:border-brand/40 outline-none"
                                 onKeyDown={(e) => e.key === "Enter" && sendWhisper()}
                               />
                               <ShadButton
@@ -520,7 +520,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] border min-h-[36px]",
                         busy
                           ? "border-brand/30 bg-brand/8 text-brand"
-                          : "border-black/8 bg-paper text-muted",
+                          : "border-border bg-paper text-muted",
                       )}
                     >
                       <span
@@ -542,7 +542,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                       key={a.id}
                       className={cn(
                         "flex items-center justify-between rounded-md px-3 py-2 border text-sm",
-                        busy ? "bg-brand/8 border-brand/25" : "bg-paper/60 border-black/6",
+                        busy ? "bg-brand/8 border-brand/25" : "bg-paper/60 border-border",
                       )}
                     >
                       <span className="text-ink truncate">{a.name}</span>

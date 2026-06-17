@@ -409,7 +409,7 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-black/10 md:hidden select-none pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(30,0,48,0.35),0_1px_0_rgba(255,255,255,0.75)_inset]"
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden select-none pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(30,0,48,0.35),0_1px_0_rgba(255,255,255,0.75)_inset]"
               drag="y"
               dragConstraints={{ top: 0 }}
               dragElastic={{ top: 0, bottom: 0.35 }}
@@ -490,7 +490,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "relative wl-panel border border-black/8 flex flex-col min-h-0 overflow-hidden wl-panel-editorial",
+        "relative wl-panel border border-border flex flex-col min-h-0 overflow-hidden wl-panel-editorial",
         autoHeight ? "h-auto" : "h-full",
         "panel-mobile-surface",
         className,
@@ -506,7 +506,7 @@ export function Panel({
         <header className="relative shrink-0 px-3 py-2.5 max-md:px-4 max-md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0">
             {Icon && (
-              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-black/8 wl-accent-icon-chip">
+              <div className="w-8 h-8 flex items-center justify-center shrink-0 border border-border wl-accent-icon-chip">
                 <Icon className="w-3.5 h-3.5" />
               </div>
             )}
@@ -562,7 +562,7 @@ export function StatTile({
   const trendPositive = trend && trend.value >= 0;
   return (
     <div
-      className="stat-tile-mobile relative wl-panel border border-black/8 p-4 max-md:p-5 overflow-hidden card-interactive"
+      className="stat-tile-mobile relative wl-panel border border-border p-4 max-md:p-5 overflow-hidden card-interactive"
       data-accent={resolvedAccent}
     >
       {/* Ambient glow */}
@@ -574,7 +574,7 @@ export function StatTile({
         <div className="flex items-start justify-between mb-2.5">
           <p className="text-eyebrow leading-none">{label}</p>
           {Icon && (
-            <div className="w-7 h-7 flex items-center justify-center border border-black/8 shrink-0 wl-accent-icon-chip">
+            <div className="w-7 h-7 flex items-center justify-center border border-border shrink-0 wl-accent-icon-chip">
               <Icon className="w-3.5 h-3.5" />
             </div>
           )}

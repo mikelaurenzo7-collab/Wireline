@@ -348,7 +348,7 @@ export default function Cadences() {
                       Active
                     </span>
                   ) : (
-                    <span className="wl-label px-1.5 py-0.5 rounded bg-black/[0.04] text-muted border border-black/10">
+                    <span className="wl-label px-1.5 py-0.5 rounded bg-muted text-muted border border-border">
                       Paused
                     </span>
                   )}
@@ -459,7 +459,7 @@ export default function Cadences() {
               {draftSteps.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2 rounded-md bg-black/[0.02] border border-black/8 p-3"
+                  className="flex items-start gap-2 rounded-md bg-muted/20 border border-border p-3"
                 >
                   <span
                     className={cn(
@@ -540,7 +540,7 @@ export default function Cadences() {
               </ShadButton>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-black/8">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
               <ShadButton
                 type="button"
                 variant="ghost"

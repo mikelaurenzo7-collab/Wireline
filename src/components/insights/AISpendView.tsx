@@ -102,7 +102,7 @@ function SpendBudgetCard() {
 
   if (loading && !status) {
     return (
-      <div className="rounded-md wl-panel border border-black/8 p-6 flex items-center gap-3 text-muted text-sm">
+      <div className="rounded-md wl-panel p-6 flex items-center gap-3 text-muted text-sm">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading budget…
       </div>
     );
@@ -185,7 +185,7 @@ function SpendBudgetCard() {
             value={draft.monthly_limit_usd}
             onChange={(e) => setDraft({ ...draft, monthly_limit_usd: e.target.value })}
             placeholder="e.g. 200"
-            className="w-full h-11 px-4 rounded-md wl-panel border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+            className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
           />
         </label>
         <label className="space-y-1.5">
@@ -200,7 +200,7 @@ function SpendBudgetCard() {
             onChange={(e) =>
               setDraft({ ...draft, warn_threshold_pct: parseInt(e.target.value || "80") })
             }
-            className="w-full h-11 px-4 rounded-md wl-panel border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+            className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
           />
         </label>
       </div>
@@ -396,7 +396,7 @@ export default function AISpendView({ days }: { days: number }) {
                 {by_model.map((m: any) => (
                   <div
                     key={m.model}
-                    className="flex items-baseline justify-between border-b border-black/5 pb-3 last:border-0 last:pb-0"
+                    className="flex items-baseline justify-between border-b border-border pb-3 last:border-0 last:pb-0"
                   >
                     <div>
                       <div className="text-sm font-mono text-ink/90">{m.model}</div>
@@ -408,7 +408,7 @@ export default function AISpendView({ days }: { days: number }) {
                   </div>
                 ))}
               </div>
-              <div className="pt-3 border-t border-black/5">
+              <div className="pt-3 border-t border-border">
                 <div className="app-section-title mb-1">Tokens (window)</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                   <div>

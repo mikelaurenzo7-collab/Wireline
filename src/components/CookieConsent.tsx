@@ -86,7 +86,7 @@ export default function CookieConsent() {
         >
           {/* Compact contained card — bottom-right, never spans the screen or
               overlaps the left-aligned hero CTAs. */}
-          <div className="rounded-md border border-black/10 backdrop-blur-xl shadow-lg shadow-black/5 px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
+          <div className="rounded-md border border-border backdrop-blur-xl shadow-lg px-3.5 py-3 flex items-start gap-2.5 wl-cookie-card">
             {/* Icon */}
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />

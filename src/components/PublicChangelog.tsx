@@ -187,7 +187,7 @@ export default function PublicChangelog() {
             })}
           </ol>
 
-          <div className="mt-12 pt-6 border-t border-black/8">
+          <div className="mt-12 pt-6 border-t border-border">
             <p className="text-eyebrow mb-2">Coming up</p>
             <ul className="marketing-body space-y-1 list-disc pl-5">
               <li>iOS app — listen-in + whisper-coach on the go</li>

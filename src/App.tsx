@@ -20,6 +20,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { MotionConfig } from "motion/react";
 import { isMarketingHomePath, isSessionOptionalPublicPath } from "./lib/public-routes";
 
+const Features = lazy(() => import("./pages/Features"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
@@ -177,6 +178,15 @@ function AppContent() {
         </Suspense>
       );
     }
+  }
+  if (location.pathname === "/features") {
+    return (
+      <Suspense fallback={<MarketingRouteFallback />}>
+        <div className="marketing-surface min-h-dvh">
+          <Features />
+        </div>
+      </Suspense>
+    );
   }
   if (location.pathname === "/pricing") {
     return (

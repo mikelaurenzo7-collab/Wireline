@@ -42,7 +42,6 @@ import { hydrateAgentsFromFleet, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 
 import { cn } from "../lib/utils";
-import FleetSetupNudge from "./FleetSetupNudge";
 import type { PipelineStep } from "./ui/LiveTaskPipeline";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Input } from "./ui/shadcn/Input";
@@ -76,20 +75,16 @@ import type {
   DirectorTurnActionMeta,
 } from "../lib/director-message-metadata";
 import { DirectorTurnLedger } from "./director/DirectorTurnLedger";
-import { DirectorCapabilityCatalog } from "./director/DirectorCapabilityCatalog";
 import { SignalOrbFrame } from "./ui/SignalOrbFrame";
 import { DirectorComposerAccessory } from "./director/DirectorComposerAccessory";
 import { DirectorComposerContextStrip } from "./director/DirectorComposerContextStrip";
 import { DirectorComposerToolbar } from "./director/DirectorComposerToolbar";
 import { DirectorUsageIndicator } from "./director/DirectorUsageIndicator";
-import { DirectorStarterPrompts } from "./director/DirectorStarterPrompts";
 import DirectorArtifactsPanel, { type DirectorArtifact } from "./director/DirectorArtifactsPanel";
 import { INTEGRATION_STYLES } from "../lib/integration-activities";
 import type { ToolIntegration } from "../lib/agent-capabilities";
 import {
-  DIRECTOR_EMPTY_HERO,
   DIRECTOR_SCENE_BADGES,
-  DIRECTOR_CAPABILITY_PILLS,
   DIRECTOR_LOADING_COPY,
   DIRECTOR_COMPOSER_HINTS,
   DIRECTOR_COMPOSER_CONTEXT,
@@ -1395,7 +1390,7 @@ export default function DirectorWorkspace({
             </div>
           )}
           {!isLoading && visibleMessages.length > 0 && (
-            <p className="mb-3 rounded-md border border-black/5 bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
+            <p className="mb-3 rounded-md border border-border bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
               {DIRECTOR_SESSION_COPY.sessionHint}
               {pendingApprovalCount > 0 ? (
                 <>
@@ -1548,7 +1543,7 @@ export default function DirectorWorkspace({
                         )}
 
                         {m.role === "director" && m.proposals && (
-                          <div className="mt-2 pt-2 border-t border-black/5 space-y-1.5">
+                          <div className="mt-2 pt-2 border-t border-border space-y-1.5">
                             {(() => {
                               const workflowTotal =
                                 m.proposals.actions.length + m.proposals.integrationJobs.length;
@@ -1955,7 +1950,7 @@ export default function DirectorWorkspace({
                                           `Refine concept ${p.title}: keep the core shape but adjust typography.`,
                                         )
                                       }
-                                      className="px-2.5 py-1 rounded-md wl-label border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                      className="px-2.5 py-1 rounded-md wl-label border border-border hover:border-brand/20 hover:bg-brand/5"
                                     >
                                       Edit
                                     </ShadButton>
@@ -1965,7 +1960,7 @@ export default function DirectorWorkspace({
                                           `Regenerate 3 new options from ${p.title} with stronger contrast.`,
                                         )
                                       }
-                                      className="px-2.5 py-1 rounded-md wl-label border border-black/10 hover:border-brand/20 hover:bg-brand/5"
+                                      className="px-2.5 py-1 rounded-md wl-label border border-border hover:border-brand/20 hover:bg-brand/5"
                                     >
                                       Regenerate
                                     </ShadButton>

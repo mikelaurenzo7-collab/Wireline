@@ -187,7 +187,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
   };
 
   return (
-    <div className="rounded-md bg-black/5 border border-black/10 p-5 space-y-4 mt-4">
+    <div className="rounded-md bg-muted/10 border border-border p-5 space-y-4 mt-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="app-section-title">Name</label>
@@ -195,7 +195,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Slack #sales channel"
-            className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm outline-none focus:border-brand/60"
           />
         </div>
         <div className="space-y-1.5">
@@ -204,7 +204,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/..."
-            className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm font-mono outline-none focus:border-brand/60"
           />
         </div>
       </div>
@@ -232,7 +232,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                   "h-auto w-full text-left rounded-md p-2.5 flex items-start gap-2 whitespace-normal",
                   on
                     ? "bg-brand/10 border-brand/40"
-                    : "bg-black/20 border-white/8 hover:border-white/20",
+                    : "bg-muted/20 border-border hover:border-border/60",
                 )}
               >
                 <div
@@ -266,7 +266,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           placeholder="long-random-string-only-you-and-the-receiver-know"
-          className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm font-mono outline-none focus:border-brand/60"
+          className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm font-mono outline-none focus:border-brand/60"
         />
       </div>
 

@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export const MARKETING_PAGE_FILES = new Set([
+  "Features.tsx",
   "LandingPage.tsx",
   "Pricing.tsx",
   "About.tsx",

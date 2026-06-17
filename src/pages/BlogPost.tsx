@@ -106,7 +106,7 @@ export default function BlogPost() {
             Back to blog
           </Link>
 
-          <header className="pb-10 border-b border-black/8">
+          <header className="pb-10 border-b border-border">
             <p className="text-eyebrow text-brand mb-4">Wireline blog</p>
             <h1 className="marketing-hero-title mb-6 text-balance">{post.title}</h1>
             <p className="text-lg sm:text-xl text-ink/75 leading-relaxed max-w-3xl mb-6">
@@ -147,7 +147,7 @@ export default function BlogPost() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {relatedPosts.map((entry) => (
-                <article key={entry.id} className="border border-black/8 bg-white/55 p-5">
+                <article key={entry.id} className="border border-border bg-white/55 p-5">
                   <p className="text-xs text-ink/60 mb-2">
                     {dateFormatter.format(new Date(entry.date))}
                   </p>

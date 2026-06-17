@@ -238,7 +238,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
 
       {trends.length > 1 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <div className="rounded-md wl-panel border border-black/8 p-5">
+          <div className="rounded-md wl-panel border border-border p-5">
             <p className="wl-insight-label text-brand/70 mb-4">TTFT trend</p>
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
@@ -270,7 +270,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             </div>
           </div>
 
-          <div className="rounded-md wl-panel border border-black/8 p-5">
+          <div className="rounded-md wl-panel border border-border p-5">
             <p className="wl-insight-label text-brand/70 mb-4">Failure rates</p>
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
@@ -311,7 +311,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">Hangup reasons</p>
           <div className="space-y-2">
             {topHangups.length === 0 ? (
@@ -320,7 +320,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
               topHangups.map(([reason, count]) => (
                 <div
                   key={reason}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-black/5 last:border-0"
+                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <span className="text-sm text-ink/85 truncate">{reason}</span>
                   <span className="font-mono text-[11px] text-muted shrink-0">{count}</span>
@@ -330,7 +330,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
           </div>
         </div>
 
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">Recent calls</p>
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {recent.length === 0 ? (
@@ -339,7 +339,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
               recent.map((call) => (
                 <div
                   key={String(call.id)}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-black/5 last:border-0"
+                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <div className="min-w-0">
                     <p className="text-sm text-ink/85 truncate">

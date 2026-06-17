@@ -76,7 +76,7 @@ export default function OAuthComplete() {
         noIndex
       />
       <div className="flex flex-1 items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md border border-black/8 bg-paper/92 p-7 sm:p-8 text-center space-y-5 wl-oauth-complete-card">
+        <div className="w-full max-w-md border border-border bg-paper/92 p-7 sm:p-8 text-center space-y-5 wl-oauth-complete-card">
           {error ? (
             <>
               <div role="alert" className="flex items-center justify-center gap-2 text-rose-600">

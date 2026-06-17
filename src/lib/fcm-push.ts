@@ -72,6 +72,7 @@ export async function sendFcmPush(
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const message: any = {
       token: deviceToken,
       android: { priority: "high" },
@@ -91,6 +92,7 @@ export async function sendFcmPush(
     });
 
     return { ok: true, status: res.status };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const status = error.response?.status || 0;
     const reason = error.response?.data?.error?.details?.[0]?.errorCode || error.message;

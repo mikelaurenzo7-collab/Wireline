@@ -89,7 +89,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     <div className="space-y-4">
       {/* Voice Observability Section */}
       {hasVoiceMetrics && (
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-brand" />
             <p className="wl-insight-label text-brand/70">Voice Pipeline Telemetry</p>
@@ -200,7 +200,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         ].map((tile) => (
           <div
             key={tile.label}
-            className="stat-tile-mobile rounded-md wl-panel border border-black/8 p-5"
+            className="stat-tile-mobile rounded-md wl-panel border border-border p-5"
           >
             <p className="wl-insight-label mb-2">{tile.label}</p>
             <p className="metric-value font-display italic text-3xl text-ink">{tile.value}</p>
@@ -210,7 +210,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">
             Live-call guards (Wireline defaults)
           </p>
@@ -235,7 +235,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           </p>
         </div>
 
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">Slowest actions</p>
           <div className="space-y-2">
             {slowest.length === 0 ? (
@@ -244,7 +244,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
               slowest.map((a: any) => (
                 <div
                   key={a.action}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-black/5 last:border-0"
+                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <span className="text-sm text-ink/85 truncate">{a.action}</span>
                   <span className="font-mono text-[11px] text-muted shrink-0">

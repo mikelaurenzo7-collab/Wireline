@@ -320,7 +320,7 @@ export default function CrmConnectionCard() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md wl-panel border border-black/8 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="rounded-md wl-panel border border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="wl-label text-brand">Connected stack</p>
           <p className="text-caption mt-0.5">
@@ -387,14 +387,14 @@ export default function CrmConnectionCard() {
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
                         "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 h-full flex flex-col",
-                        s.connected ? styles.card : "border-black/8",
+                        s.connected ? styles.card : "border-border",
                       )}
                     >
                       <div className="flex items-start gap-3 flex-1">
                         <div
                           className={cn(
                             "w-9 h-9 rounded-md flex items-center justify-center p-1.5 border shrink-0",
-                            s.connected ? styles.icon : "bg-black/4 border-black/10 text-muted/50",
+                            s.connected ? styles.icon : "bg-muted border border-border text-muted/50",
                           )}
                         >
                           {getIntegrationLogo(key) ?? (
@@ -484,7 +484,7 @@ export default function CrmConnectionCard() {
                           const toolInt = toolIntegrationForProvider(key);
                           if (!toolInt) return null;
                           return (
-                            <div className="mt-3 pt-3 border-t border-black/8 hidden sm:block">
+                            <div className="mt-3 pt-3 border-t border-border hidden sm:block">
                               <IntegrationCapabilityPanel
                                 integration={toolInt}
                                 accentColor={PROVIDER_ACCENT[key] ?? BRAND.purple}

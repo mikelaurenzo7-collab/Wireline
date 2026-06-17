@@ -245,7 +245,7 @@ export default function FounderDashboard() {
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <div
             className={cn(
-              "shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-black/8",
+              "shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-border",
               WL_APP_CLASSES.mobileContextBar,
               WL_APP_CLASSES.mobileContextAccent,
             )}
@@ -375,7 +375,7 @@ export default function FounderDashboard() {
               onChange={(e) => setBroadcast(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
               placeholder={OPS_FOUNDER.broadcastPlaceholder}
-              className="flex-1 bg-black/5 border border-black/10 rounded-md px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
+              className="flex-1 bg-black/5 dark:bg-white/5 border border-border rounded-md px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
             />
             <ShadButton
               onClick={sendBroadcast}

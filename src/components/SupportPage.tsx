@@ -217,7 +217,7 @@ export function SupportPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@yourcompany.com"
-                  className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                 />
               </div>
 
@@ -235,7 +235,7 @@ export function SupportPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Short summary — what's broken or what you need"
-                  className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                 />
               </div>
 
@@ -261,7 +261,7 @@ export function SupportPage() {
                           ? "Agent name, call ID or approx time, what the agent did / didn't do, what should have happened."
                           : "Be as specific as possible. We respond to specifics faster than generalities."
                   }
-                  className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
+                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
                 />
               </div>
 

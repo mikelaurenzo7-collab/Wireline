@@ -140,7 +140,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           disableAnimations
           onClick={refresh}
           aria-label="Refresh available numbers"
-          className="shrink-0 rounded-full border-black/10 text-muted hover:text-brand hover:border-brand/40"
+          className="shrink-0 rounded-full border-border text-muted hover:text-brand hover:border-brand/40"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </ShadButton>
@@ -162,7 +162,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   "text-left p-3.5 rounded-md wl-panel border transition-all flex items-center gap-3 group",
                   claiming === n.phone_number
                     ? "border-brand/40 bg-brand/5"
-                    : "border-black/10 hover:border-brand/40 hover:bg-brand/[0.03]",
+                    : "border-border hover:border-brand/40 hover:bg-brand/[0.03]",
                 )}
               >
                 <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 wl-phone-number-icon">
@@ -191,7 +191,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           </div>
         </div>
       ) : (
-        <div className="rounded-md wl-panel border border-black/10 p-5 text-center">
+        <div className="rounded-md wl-panel border border-border p-5 text-center">
           <p className="text-[12px] text-muted">
             No numbers in pool right now. Search by area code below to find one.
           </p>
@@ -199,7 +199,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       )}
 
       {/* Area-code search */}
-      <div className="rounded-md border border-black/10 bg-white/[0.02] p-4 space-y-3">
+      <div className="rounded-md border border-border bg-white/[0.02] p-4 space-y-3">
         <p className="text-eyebrow/60">Search by area code</p>
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
@@ -214,7 +214,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
               onKeyDown={(e) => {
                 if (e.key === "Enter") searchByAreaCode();
               }}
-              className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-black/10 text-sm text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
+              className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-border text-sm text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
             />
           </div>
           <ShadButton
@@ -248,7 +248,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 size="sm"
                 disableAnimations
                 onClick={() => setSearchAreaCode(ac.code)}
-                className="h-auto rounded-full border-black/8 bg-black/[0.03] px-2.5 py-1 wl-micro-meta--muted hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
+                className="h-auto rounded-full border-border bg-muted/10 px-2.5 py-1 wl-micro-meta--muted hover:border-brand/30 hover:bg-brand/5 hover:text-brand"
                 title={`${ac.city}, ${ac.state}`}
               >
                 <span className="font-mono">{ac.code}</span>

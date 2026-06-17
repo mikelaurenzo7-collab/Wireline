@@ -202,7 +202,7 @@ export default function TrialGateModal() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-3xl rounded-t-md sm:rounded-md bg-paper border border-black/10 shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
+            className="relative w-full max-w-3xl rounded-t-md sm:rounded-md bg-paper border border-border shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
           >
             <ShadButton
               type="button"
@@ -211,7 +211,7 @@ export default function TrialGateModal() {
               size="icon"
               onClick={() => setDetail(null)}
               aria-label="Close"
-              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full text-muted hover:text-ink hover:bg-black/5 z-10 after:hidden"
+              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full text-muted hover:text-ink hover:bg-muted/10 z-10 after:hidden"
             >
               <X className="w-4 h-4" />
             </ShadButton>

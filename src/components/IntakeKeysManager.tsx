@@ -240,7 +240,7 @@ export default function IntakeKeysManager() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="rounded-md bg-black/5 border border-black/10 p-4 space-y-3">
+            <div className="rounded-md bg-muted/10 border border-border p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="space-y-1.5">
                   <span className="wl-label-muted">
@@ -250,7 +250,7 @@ export default function IntakeKeysManager() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Webflow Demo Form"
-                    className="w-full h-11 px-4 rounded-md bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                    className="w-full h-11 px-4 rounded-md bg-muted/10 border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all"
                   />
                 </label>
                 <label className="space-y-1.5">
@@ -267,7 +267,7 @@ export default function IntakeKeysManager() {
                   >
                     <SelectTrigger
                       aria-label="Default agent"
-                      className="w-full h-11 px-3 rounded-md bg-black/5 border border-black/10 text-ink text-sm"
+                      className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -294,7 +294,7 @@ export default function IntakeKeysManager() {
                     ? "bg-black/20 border-white/5 text-muted/70"
                     : autoDial
                       ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
-                      : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
+                      : "bg-muted/10 border-border text-ink/80 hover:border-border/60",
                 )}
               >
                 <div
@@ -425,7 +425,7 @@ export default function IntakeKeysManager() {
                   size="sm"
                   disableAnimations
                   onClick={() => toggleActive(k)}
-                  className="h-9 px-3 wl-micro-meta hover:text-ink border-black/8 hover:border-black/15"
+                  className="h-9 px-3 wl-micro-meta hover:text-ink border-border hover:border-border/60"
                 >
                   {k.active ? "Pause" : "Resume"}
                 </ShadButton>
@@ -447,7 +447,7 @@ export default function IntakeKeysManager() {
                       size="sm"
                       disableAnimations
                       onClick={() => setConfirmDelete(null)}
-                      className="h-9 px-3 wl-micro-meta border-black/8"
+                      className="h-9 px-3 wl-micro-meta border-border"
                     >
                       Cancel
                     </ShadButton>

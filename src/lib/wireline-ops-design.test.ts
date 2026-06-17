@@ -67,7 +67,7 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_CHANNEL_EMPTY.phone.actions.some((a) => a.to.includes("outbound"))).toBe(true);
     expect(OPS_CHANNEL_EMPTY.sms.actions.some((a) => a.to.includes("outbound"))).toBe(true);
     expect(OPS_CHANNEL_EMPTY.email.actions.some((a) => a.to === "/integrations")).toBe(true);
-    expect(OPS_CHANNEL_EMPTY.floor.actions.some((a) => a.to === "/chat")).toBe(true);
+    expect(OPS_CHANNEL_EMPTY.floor.actions.some((a) => a.to === "/agents")).toBe(true);
     expect(OPS_CHANNEL_EMPTY.training.actions.some((a) => a.to === "/agents")).toBe(true);
   });
 
@@ -87,8 +87,8 @@ describe("Wireline Live Ops design contract", () => {
     expect(OPS_TRIAGE_COPY.hotStripHint.toLowerCase()).toContain("autonomous");
     expect(OPS_TRIAGE_COPY.hotStripPrompt(2).toLowerCase()).toContain("lead");
     expect(OPS_TRIAGE_COPY.escalationCoachPrompt("+1555", "summary")).toContain("+1555");
-    expect(directorPromptHref("hi there")).toBe("/chat?prompt=hi%20there");
-    expect(directorAssistHref("a/1", "go")).toBe("/chat?agent=a%2F1&prompt=go");
+    expect(directorPromptHref("hi there")).toBe("/agents?prompt=hi%20there");
+    expect(directorAssistHref("a/1", "go")).toBe("/agents?agent=a%2F1&prompt=go");
     expect(OPS_TRAINING_ASSISTS.length).toBeGreaterThanOrEqual(5);
     expect(OPS_TRAINING_ASSISTS.every((a) => a.label && a.prompt)).toBe(true);
   });
@@ -96,7 +96,7 @@ describe("Wireline Live Ops design contract", () => {
   it("defines the Studio co-pilot assists contract", () => {
     expect(OPS_STUDIO_ASSISTS.length).toBeGreaterThanOrEqual(5);
     expect(OPS_STUDIO_ASSISTS.every((a) => a.label && a.prompt)).toBe(true);
-    expect(OPS_STUDIO_ASSISTS_COPY.eyebrow.toLowerCase()).toContain("director");
+    expect(OPS_STUDIO_ASSISTS_COPY.eyebrow.toLowerCase()).toContain("assistant");
     expect(OPS_STUDIO_ASSISTS_COPY.hint.toLowerCase()).toContain("agent");
   });
 
@@ -113,7 +113,7 @@ describe("Wireline Live Ops design contract", () => {
   });
 
   it("defines help, support, and insights empty copy with route CTAs", () => {
-    expect(OPS_HELP.quickLinks.some((l) => l.to === "/chat")).toBe(true);
+    expect(OPS_HELP.quickLinks.some((l) => l.to === "/agents")).toBe(true);
     expect(OPS_HELP.stat(3, 2)).toBe("3 live lines · 2 demos");
     expect(OPS_SUPPORT_EMPTY.dnc.title.toLowerCase()).toContain("blocked");
     expect(OPS_SUPPORT_EMPTY.auditCompliance.toLowerCase()).toContain("compliance");

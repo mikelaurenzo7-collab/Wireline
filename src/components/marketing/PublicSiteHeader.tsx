@@ -9,6 +9,7 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 export type PublicNavActive = "signin" | "signup" | "home";
 
 const NAV_LINKS = [
+  { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
   { to: "/showcase", label: "Demos" },
   { to: "/compare", label: "Compare" },

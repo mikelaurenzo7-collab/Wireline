@@ -587,7 +587,7 @@ function CallDetail({
       <div className="h-full flex flex-col">
         {/* Sub-tabs */}
         <div
-          className="shrink-0 px-3 pt-2.5 pb-2 border-b border-black/8 flex items-center gap-1.5"
+          className="shrink-0 px-3 pt-2.5 pb-2 border-b border-border flex items-center gap-1.5"
           role="tablist"
         >
           {(
@@ -612,8 +612,8 @@ function CallDetail({
                 className={cn(
                   "h-auto px-2.5 py-1 rounded-full border wl-label",
                   active
-                    ? "bg-black/[0.06] border-brand/40 text-ink hover:bg-black/[0.06]"
-                    : "border-black/8 text-muted hover:text-ink",
+                    ? "bg-muted/80 border-brand/40 text-ink hover:bg-muted"
+                    : "border-border text-muted hover:text-ink",
                 )}
               >
                 <t.icon className={cn("w-3 h-3", active ? "text-brand" : "")} />
@@ -688,7 +688,7 @@ function CallDetail({
                 )}
                 {/* QA Scorecard */}
                 {qaScore !== null && qaBreakdown ? (
-                  <div className="rounded-md wl-panel p-5 bg-gradient-to-br from-white/40 to-transparent border border-black/[0.04] shadow-sm backdrop-blur-sm">
+                  <div className="rounded-md wl-panel p-5 bg-gradient-to-br from-brand/[0.04] to-transparent border border-border shadow-sm backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-3">
                       <div
                         className="wl-label flex items-center gap-1.5 wl-qa-text"
@@ -710,7 +710,7 @@ function CallDetail({
                         return (
                           <div key={key} className="flex items-center gap-2">
                             <span className="wl-label-muted w-20 shrink-0">{label}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-black/10 overflow-hidden">
+                            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${(val / 20) * 100}%` }}
@@ -726,7 +726,7 @@ function CallDetail({
                       })}
                     </div>
                     {qaBreakdown.notes && (
-                      <p className="text-[11px] text-ink/65 leading-relaxed border-t border-black/8 pt-2 mt-2">
+                      <p className="text-[11px] text-ink/65 leading-relaxed border-t border-border pt-2 mt-2">
                         <Sparkles className="w-3 h-3 inline mr-1 text-brand" />
                         {qaBreakdown.notes}
                       </p>
@@ -812,10 +812,10 @@ function CallDetail({
                         className={cn(
                           "p-3 rounded-md border text-[12px] leading-snug max-w-[85%]",
                           isAI
-                            ? "bg-black/[0.03] border-black/8 text-ink mr-auto"
+                            ? "bg-muted/30 border-border text-ink mr-auto"
                             : isUser
                               ? "bg-brand/8 border-brand/20 text-ink ml-auto"
-                              : "bg-black/[0.05] border-black/8 text-muted text-center mx-auto",
+                              : "bg-muted border-border text-muted text-center mx-auto",
                         )}
                       >
                         <div

@@ -411,7 +411,7 @@ export const DIRECTOR_DEEP_MODE_COPY = {
 export const DIRECTOR_MODEL_PICKER_COPY = {
   label: "Model",
   shortLabel: "Model",
-  hint: "Director chat only — voice agents stay on Wireline Sonnet. OpenRouter uses your company key.",
+  hint: "Assistant chat only — voice agents stay on Wireline Sonnet. OpenRouter uses your company key.",
   wirelineSection: "Wireline",
   openRouterSection: "OpenRouter",
   autoLabel: "Auto (recommended)",
@@ -439,7 +439,7 @@ export type ComposerAccessoryKind =
   | "designSetup";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
-  connectors: "Connector lanes your fleet can orchestrate through Director",
+  connectors: "Connector lanes your fleet can orchestrate through Assistant",
   capabilities: "Tap a skill — example prompt lands in the composer",
   coach: "Route this thread through one agent's memory and tools",
   tools: "Abilities currently armed for the coached agent",
@@ -861,7 +861,7 @@ export const DIRECTOR_SESSION_COPY = {
   pendingApprovals: (n: number) => (n === 1 ? "1 approval pending" : `${n} approvals pending`),
   sessionHint:
     "Applied agent settings persist on each agent. Unapproved cards and chat history are removed when you clear.",
-  degradedNotice: "Some Director data could not be loaded. Your thread may be incomplete.",
+  degradedNotice: "Some Assistant data could not be loaded. Your thread may be incomplete.",
   degradedRetryLabel: "Retry",
 } as const;
 

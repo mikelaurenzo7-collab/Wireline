@@ -151,7 +151,7 @@ export default function QualityView({ days }: { days: number }) {
         ].map(({ label, value, accent }) => (
           <div
             key={label}
-            className="relative rounded-md wl-panel border border-black/8 p-4 overflow-hidden"
+            className="relative rounded-md wl-panel p-4 overflow-hidden"
             data-accent={accent}
           >
             <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-25 blur-3xl pointer-events-none wl-accent-halo" />
@@ -163,7 +163,7 @@ export default function QualityView({ days }: { days: number }) {
 
       {/* Distribution + Radar */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-4 flex items-center gap-1.5">
             <BarChart3 className="w-3 h-3" /> Score Distribution
           </h4>
@@ -171,7 +171,7 @@ export default function QualityView({ days }: { days: number }) {
             {distribution.map((bucket: any) => (
               <div key={bucket.label} className="flex items-center gap-3">
                 <span className="wl-micro-meta--muted w-28 shrink-0">{bucket.label}</span>
-                <div className="flex-1 h-2 rounded-full bg-black/10 overflow-hidden">
+                <div className="flex-1 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(bucket.count / maxDist) * 100}%` }}
@@ -188,7 +188,7 @@ export default function QualityView({ days }: { days: number }) {
           </div>
         </div>
 
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-2 flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Dimension Averages (% of max)
           </h4>
@@ -216,7 +216,7 @@ export default function QualityView({ days }: { days: number }) {
 
       {/* 7-day trend */}
       {data.trend && data.trend.length > 1 && (
-        <div className="rounded-md wl-panel border border-black/8 p-5">
+        <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-4 flex items-center gap-1.5">
             <TrendingUp className="w-3 h-3" /> QA Score Trend
           </h4>
@@ -268,13 +268,13 @@ export default function QualityView({ days }: { days: number }) {
       )}
 
       {/* Dimension detail table */}
-      <div className="rounded-md wl-panel border border-black/8 overflow-hidden">
-        <div className="px-5 py-3 border-b border-black/8">
+      <div className="rounded-md wl-panel overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
           <h4 className="font-mono wl-label-muted flex items-center gap-1.5">
             <Star className="w-3 h-3" /> Rubric Dimensions
           </h4>
         </div>
-        <div className="divide-y divide-black/6">
+        <div className="divide-y divide-border">
           {[
             {
               key: "greeting",

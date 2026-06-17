@@ -187,7 +187,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   };
 
   const inputCls =
-    "w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all";
+    "w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -205,7 +205,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-lg rounded-md wl-panel-elevated border border-brand/20 shadow-[0_12px_48px_rgba(var(--brand-rgb),0.15)] overflow-hidden bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl"
       >
-        <header className="px-5 py-4 border-b border-black/10 flex items-center justify-between">
+        <header className="px-5 py-4 border-b border-border flex items-center justify-between">
           <div>
             <p className="wl-label text-brand mb-0.5">Appointments</p>
             <h2 className="font-display italic text-2xl text-ink">
@@ -331,7 +331,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
           )}
         </div>
 
-        <footer className="px-5 py-4 border-t border-black/10 flex items-center justify-end gap-2">
+        <footer className="px-5 py-4 border-t border-border flex items-center justify-end gap-2">
           <ShadButton
             onClick={onClose}
             variant="outline"
@@ -434,7 +434,7 @@ function CalendarGrid({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/8">
+      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/80">
         <ShadButton
           onClick={() =>
             setMonth((m) => {
@@ -472,7 +472,7 @@ function CalendarGrid({
         </ShadButton>
       </div>
 
-      <div className="shrink-0 grid grid-cols-7 border-b border-black/8 min-w-[21rem]" role="row">
+      <div className="shrink-0 grid grid-cols-7 border-b border-border/80 min-w-[21rem]" role="row">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} role="columnheader" className="py-2 text-center wl-label text-ink/40">
             {d}
@@ -504,8 +504,8 @@ function CalendarGrid({
                     : "Empty calendar cell"
                 }
                 className={cn(
-                  "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-black/6 p-1.5",
-                  cell.day ? "hover:bg-black/3" : "opacity-0 pointer-events-none",
+                  "min-h-[50px] sm:min-h-[60px] md:min-h-[80px] border-b border-r border-border/40 p-1.5",
+                  cell.day ? "hover:bg-accent/40" : "opacity-0 pointer-events-none",
                 )}
               >
                 {cell.day && (
@@ -988,7 +988,7 @@ function AppointmentRow({
                         setShowStatusMenu(false);
                       }}
                       aria-label={`Set ${appt.customer_name} appointment status to ${s}`}
-                      className="w-full h-auto justify-start rounded-none px-3 py-2 wl-micro-meta text-ink hover:bg-black/5"
+                      className="w-full h-auto justify-start rounded-none px-3 py-2 wl-micro-meta text-ink hover:bg-accent/40"
                     >
                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
                       {s}
@@ -1004,7 +1004,7 @@ function AppointmentRow({
             aria-label={`Edit appointment for ${appt.customer_name}`}
             variant="ghost"
             size="icon"
-            className="w-7 h-7 hover:text-ink hover:border-black/20"
+            className="w-7 h-7 hover:text-ink hover:border-border/60"
           >
             <Pencil className="w-3.5 h-3.5" />
           </ShadButton>

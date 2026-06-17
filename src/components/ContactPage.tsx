@@ -202,7 +202,7 @@ export function ContactPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@yourcompany.com"
-                    className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                    className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                   />
                 </div>
                 <div>
@@ -215,7 +215,7 @@ export function ContactPage() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     placeholder="Acme Co."
-                    className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                    className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                   />
                 </div>
               </div>
@@ -231,7 +231,7 @@ export function ContactPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Short summary — what you'd like to talk about"
-                  className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                 />
               </div>
 
@@ -254,7 +254,7 @@ export function ContactPage() {
                           ? "Outlet, your angle, and any deadline we should know about."
                           : "Tell us what you need — the more specific, the faster we can help."
                   }
-                  className="w-full rounded-md border border-black/10 bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
+                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
                 />
               </div>
 

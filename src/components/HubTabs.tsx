@@ -55,7 +55,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
         className,
       )}
     >
-      <div className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel border border-black/8">
+      <div className="app-tab-strip flex items-center gap-0.5 p-0.5 wl-panel border border-border">
         {tabs.map((t, index) => {
           const Icon = t.icon;
           const active = pathname === t.path || pathname.startsWith(`${t.path}/`);
@@ -75,7 +75,7 @@ export default function HubTabs({ tabs, label, className, layoutIdPrefix }: HubT
               }}
               className={cn(
                 "group relative shrink-0 inline-flex min-h-10 items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium touch-press hover:scale-[1.02]",
-                active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
+                active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-muted/10",
               )}
             >
               {active && (

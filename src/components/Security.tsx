@@ -194,7 +194,7 @@ export default function Security() {
             ))}
           </div>
 
-          <div className="mt-12 pt-6 border-t border-black/8">
+          <div className="mt-12 pt-6 border-t border-border">
             <p className="text-eyebrow mb-2">On the roadmap</p>
             <ul className="marketing-body space-y-1 list-disc pl-5">
               <li>SOC 2 Type II certification — audit firm engaged, target 2026 Q4.</li>
@@ -207,7 +207,7 @@ export default function Security() {
             </ul>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-black/8">
+          <div className="mt-10 pt-6 border-t border-border">
             <p className="text-eyebrow mb-3">Vertical trust packs</p>
             <div className="flex flex-wrap gap-x-4 gap-y-2 marketing-body">
               <Link to="/trust/medical" className="text-brand hover:underline">

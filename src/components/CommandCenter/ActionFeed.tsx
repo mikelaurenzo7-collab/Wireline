@@ -151,7 +151,7 @@ export function ActionFeed({
                   "relative group rounded-md border transition-all duration-300 overflow-hidden",
                   action.status === "pending"
                     ? "wl-panel hover:border-brand/30"
-                    : "bg-black/[0.02] border-black/4 opacity-60",
+                    : "bg-muted/10 border-border/40 opacity-60",
                   isExpanded && "border-brand/40 bg-paper/90 ring-1 ring-brand/10 shadow-lg",
                 )}
               >
@@ -199,7 +199,7 @@ export function ActionFeed({
                               "wl-label font-bold px-1.5 py-0.5 rounded-full border",
                               action.priority === "high"
                                 ? "bg-destructive/10 text-destructive border-destructive/20"
-                                : "bg-black/5 text-muted border-black/10",
+                                : "bg-muted text-muted border-border",
                             )}
                           >
                             {action.priority}
@@ -270,7 +270,7 @@ export function ActionFeed({
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden bg-black/[0.03] border-t border-black/5"
+                      className="overflow-hidden bg-muted/20 border-t border-border"
                     >
                       <div className="p-5 space-y-4">
                         {action.reasoning && (
@@ -284,10 +284,10 @@ export function ActionFeed({
 
                         <div className="space-y-2">
                           <h4 className="wl-label text-muted font-bold">Drafted Content</h4>
-                          <div className="rounded-md bg-paper/90 border border-black/5 p-4 overflow-hidden">
+                          <div className="rounded-md bg-paper/90 border border-border p-4 overflow-hidden">
                             {action.type === "send_email" ? (
                               <div className="space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border">
                                   <span className="wl-label text-muted font-mono">TO:</span>
                                   <span
                                     className={cn(
@@ -309,7 +309,7 @@ export function ActionFeed({
                               </div>
                             ) : action.type === "send_text_message" ? (
                               <div className="space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border">
                                   <span className="wl-label text-muted font-mono">TO:</span>
                                   <span
                                     className={cn(
@@ -331,7 +331,7 @@ export function ActionFeed({
                               </div>
                             ) : action.type === "notify_slack" ? (
                               <div className="space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-bottom border-black/5">
+                                <div className="flex items-center gap-2 pb-2 border-b border-border">
                                   <span className="wl-label text-muted font-mono">CHANNEL:</span>
                                   <span
                                     className={cn(

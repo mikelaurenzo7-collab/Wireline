@@ -37,23 +37,29 @@ export function Field({
   hint?: string;
 }) {
   const hintId = useId();
-  // Wrapping the control in the <label> gives a programmatic association
-  // for the text inputs/textarea without threading ids through every call
-  // site; Select carries its own aria-label.
+  const inputId = useId();
+
+  let processedChildren = children;
+  if (React.isValidElement(children)) {
+    const propsToInject: any = { id: inputId };
+    if (hint) {
+      propsToInject["aria-describedby"] = hintId;
+    }
+    processedChildren = React.cloneElement(children as React.ReactElement<any>, propsToInject);
+  }
+
   return (
-    <label className="flex flex-col gap-2">
-      <span className="app-section-title">{label}</span>
-      {React.isValidElement(children) && hint
-        ? React.cloneElement(children as React.ReactElement<{ "aria-describedby"?: string }>, {
-            "aria-describedby": hintId,
-          })
-        : children}
+    <div className="flex flex-col gap-2">
+      <label htmlFor={inputId} className="app-section-title">
+        {label}
+      </label>
+      {processedChildren}
       {hint && (
         <p id={hintId} className="wl-micro-meta--muted leading-relaxed">
           {hint}
         </p>
       )}
-    </label>
+    </div>
   );
 }
 

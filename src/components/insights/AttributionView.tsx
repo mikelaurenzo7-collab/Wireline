@@ -50,9 +50,9 @@ export default function AttributionView({ days }: { days: number }) {
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
         />
       </div>
-      <div className="rounded-md wl-panel border border-black/8 overflow-hidden app-table-scroll">
+      <div className="rounded-md wl-panel overflow-hidden app-table-scroll">
         <table className="w-full text-sm">
-          <thead className="bg-black/3">
+          <thead className="bg-black/[0.03] dark:bg-white/[0.02]">
             <tr className="text-left wl-insight-label">
               <th className="px-3 py-2.5 font-medium">Campaign</th>
               <th className="px-3 py-2.5 font-medium text-right">Calls</th>
@@ -64,14 +64,14 @@ export default function AttributionView({ days }: { days: number }) {
           </thead>
           <tbody>
             {rows.map((r, i) => {
-              const calls = Number(r.calls) || 0;
-              const booked = Number(r.booked) || 0;
-              const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
-              const isUntagged = r.source === "(untagged)";
-              return (
+               const calls = Number(r.calls) || 0;
+               const booked = Number(r.booked) || 0;
+               const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
+               const isUntagged = r.source === "(untagged)";
+               return (
                 <tr
                   key={`${r.source}-${i}`}
-                  className="border-t border-black/5 hover:bg-black/[0.02] transition-colors"
+                  className="border-t border-border hover:bg-black/[0.02] dark:hover:bg-white/[0.01] transition-colors"
                 >
                   <td className="px-3 py-2.5">
                     <span className={isUntagged ? "text-muted/80 italic" : "text-ink font-medium"}>

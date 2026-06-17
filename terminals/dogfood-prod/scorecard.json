@@ -1,0 +1,57 @@
+{
+  "date": "2026-06-08",
+  "url": "https://trywireline.com",
+  "gate": "launch",
+  "personas": ["founder", "ops"],
+  "dimensions": {
+    "functional": {
+      "score": 2,
+      "weight": 0.2,
+      "notes": "Sign-in and shell routes work; P0 journeys J1/J3/J8 blocked by Director hang and Painter timeout."
+    },
+    "director": {
+      "score": 1,
+      "weight": 0.2,
+      "notes": "Stream stuck on 'Connecting to Director' >3m; persistent hydration banner on empty Chat thread; execute/coach untestable."
+    },
+    "painter": {
+      "score": 2,
+      "weight": 0.1,
+      "notes": "Debt-relief render probe started then timed out ('Design didn't finish in time'); no preview iframe."
+    },
+    "shell": {
+      "score": 5,
+      "weight": 0.15,
+      "notes": "1440 expanded rail 216px matches main padding; Email title not clipped; 390px Ops Triage usable without horizontal scroll."
+    },
+    "trust": {
+      "score": 2,
+      "weight": 0.15,
+      "notes": "Approve/deny execute path not reachable; Ops Actions empty-state clear; DNC section visible in triage/admin."
+    },
+    "design": {
+      "score": 4,
+      "weight": 0.1,
+      "notes": "Aurora cream/velvet consistent on Ops, Chat hero, Training, Email; operator-specific copy; Beta badges present."
+    },
+    "observability": {
+      "score": 2,
+      "weight": 0.1,
+      "notes": "GET /api/design/profile returns 500 in-session; likely drives DF-003 banner; Director SSE never reached terminal reply."
+    }
+  },
+  "total": 49,
+  "verdict": "NOT_READY",
+  "open_p0": 3,
+  "journeys": {
+    "J1": "fail",
+    "J2": "pass",
+    "J3": "fail",
+    "J4": "skip",
+    "J5": "fail",
+    "J6": "partial",
+    "J7": "partial",
+    "J8": "fail",
+    "J9": "pass"
+  }
+}

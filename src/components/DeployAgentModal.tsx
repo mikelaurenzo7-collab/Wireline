@@ -253,7 +253,7 @@ export default function DeployAgentModal({
             className="relative z-10 w-full sm:w-[min(540px,calc(100vw-32px))] max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain rounded-t-md sm:rounded-md"
           >
             <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
-              <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-black/8 dark:border-white/8">
+              <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-border">
                 <div className="space-y-1.5 min-w-0">
                   <p className="wl-micro-meta">
                     Deploy · {template.category}
@@ -298,7 +298,7 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-black/5 border border-black/10 rounded-md px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="wl-micro-meta">
                     What callers and your team will see. You can change this any time in /agents.
@@ -375,7 +375,7 @@ export default function DeployAgentModal({
                                   "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[12px] border",
                                   isSelected
                                     ? "bg-brand/12 border-brand/35 text-ink"
-                                    : "bg-black/5 border-black/8 text-ink/75 hover:bg-black/8 hover:text-ink",
+                                    : "bg-muted/20 border border-border text-ink/75 hover:bg-muted/30 hover:text-ink",
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
@@ -408,7 +408,7 @@ export default function DeployAgentModal({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-black/10 dark:border-white/10 bg-black/5 px-4 py-3 text-[12px] text-ink/65">
+                  <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[12px] text-ink/65">
                     Email agent — no voice picker. The agent's writing tone is configured in{" "}
                     <span className="text-ink/80">/agents → Personality</span> after deploy.
                   </div>
@@ -416,7 +416,7 @@ export default function DeployAgentModal({
               </div>
 
               {/* Footer */}
-              <div className="relative z-10 px-7 pb-6 pt-2 flex items-center justify-between gap-3 border-t border-black/8 dark:border-white/8">
+              <div className="relative z-10 px-7 pb-6 pt-2 flex items-center justify-between gap-3 border-t border-border">
                 <ShadButton
                   type="button"
                   variant="ghost"
@@ -481,7 +481,7 @@ function GenderTile({
         "relative h-auto rounded-md border px-3 py-3 text-left overflow-hidden justify-start",
         active
           ? "border-brand/40 bg-brand/8 text-ink"
-          : "border-black/10 bg-black/4 text-ink/70 hover:bg-black/8 hover:text-ink",
+          : "border-border bg-muted/20 text-ink/70 hover:bg-muted/30 hover:text-ink",
       )}
     >
       {active && (
@@ -496,7 +496,7 @@ function GenderTile({
         <div
           className={cn(
             "w-8 h-8 rounded-md flex items-center justify-center shrink-0 border",
-            active ? "border-brand/40 bg-brand/15" : "border-black/8 bg-white/40",
+            active ? "border-brand/40 bg-brand/15" : "border-border bg-white/40",
           )}
         >
           <Icon className="w-4 h-4" strokeWidth={2.2} />

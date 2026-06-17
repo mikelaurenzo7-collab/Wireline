@@ -4,6 +4,7 @@ export function isMarketingHomePath(pathname: string): boolean {
 }
 
 const MARKETING_PUBLIC_PATHS = new Set([
+  "/features",
   "/pricing",
   "/compare",
   "/about",

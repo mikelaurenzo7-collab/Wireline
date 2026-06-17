@@ -466,7 +466,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
                 ? "bg-destructive/8 border-destructive/25 hover:border-destructive/40"
                 : t.priority === "medium"
                   ? "bg-brand/[0.06] border-brand/20 hover:border-brand/35"
-                  : "border-black/8 hover:border-black/12",
+                  : "border-border hover:border-border/150",
             )}
           >
             <ShieldAlert
@@ -593,7 +593,7 @@ const KnowledgeGapRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="wl-panel wl-panel-editorial border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press hover:scale-[1.02]">
+      <Card className="wl-panel wl-panel-editorial border-border hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press hover:scale-[1.02]">
         <div className="flex items-start gap-3 w-full">
           <BookOpen className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0 text-left">
@@ -721,7 +721,7 @@ const OpenTaskRow: React.FC<{
       transition={{ duration: 0.18 }}
       className="mb-2 list-none"
     >
-      <Card className="wl-panel wl-panel-editorial border-black/8 hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press hover:scale-[1.02]">
+      <Card className="wl-panel wl-panel-editorial border-border hover:border-brand/25 transition-all p-3 flex items-start gap-3 rounded-md touch-press hover:scale-[1.02]">
         <ShadButton
           variant="outline"
           size="icon"
@@ -760,7 +760,7 @@ const OpenTaskRow: React.FC<{
                 task.priority === "medium" &&
                   "bg-brand/15 text-brand border-brand/30 hover:bg-brand/20",
                 task.priority === "low" &&
-                  "bg-black/[0.04] text-muted border-black/10 hover:bg-black/[0.06]",
+                  "bg-black/[0.04] dark:bg-white/5 text-muted border-border hover:bg-black/[0.06] dark:hover:bg-white/8",
               )}
             >
               {task.priority}
@@ -830,8 +830,8 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                   ),
                 )}
                 className="w-9 h-9 rounded-full border border-brand/30 text-brand hover:bg-brand/10 flex items-center justify-center transition-colors touch-press hit-area-44"
-                title="Coach in Director"
-                aria-label="Coach this escalation in Director chat"
+                title="Coach with Assistant"
+                aria-label="Coach this escalation with Assistant"
               >
                 <Sparkles className="w-3.5 h-3.5" />
               </Link>

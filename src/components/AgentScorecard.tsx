@@ -77,7 +77,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
   if (loading && !data) {
     return (
-      <section className="rounded-md wl-panel border border-black/10 dark:border-white/10 p-5 flex items-center gap-3">
+      <section className="rounded-md wl-panel border border-border p-5 flex items-center gap-3">
         <Loader2 className="w-4 h-4 animate-spin text-brand" />
         <span className="app-section-title/70">Loading scorecard</span>
       </section>
@@ -113,7 +113,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 
       <header className="relative flex items-start gap-3 mb-4">
         <div
-          className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-black/10 dark:border-white/10 shadow-lg shadow-brand/10 wl-accent-icon-chip wl-accent-text"
+          className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-border shadow-lg shadow-brand/10 wl-accent-icon-chip wl-accent-text"
           data-accent={SCORECARD_BRAND}
         >
           <Target className="w-4.5 h-4.5" />
@@ -164,7 +164,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 function DeltaPill({ pct }: { pct: number }) {
   if (!Number.isFinite(pct) || pct === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label font-mono font-medium bg-black/[0.04] dark:bg-white/5 border border-black/10 dark:border-white/10 text-ink/40">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label font-mono font-medium bg-muted border border-border text-ink/40">
         flat
       </span>
     );

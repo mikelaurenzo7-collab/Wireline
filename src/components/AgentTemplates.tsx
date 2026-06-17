@@ -408,7 +408,7 @@ function TemplateCard({
               className={cn(
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
-                  ? "bg-black/[0.04] dark:bg-white/8 border-black/10 dark:border-white/15 text-ink/70"
+                  ? "bg-muted border border-border text-ink/70"
                   : "bg-brand/10 border-brand/30 text-brand",
                 alreadyDeployed && "hidden sm:inline-flex",
               )}
@@ -417,7 +417,7 @@ function TemplateCard({
             </span>
             {/* Extra badge — desktop only to reduce chip noise on mobile */}
             {template.badge && (
-              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/8 border border-black/10 dark:border-white/15 wl-label leading-none text-ink/70">
+              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-ink/70">
                 {template.badge}
               </span>
             )}
@@ -615,7 +615,7 @@ export default function AgentTemplates() {
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Top bar — page title removed per design direction; the left
           nav already labels this "Templates". Search stays. */}
-      <div className="px-4 py-3 border-b border-black/8 dark:border-white/8 flex flex-col gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-border flex flex-col gap-3 shrink-0">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none" />
@@ -625,7 +625,7 @@ export default function AgentTemplates() {
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-black/5 border border-black/10 rounded-md outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
           />
         </div>
 

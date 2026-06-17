@@ -486,7 +486,7 @@ export default function FastStartWizard({
                         value={businessDescription}
                         onChange={(e) => setBusinessDescription(e.target.value)}
                         placeholder="e.g., We're a family-owned plumbing company in Chicago that handles emergency repairs, drain cleaning, and bathroom remodels..."
-                        className="w-full h-32 p-4 rounded-md bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none resize-none text-sm placeholder:text-muted/50"
+                        className="w-full h-32 p-4 rounded-md bg-white/50 border border-border focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none resize-none text-sm placeholder:text-muted/50"
                         autoFocus
                       />
                     </label>
@@ -526,7 +526,7 @@ export default function FastStartWizard({
                         value={websiteUrl}
                         onChange={(e) => setWebsiteUrl(e.target.value)}
                         placeholder="https://yourbusiness.com"
-                        className="w-full p-4 rounded-md bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50"
+                        className="w-full p-4 rounded-md bg-white/50 border border-border focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50"
                         autoFocus
                       />
                     </label>
@@ -554,7 +554,7 @@ export default function FastStartWizard({
                             "p-4 h-auto rounded-md border text-left transition-all w-full justify-start flex-col items-start touch-press-deep hover:scale-[1.01]",
                             selectedVoiceId === voice.id
                               ? "border-brand bg-brand/5"
-                              : "border-black/10 hover:border-black/20",
+                              : "border-border hover:border-border/60",
                           )}
                         >
                           <div className="flex items-center justify-between mb-2">
@@ -582,7 +582,7 @@ export default function FastStartWizard({
                         value={areaCode}
                         onChange={(e) => setAreaCode(e.target.value.replace(/\D/g, "").slice(0, 3))}
                         placeholder="212"
-                        className="w-32 p-4 rounded-md bg-white/50 border border-black/10 focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50 text-center tracking-widest"
+                        className="w-32 p-4 rounded-md bg-white/50 border border-border focus:border-brand/50 focus:ring-2 focus:ring-brand/10 outline-none text-sm placeholder:text-muted/50 text-center tracking-widest"
                         autoFocus
                       />
                     </label>
@@ -598,7 +598,7 @@ export default function FastStartWizard({
 
                 {currentStep.id === "review" && (
                   <div className="space-y-4">
-                    <div className="p-4 rounded-md bg-white/50 border border-black/10 space-y-3">
+                    <div className="p-4 rounded-md bg-white/50 border border-border space-y-3">
                       <div className="flex items-start gap-3">
                         <Building2 className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                         <div>

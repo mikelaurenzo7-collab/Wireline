@@ -141,7 +141,7 @@ export function CarrierPanel({
 
           <div className="space-y-1.5">
             <label htmlFor="vapi-phone-number-id" className="wl-label text-ink/40">
-              Default Wireline phone number ID
+              Default carrier peering ID
             </label>
             <Input
               id="vapi-phone-number-id"

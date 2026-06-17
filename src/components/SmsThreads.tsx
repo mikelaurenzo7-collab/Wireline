@@ -275,7 +275,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search number or summary…"
                       aria-label="Search SMS threads"
-                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-black/10 rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all"
                     />
                   </div>
                 </div>
@@ -415,7 +415,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                   transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className="h-full flex flex-col min-h-0 p-3 bg-gradient-to-br from-white/40 to-transparent"
                 >
-                  <div className="shrink-0 pb-2 border-b border-black/6 flex items-center gap-2">
+                  <div className="shrink-0 pb-2 border-b border-border flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
                     <span className="font-mono text-sm text-ink truncate">
                       {activeThread.customer_number}
@@ -460,7 +460,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                             "max-w-[min(78%,36rem)] lg:max-w-[min(72%,44rem)] xl:max-w-[min(66%,52rem)] rounded-md px-3.5 py-2.5 border transition-all duration-300 hover:shadow-sm",
                             m.direction === "out"
                               ? "ml-auto bg-brand/12 border-brand/30 text-ink"
-                              : "mr-auto bg-white/80 backdrop-blur-sm border-black/10 text-ink",
+                              : "mr-auto bg-white/80 backdrop-blur-sm border-border text-ink",
                           )}
                         >
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
@@ -481,7 +481,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                     <div ref={messagesEndRef} />
                   </div>
 
-                  <div className="shrink-0 border-t border-black/8 pt-3">
+                  <div className="shrink-0 border-t border-border pt-3">
                     <div className="flex gap-2">
                       <Input
                         type="text"
@@ -495,7 +495,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         }}
                         placeholder="Type a reply…"
                         disabled={sending}
-                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-black/10 rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-ink placeholder:text-ink/40 disabled:opacity-50 transition-all duration-300"
+                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-border rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-ink placeholder:text-ink/40 disabled:opacity-50 transition-all duration-300"
                       />
                       <ShadButton
                         type="button"

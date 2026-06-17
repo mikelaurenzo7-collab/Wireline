@@ -302,7 +302,7 @@ export default function DailyBrief() {
                         a.urgency === "high" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                         a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
-                        a.urgency === "low" && "bg-black/[0.06] text-ink/50 border border-black/12",
+                        a.urgency === "low" && "bg-muted text-ink/50 border border-border",
                       )}
                     >
                       {a.urgency}
@@ -504,10 +504,10 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             className={cn(
               "w-full h-auto px-4 py-3 rounded-md border flex items-start gap-3 text-left justify-start",
               !gmailConnected
-                ? "bg-black/20 border-border text-muted/70 cursor-not-allowed"
+                ? "bg-muted/40 border-border text-muted/70 cursor-not-allowed"
                 : enabled
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "bg-black/5 border-black/10 text-ink/80 hover:border-black/20",
+                  : "bg-muted/20 border border-border text-ink/80 hover:border-border/60 hover:bg-muted/40",
             )}
           >
             <div
@@ -543,7 +543,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 type="time"
                 value={sendAt}
                 onChange={(e) => setSendAt(e.target.value)}
-                className="w-full h-11 px-4 rounded-md bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+                className="w-full h-11 px-4 rounded-md bg-muted/20 border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
               />
               <span className="wl-micro-meta opacity-90 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
@@ -561,7 +561,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setRecipient(e.target.value.trimStart())}
                 onBlur={(e) => setRecipient(e.target.value.trim())}
                 placeholder="you@example.com"
-                className="w-full h-11 px-4 rounded-md bg-black/5 border border-black/10 outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                className="w-full h-11 px-4 rounded-md bg-muted/20 border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all"
               />
             </label>
           </div>

@@ -254,7 +254,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           </CtaLink>
           <a
             href={cfg.secondaryCta.href}
-            className="inline-flex items-center gap-2 px-5 py-3 wl-panel border border-black/12 text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 wl-panel border border-border text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
           >
             <Phone className="w-4 h-4" />
             {cfg.secondaryCta.label}

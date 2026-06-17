@@ -78,7 +78,7 @@ export const OPS_CHANNEL_EMPTY = {
     description: "Active conversations stream here in real time — listen in, coach, or escalate.",
     actions: [
       { label: "View call history", to: "/phone" },
-      { label: "Coach in chat", to: "/chat", primary: true },
+      { label: "Coach in chat", to: "/agents", primary: true },
     ],
   },
   fleetRail: {
@@ -136,7 +136,7 @@ export const OPS_CHANNEL_EMPTY = {
       "Connect Gmail, Outlook, or Yahoo in Integrations so agents can triage and reply from caller moments.",
     actions: [
       { label: "Connect email", to: "/integrations", primary: true },
-      { label: "Ask Director", to: "/chat" },
+      { label: "Ask Assistant", to: "/chat" },
     ],
   },
   inboxDetail: {
@@ -331,7 +331,7 @@ export const OPS_TRIAGE_COPY = {
   /** Slim hot-lead signal strip — replaces the old full-height Hot Leads panel. */
   hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
   hotStripHint: "Agents are following up autonomously",
-  hotStripCta: "Brief Director",
+  hotStripCta: "Brief Assistant",
   hotStripPrompt: (n: number) =>
     `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now — who they are, why they're hot, and what the fleet is doing to close them.`,
   escalationCoachPrompt: (number: string, summary: string) =>
@@ -374,8 +374,8 @@ export const OPS_TRAINING_ASSISTS = [
 ] as const;
 
 export const OPS_TRAINING_ASSISTS_COPY = {
-  eyebrow: "Director assists",
-  hint: "Runs in Director chat",
+  eyebrow: "Assistant assists",
+  hint: "Runs in Assistant chat",
 } as const;
 
 /**
@@ -413,18 +413,18 @@ export const OPS_STUDIO_ASSISTS = [
 ] as const;
 
 export const OPS_STUDIO_ASSISTS_COPY = {
-  eyebrow: "Director co-pilot",
-  hint: "Opens Director scoped to this agent",
+  eyebrow: "Assistant co-pilot",
+  hint: "Opens Assistant scoped to this agent",
 } as const;
 
 /** Deep-link into Director chat with an agent focused and the composer prefilled. */
 export function directorAssistHref(agentId: string, prompt: string): string {
-  return `/chat?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
+  return `/agents?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
 }
 
 /** Deep-link into Director chat with only a prefilled prompt. */
 export function directorPromptHref(prompt: string): string {
-  return `/chat?prompt=${encodeURIComponent(prompt)}`;
+  return `/agents?prompt=${encodeURIComponent(prompt)}`;
 }
 
 /** In-app help route — quick paths + page chrome */
@@ -435,7 +435,7 @@ export const OPS_HELP = {
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} · ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Director · Chat", to: "/chat", hint: "Deploy agents & ask questions" },
+    { label: "Assistant Chat", to: "/agents", hint: "Deploy agents & ask questions" },
     { label: "Integrations", to: "/integrations", hint: "Gmail, Outlook, Yahoo" },
     { label: "Training", to: "/training", hint: "Knowledge, voice, flows" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },

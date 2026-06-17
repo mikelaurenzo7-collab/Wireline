@@ -45,7 +45,7 @@ export default function HeatmapView({ days }: { days: number }) {
           Calls by Hour × Weekday
         </h3>
       </div>
-      <div className="app-table-scroll rounded-md border border-black/8">
+      <div className="app-table-scroll rounded-md border border-border">
         <table className="w-full md:min-w-[700px]">
           <thead>
             <tr>

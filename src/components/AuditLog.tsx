@@ -172,7 +172,7 @@ const EventRow = React.memo(
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="overflow-hidden"
             >
-              <div className="px-4 pb-4 pt-2 border-t border-black/8 space-y-3">
+              <div className="px-4 pb-4 pt-2 border-t border-border space-y-3">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                   {event.ip_address && (
                     <div>

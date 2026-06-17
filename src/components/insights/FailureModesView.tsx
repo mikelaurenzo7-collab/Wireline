@@ -70,7 +70,7 @@ export default function FailureModesView() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="rounded-md wl-panel border border-black/8 p-6 space-y-4"
+          className="rounded-md wl-panel p-6 space-y-4"
         >
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
@@ -87,7 +87,7 @@ export default function FailureModesView() {
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     m.severity === "medium" &&
                       "bg-amber-500/15 text-amber-500 border border-amber-500/30",
-                    m.severity === "low" && "bg-black/[0.06] text-ink/50 border border-black/12",
+                    m.severity === "low" && "bg-black/[0.06] dark:bg-white/5 text-ink/50 border border-border",
                   )}
                 >
                   {m.severity}

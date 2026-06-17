@@ -516,8 +516,8 @@ export default function DncManager() {
 
         {/* Add number modal */}
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogContent className="sm:max-w-md border border-black/10 dark:border-white/10 shadow-2xl p-6 wl-modal-surface rounded-md">
-            <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-black/5 dark:border-white/5">
+          <DialogContent className="sm:max-w-md border border-border shadow-2xl p-6 wl-modal-surface rounded-md">
+            <DialogHeader className="flex flex-row items-center gap-3 space-y-0 pb-4 border-b border-border/60">
               <div className="w-9 h-9 rounded-md bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
                 <Shield className="w-4.5 h-4.5 text-rose-500" />
               </div>
@@ -582,7 +582,7 @@ export default function DncManager() {
               <ShadButton
                 variant="outline"
                 onClick={() => setShowAdd(false)}
-                className="flex-1 rounded-md h-10 border-black/10 hover:bg-black/[0.04] dark:border-white/10 dark:hover:bg-white/5 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink"
+                className="flex-1 rounded-md h-10 border-border hover:bg-accent/40 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink"
               >
                 Cancel
               </ShadButton>

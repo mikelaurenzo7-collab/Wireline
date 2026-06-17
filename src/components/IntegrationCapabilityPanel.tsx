@@ -63,7 +63,7 @@ export default function IntegrationCapabilityPanel({
               key={task.id}
               className={cn(
                 "rounded-md border bg-paper/80",
-                compact ? "px-2.5 py-2 border-black/8" : "px-3 py-2.5 border-black/10",
+                compact ? "px-2.5 py-2 border-border" : "px-3 py-2.5 border-border",
               )}
             >
               <div className="flex items-start gap-2 mb-1.5">
@@ -90,22 +90,22 @@ export default function IntegrationCapabilityPanel({
               </div>
               <div className="flex flex-wrap gap-1 pl-5">
                 {task.tools.map((toolName) => {
-                  const entry = getCatalogEntry(toolName);
-                  const on = enabledSet.has(toolName);
-                  return (
-                    <span
-                      key={toolName}
-                      className={cn(
-                        "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
-                        on
-                          ? "wl-accent-tag border-current/25 bg-current/8"
-                          : "border-black/10 bg-black/4 text-ink/40",
-                      )}
-                      title={entry?.description}
-                    >
-                      {entry?.label ?? toolName}
-                    </span>
-                  );
+                   const entry = getCatalogEntry(toolName);
+                   const on = enabledSet.has(toolName);
+                   return (
+                     <span
+                       key={toolName}
+                       className={cn(
+                         "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
+                         on
+                           ? "wl-accent-tag border-current/25 bg-current/8"
+                           : "border-border bg-muted/10 text-ink/40",
+                       )}
+                       title={entry?.description}
+                     >
+                       {entry?.label ?? toolName}
+                     </span>
+                   );
                 })}
               </div>
             </div>

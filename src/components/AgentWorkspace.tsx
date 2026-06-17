@@ -187,7 +187,7 @@ function ProposalCard({
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
         "rounded-md border px-3 py-2.5 text-ink transition-all duration-200",
-        state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
+        state === "dismissed" ? "border-border/40 bg-muted/50" : TONE_CLASSES[tone],
         !state && "hover:shadow-md cursor-default",
       )}
     >
@@ -195,7 +195,7 @@ function ProposalCard({
         <span
           className={cn(
             "mt-0.5 shrink-0 flex w-6 h-6 items-center justify-center rounded-md",
-            state === "dismissed" ? "bg-black/5 text-muted/60" : TONE_ICON_CLASSES[tone],
+            state === "dismissed" ? "bg-muted text-muted" : TONE_ICON_CLASSES[tone],
           )}
         >
           {icon}
@@ -706,7 +706,7 @@ export default function AgentWorkspace({
   return (
     <div className="flex flex-col h-full min-h-0 relative">
       {/* Minimal header - identity + tabs inline */}
-      <div className="shrink-0 border-b border-black/8">
+      <div className="shrink-0 border-b border-border">
         <div className="flex items-center justify-between px-4 py-2.5">
           <div className="flex items-center gap-3">
             <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
@@ -877,7 +877,7 @@ export default function AgentWorkspace({
 
                       {/* Proposals */}
                       {m.role === "agent" && m.proposals && (
-                        <div className="mt-3 pt-3 border-t border-black/5 space-y-2">
+                        <div className="mt-3 pt-3 border-t border-border/40 space-y-2">
                           {m.proposals.changes.map((c, i) => {
                             const key = `${m.id}:change:${i}`;
                             const state = resolved[key];
