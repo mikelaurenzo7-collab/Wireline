@@ -7,18 +7,17 @@ const FLEET_SRC = readFileSync(join(import.meta.dirname, "FleetSettings.tsx"), "
 
 describe("TuningRailMap", () => {
   it("contains the expected rail sections", () => {
-    expect(MAP_SRC).toContain("Identity");
-    expect(MAP_SRC).toContain("Role");
-    expect(MAP_SRC).toContain("Phone Number");
+    expect(MAP_SRC).toContain("Name + role");
     expect(MAP_SRC).toContain("Voice");
-    expect(MAP_SRC).toContain("Knowledge");
-    expect(MAP_SRC).toContain("Integrations");
-    expect(MAP_SRC).toContain("Rules");
-    expect(MAP_SRC).toContain("Launch Checklist");
+    expect(MAP_SRC).toContain("Model");
+    expect(MAP_SRC).toContain("Number");
+    expect(MAP_SRC).toContain("Training");
   });
 
   it("is mounted before the detailed controls", () => {
     expect(FLEET_SRC.indexOf("<TuningRailMap")).toBeGreaterThan(-1);
-    expect(FLEET_SRC.indexOf("<TuningRailMap")).toBeLessThan(FLEET_SRC.indexOf("<AgentConfigPanel"));
+    expect(FLEET_SRC.indexOf("<TuningRailMap")).toBeLessThan(
+      FLEET_SRC.indexOf("<AgentConfigPanel"),
+    );
   });
 });

@@ -247,7 +247,7 @@ export default function FleetSettings() {
     const agentRole = overrideData?.role || newAgentRole;
     if (!agentName || !agentId) return;
 
-    if (subscription.status !== "active") {
+    if (subscription.status !== "active" && subscription.status !== "trialing") {
       toastWarning("Subscription required", "Activate a billing plan to deploy agents.");
       return;
     }
@@ -594,29 +594,31 @@ export default function FleetSettings() {
                     : "Everything the Assistant can change, you can fine-tune by hand — identity, voice, model, knowledge, tools, rules, and launch readiness."}
                 </p>
               </div>
-              <TuningRailMap
-                selectedAgent={selectedAgent}
-                agentConfig={agentConfig}
-                integrationStatus={integrationStatus}
-                accountType={accountType}
-              />
-              <AgentConfigPanel
-                selectedAgent={selectedAgent}
-                setSelectedAgent={setSelectedAgent}
-                agentConfig={agentConfig}
-                setAgentConfig={setAgentConfig}
-                isConfigLoading={isConfigLoading}
-                fetchAgentConfig={fetchAgentConfig}
-                updateAgentMeta={updateAgentMeta}
-                toggleIntegrationGroup={toggleIntegrationGroup}
-                toggleAgentTool={toggleAgentTool}
-                resetAgentToolsToRoleDefaults={resetAgentToolsToRoleDefaults}
-                agentStats={agentStats}
-                fetchAgentPerformance={fetchAgentPerformance}
-                isApplyingTemplate={isApplyingTemplate}
-                applyRoleTemplate={applyRoleTemplate}
-                integrationStatus={integrationStatus}
-              />
+              <div className="flex-1 min-h-0 scroll-viewport flex flex-col">
+                <TuningRailMap
+                  selectedAgent={selectedAgent}
+                  agentConfig={agentConfig}
+                  integrationStatus={integrationStatus}
+                  accountType={accountType}
+                />
+                <AgentConfigPanel
+                  selectedAgent={selectedAgent}
+                  setSelectedAgent={setSelectedAgent}
+                  agentConfig={agentConfig}
+                  setAgentConfig={setAgentConfig}
+                  isConfigLoading={isConfigLoading}
+                  fetchAgentConfig={fetchAgentConfig}
+                  updateAgentMeta={updateAgentMeta}
+                  toggleIntegrationGroup={toggleIntegrationGroup}
+                  toggleAgentTool={toggleAgentTool}
+                  resetAgentToolsToRoleDefaults={resetAgentToolsToRoleDefaults}
+                  agentStats={agentStats}
+                  fetchAgentPerformance={fetchAgentPerformance}
+                  isApplyingTemplate={isApplyingTemplate}
+                  applyRoleTemplate={applyRoleTemplate}
+                  integrationStatus={integrationStatus}
+                />
+              </div>
             </aside>
           </div>
         </div>

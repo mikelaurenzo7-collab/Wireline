@@ -150,15 +150,16 @@ export default function AgentConfigPanel({
 
   if (!selectedAgent) {
     return (
-      <main className="flex-1 min-h-0 scroll-viewport px-3 py-3 hidden md:block">
-        <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+      <main className="flex-1 px-3 py-3 hidden md:block">
+        <div className="flex min-h-[220px] py-8 flex-col items-center justify-center gap-4 px-6 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-md border border-border bg-paper text-muted">
             <Bot className="h-7 w-7" />
           </div>
           <div className="space-y-1.5">
             <h3 className="font-display text-2xl italic text-ink">Pick an agent</h3>
             <p className="max-w-sm text-sm leading-relaxed text-muted">
-              Choose an agent from the list to set up the basics. Deep training now lives on its own Training page.
+              Choose an agent from the list to set up the basics. Deep training now lives on its own
+              Training page.
             </p>
           </div>
         </div>
@@ -175,7 +176,7 @@ export default function AgentConfigPanel({
   const trainingHref = `/training?agent=${encodeURIComponent(selectedAgent.id)}`;
 
   return (
-    <main className="flex-1 min-h-0 scroll-viewport px-3 py-3 wl-fleet-config-drawer md:flex-1">
+    <main className="flex-1 wl-fleet-config-drawer md:overflow-visible md:h-auto md:min-h-0 px-3 py-3">
       <ShadButton
         type="button"
         variant="outline"
@@ -193,12 +194,17 @@ export default function AgentConfigPanel({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="wl-label text-brand tracking-[0.22em]">Simple setup</p>
-              <h3 className="mt-1 font-display text-2xl italic text-ink">Only the basics live here.</h3>
+              <h3 className="mt-1 font-display text-2xl italic text-ink">
+                Only the basics live here.
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">
-                Name the agent, choose its role, pick a voice and model, confirm the number, then move training and workflows to the Training page.
+                Name the agent, choose its role, pick a voice and model, confirm the number, then
+                move training and workflows to the Training page.
               </p>
             </div>
-            {isConfigLoading && <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-brand" />}
+            {isConfigLoading && (
+              <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-brand" />
+            )}
           </div>
         </section>
 
@@ -226,10 +232,18 @@ export default function AgentConfigPanel({
                 variant="outline"
                 disableAnimations
                 onClick={saveName}
-                disabled={!draftName.trim() || draftName.trim() === selectedAgent.name || savingKey === "name"}
+                disabled={
+                  !draftName.trim() ||
+                  draftName.trim() === selectedAgent.name ||
+                  savingKey === "name"
+                }
                 className="shrink-0"
               >
-                {savingKey === "name" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {savingKey === "name" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
               </ShadButton>
             </div>
           </div>
@@ -239,7 +253,9 @@ export default function AgentConfigPanel({
               <label className="wl-label text-ink/45">Role</label>
               <Select
                 value={selectedAgent.role || "customer_service"}
-                onValueChange={(value) => void commit("role", { role: value }, "Agent role updated.")}
+                onValueChange={(value) =>
+                  void commit("role", { role: value }, "Agent role updated.")
+                }
               >
                 <SelectTrigger aria-label="Agent role" className="w-full">
                   <SelectValue />
@@ -258,7 +274,9 @@ export default function AgentConfigPanel({
               <label className="wl-label text-ink/45">Channel</label>
               <Select
                 value={selectedAgent.channel || "voice"}
-                onValueChange={(value) => void commit("channel", { channel: value }, "Channel updated.")}
+                onValueChange={(value) =>
+                  void commit("channel", { channel: value }, "Channel updated.")
+                }
               >
                 <SelectTrigger aria-label="Agent channel" className="w-full">
                   <SelectValue />
@@ -297,14 +315,21 @@ export default function AgentConfigPanel({
             value={selectedAgent.voice_id}
             catalog={voiceCatalog}
             onSelect={(voiceId, provider) =>
-              void commit("voice", {
-                voice_id: voiceId,
-                ...(voiceId && provider ? { voice_provider: provider } : {}),
-              }, "Voice updated.")
+              void commit(
+                "voice",
+                {
+                  voice_id: voiceId,
+                  ...(voiceId && provider ? { voice_provider: provider } : {}),
+                },
+                "Voice updated.",
+              )
             }
           />
 
-          <AgentModelSelector agent={selectedAgent} onCommit={(patch) => void commit("model", patch, "Model updated.")} />
+          <AgentModelSelector
+            agent={selectedAgent}
+            onCommit={(patch) => void commit("model", patch, "Model updated.")}
+          />
         </section>
 
         <section className="rounded-md border border-border bg-paper p-4 space-y-4">
@@ -317,7 +342,12 @@ export default function AgentConfigPanel({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="wl-label text-ink/45">Phone number</p>
-                <p className={cn("mt-1 text-sm font-medium", hasNumber ? "text-ink" : "text-muted italic")}>
+                <p
+                  className={cn(
+                    "mt-1 text-sm font-medium",
+                    hasNumber ? "text-ink" : "text-muted italic",
+                  )}
+                >
                   {numberLabel(selectedAgent)}
                 </p>
               </div>
@@ -343,9 +373,16 @@ export default function AgentConfigPanel({
                 size="sm"
                 disableAnimations
                 onClick={saveGreeting}
-                disabled={draftGreeting.trim() === (selectedAgent.first_message || "") || savingKey === "greeting"}
+                disabled={
+                  draftGreeting.trim() === (selectedAgent.first_message || "") ||
+                  savingKey === "greeting"
+                }
               >
-                {savingKey === "greeting" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                {savingKey === "greeting" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
                 Save greeting
               </ShadButton>
             </div>
@@ -356,7 +393,9 @@ export default function AgentConfigPanel({
           <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] pb-3">
             <div>
               <p className="wl-label text-brand tracking-[0.2em]">Training moved out</p>
-              <h4 className="mt-1 font-display text-xl italic text-ink">Workflows, knowledge, and tests</h4>
+              <h4 className="mt-1 font-display text-xl italic text-ink">
+                Workflows, knowledge, and tests
+              </h4>
             </div>
             <GraduationCap className="h-5 w-5 text-brand" />
           </div>
