@@ -1,5 +1,10 @@
 import FigmaOverhaul from "./FigmaOverhaul";
+import { AuthProvider } from "./contexts/AuthContext";
 
 export default function App() {
-  return <FigmaOverhaul />;
+  return (
+    <AuthProvider>
+      <FigmaOverhaul />
+    </AuthProvider>
+  );
 }
