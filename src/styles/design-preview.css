@@ -260,3 +260,38 @@
   }
 }
 
+/* Desktop workspace fit for authenticated pages. */
+@media (min-width: 1280px) {
+  .client-console__stage .app-surface {
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: clamp(1.25rem, 1.8vw, 2.5rem) !important;
+    padding-right: clamp(1.25rem, 1.8vw, 2.5rem) !important;
+  }
+}
+
+@media (min-width: 1920px) {
+  .client-console__stage .app-surface {
+    padding-left: clamp(1.75rem, 2vw, 3rem) !important;
+    padding-right: clamp(1.75rem, 2vw, 3rem) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .wl-channel-inbox-grid {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(320px, clamp(340px, 23vw, 460px)) minmax(0, 1fr) !important;
+  }
+
+  .wl-channel-inbox-grid > section {
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1920px) {
+  .wl-channel-inbox-grid {
+    grid-template-columns: minmax(380px, clamp(420px, 22vw, 560px)) minmax(0, 1fr) !important;
+  }
+}
