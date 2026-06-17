@@ -1,4 +1,5 @@
 import FigmaOverhaul from "./FigmaOverhaul";
+import PersonalWorkspace from "./PersonalWorkspace";
 import { AuthProvider } from "./contexts/AuthContext";
 
 export default function App() {
