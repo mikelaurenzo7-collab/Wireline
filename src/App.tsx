@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import FigmaOverhaul from "./FigmaOverhaul";
 import PersonalWorkspace from "./PersonalWorkspace";
 import AgentStudioWorkspace from "./AgentStudioWorkspace";
+import PublicMarketingWorkspace from "./PublicMarketingWorkspace";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./studio-hotfix.css";
+
+const publicPaths = new Set(["/", "/features", "/pricing", "/showcase", "/developers", "/compare", "/training", "/about", "/blog"]);
 
 function useCurrentPath() {
   const [path, setPath] = useState(location.pathname);
@@ -34,9 +37,9 @@ function useCurrentPath() {
 export default function App() {
   const path = useCurrentPath();
   let Surface = FigmaOverhaul;
+  if (publicPaths.has(path)) Surface = PublicMarketingWorkspace;
   if (path.indexOf("/app/personal") === 0 || path === "/personal-home") Surface = PersonalWorkspace;
-  if (path.indexOf("/app/business/studio") === 0) Surface = AgentStudioWorkspace;
-  if (path === "/agents") Surface = AgentStudioWorkspace;
+  if (path.indexOf("/app/business/studio") === 0 || path === "/agents") Surface = AgentStudioWorkspace;
 
   return (
     <div className="w-full max-w-[100vw] overflow-x-hidden">
