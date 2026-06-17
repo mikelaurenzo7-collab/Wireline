@@ -68,6 +68,25 @@
   box-shadow: 0 14px 34px -24px rgba(0, 0, 0, 0.75);
 }
 
+/* Runtime internals still use the historic director role. Visible product copy
+   should read Assistant, so the message badge is swapped without touching API,
+   persistence, streaming, or proposal logic. */
+[data-testid="director-workspace"] .wl-director-thread-scroll .wl-micro-meta--muted.uppercase {
+  font-size: 0 !important;
+}
+
+[data-testid="director-workspace"] .wl-director-thread-scroll .wl-micro-meta--muted.uppercase::before {
+  content: "Assistant";
+  display: inline;
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+
+[data-testid="director-workspace"] .wl-director-thread-scroll .wl-micro-meta--muted.uppercase > span {
+  font-size: 0.625rem;
+}
+
 /* Give the Assistant the primary canvas; precision controls stay available but
    should not crowd the conversation on 13–14 inch laptops. */
 @media (min-width: 768px) {
