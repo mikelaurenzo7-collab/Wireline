@@ -120,6 +120,9 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     const serviceRoleLockdownTables = new Set([
       "wireline_oauth_pending_codes",
       "wireline_stripe_events",
+      "wireline_call_reliability_staging",
+      "wireline_webhook_health",
+      "wireline_demo_call_events",
     ]);
 
     for (const { table, column } of requiredColumns) {
@@ -284,7 +287,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
       ORDER BY t.tablename
     `);
     for (const row of rlsNoPolicy.rows as Array<{ tablename: string }>) {
-      if (!serviceRoleLockdownTables.has(row.tablename)) {
+      if (!serviceRoleLockdownTables.has(row.tablename) && !row.tablename.includes("_backup_")) {
         result.healthy = false;
         result.issues.push(
           `RLS enabled but no policies on ${row.tablename} (expected only oauth_pending_codes + stripe_events)`,

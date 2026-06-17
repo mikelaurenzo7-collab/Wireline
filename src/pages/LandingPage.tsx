@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, type MotionProps } from "motion/react";
 import {
@@ -9,24 +9,25 @@ import {
   Ear,
   Mail,
   MessageSquare,
+  Phone,
   PhoneCall,
   PhoneIncoming,
   PhoneOutgoing,
   Plus,
   ScrollText,
+  ShieldCheck,
   Sparkles,
+  Zap,
 } from "lucide-react";
-import { RobotHead, type RobotPose } from "../components/marketing/RobotHead";
 import PublicSiteHeader from "../components/marketing/PublicSiteHeader";
 import IntegrationLogos from "../components/layout/IntegrationLogos";
-import HeroCallPreview from "../components/marketing/HeroCallPreview";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import { PageMeta } from "../lib/page-meta";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 import { WIRELINE_FEATURES } from "../data/wireline-knowledge";
-import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
+import { WEDGES } from "../data/vertical-wedges";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 
 /* ── Source-of-truth derived data ─────────────────────────────────── */
@@ -42,75 +43,6 @@ const STATS = [
 ] as const;
 
 const TRUST_BADGES = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
-
-const CAPABILITY_ICONS = [PhoneIncoming, PhoneOutgoing, Mail, MessageSquare, Activity] as const;
-
-const HOW_IT_WORKS = [
-  {
-    numeral: "I",
-    kicker: "Act I — Teach",
-    title: "Paste your website",
-    body: "Wireline reads your site and drafts the whole playbook — business profile, FAQs, scheduling rules, and escalation paths — before you type a word.",
-    footnote: "~3 minutes, one approval",
-    pose: "typing",
-    variant: 5,
-  },
-  {
-    numeral: "II",
-    kicker: "Act II — Shape",
-    title: "Shape it in the Studio",
-    body: "Dial in the voice character — warm, playful, or authoritative — and pick each agent's brain: Claude, Gemini, GPT, or Grok, with speed badges so a heavier model never sneaks onto a live call. One personality, held for the entire conversation.",
-    footnote: "Live in under 10 minutes",
-    pose: "on-call",
-    variant: 2,
-  },
-  {
-    numeral: "III",
-    kicker: "Act III — Supervise",
-    title: "Go live on a real number",
-    body: "A dedicated voice number is provisioned instantly — no Twilio account, no developers. Inbound, outbound, email, and SMS from the same fleet.",
-    footnote: "Full audit trail, always",
-    pose: "texting",
-    variant: 4,
-  },
-] as const satisfies ReadonlyArray<{
-  numeral: string;
-  kicker: string;
-  title: string;
-  body: string;
-  footnote: string;
-  pose: RobotPose;
-  variant: 1 | 2 | 3 | 4 | 5 | 6;
-}>;
-
-const COCKPIT_POINTS = [
-  {
-    icon: Ear,
-    title: "Listen in & whisper-coach",
-    body: "Drop into any live call silently, or whisper guidance only your agent hears — mid-sentence course corrections without the caller ever knowing.",
-  },
-  {
-    icon: ScrollText,
-    title: "Every word on the record",
-    body: "Full transcripts, sentiment, and outcomes on every interaction. When an agent escalates or takes a message, you see exactly why.",
-  },
-  {
-    icon: Sparkles,
-    title: "A fleet that gets sharper",
-    body: "The self-improvement loop mines lessons from your highest-scoring calls and feeds them back into the playbook — every call sharpens the next.",
-  },
-] as const;
-
-const INDUSTRIES: ReadonlyArray<{ slug: VerticalKey; label: string }> = [
-  { slug: "home-services", label: "Home Services" },
-  { slug: "medical", label: "Medical" },
-  { slug: "legal", label: "Legal" },
-  { slug: "real-estate", label: "Real Estate" },
-  { slug: "insurance", label: "Insurance" },
-  { slug: "restaurants", label: "Restaurants" },
-  { slug: "sales", label: "Sales Teams" },
-  { slug: "personal", label: "Personal" },
-];
 
 const FAQS = [
   {
@@ -183,8 +115,6 @@ const FOOTER_COLS = [
   },
 ];
 
-/* ── Shared editorial atoms ───────────────────────────────────────── */
-
 const REVEAL: MotionProps = {
   initial: { opacity: 0, y: 16 },
   whileInView: { opacity: 1, y: 0 },
@@ -192,7 +122,7 @@ const REVEAL: MotionProps = {
   transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] },
 };
 
-function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
+function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
   return (
     <p
       className={`inline-flex items-center gap-2 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.25em] ${
@@ -244,8 +174,6 @@ function SectionHead({
   );
 }
 
-/* ── Page ─────────────────────────────────────────────────────────── */
-
 export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
@@ -266,49 +194,53 @@ export default function LandingPage() {
       <div className="marketing-surface relative min-h-dvh bg-paper">
         <PublicSiteHeader active="home" />
 
-        {/* ─── Hero — executive product scene with gutter robots ──── */}
+        {/* ─── Hero Section ─── */}
         <section
           data-testid="hero-section"
-          className="relative overflow-hidden border-b border-ink/[0.08] bg-paper pt-24 sm:pt-28 lg:pt-32 pb-14 lg:pb-20"
+          className="relative pt-36 pb-24 overflow-hidden border-b border-ink/[0.08]"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-16 h-px bg-ink/[0.08]"
-          />
-          <div className="relative z-10 mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(460px,0.78fr)] lg:gap-16">
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="max-w-3xl text-left"
-            >
-              <span className="inline-flex items-center gap-2 border border-ink/[0.12] bg-white/[0.35] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.24em] text-ink/72 shadow-[0_1px_0_rgba(255,255,255,0.75)_inset]">
-                <span className="h-1.5 w-1.5 bg-brand" aria-hidden="true" />
-                Phone · Email · SMS
-              </span>
-
-              <h1 className="mt-7 max-w-4xl font-display text-[clamp(3rem,7vw,7.1rem)] leading-[0.88] tracking-[-0.075em] text-ink text-balance">
-                AI agents that answer every customer like your best rep.
+          {/* Ambient Background Glow */}
+          <div className="absolute top-0 right-0 w-1/2 h-full opacity-20 pointer-events-none" style={{ background: "radial-gradient(circle at top right, rgba(255,191,0,0.1) 0%, transparent 70%)" }}></div>
+          
+          <div className="max-w-[1280px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Hero Left Content */}
+            <div className="lg:col-span-7 flex flex-col gap-8 z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-ink/[0.08] bg-white/40 w-fit">
+                <span className="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-ink/70">Network Status: Sovereign</span>
+              </div>
+              
+              <h1 className="font-display text-[clamp(2.5rem,5.5vw,5.5rem)] leading-[0.92] tracking-[-0.05em] text-ink">
+                The Sovereign AI Voice Network, <br />
+                <span className="text-brand italic font-light">Built for the Autonomous Era.</span>
               </h1>
-
-              <p className="mt-7 max-w-2xl text-[clamp(1rem,1.45vw,1.28rem)] leading-relaxed text-ink/68">
-                Deploy a trained agent fleet on real phone numbers in minutes. Handle inbound calls,
-                qualify leads, book appointments, send follow-ups, and keep every interaction
-                visible from one supervisor cockpit.
+              
+              <p className="font-sans text-[clamp(1rem,1.35vw,1.25rem)] leading-relaxed text-ink/70 max-w-2xl">
+                Wireline provides telecomm-grade infrastructure for autonomous AI agents. We ensure secure, zero-latency voice interactions by bypassing traditional commercial networks.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {/* Voice Bubble Widget from Stitch */}
+              <div className="inline-flex items-center gap-4 bg-white/50 p-6 rounded-md border border-ink/[0.08] shadow-sm transition-transform hover:-translate-y-0.5 max-w-xl">
+                <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-white shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <span className="font-display text-lg sm:text-xl italic text-ink">
+                  "Siri, have Wireline call the pharmacy and refill my prescription."
+                </span>
+              </div>
+
+              <div className="flex items-center gap-6 mt-4">
                 <Link
                   to="/signup"
                   data-testid="hero-primary-cta"
-                  className="inline-flex min-h-12 items-center justify-center bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white px-8 py-3 rounded-full font-semibold animate-pulse-glow hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] active:scale-95 transition-all duration-300"
+                  className="inline-flex min-h-12 items-center justify-center bg-brand text-white px-8 py-4 rounded-full text-[14px] font-semibold transition-all duration-300 hover:bg-brand-deep hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(139,63,214,0.3)] active:scale-95"
                 >
                   Start free trial
                 </Link>
                 <Link
                   to="/showcase"
                   data-testid="hero-showcase-link"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] bg-paper/55 backdrop-blur-md px-8 py-3 rounded-full text-[14px] font-semibold text-ink transition-all duration-300 hover:bg-white/60 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)] active:scale-95"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 border border-ink/[0.14] bg-white/50 px-8 py-4 rounded-full text-[14px] font-semibold text-ink transition-all duration-300 hover:bg-white/70 hover:-translate-y-1 active:scale-95"
                 >
                   Hear live demos
                   <ArrowUpRight className="h-4 w-4 shrink-0" />
@@ -317,85 +249,86 @@ export default function LandingPage() {
 
               <div
                 data-testid="hero-trust-badges"
-                className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ink/[0.1] pt-5"
+                className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-ink/[0.1] pt-5"
                 aria-label="Security and compliance"
               >
                 {TRUST_BADGES.map((badge) => (
                   <span
                     key={badge}
-                    className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-ink/58"
+                    className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-ink/50"
                   >
                     {badge}
                   </span>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
-            <div className="relative lg:pt-7">
-              <div
-                aria-hidden="true"
-                className="absolute -left-4 -top-4 h-16 w-16 border-l border-t border-ink/[0.14]"
-              />
-              <div
-                aria-hidden="true"
-                className="absolute -bottom-5 -right-4 h-20 w-20 border-b border-r border-ink/[0.14]"
-              />
-              <HeroCallPreview />
+            {/* Hero Right Mockup / Live Agent Demos */}
+            <div className="lg:col-span-5 relative flex justify-center order-2 lg:order-1 mt-12 lg:mt-0">
+              <div className="relative w-full max-w-[320px] bg-ink rounded-[3rem] border-[8px] border-ink/[0.1] shadow-2xl p-4 overflow-hidden animate-float">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-8 bg-ink rounded-b-2xl z-10" />
+                <div className="h-[600px] w-full bg-[#0a0a0a] rounded-[2.2rem] flex flex-col items-center justify-center text-white p-6 relative overflow-hidden">
+                  
+                  {/* Status Indicator */}
+                  <div className="mb-auto mt-8 text-center w-full z-10">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand/20 border border-brand/40 text-[10px] uppercase tracking-widest text-brand mb-2">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                      </span>
+                      Live Agent Demo
+                    </div>
+                    <div className="font-display text-2xl text-paper mt-1">Interactive Call</div>
+                  </div>
+
+                  {/* Browser Call Widgets Embedded In Mockup Screen */}
+                  <div className="w-full space-y-4 my-auto z-10">
+                    {csDemo && (
+                      <div className="bg-white/5 border border-white/10 rounded-md p-4 text-center hover:bg-white/10 transition-colors">
+                        <p className="text-[11px] font-mono uppercase tracking-wider text-paper/60 mb-2">Jordan · Inbound CS</p>
+                        <BrowserCallWidget
+                          agentName={csDemo.name}
+                          buttonLabel={`Call Inbound Agent`}
+                        />
+                      </div>
+                    )}
+                    {salesDemo && (
+                      <div className="bg-white/5 border border-white/10 rounded-md p-4 text-center hover:bg-white/10 transition-colors">
+                        <p className="text-[11px] font-mono uppercase tracking-wider text-paper/60 mb-2">Jake · Outbound Sales</p>
+                        <BrowserCallWidget
+                          agentName={salesDemo.name}
+                          buttonLabel={`Call Outbound Agent`}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Audio Waveform Visualization */}
+                  <div className="mt-auto mb-6 flex items-center justify-center gap-1 h-12 w-full z-10">
+                    {[0.1, 0.4, 0.2, 0.6, 0.3, 0.5, 0.1, 0.4, 0.2].map((delay, idx) => (
+                      <motion.div
+                        key={idx}
+                        animate={{ height: [12, 48, 12], opacity: [0.5, 1, 0.5] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay }}
+                        className="w-1 bg-brand rounded-full"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="w-full text-center text-[11px] text-paper/40 z-10">
+                    Routing via Sovereign Node 09
+                  </div>
+                </div>
+              </div>
+              {/* Blur backdrop behind phone */}
+              <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-brand/5 rounded-full blur-3xl"></div>
             </div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 mx-auto mt-12 w-full max-w-4xl"
-          >
-            <p className="mb-4 text-center font-mono text-[11px] uppercase tracking-[0.24em] text-ink/48">
-              Live demo — no signup
-            </p>
-
-            <div className="grid grid-cols-1 gap-3 border border-ink/[0.1] bg-[#FBF8F0]/90 p-3 shadow-[0_1px_0_rgba(255,255,255,0.75)_inset] sm:grid-cols-2 sm:p-4">
-              {csDemo && (
-                <div className="flex flex-col items-center border border-ink/[0.08] bg-white/[0.48] p-4 text-center transition-colors duration-200 hover:bg-white/[0.68]">
-                  <p className="mb-3 text-[12px] font-semibold tracking-tight text-ink/70">
-                    Jordan · Inbound Support
-                  </p>
-                  <BrowserCallWidget
-                    agentName={csDemo.name}
-                    buttonLabel={`Talk to ${csDemo.name}`}
-                  />
-                  <a
-                    href={`tel:${csDemo.tel}`}
-                    className="mt-3.5 font-mono text-[13px] tracking-tight text-brand transition-colors hover:text-brand/80"
-                  >
-                    {csDemo.display}
-                  </a>
-                </div>
-              )}
-              {salesDemo && (
-                <div className="flex flex-col items-center border border-ink/[0.08] bg-white/[0.48] p-4 text-center transition-colors duration-200 hover:bg-white/[0.68]">
-                  <p className="mb-3 text-[12px] font-semibold tracking-tight text-ink/70">
-                    Jake · Outbound Sales
-                  </p>
-                  <BrowserCallWidget
-                    agentName={salesDemo.name}
-                    buttonLabel={`Talk to ${salesDemo.name}`}
-                  />
-                  <a
-                    href={`tel:${salesDemo.tel}`}
-                    className="mt-3.5 font-mono text-[13px] tracking-tight text-brand transition-colors hover:text-brand/80"
-                  >
-                    {salesDemo.display}
-                  </a>
-                </div>
-              )}
-            </div>
-          </motion.div>
         </section>
 
-        {/* ─── Proof band ─────────────────────────────────────────── */}
-        <section data-testid="proof-section" className="border-b border-ink/[0.08] py-14 lg:py-20">
-          <div className="mx-auto w-full max-w-7xl">
+        {/* ─── Proof Section ─── */}
+        <section data-testid="proof-section" className="py-20 lg:py-24 border-b border-ink/[0.08]">
+          <div className="max-w-[1280px] mx-auto px-6 md:px-12">
             <div className="grid grid-cols-2 gap-px overflow-hidden border border-ink/[0.08] bg-ink/[0.08] lg:grid-cols-4">
               {STATS.map((stat, i) => (
                 <motion.div
@@ -404,7 +337,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-paper p-7 sm:p-9 lg:p-11"
+                  className="bg-paper p-8 sm:p-10"
                 >
                   <p className="font-display text-[clamp(2rem,4.4vw,3.6rem)] leading-none tracking-tight text-ink">
                     {stat.value}
@@ -418,9 +351,86 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ─── Performance & Carrier Fidelity Section ─── */}
+        <section className="relative bg-[#FBF8F0]/70 py-24 lg:py-32 overflow-hidden border-b border-ink/[0.08]">
+          <div className="max-w-[1280px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            
+            {/* Visualizer and stats */}
+            <div>
+              <h2 className="font-display text-[clamp(2rem,4vw,3.5rem)] leading-[1.05] tracking-[-0.03em] text-ink mb-6">
+                Carrier-grade fidelity. <br />
+                <span className="italic font-light text-brand">Zero abstraction.</span>
+              </h2>
+              <p className="font-sans text-base leading-relaxed text-ink/75 mb-10 max-w-xl">
+                Traditional VoIP is built for humans who can tolerate jitter. Wireline is built for AI—where every millisecond of latency disrupts the transformer's logic. We peer directly with Tier-1 carriers to ensure your voice agents never miss a syllable.
+              </p>
+              
+              <ul className="space-y-6">
+                <li className="flex items-start gap-4">
+                  <span className="grid h-8 w-8 place-items-center bg-brand/10 text-brand">
+                    <ShieldCheck className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h4 className="font-display text-lg tracking-tight text-ink font-semibold">End-to-end encrypted sovereign routing</h4>
+                    <p className="text-[13px] text-ink/65 mt-1">Direct interconnect pathways isolated from public internet volatility.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="grid h-8 w-8 place-items-center bg-brand/10 text-brand">
+                    <Zap className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h4 className="font-display text-lg tracking-tight text-ink font-semibold">Bypass public internet congestion</h4>
+                    <p className="text-[13px] text-ink/65 mt-1">Direct SIP bindings and SMPP edge connections prevent routing jumps.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Performance Grid from Stitch */}
+            <div className="space-y-6">
+              <div className="p-6 bg-white/40 border border-ink/[0.08] hover:border-brand/30 transition-all rounded-md shadow-sm">
+                <span className="font-mono text-[10px] tracking-widest text-brand uppercase block mb-3 font-semibold">Latency</span>
+                <div className="font-display text-3xl font-bold text-ink mb-1">&lt;50ms</div>
+                <p className="text-[13px] text-ink/60">Global average round-trip time across our backbone.</p>
+              </div>
+
+              <div className="p-6 bg-white/40 border border-ink/[0.08] hover:border-brand/30 transition-all rounded-md shadow-sm">
+                <span className="font-mono text-[10px] tracking-widest text-brand uppercase block mb-3 font-semibold">Jitter</span>
+                <div className="font-display text-3xl font-bold text-ink mb-1">1.2ms</div>
+                <p className="text-[13px] text-ink/60">Rock-solid packet consistency for flawless voice synthesis.</p>
+              </div>
+
+              <div className="p-6 bg-white/40 border border-ink/[0.08] hover:border-brand/30 transition-all rounded-md shadow-sm">
+                <span className="font-mono text-[10px] tracking-widest text-brand uppercase block mb-3 font-semibold">Uptime</span>
+                <div className="font-display text-3xl font-bold text-ink mb-1">99.999%</div>
+                <p className="text-[13px] text-ink/60">Enterprise SLA backed by redundant carrier-direct nodes.</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        {/* ─── Editorial Image Break ─── */}
+        <section className="max-w-[1280px] mx-auto px-6 md:px-12 py-24">
+          <div className="relative w-full aspect-[21/9] overflow-hidden rounded-md border border-ink/[0.08] shadow-sm">
+            <img 
+              className="w-full h-full object-cover grayscale brightness-[0.70] hover:grayscale-0 transition-all duration-700" 
+              alt="A cinematic, high-contrast shot of a server farm at night, illuminated by soft violet neon lights." 
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0_jHiRcOrnyfGPOOPO6LGgtMiMIRfuJUvl8f4-SLT0dv9FugQ6I67LWQlMKt7CmTP-xQbfm6V8ko4_QDHzfN19bHfhRV6vXddU4fE1jCNwLUmFm8UB_gO3F8sVnsP5ed_IpTruzHziDf5Tshsp3riRr3RspmRnDNcTk991B-I9srH8SWUUFJzhDOa48SvR0BFHxAjgCZB4lqnmFxP8QsqEGgCvT2vRi-lEu5p7OtE3IAPgyWLNHtBGUuydMvqHovQywyPI6iagg" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-ink/60 to-transparent flex items-center p-12">
+              <div className="max-w-md">
+                <h3 className="font-display text-2xl sm:text-3xl text-paper mb-4 leading-tight font-semibold">Built for what comes next.</h3>
+                <p className="text-paper/80 font-sans text-[14px] leading-relaxed">The future isn't visual—it's auditory and autonomous. Wireline is the dial-tone for the next billion AI agents.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ─── Capabilities — one fleet, every channel ────────────── */}
-        <section data-testid="capabilities-section" className="py-20 lg:py-28">
-          <div className="mx-auto w-full max-w-7xl">
+        <section data-testid="capabilities-section" className="py-20 lg:py-28 border-t border-ink/[0.08]">
+          <div className="mx-auto w-full max-w-7xl px-6 md:px-12">
             <SectionHead
               eyebrow="One fleet, every channel"
               title="Five jobs your fleet takes off your plate on day one."
@@ -429,7 +439,6 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 gap-px border border-ink/[0.08] bg-ink/[0.08] md:grid-cols-2 xl:grid-cols-5">
               {WIRELINE_FEATURES.map((feature, i) => {
-                const Icon = CAPABILITY_ICONS[i] ?? Activity;
                 return (
                   <motion.div
                     key={feature.title}
@@ -440,9 +449,6 @@ export default function LandingPage() {
                     className="group flex flex-col bg-paper p-6 transition-colors duration-200 hover:bg-white/[0.55] lg:p-7"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="grid h-10 w-10 place-items-center border border-ink/[0.12] bg-white/[0.45] text-brand">
-                        <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
-                      </span>
                       <span className="font-mono text-[10px] tracking-[0.2em] text-ink/35">
                         0{i + 1}
                       </span>
@@ -460,98 +466,46 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── How it works ───────────────────────────────────────── */}
-        <section
-          data-testid="how-it-works-section"
-          className="border-y border-ink/[0.08] bg-[#FBF8F0]/70 py-20 lg:py-28"
-        >
-          <div className="mx-auto w-full max-w-6xl">
-            <SectionHead
-              eyebrow="Under 10 minutes"
-              title="From website to working agent in three acts."
-              lede="No developers, no prompt engineering, no phone-system migration. If you can paste a URL, you can deploy a fleet."
-            />
-
-            <div className="relative mt-16 grid grid-cols-1 gap-14 md:grid-cols-3 md:gap-6 lg:mt-20 lg:gap-10">
-              {/* The wire: threads the three acts together on desktop */}
-              <svg
-                className="pointer-events-none absolute left-[4%] top-8 z-0 hidden h-[60px] w-[92%] text-ink/[0.14] md:block"
-                viewBox="0 0 1000 60"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M0 30 C 120 30, 140 8, 260 14 S 460 52, 580 38 S 840 10, 1000 28"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeDasharray="6 7"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              {HOW_IT_WORKS.map((step, i) => (
-                <motion.article
-                  key={step.title}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ delay: i * 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="group relative text-center md:text-left"
-                  data-testid={`act-${i + 1}`}
-                >
-                  {/* Ghost roman numeral */}
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-9 left-1/2 z-0 -translate-x-1/2 select-none font-display text-[clamp(7rem,11vw,10rem)] leading-none text-transparent transition-colors duration-500 [-webkit-text-stroke:1.5px_rgba(26,22,20,0.14)] group-hover:[-webkit-text-stroke:1.5px_rgba(139,63,214,0.38)] md:left-auto md:right-2 md:translate-x-0"
-                  >
-                    {step.numeral}
-                  </span>
-
-                  {/* Robot mascot on pedestal */}
-                  <div className="relative z-10 mb-5 flex justify-center md:justify-start">
-                    <span className="inline-flex h-24 w-24 items-end justify-center rounded-full border border-ink/10 pb-1.5 transition-all duration-500 [background:radial-gradient(circle_at_50%_42%,rgba(139,63,214,0.1),transparent_72%)] group-hover:-translate-y-1 group-hover:border-brand/40">
-                      <RobotHead variant={step.variant} pose={step.pose} size={72} vivid />
-                    </span>
-                  </div>
-
-                  <div className="relative z-10">
-                    <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-brand sm:text-[11px]">
-                      {step.kicker}
-                    </p>
-                    <h3 className="font-display text-xl tracking-tight text-ink text-balance lg:text-2xl">
-                      {step.title}
-                    </h3>
-                    <p className="mx-auto mt-2.5 max-w-sm text-[13.5px] leading-relaxed text-ink/65 md:mx-0">
-                      {step.body}
-                    </p>
-                    <p className="mt-4 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/50 sm:text-[11px]">
-                      <span className="inline-block h-px w-3.5 bg-brand/65" aria-hidden="true" />
-                      {step.footnote}
-                    </p>
-                  </div>
-                </motion.article>
-              ))}
+        {/* ─── Bento Grid Sections ─── */}
+        <section className="max-w-[1280px] mx-auto px-6 md:px-12 pb-32">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            {/* Direct Carrier Peering */}
+            <div className="md:col-span-8 bg-[#FBF8F0]/90 p-10 sm:p-12 border border-ink/[0.08] rounded-md flex flex-col justify-between shadow-sm">
+              <div>
+                <h4 className="font-display text-2xl sm:text-3xl mb-4 font-semibold text-ink">Direct Carrier Peering</h4>
+                <p className="font-sans text-base leading-relaxed text-ink/70 max-w-xl">
+                  We don't use the public internet for the 'Last Mile'. Wireline peers directly with cellular networks at the edge, reducing hop counts and eliminating ISP throttling.
+                </p>
+              </div>
+              <div className="mt-12 flex gap-12 border-t border-ink/[0.08] pt-6">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-mono font-bold text-brand uppercase tracking-wider mb-1">Region</span>
+                  <span className="font-display text-xl text-ink">Global Edge</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-mono font-bold text-brand uppercase tracking-wider mb-1">Protocol</span>
+                  <span className="font-display text-xl text-ink">W-SIP S1</span>
+                </div>
+              </div>
             </div>
-
-            <motion.div {...REVEAL} className="mt-12 text-center">
-              <Link
-                to="/signup"
-                className="inline-flex min-h-12 items-center justify-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white px-8 py-3 rounded-full text-[14px] font-semibold transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] active:scale-95 animate-pulse-glow"
-              >
-                Deploy your first agent
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-ink/45">
-                14-day trial · No card required
-              </p>
-            </motion.div>
+            {/* Privacy Card */}
+            <div className="md:col-span-4 bg-brand p-10 sm:p-12 rounded-md text-paper flex flex-col justify-between shadow-md">
+              <div className="w-12 h-12 rounded-full border border-paper/20 flex items-center justify-center mb-8 bg-white/10">
+                <ShieldCheck className="w-6 h-6 text-paper" />
+              </div>
+              <div>
+                <h4 className="font-display text-xl sm:text-2xl mb-4 font-semibold text-paper">Privacy First</h4>
+                <p className="font-sans text-sm leading-relaxed text-paper/85">
+                  Voice metadata is encrypted at the source and never stored. Our sovereign infrastructure ensures no commercial ISP can intercept agent communications.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ─── Supervisor cockpit — dark band ─────────────────────── */}
+        {/* ─── Supervisor Cockpit Section ─── */}
         <section data-testid="cockpit-section" className="bg-ink py-20 text-paper lg:py-28">
-          <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+          <div className="mx-auto grid w-full max-w-7xl px-6 md:px-12 grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
             <div>
               <SectionHead
                 dark
@@ -562,14 +516,26 @@ export default function LandingPage() {
               />
 
               <div className="-mt-4 space-y-7">
-                {COCKPIT_POINTS.map((point) => (
+                {[
+                  {
+                    icon: Ear,
+                    title: "Listen in & whisper-coach",
+                    body: "Drop into any live call silently, or whisper guidance only your agent hears — mid-sentence course corrections without the caller ever knowing.",
+                  },
+                  {
+                    icon: ScrollText,
+                    title: "Every word on the record",
+                    body: "Full transcripts, sentiment, and outcomes on every interaction. When an agent escalates or takes a message, you see exactly why.",
+                  },
+                  {
+                    icon: Sparkles,
+                    title: "A fleet that gets sharper",
+                    body: "The self-improvement loop mines lessons from your highest-scoring calls and feeds them back into the playbook — every call sharpens the next.",
+                  },
+                ].map((point) => (
                   <motion.div key={point.title} {...REVEAL} className="flex gap-4">
                     <span className="grid h-10 w-10 shrink-0 place-items-center border border-paper/[0.14] bg-paper/[0.04] text-paper/85">
-                      <point.icon
-                        className="h-[18px] w-[18px]"
-                        strokeWidth={1.7}
-                        aria-hidden="true"
-                      />
+                      <point.icon className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" />
                     </span>
                     <div>
                       <h3 className="font-display text-lg tracking-tight text-paper">
@@ -657,65 +623,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── Industries ─────────────────────────────────────────── */}
-        <section data-testid="industries-section" className="py-20 lg:py-28">
-          <div className="mx-auto w-full max-w-7xl">
-            <SectionHead
-              eyebrow="Vertical onboarding"
-              title="Horizontal platform. Purpose-built starting points."
-              lede="Every industry gets its own playbook, demo agent, and escalation rules — not a generic script with your name pasted in."
-            />
-
-            <div className="grid grid-cols-1 gap-px border border-ink/[0.08] bg-ink/[0.08] sm:grid-cols-2 xl:grid-cols-4">
-              {INDUSTRIES.map(({ slug, label }, i) => {
-                const wedge = WEDGES[slug];
-                return (
-                  <motion.div
-                    key={slug}
-                    initial={{ opacity: 0, y: 14 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: (i % 4) * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="bg-paper"
-                  >
-                    <Link
-                      to={`/for/${slug}`}
-                      className="group flex h-full flex-col p-6 transition-colors duration-200 hover:bg-white/[0.55] lg:p-7"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink/50">
-                          {label}
-                        </span>
-                        <ArrowUpRight
-                          className="h-4 w-4 text-ink/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand"
-                          aria-hidden="true"
-                        />
-                      </div>
-                      <p className="mt-4 font-display text-[17px] leading-snug tracking-tight text-ink lg:text-lg">
-                        {wedge.headline}
-                      </p>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Integrations ───────────────────────────────────────── */}
-        <section
-          data-testid="integrations-section"
-          className="border-y border-ink/[0.08] bg-[#FBF8F0]/70 py-16 lg:py-20"
-        >
-          <div className="mx-auto w-full max-w-5xl">
-            <SectionHead eyebrow="Your stack" title="Plugs into the tools you already run." />
-            <IntegrationLogos compact />
-          </div>
-        </section>
-
-        {/* ─── Pricing teaser ─────────────────────────────────────── */}
+        {/* ─── Pricing Teaser Section ─── */}
         <section data-testid="pricing-teaser-section" className="py-20 lg:py-28">
-          <div className="mx-auto w-full max-w-7xl">
+          <div className="mx-auto w-full max-w-7xl px-6 md:px-12">
             <SectionHead
               eyebrow="Honest unit economics"
               title="Priced like a tool, not a headcount."
@@ -745,7 +655,7 @@ export default function LandingPage() {
                         {plan.name}
                       </h3>
                       {highlight && (
-                        <span className="border border-paper/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.16em] text-paper/75">
+                        <span className="border border-paper/25 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-paper/75">
                           Most popular
                         </span>
                       )}
@@ -788,8 +698,8 @@ export default function LandingPage() {
                       to={`/signup?plan=${plan.id}`}
                       className={`mt-6 inline-flex min-h-11 items-center justify-center text-[13px] font-semibold transition-all duration-300 rounded-full hover:-translate-y-1 active:scale-95 ${
                         highlight
-                          ? "bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white hover:shadow-[0_8px_30px_rgba(155,92,224,0.5)] animate-pulse-glow"
-                          : "border border-ink/[0.16] bg-paper/55 backdrop-blur-md text-ink hover:bg-white/60 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)]"
+                          ? "bg-brand text-white hover:bg-brand-deep hover:shadow-[0_8px_30px_rgba(139,63,214,0.4)] animate-pulse-glow"
+                          : "border border-ink/[0.16] bg-white/50 backdrop-blur-md text-ink hover:bg-white/70 hover:shadow-[0_8px_30px_rgba(26,22,20,0.1)]"
                       }`}
                     >
                       Start free trial
@@ -811,9 +721,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── FAQ ────────────────────────────────────────────────── */}
+        {/* ─── FAQ ─── */}
         <section data-testid="faq-section" className="border-t border-ink/[0.08] py-20 lg:py-28">
-          <div className="mx-auto w-full max-w-3xl">
+          <div className="mx-auto w-full max-w-3xl px-6 md:px-12">
             <SectionHead
               eyebrow="Questions, answered"
               title="Everything you'd ask your best rep."
@@ -848,15 +758,15 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── Final CTA band ─────────────────────────────────────── */}
+        {/* ─── Final CTA ─── */}
         <section
           data-testid="final-cta-section"
-          className="relative overflow-hidden bg-ink py-20 text-paper lg:py-28"
+          className="relative overflow-hidden bg-ink py-20 text-paper lg:py-28 border-t border-ink/[0.08]"
         >
-          <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
+          <div className="relative z-10 mx-auto w-full max-w-4xl text-center px-6">
             <motion.div {...REVEAL}>
               <Eyebrow dark>Right now, a call is going to voicemail</Eyebrow>
-              <h2 className="mt-5 font-display text-[clamp(2.4rem,5.6vw,4.6rem)] leading-[0.95] tracking-[-0.05em] text-paper text-balance">
+              <h2 className="mt-5 font-display text-[clamp(2.4rem,5.6vw,4.6rem)] leading-[0.95] tracking-[-0.05em] text-paper text-balance font-semibold">
                 Your next missed call doesn&rsquo;t have to be.
               </h2>
               <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-paper/60 sm:text-base">
@@ -866,7 +776,7 @@ export default function LandingPage() {
               <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   to="/signup"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 bg-paper px-7 text-[14px] font-semibold text-ink transition-transform duration-200 hover:-translate-y-px"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 bg-paper px-7 text-[14px] font-semibold text-ink transition-transform duration-200 hover:-translate-y-px rounded-full"
                 >
                   Start free trial
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -874,7 +784,7 @@ export default function LandingPage() {
                 {csDemo && (
                   <a
                     href={`tel:${csDemo.tel}`}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 border border-paper/[0.22] px-7 text-[14px] font-semibold text-paper transition-colors hover:bg-paper/[0.06]"
+                    className="inline-flex min-h-12 items-center justify-center gap-2 border border-paper/[0.22] px-7 text-[14px] font-semibold text-paper transition-colors hover:bg-paper/[0.06] rounded-full"
                   >
                     <PhoneCall className="h-4 w-4" aria-hidden="true" />
                     Call a live agent — {csDemo.display}
@@ -885,7 +795,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ─── Footer ─────────────────────────────────────────────── */}
+        {/* ─── Footer ─── */}
         <footer
           data-testid="landing-footer"
           className="border-t border-paper/[0.08] bg-ink text-paper"

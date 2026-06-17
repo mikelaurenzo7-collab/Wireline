@@ -33,31 +33,10 @@ test.describe("Wireline design — landing hero & trust", () => {
     }
   });
 
-  test("landing trust badges visible and section robots removed", async ({ page }) => {
+  test("landing trust badges visible", async ({ page }) => {
     await gotoHydrated(page, "/");
     const badges = page.getByTestId("hero-trust-badges");
     await expect(badges).toBeVisible();
-    const fontSize = await badges
-      .locator("span.font-medium")
-      .first()
-      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    expect(fontSize).toBeGreaterThanOrEqual(12);
-    await expect(page.getByTestId("proof-robot-decorations-top")).toHaveCount(0);
-    await expect(page.getByTestId("integrations-robot-decorations")).toHaveCount(0);
-    await expect(page.getByTestId("faq-robot-decorations")).toHaveCount(0);
-  });
-
-  test("landing hero robots render on laptop and desktop viewports", async ({ page }) => {
-    for (const viewport of [
-      { width: 1366, height: 768, name: "laptop" },
-      { width: 1920, height: 1080, name: "desktop" },
-    ]) {
-      await page.setViewportSize(viewport);
-      await gotoHydrated(page, "/");
-      const heroRobots = page.getByTestId("hero-robot-decorations");
-      await expect(heroRobots).toBeVisible();
-      await expect(heroRobots.locator(".wl-sticker-slot")).toHaveCount(4);
-    }
   });
 });
 

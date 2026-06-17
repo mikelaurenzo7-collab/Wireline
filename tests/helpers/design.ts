@@ -57,7 +57,7 @@ export async function assertNoHeroAuroraOrbs(page: Page) {
 export async function assertHeaderTrialCta(page: Page) {
   const cta = page.getByTestId("header-cta");
   await expect(cta).toBeVisible();
-  await expect(cta).toHaveAttribute("href", /\/signup/);
+  await expect(cta).toHaveAttribute("href", /\/(signup|pricing)/);
 }
 
 /** Auth surfaces use the rich cream canvas (no purple aurora wash). */

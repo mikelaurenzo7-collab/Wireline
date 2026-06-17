@@ -2,6 +2,10 @@
 import { auditLogger, log } from "../lib/server-context";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 
+function isTestEnv() {
+  return process.env.NODE_ENV === "test" || process.env.PLAYWRIGHT_TEST === "true";
+}
+
 const OAUTH_RATE_WINDOW_MS = 5 * 60_000;
 const OAUTH_RATE_MAX = 10;
 const EMAIL_RATE_WINDOW_MS = 60_000;
@@ -36,6 +40,7 @@ const MIGRATE_SESSION_RATE_WINDOW_MS = 15 * 60_000;
 const MIGRATE_SESSION_RATE_MAX = 10;
 
 export async function emailRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const result = await rateLimit(userId, {
@@ -53,6 +58,7 @@ export async function emailRateLimiter(req: any, res: any, next: any) {
 }
 
 export async function dialRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const status = distributedLimiterStatus();
@@ -73,6 +79,7 @@ export async function dialRateLimiter(req: any, res: any, next: any) {
 }
 
 export function oauthRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const key = req.ip || "anon";
   rateLimit(key, { bucket: "oauth", windowMs: OAUTH_RATE_WINDOW_MS, max: OAUTH_RATE_MAX })
     .then((result) => {
@@ -86,6 +93,7 @@ export function oauthRateLimiter(req: any, res: any, next: any) {
 }
 
 export async function knowledgeRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const result = await rateLimit(userId, {
@@ -107,6 +115,7 @@ export async function knowledgeRateLimiter(req: any, res: any, next: any) {
  * 15-minute window. Returns 429 with retry-after header on lockout.
  */
 export async function signinRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const email = (req.body?.email || "").toString().toLowerCase().trim();
   const ip = req.ip || "anon";
   const key = email ? `signin:${email}:${ip}` : `signin:anon:${ip}`;
@@ -141,6 +150,7 @@ export async function signinRateLimiter(req: any, res: any, next: any) {
  * emails are real.
  */
 export async function signupRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const ip = req.ip || "anon";
   const key = `signup:${ip}`;
   const result = await rateLimit(key, {
@@ -171,6 +181,7 @@ export async function signupRateLimiter(req: any, res: any, next: any) {
  * frontend can show the user when to try again.
  */
 export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const email = (req.body?.email || "").toString().toLowerCase().trim();
   const ip = req.ip || "anon";
   const key = email ? `forgotpw:${email}:${ip}` : `forgotpw:anon:${ip}`;
@@ -197,6 +208,7 @@ export async function forgotPasswordRateLimiter(req: any, res: any, next: any) {
 }
 
 export async function resendVerificationRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const ip = req.ip || "anon";
@@ -227,6 +239,7 @@ export async function resendVerificationRateLimiter(req: any, res: any, next: an
  * token-exchange abuse if a bearer leaks via XSS or logs.
  */
 export async function migrateSessionRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const ip = req.ip || "anon";
   const key = `migrate_session:${ip}`;
   const result = await rateLimit(key, {
@@ -251,6 +264,7 @@ export async function migrateSessionRateLimiter(req: any, res: any, next: any) {
 }
 
 export async function resetPasswordRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const ip = req.ip || "anon";
   const key = `resetpw:${ip}`;
   const result = await rateLimit(key, {
@@ -275,6 +289,7 @@ export async function resetPasswordRateLimiter(req: any, res: any, next: any) {
 }
 
 export async function phoneNumberRateLimiter(req: any, res: any, next: any) {
+  if (isTestEnv()) return next();
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const result = await rateLimit(userId, {

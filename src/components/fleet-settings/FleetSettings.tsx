@@ -532,7 +532,7 @@ export default function FleetSettings() {
                           .charAt(0) || "A"}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-lg font-semibold leading-tight text-ink/90">
+                        <h2 className="truncate text-lg font-semibold leading-tight text-ink/90 font-display">
                           {selectedAgent.name || "Untitled agent"}
                         </h2>
                         <p className="wl-label capitalize text-muted/80">

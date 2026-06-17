@@ -665,7 +665,7 @@ export default function LiveOps() {
                         )}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Market Sentiment</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Market Sentiment</h3>
                           <span className="text-[10px] text-muted-foreground font-mono">Live customer feedback</span>
                         </div>
 
@@ -713,7 +713,7 @@ export default function LiveOps() {
                         )}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-sans">Unit Economics</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Unit Economics</h3>
                           <span className={clsx(WL_OPS_CLASSES.scoreBadge, "text-[10px]")}>
                             {OPS_COPY.roiLabel}: {stats?.unitEconomics?.efficiencyScore ?? 0}%
                           </span>
@@ -762,7 +762,7 @@ export default function LiveOps() {
                       {/* Task Distribution (from Stitch) */}
                       <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5 space-y-4">
                         <div className="flex justify-between items-center">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Task Distribution</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Task Distribution</h3>
                           <span className="text-[10px] text-muted-foreground font-mono">Operations split</span>
                         </div>
                         <div className="space-y-4">
@@ -802,7 +802,7 @@ export default function LiveOps() {
                       {/* Top Performing Agents Leaderboard */}
                       <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5">
                         <div className="flex items-center justify-between mb-5">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Top Performing Agents</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Top Performing Agents</h3>
                           <span className="text-[10px] text-brand font-mono font-bold flex items-center gap-1">
                             <Award className="w-3.5 h-3.5" />
                             <span>Live Rankings</span>
@@ -817,13 +817,13 @@ export default function LiveOps() {
                                 <div className="w-9 h-9 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-xs font-bold text-brand uppercase">
                                   AS
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[8px] text-white border border-card">
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
                                   ✓
                                 </div>
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-foreground">Alex Sterling</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">98% Res. • 2.4k calls</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">98% Res. • 2.4k calls</p>
                               </div>
                             </div>
                             <span className="text-xs font-black font-mono text-brand">#1</span>
@@ -836,13 +836,13 @@ export default function LiveOps() {
                                 <div className="w-9 h-9 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-400 uppercase">
                                   SC
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[8px] text-white border border-card">
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
                                   ✓
                                 </div>
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-foreground">Sarah Chen</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">92% Res. • 1.1k calls</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">92% Res. • 1.1k calls</p>
                               </div>
                             </div>
                             <span className="text-xs font-black font-mono text-muted-foreground">#2</span>
@@ -855,13 +855,13 @@ export default function LiveOps() {
                                 <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400 uppercase">
                                   CJ
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[8px] text-white border border-card">
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
                                   ✓
                                 </div>
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-foreground">Casey Jordan</p>
-                                <p className="text-[9px] text-muted-foreground uppercase font-mono mt-0.5">89% Res. • 840 calls</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">89% Res. • 840 calls</p>
                               </div>
                             </div>
                             <span className="text-xs font-black font-mono text-muted-foreground">#3</span>
@@ -884,7 +884,7 @@ export default function LiveOps() {
                       {/* Monospaced Operational Live Console (from Stitch) */}
                       <div className="wl-card-lift hover:border-brand/35 transition-colors duration-200 wl-panel border border-brand/10 bg-card/10 backdrop-blur-md rounded-md p-5 space-y-3">
                         <div className="flex items-center justify-between">
-                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold">Operational Logs</h3>
+                          <h3 className="wl-label text-[11px] uppercase tracking-wider font-bold font-display">Operational Logs</h3>
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
