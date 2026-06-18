@@ -52,7 +52,7 @@
   }
 
   html {
-    color-scheme: light;
+    color-scheme: dark;
     /* iOS auto-resizes text in landscape rotation by default — pin to 100%
      * so our type scale stays consistent across orientations. */
     -webkit-text-size-adjust: 100%;
@@ -66,12 +66,12 @@
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: none;
-    background: var(--color-paper);
+    background: var(--canvas);
   }
 
   body {
-    @apply font-sans bg-paper text-ink text-[14px] leading-relaxed selection:bg-brand/20 selection:text-ink antialiased overflow-x-hidden;
-    background: var(--color-paper);
+    @apply font-sans bg-background text-foreground text-[14px] leading-relaxed selection:bg-brand/25 antialiased overflow-x-hidden;
+    background: var(--canvas);
     -webkit-tap-highlight-color: transparent;
     /* Flexible viewport — panels still own their scroll but the body can
        expand beyond 100dvh if content requires it (laptop-safe). */
@@ -101,19 +101,19 @@
   }
 
   :root {
-    --wl-purple: #8b3fd6;
-    --wl-purple-light: #8b3fd6;
-    --wl-purple-deep: #6b2b99;
-    --wl-purple-muted: #8b6fa8;
+    --wl-purple: var(--iris);
+    --wl-purple-light: var(--iris-bright);
+    --wl-purple-deep: var(--iris-deep);
+    --wl-purple-muted: var(--text-2);
     /* Lightened June 2026 — track the index.css canvas (#f0e6d4 → #f5f1e8).
      * --wl-paper was the old rich tan; lifted so the marketing robot and
      * dark-mode wordmark match the lighter cream canvas. */
-    --wl-cream: #f5f1e8;
-    --wl-paper: #f5f1e8;
-    --wl-cream-warm: #f5efe5;
-    --wl-ink: #1a1614;
-    --wl-emerald: #10b981;
-    --wl-emerald-soft: #34d399;
+    --wl-cream: var(--panel);
+    --wl-paper: var(--canvas);
+    --wl-cream-warm: var(--panel-2);
+    --wl-ink: var(--text);
+    --wl-emerald: var(--mint);
+    --wl-emerald-soft: var(--mint);
   }
 
   /* iOS Safari zooms the viewport when a form field has font-size < 16px.
@@ -196,8 +196,8 @@
   .app-surface {
     font-size: 14px !important;
     line-height: 1.45 !important;
-    --client-panel-bg: rgba(248, 244, 236, 0.74);
-    --client-panel-border: rgba(26, 22, 20, 0.085);
+    --client-panel-bg: var(--panel);
+    --client-panel-border: var(--border);
   }
   .app-surface h1 {
     font-size: 1.25rem !important;
@@ -491,15 +491,15 @@
     background: transparent;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb {
-    background: rgba(107, 43, 153, 0.18);
+    background: rgba(124, 156, 255, 0.18);
     border-radius: 999px;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb:hover {
-    background: rgba(107, 43, 153, 0.42);
+    background: rgba(124, 156, 255, 0.42);
   }
   .scrollbar-hide {
     scrollbar-width: thin;
-    scrollbar-color: rgba(107, 43, 153, 0.18) transparent;
+    scrollbar-color: rgba(124, 156, 255, 0.18) transparent;
   }
 
   /* Horizontal tab strips — scroll when cramped, no phantom scrollbar when content fits */
@@ -542,14 +542,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(107, 43, 153, 0.35);
+    background: rgba(124, 156, 255, 0.35);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(107, 43, 153, 0.6);
+    background: rgba(124, 156, 255, 0.6);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -558,7 +558,7 @@
   input,
   textarea,
   select {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   /* Branded text selection — a warm purple wash with ink-dark glyphs
@@ -566,25 +566,24 @@
      kind of detail that makes the whole product feel hand-finished on
      every device that can select text (desktop drag, mobile long-press). */
   ::selection {
-    background: rgba(107, 43, 153, 0.18);
-    color: #1a1614;
+    background: rgba(124, 156, 255, 0.18);
+    color: var(--text);
   }
   ::-moz-selection {
-    background: rgba(107, 43, 153, 0.18);
-    color: #1a1614;
+    background: rgba(124, 156, 255, 0.18);
+    color: var(--text);
   }
 
   /* Immersive auth inputs — branded focus ring */
   .auth-input {
-    @apply w-full border border-ink/[0.08] bg-white/60 px-4 py-3 text-[13px] text-ink placeholder:text-ink/65 focus:border-brand/60 focus:bg-white/80 transition-all;
-    /* WCAG 4.5:1+ placeholder on cream */
+    @apply w-full border border-white/10 bg-white/5 px-4 py-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-brand/60 focus:bg-white/[0.08] transition-all;
   }
   .auth-input::placeholder {
-    color: rgba(26, 22, 20, 0.55);
+    color: var(--text-3);
   }
 
   :focus-visible {
-    outline: 2px solid rgba(107, 43, 153, 0.6);
+    outline: 2px solid rgba(124, 156, 255, 0.6);
     outline-offset: 2px;
   }
 

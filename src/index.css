@@ -1,6 +1,5 @@
-/* Wireline unified cream design system — Canva-inspired launch surface */
+/* Wireline — "Midnight" design system. Dark-only, token-driven. */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
-@import "@fontsource-variable/fraunces/wght.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
@@ -11,43 +10,65 @@
 :root {
   --font-size: 16px;
 
-  /* Core Wireline palette: rich cream, espresso ink, restrained violet. */
-  --paper: #f7ecd9;
-  --paper-deep: #ead8bd;
-  --paper-soft: #fbf4e8;
-  --ink: #100b14;
-  --ink-soft: #1a111f;
-  --brand: #522073;
-  --brand-deep: #371347;
-  --brand-bright: #9b6ad0;
-  --background: #f3e6cf;
-  --foreground: #100b14;
-  --card: #fff7ea;
-  --card-foreground: #100b14;
-  --popover: #fff7ea;
-  --popover-foreground: #100b14;
-  --primary: #522073;
-  --primary-foreground: #fff7ea;
-  --secondary: #ead8bd;
-  --secondary-foreground: #100b14;
-  --muted: #ead8bd;
-  --muted-foreground: #6f5d4b;
-  --accent: #efe2f6;
-  --accent-foreground: #371347;
-  --destructive: #a84024;
-  --destructive-foreground: #fff7ea;
-  --border: rgba(16, 11, 20, 0.13);
-  --input: transparent;
-  --input-background: #fff7ea;
-  --switch-background: #d7c2a2;
-  --ring: #522073;
-  --chart-1: #522073;
-  --chart-2: #9b6ad0;
-  --chart-3: #7f4fb2;
-  --chart-4: #c1a2df;
-  --chart-5: #371347;
-  --radius: 0px;
-  --font-display: "Fraunces", Georgia, serif;
+  /* Midnight palette — graphite canvas, iris accent, mint/amber signals. */
+  --canvas: #0c0d11;
+  --canvas-deep: #0a0b0e;
+  --panel: #14161d;
+  --panel-2: #191c24;
+  --raised: #21242e;
+
+  --text: #eceDF1;
+  --text-2: #9b9da8;
+  --text-3: #62646e;
+
+  --iris: #7c9cff;
+  --iris-bright: #a9beff;
+  --iris-deep: #5570e6;
+  --mint: #54e0b4;
+  --amber: #f4b45a;
+  --rose: #e5705f;
+
+  /* Legacy aliases kept so existing class names map onto Midnight without churn.
+     bg-ink/text-paper (the app shell pattern) → dark canvas + light text. */
+  --paper: #eceDF1;        /* used as text-paper (light text on dark shell) */
+  --paper-deep: #0a0b0e;
+  --paper-soft: #16181d;
+  --ink: #0c0d11;          /* used as bg-ink (dark canvas) */
+  --ink-soft: #191c24;
+  --brand: #7c9cff;
+  --brand-deep: #5570e6;
+  --brand-bright: #a9beff;
+
+  /* shadcn semantic tokens (drive every primitive + Tailwind color utility). */
+  --background: #0c0d11;
+  --foreground: #eceDF1;
+  --card: #14161d;
+  --card-foreground: #eceDF1;
+  --popover: #191c24;
+  --popover-foreground: #eceDF1;
+  --primary: #7c9cff;
+  --primary-foreground: #0a0b10;
+  --secondary: #191c24;
+  --secondary-foreground: #eceDF1;
+  --muted: #191c24;
+  --muted-foreground: #9b9da8;
+  --accent: #21242e;
+  --accent-foreground: #eceDF1;
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.12);
+  --input-background: #191c24;
+  --switch-background: #21242e;
+  --ring: #7c9cff;
+  --chart-1: #7c9cff;
+  --chart-2: #54e0b4;
+  --chart-3: #f4b45a;
+  --chart-4: #a9beff;
+  --chart-5: #5570e6;
+
+  --radius: 14px;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
@@ -80,13 +101,20 @@
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-brand-bright: var(--brand-bright);
+  --color-iris: var(--iris);
+  --color-iris-bright: var(--iris-bright);
+  --color-iris-deep: var(--iris-deep);
+  --color-mint: var(--mint);
+  --color-amber: var(--amber);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-3xl: 28px;
 }
 
 @layer base {
@@ -104,23 +132,26 @@
   html {
     font-size: var(--font-size);
     scroll-behavior: smooth;
-    background: var(--background);
+    background: var(--canvas);
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
     font-optical-sizing: auto;
+    color-scheme: dark;
   }
 
   body {
     min-height: 100vh;
     overflow-x: hidden;
+    /* Calm, single faint iris bloom — no competing gradients or grain. */
     background:
-      radial-gradient(circle at 88% -8%, rgba(82, 32, 115, 0.13), transparent 34rem),
-      radial-gradient(circle at 8% 12%, rgba(255, 247, 234, 0.88), transparent 28rem),
-      linear-gradient(180deg, var(--paper-soft), var(--background) 34%, var(--paper-deep));
+      radial-gradient(62% 38% at 50% -8%, rgba(124, 156, 255, 0.08), transparent 70%),
+      var(--canvas);
+    background-attachment: fixed;
     color: var(--foreground);
     font-family: var(--font-sans);
+    letter-spacing: -0.006em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: geometricPrecision;
+    text-rendering: optimizeLegibility;
   }
 
   *,
@@ -136,15 +167,16 @@
   h4,
   .font-display {
     font-family: var(--font-display);
-    font-weight: 560;
-    letter-spacing: -0.032em;
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.08;
     text-wrap: balance;
     text-transform: none;
   }
 
-  h1 { letter-spacing: -0.054em; line-height: 0.99; }
-  h2 { letter-spacing: -0.044em; line-height: 1.03; }
-  h3 { letter-spacing: -0.028em; line-height: 1.08; }
+  h1 { letter-spacing: -0.034em; line-height: 1.02; }
+  h2 { letter-spacing: -0.03em; line-height: 1.06; }
+  h3 { letter-spacing: -0.022em; line-height: 1.12; }
 
   p,
   li {
@@ -166,8 +198,8 @@
   }
 
   ::selection {
-    background: var(--brand);
-    color: var(--paper-soft);
+    background: var(--iris);
+    color: #0a0b10;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -180,187 +212,79 @@
 }
 
 @layer utilities {
+  /* Surface utilities, restyled to Midnight (kept names = no consumer churn). */
   .wl-overhaul-surface,
-  .wl-cream-surface {
+  .wl-cream-surface,
+  .wl-grain {
     background:
-      radial-gradient(circle at 92% 0%, rgba(82, 32, 115, 0.13), transparent 30rem),
-      radial-gradient(circle at 4% 16%, rgba(255, 247, 234, 0.9), transparent 26rem),
-      linear-gradient(180deg, var(--paper-soft), var(--background) 42%, var(--paper-deep));
+      radial-gradient(50% 36% at 70% 0%, rgba(124, 156, 255, 0.06), transparent 70%),
+      var(--canvas);
   }
 
-  .bg-ink.text-paper,
-  .flex.min-h-screen.bg-ink.text-paper {
-    background:
-      radial-gradient(circle at 82% 0%, rgba(155, 106, 208, 0.18), transparent 34rem),
-      radial-gradient(circle at 10% 10%, rgba(247, 236, 217, 0.055), transparent 28rem),
-      linear-gradient(180deg, #100b14, #17101d 48%, #100b14) !important;
+  .wl-premium-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 30px 60px -42px rgba(0, 0, 0, 0.9);
   }
 
-  .wl-overhaul-surface h1,
-  .wl-overhaul-surface h2,
-  .wl-overhaul-surface h3,
-  .wl-grain h1,
-  .wl-grain h2,
-  .wl-grain h3,
-  .bg-ink.text-paper h1,
-  .bg-ink.text-paper h2,
-  .bg-ink.text-paper h3 {
-    text-transform: none !important;
-    text-wrap: balance;
+  .wl-dark-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 30px 60px -42px rgba(0, 0, 0, 0.9);
   }
 
-  .wl-overhaul-surface h1,
-  .wl-grain h1,
-  .bg-ink.text-paper h1 {
-    letter-spacing: -0.054em !important;
-    line-height: 0.99 !important;
+  .wl-panel {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: var(--radius-lg);
   }
 
-  .wl-overhaul-surface h2,
-  .wl-grain h2,
-  .bg-ink.text-paper h2 {
-    letter-spacing: -0.044em !important;
-    line-height: 1.03 !important;
-  }
-
-  .wl-overhaul-surface h3,
-  .wl-grain h3,
-  .bg-ink.text-paper h3 {
-    letter-spacing: -0.028em !important;
-    line-height: 1.08 !important;
+  .wl-panel-elevated {
+    border: 1px solid var(--input);
+    background: var(--panel-2);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 40px 80px -50px rgba(0, 0, 0, 0.95);
   }
 
   .wl-title {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.054em;
-    line-height: 0.98;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
     text-transform: none;
     text-wrap: balance;
   }
 
   .wl-subtitle {
-    font-family: var(--font-sans);
-    font-weight: 760;
-    letter-spacing: 0.11em;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
+    color: var(--text-2);
   }
 
   .wl-label {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 700;
+    font-size: 0.66rem;
+    font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
+    color: var(--text-3);
   }
 
   .wl-numeral {
-    font-family: var(--font-display);
     font-variant-numeric: tabular-nums lining-nums;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.02em;
   }
 
-  .wl-grain {
-    background:
-      radial-gradient(circle at 92% 0%, rgba(82, 32, 115, 0.1), transparent 30rem),
-      radial-gradient(circle at 5% 18%, rgba(255, 247, 234, 0.82), transparent 24rem),
-      radial-gradient(rgba(16, 11, 20, 0.026) 1px, transparent 1px),
-      linear-gradient(180deg, var(--paper-soft), var(--background) 48%, var(--paper-deep));
-    background-size: auto, auto, 4px 4px, auto;
-  }
+  .touch-press { transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.12s ease, background-color 0.12s ease, border-color 0.12s ease; }
+  .touch-press:active { transform: scale(0.97); }
+  .touch-press-deep:active { transform: scale(0.95); opacity: 0.92; }
 
-  .wl-premium-card {
-    border: 1px solid rgba(16, 11, 20, 0.12);
-    background: color-mix(in srgb, var(--card) 88%, white 12%);
-    box-shadow: 0 28px 90px -66px rgba(16, 11, 20, 0.66);
-  }
-
-  .wl-dark-card {
-    border: 1px solid rgba(247, 236, 217, 0.12);
-    background: rgba(247, 236, 217, 0.045);
-    box-shadow: 0 28px 90px -66px rgba(0, 0, 0, 0.9);
-  }
-
-  .touch-press { transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease, border-color 0.12s ease; }
-  .touch-press:active { transform: scale(0.98); }
+  .scroll-viewport { overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 
   .text-balance { text-wrap: balance; }
-}
-
-/* Authenticated app responsive containment. */
-@media (max-width: 1023px) {
-  .flex.min-h-screen.bg-ink.text-paper {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    overflow-x: hidden !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper > .flex.flex-1.flex-col {
-    width: 100% !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    overflow-x: hidden !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper header,
-  .flex.min-h-screen.bg-ink.text-paper main {
-    width: 100% !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    overflow-x: hidden !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper header {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper main {
-    padding: 1rem !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper .overflow-x-auto {
-    max-width: 100vw !important;
-    overflow-x: auto !important;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper *,
-  .flex.min-h-screen.bg-ink.text-paper *::before,
-  .flex.min-h-screen.bg-ink.text-paper *::after {
-    min-width: 0 !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper [class*="max-w-"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="w-"],
-  .flex.min-h-screen.bg-ink.text-paper [style*="width"] {
-    max-width: 100% !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper .font-display,
-  .flex.min-h-screen.bg-ink.text-paper p,
-  .flex.min-h-screen.bg-ink.text-paper span,
-  .flex.min-h-screen.bg-ink.text-paper div,
-  .flex.min-h-screen.bg-ink.text-paper button {
-    overflow-wrap: anywhere;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper .text-5xl { font-size: 2.25rem !important; line-height: 1.08 !important; }
-  .flex.min-h-screen.bg-ink.text-paper .text-4xl { font-size: 2rem !important; line-height: 1.12 !important; }
-  .flex.min-h-screen.bg-ink.text-paper .text-3xl { font-size: 1.65rem !important; line-height: 1.16 !important; }
-}
-
-@media (max-width: 767px) {
-  .flex.min-h-screen.bg-ink.text-paper .grid,
-  .flex.min-h-screen.bg-ink.text-paper [class*="grid-cols-"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper [class*="xl:grid-cols-"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="lg:grid-cols-"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="sm:grid-cols-"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
