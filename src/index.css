@@ -1,4 +1,4 @@
-/* Wireline Figma UI/UX Overhaul — design source: Figma Make P3ESVszYd8FarNQNJvMnfa */
+/* Wireline unified cream design system — Canva-inspired launch surface */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "@fontsource-variable/fraunces/wght.css";
 @import "@fontsource/jetbrains-mono/400.css";
@@ -10,38 +10,42 @@
 
 :root {
   --font-size: 16px;
-  --paper: #efe9dc;
-  --paper-deep: #e6dccb;
-  --ink: #000000;
-  --brand: #4f1e7b;
-  --brand-deep: #3b154c;
-  --brand-bright: #6a2da3;
-  --background: #efe9dc;
-  --foreground: #000000;
-  --card: #f6f1e7;
-  --card-foreground: #000000;
-  --popover: #f6f1e7;
-  --popover-foreground: #000000;
-  --primary: #4f1e7b;
-  --primary-foreground: #f6f1e7;
-  --secondary: #e6dccb;
-  --secondary-foreground: #000000;
-  --muted: #e6dccb;
-  --muted-foreground: #6b5f54;
-  --accent: #ede4f3;
-  --accent-foreground: #3b154c;
-  --destructive: #a8341f;
-  --destructive-foreground: #f6f1e7;
-  --border: rgba(0, 0, 0, 0.12);
+
+  /* Core Wireline palette: rich cream, espresso ink, restrained violet. */
+  --paper: #f7ecd9;
+  --paper-deep: #ead8bd;
+  --paper-soft: #fbf4e8;
+  --ink: #100b14;
+  --ink-soft: #1a111f;
+  --brand: #522073;
+  --brand-deep: #371347;
+  --brand-bright: #9b6ad0;
+  --background: #f3e6cf;
+  --foreground: #100b14;
+  --card: #fff7ea;
+  --card-foreground: #100b14;
+  --popover: #fff7ea;
+  --popover-foreground: #100b14;
+  --primary: #522073;
+  --primary-foreground: #fff7ea;
+  --secondary: #ead8bd;
+  --secondary-foreground: #100b14;
+  --muted: #ead8bd;
+  --muted-foreground: #6f5d4b;
+  --accent: #efe2f6;
+  --accent-foreground: #371347;
+  --destructive: #a84024;
+  --destructive-foreground: #fff7ea;
+  --border: rgba(16, 11, 20, 0.13);
   --input: transparent;
-  --input-background: #f6f1e7;
-  --switch-background: #cbbfae;
-  --ring: #4f1e7b;
-  --chart-1: #4f1e7b;
-  --chart-2: #6a2da3;
-  --chart-3: #8b5cb8;
-  --chart-4: #b08fce;
-  --chart-5: #3b154c;
+  --input-background: #fff7ea;
+  --switch-background: #d7c2a2;
+  --ring: #522073;
+  --chart-1: #522073;
+  --chart-2: #9b6ad0;
+  --chart-3: #7f4fb2;
+  --chart-4: #c1a2df;
+  --chart-5: #371347;
   --radius: 0px;
   --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
@@ -108,7 +112,10 @@
   body {
     min-height: 100vh;
     overflow-x: hidden;
-    background: var(--background);
+    background:
+      radial-gradient(circle at 88% -8%, rgba(82, 32, 115, 0.13), transparent 34rem),
+      radial-gradient(circle at 8% 12%, rgba(255, 247, 234, 0.88), transparent 28rem),
+      linear-gradient(180deg, var(--paper-soft), var(--background) 34%, var(--paper-deep));
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -130,30 +137,14 @@
   .font-display {
     font-family: var(--font-display);
     font-weight: 560;
-    letter-spacing: -0.028em;
-  }
-
-  h1,
-  h2,
-  h3 {
-    text-transform: uppercase;
+    letter-spacing: -0.032em;
     text-wrap: balance;
+    text-transform: none;
   }
 
-  h1 {
-    letter-spacing: -0.044em;
-    line-height: 0.99;
-  }
-
-  h2 {
-    letter-spacing: -0.034em;
-    line-height: 1.03;
-  }
-
-  h3 {
-    letter-spacing: -0.024em;
-    line-height: 1.08;
-  }
+  h1 { letter-spacing: -0.054em; line-height: 0.99; }
+  h2 { letter-spacing: -0.044em; line-height: 1.03; }
+  h3 { letter-spacing: -0.028em; line-height: 1.08; }
 
   p,
   li {
@@ -176,7 +167,7 @@
 
   ::selection {
     background: var(--brand);
-    color: var(--paper);
+    color: var(--paper-soft);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -189,46 +180,62 @@
 }
 
 @layer utilities {
-  .wl-overhaul-surface {
+  .wl-overhaul-surface,
+  .wl-cream-surface {
     background:
-      radial-gradient(circle at 92% 0%, rgba(79, 30, 123, 0.08), transparent 30rem),
-      radial-gradient(circle at 5% 18%, rgba(79, 30, 123, 0.045), transparent 24rem),
-      var(--background);
+      radial-gradient(circle at 92% 0%, rgba(82, 32, 115, 0.13), transparent 30rem),
+      radial-gradient(circle at 4% 16%, rgba(255, 247, 234, 0.9), transparent 26rem),
+      linear-gradient(180deg, var(--paper-soft), var(--background) 42%, var(--paper-deep));
+  }
+
+  .bg-ink.text-paper,
+  .flex.min-h-screen.bg-ink.text-paper {
+    background:
+      radial-gradient(circle at 82% 0%, rgba(155, 106, 208, 0.18), transparent 34rem),
+      radial-gradient(circle at 10% 10%, rgba(247, 236, 217, 0.055), transparent 28rem),
+      linear-gradient(180deg, #100b14, #17101d 48%, #100b14) !important;
+  }
+
+  .wl-overhaul-surface h1,
+  .wl-overhaul-surface h2,
+  .wl-overhaul-surface h3,
+  .wl-grain h1,
+  .wl-grain h2,
+  .wl-grain h3,
+  .bg-ink.text-paper h1,
+  .bg-ink.text-paper h2,
+  .bg-ink.text-paper h3 {
+    text-transform: none !important;
+    text-wrap: balance;
   }
 
   .wl-overhaul-surface h1,
   .wl-grain h1,
   .bg-ink.text-paper h1 {
-    letter-spacing: -0.046em !important;
-    line-height: 0.98 !important;
-    text-transform: uppercase !important;
-    text-wrap: balance;
+    letter-spacing: -0.054em !important;
+    line-height: 0.99 !important;
   }
 
   .wl-overhaul-surface h2,
   .wl-grain h2,
   .bg-ink.text-paper h2 {
-    letter-spacing: -0.036em !important;
+    letter-spacing: -0.044em !important;
     line-height: 1.03 !important;
-    text-transform: uppercase !important;
-    text-wrap: balance;
   }
 
   .wl-overhaul-surface h3,
   .wl-grain h3,
   .bg-ink.text-paper h3 {
-    letter-spacing: -0.024em !important;
+    letter-spacing: -0.028em !important;
     line-height: 1.08 !important;
-    text-transform: uppercase !important;
-    text-wrap: balance;
   }
 
   .wl-title {
     font-family: var(--font-display);
     font-weight: 600;
-    letter-spacing: -0.048em;
+    letter-spacing: -0.054em;
     line-height: 0.98;
-    text-transform: uppercase;
+    text-transform: none;
     text-wrap: balance;
   }
 
@@ -254,8 +261,24 @@
   }
 
   .wl-grain {
-    background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
-    background-size: 4px 4px;
+    background:
+      radial-gradient(circle at 92% 0%, rgba(82, 32, 115, 0.1), transparent 30rem),
+      radial-gradient(circle at 5% 18%, rgba(255, 247, 234, 0.82), transparent 24rem),
+      radial-gradient(rgba(16, 11, 20, 0.026) 1px, transparent 1px),
+      linear-gradient(180deg, var(--paper-soft), var(--background) 48%, var(--paper-deep));
+    background-size: auto, auto, 4px 4px, auto;
+  }
+
+  .wl-premium-card {
+    border: 1px solid rgba(16, 11, 20, 0.12);
+    background: color-mix(in srgb, var(--card) 88%, white 12%);
+    box-shadow: 0 28px 90px -66px rgba(16, 11, 20, 0.66);
+  }
+
+  .wl-dark-card {
+    border: 1px solid rgba(247, 236, 217, 0.12);
+    background: rgba(247, 236, 217, 0.045);
+    box-shadow: 0 28px 90px -66px rgba(0, 0, 0, 0.9);
   }
 
   .touch-press { transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease, border-color 0.12s ease; }
@@ -264,13 +287,7 @@
   .text-balance { text-wrap: balance; }
 }
 
-/*
- * Authenticated app responsive containment.
- * The Figma desktop cockpit intentionally uses wide panels, but on iPhone/tablet
- * those panels were creating horizontal scroll and exposing the cream body
- * background beside the dark app. These rules make the authenticated console a
- * single-column, viewport-bound shell until the desktop sidebar breakpoint.
- */
+/* Authenticated app responsive containment. */
 @media (max-width: 1023px) {
   .flex.min-h-screen.bg-ink.text-paper {
     width: 100vw !important;
@@ -346,4 +363,4 @@
   .flex.min-h-screen.bg-ink.text-paper [class*="sm:grid-cols-"] {
     grid-template-columns: minmax(0, 1fr) !important;
   }
-}
+}
