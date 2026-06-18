@@ -10,8 +10,6 @@ import {
   ArrowRight,
   AlertTriangle,
   ExternalLink,
-  Crown,
-  Zap,
   Building2,
   Plus,
 } from "lucide-react";
@@ -23,8 +21,10 @@ import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
 
+type BillingPlanId = "personal" | "personal-plus" | "starter" | "scale";
+
 interface Plan {
-  id: "personal" | "starter" | "pro" | "business" | "enterprise";
+  id: BillingPlanId;
   name: string;
   price_usd_monthly: number;
   max_agents: number;
@@ -48,18 +48,23 @@ interface SubscriptionState {
 
 const PLAN_ICONS: Record<string, any> = {
   personal: Sparkles,
+  "personal-plus": Sparkles,
   starter: Sparkles,
-  pro: Zap,
-  business: Building2,
-  enterprise: Crown,
+  scale: Building2,
 };
 
 const PLAN_ACCENTS: Record<string, string> = {
   personal: BRAND.purple,
+  "personal-plus": BRAND.purple,
   starter: BRAND.purple,
-  pro: BRAND.purple,
-  business: BRAND.purple,
-  enterprise: BRAND.creamDeep,
+  scale: BRAND.purple,
+};
+
+const CHECKOUT_VALUES: Record<string, number> = {
+  personal: 9,
+  "personal-plus": 19,
+  starter: 249,
+  scale: 699,
 };
 
 export default function StripeBillingCard() {
@@ -148,17 +153,11 @@ export default function StripeBillingCard() {
       // Dispatch analytics checkout initiation events
       if (typeof window !== "undefined") {
         try {
-          const prices: Record<string, number> = {
-            personal: 49,
-            starter: 149,
-            pro: 499,
-            business: 1499,
-          };
           if (typeof (window as any).fbq === "function") {
             (window as any).fbq("track", "InitiateCheckout", {
               content_category: "Subscription",
               content_ids: [planId],
-              value: prices[planId] || 0,
+              value: CHECKOUT_VALUES[planId] || 0,
               currency: "USD",
             });
           }
@@ -408,7 +407,7 @@ function PlanPicker({
           the cost. No setup fees. Cancel anytime.
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 stagger-children">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 stagger-children">
         {plans.map((plan) => {
           const Icon = PLAN_ICONS[plan.id] || Building2;
           const accent = PLAN_ACCENTS[plan.id] || BRAND.purple;
@@ -427,7 +426,7 @@ function PlanPicker({
               )}
               data-accent={accent}
             >
-              {!isSignupMatch && plan.id === "pro" && (
+              {!isSignupMatch && plan.id === "starter" && (
                 <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
                   Most popular
                 </div>
@@ -448,16 +447,10 @@ function PlanPicker({
               <div>
                 <h4 className="font-display italic text-2xl text-ink">{plan.name}</h4>
                 <div className="mt-1.5 flex items-baseline gap-1">
-                  {plan.price_usd_monthly > 0 ? (
-                    <>
-                      <span className="font-display italic text-4xl text-ink">
-                        ${plan.price_usd_monthly.toLocaleString()}
-                      </span>
-                      <span className="wl-label-muted/70">/mo</span>
-                    </>
-                  ) : (
-                    <span className="font-display italic text-4xl text-ink">Custom</span>
-                  )}
+                  <span className="font-display italic text-4xl text-ink">
+                    ${plan.price_usd_monthly.toLocaleString()}
+                  </span>
+                  <span className="wl-label-muted/70">/mo</span>
                 </div>
               </div>
               <ul className="space-y-2 flex-1">
@@ -479,20 +472,22 @@ function PlanPicker({
                 disabled={isBusy || !plan.configured}
                 className={cn(
                   "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow",
-                  !isBusy && "wl-accent-subscribe",
+                  !isBusy && plan.configured && "wl-accent-subscribe",
                 )}
               >
                 {isBusy ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
+                ) : plan.configured ? (
                   <>
                     Subscribe <ArrowRight className="w-3 h-3" />
                   </>
+                ) : (
+                  "Contact sales"
                 )}
               </ShadButton>
               {!plan.configured && (
                 <p className="wl-label text-muted/70 text-center leading-relaxed">
-                  Available soon — contact us to start on this tier
+                  Stripe price pending — contact us to start on this tier
                 </p>
               )}
               <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
