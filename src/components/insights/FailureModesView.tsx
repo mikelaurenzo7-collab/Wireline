@@ -59,7 +59,7 @@ export default function FailureModesView() {
           variant="outline"
           size="sm"
           onClick={() => load(true)}
-          className="rounded-full wl-insight-label hover:text-ink hover:border-brand/25"
+          className="rounded-full wl-insight-label hover:text-foreground hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </ShadButton>
@@ -75,7 +75,7 @@ export default function FailureModesView() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-display italic text-2xl text-ink leading-tight">
+                <h4 className="font-display italic text-2xl text-foreground leading-tight">
                   {m.failure_type}
                 </h4>
                 <span
@@ -87,7 +87,8 @@ export default function FailureModesView() {
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     m.severity === "medium" &&
                       "bg-amber-500/15 text-amber-500 border border-amber-500/30",
-                    m.severity === "low" && "bg-black/[0.06] dark:bg-white/5 text-ink/50 border border-border",
+                    m.severity === "low" &&
+                      "bg-black/[0.06] dark:bg-white/5 text-foreground/50 border border-border",
                   )}
                 >
                   {m.severity}
@@ -99,10 +100,10 @@ export default function FailureModesView() {
             </div>
             <div className="font-display italic text-3xl text-brand-display">{m.count}</div>
           </div>
-          <p className="text-sm text-ink/75 leading-relaxed">{m.description}</p>
+          <p className="text-sm text-foreground/75 leading-relaxed">{m.description}</p>
           <div className="rounded-md bg-brand/10 border border-brand/30 p-4">
             <div className="wl-insight-label text-brand mb-1">Recommended fix</div>
-            <p className="text-sm text-ink/90">{m.recommended_fix}</p>
+            <p className="text-sm text-foreground/90">{m.recommended_fix}</p>
           </div>
         </motion.div>
       ))}

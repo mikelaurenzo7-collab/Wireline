@@ -38,7 +38,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
 
   return (
     <FormShell>
-      <p className="text-[11px] text-ink/65 leading-relaxed">
+      <p className="text-[11px] text-foreground/65 leading-relaxed">
         Wireline AI runs up to 5 web searches to identify who's calling and where they work. Use the
         operator context to narrow the search — names + companies on a phone are usually too generic
         alone.
@@ -95,7 +95,9 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
                   >
                     {enrichment.research_confidence} confidence
                   </div>
-                  <div className="text-sm text-ink/85 mt-0.5">{enrichment.identity_summary}</div>
+                  <div className="text-sm text-foreground/85 mt-0.5">
+                    {enrichment.identity_summary}
+                  </div>
                 </div>
               </div>
             </div>
@@ -149,7 +151,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
                 {enrichment.sources.map((s: string, i: number) => (
                   <li
                     key={i}
-                    className="flex items-center gap-1.5 text-ink/70 hover:text-brand transition-colors"
+                    className="flex items-center gap-1.5 text-foreground/70 hover:text-brand transition-colors"
                   >
                     <ExternalLink className="w-3 h-3 shrink-0" />
                     <a

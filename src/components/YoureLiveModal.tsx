@@ -197,14 +197,14 @@ function NextStepCard({
           className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
             primary
               ? "bg-brand/20 text-brand"
-              : "bg-black/5 text-ink/60 group-hover:text-brand transition-colors"
+              : "bg-black/5 text-foreground/60 group-hover:text-brand transition-colors"
           }`}
         >
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className={`text-sm font-medium ${primary ? "text-brand" : "text-ink"}`}>
+            <h4 className={`text-sm font-medium ${primary ? "text-brand" : "text-foreground"}`}>
               {title}
             </h4>
             <ArrowRight
@@ -378,7 +378,7 @@ export default function YoureLiveModal({
 
           <DialogHeader className="flex flex-col space-y-0 text-center items-center pb-1">
             <DialogDescription className="wl-label text-brand mb-1">{eyebrow}</DialogDescription>
-            <DialogTitle className="font-display italic text-3xl text-ink leading-tight">
+            <DialogTitle className="font-display italic text-3xl text-foreground leading-tight">
               {title}
               {titleAccent ? (
                 <>
@@ -401,7 +401,7 @@ export default function YoureLiveModal({
               className="mt-4 p-4 rounded-md border border-brand/25 bg-brand/5 text-left"
             >
               <p className="wl-label text-brand mb-1">{ACTIVATION_PENDING_COPY.phoneLabel}</p>
-              <p className="font-mono text-lg text-ink tabular-nums">{phoneNumber}</p>
+              <p className="font-mono text-lg text-foreground tabular-nums">{phoneNumber}</p>
               <a
                 href={formatTel(phoneNumber)}
                 className="touch-press mt-3 inline-flex items-center justify-center gap-2 w-full rounded-full bg-brand text-on-brand wl-label py-2.5 min-h-[44px] hover:opacity-95 transition-opacity"
@@ -505,7 +505,7 @@ export default function YoureLiveModal({
                     <Icon className="w-4 h-4" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[11px] font-semibold text-ink uppercase tracking-[0.1em]">
+                    <span className="block text-[11px] font-semibold text-foreground uppercase tracking-[0.1em]">
                       {item.label}
                     </span>
                     <span className="block wl-micro-meta--muted leading-snug mt-0.5">

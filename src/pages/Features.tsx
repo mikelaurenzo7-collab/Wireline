@@ -72,7 +72,7 @@ export default function Features() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display italic text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.05] tracking-tight mb-6 text-ink"
+          className="font-display italic text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.05] tracking-tight mb-6 text-foreground"
         >
           <span className="wl-brand-display">The Multi-Channel Engine.</span>
         </motion.h1>
@@ -81,7 +81,7 @@ export default function Features() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.6 }}
-          className="text-ink/75 text-lg leading-relaxed max-w-2xl mx-auto mb-10"
+          className="text-foreground/75 text-lg leading-relaxed max-w-2xl mx-auto mb-10"
         >
           A sovereign stack for Phone, SMS, and Email. Experience true technical independence with a
           vertically integrated communication layer.
@@ -99,7 +99,7 @@ export default function Features() {
             </Link>
           </ShadButton>
           <ShadButton variant="outline" size="lg" asChild>
-            <Link to="/showcase" className="inline-flex items-center gap-2 text-ink">
+            <Link to="/showcase" className="inline-flex items-center gap-2 text-foreground">
               View Technical Specs
             </Link>
           </ShadButton>
@@ -115,7 +115,7 @@ export default function Features() {
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold block mb-2">
             Unified Data Flow
           </span>
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground">
             How we route across the sovereign stack
           </h2>
         </div>
@@ -123,7 +123,7 @@ export default function Features() {
         {/* 3 Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           {/* Phone Step */}
-          <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-paper flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
+          <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-card flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
             <div>
               <div
                 className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand"
@@ -131,8 +131,8 @@ export default function Features() {
               >
                 <Phone className="w-5 h-5" />
               </div>
-              <h3 className="font-display italic text-xl text-ink mb-3">01. Phone</h3>
-              <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">
+              <h3 className="font-display italic text-xl text-foreground mb-3">01. Phone</h3>
+              <p className="text-xs sm:text-sm text-foreground/70 leading-relaxed">
                 Encrypted voice peering with zero-hop routing between carrier gateways. Sub-30ms
                 latency for crystal-clear fidelity.
               </p>
@@ -145,7 +145,7 @@ export default function Features() {
           </div>
 
           {/* SMS Step */}
-          <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-paper flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
+          <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-card flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
             <div>
               <div
                 className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand"
@@ -153,8 +153,8 @@ export default function Features() {
               >
                 <MessageSquare className="w-5 h-5" />
               </div>
-              <h3 className="font-display italic text-xl text-ink mb-3">02. SMS</h3>
-              <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">
+              <h3 className="font-display italic text-xl text-foreground mb-3">02. SMS</h3>
+              <p className="text-xs sm:text-sm text-foreground/70 leading-relaxed">
                 High-throughput messaging without the middleware tax. Direct SMPP binds ensure
                 delivery certainty in milliseconds.
               </p>
@@ -167,7 +167,7 @@ export default function Features() {
           </div>
 
           {/* Email Step */}
-          <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-paper flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
+          <div className="wl-panel border border-outline-variant/40 p-8 rounded-md bg-card flex flex-col justify-between hover:border-brand/30 transition-all shadow-sm">
             <div>
               <div
                 className="w-12 h-12 bg-brand/10 rounded-full flex items-center justify-center mb-6 text-brand"
@@ -175,8 +175,8 @@ export default function Features() {
               >
                 <Mail className="w-5 h-5" />
               </div>
-              <h3 className="font-display italic text-xl text-ink mb-3">03. Email</h3>
-              <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">
+              <h3 className="font-display italic text-xl text-foreground mb-3">03. Email</h3>
+              <p className="text-xs sm:text-sm text-foreground/70 leading-relaxed">
                 Sovereign SMTP infrastructure with dedicated IP warming and custom DKIM/SPF
                 signatures for maximum inboxing.
               </p>
@@ -195,15 +195,15 @@ export default function Features() {
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold">
               Platform Architecture
             </p>
-            <h2 className="font-display italic text-3xl text-ink leading-tight">
+            <h2 className="font-display italic text-3xl text-foreground leading-tight">
               The Shared Interaction Timeline
             </h2>
-            <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
+            <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
               In a traditional setup, if a customer calls a business and then sends an SMS, those
               are treated as separate tickets by separate software packages. Conversations get
               dropped, and customers have to repeat themselves.
             </p>
-            <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
+            <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
               With Wireline, a customer profile maintains a single unified timeline. The agent that
               handles their email knows what they said on their phone call five minutes ago.
             </p>
@@ -216,7 +216,7 @@ export default function Features() {
               ].map((point) => (
                 <div
                   key={point}
-                  className="flex items-start gap-2.5 text-xs sm:text-sm text-ink/80"
+                  className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/80"
                 >
                   <div
                     className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0 mt-0.5"
@@ -231,14 +231,16 @@ export default function Features() {
           </div>
 
           <div className="lg:col-span-7">
-            <div className="wl-panel border border-brand/20 bg-paper-warm/40 p-6 sm:p-8 space-y-6 rounded-md shadow-sm relative overflow-hidden paper-texture">
+            <div className="wl-panel border border-brand/20 bg-card-warm/40 p-6 sm:p-8 space-y-6 rounded-md shadow-sm relative overflow-hidden paper-texture">
               <div className="absolute top-0 right-0 p-3 bg-brand/10 border-b border-l border-brand/20 rounded-bl-md">
                 <span className="font-mono text-[10px] uppercase tracking-wider text-brand font-semibold">
                   Live Flow Simulation
                 </span>
               </div>
 
-              <h4 className="font-display italic text-xl text-ink">Single Customer Thread</h4>
+              <h4 className="font-display italic text-xl text-foreground">
+                Single Customer Thread
+              </h4>
 
               <div className="relative border-l-2 border-brand/25 ml-4 pl-6 space-y-8 py-2">
                 {/* Step 1: Phone */}
@@ -248,18 +250,18 @@ export default function Features() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="font-semibold text-xs sm:text-sm text-ink">
+                      <span className="font-semibold text-xs sm:text-sm text-foreground">
                         10:04 AM · Inbound Call
                       </span>
                       <span className="font-mono text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-sm">
                         Voice Agent
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-ink/70 mt-1">
+                    <p className="text-xs sm:text-sm text-foreground/70 mt-1">
                       Customer called Jordan (sales rep). Confirmed interest in Premium Fleet and
                       requested a quote.
                     </p>
-                    <div className="bg-black/5 p-2.5 mt-2 rounded-sm text-xs italic text-ink/65 border border-ink/[0.05]">
+                    <div className="bg-black/5 p-2.5 mt-2 rounded-sm text-xs italic text-foreground/65 border border-ink/[0.05]">
                       "Sure, I'll send that quote over right now via SMS and email. What's your best
                       address?"
                     </div>
@@ -273,14 +275,14 @@ export default function Features() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="font-semibold text-xs sm:text-sm text-ink">
+                      <span className="font-semibold text-xs sm:text-sm text-foreground">
                         10:05 AM · Auto-SMS Delivery
                       </span>
                       <span className="font-mono text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-sm">
                         SMS Agent
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-ink/70 mt-1">
+                    <p className="text-xs sm:text-sm text-foreground/70 mt-1">
                       Platform dispatched a secure link containing the quote payload, matching the
                       voice request.
                     </p>
@@ -298,14 +300,14 @@ export default function Features() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="font-semibold text-xs sm:text-sm text-ink">
+                      <span className="font-semibold text-xs sm:text-sm text-foreground">
                         10:06 AM · Contract Delivered
                       </span>
                       <span className="font-mono text-[10px] text-brand bg-brand/10 px-1.5 py-0.5 rounded-sm">
                         Email Agent
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-ink/70 mt-1">
+                    <p className="text-xs sm:text-sm text-foreground/70 mt-1">
                       Comprehensive proposal delivered with Stripe checkout link. Context inherited
                       from voice conversation.
                     </p>
@@ -324,7 +326,7 @@ export default function Features() {
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 order-last lg:order-first">
-            <div className="wl-panel border border-brand/20 bg-paper-warm/40 p-6 sm:p-8 rounded-md shadow-sm relative overflow-hidden paper-texture">
+            <div className="wl-panel border border-brand/20 bg-card-warm/40 p-6 sm:p-8 rounded-md shadow-sm relative overflow-hidden paper-texture">
               <div className="flex items-center justify-between border-b border-outline-variant/30 pb-4 mb-6">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -349,13 +351,13 @@ export default function Features() {
                     cx="200"
                     cy="120"
                     r="40"
-                    stroke="#8b3fd6"
+                    stroke="#7c9cff"
                     strokeDasharray="4 4"
                     strokeWidth="2"
                   ></circle>
                   <path
                     d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z"
-                    stroke="#8b3fd6"
+                    stroke="#7c9cff"
                     strokeWidth="3"
                   >
                     <animate
@@ -376,7 +378,7 @@ export default function Features() {
                   ></rect>
                   <path
                     d="M260 200V240M240 220H280"
-                    stroke="#8b3fd6"
+                    stroke="#7c9cff"
                     strokeLinecap="round"
                     strokeWidth="3"
                   ></path>
@@ -437,20 +439,20 @@ export default function Features() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-paper-warm/20 border border-brand/10 rounded-sm">
-                    <h5 className="font-display italic text-base text-ink mb-1">
+                  <div className="p-4 bg-card-warm/20 border border-brand/10 rounded-sm">
+                    <h5 className="font-display italic text-base text-foreground mb-1">
                       Interactive Widgets
                     </h5>
-                    <p className="text-xs text-ink/70 leading-relaxed">
+                    <p className="text-xs text-foreground/70 leading-relaxed">
                       Check your lock screen or home screen widget to see active call states and
                       live transcripts while driving.
                     </p>
                   </div>
-                  <div className="p-4 bg-paper-warm/20 border border-brand/10 rounded-sm">
-                    <h5 className="font-display italic text-base text-ink mb-1">
+                  <div className="p-4 bg-card-warm/20 border border-brand/10 rounded-sm">
+                    <h5 className="font-display italic text-base text-foreground mb-1">
                       Direct Carrier Routing
                     </h5>
-                    <p className="text-xs text-ink/70 leading-relaxed">
+                    <p className="text-xs text-foreground/70 leading-relaxed">
                       Zero middleware jank. Direct-to-carrier routing ensures crisp, HD audio with
                       sub-second model response times.
                     </p>
@@ -464,15 +466,15 @@ export default function Features() {
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold">
               Hands-Free Coverage
             </p>
-            <h2 className="font-display italic text-3xl sm:text-4xl text-ink leading-tight">
+            <h2 className="font-display italic text-3xl sm:text-4xl text-foreground leading-tight">
               Siri Hands-Free Integration
             </h2>
-            <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
+            <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
               Designed for high-stakes environments — from critical surgical theaters to the
               driver's seat. Our voice engine interfaces directly with Apple's Siri, allowing
               medical professionals and logistics teams to trigger workflows entirely by voice.
             </p>
-            <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
+            <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
               Ask Siri to trigger a custom Wireline workflow. Your fleet automatically places the
               call, coordinates with the client, updates your CRM, and displays the outcome on your
               iOS Widget immediately when you park.
@@ -486,7 +488,7 @@ export default function Features() {
               ].map((point) => (
                 <li
                   key={point}
-                  className="flex items-center gap-2.5 text-xs sm:text-sm text-ink/80 font-medium"
+                  className="flex items-center gap-2.5 text-xs sm:text-sm text-foreground/80 font-medium"
                 >
                   <div
                     className="w-5 h-5 rounded-sm bg-brand/10 flex items-center justify-center shrink-0"
@@ -503,7 +505,7 @@ export default function Features() {
               <span className="font-mono text-[10px] uppercase tracking-wider text-brand font-semibold">
                 Core Driving Scenario
               </span>
-              <p className="text-xs sm:text-sm text-ink/80 italic leading-relaxed">
+              <p className="text-xs sm:text-sm text-foreground/80 italic leading-relaxed">
                 "Siri, tell Wireline to ask the doctor's office if they received my lab results."
               </p>
             </div>
@@ -520,10 +522,10 @@ export default function Features() {
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold mb-2">
             The Complete Infrastructure
           </p>
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground">
             A Core Voice Carrier & Software Layer
           </h2>
-          <p className="text-ink/65 text-sm sm:text-base mt-3 leading-relaxed">
+          <p className="text-foreground/65 text-sm sm:text-base mt-3 leading-relaxed">
             Wireline is built on top of our own direct voice network. We cut out Twilio middleware
             to deliver premium call-center infrastructure directly to small shops and large fleets.
           </p>
@@ -566,7 +568,7 @@ export default function Features() {
             return (
               <div
                 key={item.title}
-                className="wl-panel border border-ink/[0.08] bg-paper hover:border-brand/30 transition-all p-6 rounded-md group relative overflow-hidden flex flex-col justify-between"
+                className="wl-panel border border-ink/[0.08] bg-card hover:border-brand/30 transition-all p-6 rounded-md group relative overflow-hidden flex flex-col justify-between"
               >
                 <div>
                   <div
@@ -575,10 +577,12 @@ export default function Features() {
                   >
                     <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-display italic text-lg text-ink leading-tight mb-2">
+                  <h3 className="font-display italic text-lg text-foreground leading-tight mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-ink/70 leading-relaxed">{item.body}</p>
+                  <p className="text-xs sm:text-sm text-foreground/70 leading-relaxed">
+                    {item.body}
+                  </p>
                 </div>
               </div>
             );

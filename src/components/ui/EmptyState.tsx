@@ -135,7 +135,7 @@ export function EmptyState({
                     isPrimary &&
                       compact &&
                       "!normal-case !tracking-normal !text-[11px] !font-semibold",
-                    !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
+                    !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
                     !isPrimary && compact && "normal-case tracking-normal text-[11px] font-medium",
                   )}
                 >
@@ -161,7 +161,7 @@ export function EmptyState({
                   isPrimary &&
                     compact &&
                     "!normal-case !tracking-normal !text-[11px] !font-semibold",
-                  !isPrimary && "border-brand/20 text-ink/85 hover:bg-brand/[0.04]",
+                  !isPrimary && "border-brand/20 text-foreground/85 hover:bg-brand/[0.04]",
                   !isPrimary && compact && "normal-case tracking-normal text-[11px] font-medium",
                 )}
               >

@@ -169,7 +169,7 @@ export default function DispatchTab({
                     >
                       <SelectTrigger
                         aria-label="Select agent to dial with"
-                        className="w-full text-sm bg-black/5 border border-black/10 rounded-md pl-3 py-2 text-ink h-auto"
+                        className="w-full text-sm bg-black/5 border border-white/10 rounded-md pl-3 py-2 text-foreground h-auto"
                       >
                         <SelectValue
                           placeholder={
@@ -222,12 +222,12 @@ export default function DispatchTab({
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 tabular-nums transition-all focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] focus:bg-white/50",
+                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 tabular-nums transition-all focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] focus:bg-white/50",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-brand/50"
                                 : "border-destructive/40"
-                              : "border-black/10",
+                              : "border-white/10",
                           )}
                         />
                         {customerNumber.length > 0 &&
@@ -251,7 +251,7 @@ export default function DispatchTab({
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                           placeholder="Optional"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
+                          className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
                         />
                       </div>
 
@@ -262,7 +262,7 @@ export default function DispatchTab({
                           onChange={(e) => setContext(e.target.value)}
                           rows={4}
                           placeholder="What should the agent say?"
-                          className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 resize-none leading-relaxed"
+                          className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 resize-none leading-relaxed"
                         />
                       </div>
 
@@ -348,11 +348,11 @@ export default function DispatchTab({
                         <ul className="wl-micro-meta--muted space-y-0.5">
                           <li className="flex items-center gap-1.5">
                             <ChevronRight className="w-2.5 h-2.5 text-brand" /> Headers:{" "}
-                            <span className="text-ink/80">phone, name, context</span>
+                            <span className="text-foreground/80">phone, name, context</span>
                           </li>
                           <li className="flex items-center gap-1.5">
                             <ChevronRight className="w-2.5 h-2.5 text-brand" /> Limit:{" "}
-                            <span className="text-ink/80">1,000 rows</span>
+                            <span className="text-foreground/80">1,000 rows</span>
                           </li>
                         </ul>
                       </div>
@@ -373,7 +373,7 @@ export default function DispatchTab({
                             >
                               <SelectTrigger
                                 aria-label="Assign to campaign"
-                                className="w-full text-sm bg-black/5 border border-black/10 rounded-md pl-3 py-2 text-ink h-auto"
+                                className="w-full text-sm bg-black/5 border border-white/10 rounded-md pl-3 py-2 text-foreground h-auto"
                               >
                                 <SelectValue placeholder="No campaign" />
                               </SelectTrigger>
@@ -415,7 +415,7 @@ export default function DispatchTab({
                         ) : (
                           <UploadCloud className="w-7 h-7 text-muted group-hover:text-brand transition-colors" />
                         )}
-                        <span className="font-display italic text-base text-ink">
+                        <span className="font-display italic text-base text-foreground">
                           Upload manifest
                         </span>
                         <span className="app-section-title">Drag CSV or click to browse</span>
@@ -534,7 +534,7 @@ export default function DispatchTab({
                         >
                           <div className="flex-1 min-w-0 space-y-1.5">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-display italic text-lg text-ink leading-none truncate">
+                              <h3 className="font-display italic text-lg text-foreground leading-none truncate">
                                 {lead.customer_name || "Unknown subject"}
                               </h3>
                               {lead.source === "inbound" && (
@@ -613,7 +613,7 @@ export default function DispatchTab({
               </AnimatePresence>
 
               {leadsHasMore && (
-                <div className="px-4 py-3 flex justify-center border-t border-black/8">
+                <div className="px-4 py-3 flex justify-center border-t border-white/8">
                   <ShadButton
                     type="button"
                     variant="outline"

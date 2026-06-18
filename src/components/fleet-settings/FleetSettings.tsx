@@ -532,7 +532,7 @@ export default function FleetSettings() {
                           .charAt(0) || "A"}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-lg font-semibold leading-tight text-ink/90 font-display">
+                        <h2 className="truncate text-lg font-semibold leading-tight text-foreground/90 font-display">
                           {selectedAgent.name || "Untitled agent"}
                         </h2>
                         <p className="wl-label capitalize text-muted/80">
@@ -578,10 +578,10 @@ export default function FleetSettings() {
                 the middle, and clients can still manually customize everything. */}
             <aside
               data-testid="studio-tuning-rail"
-              className="shrink-0 flex min-h-0 flex-col overflow-hidden border-t md:border-t-0 border-border/70 bg-paper/70 dark:bg-velvet/35 md:w-[clamp(360px,30vw,420px)] xl:w-[clamp(380px,27vw,460px)]"
+              className="shrink-0 flex min-h-0 flex-col overflow-hidden border-t md:border-t-0 border-border/70 bg-card/70 dark:bg-velvet/35 md:w-[clamp(360px,30vw,420px)] xl:w-[clamp(380px,27vw,460px)]"
               aria-label="Agent tuning rail"
             >
-              <div className="shrink-0 border-b border-border/80 px-4 py-3 bg-paper/85 dark:bg-velvet/50">
+              <div className="shrink-0 border-b border-border/80 px-4 py-3 bg-card/85 dark:bg-velvet/50">
                 <div className="flex items-center justify-between gap-2">
                   <p className="wl-label text-brand tracking-[0.22em]">
                     {isPersonal ? "Personalize" : "Tune"}

@@ -91,9 +91,9 @@
 @media (min-width: 768px) {
   [data-testid="studio-director-center"] {
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--paper, #f5f1e8) 78%, white), color-mix(in srgb, var(--paper, #f5f1e8) 88%, transparent)),
-      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-brand, #8b3fd6) 7%, transparent), transparent 42%);
-    border-color: color-mix(in srgb, var(--color-brand, #8b3fd6) 16%, transparent) !important;
+      linear-gradient(180deg, var(--panel), var(--canvas)),
+      radial-gradient(circle at 50% 0%, rgba(124, 156, 255, 0.07), transparent 42%);
+    border-color: rgba(124, 156, 255, 0.16) !important;
   }
 
   [data-testid="studio-tuning-rail"] {

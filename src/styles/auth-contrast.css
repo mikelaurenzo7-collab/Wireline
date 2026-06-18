@@ -19,10 +19,10 @@
    FIX 1 — make the token theme-aware (deep brand on light ≈7.6:1 on paper;
    luminous lavender on velvet). One variable flips every consumer.            */
 :root {
-  --color-brand-ink: #6b2b99;
+  --color-brand-ink: var(--iris-bright);
 }
 .dark {
-  --color-brand-ink: #f3e8ff;
+  --color-brand-ink: var(--iris-bright);
 }
 
 /* FIX 2 — the deepen-rule matched `[class*="text-brand"]` as a SUBSTRING, so
@@ -36,7 +36,7 @@
   button[class*=":text-brand"]:not([class*="bg-brand"]):not([class*="bg-gradient"]),
 .app-surface
   [role="button"][class*=":text-brand"]:not([class*="bg-brand"]):not([class*="bg-gradient"]) {
-  color: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  color: color-mix(in srgb, var(--text) 80%, transparent);
 }
 .app-surface
   button[class*=":text-brand"]:not([class*="bg-brand"]):not([class*="bg-gradient"]):hover,

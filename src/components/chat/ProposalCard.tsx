@@ -64,8 +64,8 @@ export default function ProposalCard({
       className={cn(
         WL_DIRECTOR_CLASSES.proposalCard,
         WL_DIRECTOR_CLASSES.proposalRail,
-        "rounded-md border px-3 py-2.5 pl-4 text-ink transition-all duration-200",
-        state === "dismissed" ? "border-black/8 bg-black/3" : TONE_CLASSES[tone],
+        "rounded-md border px-3 py-2.5 pl-4 text-foreground transition-all duration-200",
+        state === "dismissed" ? "border-white/8 bg-black/3" : TONE_CLASSES[tone],
         isPending && "hover:shadow-md cursor-default",
       )}
     >

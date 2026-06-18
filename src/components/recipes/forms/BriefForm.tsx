@@ -110,7 +110,7 @@ export function BriefForm({
                   <div className="text-rose-500 text-[11px] uppercase tracking-[0.25em]">
                     "{o.objection}"
                   </div>
-                  <div className="text-ink/85">→ {o.response}</div>
+                  <div className="text-foreground/85">→ {o.response}</div>
                 </li>
               ))}
             </ul>

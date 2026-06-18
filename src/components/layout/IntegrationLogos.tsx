@@ -301,7 +301,7 @@ function LogoRow({ logos, height = 22 }: { logos: LogoDef[]; height?: number }) 
         return (
           <div
             key={logo.name}
-            className="text-ink/70 hover:text-ink transition-colors duration-200"
+            className="text-foreground/70 hover:text-foreground transition-colors duration-200"
             title={logo.name}
             data-logo-height={height}
             data-logo-scale={logo.scale}

@@ -203,7 +203,7 @@ export default function Pipeline() {
         onClick={load}
         disabled={loading}
         variant="outline"
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-input text-eyebrow hover:text-ink hover:border-brand/25 transition-colors disabled:opacity-60 h-auto"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-input text-eyebrow hover:text-foreground hover:border-brand/25 transition-colors disabled:opacity-60 h-auto"
       >
         {loading ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -350,10 +350,10 @@ export default function Pipeline() {
                               <Card className="border-none bg-transparent shadow-none p-0 text-left rounded-none">
                                 <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0 gap-1">
                                   <GripVertical
-                                    className="wl-pipeline-card-grip w-3 h-3 shrink-0 text-ink/30"
+                                    className="wl-pipeline-card-grip w-3 h-3 shrink-0 text-foreground/55"
                                     aria-hidden
                                   />
-                                  <CardTitle className="text-[12px] font-semibold text-ink truncate flex items-center gap-1.5 leading-none flex-1 min-w-0">
+                                  <CardTitle className="text-[12px] font-semibold text-foreground truncate flex items-center gap-1.5 leading-none flex-1 min-w-0">
                                     {lead.customerName || "(no name)"}
                                     {lead.demo && (
                                       <Badge
@@ -397,7 +397,7 @@ export default function Pipeline() {
                                             {lead.lastContactSummary}
                                           </p>
                                         </TooltipTrigger>
-                                        <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-ink rounded-md shadow-xl">
+                                        <TooltipContent className="bg-popover border border-input p-2.5 max-w-xs text-xs text-foreground rounded-md shadow-xl">
                                           {lead.lastContactSummary}
                                         </TooltipContent>
                                       </Tooltip>
@@ -424,14 +424,14 @@ export default function Pipeline() {
                                             key={s.id}
                                             onClick={() => moveLead(lead.id, s.id)}
                                             variant="outline"
-                                            className="wl-label px-1.5 py-0.5 rounded border border-input text-muted hover:text-ink hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
+                                            className="wl-label px-1.5 py-0.5 rounded border border-input text-muted hover:text-foreground hover:border-brand/30 transition-colors h-auto focus-visible:opacity-100"
                                             title={`Move to ${s.label}`}
                                             aria-label={`Move ${lead.customerName || "lead"} to ${s.label}`}
                                           >
                                             → {s.label}
                                           </ShadButton>
                                         ))}
-                                      <ChevronRight className="w-3 h-3 text-ink/40" />
+                                      <ChevronRight className="w-3 h-3 text-foreground/55" />
                                     </div>
                                   </div>
                                 </CardContent>

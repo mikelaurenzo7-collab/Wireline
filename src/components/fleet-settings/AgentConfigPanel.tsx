@@ -74,10 +74,10 @@ function QuickLink({
         <Icon className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-ink">{title}</span>
+        <span className="block text-sm font-semibold text-foreground">{title}</span>
         <span className="mt-1 block text-xs leading-relaxed text-muted">{description}</span>
       </span>
-      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-ink/35 transition group-hover:translate-x-0.5 group-hover:text-brand" />
+      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-foreground/55 transition group-hover:translate-x-0.5 group-hover:text-brand" />
     </Link>
   );
 }
@@ -152,11 +152,11 @@ export default function AgentConfigPanel({
     return (
       <main className="flex-1 px-3 py-3 hidden md:block">
         <div className="flex min-h-[220px] py-8 flex-col items-center justify-center gap-4 px-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-border bg-paper text-muted">
+          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-border bg-card text-muted">
             <Bot className="h-7 w-7" />
           </div>
           <div className="space-y-1.5">
-            <h3 className="font-display text-2xl italic text-ink">Pick an agent</h3>
+            <h3 className="font-display text-2xl italic text-foreground">Pick an agent</h3>
             <p className="max-w-sm text-sm leading-relaxed text-muted">
               Choose an agent from the list to set up the basics. Deep training now lives on its own
               Training page.
@@ -184,7 +184,7 @@ export default function AgentConfigPanel({
         disableAnimations
         onClick={() => setSelectedAgent(null)}
         aria-label="Back to agent list"
-        className="mb-3 h-10 rounded-full wl-label text-ink/80 md:hidden"
+        className="mb-3 h-10 rounded-full wl-label text-foreground/80 md:hidden"
       >
         <ChevronLeft className="h-3.5 w-3.5" /> Back to fleet
       </ShadButton>
@@ -194,7 +194,7 @@ export default function AgentConfigPanel({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="wl-label text-brand tracking-[0.22em]">Simple setup</p>
-              <h3 className="mt-1 font-display text-2xl italic text-ink">
+              <h3 className="mt-1 font-display text-2xl italic text-foreground">
                 Only the basics live here.
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -208,14 +208,14 @@ export default function AgentConfigPanel({
           </div>
         </section>
 
-        <section className="rounded-md border border-border bg-paper p-4 space-y-4">
+        <section className="rounded-md border border-border bg-card p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-ink/[0.08] pb-3">
             <UserRound className="h-4 w-4 text-brand" />
-            <h4 className="font-display text-xl italic text-ink">Identity</h4>
+            <h4 className="font-display text-xl italic text-foreground">Identity</h4>
           </div>
 
           <div className="space-y-2">
-            <label className="wl-label text-ink/45">Agent name</label>
+            <label className="wl-label text-foreground/60">Agent name</label>
             <div className="flex gap-2">
               <Input
                 value={draftName}
@@ -224,7 +224,7 @@ export default function AgentConfigPanel({
                 onKeyDown={(event) => {
                   if (event.key === "Enter") saveName();
                 }}
-                className="text-base font-semibold text-ink"
+                className="text-base font-semibold text-foreground"
                 placeholder="Jordan"
               />
               <ShadButton
@@ -250,7 +250,7 @@ export default function AgentConfigPanel({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="wl-label text-ink/45">Role</label>
+              <label className="wl-label text-foreground/60">Role</label>
               <Select
                 value={selectedAgent.role || "customer_service"}
                 onValueChange={(value) =>
@@ -271,7 +271,7 @@ export default function AgentConfigPanel({
             </div>
 
             <div className="space-y-2">
-              <label className="wl-label text-ink/45">Channel</label>
+              <label className="wl-label text-foreground/60">Channel</label>
               <Select
                 value={selectedAgent.channel || "voice"}
                 onValueChange={(value) =>
@@ -294,20 +294,20 @@ export default function AgentConfigPanel({
           <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] p-3">
             <div className="flex flex-wrap items-center gap-2">
               <RoleBadge role={selectedAgent.role} size="sm" />
-              <span className="inline-flex items-center gap-1 rounded-full border border-ink/[0.08] bg-paper px-2 py-0.5 text-xs text-ink/70">
+              <span className="inline-flex items-center gap-1 rounded-full border border-ink/[0.08] bg-card px-2 py-0.5 text-xs text-foreground/70">
                 <Radio className="h-3 w-3 text-brand" /> {selectedAgent.channel || "voice"}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-ink/[0.08] bg-paper px-2 py-0.5 text-xs text-ink/70">
+              <span className="inline-flex items-center gap-1 rounded-full border border-ink/[0.08] bg-card px-2 py-0.5 text-xs text-foreground/70">
                 <Hash className="h-3 w-3 text-brand" /> {selectedAgent.id}
               </span>
             </div>
           </div>
         </section>
 
-        <section className="rounded-md border border-border bg-paper p-4 space-y-4">
+        <section className="rounded-md border border-border bg-card p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-ink/[0.08] pb-3">
             <Mic2 className="h-4 w-4 text-brand" />
-            <h4 className="font-display text-xl italic text-ink">Voice and model</h4>
+            <h4 className="font-display text-xl italic text-foreground">Voice and model</h4>
           </div>
 
           <VoiceFieldSelect
@@ -332,20 +332,20 @@ export default function AgentConfigPanel({
           />
         </section>
 
-        <section className="rounded-md border border-border bg-paper p-4 space-y-4">
+        <section className="rounded-md border border-border bg-card p-4 space-y-4">
           <div className="flex items-center gap-2 border-b border-ink/[0.08] pb-3">
             <Phone className="h-4 w-4 text-brand" />
-            <h4 className="font-display text-xl italic text-ink">Number and opening line</h4>
+            <h4 className="font-display text-xl italic text-foreground">Number and opening line</h4>
           </div>
 
           <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="wl-label text-ink/45">Phone number</p>
+                <p className="wl-label text-foreground/60">Phone number</p>
                 <p
                   className={cn(
                     "mt-1 text-sm font-medium",
-                    hasNumber ? "text-ink" : "text-muted italic",
+                    hasNumber ? "text-foreground" : "text-muted italic",
                   )}
                 >
                   {numberLabel(selectedAgent)}
@@ -358,13 +358,13 @@ export default function AgentConfigPanel({
           </div>
 
           <div className="space-y-2">
-            <label className="wl-label text-ink/45">Initial greeting</label>
+            <label className="wl-label text-foreground/60">Initial greeting</label>
             <textarea
               value={draftGreeting}
               onChange={(event) => setDraftGreeting(event.target.value)}
               onBlur={saveGreeting}
               placeholder="Thanks for calling. How can I help today?"
-              className="min-h-[84px] w-full resize-none rounded-md border border-ink/[0.1] bg-ink/[0.025] px-3 py-2 text-sm leading-relaxed text-ink outline-none transition focus:border-brand/50 focus:ring-4 focus:ring-brand/10"
+              className="min-h-[84px] w-full resize-none rounded-md border border-ink/[0.1] bg-ink/[0.025] px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition focus:border-brand/50 focus:ring-4 focus:ring-brand/10"
             />
             <div className="flex justify-end">
               <ShadButton
@@ -389,11 +389,11 @@ export default function AgentConfigPanel({
           </div>
         </section>
 
-        <section className="rounded-md border border-border bg-paper p-4 space-y-3">
+        <section className="rounded-md border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] pb-3">
             <div>
               <p className="wl-label text-brand tracking-[0.2em]">Training moved out</p>
-              <h4 className="mt-1 font-display text-xl italic text-ink">
+              <h4 className="mt-1 font-display text-xl italic text-foreground">
                 Workflows, knowledge, and tests
               </h4>
             </div>
@@ -423,15 +423,17 @@ export default function AgentConfigPanel({
 
           <div className="grid grid-cols-3 gap-2 pt-1 text-center">
             <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] px-2 py-2">
-              <p className="font-mono text-sm font-semibold text-ink">{knowledgeCount}</p>
+              <p className="font-mono text-sm font-semibold text-foreground">{knowledgeCount}</p>
               <p className="wl-label-muted">Facts</p>
             </div>
             <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] px-2 py-2">
-              <p className="font-mono text-sm font-semibold text-ink">{directiveCount}</p>
+              <p className="font-mono text-sm font-semibold text-foreground">{directiveCount}</p>
               <p className="wl-label-muted">Rules</p>
             </div>
             <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] px-2 py-2">
-              <p className="font-mono text-sm font-semibold text-ink">{connectedIntegrations}</p>
+              <p className="font-mono text-sm font-semibold text-foreground">
+                {connectedIntegrations}
+              </p>
               <p className="wl-label-muted">Connected</p>
             </div>
           </div>
@@ -439,7 +441,7 @@ export default function AgentConfigPanel({
 
         <section className="rounded-md border border-brand/15 bg-brand/[0.035] p-4">
           <p className="wl-label text-brand tracking-[0.2em]">Recommended path</p>
-          <ol className="mt-3 space-y-2 text-sm leading-relaxed text-ink/72">
+          <ol className="mt-3 space-y-2 text-sm leading-relaxed text-foreground/72">
             <li>1. Create the agent name and role here.</li>
             <li>2. Pick the voice and model.</li>
             <li>3. Add knowledge and workflows in Training.</li>

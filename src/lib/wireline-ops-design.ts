@@ -339,7 +339,7 @@ export const OPS_TRIAGE_COPY = {
 } as const;
 
 /**
- * Training "Director assists" — replaces the old recipe pop-out modals with
+ * Training "Assistant assists" — replaces the old recipe pop-out modals with
  * deep-links that prefill Director chat (mobile-safe, no modal to fail).
  */
 export const OPS_TRAINING_ASSISTS = [
@@ -397,8 +397,7 @@ export const OPS_STUDIO_ASSISTS = [
   },
   {
     label: "Set the schedule",
-    prompt:
-      "Help me set this agent's business hours and an out-of-hours message for my timezone.",
+    prompt: "Help me set this agent's business hours and an out-of-hours message for my timezone.",
   },
   {
     label: "Pick the right tools",
@@ -625,12 +624,12 @@ export const WL_CHANNEL_CLASSES = {
   inboxList:
     "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border wl-panel rounded-none lg:rounded-l-md",
   inboxListHeader:
-    "shrink-0 px-3 py-2 border-b border-black/6 flex items-center justify-between gap-2",
+    "shrink-0 px-3 py-2 border-b border-white/6 flex items-center justify-between gap-2",
   inboxDetail: "min-h-0 flex flex-col bg-white/[0.02] lg:rounded-r-md",
   listColHeader:
-    "hidden sm:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem] gap-2 px-3 py-2 border-b border-black/6 bg-black/[0.02]",
+    "hidden sm:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem] gap-2 px-3 py-2 border-b border-white/6 bg-black/[0.02]",
   threadRow:
-    "w-full text-left rounded-md p-3 border border-border bg-paper/40 transition-all hover:border-brand/25 touch-press",
+    "w-full text-left rounded-md p-3 border border-border bg-white/[0.04] transition-all hover:border-brand/25 touch-press",
   threadRowActive: "bg-brand/8 border-brand/30",
 } as const;
 
@@ -726,9 +725,9 @@ export const OPS_INSIGHTS_EMPTY = {
     eyebrow: "AI spend",
     title: "No AI usage in this window",
     description:
-      "Try a longer date range, or run Director recipes and live calls to accumulate usage.",
+      "Try a longer date range, or run Assistant recipes and live calls to accumulate usage.",
     actions: [
-      { label: "Ask Director", to: "/chat", primary: true },
+      { label: "Ask Assistant", to: "/chat", primary: true },
       { label: "Live Ops", to: "/ops" },
     ],
   },

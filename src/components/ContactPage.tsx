@@ -83,7 +83,7 @@ export function ContactPage() {
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
+          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
@@ -111,7 +111,7 @@ export function ContactPage() {
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
               <Phone className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-sm font-semibold text-ink mb-1">Call our team</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Call our team</p>
             <p className="text-caption leading-relaxed">
               {salesAgent.display} — {salesAgent.name} picks up 24/7 and can talk plans, demos, and
               fit on the spot.
@@ -124,7 +124,7 @@ export function ContactPage() {
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
               <Mail className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-sm font-semibold text-ink mb-1">Email us</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Email us</p>
             <p className="text-caption leading-relaxed">
               sales@trywireline.com — sales, partnerships, and press. 1 business day response.
             </p>
@@ -136,7 +136,7 @@ export function ContactPage() {
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
               <Sparkles className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-sm font-semibold text-ink mb-1">Start free</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Start free</p>
             <p className="text-caption leading-relaxed">
               Skip the back-and-forth — deploy a real agent on a 14-day trial, no card required.
             </p>
@@ -144,7 +144,7 @@ export function ContactPage() {
         </div>
 
         <div className="marketing-panel p-6">
-          <h2 className="font-display italic text-xl text-ink mb-1">Send us a note</h2>
+          <h2 className="font-display italic text-xl text-foreground mb-1">Send us a note</h2>
           <p className="text-[12px] text-muted mb-6 leading-relaxed">
             Pick the closest topic — it routes to the right person faster.
           </p>
@@ -154,10 +154,10 @@ export function ContactPage() {
               <div className="w-12 h-12 rounded-full wl-status-success flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-6 h-6 wl-text-success" />
               </div>
-              <p className="font-display italic text-xl text-ink mb-2">Message received</p>
+              <p className="font-display italic text-xl text-foreground mb-2">Message received</p>
               <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto">
                 Thanks — we'll reply within 1 business day at{" "}
-                <strong className="text-ink">{email}</strong>. If it's time-sensitive, call{" "}
+                <strong className="text-foreground">{email}</strong>. If it's time-sensitive, call{" "}
                 {salesAgent.display} and {salesAgent.name} will point you to the right person.
               </p>
             </div>
@@ -176,8 +176,8 @@ export function ContactPage() {
                       className={
                         "h-auto px-3 py-2 rounded-md text-[11px] text-left justify-start " +
                         (inquiryType === t.value
-                          ? "border-brand bg-brand/10 text-ink"
-                          : "text-ink/70 hover:border-brand/40 hover:bg-black/[0.02]")
+                          ? "border-brand bg-brand/10 text-foreground"
+                          : "text-foreground/70 hover:border-brand/40 hover:bg-black/[0.02]")
                       }
                     >
                       {t.label}
@@ -202,7 +202,7 @@ export function ContactPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@yourcompany.com"
-                    className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                   />
                 </div>
                 <div>
@@ -215,7 +215,7 @@ export function ContactPage() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     placeholder="Acme Co."
-                    className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                    className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                   />
                 </div>
               </div>
@@ -231,7 +231,7 @@ export function ContactPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Short summary — what you'd like to talk about"
-                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                  className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                 />
               </div>
 
@@ -254,7 +254,7 @@ export function ContactPage() {
                           ? "Outlet, your angle, and any deadline we should know about."
                           : "Tell us what you need — the more specific, the faster we can help."
                   }
-                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
+                  className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
                 />
               </div>
 

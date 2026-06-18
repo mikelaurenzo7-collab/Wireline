@@ -52,11 +52,11 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
             >
               <span
                 className={cn(
-                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-paper dark:bg-velvet",
+                  "absolute left-0 top-2.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 bg-card dark:bg-velvet",
                   step.status === "done" &&
                     "border-[color-mix(in_srgb,var(--wl-signal)_50%,transparent)]",
                   step.status === "active" && "border-brand bg-brand/10",
-                  step.status === "pending" && "border-black/10",
+                  step.status === "pending" && "border-white/10",
                 )}
               >
                 {step.status === "done" && <Check className="w-2 h-2 wl-text-success" />}
@@ -69,8 +69,8 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
                 <p
                   className={cn(
                     "text-[11px] leading-tight",
-                    step.status === "active" && "font-semibold text-ink",
-                    step.status === "done" && "text-ink/50",
+                    step.status === "active" && "font-semibold text-foreground",
+                    step.status === "done" && "text-foreground/50",
                     step.status === "pending" && "text-muted/50",
                   )}
                 >
@@ -117,8 +117,8 @@ export function LiveTaskPipeline({ steps, className, variant = "default" }: Live
             <span
               className={cn(
                 "text-[11px] leading-tight",
-                step.status === "done" && "text-ink/40",
-                step.status === "active" && "text-ink font-medium",
+                step.status === "done" && "text-foreground/55",
+                step.status === "active" && "text-foreground font-medium",
                 step.status === "pending" && "text-muted/50",
               )}
             >

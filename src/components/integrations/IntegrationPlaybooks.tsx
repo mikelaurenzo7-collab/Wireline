@@ -59,7 +59,7 @@ export function IntegrationPlaybookPanel({
               <activeIntegration.Icon className="w-4 h-4 text-brand" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-ink">{activeIntegration.label}</div>
+              <div className="text-sm font-semibold text-foreground">{activeIntegration.label}</div>
               <div className="wl-micro-meta--muted leading-relaxed text-pretty">
                 {activePlaybook?.orbitHint ?? activeIntegration.tagline}
               </div>

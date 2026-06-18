@@ -22,7 +22,7 @@ function LegalLayout({
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
+          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
@@ -35,28 +35,28 @@ function LegalLayout({
         </div>
         <p className="text-eyebrow !text-[0.625rem] mb-10">Last updated: {LAST_UPDATED}</p>
 
-        <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-ink/85 leading-relaxed">
+        <div className="prose prose-sm sm:prose-base max-w-none space-y-8 text-foreground/85 leading-relaxed">
           {children}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-black/8 flex flex-wrap gap-x-4 gap-y-2 text-caption">
+        <div className="mt-16 pt-8 border-t border-white/8 flex flex-wrap gap-x-4 gap-y-2 text-caption">
           <Link
             to="/privacy"
-            className="hover:text-ink transition-colors min-h-[44px] inline-flex items-center"
+            className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"
           >
             Privacy Policy
           </Link>
           <span aria-hidden="true">·</span>
           <Link
             to="/terms"
-            className="hover:text-ink transition-colors min-h-[44px] inline-flex items-center"
+            className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"
           >
             Terms of Service
           </Link>
           <span aria-hidden="true">·</span>
           <Link
             to="/privacy#ccpa"
-            className="hover:text-ink transition-colors min-h-[44px] inline-flex items-center"
+            className="hover:text-foreground transition-colors min-h-[44px] inline-flex items-center"
           >
             Do Not Sell My Information
           </Link>
@@ -77,7 +77,7 @@ function Section({
 }) {
   return (
     <section id={id}>
-      <h2 className="text-base font-semibold text-ink mb-3 border-b border-black/8 pb-2">
+      <h2 className="text-base font-semibold text-foreground mb-3 border-b border-white/8 pb-2">
         {title}
       </h2>
       <div className="space-y-3 text-sm">{children}</div>
@@ -101,8 +101,8 @@ export function PrivacyPolicy() {
         <p>
           <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
           AI-powered omnichannel agent fleet for businesses. Questions about this policy can be sent
-          to <strong>support@trywireline.com</strong>. This policy explains what data we collect, why,
-          and your rights over it.
+          to <strong>support@trywireline.com</strong>. This policy explains what data we collect,
+          why, and your rights over it.
         </p>
       </Section>
 
@@ -352,11 +352,11 @@ export function TermsOfService() {
         <p>
           <strong>30-day money-back guarantee.</strong> If Wireline isn't working for your business
           for any reason within 30 days of your first paid invoice, email{" "}
-          <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll refund
-          that month's charge in full — no forms, no escalation, no questions about your reason. The
-          30-day window starts on the date of your first paid invoice (not the trial start).
-          Outbound call minutes consumed prior to the refund request are not separately deducted —
-          the refund is on the subscription line item.
+          <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
+          refund that month's charge in full — no forms, no escalation, no questions about your
+          reason. The 30-day window starts on the date of your first paid invoice (not the trial
+          start). Outbound call minutes consumed prior to the refund request are not separately
+          deducted — the refund is on the subscription line item.
         </p>
         <p>
           After the 30-day window, no refunds are issued for partial periods, but you can cancel
@@ -467,10 +467,10 @@ export function DataDeletion() {
       </Section>
       <Section title="Don't have access to your account?">
         <p>
-          Email <strong>support@trywireline.com</strong> from the address tied to the account with the
-          subject line <em>"Data deletion request"</em>. We verify the request out of band (text or
-          call to a phone number on file) and then run the same deletion job manually. We confirm by
-          email when the purge completes; SLA is 7 business days.
+          Email <strong>support@trywireline.com</strong> from the address tied to the account with
+          the subject line <em>"Data deletion request"</em>. We verify the request out of band (text
+          or call to a phone number on file) and then run the same deletion job manually. We confirm
+          by email when the purge completes; SLA is 7 business days.
         </p>
       </Section>
       <Section title="What's deleted">
@@ -720,8 +720,8 @@ export function ZoomDocs() {
 
       <Section title="Support">
         <p>
-          For any issue with the Zoom integration, contact <strong>support@trywireline.com</strong> or
-          visit{" "}
+          For any issue with the Zoom integration, contact <strong>support@trywireline.com</strong>{" "}
+          or visit{" "}
           <a
             href="https://trywireline.com/support"
             className="text-brand hover:underline"

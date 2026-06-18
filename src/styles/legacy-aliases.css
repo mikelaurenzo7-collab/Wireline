@@ -4,16 +4,16 @@
 /* -------------------------  Brutal-shadow legacy aliases  ----------- */
 .brutal-shadow {
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 8px 32px -8px rgba(0, 0, 0, 0.12),
-    0 4px 16px -4px rgba(107, 43, 153, 0.14);
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 8px 32px -8px rgba(0, 0, 0, 0.5),
+    0 4px 16px -4px rgba(124, 156, 255, 0.14);
 }
 
 .brutal-shadow-brand {
   box-shadow:
-    0 0 0 1px rgba(107, 43, 153, 0.25) inset,
-    0 8px 24px -6px rgba(107, 43, 153, 0.3),
-    0 14px 40px -10px rgba(107, 43, 153, 0.18);
+    0 0 0 1px rgba(124, 156, 255, 0.25) inset,
+    0 8px 24px -6px rgba(124, 156, 255, 0.3),
+    0 14px 40px -10px rgba(124, 156, 255, 0.18);
 }
 
 /* Display headline accent — solid brand purple on the upright editorial face.
@@ -29,7 +29,7 @@
 /* Legacy alias — same treatment. */
 .text-stroke {
   color: var(--color-brand);
-  filter: drop-shadow(0 0 16px rgba(107, 43, 153, 0.2));
+  filter: drop-shadow(0 0 16px rgba(124, 156, 255, 0.2));
 }
 
 .brand-wordmark {
@@ -37,7 +37,7 @@
   letter-spacing: 0;
   text-rendering: geometricPrecision;
   color: var(--color-brand);
-  filter: drop-shadow(0 0 10px rgba(107, 43, 153, 0.18));
+  filter: drop-shadow(0 0 10px rgba(124, 156, 255, 0.18));
 }
 
 /* Rich Cream + Purple — a single purple hairline for emphasized surfaces.
@@ -53,7 +53,7 @@
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: rgba(107, 43, 153, 0.45);
+  background: rgba(124, 156, 255, 0.45);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -71,7 +71,7 @@
  * every card. Drop opacity drastically below the md breakpoint. */
 @media (max-width: 767px) {
   .wl-purple-ring::before {
-    background: rgba(107, 43, 153, 0.18);
+    background: rgba(124, 156, 255, 0.18);
   }
 }
 

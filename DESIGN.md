@@ -1,308 +1,112 @@
-# Wireline Design System — Rich Cream + Purple
+# Wireline Design System — "Midnight"
 
-**Status:** Internal reference (2026)
-**Goal:** One cohesive, premium, editorial visual language across every client-facing surface.
+**Status:** Active (2026) · **Mode:** Dark-only
+**Goal:** One cohesive, premium, desktop-first visual language across every
+authenticated surface. Calm, spacious, opinionated.
 
-> **Canonical UI layer:** [`src/components/ui/shadcn/*`](src/components/ui/shadcn/).
-> Every button, input, modal, sheet, tab, dropdown, switch, tooltip,
-> badge, alert, progress, skeleton, avatar, accordion, separator, and
-> command palette ships from there. The Rich Cream + Purple primitives
-> (`Medallion`, `SectionHeader`, `EmptyState`, `Button` alias) compose
-> shadcn primitives; they never reimplement them. Dark mode flips via
-> `ThemeContext` toggling the `.dark` class on `<html>`.
->
-> **Rebrand note (June 2026):** The system was previously called
-> "Aurora Cream." We dropped the "Aurora" label because it kept
-> drifting the language into multi-color washes, sinusoidal SVG
-> backdrops, and cyan/violet/magenta orb bleeds that competed with
-> data UI. The system is two colors: **rich cream** (paper) and
-> **brand purple**. Single-hue gradients within purple are fine
-> (e.g. `from-brand to-brand-deep`); multi-color, multi-stop, or
-> rainbow gradients are not. Anything `aurora-*` in legacy code is
-> being renamed or deleted.
+> **History:** Earlier passes ("Aurora Cream", "Rich Cream + Purple") layered
+> competing type systems, `!important` selector-soup, a zero-radius reset, and
+> stacked gradients on top of each other. Midnight replaces all of it with a
+> single token-driven dark system. The app-visual ratchet tests
+> (`shadcn-pivot-ratchet`, `wireline-design-audit`) that locked in the old look
+> have been removed. The Director **design-generation** product (the feature
+> that generates designs *for clients* via Figma/Canva/Magic Patterns) is
+> unrelated to app chrome and is unaffected.
 
 ---
 
-## 1. Core Tokens (Never invent new ones)
+## 1. Principles
 
-### Typography
-- **Display (Headlines):** `font-display` → Fraunces (UPRIGHT, 400–700). The
-  slanted face is retired — only the upright weight axis ships, and a base-layer
-  override (`.italic { font-style: normal !important }`) neutralizes legacy
-  `italic` utilities so old markup renders upright without churn. Never
-  reintroduce synthesized obliques.
-- **Interface (Body/UI):** `font-sans` → Plus Jakarta Sans
-- **Mono (Labels, Code, Metrics):** `font-mono` → JetBrains Mono
+1. **Dark-only.** `ThemeContext` always resolves `dark`; `<html class="dark">`
+   with `color-scheme: dark`. There is no light path today (the seam remains if
+   a "Daybreak" variant is ever wanted).
+2. **Desktop/laptop-first.** Design for real screens from the smallest laptop
+   (~1280px) up through large desktop (1600–1920px+) as the first-class
+   experience, escalating layouts into `lg:`/`xl:`/`2xl:` for density and space.
+   **Mobile browser is a clean functional fallback, not a focus** — the phone
+   experience ships as the native app, not the web viewport.
+3. **Token-driven.** All color/radius/elevation lives in `src/index.css`
+   (`:root` + `@theme`). Change a token, the whole app moves. Never hardcode a
+   hex in a component — use the semantic Tailwind utility or CSS var.
+4. **Calm.** One faint accent bloom, hairline borders, generous negative space.
+   No competing gradients, grain, or halos. Let data UI breathe.
+
+---
+
+## 2. Core tokens (source of truth: `src/index.css`)
 
 ### Color
-- `--color-brand`: #4F1E7B (Silky Purple)
-- `--color-brand-deep`: #3B154C
-- `--color-ink`: #1A1614
-- `--color-paper`: #EFE9DC (warm cream base)
-- `--color-muted` / `--color-muted-soft`
-- Gradients: Always `from-brand to-brand-deep` for primary actions and medallions.
+| Role | Token | Value |
+|---|---|---|
+| Canvas | `--canvas` | `#0C0D11` |
+| Panel (cards, sidebar, topbar) | `--panel` | `#14161D` |
+| Raised (inputs, nested) | `--panel-2` | `#191C24` |
+| Highest (hover) | `--raised` | `#21242E` |
+| Text primary / secondary / tertiary | `--text` / `--text-2` / `--text-3` | `#ECEDF1` / `#9B9DA8` / `#62646E` |
+| Accent (iris) | `--iris` / `--iris-bright` / `--iris-deep` | `#7C9CFF` / `#A9BEFF` / `#5570E6` |
+| Live / positive | `--mint` | `#54E0B4` |
+| Attention | `--amber` | `#F4B45A` |
+| Border / input hairline | `--border` / `--input` | `rgba(255,255,255,.09)` / `.12` |
 
-### Effects
-- `.glass` — the signature translucent cream surface. **Permitted surfaces:** modal overlays (`.glass-elevated`), sticky shells (`.shell-sticky-glass`), sidebar chrome, icon buttons on glass panels. **Do not** use for ordinary card bodies — use `<Card>` instead (see migration note below).
-- `.wl-purple-ring` — subtle premium purple hairline (use on active/selected states; replaces the retired `.aurora-ring`)
-- Soft brand halos: `<span aria-hidden className="absolute inset-0 -z-10 rounded-full bg-brand/30 blur-2xl scale-150" />`
+The shadcn semantic tokens (`--background`, `--card`, `--primary`, `--ring`, …)
+map onto the above, so every shadcn primitive and Tailwind color utility
+(`bg-card`, `text-foreground`, `border-border`, `bg-primary`) inherits Midnight
+automatically. **The accent is rare and meaningful** — primary actions, active
+nav, focus. Mint is live/success only; amber is attention only.
 
-> **Migration note — `glassUtility` ratchet:** The `shadcn-pivot-ratchet` tracks `.glass` usage and only allows it to decrease over time. Card bodies that currently carry `.glass` should be migrated to `<Card>` from `src/components/ui/shadcn/`. `<Card>` consumes the `--card` design token, adapts to dark-mode automatically, and is the canonical card surface going forward. Shell surfaces (TopBar, Sidebar, modals, popovers, sticky headers) are permanently exempt — those keep `.glass`/`.glass-strong`/`.glass-elevated`/`.shell-sticky-glass`.
+### Typography
+- **Display & UI:** `font-display` / `font-sans` → **Plus Jakarta Sans** (no
+  competing serif). Tight display tracking (`-0.034em` on h1, easing to `0`),
+  one scale — no per-surface `!important` overrides.
+- **Mono (eyebrows, labels, metrics):** `font-mono` → **JetBrains Mono**,
+  uppercase, `+0.18em`, used small.
 
 ### Radius
-- **Zero radius** is the default. A global `border-radius: 0 !important` reset in
-  `index.css` (`@layer base`) makes every element razor-edged; Tailwind's
-  `--radius-{sm..3xl}` tokens are all overridden to `0`. The only exceptions are
-  inherently circular elements (`.dot-*`, `.live-ring`, `[data-circular]`,
-  scrollbar thumbs) which opt back in to `9999px`.
-- Because the reset flattens everything, **`rounded-lg` / `rounded-xl` / `rounded-2xl` /
-  `rounded-3xl` are visually identical to `rounded-md` — i.e. they're misleading dead
-  classes.** Use `rounded-md` as the one allowed radius literal; it signals "yes, this
-  is intentionally flat." The `shadcn-pivot-ratchet` test enforces this (see below).
+Real, soft scale (the old `border-radius: 0 !important` reset is gone):
+`--radius-sm:10 · md:12 · lg:14 · xl:18 · 2xl:22 · 3xl:28`. `rounded-*` means
+what it says again.
 
-### Anti-pattern ratchets (`shadcn-pivot-ratchet`)
-`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts` counts known
-anti-patterns in feature/page code (`src/components`, `src/pages`, excluding the
-`shadcn/` primitive layer) and **fails CI if any count rises above its baseline**.
-All baselines are currently **0** — the migrations are complete, so the win is
-locked in and may only ever stay at 0:
-
-| Metric | Baseline | Rule |
-|--------|----------|------|
-| `rawButton` | 0 | No raw `<button>`. Use `ShadButton` (see §3). For a fully custom tile, use `<ShadButton variant="ghost" disableAnimations className="h-auto justify-start … your-wl-class">` — `cn()` is `twMerge`-backed so your overrides win, and unlayered `.wl-*` CSS beats Tailwind's layered utilities. Example: the `wl-console-map-item` tiles in `YoureLiveModal`. |
-| `rawInput` | 0 | No raw `<input>`. Use `Input` / `Checkbox` / `Slider`. |
-| `rawSelect` | 0 | No raw `<select>`. Use `Select`. |
-| `rawDialog` | 0 | Never use the native `<dialog>`. Use `Dialog` / `Sheet`. |
-| `glassUtility` | 0 | No `.glass` in feature code — migrate to `<Card>` / `wl-panel`. Shell surfaces are exempt (see note above). |
-| `largeRadius` | 0 | No `rounded-{lg\|xl\|2xl\|3xl}` literals — use `rounded-md`. |
-
-When you legitimately migrate code away from an anti-pattern the count can only go
-down; the test then tells you to **lower the baseline in the same PR** so the gain is
-permanent. Raising a baseline is reserved for a deliberate, explained exception.
+### Elevation & motion
+Two soft layered shadows + a 1px inset highlight; gradient buttons carry a
+colored glow. One spring (`cubic-bezier(.34,1.56,.64,1)`), `.touch-press` for
+GPU press feedback, `prefers-reduced-motion` honored.
 
 ---
 
-## 2. Recurring Patterns (Use these components)
-
-### SectionHeader
-```tsx
-<SectionHeader
-  eyebrow="Live right now"
-  title="Talk to the Wireline team"
-  description="No signup required."
-/>
-```
-- Always starts with a mono eyebrow.
-- Title is always `font-display` (upright — the global italic override keeps
-  legacy `italic` classes rendering upright).
-- Description is `text-muted`.
-
-### Medallion + Halo
-```tsx
-<Medallion withHalo size="md">
-  <Sparkles className="w-6 h-6" />
-</Medallion>
-```
-- The signature visual motif for empty states, identity, and status.
-
-### EmptyState (Canonical)
-```tsx
-<EmptyState
-  icon={Users}
-  title="No entries yet"
-  description="Upload a PDF or add a policy so your agent answers consistently."
-  actions={[{ label: "Upload CSV", onClick: ..., primary: true }]}
-/>
-```
-- Use this everywhere instead of ad-hoc empty states.
-
-### Primary Button
-```tsx
-<Button variant="primary">
-  Start free trial <ArrowRight className="w-4 h-4" />
-</Button>
-```
-- Always gradient + depth shadow + active press.
-
-### Status / Live Dot
-```tsx
-<span className="relative flex h-1.5 w-1.5">
-  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500/60" />
-  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-</span>
-```
-
----
-
-## 3. Do's and Don'ts
-
-**Do**
-- Start every major content block with `SectionHeader`.
-- Use `Medallion` + halo for every empty / idle / no-data state.
-- Keep CTAs consistent (`primary` gradient or `secondary` glass).
-- Use `<Card>` for all card surfaces; reserve `.glass` for non-card surfaces (modals, sticky shells, popovers, icon-button faces) where the shadcn Card token is inappropriate.
-- Mark purely decorative elements with `aria-hidden`.
-- **Decouple visual size from hit targets.** Keep visual elements compact (36px inputs, 32px secondary buttons, 20px utility icons). Expand interactive hit areas to 44–48px minimum using invisible `::after` pseudo-elements, transparent outer padding, or container bounds — never by inflating the visual container.
-- Use sharp 14px body typography, high-contrast dark surfaces, and thin ambient-luminosity borders for information density.
-- Use `.wl-panel` and `.wl-panel-elevated` for specular depth surfaces instead of flat `border border-black/8` patterns.
-- Apply `.touch-press` to all small interactive elements (buttons, pills) for zero-latency GPU-driven feedback.
-- Use `.wl-orbit` with `data-active` for orbital activity indicators around agent avatars.
-- Use `.scroll-viewport` on any container that needs isolated inner scrolling (overscroll containment).
-- Apply `.wl-label` for premium uppercase captions (10px, tracking +0.03em).
-
-**Don't**
-- Introduce new colors or radius values.
-- Mix flat `bg-brand` buttons with gradient ones.
-- Create one-off empty states.
-- Use `border-white/*` on cream backgrounds (use `border-black/8` or `border-ink/[0.08]`).
-- Stack multiple cards inside cards without clear visual separation.
-- Use bulky `w-11 h-11` / `w-12 h-12` classes to satisfy tap targets — this distorts the compact visual silhouette. Use `hit-area-44` or the built-in `::after` expansion on ShadButton instead.
-- Use heavy flat `border border-black/8` for workspace panels — migrate to `.wl-panel` / `.wl-panel-elevated` specular depth system.
-
----
-
-## 3b. Equal-Viewport Architecture — Locked Viewport
-
-Wireline treats mobile, laptop, and desktop as **equally important** — design
-at 390px first for correctness, then escalate layouts into `lg:`/`xl:`/`2xl:`
-(more columns, wider split panes, scaled measure) so 1440px+ screens read as a
-true desktop tool, never a stretched tablet. The app shell uses a **strict
-locked viewport** pattern at every size:
-
-- `html`, `body`, `#root` are pinned to `height: 100dvh; overflow: hidden`
-- No document-level scroll — the browser chrome stays perfectly stationary
-- All scrollable areas use `.scroll-viewport` (`overflow-y: auto; overscroll-behavior-y: contain`)
-- This eliminates scroll chaining, rubber-band bounce, and address-bar jank
-
-### Wireline Identity Classes
+## 3. Surface utilities (`@layer utilities` in `index.css`)
 
 | Class | Purpose |
-|-------|---------|
-| `.wl-panel` | Specular depth surface (ambient blur + inset highlight) |
-| `.wl-panel-elevated` | Primary workspace container (deeper blur + aurora glow) |
-| `.touch-press` | Zero-latency GPU-driven scale(0.97) on :active |
-| `.touch-press-deep` | Deeper press for larger surfaces (scale 0.95 + opacity) |
-| `.wl-orbit` | Orbital activity ring around agent avatars |
-| `.wl-label` | Premium uppercase caption (10px, +0.03em tracking) |
+|---|---|
+| `.wl-panel` | Standard panel (panel bg + hairline + 14px radius) |
+| `.wl-panel-elevated` | Primary workspace container (raised bg + inset highlight + deep shadow) |
+| `.wl-premium-card` / `.wl-dark-card` | Card surfaces with depth |
+| `.wl-title` / `.wl-subtitle` / `.wl-label` | Display title / mono eyebrow / mono micro-label |
+| `.wl-numeral` | Tabular lining numerals for metrics |
+| `.touch-press` / `.touch-press-deep` | Press physics |
 | `.scroll-viewport` | Isolated scroll container with overscroll containment |
 
-### Bottom Sheet Pattern (Mobile)
+---
 
-On mobile (<xl), panels slide up from the bottom as full-width sheets instead of side drawers. They include:
-- A drag handle (36px × 4px rounded indicator)
-- Spring physics animation (damping: 32, stiffness: 340)
-- Max height of 85dvh to maintain context
-- `.wl-panel-elevated` specular treatment
+## 4. Component tiers
+
+- **Tier 1 — shadcn primitives** (`src/components/ui/shadcn/`): the only
+  sanctioned source of buttons, inputs, tabs, dialogs, etc. They consume the
+  tokens above. Prefer `ShadButton` over raw `<button>`.
+- **Tier 2 — compositions** (`src/components/ui/`): `SectionHeader`,
+  `EmptyState`, `Medallion`, `HaloButton` — built *out of* Tier 1.
+- **Tier 3 — theme/branding**: `ThemeContext` (dark-only), `BrandingContext`.
 
 ---
 
-## 3c. Director mission control
+## 5. Information architecture
 
-The **Director** is the account-level operator chat (route `/director`). It is
-the reference implementation for density, streaming UX, and purple/cream
-chrome. Do not invent one-off class names or copy in Director components.
-
-### Design contract (`src/lib/wireline-director-design.ts`)
-
-| Export | Use |
-|--------|-----|
-| `WIRELINE_DIRECTOR_BRAND` | Violet / signal / opus accent hex values |
-| `WL_DIRECTOR_CLASSES` | Canonical Tailwind + `wl-*` utility bundles (composer, bubbles, proposals, live orchestra) |
-| `WL_APP_CLASSES` | Shared app chrome outside Director (settings, insights, integrations) |
-| `DIRECTOR_CAPABILITY_*` | Capability catalog categories, labels, starter prompts |
-| `DIRECTOR_LIVE_STEP_COPY`, `LIVE_FEED_LABELS` | Live orchestration + integration feed copy |
-
-Add new shared Director strings and CSS class names here first, then wire
-components and extend `wireline-director-design.test.ts`. Run `npm run test:design`
-in CI-equivalent checks.
-
-### Component map (`src/components/`)
-
-| File | Responsibility |
-|------|----------------|
-| `DirectorWorkspace.tsx` | Shell: thread, streaming, artifacts panel, composer |
-| `director/DirectorLiveSession.tsx` | Live mission panel + feed |
-| `director/DirectorLiveOrchestra.tsx` | Multi-step orchestration UI |
-| `director/DirectorMessageBody.tsx` | Message rendering |
-| `director/DirectorComposerToolbar.tsx` | Composer tool row |
-| `director/DirectorComposerAccessory.tsx` | Expanded composer accessories |
-| `director/DirectorComposerContextStrip.tsx` | Context chips above input |
-| `director/DirectorCapabilityCatalog.tsx` | Pickable capabilities / starters |
-| `director/DirectorStarterPrompts.tsx` | Empty-state prompt chips |
-| `director/DirectorArtifactsPanel.tsx` | Deliverables rail |
-| `director/DirectorResearchSources.tsx` | Research citation list |
-| `chat/ProposalCard.tsx` | Approval proposals (dashed = not yet executed) |
-
-CSS for Director lives in `src/index.css` (search `.wl-director`, `.wl-composer`,
-`.wl-proposal`). Deeper surface priorities: `.cursor/skills/wireline-design/surfaces.md`.
+The **Assistant** (formerly "Director") and the **Studio** are **one
+workspace**: the Assistant thread on the left, an open **Canvas** filling the
+rest where work appears (deliverables, agent builds, design previews). Idle
+Canvas stays spacious by design. Sidebar groups: **Studio · Agents · Training**
+then *Operate:* **Live Ops · Inbox · Insights · Settings**.
 
 ---
 
-## 4. File Locations
-
-The UI layer is **tiered**. Always reach for the lowest tier that fits.
-
-### Tier 1 — shadcn primitives (`src/components/ui/shadcn/`) — **canonical**
-
-These wrap Radix primitives and consume the design tokens defined in
-`src/index.css` (`--background`, `--card`, `--primary`, `--ring`, …).
-They are the only sanctioned source of buttons, inputs, tabs, modals,
-sheets, popovers, switches, tooltips, etc. Importing from anywhere else
-when an equivalent shadcn primitive exists is a regression.
-
-Available primitives (import from `@/src/components/ui/shadcn` or its
-barrel `index.ts`):
-
-- `ShadButton` (+ `buttonVariants`) — the canonical button. Variants:
-  `default` (gradient brand), `outline` (cream glass border), `ghost`,
-  `secondary`, `destructive`, `link`,
-  `glass` (frosted-glass icon/action button — use on glass card surfaces),
-  `chrome` (dark-surface icon/action button — use inside TopBar/Sidebar only).
-  Sizes: `default | sm | lg | icon`.
-- `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`
-- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
-- `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`
-- `Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, …
-- `DropdownMenu`, `DropdownMenuTrigger`, …
-- `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, `SelectValue`
-- `Checkbox` — styled native `<input type="checkbox">`; use anywhere you'd
-  reach for a tri-state-free boolean toggle that should look like a box,
-  not a `Switch` pill.
-- `Slider` — styled native `<input type="range">`; use anywhere you'd
-  reach for a numeric slider with a single thumb.
-- `Command`, `CommandInput`, `CommandList`, `CommandItem`, …
-- `Input`, `Switch`, `Badge`, `Alert`, `Progress`, `Skeleton`, `Avatar`,
-  `Separator`, `Tooltip`, `ScrollArea`, `Accordion`
-
-Never render a raw `<button>` / `<input>` / `<dialog>` / `<select>` in
-`src/components/**` or `src/pages/**`. The DOM-anti-pattern ratchet
-(`src/components/ui/__tests__/shadcn-pivot-ratchet.test.ts`) fails CI
-if these counts grow.
-
-### Tier 2 — Rich Cream + Purple compositions (`src/components/ui/`)
-
-Higher-level patterns composed **out of** the shadcn primitives:
-
-- `Medallion.tsx` — signature halo motif for empty/idle states.
-- `SectionHeader.tsx` — mono eyebrow + upright display title + muted
-  description, used at the top of every major content block.
-- `EmptyState.tsx` — canonical "no data yet" surface; wraps `Medallion`
-  + `ShadButton`.
-- `HaloButton.tsx` — thin `<ShadButton asChild>` wrapper for branded/halo
-  CTAs that have hand-tuned glass + blur-2xl halos. Preserves the visual
-  pixel-perfectly while satisfying the raw-`<button>` ratchet.
-
-Feature components live in their own folders (`src/components/<feature>/…`)
-and must compose out of Tier 1 / Tier 2 — they never reintroduce raw
-HTML controls.
-
-### Tier 3 — theme + branding
-
-- `src/contexts/ThemeContext.tsx` — light / dark / system preference.
-  Toggles the `.dark` class on `<html>`; the shadcn token system in
-  `src/index.css` flips automatically.
-- `src/contexts/BrandingContext.tsx` — per-tenant logo + accent.
-
----
-
-*When in doubt, look at the Director welcome state or the elevated AgentWorkspace empty state — they are the current gold standard.*
+*Gold standard: the unified Studio (Assistant + Canvas). Reference mockups live
+in `design-mockups/`.*

@@ -205,7 +205,7 @@ export default function Compare() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+            <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-foreground/65 mb-4">
               <span className="wl-eyebrow-dot" aria-hidden="true" />
               How Wireline compares
             </p>
@@ -230,7 +230,7 @@ export default function Compare() {
             viewports by design (6 competitor columns need readable
             widths). Without this hint, mobile visitors think the table
             is broken instead of pannable. */}
-          <p className="md:hidden font-mono text-[11px] sm:text-[10px] uppercase tracking-[0.3em] text-ink/55 mb-2 flex items-center gap-1.5">
+          <p className="md:hidden font-mono text-[11px] sm:text-[10px] uppercase tracking-[0.3em] text-foreground/55 mb-2 flex items-center gap-1.5">
             <span aria-hidden="true">←</span>
             Pan to compare
             <span aria-hidden="true">→</span>
@@ -242,7 +242,7 @@ export default function Compare() {
               </caption>
               <thead>
                 <tr className="border-b border-ink/[0.12]">
-                  <th className="wl-compare-sticky-col text-left p-4 pl-6 font-mono text-[10px] uppercase tracking-[0.3em] text-ink/55 font-medium w-64">
+                  <th className="wl-compare-sticky-col text-left p-4 pl-6 font-mono text-[10px] uppercase tracking-[0.3em] text-foreground/55 font-medium w-64">
                     Capability
                   </th>
                   {COMPETITORS.map((c) => (
@@ -254,13 +254,15 @@ export default function Compare() {
                     >
                       <div
                         className={`font-mono text-[11px] uppercase tracking-[0.25em] font-semibold ${
-                          c.key === "wireline" ? "text-brand" : "text-ink/65"
+                          c.key === "wireline" ? "text-brand" : "text-foreground/65"
                         }`}
                       >
                         {c.label}
                       </div>
                       {c.note && (
-                        <div className="text-[10px] text-ink/50 mt-1 leading-tight">{c.note}</div>
+                        <div className="text-[10px] text-foreground/50 mt-1 leading-tight">
+                          {c.note}
+                        </div>
                       )}
                     </th>
                   ))}
@@ -275,8 +277,12 @@ export default function Compare() {
                     }`}
                   >
                     <td className="wl-compare-sticky-col p-4 pl-6 align-top">
-                      <p className="text-[13px] text-ink font-medium leading-snug">{row.feature}</p>
-                      <p className="text-[11px] text-ink/60 mt-1 leading-relaxed">{row.detail}</p>
+                      <p className="text-[13px] text-foreground font-medium leading-snug">
+                        {row.feature}
+                      </p>
+                      <p className="text-[11px] text-foreground/60 mt-1 leading-relaxed">
+                        {row.detail}
+                      </p>
                       {row.feature.includes("integrations") && (
                         <div className="flex flex-wrap gap-1.5 mt-2.5">
                           {["HubSpot", "Salesforce", "Slack", "Zoom", "Apollo", "Meta"].map((b) => (
@@ -287,7 +293,7 @@ export default function Compare() {
                               {b}
                             </span>
                           ))}
-                          <span className="px-1.5 py-0.5 bg-ink/[0.03] border border-ink/10 text-ink/55 font-mono text-[10px] uppercase tracking-[0.2em]">
+                          <span className="px-1.5 py-0.5 bg-ink/[0.03] border border-ink/10 text-foreground/55 font-mono text-[10px] uppercase tracking-[0.2em]">
                             + 4 more
                           </span>
                         </div>
@@ -333,7 +339,7 @@ export default function Compare() {
               </tbody>
             </table>
           </div>
-          <p id="compare-legend" className="text-[10px] text-ink/55 mt-3 leading-relaxed">
+          <p id="compare-legend" className="text-[10px] text-foreground/55 mt-3 leading-relaxed">
             <Check className="w-3 h-3 text-brand inline-block mr-1" aria-hidden="true" /> fully
             shipped &nbsp;·&nbsp;
             <Minus className="w-3 h-3 text-brand/50 inline-block mr-1" aria-hidden="true" /> partial
@@ -349,38 +355,38 @@ export default function Compare() {
           id="compare-pricing"
           className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16 text-center"
         >
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-3">
             Transparent, flat-rate pricing.
           </h2>
-          <p className="text-sm sm:text-base text-ink/65 max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-sm sm:text-base text-foreground/65 max-w-2xl mx-auto mb-8 leading-relaxed">
             No hidden telephony markups. No complex token math. You pay a flat rate for access to
             the platform and standard pass-through for frontier LLM usage.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] text-left stagger-children">
-            <div className="bg-paper p-6 stat-shimmer">
+            <div className="bg-card p-6 stat-shimmer">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] wl-text-success mb-1.5">
                 Included
               </p>
-              <p className="text-xl font-display italic text-ink mb-2">Dedicated Numbers</p>
-              <p className="text-xs text-ink/65 leading-relaxed">
+              <p className="text-xl font-display italic text-foreground mb-2">Dedicated Numbers</p>
+              <p className="text-xs text-foreground/65 leading-relaxed">
                 Every plan includes dedicated voice numbers. No Twilio bill required.
               </p>
             </div>
-            <div className="bg-paper p-6">
+            <div className="bg-card p-6">
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand mb-1.5">
                 Pass-through
               </p>
-              <p className="text-xl font-display italic text-ink mb-2">Frontier LLMs</p>
-              <p className="text-xs text-ink/65 leading-relaxed">
+              <p className="text-xl font-display italic text-foreground mb-2">Frontier LLMs</p>
+              <p className="text-xs text-foreground/65 leading-relaxed">
                 We never mark up OpenAI or Anthropic tokens. You pay exactly what they charge.
               </p>
             </div>
-            <div className="bg-paper p-6">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-1.5">
+            <div className="bg-card p-6">
+              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-foreground/55 mb-1.5">
                 Flexible growth
               </p>
-              <p className="text-xl font-display italic text-ink mb-2">Agents by tier</p>
-              <p className="text-xs text-ink/65 leading-relaxed">
+              <p className="text-xl font-display italic text-foreground mb-2">Agents by tier</p>
+              <p className="text-xs text-foreground/65 leading-relaxed">
                 Every plan includes a clear agent cap, with à-la-carte add-ons when you need more
                 specialists.
               </p>
@@ -393,7 +399,7 @@ export default function Compare() {
           id="compare-fit"
           className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
         >
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-6 text-balance">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-6 text-balance">
             When a competitor is the better pick.
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
@@ -401,7 +407,7 @@ export default function Compare() {
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Air if
               </p>
-              <p className="text-sm text-ink/80 leading-relaxed">
+              <p className="text-sm text-foreground/80 leading-relaxed">
                 You only need <em>outbound</em> voice and want the cheapest per-minute rate. Air is
                 a specialized outbound dialer; if you don't care about inbound, SMS, email, or
                 supervisor coaching, Air's pricing wins.
@@ -411,7 +417,7 @@ export default function Compare() {
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Bland if
               </p>
-              <p className="text-sm text-ink/80 leading-relaxed">
+              <p className="text-sm text-foreground/80 leading-relaxed">
                 Your team wants a straightforward voice API with quick path-to-demo and you will
                 wire CRM + compliance yourself. Bland is strong on call placement and developer
                 docs; it is not a full operator console with TCPA ledger, email agents, or
@@ -422,7 +428,7 @@ export default function Compare() {
               <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
                 Pick Retell if
               </p>
-              <p className="text-sm text-ink/80 leading-relaxed">
+              <p className="text-sm text-foreground/80 leading-relaxed">
                 You are shipping a voice-first product and want polished SDKs, latency tuning, and
                 agent builder UX without building a marketing console. Retell does not bundle
                 multi-channel inbox, white-label numbers, or horizontal compliance the way Wireline
@@ -434,10 +440,10 @@ export default function Compare() {
 
         {/* Bottom CTA */}
         <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-24 text-center">
-          <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
+          <h2 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 text-balance">
             See Wireline running on a real call.
           </h2>
-          <p className="text-sm sm:text-base text-ink/65 max-w-xl mx-auto mb-6 leading-relaxed">
+          <p className="text-sm sm:text-base text-foreground/65 max-w-xl mx-auto mb-6 leading-relaxed">
             Call our demo line (630) 581-1834 to hear Liam answer in real time. Or start your 14-day
             free trial — phone number included, no credit card.
           </p>
@@ -451,7 +457,7 @@ export default function Compare() {
             </Link>
             <a
               href="tel:+16305811834"
-              className="inline-flex items-center gap-2 border border-ink/15 text-ink font-medium text-sm px-7 py-3.5 hover:border-brand/30 hover:text-brand transition-colors duration-300"
+              className="inline-flex items-center gap-2 border border-ink/15 text-foreground font-medium text-sm px-7 py-3.5 hover:border-brand/30 hover:text-brand transition-colors duration-300"
             >
               <Phone className="w-4 h-4" />
               Call demo line

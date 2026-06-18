@@ -306,7 +306,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 key={d.key}
                 className="grid grid-cols-[5.5rem,_auto,_1fr] sm:grid-cols-[6rem,_auto,_1fr,_1fr] items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/3 transition-colors"
               >
-                <label className="text-[11px] text-ink/80 truncate">{d.label}</label>
+                <label className="text-[11px] text-foreground/80 truncate">{d.label}</label>
                 <ShadButton
                   type="button"
                   variant={closed ? "destructive" : "outline"}
@@ -397,7 +397,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-ink text-[12px]">{opt.label}</span>
+                  <span className="font-medium text-foreground text-[12px]">{opt.label}</span>
                   {active && <span className="wl-label text-brand">Active</span>}
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
@@ -431,7 +431,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-ink text-[12px]">{opt.label}</span>
+                  <span className="font-medium text-foreground text-[12px]">{opt.label}</span>
                   {active && <span className="wl-label text-brand">Active</span>}
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed mt-1">{opt.hint}</p>
@@ -490,7 +490,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="wl-label text-ink/40 font-semibold block mb-1">
+              <span className="wl-label text-foreground/55 font-semibold block mb-1">
                 Escalation phone (SMS)
               </span>
               <Input
@@ -503,12 +503,12 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="+1 555 123 4567"
                 aria-label="Per-agent escalation phone number"
-                className="w-full h-9 px-3 rounded-md border border-border bg-paper text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
                 data-testid="escalation-phone-input"
               />
             </label>
             <label className="block">
-              <span className="wl-label text-ink/40 font-semibold block mb-1">
+              <span className="wl-label text-foreground/55 font-semibold block mb-1">
                 Escalation email
               </span>
               <Input
@@ -521,7 +521,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 }
                 placeholder="lead@yourcompany.com"
                 aria-label="Per-agent escalation email"
-                className="w-full h-9 px-3 rounded-md border border-border bg-paper text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
+                className="w-full h-9 px-3 rounded-md border border-border bg-card text-[12px] focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/12 transition-all"
                 data-testid="escalation-email-input"
               />
             </label>
@@ -540,7 +540,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               "mt-3 flex items-start gap-3 p-3 rounded-md border transition-all cursor-pointer " +
               (value.escalation_handoff_enabled && value.escalation_phone
                 ? "border-brand/30 bg-brand/[0.04]"
-                : "border-border bg-paper hover:border-brand/20")
+                : "border-border bg-card hover:border-brand/20")
             }
           >
             <Checkbox
@@ -552,10 +552,10 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               data-testid="escalation-handoff-toggle"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-semibold text-ink leading-tight">
+              <p className="text-[12px] font-semibold text-foreground leading-tight">
                 Warm-transfer the live caller
               </p>
-              <p className="text-[10.5px] text-ink/40 leading-relaxed mt-0.5">
+              <p className="text-[10.5px] text-foreground/55 leading-relaxed mt-0.5">
                 {value.escalation_phone
                   ? "When this agent escalates, the live call transfers to the phone above instead of just sending an alert. The agent will say a brief handoff line before transferring."
                   : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
@@ -579,11 +579,13 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       >
         <div className="space-y-1.5">
           {variableEntries.length === 0 && (
-            <div className="text-[11px] text-ink/40 italic px-1 py-2">
-              No variables yet. Add ones like <code className="text-ink/80">business_name</code>,{" "}
-              <code className="text-ink/80">website</code>,{" "}
-              <code className="text-ink/80">support_email</code>, then reference them as{" "}
-              <code className="text-ink/80">{"{business_name}"}</code> in your agent's content.
+            <div className="text-[11px] text-foreground/55 italic px-1 py-2">
+              No variables yet. Add ones like{" "}
+              <code className="text-foreground/80">business_name</code>,{" "}
+              <code className="text-foreground/80">website</code>,{" "}
+              <code className="text-foreground/80">support_email</code>, then reference them as{" "}
+              <code className="text-foreground/80">{"{business_name}"}</code> in your agent's
+              content.
             </div>
           )}
           {variableEntries.map(([k, v]) => (
@@ -609,7 +611,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 disableAnimations
                 onClick={() => removeVariable(k)}
                 aria-label={`Remove ${k}`}
-                className="w-9 h-9 rounded-md text-ink/40 hover:text-rose-500 hover:bg-rose-500/8 shrink-0"
+                className="w-9 h-9 rounded-md text-foreground/55 hover:text-rose-500 hover:bg-rose-500/8 shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </ShadButton>
@@ -684,7 +686,7 @@ function Section({
           <Icon className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <h3 className="font-display italic text-lg text-ink leading-tight">{title}</h3>
+          <h3 className="font-display italic text-lg text-foreground leading-tight">{title}</h3>
           {hint && <p className="wl-micro-meta--muted leading-relaxed mt-0.5">{hint}</p>}
         </div>
       </header>
@@ -728,7 +730,7 @@ function Field({
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? "text-brand" : "text-ink/40";
+  const tone = len > max * 0.9 ? "text-brand" : "text-foreground/55";
   return (
     <p className={cn("wl-micro-badge tabular-nums text-right", tone)}>
       {len}/{max}
@@ -746,7 +748,7 @@ function ChipList({
   tone: "rose" | "brand";
 }) {
   if (chips.length === 0) {
-    return <p className="text-[11px] text-ink/40 italic px-1 py-1">None yet.</p>;
+    return <p className="text-[11px] text-foreground/55 italic px-1 py-1">None yet.</p>;
   }
   const toneClass =
     tone === "rose"

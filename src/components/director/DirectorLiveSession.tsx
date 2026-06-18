@@ -65,7 +65,7 @@ function LiveReplyPreview({ text }: { text: string }) {
       </div>
       <div className="relative max-h-36 overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/95 dark:from-velvet/95 to-transparent z-10" />
-        <pre className="px-3 py-2.5 text-[12px] leading-relaxed text-ink/85 whitespace-pre-wrap font-sans">
+        <pre className="px-3 py-2.5 text-[12px] leading-relaxed text-foreground/85 whitespace-pre-wrap font-sans">
           {lines.join("\n")}
           <span
             aria-hidden
@@ -104,7 +104,7 @@ function ThinkingStream({ text, isDeep }: { text: string; isDeep: boolean }) {
         ref={scrollRef}
         className="relative max-h-28 overflow-y-auto scroll-viewport px-3 py-2.5"
       >
-        <div className="pointer-events-none sticky top-0 -mb-6 h-4 bg-gradient-to-b from-paper dark:from-velvet to-transparent z-10" />
+        <div className="pointer-events-none sticky top-0 -mb-6 h-4 bg-gradient-to-b from-card dark:from-velvet to-transparent z-10" />
         <p
           className={cn(
             WL_DIRECTOR_CLASSES.metaCaption,
@@ -221,7 +221,7 @@ export default function DirectorLiveSession({
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="text-[13px] font-semibold text-ink tracking-[-0.01em]"
+                  className="text-[13px] font-semibold text-foreground tracking-[-0.01em]"
                 >
                   {phaseCopy.headline}
                 </motion.p>

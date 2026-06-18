@@ -65,7 +65,7 @@ function CapabilityRow({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="wl-micro-meta font-semibold text-ink leading-snug">{item.label}</p>
+        <p className="wl-micro-meta font-semibold text-foreground leading-snug">{item.label}</p>
         {!compact && (
           <p
             className={cn(
@@ -134,7 +134,7 @@ export function DirectorCapabilityCatalog({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search skills…"
-            className="h-8 w-full py-1 pl-7 pr-2 wl-micro-meta bg-cream/60 border-border/80 placeholder:text-muted-foreground/60 focus-visible:ring-brand/40"
+            className="h-8 w-full py-1 pl-7 pr-2 wl-micro-meta bg-card/60 border-border/80 placeholder:text-muted-foreground/60 focus-visible:ring-brand/40"
           />
         </div>
         {!filteredCatalog && (
@@ -205,7 +205,7 @@ export function DirectorCapabilityCatalog({
               onClick={() => onPickExample(item.example)}
               title={item.description}
               className={cn(
-                "group h-auto text-left items-start gap-2 px-3 py-2.5 rounded-md border border-border/80 bg-paper/50 dark:bg-velvet/40 backdrop-blur-sm",
+                "group h-auto text-left items-start gap-2 px-3 py-2.5 rounded-md border border-border/80 bg-card/50 dark:bg-velvet/40 backdrop-blur-sm",
                 "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm hover:shadow-brand/5 hover:border-brand/25 hover:bg-brand/[0.03]",
               )}
             >
@@ -213,7 +213,7 @@ export function DirectorCapabilityCatalog({
                 <Icon className="w-3.5 h-3.5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block wl-micro-meta font-semibold text-ink leading-snug">
+                <span className="block wl-micro-meta font-semibold text-foreground leading-snug">
                   {item.label}
                 </span>
                 <span

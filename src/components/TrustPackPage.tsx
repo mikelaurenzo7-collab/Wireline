@@ -84,7 +84,7 @@ export default function TrustPackPage() {
       <div className="max-w-2xl mx-auto px-4 py-12">
         <Link
           to="/security"
-          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink mb-6 touch-press"
+          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground mb-6 touch-press"
         >
           <ArrowLeft className="w-4 h-4" />
           Security overview
@@ -94,13 +94,13 @@ export default function TrustPackPage() {
             <ShieldCheck className="w-5 h-5" />
           </span>
           <div>
-            <h1 className="font-display italic text-2xl text-ink">{pack.title}</h1>
+            <h1 className="font-display italic text-2xl text-foreground">{pack.title}</h1>
             <p className="text-sm text-muted mt-1">{pack.subtitle}</p>
           </div>
         </div>
         <ul className="space-y-3 mb-8">
           {pack.bullets.map((b) => (
-            <li key={b} className="flex gap-2 text-sm text-ink/80 leading-relaxed">
+            <li key={b} className="flex gap-2 text-sm text-foreground/80 leading-relaxed">
               <span className="text-brand mt-0.5">✓</span>
               {b}
             </li>

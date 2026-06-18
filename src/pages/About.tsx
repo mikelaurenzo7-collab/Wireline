@@ -59,7 +59,7 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+            <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-foreground/65 mb-4">
               <span className="wl-eyebrow-dot" aria-hidden="true" />
               The mission
             </p>
@@ -97,14 +97,16 @@ export default function About() {
               <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-2">
                 Founder
               </p>
-              <h2 className="font-display italic text-3xl text-ink mb-3">Michael Laurenzo</h2>
-              <p className="text-sm text-ink/80 leading-relaxed mb-3">
+              <h2 className="font-display italic text-3xl text-foreground mb-3">
+                Michael Laurenzo
+              </h2>
+              <p className="text-sm text-foreground/80 leading-relaxed mb-3">
                 Michael is a builder, leader, competitor — and an operator before he was a founder.
                 Wireline started as a tool he wanted for his own businesses: an AI agent that picks
                 up every call, every email, every text, and treats the customer like the owner would
                 if the owner had unlimited time.
               </p>
-              <p className="text-sm text-ink/80 leading-relaxed">
+              <p className="text-sm text-foreground/80 leading-relaxed">
                 He runs Wireline as a team of one by design. Shipping decisions don't go through
                 committee. Customers talk to the person who builds the product. Bugs reported in the
                 morning are usually fixed by lunch.
@@ -125,7 +127,7 @@ export default function About() {
           id="about-principles"
           className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
         >
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-8">
             How Wireline operates
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
@@ -144,10 +146,10 @@ export default function About() {
                 >
                   <Sparkles className="w-4 h-4 text-white" strokeWidth={2} />
                 </div>
-                <h3 className="font-display italic text-xl text-ink mb-1.5 leading-tight">
+                <h3 className="font-display italic text-xl text-foreground mb-1.5 leading-tight">
                   {p.title}
                 </h3>
-                <p className="text-sm text-ink/70 leading-relaxed">{p.body}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{p.body}</p>
               </motion.div>
             ))}
           </div>
@@ -158,8 +160,10 @@ export default function About() {
           id="about-infra"
           className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
         >
-          <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-3">The infra moat</h2>
-          <p className="text-sm sm:text-base text-ink/65 leading-relaxed mb-6 max-w-2xl">
+          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-3">
+            The infra moat
+          </h2>
+          <p className="text-sm sm:text-base text-foreground/65 leading-relaxed mb-6 max-w-2xl">
             Wireline is built on the strongest infra layer money can buy. Every paying customer
             inherits the reliability + capability of these platforms at no incremental cost.
           </p>
@@ -170,10 +174,10 @@ export default function About() {
 
         {/* CTA */}
         <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-16 text-center">
-          <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
+          <h2 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 text-balance">
             Let's get your front desk back.
           </h2>
-          <p className="text-sm sm:text-base text-ink/70 max-w-xl mx-auto mb-6 leading-relaxed">
+          <p className="text-sm sm:text-base text-foreground/70 max-w-xl mx-auto mb-6 leading-relaxed">
             14-day free trial. Phone number included. No credit card. Cancel anytime.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
@@ -186,7 +190,7 @@ export default function About() {
             </Link>
             <a
               href="tel:+16305811834"
-              className="inline-flex items-center gap-2 border border-ink/15 text-ink font-medium text-sm px-7 py-3.5 hover:border-brand/30 hover:text-brand transition-colors duration-300"
+              className="inline-flex items-center gap-2 border border-ink/15 text-foreground font-medium text-sm px-7 py-3.5 hover:border-brand/30 hover:text-brand transition-colors duration-300"
             >
               <Phone className="w-4 h-4" />
               Call demo line

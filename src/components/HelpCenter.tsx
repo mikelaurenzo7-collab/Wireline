@@ -56,8 +56,8 @@ function AgentCard({
           <p
             className={
               large
-                ? "font-display italic text-xl leading-none text-ink truncate"
-                : "font-display italic text-lg leading-none text-ink truncate"
+                ? "font-display italic text-xl leading-none text-foreground truncate"
+                : "font-display italic text-lg leading-none text-foreground truncate"
             }
           >
             {agent.display}
@@ -85,14 +85,14 @@ const helpActions = (
       href={WIRELINE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-border text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors touch-press"
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-border text-[11px] uppercase tracking-[0.22em] text-foreground/80 hover:text-foreground hover:border-brand/25 transition-colors touch-press"
     >
       <ExternalLink className="w-3.5 h-3.5" />
       trywireline.com
     </a>
     <a
       href={`mailto:${WIRELINE_SUPPORT_EMAIL}`}
-      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-border text-[11px] uppercase tracking-[0.22em] text-ink/80 hover:text-ink hover:border-brand/25 transition-colors touch-press"
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-panel border border-border text-[11px] uppercase tracking-[0.22em] text-foreground/80 hover:text-foreground hover:border-brand/25 transition-colors touch-press"
     >
       <MessageCircle className="w-3.5 h-3.5" />
       Email Mike
@@ -161,7 +161,7 @@ export default function HelpCenter() {
                     className="group flex items-center justify-between gap-3 rounded-md border border-border bg-brand/[0.03] px-3 py-2.5 hover:border-brand/25 hover:bg-brand/[0.06] transition-colors"
                   >
                     <div className="min-w-0 text-left">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-ink/90">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/90">
                         {link.label}
                       </p>
                       <p className="text-[11px] text-muted/75 mt-0.5 leading-snug">{link.hint}</p>
@@ -192,7 +192,7 @@ export default function HelpCenter() {
                 {WIRELINE_INTEGRATIONS.map((i) => (
                   <span
                     key={i}
-                    className="wl-label px-2 py-1 rounded-md bg-brand/[0.06] border border-border text-ink/80 normal-case tracking-[0.18em]"
+                    className="wl-label px-2 py-1 rounded-md bg-brand/[0.06] border border-border text-foreground/80 normal-case tracking-[0.18em]"
                   >
                     {i}
                   </span>

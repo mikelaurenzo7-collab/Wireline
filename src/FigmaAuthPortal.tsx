@@ -89,7 +89,7 @@ function Logo({ light = false }: { light?: boolean }) {
     <span
       className={cn(
         "inline-flex items-center gap-2 font-display text-xl tracking-tight",
-        light ? "text-paper" : "text-ink",
+        light ? "text-paper" : "text-foreground",
       )}
     >
       <span className="flex h-7 w-7 items-center justify-center bg-brand text-[12px] text-paper">
@@ -226,7 +226,7 @@ function OAuthButtons({
                 )}
               </span>
               <span>
-                <span className="block text-sm font-semibold text-ink">
+                <span className="block text-sm font-semibold text-foreground">
                   Continue with {provider.label}
                 </span>
                 <span className="block text-xs text-muted-foreground">{provider.sub}</span>
@@ -256,7 +256,7 @@ function Shell({ children, mode }: { children: ReactNode; mode: WorkspaceMode })
           </Link>
         </div>
         <div className="relative z-10 max-w-xl">
-          <Chip className="border-paper/20 bg-paper/5 text-paper/70">
+          <Chip className="border-paper/20 bg-card/5 text-paper/70">
             {mode === "personal" ? "Personal workspace" : "Business workspace"}
           </Chip>
           <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">
@@ -270,13 +270,13 @@ function Shell({ children, mode }: { children: ReactNode; mode: WorkspaceMode })
               : "Deploy AI voice, SMS, and email agents with real OAuth, training, integrations, and operator controls."}
           </p>
         </div>
-        <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-paper/10 text-center">
+        <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-card/10 text-center">
           {[
             ["Google", "Workspace"],
             ["Outlook", "Microsoft 365"],
             ["Yahoo", "Mail"],
           ].map(([a, b]) => (
-            <div key={a} className="bg-paper/[.03] p-4">
+            <div key={a} className="bg-card/[.03] p-4">
               <div className="font-display text-xl">{a}</div>
               <div className="mt-1 text-[10px] uppercase tracking-[.18em] text-paper/45">{b}</div>
             </div>
@@ -328,13 +328,13 @@ function WorkspaceSelector({
           <span
             className={cn(
               "mt-0.5 flex h-8 w-8 items-center justify-center rounded-full",
-              mode === option.id ? "bg-brand text-paper" : "bg-secondary text-ink",
+              mode === option.id ? "bg-brand text-paper" : "bg-secondary text-foreground",
             )}
           >
             {option.icon}
           </span>
           <span className="flex-1">
-            <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
               {option.title}
               {mode === option.id && <Check className="h-4 w-4 text-brand" />}
             </span>
@@ -486,7 +486,9 @@ export default function FigmaAuthPortal() {
         <Logo />
       </Link>
       <Chip>{isReset ? "Account recovery" : "Wireline account"}</Chip>
-      <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-ink">{title}</h1>
+      <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-foreground">
+        {title}
+      </h1>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
       {redirectTarget && !isReset && (
         <div className="mt-4 rounded-[16px] border border-brand/20 bg-brand/8 p-3 text-xs leading-5 text-brand">
@@ -502,7 +504,9 @@ export default function FigmaAuthPortal() {
             onClick={() => setMode("signin")}
             className={cn(
               "min-h-[44px] text-sm font-semibold transition",
-              !isSignup ? "bg-brand text-paper" : "bg-card text-muted-foreground hover:text-ink",
+              !isSignup
+                ? "bg-brand text-paper"
+                : "bg-card text-muted-foreground hover:text-foreground",
             )}
           >
             Sign in
@@ -512,7 +516,9 @@ export default function FigmaAuthPortal() {
             onClick={() => setMode("signup")}
             className={cn(
               "min-h-[44px] text-sm font-semibold transition",
-              isSignup ? "bg-brand text-paper" : "bg-card text-muted-foreground hover:text-ink",
+              isSignup
+                ? "bg-brand text-paper"
+                : "bg-card text-muted-foreground hover:text-foreground",
             )}
           >
             Create account
@@ -536,7 +542,7 @@ export default function FigmaAuthPortal() {
           />
         )}
         <form onSubmit={submit} className="mt-5 space-y-4">
-          <label className="block space-y-2 text-sm font-semibold text-ink">
+          <label className="block space-y-2 text-sm font-semibold text-foreground">
             <span>Email address</span>
             <span className="relative block">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -551,7 +557,7 @@ export default function FigmaAuthPortal() {
             </span>
           </label>
           {!isReset && (
-            <label className="block space-y-2 text-sm font-semibold text-ink">
+            <label className="block space-y-2 text-sm font-semibold text-foreground">
               <span className="flex items-center justify-between">
                 <span>Password</span>
                 {!isSignup && (
@@ -713,7 +719,7 @@ export function FigmaOAuthComplete() {
   return (
     <Shell mode={workspaceMode}>
       <Chip>{error ? "Sign-in failed" : "Completing sign-in"}</Chip>
-      <h1 className="mt-5 font-display text-4xl text-ink">
+      <h1 className="mt-5 font-display text-4xl text-foreground">
         {error ? "We could not finish sign-in." : "Finishing OAuth sign-in."}
       </h1>
       <div className="mt-7 border border-border bg-card p-6 text-sm text-muted-foreground">

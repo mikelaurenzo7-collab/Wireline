@@ -8,7 +8,7 @@
 }
 
 .wl-preview-body {
-  background: #1c0f33;
+  background: var(--panel-2);
 }
 
 .wl-preview-muted {
@@ -389,8 +389,8 @@
 }
 
 .wl-preview-docusign-field[data-signed="true"] {
-  background: rgba(107, 43, 153, 0.08);
-  border: 1px solid rgba(107, 43, 153, 0.25);
+  background: rgba(124, 156, 255, 0.08);
+  border: 1px solid rgba(124, 156, 255, 0.25);
 }
 
 .wl-preview-docusign-dot {
@@ -414,7 +414,7 @@
 }
 
 .wl-preview-docusign-label[data-signed="true"] {
-  color: rgba(107, 43, 153, 0.85);
+  color: rgba(124, 156, 255, 0.85);
 }
 
 .wl-preview-docusign-awaiting {
@@ -537,7 +537,7 @@
 }
 
 .wl-preview-excel-th {
-  color: #8b6fa8;
+  color: var(--iris);
   border-bottom: 1px solid rgba(33, 115, 70, 0.3);
 }
 

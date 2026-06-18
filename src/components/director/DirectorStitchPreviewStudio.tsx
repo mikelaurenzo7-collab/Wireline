@@ -160,7 +160,7 @@ function LoadingProgress({ elapsedMs }: { elapsedMs: number }) {
     <div className="rounded-md border border-brand/15 p-8 text-center space-y-3">
       <Loader2 className="w-6 h-6 text-brand/50 animate-spin mx-auto" />
       <div>
-        <p className="text-[12px] text-ink font-medium">{phase}</p>
+        <p className="text-[12px] text-foreground font-medium">{phase}</p>
         <p className="wl-micro-meta--muted mt-1">{timeLabel} elapsed</p>
       </div>
       {elapsedMs > 15_000 && (
@@ -566,7 +566,7 @@ export default function DirectorStitchPreviewStudio({
             {deviceLabel(preview.deviceType)}
           </span>
         </span>
-        <p className="text-[12px] text-ink font-medium truncate max-w-[min(100%,20rem)]">
+        <p className="text-[12px] text-foreground font-medium truncate max-w-[min(100%,20rem)]">
           {preview.title}
         </p>
       </div>
@@ -585,8 +585,8 @@ export default function DirectorStitchPreviewStudio({
                 className={cn(
                   "h-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md wl-micro-meta font-semibold transition-all",
                   selected
-                    ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
-                    : "text-muted hover:text-ink hover:bg-paper/60",
+                    ? "bg-card dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
+                    : "text-muted hover:text-foreground hover:bg-card/60",
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -621,8 +621,8 @@ export default function DirectorStitchPreviewStudio({
                     className={cn(
                       "h-7 w-7 p-0 shrink-0 flex items-center justify-center rounded-md transition-all",
                       selected
-                        ? "bg-paper dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
-                        : "text-muted hover:text-ink hover:bg-paper/60",
+                        ? "bg-card dark:bg-velvet/80 text-brand shadow-sm border border-brand/20"
+                        : "text-muted hover:text-foreground hover:bg-card/60",
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -649,7 +649,7 @@ export default function DirectorStitchPreviewStudio({
                 "h-7 px-2 shrink-0 flex items-center gap-1.5 rounded-md transition-all wl-micro-meta font-semibold",
                 wireframeMode
                   ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                  : "text-muted hover:text-ink hover:bg-paper/60",
+                  : "text-muted hover:text-foreground hover:bg-card/60",
               )}
             >
               {wireframeMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -667,7 +667,7 @@ export default function DirectorStitchPreviewStudio({
               onClick={openFullScreen}
               disabled={!canExpand}
               title={WIRELINE_STITCH_UI.expandLabel}
-              className="h-7 w-7 p-0 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-ink hover:bg-paper/60 transition-all disabled:opacity-40"
+              className="h-7 w-7 p-0 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-foreground hover:bg-card/60 transition-all disabled:opacity-40"
             >
               <Expand className="w-3.5 h-3.5" />
               <span className="sr-only">{WIRELINE_STITCH_UI.expandLabel}</span>
@@ -683,7 +683,7 @@ export default function DirectorStitchPreviewStudio({
           animate={{ opacity: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -4 }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-md border border-brand/15 bg-gradient-to-b from-paper/98 to-paper/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
+          className="rounded-md border border-brand/15 bg-gradient-to-b from-card/98 to-card/90 dark:from-velvet/70 dark:to-velvet/50 overflow-hidden shadow-[0_20px_50px_-24px_rgba(107,47,168,0.35)]"
         >
           {tab === "screenshot" && hasRenderableImage && (
             <DeviceChrome device={effectiveDeviceType} fullHeight immersive={immersive}>
@@ -827,7 +827,7 @@ export default function DirectorStitchPreviewStudio({
           {tab === "export" && (
             <div className="p-4 sm:p-5 space-y-4">
               <div>
-                <p className="text-[12px] text-ink font-medium">{preview.title}</p>
+                <p className="text-[12px] text-foreground font-medium">{preview.title}</p>
                 <p className="wl-micro-meta--muted leading-relaxed mt-1">
                   {WIRELINE_STITCH_UI.exportBlurb}
                 </p>
@@ -926,7 +926,7 @@ export default function DirectorStitchPreviewStudio({
                     type="button"
                     onClick={() => void sendToCanva()}
                     disabled={!ready.imageArtifactId || Boolean(exportBusy.canva)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-white/10 hover:border-brand/20 h-auto disabled:opacity-60"
                   >
                     {exportBusy.canva ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1007,7 +1007,7 @@ export default function DirectorStitchPreviewStudio({
                       type="button"
                       onClick={() => void openArtifactDownload(ready.imageArtifactId, false)}
                       disabled={Boolean(exportBusy[ready.imageArtifactId])}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-white/10 hover:border-brand/20 h-auto disabled:opacity-60"
                     >
                       {exportBusy[ready.imageArtifactId] ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1022,7 +1022,7 @@ export default function DirectorStitchPreviewStudio({
                       type="button"
                       onClick={() => void openArtifactDownload(ready.htmlArtifactId, true)}
                       disabled={Boolean(exportBusy[ready.htmlArtifactId])}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-black/10 hover:border-brand/20 h-auto disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md wl-micro-meta font-semibold border border-white/10 hover:border-brand/20 h-auto disabled:opacity-60"
                     >
                       {exportBusy[ready.htmlArtifactId] ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />

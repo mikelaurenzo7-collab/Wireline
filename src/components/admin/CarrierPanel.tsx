@@ -112,7 +112,7 @@ export function CarrierPanel({
             <div className="rounded-md wl-panel border border-brand/30 p-3 space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                <p className="wl-label text-ink/80">Voice network key</p>
+                <p className="wl-label text-foreground/80">Voice network key</p>
               </div>
               <p className="wl-label text-brand">Managed by Wireline</p>
             </div>
@@ -131,7 +131,7 @@ export function CarrierPanel({
                     hasBrowserVoiceKey ? "bg-brand" : "bg-rose-500",
                   )}
                 />
-                <p className="wl-label text-ink/80">Browser voice key</p>
+                <p className="wl-label text-foreground/80">Browser voice key</p>
               </div>
               <p className={cn("wl-label", hasBrowserVoiceKey ? "text-brand" : "text-rose-500")}>
                 {hasBrowserVoiceKey ? "Connected" : "Missing"}
@@ -140,7 +140,7 @@ export function CarrierPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="vapi-phone-number-id" className="wl-label text-ink/40">
+            <label htmlFor="vapi-phone-number-id" className="wl-label text-foreground/55">
               Default carrier peering ID
             </label>
             <Input
@@ -150,13 +150,13 @@ export function CarrierPanel({
               onChange={(e) =>
                 onUpdateSettings({ ...settings, vapi_phone_number_id: e.target.value })
               }
-              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono"
+              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground placeholder:text-foreground/55 font-mono"
               placeholder="e.g. 3c7a9f…"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="vapi-inbound-agent-id" className="wl-label text-ink/40">
+            <label htmlFor="vapi-inbound-agent-id" className="wl-label text-foreground/55">
               Default inbound voice agent
             </label>
             <div className="relative">
@@ -171,7 +171,7 @@ export function CarrierPanel({
               >
                 <SelectTrigger
                   id="vapi-inbound-agent-id"
-                  className="w-full text-sm bg-black/5 border border-input rounded-md pl-3 py-2 text-ink h-auto"
+                  className="w-full text-sm bg-black/5 border border-input rounded-md pl-3 py-2 text-foreground h-auto"
                 >
                   <SelectValue placeholder="Oldest voice agent (fallback)" />
                 </SelectTrigger>
@@ -248,7 +248,7 @@ export function CarrierPanel({
                         )}
                       >
                         <div className="flex items-baseline justify-between mb-0.5">
-                          <span className="text-sm text-ink">{p.label}</span>
+                          <span className="text-sm text-foreground">{p.label}</span>
                           <span className="wl-label-muted">{p.sub}</span>
                         </div>
                         <p className="wl-micro-meta--muted leading-snug">{p.desc}</p>
@@ -256,7 +256,7 @@ export function CarrierPanel({
                     ))}
                   </div>
                   <div className="space-y-1.5 pt-2">
-                    <label htmlFor="voice-llm-model" className="wl-label text-ink/40">
+                    <label htmlFor="voice-llm-model" className="wl-label text-foreground/55">
                       Model Revision Override
                     </label>
                     <Input
@@ -266,7 +266,7 @@ export function CarrierPanel({
                       onChange={(e) =>
                         onUpdateSettings({ ...settings, voice_llm_model: e.target.value })
                       }
-                      className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono"
+                      className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground font-mono"
                     />
                   </div>
                 </div>
@@ -314,10 +314,10 @@ export function CarrierPanel({
                   className="rounded-md wl-panel border border-input p-3 flex flex-col xl:flex-row xl:items-center gap-2"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-display italic text-lg text-ink leading-none tabular-nums truncate">
+                    <div className="font-display italic text-lg text-foreground leading-none tabular-nums truncate">
                       {pt.phone_number}
                     </div>
-                    <div className="wl-label text-ink/40 mt-1 font-mono">
+                    <div className="wl-label text-foreground/55 mt-1 font-mono">
                       {pt.vapi_number_id?.substring(0, 16)}…
                     </div>
                   </div>
@@ -341,7 +341,7 @@ export function CarrierPanel({
                         /* silent — operator will see no save indicator */
                       }
                     }}
-                    className="text-[11px] bg-black/5 border border-input rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-ink min-w-[200px] placeholder:text-ink/40 h-auto"
+                    className="text-[11px] bg-black/5 border border-input rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-foreground min-w-[200px] placeholder:text-foreground/55 h-auto"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <LinkIcon className="w-3 h-3 text-brand" />
@@ -354,7 +354,7 @@ export function CarrierPanel({
                       >
                         <SelectTrigger
                           aria-label={`Assign agent to ${pt.phone_number}`}
-                          className="text-xs bg-black/5 border border-input rounded-md pl-2.5 py-1.5 text-ink min-w-[150px] h-auto"
+                          className="text-xs bg-black/5 border border-input rounded-md pl-2.5 py-1.5 text-foreground min-w-[150px] h-auto"
                         >
                           <SelectValue placeholder="Unassigned" />
                         </SelectTrigger>
@@ -390,14 +390,14 @@ export function CarrierPanel({
 
           <div className="rounded-md wl-panel border border-input p-3 space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="wl-label text-ink inline-flex items-center gap-1.5">
+              <h4 className="wl-label text-foreground inline-flex items-center gap-1.5">
                 <Plus className="w-3 h-3 text-brand" /> Add Wireline number
               </h4>
               <ShadButton
                 onClick={handleSync}
                 disabled={isSyncing}
                 variant="outline"
-                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 wl-label text-ink/40 hover:text-brand transition-colors h-auto py-1 px-2 border-input"
+                className="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5 wl-label text-foreground/55 hover:text-brand transition-colors h-auto py-1 px-2 border-input"
               >
                 {isSyncing ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -415,14 +415,14 @@ export function CarrierPanel({
                 value={newNumber}
                 onChange={(e) => setNewNumber(e.target.value)}
                 placeholder="+1 800 555 0100"
-                className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink tabular-nums h-auto"
+                className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground tabular-nums h-auto"
               />
               <Input
                 type="text"
                 value={newNumberVapiId}
                 onChange={(e) => setNewNumberVapiId(e.target.value)}
                 placeholder="Wireline voice number ID"
-                className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink font-mono h-auto"
+                className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground font-mono h-auto"
               />
             </div>
             <ShadButton
@@ -456,7 +456,9 @@ export function CarrierPanel({
             <div className="rounded-md border border-brand/30 bg-brand/[0.06] p-3 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm text-ink leading-none">Bring-your-own-carrier webhook</p>
+                  <p className="text-sm text-foreground leading-none">
+                    Bring-your-own-carrier webhook
+                  </p>
                   <p className="wl-micro-meta--muted mt-1 leading-relaxed">
                     You're on a BYOC plan — paste this URL as the "A Message Comes In" webhook on
                     each of your carrier numbers.
@@ -475,7 +477,7 @@ export function CarrierPanel({
                   Copy URL
                 </ShadButton>
               </div>
-              <code className="block text-[11px] font-mono text-ink/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
+              <code className="block text-[11px] font-mono text-foreground/90 bg-black/15 px-2.5 py-1.5 rounded select-all break-all">
                 https://trywireline.com/api/twilio-webhook/sms
               </code>
             </div>
@@ -483,7 +485,7 @@ export function CarrierPanel({
 
           <div className="flex items-center justify-between rounded-md border border-input bg-white/[0.02] p-3">
             <div>
-              <p className="text-sm text-ink leading-none">Enable outbound SMS</p>
+              <p className="text-sm text-foreground leading-none">Enable outbound SMS</p>
               <p className="wl-micro-meta mt-1 leading-relaxed">
                 Lets your agents follow up via text. Replies trigger TCPA opt-out tracking.
               </p>
@@ -508,7 +510,7 @@ export function CarrierPanel({
             >
               <span
                 className={cn(
-                  "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
+                  "absolute top-0.5 w-5 h-5 rounded-full bg-card transition-all shadow",
                   settings.twilio_messaging_enabled ? "left-5" : "left-0.5",
                 )}
               />
@@ -516,7 +518,7 @@ export function CarrierPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="twilio-sms-from" className="wl-label text-ink/40">
+            <label htmlFor="twilio-sms-from" className="wl-label text-foreground/55">
               SMS sender number
             </label>
             <Input
@@ -529,7 +531,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_sms_from_number: e.target.value })
               }
               placeholder="+1 800 555 0100"
-              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
+              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground placeholder:text-foreground/55 font-mono h-auto"
             />
             <p className="wl-micro-meta leading-relaxed">
               A Twilio-verified number you own. Outbound texts go from this number.
@@ -537,7 +539,7 @@ export function CarrierPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="twilio-messaging-sid" className="wl-label text-ink/40">
+            <label htmlFor="twilio-messaging-sid" className="wl-label text-foreground/55">
               OR Messaging Service SID (recommended for scale)
             </label>
             <Input
@@ -548,7 +550,7 @@ export function CarrierPanel({
                 onUpdateSettings({ ...settings, twilio_messaging_service_sid: e.target.value })
               }
               placeholder="MG••••••••••••••••••••••••••••••••"
-              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
+              className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground placeholder:text-foreground/55 font-mono h-auto"
             />
             <p className="wl-micro-meta leading-relaxed">
               Twilio's pool of numbers with auto-failover. Overrides the single sender above.
@@ -578,7 +580,7 @@ export function CarrierPanel({
               was set up — this just exposes them to operators. */}
           <div className="mt-6 pt-5 border-t border-input space-y-3">
             <div>
-              <p className="wl-label text-ink/40 mb-1">Alerts to you</p>
+              <p className="wl-label text-foreground/55 mb-1">Alerts to you</p>
               <p className="text-[11px] text-muted leading-relaxed">
                 Have Wireline text YOU when your agents do something worth knowing about — booked
                 meetings, escalations, hot leads, trial milestones.
@@ -587,7 +589,7 @@ export function CarrierPanel({
 
             <div className="flex items-center justify-between rounded-md border border-input bg-white/[0.02] p-3">
               <div className="min-w-0">
-                <p className="text-sm text-ink leading-none">Operator alerts</p>
+                <p className="text-sm text-foreground leading-none">Operator alerts</p>
                 <p className="wl-micro-meta mt-1 leading-relaxed">
                   We'll text the number below when notable events happen.
                 </p>
@@ -614,7 +616,7 @@ export function CarrierPanel({
               >
                 <span
                   className={cn(
-                    "absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow",
+                    "absolute top-0.5 w-5 h-5 rounded-full bg-card transition-all shadow",
                     settings.twilio_manager_alerts_enabled ? "left-5" : "left-0.5",
                   )}
                 />
@@ -623,7 +625,7 @@ export function CarrierPanel({
 
             {settings.twilio_manager_alerts_enabled && (
               <div className="space-y-1.5">
-                <label htmlFor="manager-alert-number" className="wl-label text-ink/40">
+                <label htmlFor="manager-alert-number" className="wl-label text-foreground/55">
                   Your phone number
                 </label>
                 <Input
@@ -639,7 +641,7 @@ export function CarrierPanel({
                     })
                   }
                   placeholder="+1 555 555 0100"
-                  className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-ink placeholder:text-ink/40 font-mono h-auto"
+                  className="w-full text-sm bg-black/5 border border-input rounded-md px-3 py-2 outline-none focus-visible:ring-brand/40 text-foreground placeholder:text-foreground/55 font-mono h-auto"
                 />
                 <p className="wl-micro-meta leading-relaxed">
                   Standard messaging rates apply. We send no more than ~5 alerts per day per agent

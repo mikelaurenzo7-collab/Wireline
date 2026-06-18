@@ -135,7 +135,7 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display text-[clamp(3rem,8vw,5.75rem)] italic leading-[0.98] tracking-[-0.045em] text-ink text-balance"
+          className="font-display text-[clamp(3rem,8vw,5.75rem)] italic leading-[0.98] tracking-[-0.045em] text-foreground text-balance"
         >
           Choose the plan that fits your call volume.
         </motion.h1>
@@ -144,7 +144,7 @@ export default function Pricing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.6 }}
-          className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-ink/70"
+          className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-foreground/70"
         >
           Start with a small bundle, then add agents as your business grows. Personal stays
           inexpensive; business plans scale around minutes, routing, teams, coaching, and support.
@@ -164,7 +164,7 @@ export default function Pricing() {
               className={`min-h-[42px] rounded-md border px-4 text-sm font-semibold transition ${
                 billingInterval === interval
                   ? "border-brand bg-brand text-white"
-                  : "border-ink/10 bg-paper text-ink/65 hover:border-brand/30 hover:text-ink"
+                  : "border-ink/10 bg-card text-foreground/65 hover:border-brand/30 hover:text-foreground"
               }`}
             >
               {interval === "month" ? "Monthly" : "Annual"}
@@ -182,7 +182,7 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.12 + index * 0.04, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className={`relative flex flex-col rounded-md border bg-paper p-6 shadow-[0_18px_50px_-44px_rgba(26,22,20,0.55)] ${
+                className={`relative flex flex-col rounded-md border bg-card p-6 shadow-[0_18px_50px_-44px_rgba(26,22,20,0.55)] ${
                   isHighlighted ? "border-brand ring-1 ring-brand/20" : "border-ink/10"
                 }`}
               >
@@ -192,17 +192,17 @@ export default function Pricing() {
                   </span>
                 )}
 
-                <h2 className="font-display text-2xl italic text-ink">{plan.name}</h2>
-                <p className="mt-2 min-h-[44px] text-sm leading-6 text-ink/64">
+                <h2 className="font-display text-2xl italic text-foreground">{plan.name}</h2>
+                <p className="mt-2 min-h-[44px] text-sm leading-6 text-foreground/64">
                   {PLAN_BLURBS[plan.id]}
                 </p>
 
                 <div className="my-6 flex items-end gap-1">
-                  <span className="font-display text-4xl italic leading-none text-ink">
+                  <span className="font-display text-4xl italic leading-none text-foreground">
                     {planPrice(plan, billingInterval)}
                   </span>
                   {planCadence(plan, billingInterval) && (
-                    <span className="pb-1 text-xs text-ink/55">
+                    <span className="pb-1 text-xs text-foreground/55">
                       {planCadence(plan, billingInterval)}
                     </span>
                   )}
@@ -229,7 +229,7 @@ export default function Pricing() {
                   </ShadButton>
                 </div>
 
-                <ul className="mt-auto space-y-3 border-t border-ink/10 pt-5 text-sm text-ink/72">
+                <ul className="mt-auto space-y-3 border-t border-ink/10 pt-5 text-sm text-foreground/72">
                   {plan.features.slice(0, 7).map((feature) => (
                     <li key={feature} className="flex gap-2.5">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" strokeWidth={2.6} />
@@ -245,14 +245,14 @@ export default function Pricing() {
 
       <section
         id="pricing-value"
-        className="border-y border-ink/10 bg-paper-warm/25 py-20 scroll-mt-28"
+        className="border-y border-ink/10 bg-card-warm/25 py-20 scroll-mt-28"
       >
         <div className="mx-auto max-w-6xl px-6 lg:px-12">
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
               What scales with you
             </p>
-            <h2 className="mt-3 font-display text-4xl italic text-ink">
+            <h2 className="mt-3 font-display text-4xl italic text-foreground">
               The same product, more capacity.
             </h2>
           </div>
@@ -260,13 +260,13 @@ export default function Pricing() {
             {VALUE_BULLETS.map(({ icon: Icon, title, text }) => (
               <article
                 key={title}
-                className="rounded-md border border-ink/10 bg-paper p-6 shadow-sm"
+                className="rounded-md border border-ink/10 bg-card p-6 shadow-sm"
               >
                 <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-md border border-brand/15 bg-brand/8 text-brand">
                   <Icon className="h-5 w-5" />
                 </div>
-                <h3 className="font-display text-2xl italic text-ink">{title}</h3>
-                <p className="mt-3 text-sm leading-7 text-ink/66">{text}</p>
+                <h3 className="font-display text-2xl italic text-foreground">{title}</h3>
+                <p className="mt-3 text-sm leading-7 text-foreground/66">{text}</p>
               </article>
             ))}
           </div>
@@ -278,25 +278,25 @@ export default function Pricing() {
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
             FAQ
           </p>
-          <h2 className="mt-3 font-display text-4xl italic text-ink">
+          <h2 className="mt-3 font-display text-4xl italic text-foreground">
             Straight answers before checkout.
           </h2>
         </div>
         <div className="space-y-4">
           {FAQS.map((item) => (
-            <article key={item.question} className="rounded-md border border-ink/10 bg-paper p-6">
-              <h3 className="text-base font-semibold text-ink">{item.question}</h3>
-              <p className="mt-2 text-sm leading-7 text-ink/66">{item.answer}</p>
+            <article key={item.question} className="rounded-md border border-ink/10 bg-card p-6">
+              <h3 className="text-base font-semibold text-foreground">{item.question}</h3>
+              <p className="mt-2 text-sm leading-7 text-foreground/66">{item.answer}</p>
             </article>
           ))}
         </div>
       </section>
 
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-20 pt-4 text-center">
-        <h2 className="font-display text-4xl italic text-ink sm:text-5xl text-balance">
+        <h2 className="font-display text-4xl italic text-foreground sm:text-5xl text-balance">
           Launch your first agent today.
         </h2>
-        <p className="mx-auto mb-8 mt-4 max-w-xl text-base leading-7 text-ink/70">
+        <p className="mx-auto mb-8 mt-4 max-w-xl text-base leading-7 text-foreground/70">
           Start with the plan that matches your call volume. Upgrade, add agents, or talk to sales
           when you need more coverage.
         </p>
@@ -308,7 +308,7 @@ export default function Pricing() {
             </Link>
           </ShadButton>
           <ShadButton variant="outline" size="lg" asChild>
-            <a href="tel:+16305811834" className="inline-flex items-center gap-2 text-ink">
+            <a href="tel:+16305811834" className="inline-flex items-center gap-2 text-foreground">
               <Phone className="h-4 w-4" />
               Call demo line
             </a>

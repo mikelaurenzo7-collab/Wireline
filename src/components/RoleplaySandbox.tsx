@@ -215,7 +215,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
     <div className="rounded-md wl-panel-elevated border border-border overflow-hidden flex flex-col xl:flex-row h-[600px]">
       {/* Sidebar: Persona Selector */}
       <div className="w-full xl:w-80 border-b xl:border-b-0 xl:border-r border-border p-4 flex flex-col bg-black/10 shrink-0">
-        <h3 className="text-[11px] font-medium text-ink uppercase tracking-[0.25em] mb-3">
+        <h3 className="text-[11px] font-medium text-foreground uppercase tracking-[0.25em] mb-3">
           Select Persona
         </h3>
         <div className="space-y-2 flex-1 overflow-y-auto pr-1">
@@ -231,7 +231,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                   className={`w-full text-left p-3 rounded-md border transition-all h-auto ${
                     active
                       ? "bg-brand/10 border-brand/50 text-brand"
-                      : "wl-panel border-border text-ink hover:border-brand/30 hover:bg-black/20"
+                      : "wl-panel border-border text-foreground hover:border-brand/30 hover:bg-black/20"
                   }`}
                 >
                   <div className="w-full">
@@ -248,14 +248,14 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                 </ShadButton>
                 {active && p.id === "custom" && (
                   <div className="p-2 rounded bg-black/20 border border-border space-y-1">
-                    <label className="text-[9px] uppercase tracking-wider text-muted font-medium">
+                    <label className="text-[10px] uppercase tracking-wider text-muted font-medium">
                       Define Behavior:
                     </label>
                     <textarea
                       value={customModifier}
                       onChange={(e) => setCustomModifier(e.target.value)}
                       placeholder="Describe custom customer behavior..."
-                      className="w-full text-[11px] p-2 bg-black/30 border border-border rounded text-ink outline-none focus:border-brand/50 min-h-[60px] resize-none leading-relaxed"
+                      className="w-full text-[11px] p-2 bg-black/30 border border-border rounded text-foreground outline-none focus:border-brand/50 min-h-[60px] resize-none leading-relaxed"
                     />
                   </div>
                 )}
@@ -278,17 +278,17 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
       </div>
 
       {/* Main Sandbox Panel */}
-      <div className="flex-1 flex flex-col min-w-0 bg-paper/20">
+      <div className="flex-1 flex flex-col min-w-0 bg-card/20">
         {/* Header */}
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-brand" />
-            <h4 className="text-xs font-medium uppercase tracking-widest text-ink">
+            <h4 className="text-xs font-medium uppercase tracking-widest text-foreground">
               Interactive Roleplay Sandbox
             </h4>
           </div>
           <span className="text-[11px] text-muted bg-black/20 border border-border px-2 py-0.5 rounded-full">
-            Active persona: <strong className="text-ink">{selectedPersona.name}</strong>
+            Active persona: <strong className="text-foreground">{selectedPersona.name}</strong>
           </span>
         </div>
 
@@ -300,11 +300,11 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                 <Sparkles className="w-5 h-5 animate-pulse" />
               </div>
               <div>
-                <h5 className="text-sm font-semibold text-ink">Start a coaching session</h5>
+                <h5 className="text-sm font-semibold text-foreground">Start a coaching session</h5>
                 <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed mt-1">
                   Type a message below to roleplay as the{" "}
-                  <strong className="text-ink">{selectedPersona.name}</strong>. See how your agent
-                  responds and receive real-time coaching suggestions.
+                  <strong className="text-foreground">{selectedPersona.name}</strong>. See how your
+                  agent responds and receive real-time coaching suggestions.
                 </p>
               </div>
             </div>
@@ -321,7 +321,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                   className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 border mt-0.5 ${
                     m.role === "user"
                       ? "bg-brand/10 border-brand/30 text-brand"
-                      : "bg-paper border-border text-ink"
+                      : "bg-card border-border text-foreground"
                   }`}
                 >
                   {m.role === "user" ? (
@@ -337,11 +337,11 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                     className={`rounded-md p-3 text-sm leading-relaxed ${
                       m.role === "user"
                         ? "bg-brand text-on-brand shadow-sm font-sans"
-                        : "bg-black/40 border border-border text-ink font-mono"
+                        : "bg-black/40 border border-border text-foreground font-mono"
                     }`}
                   >
                     {m.role === "user" && (
-                      <span className="block text-[9px] uppercase tracking-wider opacity-60 mb-0.5">
+                      <span className="block text-[10px] uppercase tracking-wider opacity-60 mb-0.5">
                         {selectedPersona.name}
                       </span>
                     )}
@@ -361,7 +361,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                           <span>AI Coach Analysis</span>
                         </div>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                             m.coaching.score >= 90
                               ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/20"
                               : m.coaching.score >= 70
@@ -372,7 +372,9 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                           Score: {m.coaching.score}/100
                         </span>
                       </div>
-                      <p className="text-ink/80 leading-relaxed font-sans">{m.coaching.feedback}</p>
+                      <p className="text-foreground/80 leading-relaxed font-sans">
+                        {m.coaching.feedback}
+                      </p>
                       {m.coaching.suggestions.length > 0 && (
                         <div className="space-y-1 mt-1 pl-2 border-l border-brand/30">
                           {m.coaching.suggestions.map((s, idx) => (
@@ -390,7 +392,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
           )}
           {isSending && (
             <div className="flex gap-3 max-w-[80%] mr-auto items-center">
-              <div className="w-8 h-8 rounded-md bg-paper border border-border flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-md bg-card border border-border flex items-center justify-center shrink-0">
                 <Bot className="w-4.5 h-4.5" />
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted">
@@ -409,7 +411,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder={`Say something as the ${selectedPersona.name}...`}
-            className="flex-1 bg-black/20 border-border text-ink text-xs h-9 rounded-md"
+            className="flex-1 bg-black/20 border-border text-foreground text-xs h-9 rounded-md"
           />
           <ShadButton
             type="submit"

@@ -50,7 +50,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
       <div
         className={cn(
           WL_DIRECTOR_CLASSES.composerColumn,
-          "rounded-md border border-brand/10 bg-paper/75 dark:bg-velvet/45 backdrop-blur-md p-3 space-y-3 shadow-sm shadow-brand/[0.02] transition-all duration-300 hover:shadow-md hover:shadow-brand/[0.04]",
+          "rounded-md border border-brand/10 bg-card/75 dark:bg-velvet/45 backdrop-blur-md p-3 space-y-3 shadow-sm shadow-brand/[0.02] transition-all duration-300 hover:shadow-md hover:shadow-brand/[0.04]",
           WL_DIRECTOR_CLASSES.artifactsPanel,
         )}
       >
@@ -95,7 +95,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                     <a
                       href={a.downloadUrl}
                       download={a.name}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper/95 backdrop-blur-sm wl-label font-semibold text-ink shadow-lg hover:bg-white transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/95 backdrop-blur-sm wl-label font-semibold text-foreground shadow-lg hover:bg-card transition-colors"
                     >
                       <Download className="w-2.5 h-2.5" />
                       Download
@@ -108,7 +108,7 @@ export default function DirectorArtifactsPanel({ artifacts }: DirectorArtifactsP
                     </p>
                   </div>
                   {/* Format badge */}
-                  <div className="absolute top-1.5 right-1.5 px-1 py-0.5 rounded bg-black/40 backdrop-blur-sm text-[7px] font-mono text-white/80 uppercase font-bold">
+                  <div className="absolute top-1.5 right-1.5 px-1 py-0.5 rounded bg-black/40 backdrop-blur-sm text-[10px] font-mono text-white/80 uppercase font-bold">
                     {a.mimeType?.split("/")[1]?.replace("+xml", "") || a.artifactType}
                   </div>
                 </div>

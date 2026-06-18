@@ -263,10 +263,10 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
           <ChannelInboxGrid>
             <ChannelInboxListPane label="All conversations" detailOpen={!!activeId}>
               {!loading && !fetchErr && threads.length > 0 && (
-                <div className="sticky top-0 z-10 px-1 pb-2 bg-gradient-to-b from-paper/95 to-paper/60 backdrop-blur-sm">
+                <div className="sticky top-0 z-10 px-1 pb-2 bg-gradient-to-b from-card/95 to-card/60 backdrop-blur-sm">
                   <div className="relative">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/35 pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/55 pointer-events-none"
                       aria-hidden
                     />
                     <Input
@@ -275,7 +275,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search number or summary…"
                       aria-label="Search SMS threads"
-                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 transition-all"
                     />
                   </div>
                 </div>
@@ -359,7 +359,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <p className="font-mono text-sm text-ink truncate">
+                            <p className="font-mono text-sm text-foreground truncate">
                               {t.customer_number}
                             </p>
                             {t.summary ? (
@@ -417,7 +417,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                 >
                   <div className="shrink-0 pb-2 border-b border-border flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5 text-brand shrink-0" />
-                    <span className="font-mono text-sm text-ink truncate">
+                    <span className="font-mono text-sm text-foreground truncate">
                       {activeThread.customer_number}
                     </span>
                     <ShadButton
@@ -459,8 +459,8 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                           className={cn(
                             "max-w-[min(78%,36rem)] lg:max-w-[min(72%,44rem)] xl:max-w-[min(66%,52rem)] rounded-md px-3.5 py-2.5 border transition-all duration-300 hover:shadow-sm",
                             m.direction === "out"
-                              ? "ml-auto bg-brand/12 border-brand/30 text-ink"
-                              : "mr-auto bg-white/80 backdrop-blur-sm border-border text-ink",
+                              ? "ml-auto bg-brand/12 border-brand/30 text-foreground"
+                              : "mr-auto bg-white/80 backdrop-blur-sm border-border text-foreground",
                           )}
                         >
                           <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
@@ -495,7 +495,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         }}
                         placeholder="Type a reply…"
                         disabled={sending}
-                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-border rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-ink placeholder:text-ink/40 disabled:opacity-50 transition-all duration-300"
+                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-border rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-foreground placeholder:text-foreground/55 disabled:opacity-50 transition-all duration-300"
                       />
                       <ShadButton
                         type="button"

@@ -46,14 +46,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         className="space-y-3 max-w-md"
       >
         <p className="text-eyebrow">Error 404</p>
-        <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
+        <h2 className="font-display italic text-2xl md:text-3xl text-foreground leading-tight">
           Page not found
         </h2>
         <p className="text-caption leading-relaxed max-w-md">
           {location.pathname && location.pathname !== "/" && (
             <>
               We couldn't find{" "}
-              <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[12px] font-mono text-ink/70">
+              <code className="px-1.5 py-0.5 rounded bg-black/[0.04] text-[12px] font-mono text-foreground/70">
                 {location.pathname.length > 32
                   ? location.pathname.slice(0, 32) + "…"
                   : location.pathname}
@@ -91,14 +91,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
             />
             <a
               href="tel:+16305811834"
-              className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors shadow-[0_8px_24px_-12px_rgba(107,43,153,0.35)]"
+              className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-white/10 hover:border-white/20 transition-colors shadow-[0_8px_24px_-12px_rgba(107,43,153,0.35)]"
             >
               <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 wl-brand-icon-solid">
                 <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
               </div>
               <div className="text-left flex-1 min-w-0">
                 <p className="text-eyebrow !text-[0.625rem]">Try the demo</p>
-                <p className="text-sm text-ink font-medium truncate">(630) 581-1834</p>
+                <p className="text-sm text-foreground font-medium truncate">(630) 581-1834</p>
               </div>
             </a>
             <NotFoundCard
@@ -176,17 +176,17 @@ function NotFoundCard({
   return (
     <Link
       to={to}
-      className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-black/10 hover:border-black/20 transition-colors"
+      className="group relative flex items-center gap-3 p-4 rounded-md wl-panel border border-white/10 hover:border-white/20 transition-colors"
       data-accent={accent}
     >
-      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-black/8 wl-accent-icon-chip">
+      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-white/8 wl-accent-icon-chip">
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </div>
       <div className="text-left flex-1 min-w-0">
         <p className="wl-label-muted !text-[0.625rem]">{hint}</p>
-        <p className="text-[12px] text-ink font-medium">{label}</p>
+        <p className="text-[12px] text-foreground font-medium">{label}</p>
       </div>
-      <ChevronRight className="w-4 h-4 text-ink/65 group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
+      <ChevronRight className="w-4 h-4 text-foreground/65 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
     </Link>
   );
 }

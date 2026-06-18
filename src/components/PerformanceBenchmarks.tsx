@@ -90,18 +90,16 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           {/* Label + bar */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="wl-micro-meta">
-                {item.label}
-              </span>
+              <span className="wl-micro-meta">{item.label}</span>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
-                  <span className="text-ink/40 ml-0.5 wl-micro-meta">{item.unit}</span>
+                  <span className="text-foreground/55 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
                 <span className="wl-micro-meta">vs</span>
-                <span className="font-mono text-[11px] text-ink/70">
+                <span className="font-mono text-[11px] text-foreground/70">
                   {item.benchmark}
-                  <span className="text-ink/40 ml-0.5 wl-micro-meta">{item.unit}</span>
+                  <span className="text-foreground/55 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -124,7 +122,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           </div>
 
           {/* Expand chevron */}
-          <div className="shrink-0 text-ink/40 group-hover:text-ink/40 transition-colors">
+          <div className="shrink-0 text-foreground/55 group-hover:text-foreground/55 transition-colors">
             {expanded ? (
               <ChevronUp className="w-3.5 h-3.5" />
             ) : (
@@ -144,7 +142,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
             className="overflow-hidden"
           >
             <div
-              className={`mx-4 mb-3 px-3 py-2.5 rounded-md wl-panel border text-[11px] text-ink/70 leading-relaxed ${cfg.borderColor}`}
+              className={`mx-4 mb-3 px-3 py-2.5 rounded-md wl-panel border text-[11px] text-foreground/70 leading-relaxed ${cfg.borderColor}`}
             >
               💡 {item.tip}
             </div>
@@ -215,9 +213,7 @@ export default function PerformanceBenchmarks() {
   if (error || !data) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="wl-label text-rose-500/60">
-          {error || "No data"}
-        </p>
+        <p className="wl-label text-rose-500/60">{error || "No data"}</p>
       </div>
     );
   }
@@ -225,10 +221,8 @@ export default function PerformanceBenchmarks() {
   if (data.total_calls === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
-        <TrendingUp className="w-8 h-8 text-ink/40" />
-        <p className="wl-micro-meta">
-          No call data in the last 30 days
-        </p>
+        <TrendingUp className="w-8 h-8 text-foreground/55" />
+        <p className="wl-micro-meta">No call data in the last 30 days</p>
         <Link
           to="/outbound"
           className="px-3 py-1.5 rounded-full wl-panel border border-brand/30 text-brand wl-label hover:bg-brand/10 transition-all"

@@ -141,7 +141,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[11px] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -151,7 +151,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
         <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
           <SelectTrigger
             aria-label="Filter by call direction"
-            className="h-9 pl-8 pr-3 rounded-full wl-panel wl-filter-trigger text-ink"
+            className="h-9 pl-8 pr-3 rounded-full wl-panel wl-filter-trigger text-foreground"
           >
             <SelectValue />
           </SelectTrigger>
@@ -200,7 +200,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                   onClick={loadMore}
                   disabled={loadingMore}
                   aria-label="Load more calls"
-                  className="h-auto px-0 wl-label-muted hover:text-ink"
+                  className="h-auto px-0 wl-label-muted hover:text-foreground"
                 >
                   {loadingMore ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -307,7 +307,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                           {/* Content */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="font-display italic text-sm text-ink truncate">
+                              <span className="font-display italic text-sm text-foreground truncate">
                                 {call.customer_number || "Sim Test"}
                               </span>
                               {/* Lead score badge */}
@@ -318,7 +318,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                                     ? "bg-brand/12 text-brand border-brand/20"
                                     : (call.lead_score || 0) >= 50
                                       ? "bg-brand/8 text-brand/80 border-brand/15"
-                                      : "bg-black/[0.06] text-ink/40 border-transparent",
+                                      : "bg-black/[0.06] text-foreground/55 border-transparent",
                                 )}
                               >
                                 {call.lead_score || 0}
@@ -391,10 +391,12 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center">
-                  <FileText className="w-8 h-8 text-ink/40" />
+                  <FileText className="w-8 h-8 text-foreground/55" />
                 </div>
                 <div>
-                  <p className="text-sm font-display italic text-ink/70 mb-1">No call selected</p>
+                  <p className="text-sm font-display italic text-foreground/70 mb-1">
+                    No call selected
+                  </p>
                   <p className="wl-micro-meta leading-relaxed max-w-[200px]">
                     Click any call on the left to view the full transcript, summary, and QA
                     analysis.
@@ -441,7 +443,7 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
     return <SmilePlus className="w-3 h-3 text-brand shrink-0" aria-label="Positive sentiment" />;
   if (s === "negative")
     return <Frown className="w-3 h-3 text-destructive shrink-0" aria-label="Negative sentiment" />;
-  return <Meh className="w-3 h-3 text-ink/40 shrink-0" aria-label="Neutral sentiment" />;
+  return <Meh className="w-3 h-3 text-foreground/55 shrink-0" aria-label="Neutral sentiment" />;
 }
 
 function CallOutcomeBadge({ label }: { label: string }) {
@@ -453,7 +455,7 @@ function CallOutcomeBadge({ label }: { label: string }) {
         ? "bg-brand/10 text-brand border-brand/25"
         : normalized === "unreachable" || normalized.includes("silence")
           ? "bg-destructive/8 text-destructive border-destructive/20"
-          : "bg-ink/5 text-ink/60 border-ink/10";
+          : "bg-ink/5 text-foreground/60 border-ink/10";
   return (
     <span
       className={cn(
@@ -612,8 +614,8 @@ function CallDetail({
                 className={cn(
                   "h-auto px-2.5 py-1 rounded-full border wl-label",
                   active
-                    ? "bg-muted/80 border-brand/40 text-ink hover:bg-muted"
-                    : "border-border text-muted hover:text-ink",
+                    ? "bg-muted/80 border-brand/40 text-foreground hover:bg-muted"
+                    : "border-border text-muted hover:text-foreground",
                 )}
               >
                 <t.icon className={cn("w-3 h-3", active ? "text-brand" : "")} />
@@ -648,7 +650,7 @@ function CallDetail({
                   <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                     <FileText className="w-3 h-3" /> Mission summary
                   </div>
-                  <p className="text-ink/90 font-display italic text-lg md:text-xl leading-snug">
+                  <p className="text-foreground/90 font-display italic text-lg md:text-xl leading-snug">
                     {call.summary || "Pending inference…"}
                   </p>
                 </div>
@@ -670,7 +672,7 @@ function CallDetail({
                             ? "text-brand"
                             : (call.sentiment || "neutral") === "negative"
                               ? "text-destructive"
-                              : "text-ink/40",
+                              : "text-foreground/55",
                         )}
                       >
                         {call.sentiment || "neutral"}
@@ -683,7 +685,9 @@ function CallDetail({
                     <div className="wl-label text-brand mb-2 flex items-center gap-1.5">
                       <MessageSquare className="w-3 h-3" /> AI coaching note
                     </div>
-                    <p className="text-[12px] text-ink/80 leading-relaxed">{call.coaching_note}</p>
+                    <p className="text-[12px] text-foreground/80 leading-relaxed">
+                      {call.coaching_note}
+                    </p>
                   </div>
                 )}
                 {/* QA Scorecard */}
@@ -701,7 +705,7 @@ function CallDetail({
                         data-qa-color={qaColor(qaScore)}
                       >
                         {qaScore}
-                        <span className="text-xs text-ink/40 ml-1 not-italic">/100</span>
+                        <span className="text-xs text-foreground/55 ml-1 not-italic">/100</span>
                       </div>
                     </div>
                     <div className="space-y-2 mb-3">
@@ -718,7 +722,7 @@ function CallDetail({
                                 className={cn("h-full rounded-full", qaDimBarClass(val))}
                               />
                             </div>
-                            <span className="wl-micro-badge font-mono text-ink w-8 text-right shrink-0">
+                            <span className="wl-micro-badge font-mono text-foreground w-8 text-right shrink-0">
                               {val}/20
                             </span>
                           </div>
@@ -726,7 +730,7 @@ function CallDetail({
                       })}
                     </div>
                     {qaBreakdown.notes && (
-                      <p className="text-[11px] text-ink/65 leading-relaxed border-t border-border pt-2 mt-2">
+                      <p className="text-[11px] text-foreground/65 leading-relaxed border-t border-border pt-2 mt-2">
                         <Sparkles className="w-3 h-3 inline mr-1 text-brand" />
                         {qaBreakdown.notes}
                       </p>
@@ -773,7 +777,9 @@ function CallDetail({
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-2"
               >
                 {transcriptLines.length === 0 ? (
-                  <p className="text-ink/40 wl-label text-center py-12">No transcript available</p>
+                  <p className="text-foreground/55 wl-label text-center py-12">
+                    No transcript available
+                  </p>
                 ) : (
                   transcriptLines.map((line: string, i: number) => {
                     // Parse "Speaker: content" — real Vapi transcripts use the
@@ -812,16 +818,16 @@ function CallDetail({
                         className={cn(
                           "p-3 rounded-md border text-[12px] leading-snug max-w-[85%]",
                           isAI
-                            ? "bg-muted/30 border-border text-ink mr-auto"
+                            ? "bg-muted/30 border-border text-foreground mr-auto"
                             : isUser
-                              ? "bg-brand/8 border-brand/20 text-ink ml-auto"
+                              ? "bg-brand/8 border-brand/20 text-foreground ml-auto"
                               : "bg-muted border-border text-muted text-center mx-auto",
                         )}
                       >
                         <div
                           className={cn(
                             "wl-label mb-1",
-                            isAI ? "text-muted" : isUser ? "text-brand" : "text-ink",
+                            isAI ? "text-muted" : isUser ? "text-brand" : "text-foreground",
                           )}
                         >
                           {label}
@@ -849,7 +855,7 @@ function CallDetail({
                   <RecordingPlayer url={call.recording_url} />
                 ) : (
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
-                    <Activity className="w-6 h-6 text-ink/40" />
+                    <Activity className="w-6 h-6 text-foreground/55" />
                     <p className="text-eyebrow/60">No recording available</p>
                     <p className="wl-micro-meta">
                       Recordings are stored by the voice carrier when enabled
@@ -880,7 +886,9 @@ function Stat({
         {Icon && <Icon className="w-3 h-3" />}
         {label}
       </div>
-      <div className="font-display italic text-lg text-ink leading-none truncate">{value}</div>
+      <div className="font-display italic text-lg text-foreground leading-none truncate">
+        {value}
+      </div>
     </div>
   );
 }
@@ -951,7 +959,7 @@ function RecordingPlayer({ url }: { url: string }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 wl-label text-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1 wl-label text-muted hover:text-foreground transition-colors"
         >
           <ExternalLink className="w-3 h-3" /> Try opening directly
         </a>
@@ -972,7 +980,7 @@ function RecordingPlayer({ url }: { url: string }) {
           download
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 wl-label text-muted hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1 wl-label text-muted hover:text-foreground transition-colors"
           aria-label="Download recording"
         >
           <Download className="w-3 h-3" /> Download
@@ -1030,7 +1038,7 @@ function RecordingPlayer({ url }: { url: string }) {
           disableAnimations
           onClick={() => skip(-10)}
           aria-label="Rewind 10 seconds"
-          className="w-7 h-7 rounded-full text-muted hover:text-ink"
+          className="w-7 h-7 rounded-full text-muted hover:text-foreground"
         >
           <SkipForward className="w-3 h-3 rotate-180" />
         </ShadButton>
@@ -1054,7 +1062,7 @@ function RecordingPlayer({ url }: { url: string }) {
           disableAnimations
           onClick={() => skip(10)}
           aria-label="Forward 10 seconds"
-          className="w-7 h-7 rounded-full text-muted hover:text-ink"
+          className="w-7 h-7 rounded-full text-muted hover:text-foreground"
         >
           <SkipForward className="w-3 h-3" />
         </ShadButton>
@@ -1062,7 +1070,7 @@ function RecordingPlayer({ url }: { url: string }) {
         {/* Time */}
         <span className="wl-micro-badge font-mono text-muted tabular-nums ml-1">
           {fmtTime(currentTime)}
-          <span className="text-ink/40 mx-0.5">/</span>
+          <span className="text-foreground/55 mx-0.5">/</span>
           {fmtTime(duration)}
         </span>
 
@@ -1077,7 +1085,7 @@ function RecordingPlayer({ url }: { url: string }) {
           disableAnimations
           onClick={cycleSpeed}
           aria-label={`Playback speed: ${SPEEDS[speedIdx]}x`}
-          className="h-6 px-2 rounded-full wl-micro-badge font-mono text-muted hover:text-ink"
+          className="h-6 px-2 rounded-full wl-micro-badge font-mono text-muted hover:text-foreground"
         >
           {SPEEDS[speedIdx]}x
         </ShadButton>

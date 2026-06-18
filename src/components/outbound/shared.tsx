@@ -35,8 +35,8 @@ export const CAMPAIGN_STATUS: Record<
   draft: {
     text: "text-muted",
     bg: "bg-black/5",
-    border: "border-black/10",
-    iconBorder: "border-black/8",
+    border: "border-white/10",
+    iconBorder: "border-white/8",
   },
   active: {
     text: "wl-text-success",

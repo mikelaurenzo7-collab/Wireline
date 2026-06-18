@@ -64,7 +64,7 @@ export default function AgentIntegrationCanvas({
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           <div>
-            <h3 className="font-display italic text-base text-ink">Agent capabilities</h3>
+            <h3 className="font-display italic text-base text-foreground">Agent capabilities</h3>
             <p className="wl-micro-meta--muted leading-relaxed text-pretty">
               Each connection maps to caller moments — what {agentName || "this agent"} does when
               customers ask.
@@ -260,7 +260,7 @@ export default function AgentIntegrationCanvas({
 
                   {/* Tool count badge */}
                   {isEnabled && (
-                    <div className="wl-canvas-node__badge absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[7px] font-bold text-white px-0.5 leading-none">
+                    <div className="wl-canvas-node__badge absolute -top-1.5 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[10px] font-bold text-white px-0.5 leading-none">
                       {enabledCount}
                     </div>
                   )}

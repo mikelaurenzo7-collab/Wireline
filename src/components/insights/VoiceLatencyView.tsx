@@ -203,7 +203,9 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             className="stat-tile-mobile rounded-md wl-panel border border-border p-5"
           >
             <p className="wl-insight-label mb-2">{tile.label}</p>
-            <p className="metric-value font-display italic text-3xl text-ink">{tile.value}</p>
+            <p className="metric-value font-display italic text-3xl text-foreground">
+              {tile.value}
+            </p>
             <p className={cn("wl-director-meta", "mt-2")}>{tile.sub}</p>
           </div>
         ))}
@@ -217,7 +219,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           <ul className="space-y-3">
             {guards.map((g: any) => (
               <li key={g.label} className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-ink/80">{g.label}</span>
+                <span className="text-foreground/80">{g.label}</span>
                 <span
                   className={cn(
                     "font-mono tabular-nums",
@@ -246,7 +248,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   key={a.action}
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-ink/85 truncate">{a.action}</span>
+                  <span className="text-sm text-foreground/85 truncate">{a.action}</span>
                   <span className="font-mono text-[11px] text-muted shrink-0">
                     {a.avg_latency_ms}ms · {a.calls}×
                   </span>

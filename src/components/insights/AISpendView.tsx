@@ -126,7 +126,7 @@ function SpendBudgetCard() {
           </div>
           <div>
             <div className="wl-insight-label tracking-[0.32em] wl-accent-text">Monthly Budget</div>
-            <div className="text-sm text-ink/70 mt-1">
+            <div className="text-sm text-foreground/70 mt-1">
               Period <span className="font-mono">{period}</span> · resets on the 1st (UTC)
             </div>
           </div>
@@ -141,9 +141,9 @@ function SpendBudgetCard() {
       {limit > 0 ? (
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <div className="font-display italic text-3xl text-ink leading-none">
+            <div className="font-display italic text-3xl text-foreground leading-none">
               ${safeFixed(used, 2)}{" "}
-              <span className="text-ink/70 text-xl">/ ${safeFixed(limit, 2)}</span>
+              <span className="text-foreground/70 text-xl">/ ${safeFixed(limit, 2)}</span>
             </div>
             <div className="app-section-title">{safeFixed(pct, 1)}% used</div>
           </div>
@@ -168,7 +168,7 @@ function SpendBudgetCard() {
           )}
         </div>
       ) : (
-        <div className="text-sm text-ink/70">
+        <div className="text-sm text-foreground/70">
           No monthly limit set. Configure one below for webhook warnings — overages bill through
           your plan.
         </div>
@@ -185,7 +185,7 @@ function SpendBudgetCard() {
             value={draft.monthly_limit_usd}
             onChange={(e) => setDraft({ ...draft, monthly_limit_usd: e.target.value })}
             placeholder="e.g. 200"
-            className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+            className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all font-mono"
           />
         </label>
         <label className="space-y-1.5">
@@ -200,16 +200,17 @@ function SpendBudgetCard() {
             onChange={(e) =>
               setDraft({ ...draft, warn_threshold_pct: parseInt(e.target.value || "80") })
             }
-            className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+            className="w-full h-11 px-4 rounded-md wl-panel border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all font-mono"
           />
         </label>
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-1">
-        <div className="text-[11px] text-ink/70">
-          Threshold crossings fire <span className="font-mono text-ink/75">spend.warning</span> and{" "}
-          <span className="font-mono text-ink/75">spend.exceeded</span> webhook events — wire them
-          to Slack/CRM in Admin.
+        <div className="text-[11px] text-foreground/70">
+          Threshold crossings fire{" "}
+          <span className="font-mono text-foreground/75">spend.warning</span> and{" "}
+          <span className="font-mono text-foreground/75">spend.exceeded</span> webhook events — wire
+          them to Slack/CRM in Admin.
         </div>
         <ShadButton
           type="button"
@@ -367,7 +368,7 @@ export default function AISpendView({ days }: { days: number }) {
                   return (
                     <div key={a.action} className="space-y-1">
                       <div className="flex items-baseline justify-between gap-3">
-                        <span className="text-sm text-ink/85 truncate">{a.action}</span>
+                        <span className="text-sm text-foreground/85 truncate">{a.action}</span>
                         <span className="font-display italic text-lg text-brand-display tabular-nums shrink-0">
                           ${safeFixed(a.cost, 3)}
                         </span>
@@ -399,7 +400,7 @@ export default function AISpendView({ days }: { days: number }) {
                     className="flex items-baseline justify-between border-b border-border pb-3 last:border-0 last:pb-0"
                   >
                     <div>
-                      <div className="text-sm font-mono text-ink/90">{m.model}</div>
+                      <div className="text-sm font-mono text-foreground/90">{m.model}</div>
                       <div className="wl-insight-label mt-1">{m.calls} calls</div>
                     </div>
                     <div className="font-display italic text-2xl text-brand-display">
@@ -413,13 +414,13 @@ export default function AISpendView({ days }: { days: number }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                   <div>
                     Input{" "}
-                    <span className="text-ink/80 font-mono ml-1">
+                    <span className="text-foreground/80 font-mono ml-1">
                       {totals.input.toLocaleString()}
                     </span>
                   </div>
                   <div>
                     Output{" "}
-                    <span className="text-ink/80 font-mono ml-1">
+                    <span className="text-foreground/80 font-mono ml-1">
                       {totals.output.toLocaleString()}
                     </span>
                   </div>

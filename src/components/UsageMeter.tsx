@@ -63,7 +63,7 @@ export default function UsageMeter({
     return (
       <div
         className={cn(
-          "flex items-center gap-2 wl-label text-ink/40",
+          "flex items-center gap-2 wl-label text-foreground/55",
           compact ? "py-1.5 px-3" : "py-4 px-5",
         )}
       >
@@ -96,10 +96,10 @@ export default function UsageMeter({
         title={`${used} of ${included} voice minutes used this month — resets ${resetLabel}`}
       >
         <span className="w-2 h-2 rounded-full animate-pulse wl-accent-dot" data-circular />
-        <span className="text-ink/40 font-semibold tracking-wider">VOICE</span>
-        <span className="text-ink font-bold tabular-nums">{used.toLocaleString()}</span>
-        <span className="text-ink/40 font-light">/</span>
-        <span className="text-ink/40 tabular-nums">{included.toLocaleString()}</span>
+        <span className="text-foreground/55 font-semibold tracking-wider">VOICE</span>
+        <span className="text-foreground font-bold tabular-nums">{used.toLocaleString()}</span>
+        <span className="text-foreground/55 font-light">/</span>
+        <span className="text-foreground/55 tabular-nums">{included.toLocaleString()}</span>
       </div>
     );
   }
@@ -118,18 +118,20 @@ export default function UsageMeter({
             <Activity className="w-4.5 h-4.5 wl-accent-text" />
           </div>
           <div>
-            <h4 className="font-display italic text-lg text-ink leading-tight font-bold">
+            <h4 className="font-display italic text-lg text-foreground leading-tight font-bold">
               Voice minutes
             </h4>
-            <p className="wl-label text-ink/40 font-medium">This month · resets {resetLabel}</p>
+            <p className="wl-label text-foreground/55 font-medium">
+              This month · resets {resetLabel}
+            </p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[11px] font-mono text-ink/40">
-            <span className="text-ink tabular-nums text-base font-bold">
+          <div className="text-[11px] font-mono text-foreground/55">
+            <span className="text-foreground tabular-nums text-base font-bold">
               {used.toLocaleString()}
             </span>
-            <span className="text-ink/40"> / {included.toLocaleString()}</span>
+            <span className="text-foreground/55"> / {included.toLocaleString()}</span>
           </div>
           <p className="wl-label text-brand font-semibold mt-0.5">{pct}% used</p>
         </div>
@@ -159,7 +161,7 @@ export default function UsageMeter({
             </span>
             <span className="text-muted/80 ml-1">
               {`— billed at $${snap.overage_per_min_usd.toFixed(2)}/min (`}
-              <span className="text-ink font-semibold">
+              <span className="text-foreground font-semibold">
                 {snap.stripe_metered
                   ? `≈ $${snap.overage_cost_usd.toFixed(2)} this period`
                   : "metered billing pending Stripe setup"}
@@ -199,7 +201,7 @@ export default function UsageMeter({
           overage, where credits absorb the cost before Stripe meters it. */}
       {(credit > 0 || isOver) && (
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
-          <span className="flex items-center gap-2 wl-label text-ink/40 font-medium">
+          <span className="flex items-center gap-2 wl-label text-foreground/55 font-medium">
             <Wallet className="w-3.5 h-3.5" />
             Prepaid credits
           </span>
@@ -208,12 +210,12 @@ export default function UsageMeter({
               <span
                 className={cn(
                   "tabular-nums font-bold text-[15px]",
-                  lowCredit ? "text-amber-500" : "text-ink",
+                  lowCredit ? "text-amber-500" : "text-foreground",
                 )}
               >
                 ${credit.toFixed(2)}
               </span>
-              <span className="block wl-label text-ink/40 font-medium">
+              <span className="block wl-label text-foreground/55 font-medium">
                 {isOver
                   ? "auto-applied to overage"
                   : lowCredit

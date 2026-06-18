@@ -87,7 +87,7 @@ export default function FleetSetupNudge({ className }: { className?: string }) {
       >
         <div className="flex-1 min-w-0 pl-1">
           <p className="wl-label text-brand mb-1">{OPS_COPY.setupEyebrow}</p>
-          <p className="text-xs text-ink/75 leading-relaxed">
+          <p className="text-xs text-foreground/75 leading-relaxed">
             {OPS_COPY.setupBody(done, FLEET_SETUP_STEP_COUNT)} {OPS_COPY.setupHint}
           </p>
           <div
@@ -118,7 +118,7 @@ export default function FleetSetupNudge({ className }: { className?: string }) {
           </ShadButton>
           <Link
             to="/agents"
-            className="touch-press inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-border wl-label text-ink/70 hover:text-ink hover:border-brand/30 transition-colors min-h-[36px]"
+            className="touch-press inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-border wl-label text-foreground/70 hover:text-foreground hover:border-brand/30 transition-colors min-h-[36px]"
           >
             Agents
             <ArrowRight className="w-3 h-3" />
@@ -130,7 +130,7 @@ export default function FleetSetupNudge({ className }: { className?: string }) {
             disableAnimations
             onClick={dismiss}
             aria-label="Dismiss setup reminder"
-            className="touch-press h-9 w-9 rounded-full text-muted hover:text-ink"
+            className="touch-press h-9 w-9 rounded-full text-muted hover:text-foreground"
           >
             <X className="w-3.5 h-3.5" />
           </ShadButton>

@@ -33,7 +33,7 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
   },
   polish: {
     label: "Polish",
-    tone: "bg-ink/5 text-ink/70 border-ink/10",
+    tone: "bg-ink/5 text-foreground/70 border-ink/10",
     icon: Wrench,
   },
   security: {
@@ -178,7 +178,7 @@ export default function PublicChangelog() {
                       {meta.label}
                     </span>
                   </div>
-                  <h2 className="font-display italic text-xl text-ink leading-tight mb-1">
+                  <h2 className="font-display italic text-xl text-foreground leading-tight mb-1">
                     {entry.title}
                   </h2>
                   <p className="marketing-body">{entry.body}</p>

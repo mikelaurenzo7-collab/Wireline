@@ -62,7 +62,9 @@ function ToastItem({ toast }: { toast: Toast }) {
           <Icon aria-hidden="true" className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[12px] font-semibold text-ink leading-snug truncate">{toast.title}</p>
+          <p className="text-[12px] font-semibold text-foreground leading-snug truncate">
+            {toast.title}
+          </p>
           {toast.message && (
             <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
           )}
@@ -89,7 +91,7 @@ function ToastItem({ toast }: { toast: Toast }) {
           onClick={() => dismiss(toast.id)}
           aria-label="Dismiss notification"
           disableAnimations
-          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 text-muted hover:text-ink"
+          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 text-muted hover:text-foreground"
         >
           <X aria-hidden="true" className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
         </ShadButton>

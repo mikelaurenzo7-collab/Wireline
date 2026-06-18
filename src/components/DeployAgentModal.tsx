@@ -255,13 +255,13 @@ export default function DeployAgentModal({
             <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-border">
                 <div className="space-y-1.5 min-w-0">
-                  <p className="wl-micro-meta">
-                    Deploy · {template.category}
-                  </p>
-                  <h2 className="font-display italic text-2xl text-ink leading-tight">
+                  <p className="wl-micro-meta">Deploy · {template.category}</p>
+                  <h2 className="font-display italic text-2xl text-foreground leading-tight">
                     {template.name}
                   </h2>
-                  <p className="text-[12px] text-ink/65 leading-relaxed">{template.description}</p>
+                  <p className="text-[12px] text-foreground/65 leading-relaxed">
+                    {template.description}
+                  </p>
                 </div>
                 <ShadButton
                   type="button"
@@ -281,10 +281,7 @@ export default function DeployAgentModal({
               <div className="relative z-10 px-7 py-6 space-y-6">
                 {/* Name */}
                 <div className="space-y-2">
-                  <label
-                    htmlFor="agent-name"
-                    className="wl-label-muted opacity-80"
-                  >
+                  <label htmlFor="agent-name" className="wl-label-muted opacity-80">
                     Agent name
                   </label>
                   <Input
@@ -298,7 +295,7 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[15px] text-ink placeholder:text-ink/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[15px] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="wl-micro-meta">
                     What callers and your team will see. You can change this any time in /agents.
@@ -309,9 +306,7 @@ export default function DeployAgentModal({
                 {!isEmail ? (
                   <div className="space-y-3">
                     <div className="flex items-baseline justify-between">
-                      <label className="wl-label-muted opacity-80">
-                        Voice
-                      </label>
+                      <label className="wl-label-muted opacity-80">Voice</label>
                       <ShadButton
                         type="button"
                         variant="link"
@@ -359,9 +354,7 @@ export default function DeployAgentModal({
                           transition={{ duration: 0.25 }}
                           className="space-y-1.5 overflow-hidden"
                         >
-                          <p className="wl-micro-meta pt-1">
-                            Specific {gender} voice
-                          </p>
+                          <p className="wl-micro-meta pt-1">Specific {gender} voice</p>
                           {voicesForGender.map((v) => {
                             const isSelected = v.id === voiceId;
                             return (
@@ -374,14 +367,12 @@ export default function DeployAgentModal({
                                 className={cn(
                                   "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[12px] border",
                                   isSelected
-                                    ? "bg-brand/12 border-brand/35 text-ink"
-                                    : "bg-muted/20 border border-border text-ink/75 hover:bg-muted/30 hover:text-ink",
+                                    ? "bg-brand/12 border-brand/35 text-foreground"
+                                    : "bg-muted/20 border border-border text-foreground/75 hover:bg-muted/30 hover:text-foreground",
                                 )}
                               >
                                 <span className="truncate">{v.name}</span>
-                                <span className="wl-micro-meta shrink-0">
-                                  {v.provider}
-                                </span>
+                                <span className="wl-micro-meta shrink-0">{v.provider}</span>
                               </ShadButton>
                             );
                           })}
@@ -392,7 +383,7 @@ export default function DeployAgentModal({
                     {selectedVoice && !showVoiceList && (
                       <div className="space-y-1.5">
                         <p className="wl-micro-meta">
-                          Picked: <span className="text-ink/75">{selectedVoice.name}</span>
+                          Picked: <span className="text-foreground/75">{selectedVoice.name}</span>
                         </p>
                         {/* Real per-voice audio preview via the
                             ElevenLabs-backed /api/voices/:id/preview
@@ -408,9 +399,9 @@ export default function DeployAgentModal({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[12px] text-ink/65">
+                  <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[12px] text-foreground/65">
                     Email agent — no voice picker. The agent's writing tone is configured in{" "}
-                    <span className="text-ink/80">/agents → Personality</span> after deploy.
+                    <span className="text-foreground/80">/agents → Personality</span> after deploy.
                   </div>
                 )}
               </div>
@@ -480,8 +471,8 @@ function GenderTile({
       className={cn(
         "relative h-auto rounded-md border px-3 py-3 text-left overflow-hidden justify-start",
         active
-          ? "border-brand/40 bg-brand/8 text-ink"
-          : "border-border bg-muted/20 text-ink/70 hover:bg-muted/30 hover:text-ink",
+          ? "border-brand/40 bg-brand/8 text-foreground"
+          : "border-border bg-muted/20 text-foreground/70 hover:bg-muted/30 hover:text-foreground",
       )}
     >
       {active && (

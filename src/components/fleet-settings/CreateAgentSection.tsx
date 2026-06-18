@@ -44,9 +44,9 @@ export default function CreateAgentSection({
   };
 
   return (
-    <motion.div layout className="pt-4 mt-4 border-t border-black/8 border-dashed space-y-3">
+    <motion.div layout className="pt-4 mt-4 border-t border-white/8 border-dashed space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="wl-label text-ink normal-case tracking-[0.18em]">
+        <h3 className="wl-label text-foreground normal-case tracking-[0.18em]">
           {isPersonal ? "Create your assistant" : "Create a new agent"}
         </h3>
         <div className="flex items-center gap-1.5">
@@ -70,7 +70,7 @@ export default function CreateAgentSection({
         aria-label="Agent channel"
         variant="soft"
         fullWidth
-        className="w-full wl-panel border border-black/10"
+        className="w-full wl-panel border border-white/10"
         options={[
           { value: "voice", label: "Voice" },
           { value: "email", label: "Email" },
@@ -89,7 +89,7 @@ export default function CreateAgentSection({
             <Select value={newAgentRole} onValueChange={(v) => setNewAgentRole(v as RoleValue)}>
               <SelectTrigger
                 aria-label="Business role"
-                className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-3 pr-7 py-2 text-ink h-auto"
+                className="w-full text-xs bg-black/5 border border-white/10 rounded-md pl-3 pr-7 py-2 text-foreground h-auto"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -109,20 +109,22 @@ export default function CreateAgentSection({
         <div className="space-y-1.5">
           <label className="wl-label-muted">
             Agent ID{" "}
-            <span className="text-ink/40 normal-case tracking-normal">(lowercase, no spaces)</span>
+            <span className="text-foreground/55 normal-case tracking-normal">
+              (lowercase, no spaces)
+            </span>
           </label>
           <Input
             type="text"
             placeholder="e.g. sales-bot-1"
             value={newAgentId}
             onChange={(e) => setNewAgentId(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-            className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 font-mono"
+            className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 font-mono"
           />
         </div>
         <div className="space-y-1.5">
           <label className="wl-label-muted">
             Agent name{" "}
-            <span className="text-ink/40 normal-case tracking-normal">
+            <span className="text-foreground/55 normal-case tracking-normal">
               (what callers will hear)
             </span>
           </label>
@@ -131,7 +133,7 @@ export default function CreateAgentSection({
             placeholder="e.g. Sophie"
             value={newAgentName}
             onChange={(e) => setNewAgentName(e.target.value)}
-            className="w-full text-sm bg-black/5 border border-black/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
+            className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
           />
         </div>
       </div>

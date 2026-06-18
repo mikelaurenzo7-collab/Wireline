@@ -1285,7 +1285,7 @@ export default function DirectorWorkspace({
               </span>
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-ink leading-tight tracking-[-0.01em] truncate">
+              <p className="text-[13px] font-semibold text-foreground leading-tight tracking-[-0.01em] truncate">
                 Assistant
               </p>
               <p className="wl-label text-muted leading-tight truncate">
@@ -1374,7 +1374,7 @@ export default function DirectorWorkspace({
         >
           {loadDegraded && !isLoading && (
             <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-brand/20 bg-brand/[0.06] px-3 py-2">
-              <p className="wl-micro-meta text-ink/80 dark:text-foreground/85">
+              <p className="wl-micro-meta text-foreground/80 dark:text-foreground/85">
                 {DIRECTOR_SESSION_COPY.degradedNotice}
               </p>
               <ShadButton
@@ -1390,7 +1390,7 @@ export default function DirectorWorkspace({
             </div>
           )}
           {!isLoading && visibleMessages.length > 0 && (
-            <p className="mb-3 rounded-md border border-border bg-cream-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
+            <p className="mb-3 rounded-md border border-border bg-card-50/80 px-3 py-2 wl-micro-meta leading-relaxed text-muted dark:bg-muted/10">
               {DIRECTOR_SESSION_COPY.sessionHint}
               {pendingApprovalCount > 0 ? (
                 <>
@@ -1409,14 +1409,12 @@ export default function DirectorWorkspace({
                   <LoadingDots />
                 </div>
               </SignalOrbFrame>
-              <p className="text-eyebrow font-semibold tracking-[0.18em] text-ink/80">
+              <p className="text-eyebrow font-semibold tracking-[0.18em] text-foreground/80">
                 {DIRECTOR_LOADING_COPY.headline}
               </p>
               <p className="wl-micro-meta--muted">{DIRECTOR_LOADING_COPY.sub}</p>
             </div>
-          ) : visibleMessages.length === 0 ? (
-            null
-          ) : (
+          ) : visibleMessages.length === 0 ? null : (
             <div
               role="log"
               aria-live="polite"
@@ -1497,7 +1495,7 @@ export default function DirectorWorkspace({
                             : cn(
                                 WL_DIRECTOR_CLASSES.directorBubble,
                                 WL_DIRECTOR_CLASSES.assistantMessage,
-                                "text-ink dark:text-foreground rounded-bl-sm",
+                                "text-foreground dark:text-foreground rounded-bl-sm",
                               ),
                         )}
                       >
@@ -1832,7 +1830,7 @@ export default function DirectorWorkspace({
                                 key={p.conceptId}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="group relative rounded-md border border-brand/12 bg-paper/95 dark:bg-velvet/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
+                                className="group relative rounded-md border border-brand/12 bg-card/95 dark:bg-velvet/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand/25 transition-all duration-300"
                               >
                                 {/* Image canvas with hover overlay */}
                                 <div className="relative overflow-hidden wl-checkerboard bg-[length:16px_16px]">
@@ -1848,7 +1846,7 @@ export default function DirectorWorkspace({
                                         <a
                                           href={p.previewDataUrl}
                                           download={`${p.title || "concept"}.png`}
-                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper/95 backdrop-blur-sm wl-micro-meta font-semibold text-ink shadow-xl hover:bg-paper transition-colors"
+                                          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-card/95 backdrop-blur-sm wl-micro-meta font-semibold text-foreground shadow-xl hover:bg-card transition-colors"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           <Download className="w-3.5 h-3.5" />
@@ -1858,7 +1856,7 @@ export default function DirectorWorkspace({
                                           <a
                                             href={`data:image/svg+xml;base64,${btoa(p.svg)}`}
                                             download={`${p.title || "concept"}.svg`}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-paper/85 backdrop-blur-sm wl-micro-meta font-medium text-ink/80 hover:bg-paper/95 transition-colors"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/85 backdrop-blur-sm wl-micro-meta font-medium text-foreground/80 hover:bg-card/95 transition-colors"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <Download className="w-3 h-3" />
@@ -1893,7 +1891,7 @@ export default function DirectorWorkspace({
                                 {/* Info & quick actions */}
                                 <div className="px-3.5 py-3 space-y-2.5 border-t border-brand/8">
                                   <div>
-                                    <p className="text-[12px] font-semibold text-ink leading-tight">
+                                    <p className="text-[12px] font-semibold text-foreground leading-tight">
                                       {p.title}
                                     </p>
                                     <p className="wl-micro-meta--muted line-clamp-2 mt-0.5 leading-relaxed">

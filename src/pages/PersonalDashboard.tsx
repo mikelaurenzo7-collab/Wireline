@@ -15,7 +15,7 @@ import { PageMeta } from "../lib/page-meta";
 
 export default function PersonalDashboard() {
   return (
-    <div className="flex-1 min-h-0 scroll-viewport bg-paper pt-8 pb-20 px-6 sm:px-10 lg:px-12">
+    <div className="flex-1 min-h-0 scroll-viewport bg-card pt-8 pb-20 px-6 sm:px-10 lg:px-12">
       <PageMeta title="Personal Assistant — Wireline" />
 
       <div className="max-w-5xl mx-auto">
@@ -24,9 +24,9 @@ export default function PersonalDashboard() {
             <div className="w-10 h-10 rounded-full bg-brand/10 text-brand flex items-center justify-center">
               <User className="w-5 h-5" />
             </div>
-            <h1 className="font-display text-3xl font-semibold text-ink">My Assistant</h1>
+            <h1 className="font-display text-3xl font-semibold text-foreground">My Assistant</h1>
           </div>
-          <p className="text-ink/70 text-lg ml-13 leading-relaxed">
+          <p className="text-foreground/70 text-lg ml-13 leading-relaxed">
             Manage your personal AI, phone number, and mobile integrations.
           </p>
         </header>
@@ -38,7 +38,7 @@ export default function PersonalDashboard() {
             <motion.section
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-ink/10 rounded-xl overflow-hidden shadow-sm"
             >
               <div className="p-6 border-b border-ink/10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -57,26 +57,26 @@ export default function PersonalDashboard() {
               <div className="p-6">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink/40 mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/55 mb-2">
                       Name
                     </p>
-                    <p className="text-ink font-medium">Jordan</p>
+                    <p className="text-foreground font-medium">Jordan</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink/40 mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/55 mb-2">
                       Voice
                     </p>
                     <div className="flex items-center gap-2">
-                      <Mic className="w-4 h-4 text-ink/50" />
-                      <span className="text-ink font-medium">ElevenLabs - Professional</span>
+                      <Mic className="w-4 h-4 text-foreground/50" />
+                      <span className="text-foreground font-medium">ElevenLabs - Professional</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/50 mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50 mb-3">
                     Greeting
                   </p>
-                  <div className="pl-4 py-1 text-ink/90 italic border-l-[3px] border-brand/40 text-sm leading-relaxed">
+                  <div className="pl-4 py-1 text-foreground/90 italic border-l-[3px] border-brand/40 text-sm leading-relaxed">
                     "Hi, you've reached Michael's personal AI assistant. He's unavailable right now,
                     but how can I help you?"
                   </div>
@@ -89,7 +89,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-ink/10 rounded-xl overflow-hidden shadow-sm"
             >
               <div className="p-6 border-b border-ink/10 flex items-center gap-3">
                 <div className="p-2 rounded-md bg-brand/5 text-brand">
@@ -98,7 +98,7 @@ export default function PersonalDashboard() {
                 <h2 className="font-semibold text-lg">Mobile Ecosystem</h2>
               </div>
               <div className="p-6">
-                <p className="text-ink/80 leading-relaxed mb-6">
+                <p className="text-foreground/80 leading-relaxed mb-6">
                   Take your assistant everywhere. Setup Siri Shortcuts and download the native apps
                   for a seamless experience.
                 </p>
@@ -107,18 +107,18 @@ export default function PersonalDashboard() {
                   {/* Siri Setup */}
                   <div className="flex items-start gap-4 p-4 rounded-lg border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
                     <div className="mt-1 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center shrink-0">
-                      <Mic className="w-4 h-4 text-ink/60" />
+                      <Mic className="w-4 h-4 text-foreground/60" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-ink mb-1">Siri Shortcuts</h3>
-                      <p className="text-sm text-ink/60 mb-3">
+                      <h3 className="font-medium text-foreground mb-1">Siri Shortcuts</h3>
+                      <p className="text-sm text-foreground/60 mb-3">
                         Say "Hey Siri, Ask Wireline" to instantly talk to your agent from your lock
                         screen, AirPods, or CarPlay.
                       </p>
-                      <code className="block bg-ink/5 px-3 py-2 rounded text-xs font-mono text-ink/80 break-all select-all">
+                      <code className="block bg-ink/5 px-3 py-2 rounded text-xs font-mono text-foreground/80 break-all select-all">
                         wireline://ask
                       </code>
-                      <p className="text-[11px] text-ink/50 mt-2">
+                      <p className="text-[11px] text-foreground/50 mt-2">
                         Create a new shortcut in the Apple Shortcuts app using this URL scheme.
                       </p>
                     </div>
@@ -127,11 +127,11 @@ export default function PersonalDashboard() {
                   {/* App Download */}
                   <div className="flex items-start gap-4 p-4 rounded-lg border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
                     <div className="mt-1 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center shrink-0">
-                      <Globe className="w-4 h-4 text-ink/60" />
+                      <Globe className="w-4 h-4 text-foreground/60" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-ink mb-1">Native Apps & Widgets</h3>
-                      <p className="text-sm text-ink/60">
+                      <h3 className="font-medium text-foreground mb-1">Native Apps & Widgets</h3>
+                      <p className="text-sm text-foreground/60">
                         Download the iOS or Android app to get interactive lock screen widgets, push
                         notifications for important calls, and instant access to transcripts.
                       </p>
@@ -152,7 +152,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-ink/10 rounded-xl overflow-hidden shadow-sm"
             >
               <div className="p-5 border-b border-ink/10 flex items-center gap-3">
                 <div className="p-2 rounded-md bg-brand/5 text-brand">
@@ -161,7 +161,7 @@ export default function PersonalDashboard() {
                 <h2 className="font-semibold">Call Routing</h2>
               </div>
               <div className="p-5">
-                <p className="text-sm text-ink/80 leading-relaxed mb-4">
+                <p className="text-sm text-foreground/80 leading-relaxed mb-4">
                   Forward unanswered calls from your personal cell directly to your AI assistant.
                 </p>
                 <div className="p-4 bg-brand/5 rounded-md border border-brand/10 text-center mb-5">
@@ -183,7 +183,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="wl-panel bg-paper border border-ink/10 rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-ink/10 rounded-xl overflow-hidden shadow-sm"
             >
               <div className="p-5 border-b border-ink/10 flex items-center gap-3">
                 <div className="p-2 rounded-md bg-brand/5 text-brand">
@@ -194,16 +194,16 @@ export default function PersonalDashboard() {
               <div className="p-5">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-ink/80">Calls Handled Today</span>
-                    <span className="font-semibold text-ink">3</span>
+                    <span className="text-sm text-foreground/80">Calls Handled Today</span>
+                    <span className="font-semibold text-foreground">3</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-ink/80">Average Duration</span>
-                    <span className="font-semibold text-ink">1m 12s</span>
+                    <span className="text-sm text-foreground/80">Average Duration</span>
+                    <span className="font-semibold text-foreground">1m 12s</span>
                   </div>
                   <Link
                     to="/contact"
-                    className="block text-center w-full py-2.5 mt-3 bg-paper-warm text-ink border border-ink/10 hover:border-brand/30 hover:bg-brand/5 rounded-md text-sm font-semibold transition-colors"
+                    className="block text-center w-full py-2.5 mt-3 bg-card-warm text-foreground border border-ink/10 hover:border-brand/30 hover:bg-brand/5 rounded-md text-sm font-semibold transition-colors"
                   >
                     View Call Logs
                   </Link>

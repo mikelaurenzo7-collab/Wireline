@@ -133,7 +133,7 @@ export default function TrustSignals() {
         {VERTICALS.map(({ icon: Icon, label }) => (
           <div
             key={label}
-            className="group flex flex-col items-center gap-1.5 rounded-md border border-black/5 bg-paper/80 py-2.5 px-1 transition-all hover:border-brand/20 hover:bg-paper hover:-translate-y-0.5"
+            className="group flex flex-col items-center gap-1.5 rounded-md border border-white/5 bg-card/80 py-2.5 px-1 transition-all hover:border-brand/20 hover:bg-card hover:-translate-y-0.5"
             title={label}
           >
             <Icon
@@ -154,12 +154,12 @@ export default function TrustSignals() {
           return (
             <div
               key={label}
-              className="rounded-md border border-black/5 bg-paper/60 p-2.5 transition-all hover:bg-paper hover:border-black/10"
+              className="rounded-md border border-white/5 bg-card/60 p-2.5 transition-all hover:bg-card hover:border-white/10"
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <Icon className="w-3.5 h-3.5 text-ink/70" strokeWidth={1.75} />
+                <Icon className="w-3.5 h-3.5 text-foreground/70" strokeWidth={1.75} />
                 <span
-                  className={`text-[7px] uppercase tracking-[0.22em] font-semibold px-1.5 py-0.5 rounded-full border leading-none ${tone.pill}`}
+                  className={`text-[10px] uppercase tracking-[0.22em] font-semibold px-1.5 py-0.5 rounded-full border leading-none ${tone.pill}`}
                 >
                   <span
                     className={`inline-block w-1 h-1 rounded-full mr-1 align-middle ${tone.dot}`}
@@ -167,7 +167,9 @@ export default function TrustSignals() {
                   {tone.label}
                 </span>
               </div>
-              <p className="text-[11px] font-semibold text-ink leading-none mb-0.5">{label}</p>
+              <p className="text-[11px] font-semibold text-foreground leading-none mb-0.5">
+                {label}
+              </p>
               <p className="text-[10px] text-muted/70 leading-tight">{detail}</p>
             </div>
           );
@@ -180,25 +182,25 @@ export default function TrustSignals() {
       <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.32em] text-muted/70">
         <a
           href="/status"
-          className="inline-flex items-center gap-1.5 hover:text-ink transition-colors"
+          className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
         >
           <span className="w-1.5 h-1.5 rounded-full dot-online" />
           System status
         </a>
         <span className="text-muted/30">·</span>
-        <a href="/security" className="hover:text-ink transition-colors">
+        <a href="/security" className="hover:text-foreground transition-colors">
           Security
         </a>
         <span className="text-muted/30">·</span>
-        <a href="/changelog" className="hover:text-ink transition-colors">
+        <a href="/changelog" className="hover:text-foreground transition-colors">
           Changelog
         </a>
         <span className="text-muted/30">·</span>
-        <a href="/pricing" className="hover:text-ink transition-colors">
+        <a href="/pricing" className="hover:text-foreground transition-colors">
           Pricing
         </a>
         <span className="text-muted/30">·</span>
-        <a href="/compare" className="hover:text-ink transition-colors">
+        <a href="/compare" className="hover:text-foreground transition-colors">
           Compare
         </a>
       </div>

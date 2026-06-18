@@ -49,7 +49,7 @@ export function SubscriptionPanel({ onDeleteAccount }: SubscriptionPanelProps) {
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                 placeholder="DELETE MY ACCOUNT"
-                className="w-full h-9 px-3 rounded-md bg-black/5 border border-rose-500/20 text-xs font-mono text-ink outline-none focus-visible:ring-rose-500/50 transition-all"
+                className="w-full h-9 px-3 rounded-md bg-black/5 border border-rose-500/20 text-xs font-mono text-foreground outline-none focus-visible:ring-rose-500/50 transition-all"
               />
               <ShadButton
                 onClick={handleDelete}

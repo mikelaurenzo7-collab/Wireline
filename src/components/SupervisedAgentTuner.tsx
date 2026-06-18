@@ -188,7 +188,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
             <Brain className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-[11px] font-medium text-ink uppercase tracking-[0.28em]">
+            <h3 className="text-[11px] font-medium text-foreground uppercase tracking-[0.28em]">
               Training Buffer
             </h3>
             <p className="wl-label-muted">Promote observations to directives</p>
@@ -197,7 +197,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
         <div className="flex items-center gap-3">
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-ink/70 uppercase tracking-wider">
+              <span className="text-[11px] text-foreground/70 uppercase tracking-wider">
                 {selectedIds.size} selected
               </span>
               <ShadButton
@@ -316,7 +316,7 @@ export default function SupervisedAgentTuner({ agentId }: { agentId: string }) {
                         </div>
                       </div>
 
-                      <p className="text-sm text-ink/90 leading-relaxed font-mono bg-brand/[0.05] rounded-md px-3 py-2.5 border border-brand/15">
+                      <p className="text-sm text-foreground/90 leading-relaxed font-mono bg-brand/[0.05] rounded-md px-3 py-2.5 border border-brand/15">
                         {lesson.lesson}
                       </p>
 

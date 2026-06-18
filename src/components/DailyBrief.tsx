@@ -103,8 +103,10 @@ export default function DailyBrief() {
             <Brain className="w-7 h-7 text-on-brand" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-display italic text-ink leading-tight">Daily Brief is offline</h3>
-            <p className="text-sm text-ink/65">
+            <h3 className="text-xl font-display italic text-foreground leading-tight">
+              Daily Brief is offline
+            </h3>
+            <p className="text-sm text-foreground/65">
               Contact your administrator to enable the Wireline Daily Brief.
             </p>
           </div>
@@ -181,7 +183,10 @@ export default function DailyBrief() {
               )}
             >
               <Sun
-                className={cn("w-5 h-5", brief.mood === "yellow" ? "text-ink" : "text-on-brand")}
+                className={cn(
+                  "w-5 h-5",
+                  brief.mood === "yellow" ? "text-foreground" : "text-on-brand",
+                )}
               />
             </div>
             <div>
@@ -196,7 +201,7 @@ export default function DailyBrief() {
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="w-2 h-2 rounded-full wl-mood-dot" data-mood={brief.mood} />
-                <span className="wl-label-muted text-ink/70">{moodLabel}</span>
+                <span className="wl-label-muted text-foreground/70">{moodLabel}</span>
               </div>
             </div>
           </div>
@@ -245,10 +250,10 @@ export default function DailyBrief() {
         <div className="relative z-10 p-7 space-y-7">
           {/* Headline */}
           <div className="space-y-3">
-            <h2 className="text-2xl md:text-3xl font-display italic text-ink leading-tight tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-display italic text-foreground leading-tight tracking-tight">
               {brief.headline}
             </h2>
-            <p className="text-ink/70 text-sm md:text-base leading-relaxed max-w-3xl">
+            <p className="text-foreground/70 text-sm md:text-base leading-relaxed max-w-3xl">
               {brief.key_metrics_takeaway}
             </p>
           </div>
@@ -302,12 +307,12 @@ export default function DailyBrief() {
                         a.urgency === "high" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                         a.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
-                        a.urgency === "low" && "bg-muted text-ink/50 border border-border",
+                        a.urgency === "low" && "bg-muted text-foreground/50 border border-border",
                       )}
                     >
                       {a.urgency}
                     </span>
-                    <p className="text-sm text-ink/90 flex-1">{a.description}</p>
+                    <p className="text-sm text-foreground/90 flex-1">{a.description}</p>
                   </div>
                 ))}
               </div>
@@ -345,7 +350,9 @@ function Quick({
     <div className={cn(WL_STAT_CLASSES.tile, "p-4")}>
       <div className={cn(WL_STAT_CLASSES.label, "mb-2 mt-0")}>{label}</div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className={cn(WL_STAT_CLASSES.valueInk, "text-3xl font-display italic")}>{value}</span>
+        <span className={cn(WL_STAT_CLASSES.valueInk, "text-3xl font-display italic")}>
+          {value}
+        </span>
         {showDelta && (
           <span
             className={cn(
@@ -376,7 +383,7 @@ function Section({
       <h4 className="wl-label text-brand mb-3 flex items-center gap-2">
         <Icon className="w-3 h-3" aria-hidden /> {title}
       </h4>
-      <ul className="space-y-1.5 text-sm text-ink/85 list-disc list-inside marker:text-brand/50">
+      <ul className="space-y-1.5 text-sm text-foreground/85 list-disc list-inside marker:text-brand/50">
         {children}
       </ul>
     </div>
@@ -507,7 +514,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 ? "bg-muted/40 border-border text-muted/70 cursor-not-allowed"
                 : enabled
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "bg-muted/20 border border-border text-ink/80 hover:border-border/60 hover:bg-muted/40",
+                  : "bg-muted/20 border border-border text-foreground/80 hover:border-border/60 hover:bg-muted/40",
             )}
           >
             <div
@@ -522,10 +529,10 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
               <div className="text-xs font-medium">
                 Send the daily brief by email at the time below (UTC)
               </div>
-              <div className="wl-micro-meta leading-snug mt-0.5 text-ink/65">
+              <div className="wl-micro-meta leading-snug mt-0.5 text-foreground/65">
                 Background scheduler ticks every 5 minutes. Emails are sent through{" "}
                 {gmailAddress ? (
-                  <span className="font-mono text-ink/75">{gmailAddress}</span>
+                  <span className="font-mono text-foreground/75">{gmailAddress}</span>
                 ) : (
                   "your connected Gmail account"
                 )}
@@ -543,7 +550,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 type="time"
                 value={sendAt}
                 onChange={(e) => setSendAt(e.target.value)}
-                className="w-full h-11 px-4 rounded-md bg-muted/20 border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all font-mono"
+                className="w-full h-11 px-4 rounded-md bg-muted/20 border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all font-mono"
               />
               <span className="wl-micro-meta opacity-90 leading-snug">
                 13:00 UTC ≈ 9 AM ET / 6 AM PT. Convert your local time before saving.
@@ -561,7 +568,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setRecipient(e.target.value.trimStart())}
                 onBlur={(e) => setRecipient(e.target.value.trim())}
                 placeholder="you@example.com"
-                className="w-full h-11 px-4 rounded-md bg-muted/20 border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                className="w-full h-11 px-4 rounded-md bg-muted/20 border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all"
               />
             </label>
           </div>

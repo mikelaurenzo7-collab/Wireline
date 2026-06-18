@@ -148,13 +148,13 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div className="font-display italic text-5xl sm:text-6xl text-brand leading-none shrink-0 stat-shimmer">
             {cfg.statValue}
           </div>
-          <p className="text-sm sm:text-base text-ink/80 leading-relaxed">{cfg.statLabel}</p>
+          <p className="text-sm sm:text-base text-foreground/80 leading-relaxed">{cfg.statLabel}</p>
         </motion.div>
       </section>
 
       {/* Pain points */}
       <section className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
-        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8">
+        <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-8">
           What your AI agent handles
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
@@ -172,8 +172,8 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 <div className="w-10 h-10 flex items-center justify-center mb-3 bg-brand">
                   <Icon className="w-5 h-5 text-on-brand" strokeWidth={2} />
                 </div>
-                <h3 className="font-display italic text-xl text-ink mb-1.5">{pain.title}</h3>
-                <p className="text-sm text-ink/70 leading-relaxed">{pain.body}</p>
+                <h3 className="font-display italic text-xl text-foreground mb-1.5">{pain.title}</h3>
+                <p className="text-sm text-foreground/70 leading-relaxed">{pain.body}</p>
               </motion.div>
             );
           })}
@@ -183,7 +183,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       {/* Script preview */}
       <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         <p className="app-section-title/70 mb-3">What callers hear</p>
-        <blockquote className="wl-panel border-l-4 border-brand p-6 sm:p-8 italic text-lg sm:text-xl text-ink/85 leading-relaxed">
+        <blockquote className="wl-panel border-l-4 border-brand p-6 sm:p-8 italic text-lg sm:text-xl text-foreground/85 leading-relaxed">
           {cfg.scriptPreview}
         </blockquote>
         <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
@@ -200,7 +200,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <p className="text-[10px] uppercase tracking-[0.4em] text-brand mb-3 font-medium">
           Frequently asked
         </p>
-        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-8 text-balance">
+        <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-8 text-balance">
           The things {cfg.eyebrow.toLowerCase().replace(/^for /, "")} ask before they sign up.
         </h2>
         <div className="space-y-3">
@@ -217,7 +217,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 <span className="text-[10px] uppercase tracking-[0.3em] text-brand/70 mt-1 shrink-0 font-mono">
                   Q{i + 1}
                 </span>
-                <span className="flex-1 text-sm sm:text-base text-ink font-medium leading-snug">
+                <span className="flex-1 text-sm sm:text-base text-foreground font-medium leading-snug">
                   {faq.q}
                 </span>
                 <span
@@ -227,7 +227,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                   +
                 </span>
               </summary>
-              <div className="px-5 pb-4 pl-4 md:pl-[58px] text-sm text-ink/75 leading-relaxed">
+              <div className="px-5 pb-4 pl-4 md:pl-[58px] text-sm text-foreground/75 leading-relaxed">
                 {faq.a}
               </div>
             </motion.details>
@@ -237,10 +237,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
 
       {/* Bottom CTA */}
       <section className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-24 text-center">
-        <h2 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 text-balance">
+        <h2 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 text-balance">
           Try it on your business this week.
         </h2>
-        <p className="text-sm sm:text-base text-ink/70 max-w-xl mx-auto mb-6 leading-relaxed">
+        <p className="text-sm sm:text-base text-foreground/70 max-w-xl mx-auto mb-6 leading-relaxed">
           14-day free trial. No credit card. We'll port your business number for free if you want to
           take it production.
         </p>
@@ -254,7 +254,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           </CtaLink>
           <a
             href={cfg.secondaryCta.href}
-            className="inline-flex items-center gap-2 px-5 py-3 wl-panel border border-border text-ink text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-3 wl-panel border border-border text-foreground text-[11px] uppercase tracking-[0.3em] font-medium hover:border-brand/40 transition-all"
           >
             <Phone className="w-4 h-4" />
             {cfg.secondaryCta.label}
@@ -283,7 +283,7 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
             Built for every service business
           </p>
-          <p className="text-sm sm:text-base text-ink/80 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-foreground/80 leading-relaxed max-w-2xl mx-auto">
             Wireline runs the same way for clinics, agencies, contractors, retail, insurance,
             finance, hospitality, and SaaS. We lead the conversation with{" "}
             {cfg.eyebrow.toLowerCase().replace(/^for /, "")} because the ROI is concrete and easy to

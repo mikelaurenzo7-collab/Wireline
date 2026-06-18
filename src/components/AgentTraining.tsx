@@ -283,7 +283,7 @@ export default function AgentTraining({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-paper/70 border-b-0">
+      <header className="shrink-0 px-3 md:px-4 py-2 sticky top-0 z-30 backdrop-blur-xl bg-card/70 border-b-0">
         {/* Director assists — deep-links that prefill Director chat with this
             agent focused. Replaces the old recipe pop-out modals (mobile-safe,
             nothing to fail loading). */}
@@ -295,7 +295,7 @@ export default function AgentTraining({
             <span className="wl-label text-brand whitespace-nowrap">
               {OPS_TRAINING_ASSISTS_COPY.eyebrow}
             </span>
-            <span className="hidden sm:inline text-[11px] text-ink/60 whitespace-nowrap">
+            <span className="hidden sm:inline text-[11px] text-foreground/60 whitespace-nowrap">
               — {OPS_TRAINING_ASSISTS_COPY.hint}
             </span>
           </span>
@@ -361,7 +361,7 @@ export default function AgentTraining({
                   "h-auto px-2.5 py-1.5 rounded-md border wl-label gap-1.5",
                   activeTab === tab.id
                     ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/15 hover:text-brand"
-                    : "wl-panel border-border text-muted hover:border-brand/25 hover:text-ink",
+                    : "wl-panel border-border text-muted hover:border-brand/25 hover:text-foreground",
                 )}
               >
                 <tab.icon className="w-3 h-3" />
@@ -402,8 +402,10 @@ export default function AgentTraining({
                       <Zap className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-display italic text-xl text-ink">Analysis engine</h3>
-                      <p className="wl-label text-ink/40">
+                      <h3 className="font-display italic text-xl text-foreground">
+                        Analysis engine
+                      </h3>
+                      <p className="wl-label text-foreground/55">
                         Find improvement opportunities from your calls
                       </p>
                     </div>
@@ -433,8 +435,8 @@ export default function AgentTraining({
                     className="space-y-3"
                   >
                     <div className="rounded-md bg-black/20 border border-white/8 p-4">
-                      <h4 className="wl-label text-ink/40 mb-2">Analysis</h4>
-                      <p className="font-display italic text-lg text-ink leading-snug">
+                      <h4 className="wl-label text-foreground/55 mb-2">Analysis</h4>
+                      <p className="font-display italic text-lg text-foreground leading-snug">
                         "{optSuggestions.analysis}"
                       </p>
                     </div>
@@ -447,7 +449,7 @@ export default function AgentTraining({
                               exit={{ opacity: 0, scale: 0.9 }}
                               className="rounded-md wl-panel border border-border p-3 flex flex-col justify-between gap-3"
                             >
-                              <p className="text-sm text-ink/90 leading-relaxed">"{s}"</p>
+                              <p className="text-sm text-foreground/90 leading-relaxed">"{s}"</p>
                               <ShadButton
                                 type="button"
                                 variant="outline"
@@ -486,8 +488,10 @@ export default function AgentTraining({
                       <Target className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-display italic text-xl text-ink">Personality</h3>
-                      <p className="wl-label text-ink/40">Base behavioral heuristics and tone</p>
+                      <h3 className="font-display italic text-xl text-foreground">Personality</h3>
+                      <p className="wl-label text-foreground/55">
+                        Base behavioral heuristics and tone
+                      </p>
                     </div>
                   </div>
                   {editingPersonality ? (
@@ -534,16 +538,16 @@ export default function AgentTraining({
                     <textarea
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-md bg-muted/20 border border-border text-sm text-ink outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-ink/40"
+                      className="w-full min-h-[180px] p-3 rounded-md bg-muted/20 border border-border text-sm text-foreground outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-foreground/55"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
                     <div className="p-4 rounded-md bg-black/20 border border-white/8">
-                      <p className="font-display italic text-xl md:text-2xl text-ink leading-snug">
+                      <p className="font-display italic text-xl md:text-2xl text-foreground leading-snug">
                         {personality ? (
                           `"${personality}"`
                         ) : (
-                          <span className="text-ink/40 not-italic text-base">
+                          <span className="text-foreground/55 not-italic text-base">
                             No personality set yet — click Edit to describe how your agent should
                             speak and behave.
                           </span>
@@ -560,8 +564,12 @@ export default function AgentTraining({
                 <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
-                      <h3 className="font-display italic text-lg text-ink leading-none">Rules</h3>
-                      <p className="wl-label text-ink/40 mt-0.5">Lines your agent never crosses</p>
+                      <h3 className="font-display italic text-lg text-foreground leading-none">
+                        Rules
+                      </h3>
+                      <p className="wl-label text-foreground/55 mt-0.5">
+                        Lines your agent never crosses
+                      </p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-500 wl-label leading-none">
                       Always-on
@@ -590,7 +598,7 @@ export default function AgentTraining({
                                       content: e.target.value,
                                     })
                                   }
-                                  className="w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink min-h-[80px] resize-none"
+                                  className="w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-foreground min-h-[80px] resize-none"
                                 />
                                 <div className="flex justify-end gap-1.5">
                                   <ShadButton
@@ -645,7 +653,7 @@ export default function AgentTraining({
                                       P{d.priority}
                                     </span>
                                   </div>
-                                  <div className="text-sm text-ink/90 leading-relaxed">
+                                  <div className="text-sm text-foreground/90 leading-relaxed">
                                     {d.content}
                                   </div>
                                 </div>
@@ -681,7 +689,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="wl-label text-ink/40">Add directive</label>
+                    <label className="wl-label text-foreground/55">Add directive</label>
                     <div className="flex gap-1.5">
                       <Input
                         type="text"
@@ -691,7 +699,7 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
                         placeholder="e.g. Never discuss competitor pricing"
-                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-ink placeholder:text-ink/40"
+                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-foreground placeholder:text-foreground/55"
                       />
                       <ShadButton
                         type="button"
@@ -713,10 +721,10 @@ export default function AgentTraining({
                 <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col">
                   <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-white/8">
                     <div>
-                      <h3 className="font-display italic text-lg text-ink leading-none">
+                      <h3 className="font-display italic text-lg text-foreground leading-none">
                         Fact archive
                       </h3>
-                      <p className="wl-label text-ink/40 mt-0.5">Knowledge base</p>
+                      <p className="wl-label text-foreground/55 mt-0.5">Knowledge base</p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand wl-label leading-none">
                       Factual
@@ -753,7 +761,7 @@ export default function AgentTraining({
                                       content: e.target.value,
                                     })
                                   }
-                                  className="w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink min-h-[80px] resize-none"
+                                  className="w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground min-h-[80px] resize-none"
                                 />
                                 <div className="flex justify-end gap-1.5">
                                   <ShadButton
@@ -783,7 +791,7 @@ export default function AgentTraining({
                               </div>
                             ) : (
                               <div className="flex gap-2 items-start justify-between">
-                                <div className="flex-1 text-sm text-ink/90 leading-relaxed">
+                                <div className="flex-1 text-sm text-foreground/90 leading-relaxed">
                                   {k.content}
                                 </div>
                                 <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity flex gap-1 shrink-0">
@@ -818,7 +826,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="wl-label text-ink/40">Add fact</label>
+                    <label className="wl-label text-foreground/55">Add fact</label>
                     <div className="flex gap-1.5">
                       <Input
                         type="text"
@@ -828,7 +836,7 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
                         placeholder="e.g. Our return policy is 30 days, no questions"
-                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40"
+                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
                       />
                       <ShadButton
                         type="button"
@@ -859,7 +867,7 @@ export default function AgentTraining({
                       <Sparkles className="w-3.5 h-3.5 text-on-brand" strokeWidth={2.5} />
                     </div>
                     <div>
-                      <h3 className="font-display italic text-lg text-ink leading-none">
+                      <h3 className="font-display italic text-lg text-foreground leading-none">
                         AI auto-calibration
                       </h3>
                       <p className="wl-label text-brand">Synthetic learning engine active</p>
@@ -872,10 +880,12 @@ export default function AgentTraining({
                         className="rounded-md bg-brand/8 border border-brand/20 p-3"
                       >
                         <div className="wl-label text-brand mb-2">Pattern learned from calls</div>
-                        <p className="text-sm text-ink/90 leading-relaxed">{lesson.lesson}</p>
+                        <p className="text-sm text-foreground/90 leading-relaxed">
+                          {lesson.lesson}
+                        </p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
-                          <Clock className="w-3 h-3 text-ink/40" />
-                          <span className="wl-label text-ink/40">
+                          <Clock className="w-3 h-3 text-foreground/55" />
+                          <span className="wl-label text-foreground/55">
                             {formatDate(lesson.created_at)}
                           </span>
                         </div>
@@ -956,8 +966,8 @@ export default function AgentTraining({
                     <PlayCircle className="w-10 h-10 text-brand" strokeWidth={1.25} />
                   </div>
                   <div>
-                    <h2 className="font-display italic text-4xl text-ink mb-2">Test call</h2>
-                    <p className="text-ink/40 text-sm leading-relaxed max-w-md mx-auto">
+                    <h2 className="font-display italic text-4xl text-foreground mb-2">Test call</h2>
+                    <p className="text-foreground/55 text-sm leading-relaxed max-w-md mx-auto">
                       Test how your agent responds in a safe practice run before it takes real
                       calls.
                     </p>
@@ -965,9 +975,9 @@ export default function AgentTraining({
                   <div className="rounded-md wl-panel border border-border p-5 text-left space-y-4 max-w-sm mx-auto w-full">
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-brand" />
-                      <h4 className="font-display italic text-base text-ink">Voice call</h4>
+                      <h4 className="font-display italic text-base text-foreground">Voice call</h4>
                     </div>
-                    <p className="text-[11px] text-ink/40 leading-relaxed">
+                    <p className="text-[11px] text-foreground/55 leading-relaxed">
                       Speak directly with your agent through your browser microphone. Tests the
                       exact voice and persona your callers will hear.
                     </p>

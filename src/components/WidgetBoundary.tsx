@@ -63,7 +63,7 @@ export default class WidgetBoundary extends Component<Props, State> {
         <div className="space-y-0.5">
           <p className="wl-label text-destructive">Widget unavailable</p>
           {this.props.label && (
-            <p className="text-[12px] text-ink font-medium">{this.props.label}</p>
+            <p className="text-[12px] text-foreground font-medium">{this.props.label}</p>
           )}
           <p className="text-caption max-w-[220px] mt-1">
             The rest of the page is fine. We&apos;ve logged the error.
@@ -75,7 +75,7 @@ export default class WidgetBoundary extends Component<Props, State> {
           variant="outline"
           size="sm"
           onClick={this.reset}
-          className="touch-press rounded-full wl-ops-chip hover:text-ink hover:border-brand/25 gap-1.5"
+          className="touch-press rounded-full wl-ops-chip hover:text-foreground hover:border-brand/25 gap-1.5"
         >
           <RefreshCw className="w-3 h-3" aria-hidden /> Retry
         </ShadButton>

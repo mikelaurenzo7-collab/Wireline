@@ -49,7 +49,7 @@ export function SectionHeader({
           <h3
             className={cn(
               editorial
-                ? "font-display italic text-[21px] leading-[1.05] text-ink tracking-[-0.01em]"
+                ? "font-display italic text-[21px] leading-[1.05] text-foreground tracking-[-0.01em]"
                 : WL_APP_CLASSES.proTitle,
             )}
           >

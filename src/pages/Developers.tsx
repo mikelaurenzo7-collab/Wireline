@@ -87,7 +87,7 @@ export default function Developers() {
 
       <div className="flex flex-col md:flex-row h-[calc(100vh-5rem)] overflow-hidden">
         {/* Left Pane: Documentation */}
-        <section className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto border-b md:border-b-0 md:border-r border-outline-variant/30 bg-paper">
+        <section className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto border-b md:border-b-0 md:border-r border-outline-variant/30 bg-card">
           <div className="px-6 py-10 sm:px-8 max-w-2xl mx-auto space-y-12">
             {/* Header */}
             <div>
@@ -97,10 +97,10 @@ export default function Developers() {
                   Core API v2.4
                 </span>
               </div>
-              <h1 className="font-display italic text-4xl sm:text-5xl text-ink mb-4 leading-tight">
+              <h1 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 leading-tight">
                 Peering Gateways
               </h1>
-              <p className="text-ink/75 text-sm sm:text-base leading-relaxed">
+              <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
                 Establish low-latency interconnects between private peering points and the Wireline
                 global backbone. Our editorial-grade API allows for programmatic route management
                 and real-time egress optimization.
@@ -114,7 +114,7 @@ export default function Developers() {
                   href={openApiUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-ink"
+                  className="flex items-center gap-2 text-foreground"
                 >
                   <BookOpen className="w-4 h-4" /> OpenAPI Spec
                   <ExternalLink className="w-3 h-3 opacity-55" />
@@ -134,12 +134,12 @@ export default function Developers() {
             </div>
 
             {/* Authentication guide */}
-            <div className="p-6 bg-paper-warm/40 border border-brand/20 rounded-md shadow-sm paper-texture">
+            <div className="p-6 bg-card-warm/40 border border-brand/20 rounded-md shadow-sm paper-texture">
               <div className="flex items-center gap-2.5 mb-4">
                 <ShieldCheck className="w-5 h-5 text-brand" />
-                <h2 className="font-display italic text-xl text-ink">Authentication</h2>
+                <h2 className="font-display italic text-xl text-foreground">Authentication</h2>
               </div>
-              <p className="text-ink/75 text-xs sm:text-sm leading-relaxed mb-4">
+              <p className="text-foreground/75 text-xs sm:text-sm leading-relaxed mb-4">
                 Every API request must include a Bearer token in the{" "}
                 <code className="bg-brand/10 border border-brand/20 px-1.5 py-0.5 rounded font-mono text-[11px] text-brand">
                   Authorization
@@ -153,18 +153,22 @@ export default function Developers() {
 
             {/* Getting Started steps */}
             <div>
-              <h2 className="font-display italic text-2xl text-ink mb-6">Getting Started</h2>
+              <h2 className="font-display italic text-2xl text-foreground mb-6">Getting Started</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {GETTING_STARTED.map((step) => {
                   const Icon = step.icon;
                   return (
                     <div
                       key={step.title}
-                      className="wl-panel border border-ink/[0.08] p-4 bg-paper rounded-sm"
+                      className="wl-panel border border-ink/[0.08] p-4 bg-card rounded-sm"
                     >
                       <Icon className="w-5 h-5 text-brand mb-3" />
-                      <h3 className="font-display italic text-base text-ink mb-1">{step.title}</h3>
-                      <p className="text-[11px] text-ink/70 leading-relaxed">{step.description}</p>
+                      <h3 className="font-display italic text-base text-foreground mb-1">
+                        {step.title}
+                      </h3>
+                      <p className="text-[11px] text-foreground/70 leading-relaxed">
+                        {step.description}
+                      </p>
                     </div>
                   );
                 })}
@@ -173,8 +177,8 @@ export default function Developers() {
 
             {/* Endpoint Reference */}
             <div className="pb-10">
-              <h2 className="font-display italic text-2xl text-ink mb-6">Key Endpoints</h2>
-              <div className="border border-outline-variant/40 divide-y divide-outline-variant/30 rounded-md overflow-hidden bg-paper shadow-sm">
+              <h2 className="font-display italic text-2xl text-foreground mb-6">Key Endpoints</h2>
+              <div className="border border-outline-variant/40 divide-y divide-outline-variant/30 rounded-md overflow-hidden bg-card shadow-sm">
                 {ENDPOINTS.map((ep) => (
                   <div
                     key={ep.path}
@@ -183,11 +187,11 @@ export default function Developers() {
                     <code className="text-[11px] font-mono text-brand font-semibold shrink-0 bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-sm">
                       {ep.path}
                     </code>
-                    <span className="text-xs text-ink/75">{ep.description}</span>
+                    <span className="text-xs text-foreground/75">{ep.description}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-center text-[10px] text-ink/50 mt-4 uppercase tracking-wider font-semibold">
+              <p className="text-center text-[10px] text-foreground/50 mt-4 uppercase tracking-wider font-semibold">
                 Full endpoint list available in the{" "}
                 <a
                   href={openApiUrl}
@@ -267,7 +271,7 @@ export default function Developers() {
 
             {/* Console Log output */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-white/40 text-[10px] uppercase tracking-wider font-semibold">
+              <div className="flex items-center justify-between text-white/55 text-[10px] uppercase tracking-wider font-semibold">
                 <span>Console Egress / Carrier Logs</span>
                 <span>Real-time</span>
               </div>
@@ -289,7 +293,7 @@ export default function Developers() {
           </div>
 
           {/* Terminal Footer Status */}
-          <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[10px] text-white/40 flex justify-between items-center z-10 font-mono">
+          <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[10px] text-white/55 flex justify-between items-center z-10 font-mono">
             <div className="flex gap-4">
               <span>PATH: /networks/peering</span>
               <span>LATENCY: 14ms</span>

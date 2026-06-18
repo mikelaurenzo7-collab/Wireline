@@ -37,7 +37,10 @@ function AgentContactCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span
-              className={cn("font-semibold text-ink truncate", landing ? "text-sm" : "text-[11px]")}
+              className={cn(
+                "font-semibold text-foreground truncate",
+                landing ? "text-sm" : "text-[11px]",
+              )}
             >
               {agent.name}
             </span>
@@ -66,7 +69,7 @@ function AgentContactCard({
           ) : (
             <a
               href={`tel:${agent.tel}`}
-              className="font-mono text-[11px] tabular-nums text-ink/90 hover:text-brand hover:underline underline-offset-2"
+              className="font-mono text-[11px] tabular-nums text-foreground/90 hover:text-brand hover:underline underline-offset-2"
               aria-label={`Call ${agent.name} at ${agent.display}`}
             >
               {agent.display}
@@ -80,7 +83,7 @@ function AgentContactCard({
       return (
         <a
           href={`tel:${agent.tel}`}
-          className="block rounded-md border border-black/8 bg-paper/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-paper active:scale-[0.99] transition-all"
+          className="block rounded-md border border-white/8 bg-card/70 px-3 py-3 min-h-[56px] hover:border-brand/30 hover:bg-card active:scale-[0.99] transition-all"
           aria-label={`Call ${agent.name} at ${agent.display}`}
         >
           {card}
@@ -89,14 +92,14 @@ function AgentContactCard({
     }
 
     return (
-      <div className="rounded-md border border-black/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
+      <div className="rounded-md border border-white/8 bg-white/65 px-2 py-1.5 hover:border-brand/20 transition-colors">
         {card}
       </div>
     );
   }
 
   return (
-    <div className="relative rounded-md p-3 overflow-hidden border border-black/8 bg-white/60">
+    <div className="relative rounded-md p-3 overflow-hidden border border-white/8 bg-white/60">
       <div className="flex items-start gap-3">
         <div
           className={cn(
@@ -124,12 +127,12 @@ function AgentContactCard({
             </span>
             <span className="text-caption font-medium truncate">{agent.name}</span>
           </div>
-          <p className="font-display italic text-sm leading-snug text-ink line-clamp-2 text-balance">
+          <p className="font-display italic text-sm leading-snug text-foreground line-clamp-2 text-balance">
             {agent.role}
           </p>
           <a
             href={`tel:${agent.tel}`}
-            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-ink underline-offset-2 hover:text-brand hover:underline"
+            className="mt-1 inline-flex min-h-[44px] items-center font-mono text-[13px] tabular-nums text-foreground underline-offset-2 hover:text-brand hover:underline"
             aria-label={`Call ${agent.name} at ${agent.display}`}
           >
             <span className="select-all">{agent.display}</span>

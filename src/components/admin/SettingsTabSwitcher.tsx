@@ -122,7 +122,7 @@ export default function SettingsTabSwitcher({
     >
       <div
         className={cn(
-          "app-tab-strip wl-subtab-strip flex items-center gap-0.5 wl-panel border border-black/8 w-max min-w-full",
+          "app-tab-strip wl-subtab-strip flex items-center gap-0.5 wl-panel border border-white/8 w-max min-w-full",
           density === "compact" ? "p-0.5 border-0 bg-transparent shadow-none" : "p-0.5",
         )}
       >
@@ -149,7 +149,7 @@ export default function SettingsTabSwitcher({
                     density === "compact"
                       ? "min-h-7 px-2 py-0.5 wl-label tracking-[0.08em]"
                       : "min-h-9 px-3 py-1.5 text-[10.5px] tracking-[0.12em]",
-                    active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
+                    active ? "app-tab-active" : "text-muted hover:text-foreground hover:bg-black/4",
                   )}
                 >
                   {active && (

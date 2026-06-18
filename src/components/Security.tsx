@@ -135,7 +135,7 @@ export default function Security() {
         <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
+            className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back home
           </Link>
@@ -177,7 +177,9 @@ export default function Security() {
               >
                 <div className="flex items-center gap-2.5 mb-2">
                   <Icon className="w-4 h-4 text-brand" strokeWidth={1.8} />
-                  <h2 className="font-display italic text-lg text-ink leading-tight">{title}</h2>
+                  <h2 className="font-display italic text-lg text-foreground leading-tight">
+                    {title}
+                  </h2>
                 </div>
                 <ul className="space-y-1.5 marketing-body">
                   {items.map((line, i) => (

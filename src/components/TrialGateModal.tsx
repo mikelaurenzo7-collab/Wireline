@@ -202,7 +202,7 @@ export default function TrialGateModal() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-3xl rounded-t-md sm:rounded-md bg-paper border border-border shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
+            className="relative w-full max-w-3xl rounded-t-md sm:rounded-md bg-card border border-border shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
           >
             <ShadButton
               type="button"
@@ -211,7 +211,7 @@ export default function TrialGateModal() {
               size="icon"
               onClick={() => setDetail(null)}
               aria-label="Close"
-              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full text-muted hover:text-ink hover:bg-muted/10 z-10 after:hidden"
+              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full text-muted hover:text-foreground hover:bg-muted/10 z-10 after:hidden"
             >
               <X className="w-4 h-4" />
             </ShadButton>
@@ -223,11 +223,13 @@ export default function TrialGateModal() {
               </div>
               <h2
                 id="trial-gate-title"
-                className="font-display italic text-2xl sm:text-3xl text-ink mb-2 text-balance"
+                className="font-display italic text-2xl sm:text-3xl text-foreground mb-2 text-balance"
               >
                 {title}
               </h2>
-              <p className="text-sm sm:text-base text-ink/75 max-w-xl leading-relaxed">{body}</p>
+              <p className="text-sm sm:text-base text-foreground/75 max-w-xl leading-relaxed">
+                {body}
+              </p>
             </div>
 
             <div className="px-6 sm:px-8 pb-6">
@@ -255,14 +257,18 @@ export default function TrialGateModal() {
                           Recommended
                         </div>
                       )}
-                      <div className="font-display italic text-lg text-ink mb-1">{tier.label}</div>
-                      <div className="flex items-baseline gap-1 mb-2">
-                        <span className="font-display italic text-2xl text-ink">${tier.price}</span>
-                        <span className="wl-label-muted/70">
-                          /mo
-                        </span>
+                      <div className="font-display italic text-lg text-foreground mb-1">
+                        {tier.label}
                       </div>
-                      <p className="text-[11px] text-ink/65 leading-relaxed mb-3">{tier.pitch}</p>
+                      <div className="flex items-baseline gap-1 mb-2">
+                        <span className="font-display italic text-2xl text-foreground">
+                          ${tier.price}
+                        </span>
+                        <span className="wl-label-muted/70">/mo</span>
+                      </div>
+                      <p className="text-[11px] text-foreground/65 leading-relaxed mb-3">
+                        {tier.pitch}
+                      </p>
                       <div className="inline-flex items-center gap-1.5 wl-label text-brand">
                         {isPending ? (
                           <>

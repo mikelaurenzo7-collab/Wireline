@@ -30,7 +30,7 @@ export default function WorkspaceTopBar({
   return (
     <header
       className={cn(
-        "workspace-top-bar sticky top-0 z-30 shrink-0 border-b border-black/[0.07] bg-paper/85 dark:bg-velvet/85 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.65)_inset] dark:shadow-[0_1px_0_rgba(255,255,255,0.05)_inset] transition-colors duration-200",
+        "workspace-top-bar sticky top-0 z-30 shrink-0 border-b border-white/[0.07] bg-card/85 dark:bg-velvet/85 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.65)_inset] dark:shadow-[0_1px_0_rgba(255,255,255,0.05)_inset] transition-colors duration-200",
         className,
       )}
     >
@@ -80,7 +80,7 @@ export default function WorkspaceTopBar({
                 size="icon"
                 disableAnimations
                 onClick={onShowShortcuts}
-                className="h-8 w-8 rounded-md text-muted hover:text-ink hover:bg-black/[0.04] touch-press hover:scale-[1.05]"
+                className="h-8 w-8 rounded-md text-muted hover:text-foreground hover:bg-black/[0.04] touch-press hover:scale-[1.05]"
                 aria-label="Keyboard shortcuts"
                 title="Keyboard shortcuts (?)"
               >
@@ -99,7 +99,7 @@ export default function WorkspaceTopBar({
           className={cn(
             WL_APP_CLASSES.bodyCaption,
             // Never truncate on mobile — allow natural wrap up to 2 lines; give breathing room
-            "px-3 pb-2 pt-0 sm:pt-0 border-t border-black/[0.05] sm:border-t-0 min-w-0 line-clamp-2 sm:line-clamp-2 text-pretty max-w-[calc(100%-1.5rem)]",
+            "px-3 pb-2 pt-0 sm:pt-0 border-t border-white/[0.05] sm:border-t-0 min-w-0 line-clamp-2 sm:line-clamp-2 text-pretty max-w-[calc(100%-1.5rem)]",
             WL_APP_CLASSES.pageContextAccent,
           )}
         >

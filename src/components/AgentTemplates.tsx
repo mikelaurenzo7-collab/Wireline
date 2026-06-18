@@ -408,7 +408,7 @@ function TemplateCard({
               className={cn(
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
-                  ? "bg-muted border border-border text-ink/70"
+                  ? "bg-muted border border-border text-foreground/70"
                   : "bg-brand/10 border-brand/30 text-brand",
                 alreadyDeployed && "hidden sm:inline-flex",
               )}
@@ -417,7 +417,7 @@ function TemplateCard({
             </span>
             {/* Extra badge — desktop only to reduce chip noise on mobile */}
             {template.badge && (
-              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-ink/70">
+              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-full bg-muted border border-border wl-label leading-none text-foreground/70">
                 {template.badge}
               </span>
             )}
@@ -426,10 +426,10 @@ function TemplateCard({
 
         {/* Name */}
         <div>
-          <h3 className="text-base font-semibold text-ink leading-tight tracking-[-0.01em]">
+          <h3 className="text-base font-semibold text-foreground leading-tight tracking-[-0.01em]">
             {template.name}
           </h3>
-          <p className="text-xs text-ink/70 leading-relaxed mt-1">{template.description}</p>
+          <p className="text-xs text-foreground/70 leading-relaxed mt-1">{template.description}</p>
         </div>
 
         {/* First-message speech bubble on hover */}
@@ -439,7 +439,7 @@ function TemplateCard({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
-              className="rounded-md p-3 border text-[11px] text-ink/80 leading-relaxed italic relative wl-accent-bubble"
+              className="rounded-md p-3 border text-[11px] text-foreground/80 leading-relaxed italic relative wl-accent-bubble"
             >
               <MessageCircle className="absolute -top-2 -left-1.5 w-4 h-4 wl-accent-text" />
               <span className="pl-2">&ldquo;{template.firstMessage}&rdquo;</span>
@@ -482,8 +482,8 @@ function CustomAgentCard() {
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-ink tracking-[-0.01em]">Custom Agent</h3>
-        <p className="text-xs text-ink/70 leading-relaxed max-w-[200px]">
+        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
+        <p className="text-xs text-foreground/70 leading-relaxed max-w-[200px]">
           Let Wireline Forge design a bespoke agent for your exact use case.
         </p>
       </div>
@@ -625,7 +625,7 @@ export default function AgentTemplates() {
             placeholder="Search templates…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-brand/50 text-ink placeholder:text-muted/70"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-muted/20 border border-border rounded-md outline-none focus:border-brand/50 text-foreground placeholder:text-muted/70"
           />
         </div>
 
@@ -643,7 +643,7 @@ export default function AgentTemplates() {
                 "rounded-full wl-label",
                 activeCategory === cat
                   ? "bg-brand/15 border-brand/40 text-brand"
-                  : "text-muted hover:text-ink hover:border-brand/25",
+                  : "text-muted hover:text-foreground hover:border-brand/25",
               )}
             >
               {cat}

@@ -108,7 +108,7 @@ export default function ComplianceChecklist() {
               item.done ? "border-brand/20 bg-brand/5" : "border-border bg-surface/40",
             )}
           >
-            <span className={item.done ? "text-ink" : "text-muted"}>{item.label}</span>
+            <span className={item.done ? "text-foreground" : "text-muted"}>{item.label}</span>
             {item.href ? (
               <Link
                 to={item.href}

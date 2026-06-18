@@ -143,7 +143,7 @@ function StaffRow({
         <Icon className="w-4 h-4" strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0 text-left">
-        <div className="font-display italic text-base text-ink leading-tight truncate">
+        <div className="font-display italic text-base text-foreground leading-tight truncate">
           {member.name}
         </div>
         <div className="wl-label-muted mt-0.5 truncate">{member.title}</div>
@@ -253,11 +253,11 @@ export default function FounderDashboard() {
             <ShadButton
               onClick={() => setSelected(null)}
               variant="ghost"
-              className="wl-label-muted hover:text-ink normal-case tracking-normal touch-press"
+              className="wl-label-muted hover:text-foreground normal-case tracking-normal touch-press"
             >
               ← All staff
             </ShadButton>
-            <span className="font-display italic text-sm text-ink truncate">
+            <span className="font-display italic text-sm text-foreground truncate">
               {selected.name}
               <span className={cn(WL_APP_CLASSES.bodyCaption, "not-italic font-sans ml-1.5")}>
                 · {selected.title}
@@ -354,7 +354,7 @@ export default function FounderDashboard() {
         <FounderOperatorConsole />
 
         {provisionedIds !== null && !allProvisioned && (
-          <div className="mb-5 rounded-md border border-brand/30 bg-brand/5 p-3 text-[12px] text-ink/80">
+          <div className="mb-5 rounded-md border border-brand/30 bg-brand/5 p-3 text-[12px] text-foreground/80">
             Some staff agents aren't provisioned yet. Run
             <code className="font-mono mx-1 text-[11px] bg-black/10 px-1.5 py-0.5 rounded">
               POST /api/admin/provision-wireline-agents
@@ -375,7 +375,7 @@ export default function FounderDashboard() {
               onChange={(e) => setBroadcast(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendBroadcast()}
               placeholder={OPS_FOUNDER.broadcastPlaceholder}
-              className="flex-1 bg-black/5 dark:bg-white/5 border border-border rounded-md px-3 py-2.5 text-sm text-ink outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
+              className="flex-1 bg-black/5 dark:bg-white/5 border border-border rounded-md px-3 py-2.5 text-sm text-foreground outline-none focus:border-brand/40 transition-colors placeholder:text-muted/70"
             />
             <ShadButton
               onClick={sendBroadcast}
@@ -410,7 +410,7 @@ export default function FounderDashboard() {
             <Link
               key={l.href}
               to={l.href}
-              className="touch-press wl-card-lift inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-ink hover:border-brand/30 transition-colors min-h-10"
+              className="touch-press wl-card-lift inline-flex items-center gap-2 px-3 py-2 rounded-md wl-panel border border-border text-[11px] text-foreground hover:border-brand/30 transition-colors min-h-10"
             >
               <l.icon className="w-3.5 h-3.5 text-brand" />
               {l.label}

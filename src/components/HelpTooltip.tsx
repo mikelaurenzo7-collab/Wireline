@@ -83,9 +83,11 @@ export function HelpTooltip({ content, title, placement = "top", children }: Hel
           >
             <div className="wl-panel-elevated rounded-md border px-3 py-2 shadow-xl wl-help-tooltip-surface">
               {title && (
-                <p className="wl-label font-semibold text-ink mb-1 leading-tight">{title}</p>
+                <p className="wl-label font-semibold text-foreground mb-1 leading-tight">{title}</p>
               )}
-              <p className="text-xs text-ink/70 leading-relaxed whitespace-normal">{content}</p>
+              <p className="text-xs text-foreground/70 leading-relaxed whitespace-normal">
+                {content}
+              </p>
             </div>
           </motion.div>
         )}

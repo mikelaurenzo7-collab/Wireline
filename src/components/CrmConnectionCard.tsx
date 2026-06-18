@@ -330,7 +330,7 @@ export default function CrmConnectionCard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>
-          <span className="wl-label text-ink/40">
+          <span className="wl-label text-foreground/55">
             {PROVIDERS.length - connectedCount} available
           </span>
           <ShadButton
@@ -394,7 +394,9 @@ export default function CrmConnectionCard() {
                         <div
                           className={cn(
                             "w-9 h-9 rounded-md flex items-center justify-center p-1.5 border shrink-0",
-                            s.connected ? styles.icon : "bg-muted border border-border text-muted/50",
+                            s.connected
+                              ? styles.icon
+                              : "bg-muted border border-border text-muted/50",
                           )}
                         >
                           {getIntegrationLogo(key) ?? (
@@ -403,7 +405,7 @@ export default function CrmConnectionCard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <div className="text-[11px] font-semibold text-ink">{label}</div>
+                            <div className="text-[11px] font-semibold text-foreground">{label}</div>
                             {s.connected && (
                               <CheckCircle2 className={cn("w-3 h-3", styles.check)} />
                             )}
@@ -435,7 +437,7 @@ export default function CrmConnectionCard() {
                                   href={s.instance_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-ink transition-colors"
+                                  className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
                                   title={`Open ${label}`}
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -509,7 +511,7 @@ export default function CrmConnectionCard() {
                             placeholder="your-store.myshopify.com"
                             spellCheck={false}
                             autoCapitalize="off"
-                            className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink placeholder:text-ink/40 outline-none focus:border-brand/40"
+                            className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/40"
                           />
                           {shopError ? (
                             <p className="wl-micro-meta text-rose-500 leading-snug">{shopError}</p>
@@ -542,7 +544,7 @@ export default function CrmConnectionCard() {
                             >
                               <SelectTrigger
                                 aria-label="Default Slack channel"
-                                className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
+                                className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
                               >
                                 <SelectValue placeholder="Select channel…" />
                               </SelectTrigger>
@@ -598,7 +600,7 @@ export default function CrmConnectionCard() {
                             >
                               <SelectTrigger
                                 aria-label="Default Teams team and channel"
-                                className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-ink h-auto"
+                                className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground h-auto"
                               >
                                 <SelectValue placeholder="Select team channel…" />
                               </SelectTrigger>

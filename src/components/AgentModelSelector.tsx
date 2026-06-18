@@ -35,7 +35,7 @@ const SPEED_LABEL: Record<VoiceModelSpeed, string> = {
 const SPEED_TONE: Record<VoiceModelSpeed, string> = {
   fastest: "text-emerald-600 bg-emerald-500/10",
   fast: "text-emerald-600 bg-emerald-500/10",
-  balanced: "text-ink/55 bg-ink/[0.05]",
+  balanced: "text-foreground/55 bg-ink/[0.05]",
   heavy: "text-amber-600 bg-amber-500/10",
 };
 
@@ -116,7 +116,7 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
 
   return (
     <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-3 space-y-3">
-      <div className="flex items-center gap-1.5 wl-label text-ink/55">
+      <div className="flex items-center gap-1.5 wl-label text-foreground/55">
         <Cpu className="w-2.5 h-2.5 text-brand" />
         Reasoning model
       </div>
@@ -150,7 +150,7 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
       </Select>
 
       {selectedOption?.note && (
-        <p className="wl-micro-meta leading-relaxed text-ink/45">{selectedOption.note}</p>
+        <p className="wl-micro-meta leading-relaxed text-foreground/60">{selectedOption.note}</p>
       )}
       {selectedOption?.latencyWarning && (
         <p className="wl-micro-meta leading-relaxed text-amber-600 flex items-start gap-1.5">
@@ -162,8 +162,13 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
       {/* Temperature — null inherits the archetype's tuned default. */}
       <div className="space-y-1.5 pt-1 border-t border-ink/[0.08]">
         <div className="flex items-center justify-between">
-          <label className="wl-label text-ink/55">Temperature</label>
-          <span className={cn("wl-micro-badge font-medium", usingDefaultTemp ? "text-ink/40" : "text-ink")}>
+          <label className="wl-label text-foreground/55">Temperature</label>
+          <span
+            className={cn(
+              "wl-micro-badge font-medium",
+              usingDefaultTemp ? "text-foreground/55" : "text-foreground",
+            )}
+          >
             {usingDefaultTemp ? "Default" : (temp as number).toFixed(2)}
           </span>
         </div>
@@ -187,7 +192,7 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
             disableAnimations
             onClick={() => onCommit({ llm_temperature: null })}
             disabled={usingDefaultTemp}
-            className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-ink/40"
+            className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/55"
           >
             <RefreshCw className="w-2.5 h-2.5" />
             Use default

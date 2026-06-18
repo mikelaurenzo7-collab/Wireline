@@ -123,7 +123,8 @@ function OAuthSignInButtons({
       if (!res.ok) {
         const serverMsg = extractServerErrorMessage(j);
         throw new Error(
-          serverMsg || `Could not start ${provider} sign-in (HTTP ${res.status}). Please try again.`,
+          serverMsg ||
+            `Could not start ${provider} sign-in (HTTP ${res.status}). Please try again.`,
         );
       }
       const url = j?.url;
@@ -178,14 +179,14 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-ink/10 bg-paper text-sm font-medium text-ink shadow-sm transition hover:border-brand/30 hover:bg-paper-warm/40 focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-55"
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-ink/10 bg-card text-sm font-medium text-foreground shadow-sm transition hover:border-brand/30 hover:bg-card-warm/40 focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-55"
           >
             {pending === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : p.mark}
             <span className="hidden sm:inline">{p.label}</span>
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-ink/45">
+      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-foreground/60">
         <span className="h-px flex-1 bg-ink/10" />
         <span>Email</span>
         <span className="h-px flex-1 bg-ink/10" />
@@ -349,7 +350,7 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <div className="auth-launch min-h-screen bg-paper text-ink flex flex-col relative overflow-hidden">
+      <div className="auth-launch min-h-screen bg-card text-foreground flex flex-col relative overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(circle_at_50%_0%,rgba(139,63,214,0.14),transparent_60%)]" />
         <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
@@ -359,10 +360,10 @@ export default function AuthPortal() {
               <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-brand">
                 Wireline account
               </p>
-              <h1 className="font-display text-4xl italic tracking-tight text-ink sm:text-5xl">
+              <h1 className="font-display text-4xl italic tracking-tight text-foreground sm:text-5xl">
                 {pageTitle}
               </h1>
-              <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-ink/65">
+              <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-foreground/65">
                 {pageDescription}
               </p>
               {isSignUp && intentLabel && (
@@ -372,14 +373,16 @@ export default function AuthPortal() {
               )}
             </div>
 
-            <div className="rounded-md border border-ink/10 bg-paper shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)]">
+            <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)]">
               {!isReset && (
                 <div className="grid grid-cols-2 border-b border-ink/10 p-1">
                   <button
                     type="button"
                     onClick={() => setIsSignUp(false)}
                     className={`min-h-[48px] rounded-sm text-sm font-semibold transition ${
-                      !isSignUp ? "bg-brand text-white shadow-sm" : "text-ink/65 hover:bg-ink/5 hover:text-ink"
+                      !isSignUp
+                        ? "bg-brand text-white shadow-sm"
+                        : "text-foreground/65 hover:bg-ink/5 hover:text-foreground"
                     }`}
                   >
                     Sign in
@@ -388,7 +391,9 @@ export default function AuthPortal() {
                     type="button"
                     onClick={() => setIsSignUp(true)}
                     className={`min-h-[48px] rounded-sm text-sm font-semibold transition ${
-                      isSignUp ? "bg-brand text-white shadow-sm" : "text-ink/65 hover:bg-ink/5 hover:text-ink"
+                      isSignUp
+                        ? "bg-brand text-white shadow-sm"
+                        : "text-foreground/65 hover:bg-ink/5 hover:text-foreground"
                     }`}
                   >
                     Create account
@@ -397,15 +402,17 @@ export default function AuthPortal() {
               )}
 
               <div className="p-6 sm:p-7">
-                {!isReset && <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />}
+                {!isReset && (
+                  <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />
+                )}
 
                 <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-5">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-ink" htmlFor="auth-email">
+                    <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
                       Email address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
                       <input
                         id="auth-email"
                         type="email"
@@ -414,7 +421,7 @@ export default function AuthPortal() {
                         spellCheck={false}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 w-full rounded-md border border-ink/12 bg-paper-warm/40 pl-10 pr-3 text-base text-ink outline-none transition placeholder:text-ink/35 focus:border-brand focus:ring-4 focus:ring-brand/12"
+                        className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
                         placeholder="you@company.com"
                       />
                     </div>
@@ -423,7 +430,10 @@ export default function AuthPortal() {
                   {!isReset && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-3">
-                        <label className="text-sm font-semibold text-ink" htmlFor="auth-password">
+                        <label
+                          className="text-sm font-semibold text-foreground"
+                          htmlFor="auth-password"
+                        >
                           Password
                         </label>
                         {!isSignUp && (
@@ -441,7 +451,7 @@ export default function AuthPortal() {
                         )}
                       </div>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/45" />
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
                         <input
                           id="auth-password"
                           type={showPassword ? "text" : "password"}
@@ -450,21 +460,28 @@ export default function AuthPortal() {
                           autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 w-full rounded-md border border-ink/12 bg-paper-warm/40 pl-10 pr-11 text-base text-ink outline-none transition placeholder:text-ink/35 focus:border-brand focus:ring-4 focus:ring-brand/12"
-                          placeholder={isSignUp ? "Create a secure password" : "Enter your password"}
+                          className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-11 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
+                          placeholder={
+                            isSignUp ? "Create a secure password" : "Enter your password"
+                          }
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((value) => !value)}
-                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-ink/45 transition hover:bg-ink/5 hover:text-ink"
+                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
                           tabIndex={-1}
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                       {isSignUp && strengthLabel && (
-                        <p className="text-xs text-ink/55">
-                          Password strength: <span className="font-semibold text-brand">{strengthLabel}</span>
+                        <p className="text-xs text-foreground/55">
+                          Password strength:{" "}
+                          <span className="font-semibold text-brand">{strengthLabel}</span>
                         </p>
                       )}
                     </div>
@@ -499,7 +516,7 @@ export default function AuthPortal() {
                   )}
 
                   {isSignUp && (
-                    <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink/65">
+                    <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-foreground/65">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
@@ -508,7 +525,15 @@ export default function AuthPortal() {
                         className="mt-1 h-4 w-4 accent-brand"
                       />
                       <span>
-                        I agree to the <Link to="/terms" className="font-medium text-brand hover:underline">Terms</Link> and <Link to="/privacy" className="font-medium text-brand hover:underline">Privacy Policy</Link>.
+                        I agree to the{" "}
+                        <Link to="/terms" className="font-medium text-brand hover:underline">
+                          Terms
+                        </Link>{" "}
+                        and{" "}
+                        <Link to="/privacy" className="font-medium text-brand hover:underline">
+                          Privacy Policy
+                        </Link>
+                        .
                       </span>
                     </label>
                   )}
@@ -544,10 +569,16 @@ export default function AuthPortal() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-ink/55">
-              <Link to="/" className="hover:text-brand hover:underline">Back to home</Link>
-              <Link to="/showcase" className="hover:text-brand hover:underline">View live demos</Link>
-              <Link to="/pricing" className="hover:text-brand hover:underline">Compare plans</Link>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-foreground/55">
+              <Link to="/" className="hover:text-brand hover:underline">
+                Back to home
+              </Link>
+              <Link to="/showcase" className="hover:text-brand hover:underline">
+                View live demos
+              </Link>
+              <Link to="/pricing" className="hover:text-brand hover:underline">
+                Compare plans
+              </Link>
             </div>
           </section>
         </main>

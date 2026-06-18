@@ -1,7 +1,7 @@
 /**
  * Branded loading shell for public marketing routes.
  *
- * Replaces the flat `bg-paper` Suspense placeholder used while lazy
+ * Replaces the flat `bg-card` Suspense placeholder used while lazy
  * marketing pages stream in. Reuses the gem Medallion + halo so the
  * first impression a prospect gets matches the rest of the marketing
  * surface (rich cream + purple, crystalline glint) instead of a blank panel.
@@ -21,7 +21,7 @@ import { SignalOrbFrame } from "../ui/SignalOrbFrame";
 export default function MarketingRouteFallback() {
   return (
     <div
-      className="marketing-surface min-h-dvh bg-paper text-ink flex items-center justify-center"
+      className="marketing-surface min-h-dvh bg-card text-foreground flex items-center justify-center"
       aria-busy="true"
       aria-live="polite"
     >

@@ -119,11 +119,11 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
           <Target className="w-4.5 h-4.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-display italic text-lg text-ink leading-tight">
+          <h3 className="font-display italic text-lg text-foreground leading-tight">
             {title ?? `Performance · ${data.window_days}d`}
           </h3>
           <p className="wl-micro-meta leading-relaxed mt-0.5">
-            Optimizing for <span className="text-ink/80 font-medium">{data.kpi_focus}</span>
+            Optimizing for <span className="text-foreground/80 font-medium">{data.kpi_focus}</span>
             {" · "}
             <span className="text-brand font-semibold">{formatInt(data.sample_size)}</span>{" "}
             {data.sample_size === 1 ? "call" : "calls"} sampled
@@ -135,7 +135,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
         <div className="min-w-0">
           <div className="wl-label text-brand mb-1 font-semibold">{data.primary.label}</div>
           <div className="flex items-center gap-2.5">
-            <span className="font-display italic text-3.5xl md:text-4xl text-ink leading-none tabular-nums font-bold">
+            <span className="font-display italic text-3.5xl md:text-4xl text-foreground leading-none tabular-nums font-bold">
               {formatMetricValue(data.primary.value, data.primary.format)}
             </span>
             <DeltaPill pct={data.primary.delta_pct} />
@@ -149,8 +149,8 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
         <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-2 sm:gap-4">
           {data.secondary.map((s, i) => (
             <div key={`${s.label}-${i}`} className="min-w-0 flex flex-col gap-1">
-              <div className="wl-label font-semibold text-ink/40 truncate">{s.label}</div>
-              <div className="font-display italic text-xl font-bold text-ink leading-none tabular-nums truncate">
+              <div className="wl-label font-semibold text-foreground/55 truncate">{s.label}</div>
+              <div className="font-display italic text-xl font-bold text-foreground leading-none tabular-nums truncate">
                 {formatMetricValue(s.value, s.format)}
               </div>
             </div>
@@ -164,7 +164,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 function DeltaPill({ pct }: { pct: number }) {
   if (!Number.isFinite(pct) || pct === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label font-mono font-medium bg-muted border border-border text-ink/40">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label font-mono font-medium bg-muted border border-border text-foreground/55">
         flat
       </span>
     );
@@ -189,7 +189,7 @@ function DeltaPill({ pct }: { pct: number }) {
 function Sparkline({ values }: { values: number[] }) {
   const safe = Array.isArray(values) ? values.map((v) => (Number.isFinite(v) ? v : 0)) : [];
   if (safe.length < 2) {
-    return <div className="wl-label text-ink/40 text-right">no trend yet</div>;
+    return <div className="wl-label text-foreground/55 text-right">no trend yet</div>;
   }
   const max = Math.max(1, ...safe);
   const min = 0;

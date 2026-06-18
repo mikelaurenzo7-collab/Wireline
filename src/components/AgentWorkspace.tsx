@@ -186,7 +186,7 @@ function ProposalCard({
       }
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        "rounded-md border px-3 py-2.5 text-ink transition-all duration-200",
+        "rounded-md border px-3 py-2.5 text-foreground transition-all duration-200",
         state === "dismissed" ? "border-border/40 bg-muted/50" : TONE_CLASSES[tone],
         !state && "hover:shadow-md cursor-default",
       )}
@@ -376,12 +376,7 @@ export default function AgentWorkspace({
       label: "Connecting",
       status: phase === "connecting" ? "active" : "done",
     });
-    if (
-      phase === "preparing" ||
-      phase === "thinking" ||
-      phase === "replying" ||
-      phase === "done"
-    ) {
+    if (phase === "preparing" || phase === "thinking" || phase === "replying" || phase === "done") {
       steps.push({
         id: "prepare",
         label: "Loading context",
@@ -713,7 +708,7 @@ export default function AgentWorkspace({
               {agentName.slice(0, 1).toUpperCase()}
             </span>
             <div>
-              <p className="text-[13px] font-semibold text-ink leading-tight">{agentName}</p>
+              <p className="text-[13px] font-semibold text-foreground leading-tight">{agentName}</p>
               <p className="flex items-center gap-1.5 wl-micro-meta--muted leading-tight">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
@@ -755,7 +750,7 @@ export default function AgentWorkspace({
                   "shrink-0 rounded-md text-[11px] font-medium",
                   isActive
                     ? "bg-brand/10 text-brand border border-brand/30"
-                    : "text-muted hover:text-ink hover:bg-black/5 border border-transparent",
+                    : "text-muted hover:text-foreground hover:bg-black/5 border border-transparent",
                 )}
               >
                 <tab.icon className="w-3.5 h-3.5" />
@@ -798,10 +793,8 @@ export default function AgentWorkspace({
                   </span>
                 </div>
 
-                <p className="font-mono wl-label text-brand/70 mb-2">
-                  Direct line
-                </p>
-                <h3 className="font-display italic text-2xl text-ink mb-2">
+                <p className="font-mono wl-label text-brand/70 mb-2">Direct line</p>
+                <h3 className="font-display italic text-2xl text-foreground mb-2">
                   Chat with {agentName}
                 </h3>
                 <p className="text-[12px] text-muted leading-relaxed max-w-xs mb-5">
@@ -819,7 +812,7 @@ export default function AgentWorkspace({
                       onClick={() => triggerCommand(p.label)}
                       disabled={isSending}
                       className={cn(
-                        "touch-press group h-auto text-left text-[11px] text-ink/80 px-3 py-2 gap-2",
+                        "touch-press group h-auto text-left text-[11px] text-foreground/80 px-3 py-2 gap-2",
                         WL_DIRECTOR_CLASSES.starterChip,
                       )}
                     >
@@ -860,7 +853,7 @@ export default function AgentWorkspace({
                         "max-w-[78%] min-w-[180px] rounded-md px-5 py-4 whitespace-pre-wrap break-words relative",
                         m.role === "operator"
                           ? "bg-gradient-to-br from-brand to-brand-deep text-white rounded-br-sm shadow-lg shadow-brand/25"
-                          : "bg-paper/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-ink dark:text-foreground rounded-bl-sm shadow-sm",
+                          : "bg-card/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-foreground dark:text-foreground rounded-bl-sm shadow-sm",
                       )}
                     >
                       {/* Reasoning - Claude style */}
@@ -982,7 +975,7 @@ export default function AgentWorkspace({
                         {agentName}
                       </span>
                     </div>
-                    <div className="bg-paper/90 dark:bg-velvet/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
+                    <div className="bg-card/90 dark:bg-velvet/60 backdrop-blur-sm border border-brand/12 rounded-md rounded-bl-md px-5 py-4 shadow-sm">
                       <div className="flex items-center gap-2.5 mb-2">
                         <AgentActivityIndicator active size={24} pose="on-call" />
                         <LiveThinkingIndicator isDeep={false} />
@@ -1007,7 +1000,7 @@ export default function AgentWorkspace({
                       {streamState.phase === "replying" &&
                         typeof streamState.reply?.reply === "string" &&
                         streamState.reply.reply.trim() && (
-                          <div className="text-[12px] text-ink/85 leading-relaxed max-h-28 overflow-y-auto border-t border-brand/8 pt-2 mt-1">
+                          <div className="text-[12px] text-foreground/85 leading-relaxed max-h-28 overflow-y-auto border-t border-brand/8 pt-2 mt-1">
                             <p className="whitespace-pre-wrap line-clamp-8">
                               {streamState.reply.reply.slice(-800)}
                             </p>
@@ -1074,7 +1067,7 @@ export default function AgentWorkspace({
 
           {/* Composer - prominent at bottom */}
           <div className="shrink-0 px-4 pb-6 pt-2">
-            <div className="relative rounded-md border border-brand/20 bg-paper/95 dark:bg-velvet/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
+            <div className="relative rounded-md border border-brand/20 bg-card/95 dark:bg-velvet/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
                 value={input}
@@ -1087,7 +1080,7 @@ export default function AgentWorkspace({
                     : `Message ${agentName}…  (${IS_APPLE ? "⌘" : "Ctrl"}+Enter to send)`
                 }
                 disabled={isSending || isUploading}
-                className="w-full resize-none bg-transparent text-[14px] text-ink dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"
+                className="w-full resize-none bg-transparent text-[14px] text-foreground dark:text-foreground placeholder:text-muted/50 outline-none px-5 py-4 leading-relaxed"
               />
 
               {/* Bottom bar */}
@@ -1104,7 +1097,7 @@ export default function AgentWorkspace({
                       "rounded-md text-[11px] font-medium",
                       toolsOpen
                         ? "bg-brand/10 text-brand border border-brand/30"
-                        : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
+                        : "text-foreground/50 hover:text-brand hover:bg-brand/5 border border-transparent",
                     )}
                   >
                     <Plug className="w-3.5 h-3.5" />
@@ -1138,7 +1131,7 @@ export default function AgentWorkspace({
                         "rounded-md text-[11px] font-medium",
                         attachmentsOpen
                           ? "bg-brand/10 text-brand border border-brand/30"
-                          : "text-ink/50 hover:text-brand hover:bg-brand/5 border border-transparent",
+                          : "text-foreground/50 hover:text-brand hover:bg-brand/5 border border-transparent",
                       )}
                     >
                       {isUploading ? (
@@ -1218,7 +1211,7 @@ export default function AgentWorkspace({
                           >
                             <GraduationCap className="w-4 h-4 text-brand/70" />
                             <div className="text-left">
-                              <span className="block text-[11px] font-medium text-ink dark:text-white">
+                              <span className="block text-[11px] font-medium text-foreground dark:text-white">
                                 Instruction
                               </span>
                               <span className="block wl-micro-meta--muted">

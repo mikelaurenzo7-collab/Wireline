@@ -20,7 +20,11 @@ const ESSENTIALS = [
   { id: "training", label: "Training", icon: BookOpen },
 ] as const;
 
-function statusFor(id: string, flags: ReturnType<typeof computeAgentReadiness>["flags"], isPersonal: boolean) {
+function statusFor(
+  id: string,
+  flags: ReturnType<typeof computeAgentReadiness>["flags"],
+  isPersonal: boolean,
+) {
   if (id === "identity") return flags.hasAgent;
   if (id === "voice") return flags.hasVoice;
   if (id === "model") return true;
@@ -36,15 +40,20 @@ export default function TuningRailMap({
   accountType = "business",
 }: TuningRailMapProps) {
   const isPersonal = accountType === "personal";
-  const { score, total, flags, ready } = computeAgentReadiness(selectedAgent, agentConfig, integrationStatus, {
-    accountType,
-  });
+  const { score, total, flags, ready } = computeAgentReadiness(
+    selectedAgent,
+    agentConfig,
+    integrationStatus,
+    {
+      accountType,
+    },
+  );
   const trainingHref = selectedAgent
     ? `/training?agent=${encodeURIComponent(selectedAgent.id)}`
     : "/training";
 
   return (
-    <div className="shrink-0 border-b border-border/80 bg-paper/75 px-3 py-3 dark:bg-velvet/45">
+    <div className="shrink-0 border-b border-border/80 bg-card/75 px-3 py-3 dark:bg-velvet/45">
       <div className="rounded-md border border-brand/15 bg-brand/[0.04] px-3 py-2.5">
         <div className="flex items-center justify-between gap-3">
           <span className="inline-flex items-center gap-1.5">
@@ -56,14 +65,15 @@ export default function TuningRailMap({
               "shrink-0 rounded-full border px-2 py-0.5 font-mono text-[11px] tabular-nums",
               ready
                 ? "border-brand/25 bg-brand/12 text-brand"
-                : "border-ink/[0.08] bg-ink/[0.04] text-ink/55",
+                : "border-ink/[0.08] bg-ink/[0.04] text-foreground/55",
             )}
           >
             {score}/{total} ready
           </span>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-muted">
-          Studio stays simple: create the agent, then move knowledge, workflows, pronunciation, and testing into Training.
+          Studio stays simple: create the agent, then move knowledge, workflows, pronunciation, and
+          testing into Training.
         </p>
       </div>
 
@@ -79,7 +89,7 @@ export default function TuningRailMap({
               )}
             >
               <Icon className="h-3.5 w-3.5 shrink-0 text-brand" />
-              <span className="wl-label flex-1 truncate text-ink">{section.label}</span>
+              <span className="wl-label flex-1 truncate text-foreground">{section.label}</span>
               <span
                 className={cn(
                   "h-1.5 w-1.5 shrink-0 rounded-full",
@@ -100,7 +110,7 @@ export default function TuningRailMap({
 
       <Link
         to={trainingHref}
-        className="mt-3 flex items-center justify-between rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-2 text-xs font-medium text-ink/70 transition hover:border-brand/25 hover:text-brand"
+        className="mt-3 flex items-center justify-between rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-2 text-xs font-medium text-foreground/70 transition hover:border-brand/25 hover:text-brand"
       >
         <span className="inline-flex items-center gap-2">
           <Workflow className="h-3.5 w-3.5 text-brand" />

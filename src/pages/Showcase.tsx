@@ -49,20 +49,22 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-1.5">
             {agent.role}
           </p>
-          <h3 className="font-display italic text-2xl sm:text-3xl text-ink leading-tight">
+          <h3 className="font-display italic text-2xl sm:text-3xl text-foreground leading-tight">
             {agent.name}
           </h3>
-          <p className="text-[12px] text-ink/55 mt-1">Voice: {agent.voiceLabel}</p>
+          <p className="text-[12px] text-foreground/55 mt-1">Voice: {agent.voiceLabel}</p>
         </div>
       </div>
 
-      <p className="text-sm sm:text-base text-ink/75 leading-relaxed mb-4">{agent.tagline}</p>
+      <p className="text-sm sm:text-base text-foreground/75 leading-relaxed mb-4">
+        {agent.tagline}
+      </p>
 
       <div className="bg-ink/[0.04] border border-ink/[0.08] p-4 mb-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink/55 mb-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-foreground/55 mb-2">
           After the jingle, she says
         </p>
-        <p className="text-sm text-ink/90 italic leading-relaxed">"{agent.firstMessage}"</p>
+        <p className="text-sm text-foreground/90 italic leading-relaxed">"{agent.firstMessage}"</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -70,7 +72,7 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
           <Phone className="w-3.5 h-3.5" />
           Call {agent.name} to hear her sing
         </a>
-        <span className="font-mono text-[13px] text-ink/55">{agent.display}</span>
+        <span className="font-mono text-[13px] text-foreground/55">{agent.display}</span>
       </div>
     </motion.div>
   );
@@ -90,17 +92,17 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
           <Phone className="w-5 h-5" strokeWidth={2.4} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/60 mb-0.5">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/60 mb-0.5">
             {label}
           </p>
-          <p className="font-display text-xl leading-none text-ink mb-1">{agent.name}</p>
+          <p className="font-display text-xl leading-none text-foreground mb-1">{agent.name}</p>
           <p className="font-mono text-[15px] font-medium text-brand tracking-tight">
             {agent.display}
           </p>
-          <p className="text-sm text-ink/70 mt-1 line-clamp-1">{agent.role}</p>
+          <p className="text-sm text-foreground/70 mt-1 line-clamp-1">{agent.role}</p>
         </div>
         <div className="shrink-0 text-right">
-          <ArrowRight className="w-5 h-5 text-ink/40 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+          <ArrowRight className="w-5 h-5 text-foreground/55 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
         </div>
       </div>
     </a>
@@ -126,7 +128,7 @@ export default function Showcase() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-ink/65 mb-4">
+          <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-foreground/65 mb-4">
             <span className="wl-eyebrow-dot" aria-hidden="true" />
             The playable showcase
           </p>
@@ -175,7 +177,7 @@ export default function Showcase() {
             <PhoneLineCard key={agent.tel} agent={agent} label="Demo" />
           ))}
         </div>
-        <p className="mt-6 text-[13px] text-ink/60 text-center max-w-md mx-auto">
+        <p className="mt-6 text-[13px] text-foreground/60 text-center max-w-md mx-auto">
           Each line role-plays one industry so you can hear exactly what your callers would
           experience. They never reach a real person — they're demos.
         </p>
@@ -183,7 +185,7 @@ export default function Showcase() {
 
       {/* CTA */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-8 text-center">
-        <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-4 text-balance">
+        <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-4 text-balance">
           Deploy your own in under a minute.
         </h2>
         <p className="marketing-hero-lead mx-auto mb-6">

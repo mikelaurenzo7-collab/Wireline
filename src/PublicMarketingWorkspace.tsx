@@ -157,7 +157,7 @@ function Logo({ light = false }: { light?: boolean }) {
       <span
         className={cn(
           "font-display text-[20px] font-semibold tracking-[-0.03em]",
-          light ? "text-paper" : "text-ink",
+          light ? "text-paper" : "text-foreground",
         )}
       >
         Wireline
@@ -197,7 +197,8 @@ function Button({
         "inline-flex h-11 items-center justify-center gap-2 rounded-[14px] px-5 text-sm font-semibold transition active:scale-[.98]",
         variant === "primary" &&
           "bg-brand text-paper shadow-[0_24px_50px_-22px_rgba(79,30,123,.8)] hover:bg-brand-deep",
-        variant === "secondary" && "border border-ink/12 bg-card text-ink hover:border-brand/40",
+        variant === "secondary" &&
+          "border border-ink/12 bg-card text-foreground hover:border-brand/40",
         variant === "dark" && "border border-white/10 bg-white/5 text-paper hover:bg-white/10",
       )}
     >
@@ -208,7 +209,7 @@ function Button({
 
 function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh overflow-x-clip bg-background text-ink wl-overhaul-surface">
+    <div className="min-h-dvh overflow-x-clip bg-background text-foreground wl-overhaul-surface">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0f0b14]/90 text-paper backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5 sm:px-8">
           <Link to="/" aria-label="Wireline home">
@@ -291,7 +292,7 @@ function FooterCol({
       <p
         className={cn(
           "text-[11px] font-bold uppercase tracking-[.16em]",
-          dark ? "text-paper" : "text-ink",
+          dark ? "text-paper" : "text-foreground",
         )}
       >
         {title}
@@ -302,7 +303,7 @@ function FooterCol({
           to={path(link)}
           className={cn(
             "block text-sm",
-            dark ? "text-white/45 hover:text-paper" : "text-muted-foreground hover:text-ink",
+            dark ? "text-white/60 hover:text-paper" : "text-muted-foreground hover:text-foreground",
           )}
         >
           {link}
@@ -336,7 +337,7 @@ function SectionHeader({
       <h2
         className={cn(
           "mt-3 font-display !normal-case text-4xl font-medium leading-[1.03] tracking-[-.05em] md:text-6xl",
-          dark ? "text-paper" : "text-ink",
+          dark ? "text-paper" : "text-foreground",
         )}
       >
         {title}
@@ -359,7 +360,9 @@ function Card({ item, dark = false }: { item: CardItem; dark?: boolean }) {
     <div
       className={cn(
         "rounded-[28px] border p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]",
-        dark ? "border-paper/12 bg-paper/[0.035] text-paper" : "border-border bg-card text-ink",
+        dark
+          ? "border-paper/12 bg-card/[0.035] text-paper"
+          : "border-border bg-card text-foreground",
       )}
     >
       <div
@@ -374,7 +377,7 @@ function Card({ item, dark = false }: { item: CardItem; dark?: boolean }) {
         <p
           className={cn(
             "mb-2 text-[10px] font-bold uppercase tracking-[.16em]",
-            dark ? "text-white/35" : "text-muted-foreground",
+            dark ? "text-white/55" : "text-muted-foreground",
           )}
         >
           {item.tag}
@@ -418,14 +421,14 @@ function ProductCanvas() {
                     className="rounded-[18px] border border-white/10 bg-white/[.055] p-4"
                   >
                     <p className="font-display text-3xl leading-none">{v}</p>
-                    <p className="mt-2 text-[10px] uppercase tracking-[.15em] text-white/35">{l}</p>
+                    <p className="mt-2 text-[10px] uppercase tracking-[.15em] text-white/55">{l}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[.04] p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[.18em] text-white/35">
+                    <p className="text-[10px] uppercase tracking-[.18em] text-white/55">
                       Active call
                     </p>
                     <p className="mt-1 font-display !normal-case text-2xl">Front Desk Sarah</p>
@@ -442,7 +445,7 @@ function ProductCanvas() {
               </div>
             </div>
             <div className="bg-[#17101d] p-5">
-              <p className="text-[10px] uppercase tracking-[.18em] text-white/35">
+              <p className="text-[10px] uppercase tracking-[.18em] text-white/55">
                 Operating lanes
               </p>
               <div className="mt-4 space-y-3">
@@ -479,7 +482,7 @@ function HeroMetric({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-[20px] border border-white/10 bg-white/[.055] px-4 py-3 backdrop-blur">
       <p className="font-display text-2xl leading-none text-paper">{value}</p>
-      <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-white/35">{label}</p>
+      <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-white/55">{label}</p>
     </div>
   );
 }
@@ -496,7 +499,7 @@ function Landing() {
               <Pill tone="dark">
                 <Sparkles size={12} /> Personal Assistant + Business Agent Fleet
               </Pill>
-              <h1 className="max-w-5xl font-display !normal-case text-5xl font-medium leading-[.97] tracking-[-0.065em] text-paper md:text-7xl xl:text-8xl">
+              <h1 className="max-w-5xl font-display !normal-case text-5xl font-medium leading-[.97] tracking-[-0.04em] text-paper md:text-7xl xl:text-8xl">
                 Your Phone, Finally Working for You.
               </h1>
               <p className="max-w-2xl text-[18px] leading-8 text-white/64">
@@ -825,7 +828,7 @@ function Pricing() {
                 "flex min-h-[430px] flex-col rounded-[30px] border p-6",
                 tier.featured
                   ? "border-brand bg-ink text-paper"
-                  : "border-border bg-background text-ink",
+                  : "border-border bg-background text-foreground",
               )}
             >
               <div className="flex items-start justify-between gap-3">

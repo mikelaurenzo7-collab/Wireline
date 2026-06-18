@@ -187,7 +187,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   };
 
   const inputCls =
-    "w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all";
+    "w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -208,7 +208,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
         <header className="px-5 py-4 border-b border-border flex items-center justify-between">
           <div>
             <p className="wl-label text-brand mb-0.5">Appointments</p>
-            <h2 className="font-display italic text-2xl text-ink">
+            <h2 className="font-display italic text-2xl text-foreground">
               {isEdit ? "Edit Appointment" : "New Appointment"}
             </h2>
           </div>
@@ -369,7 +369,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="wl-label text-ink/40 flex items-center gap-1.5">
+      <label className="wl-label text-foreground/55 flex items-center gap-1.5">
         {Icon && <Icon className="w-2.5 h-2.5 text-brand" />}
         {label}
       </label>
@@ -450,7 +450,7 @@ function CalendarGrid({
           <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </ShadButton>
         <span
-          className="font-display italic text-xl text-ink"
+          className="font-display italic text-xl text-foreground"
           aria-live="polite"
           aria-atomic="true"
         >
@@ -474,7 +474,7 @@ function CalendarGrid({
 
       <div className="shrink-0 grid grid-cols-7 border-b border-border/80 min-w-[21rem]" role="row">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div key={d} role="columnheader" className="py-2 text-center wl-label text-ink/40">
+          <div key={d} role="columnheader" className="py-2 text-center wl-label text-foreground/55">
             {d}
           </div>
         ))}
@@ -513,7 +513,7 @@ function CalendarGrid({
                     <div
                       className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] ml-auto",
-                        isToday ? "bg-brand text-on-brand font-bold" : "text-ink/40",
+                        isToday ? "bg-brand text-on-brand font-bold" : "text-foreground/55",
                       )}
                     >
                       {cell.day}
@@ -907,7 +907,7 @@ function AppointmentRow({
 
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-display italic text-lg text-ink leading-none">
+            <span className="font-display italic text-lg text-foreground leading-none">
               {appt.customer_name}
             </span>
             <StatusBadge status={appt.status} />
@@ -942,7 +942,7 @@ function AppointmentRow({
 
           {appt.notes && (
             <div className="flex items-start gap-1.5 mt-1">
-              <StickyNote className="w-3 h-3 text-ink/40 shrink-0 mt-0.5" />
+              <StickyNote className="w-3 h-3 text-foreground/55 shrink-0 mt-0.5" />
               <p className="wl-micro-meta leading-snug line-clamp-2">{appt.notes}</p>
             </div>
           )}
@@ -988,7 +988,7 @@ function AppointmentRow({
                         setShowStatusMenu(false);
                       }}
                       aria-label={`Set ${appt.customer_name} appointment status to ${s}`}
-                      className="w-full h-auto justify-start rounded-none px-3 py-2 wl-micro-meta text-ink hover:bg-accent/40"
+                      className="w-full h-auto justify-start rounded-none px-3 py-2 wl-micro-meta text-foreground hover:bg-accent/40"
                     >
                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_META[s].dot)} />
                       {s}
@@ -1004,7 +1004,7 @@ function AppointmentRow({
             aria-label={`Edit appointment for ${appt.customer_name}`}
             variant="ghost"
             size="icon"
-            className="w-7 h-7 hover:text-ink hover:border-border/60"
+            className="w-7 h-7 hover:text-foreground hover:border-border/60"
           >
             <Pencil className="w-3.5 h-3.5" />
           </ShadButton>

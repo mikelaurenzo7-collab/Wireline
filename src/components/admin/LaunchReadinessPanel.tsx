@@ -63,7 +63,9 @@ export default function LaunchReadinessPanel() {
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-lg font-semibold text-ink tabular-nums">{report.overall_score}%</p>
+          <p className="text-lg font-semibold text-foreground tabular-nums">
+            {report.overall_score}%
+          </p>
           <p className="wl-micro-meta text-muted">overall</p>
         </div>
       </div>
@@ -72,7 +74,7 @@ export default function LaunchReadinessPanel() {
         className={cn(
           "rounded-md border px-3 py-2 flex items-center gap-2 text-[12px]",
           report.campaign_ready
-            ? "border-brand/25 bg-brand/8 text-ink"
+            ? "border-brand/25 bg-brand/8 text-foreground"
             : "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100",
         )}
       >
@@ -93,7 +95,7 @@ export default function LaunchReadinessPanel() {
             className="rounded-md border border-border px-3 py-2 text-[12px] bg-surface/30"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-ink">{cap.label}</span>
+              <span className="font-medium text-foreground">{cap.label}</span>
               <span className={cn("wl-label capitalize", LEVEL_STYLE[cap.level])}>{cap.level}</span>
             </div>
             {cap.blockers.length > 0 && (

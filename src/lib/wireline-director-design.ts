@@ -86,7 +86,7 @@ export const WL_DIRECTOR_CLASSES = {
   actionRow: "relative flex items-start gap-2 py-1 pl-4",
   actionRowFailed: "text-rose-600 dark:text-rose-400",
   actionDetail:
-    "mt-1 rounded-md border border-black/5 bg-black/[0.03] dark:bg-white/[0.04] px-2 py-1.5 font-mono text-[10px] leading-relaxed text-muted whitespace-pre-wrap break-words",
+    "mt-1 rounded-md border border-white/5 bg-black/[0.03] dark:bg-white/[0.04] px-2 py-1.5 font-mono text-[10px] leading-relaxed text-muted whitespace-pre-wrap break-words",
 } as const;
 
 /** Reusable app surfaces outside Director (settings, integrations, ops panels) */
@@ -576,7 +576,7 @@ export const WL_APP_CLASSES = {
   /** Editorial left rail on workspace / route headers */
   pageContextAccent: "wl-page-context-accent",
   workspaceEyebrow:
-    "wl-workspace-eyebrow tracking-widest uppercase text-[9px] text-muted-foreground",
+    "wl-workspace-eyebrow tracking-widest uppercase text-[10px] text-muted-foreground",
   workspaceTitle: "wl-workspace-title font-bold tracking-tight text-3xl",
   /** 11px supporting copy — blurbs, hints, secondary lines */
   bodyCaption: "wl-body-caption text-xs text-muted-foreground",
@@ -609,9 +609,9 @@ export const WL_APP_CLASSES = {
   signalOrbRefined: WL_SIGNAL_CLASSES.signalOrbRefined,
   emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
   proTitle: "wl-pro-title font-bold tracking-tight",
-  proEyebrow: "wl-pro-eyebrow uppercase tracking-widest text-[9px]",
+  proEyebrow: "wl-pro-eyebrow uppercase tracking-widest text-[10px]",
   insightStatCard:
-    "relative rounded-md wl-panel border border-black/8 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
+    "relative rounded-md wl-panel border border-white/8 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
   /** Grouped icon controls (theme, shortcuts) on cream workspace header */
   chromeToolbar: "wl-chrome-toolbar",
   /** Compact mobile route strip under TopBar */
