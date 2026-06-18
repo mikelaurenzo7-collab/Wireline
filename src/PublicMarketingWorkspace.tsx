@@ -5,15 +5,17 @@ import { ArrowRight, BarChart3, Bot, Check, Code2, Database, Headphones, Lock, M
 
 type Tone = "light" | "dark";
 type CardItem = { icon: LucideIcon; title: string; text: string; tag?: string };
+type Tier = { name: string; price: string; plan: string; note: string; text: string; items: string[]; badge?: string; featured?: boolean };
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 const nav = ["features", "pricing", "showcase", "developers", "compare", "training", "about"];
 
-const tiers = [
-  { name: "Personal", price: "$9", note: "For one person", text: "Personal call screening, summaries, spam guard, Siri/widget triggers, and lightweight errand calls.", items: ["Assistant call screening", "Spam guard", "Call summaries", "Siri and widget triggers"] },
-  { name: "Personal+", price: "$19", note: "For heavier personal use", text: "More handled calls, deeper calendar/email context, and appointment/status-check automations.", items: ["Higher monthly usage", "Calendar/email context", "Appointment workflows", "Priority personal memory"] },
-  { name: "Business Growth", price: "$249", note: "For SMB front desks", text: "A real AI front desk with Studio, Training, Live Ops, analytics, integrations, and model selection.", items: ["Agent Studio", "Training console", "Live Ops", "CRM/calendar routing"], featured: true },
-  { name: "Scale", price: "$699+", note: "For high volume teams", text: "Advanced approvals, webhooks, audit logs, custom routing, and launch support for higher call volume.", items: ["Advanced controls", "Webhook API", "Audit logs", "Launch support"] },
+const tiers: Tier[] = [
+  { name: "Personal", price: "$9", plan: "personal", note: "For one person", text: "Personal call screening, summaries, spam guard, Siri/widget triggers, and lightweight errand calls.", items: ["Assistant call screening", "Spam guard", "Call summaries", "Siri and widget triggers"] },
+  { name: "Personal+", price: "$19", plan: "personal-plus", note: "For heavier personal use", text: "More handled calls, deeper calendar/email context, and appointment/status-check automations.", items: ["Higher monthly usage", "Calendar/email context", "Appointment workflows", "Priority personal memory"] },
+  { name: "Business Starter", price: "$99", plan: "business-starter", note: "For first business line", text: "A lower-friction business entry tier for solo operators and small teams that need one serious AI front desk before scaling.", items: ["2 business agents", "300 voice minutes", "2 business numbers", "Studio + Training basics"], badge: "Best entry" },
+  { name: "Business Growth", price: "$249", plan: "starter", note: "For SMB front desks", text: "A real AI front desk with Studio, Training, Live Ops, analytics, integrations, and model selection.", items: ["5 AI agents", "1,000 voice minutes", "Live Ops + analytics", "CRM/calendar routing"], featured: true, badge: "Most popular" },
+  { name: "Scale", price: "$699+", plan: "scale", note: "For high volume teams", text: "Advanced approvals, webhooks, audit logs, custom routing, and launch support for higher call volume.", items: ["10 AI agents", "3,000 voice minutes", "Audit logs", "Launch support"] },
 ];
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -72,89 +74,24 @@ function ModelSection() {
 }
 
 function Pricing() {
-  return <section className="bg-background"><div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Pricing" title="Personal and business pricing, separated cleanly." text="Start low for personal use. Launch business agents when the front desk starts paying for itself." /><div className="mt-10 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">{tiers.map((tier) => <div key={tier.name} className={cn("flex min-h-[430px] flex-col rounded-[30px] border p-6", tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-ink")}><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{tier.name}</p><p className={cn("mt-1 text-xs", tier.featured ? "text-white/55" : "text-muted-foreground")}>{tier.note}</p></div>{tier.featured && <Pill tone="dark">Best launch tier</Pill>}</div><div className="mt-6 flex items-end gap-1"><span className="font-display text-5xl leading-none">{tier.price}</span><span className={cn("pb-1 text-sm", tier.featured ? "text-white/50" : "text-muted-foreground")}>/mo</span></div><p className={cn("mt-4 text-sm leading-6", tier.featured ? "text-white/60" : "text-muted-foreground")}>{tier.text}</p><div className="mt-6 space-y-3 text-sm">{tier.items.map((item) => <p key={item} className="flex items-start gap-2"><Check size={15} className={cn("mt-0.5 shrink-0", tier.featured ? "text-brand-bright" : "text-brand")} />{item}</p>)}</div><Button to="/get-started" variant={tier.featured ? "dark" : "secondary"}>Start with {tier.name}</Button></div>)}</div></div></section>;
+  return <section className="bg-background"><div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Pricing" title="Personal, starter business, and scale pricing." text="Start low for personal use, launch a real business line at $99, then grow into higher-volume agents as the front desk proves itself." /><div className="mt-10 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">{tiers.map((tier) => <div key={tier.name} className={cn("flex min-h-[430px] flex-col rounded-[30px] border p-6", tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-ink")}><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{tier.name}</p><p className={cn("mt-1 text-xs", tier.featured ? "text-white/55" : "text-muted-foreground")}>{tier.note}</p></div>{tier.badge && <Pill tone={tier.featured ? "dark" : "light"}>{tier.badge}</Pill>}</div><div className="mt-6 flex items-end gap-1"><span className="font-display text-5xl leading-none">{tier.price}</span><span className={cn("pb-1 text-sm", tier.featured ? "text-white/50" : "text-muted-foreground")}>/mo</span></div><p className={cn("mt-4 text-sm leading-6", tier.featured ? "text-white/60" : "text-muted-foreground")}>{tier.text}</p><div className="mt-6 flex-1 space-y-3 text-sm">{tier.items.map((item) => <p key={item} className="flex items-start gap-2"><Check size={15} className={cn("mt-0.5 shrink-0", tier.featured ? "text-brand-bright" : "text-brand")} />{item}</p>)}</div><Button to={`/get-started?plan=${tier.plan}`} variant={tier.featured ? "dark" : "secondary"}>Start with {tier.name}</Button></div>)}</div></div></section>;
 }
 
-function Features() {
-  const items: CardItem[] = [
-    { icon: Phone, title: "Inbound voice", text: "Handle routine calls, extract intent, summarize outcomes, and transfer when needed.", tag: "Calls" },
-    { icon: Workflow, title: "Workflow permissions", text: "Enable booking, SMS follow-up, CRM notes, refunds, routing, and approval thresholds.", tag: "Studio" },
-    { icon: Database, title: "Training console", text: "Keep scripts, policies, FAQs, and simulations out of basic setup.", tag: "Training" },
-    { icon: BarChart3, title: "Quality pulse", text: "See coaching opportunities, containment, escalation, and agent-specific performance.", tag: "Ops" },
-    { icon: Smartphone, title: "Personal automations", text: "Assistant can call, screen, wait on hold, summarize, and trigger from Siri/widgets.", tag: "Personal" },
-    { icon: ShieldCheck, title: "Human-safe defaults", text: "Sensitive commitments require confirmation and scoped integration access.", tag: "Trust" },
-  ];
-  return <Page eyebrow="Features" title="A complete operating layer for calls." text="Each surface has one job: Personal for one user, Studio for setup, Training for knowledge, Live Ops for monitoring, and integrations for real work.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
-
-function Showcase() {
-  const items: CardItem[] = [
-    { icon: Bot, title: "Front desk Sarah", text: "Books appointments, answers FAQs, transfers urgent calls, and summarizes every call." },
-    { icon: Headphones, title: "Sales Liam", text: "Qualifies inbound leads, books demos, collects context, and logs notes." },
-    { icon: Phone, title: "Personal Assistant", text: "Calls pharmacies, waits on hold, screens unknown callers, and updates you after." },
-  ];
-  return <Page eyebrow="Showcase" title="Preview the agent fleet before launch." text="Wireline should feel like a command center, not a phone tree. These are the demo stories users should understand immediately.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
-
-function Developers() {
-  const items: CardItem[] = [
-    { icon: Plug, title: "OAuth connectors", text: "Google, Microsoft, and Yahoo flows remain scoped by personal vs business workspace." },
-    { icon: Code2, title: "Webhook API", text: "Push call outcomes, escalation events, and status updates into downstream tools." },
-    { icon: Lock, title: "Audit-safe actions", text: "Every tool action should know its actor, scope, confidence, and approval state." },
-  ];
-  return <Page eyebrow="Developers" title="API-first where it matters." text="Wireline’s integration story should be practical: connect identity, calendars, phones, CRM, billing, and custom workflows without exposing personal context to business agents.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
-
-function Compare() {
-  const items: CardItem[] = [
-    { icon: Radio, title: "Not a phone tree", text: "Wireline routes real conversations, understands outcomes, and escalates based on confidence." },
-    { icon: Database, title: "Not a script dump", text: "Training separates knowledge from setup and adds simulation before production calls." },
-    { icon: Sparkles, title: "Not one assistant for everything", text: "Personal and business stay scoped, with different integrations and approvals." },
-  ];
-  return <Page eyebrow="Compare" title="A live AI operating layer, not legacy call-center sprawl." text="The design goal is simple: premium control for the owner, obvious setup for the operator, and safe outcomes for the caller.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
-
-function Training() {
-  const items: CardItem[] = [
-    { icon: Database, title: "Knowledge", text: "Policies, pricing, hours, FAQs, documents, and allowed claims." },
-    { icon: Mic, title: "Voice behavior", text: "Tone, pronunciation, brevity, escalation language, and banned phrases." },
-    { icon: Headphones, title: "Simulator", text: "Run difficult scenarios before real customers experience the agent." },
-    { icon: Workflow, title: "Approvals", text: "Refunds, discounts, cancellations, and bookings can require human confirmation." },
-  ];
-  return <Page eyebrow="Training" title="Teach agents before they touch real customers." text="Studio stays simple because Training owns the deep work: scripts, scenarios, docs, simulations, and policy guardrails.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
-
-function About() {
-  const items: CardItem[] = [
-    { icon: Phone, title: "Phones should work for people", text: "Personal users need less interruption. Businesses need reliable frontline coverage." },
-    { icon: ShieldCheck, title: "Trust over flash", text: "The product should never pretend an action is completed without the right tool and audit trail." },
-    { icon: Sparkles, title: "AI-native, operator-ready", text: "The interface should feel premium, calm, and obvious at desktop and laptop sizes." },
-  ];
-  return <Page eyebrow="About" title="Wireline makes phones useful again." text="The product vision is a single AI-native line for life and work, with strong boundaries between personal context and business operations.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
-
-function Blog() {
-  const items: CardItem[] = [
-    { icon: Sparkles, title: "Launch notes", text: "How the Personal/Business split, Studio, Training, and Live Ops evolved." },
-    { icon: Workflow, title: "Operator playbooks", text: "What every SMB should train before letting an AI answer calls." },
-    { icon: BarChart3, title: "Model routing", text: "When to use efficient defaults and when to escalate to premium reasoning." },
-  ];
-  return <Page eyebrow="Blog" title="Wireline build notes." text="A launch-ready blog should explain product direction, operational strategy, and practical AI phone workflows.">{items.map((item) => <Card key={item.title} item={item} />)}</Page>;
-}
+function Features() { return <Page eyebrow="Features" title="A complete operating layer for calls." text="Each surface has one job: Personal for one user, Studio for setup, Training for knowledge, Live Ops for monitoring, and integrations for real work." items={[{ icon: Phone, title: "Inbound voice", text: "Handle routine calls, extract intent, summarize outcomes, and transfer when needed.", tag: "Calls" }, { icon: Workflow, title: "Workflow permissions", text: "Enable booking, SMS follow-up, CRM notes, refunds, routing, and approval thresholds.", tag: "Studio" }, { icon: Database, title: "Training console", text: "Keep scripts, policies, FAQs, and simulations out of basic setup.", tag: "Training" }, { icon: BarChart3, title: "Quality pulse", text: "See coaching opportunities, containment, escalation, and agent-specific performance.", tag: "Ops" }, { icon: Smartphone, title: "Personal automations", text: "Assistant can call, screen, wait on hold, summarize, and trigger from Siri/widgets.", tag: "Personal" }, { icon: ShieldCheck, title: "Human-safe defaults", text: "Sensitive commitments require confirmation and scoped integration access.", tag: "Trust" }]} />; }
+function Showcase() { return <Page eyebrow="Showcase" title="Preview the agent fleet before launch." text="Wireline should feel like a command center, not a phone tree." items={[{ icon: Bot, title: "Front desk Sarah", text: "Books appointments, answers FAQs, transfers urgent calls, and summarizes every call." }, { icon: Headphones, title: "Sales Liam", text: "Qualifies inbound leads, books demos, collects context, and logs notes." }, { icon: Phone, title: "Personal Assistant", text: "Calls pharmacies, waits on hold, screens unknown callers, and updates you after." }]} />; }
+function Developers() { return <Page eyebrow="Developers" title="API-first where it matters." text="Connect identity, calendars, phones, CRM, billing, and custom workflows without exposing personal context to business agents." items={[{ icon: Plug, title: "OAuth connectors", text: "Google, Microsoft, and Yahoo flows remain scoped by personal vs business workspace." }, { icon: Code2, title: "Webhook API", text: "Push call outcomes, escalation events, and status updates into downstream tools." }, { icon: Lock, title: "Audit-safe actions", text: "Every tool action knows its actor, scope, confidence, and approval state." }]} />; }
+function Compare() { return <Page eyebrow="Compare" title="A live AI operating layer, not legacy call-center sprawl." text="Premium control for the owner, obvious setup for the operator, and safe outcomes for the caller." items={[{ icon: Radio, title: "Not a phone tree", text: "Wireline routes real conversations and escalates based on confidence." }, { icon: Database, title: "Not a script dump", text: "Training separates knowledge from setup and adds simulation before production calls." }, { icon: Sparkles, title: "Not one assistant for everything", text: "Personal and business stay scoped, with different integrations and approvals." }]} />; }
+function Training() { return <Page eyebrow="Training" title="Teach agents before they touch real customers." text="Studio stays simple because Training owns scripts, scenarios, docs, simulations, and policy guardrails." items={[{ icon: Database, title: "Knowledge", text: "Policies, pricing, hours, FAQs, documents, and allowed claims." }, { icon: Mic, title: "Voice behavior", text: "Tone, pronunciation, brevity, escalation language, and banned phrases." }, { icon: Headphones, title: "Simulator", text: "Run difficult scenarios before real customers experience the agent." }, { icon: Workflow, title: "Approvals", text: "Refunds, discounts, cancellations, and bookings can require human confirmation." }]} />; }
+function About() { return <Page eyebrow="About" title="Wireline makes phones useful again." text="A single AI-native line for life and work, with strong boundaries between personal context and business operations." items={[{ icon: Phone, title: "Phones should work for people", text: "Personal users need less interruption. Businesses need reliable frontline coverage." }, { icon: ShieldCheck, title: "Trust over flash", text: "The product should never pretend an action is completed without the right tool and audit trail." }, { icon: Sparkles, title: "AI-native, operator-ready", text: "The interface should feel premium, calm, and obvious." }]} />; }
+function Blog() { return <Page eyebrow="Blog" title="Wireline build notes." text="Product direction, operational strategy, and practical AI phone workflows." items={[{ icon: Sparkles, title: "Launch notes", text: "How Personal/Business split, Studio, Training, and Live Ops evolved." }, { icon: Workflow, title: "Operator playbooks", text: "What every SMB should train before letting an AI answer calls." }, { icon: BarChart3, title: "Model routing", text: "Efficient defaults vs premium reasoning." }]} />; }
 
 function LegalPage({ kind }: { kind: "terms" | "privacy" | "security" | "contact" }) {
-  const copy = {
-    terms: ["Terms", "Clear commercial terms for personal and business workspaces.", ["Personal and business workspaces are scoped separately.", "Automated calls and actions require enabled tools and user-approved guardrails.", "Billing, usage, and launch support depend on the selected plan."]],
-    privacy: ["Privacy", "Personal context and business workspace data stay separated by design.", ["Personal email, calendar, contacts, and reminders are not training material for business agents.", "Business integrations are scoped to workspace permissions.", "Sensitive summaries should open in-app instead of exposing full details in lock-screen surfaces."]],
-    security: ["Security", "Wireline is designed around scoped tools, approvals, and audit-friendly behavior.", ["OAuth connectors should remain workspace-scoped.", "High-risk actions require confirmation before commitment.", "Agent outcomes should keep actor, workspace, confidence, and approval state." ]],
-    contact: ["Contact", "Reach Wireline for launch setup, support, or partnership questions.", ["Support: support@trywireline.com", "Sales: use the get-started flow for plan selection.", "Business launch support is included in higher-volume onboarding."]],
-  }[kind];
-  const items = copy[2] as string[];
-  return <Layout><main className="mx-auto max-w-[1100px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Trust" title={copy[0] as string} text={copy[1] as string} /><div className="mt-10 grid gap-4 md:grid-cols-3">{items.map((item) => <div key={item} className="rounded-[24px] border border-border bg-card p-5 text-sm leading-6 text-muted-foreground"><Check className="mb-4 h-5 w-5 text-brand" />{item}</div>)}</div><div className="mt-10"><Button to="/get-started">Get started</Button></div></main></Layout>;
+  const copy = { terms: ["Terms", "Clear commercial terms for personal and business workspaces."], privacy: ["Privacy", "Personal context and business workspace data stay separated by design."], security: ["Security", "Wireline is designed around scoped tools, approvals, and audit-friendly behavior."], contact: ["Contact", "Reach Wireline for launch setup, support, or partnership questions."] }[kind];
+  return <Layout><main className="mx-auto max-w-[1100px] px-5 py-20 sm:px-8"><SectionHeader eyebrow="Trust" title={copy[0]} text={copy[1]} /><div className="mt-10"><Button to="/get-started">Get started</Button></div></main></Layout>;
 }
 
-function Page({ eyebrow, title, text, children }: { eyebrow: string; title: string; text: string; children: ReactNode }) {
-  return <Layout><main className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow={eyebrow} title={title} text={text} /><div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{children}</div><div className="mt-12 rounded-[34px] border border-border bg-card p-6 sm:p-8"><div className="grid gap-6 lg:grid-cols-[1fr_auto]"><div><h2 className="font-display text-3xl">Ready to wire this into your workflow?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Start personal, launch business, or connect the agent fleet to real phone, calendar, inbox, and CRM systems.</p></div><div className="flex flex-wrap items-center gap-3"><Button to="/get-started">Get started</Button><Button to="/pricing" variant="secondary">View pricing</Button></div></div></div></main></Layout>;
+function Page({ eyebrow, title, text, items }: { eyebrow: string; title: string; text: string; items: CardItem[] }) {
+  return <Layout><main className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8"><SectionHeader eyebrow={eyebrow} title={title} text={text} /><div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{items.map((item) => <Card key={item.title} item={item} />)}</div><div className="mt-12 rounded-[34px] border border-border bg-card p-6 sm:p-8"><div className="grid gap-6 lg:grid-cols-[1fr_auto]"><div><h2 className="font-display text-3xl">Ready to wire this into your workflow?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Start personal, launch Business Starter, or connect the agent fleet to real phone, calendar, inbox, and CRM systems.</p></div><div className="flex flex-wrap items-center gap-3"><Button to="/get-started">Get started</Button><Button to="/pricing" variant="secondary">View pricing</Button></div></div></div></main></Layout>;
 }
 
 function PublicRoutes() {
