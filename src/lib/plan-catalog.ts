@@ -1,9 +1,13 @@
 /**
  * Stripe-backed plan catalog.
  *
- * This is the backend source of truth for billing/status/checkout. Keep these
- * ids aligned with public pricing, signup intent validation, and JSON-LD:
- *   personal, personal-plus, starter, scale.
+ * Backend billing source of truth. Public pricing/signup now uses:
+ * personal, personal-plus, starter, scale.
+ *
+ * Compatibility note: Business Growth maps to the historical Pro Stripe env
+ * vars and Scale maps to the historical Business Stripe env vars until the new
+ * Stripe env names are created. This prevents checkout from breaking during the
+ * naming transition.
  */
 
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
@@ -20,15 +24,11 @@ export type StripePlan = {
   included_phone_numbers: number;
   features: string[];
   priceIdEnv: string;
-  legacyPriceIdEnvs?: string[];
   extra_agent_price_usd?: number;
   extraAgentPriceIdEnv?: string;
-  legacyExtraAgentPriceIdEnvs?: string[];
   price_usd_annual: number;
   annualPriceIdEnv: string;
-  legacyAnnualPriceIdEnvs?: string[];
   overagePriceIdEnv?: string;
-  legacyOveragePriceIdEnvs?: string[];
 };
 
 export const STRIPE_PLANS: StripePlan[] = [
@@ -85,16 +85,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     voice_minutes_monthly: 1_000,
     overage_per_min_usd: 0.18,
     included_phone_numbers: 5,
-    priceIdEnv: "STRIPE_STARTER_PRICE_ID",
-    legacyPriceIdEnvs: ["STRIPE_PRO_PRICE_ID"],
+    // Legacy Pro envs currently represent the $249 Business Growth tier.
+    priceIdEnv: "STRIPE_PRO_PRICE_ID",
     extra_agent_price_usd: 29,
-    extraAgentPriceIdEnv: "STRIPE_STARTER_EXTRA_AGENT_PRICE_ID",
-    legacyExtraAgentPriceIdEnvs: ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID"],
+    extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 2_390,
-    annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
-    legacyAnnualPriceIdEnvs: ["STRIPE_PRO_ANNUAL_PRICE_ID"],
-    overagePriceIdEnv: "STRIPE_STARTER_OVERAGE_PRICE_ID",
-    legacyOveragePriceIdEnvs: ["STRIPE_PRO_OVERAGE_PRICE_ID"],
+    annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
+    overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
       "5 AI agents included — add more anytime",
       "5 dedicated voice numbers included",
@@ -115,16 +112,13 @@ export const STRIPE_PLANS: StripePlan[] = [
     voice_minutes_monthly: 3_000,
     overage_per_min_usd: 0.16,
     included_phone_numbers: 10,
-    priceIdEnv: "STRIPE_SCALE_PRICE_ID",
-    legacyPriceIdEnvs: ["STRIPE_BUSINESS_PRICE_ID"],
+    // Legacy Business envs currently represent the $699 Scale tier.
+    priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     extra_agent_price_usd: 39,
-    extraAgentPriceIdEnv: "STRIPE_SCALE_EXTRA_AGENT_PRICE_ID",
-    legacyExtraAgentPriceIdEnvs: ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID"],
+    extraAgentPriceIdEnv: "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
     price_usd_annual: 6_710,
-    annualPriceIdEnv: "STRIPE_SCALE_ANNUAL_PRICE_ID",
-    legacyAnnualPriceIdEnvs: ["STRIPE_BUSINESS_ANNUAL_PRICE_ID"],
-    overagePriceIdEnv: "STRIPE_SCALE_OVERAGE_PRICE_ID",
-    legacyOveragePriceIdEnvs: ["STRIPE_BUSINESS_OVERAGE_PRICE_ID"],
+    annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
+    overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
       "10 AI agents included — add more anytime",
       "10 dedicated voice numbers included",
@@ -139,41 +133,17 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
 ];
 
-function envFirst(keys: Array<string | undefined>): string | undefined {
-  for (const key of keys) {
-    if (key && process.env[key]) return process.env[key];
-  }
-  return undefined;
-}
-
-export function monthlyPriceIdForPlan(plan: StripePlan): string | undefined {
-  return envFirst([plan.priceIdEnv, ...(plan.legacyPriceIdEnvs ?? [])]);
-}
-
-export function annualPriceIdForPlan(plan: StripePlan): string | undefined {
-  return envFirst([plan.annualPriceIdEnv, ...(plan.legacyAnnualPriceIdEnvs ?? [])]);
-}
-
-export function overagePriceIdForPlan(plan: StripePlan): string | undefined {
-  return envFirst([plan.overagePriceIdEnv, ...(plan.legacyOveragePriceIdEnvs ?? [])]);
-}
-
-export function extraAgentPriceIdForPlan(plan: StripePlan): string | undefined {
-  return envFirst([plan.extraAgentPriceIdEnv, ...(plan.legacyExtraAgentPriceIdEnvs ?? [])]);
-}
-
-export function allPriceIdsForPlan(plan: StripePlan): string[] {
-  return [
-    monthlyPriceIdForPlan(plan),
-    annualPriceIdForPlan(plan),
-    overagePriceIdForPlan(plan),
-    extraAgentPriceIdForPlan(plan),
-  ].filter((value): value is string => !!value);
-}
-
 export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
   if (!priceId) return null;
-  return STRIPE_PLANS.find((plan) => allPriceIdsForPlan(plan).includes(priceId)) || null;
+  return (
+    STRIPE_PLANS.find(
+      (p) =>
+        process.env[p.priceIdEnv] === priceId ||
+        process.env[p.annualPriceIdEnv] === priceId ||
+        (p.extraAgentPriceIdEnv ? process.env[p.extraAgentPriceIdEnv] === priceId : false) ||
+        (p.overagePriceIdEnv ? process.env[p.overagePriceIdEnv] === priceId : false),
+    ) || null
+  );
 }
 
 export function planById(id: string | null | undefined): StripePlan | null {
@@ -195,8 +165,8 @@ export function plansForClient() {
     included_phone_numbers: p.included_phone_numbers,
     extra_agent_price_usd: p.extra_agent_price_usd ?? null,
     features: p.features,
-    configured: !!monthlyPriceIdForPlan(p),
-    annual_configured: !!annualPriceIdForPlan(p),
+    configured: !!process.env[p.priceIdEnv],
+    annual_configured: !!process.env[p.annualPriceIdEnv],
     contact_sales: false,
   }));
 }
