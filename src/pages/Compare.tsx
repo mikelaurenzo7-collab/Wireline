@@ -40,7 +40,7 @@ const ROWS: Row[] = [
     retell: false,
   },
   {
-    feature: "Supervisor cockpit (live coach + take-over)",
+    feature: "Live supervision (coach + take-over)",
     detail:
       "Listen to live calls, see real-time transcripts, pause the agent and inject corrections without ending the call.",
     wireline: true,
@@ -132,7 +132,7 @@ const ROWS: Row[] = [
   {
     feature: "Operator console (not just an API)",
     detail:
-      "Triage, fleet, integrations, compliance ledger, and supervisor cockpit ship as one product. No separate admin UI to build.",
+      "Triage, fleet, integrations, compliance ledger, and live supervision ships as one product. No separate admin UI to build.",
     wireline: true,
     air: "partial",
     synthflow: "partial",
@@ -190,7 +190,7 @@ export default function Compare() {
     <>
       <PageMeta
         title="Wireline vs Air / Synthflow / Bland / Retell — Feature Comparison"
-        description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, frontier reasoning, and bundled phone numbers."
+        description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, live supervision, frontier reasoning, and bundled phone numbers."
         path="/compare"
       />
 
@@ -214,7 +214,7 @@ export default function Compare() {
             </h1>
             <p className="marketing-hero-lead mx-auto">
               Wireline is the horizontal platform that runs voice + SMS + email in one console with
-              supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
+              live supervision, frontier reasoning, white-label numbers, and a real TCPA ledger.
               Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;
               Air still wins on pure outbound price. Here's the full picture.
             </p>

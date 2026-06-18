@@ -152,7 +152,7 @@ const tiers: Tier[] = [
       "A real AI front desk with Studio, Training, Live Ops, analytics, and business-only integrations.",
     features: [
       "Agent Studio and Training",
-      "Live call cockpit",
+      "Live call view",
       "CRM and calendar routing",
       "Model choice per agent",
     ],
@@ -1170,7 +1170,7 @@ function LiveOps({ onCoach }: { onCoach: () => void }) {
       <div className="flex items-end justify-between">
         <PageTitle
           eyebrow="Live Operations"
-          title="The cockpit"
+          title="Live Ops"
           text="Real-time calls, status, coaching opportunities, and escalation visibility."
         />
         <button className="rounded-[14px] bg-brand px-4 py-2 text-sm font-semibold text-paper">

@@ -90,7 +90,7 @@ router.post(
           ? "Bookmarked for live monitoring. Audio streaming lands later this quarter — for now you can review the recording the moment the call ends."
           : mode === "whisper"
             ? "Whisper-coach intent captured. Real-time audio streaming is in beta — your note will be surfaced to the agent on its next call."
-            : "Barge-in queued. The supervisor cockpit will attach you to the line as soon as the live-audio channel is wired up.",
+            : "Barge-in queued. Live supervision will attach you to the line as soon as the live-audio channel is wired up.",
     });
   },
 );

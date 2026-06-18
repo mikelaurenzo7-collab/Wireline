@@ -44,7 +44,7 @@ const SELF_SERVE_TIERS = [
     id: "pro",
     label: "Pro",
     price: 499,
-    pitch: "Growing org · 10 agents · supervisor cockpit",
+    pitch: "Growing org · 10 agents · live supervision",
   },
   {
     id: "business",

@@ -76,7 +76,7 @@ const SAMPLE_SUMMARIES = [
   "Tech support — webhook signature error, walked them through rotating the secret.",
   "Tier comparison call. Customer downgrading from Pro to Starter, captured why (seasonal slowdown).",
   "Demo booked. Prospect coming over from Air, wants to see outbound playbook.",
-  "Renewal conversation. Customer happy, asked about Business tier supervisor cockpit.",
+  "Renewal conversation. Customer happy, asked about Business tier live supervision.",
   "Sales qual — 50-seat call-center prospect, routed to Liam for enterprise quote.",
   "Refund request. Charged twice during pause, refunded one and emailed receipt.",
   "Knowledge gap detected — customer asked about Slack DLP, captured to docs queue.",
@@ -100,7 +100,7 @@ const SAMPLE_KNOWLEDGE = [
   "Business+ customers get a dedicated CSM. CSM hands off after first 90 days unless customer asks to keep them.",
   "Refund window: 14 days from invoice for any new charge. Beyond that we offer credits but not refunds.",
   "When troubleshooting webhook signature errors, always rotate VAPI_WEBHOOK_SECRET in Vercel first, then update the assistant + every pool number's server.secret in lockstep.",
-  "Our biggest competitor is Air — they're cheaper but lack two-way SMS, no email agents, and no supervisor cockpit. Use that triple as the wedge.",
+  "Our biggest competitor is Air — they're cheaper but lack two-way SMS, no email agents, and no live supervision. Use that triple as the wedge.",
   "Enterprise legal redlines: we accept SCC, DPA, BAA on request. SOC2 Type 2 available under NDA.",
 ];
 
@@ -119,7 +119,7 @@ const SAMPLE_EMAIL_SUBJECTS = [
   "HIPAA + Wireline for our practice",
   "Follow-up from yesterday's call",
   "Demo request — outbound playbook",
-  "Business tier supervisor cockpit",
+  "Business tier live supervision",
   "Refund for duplicate charge",
   "Integration question: Slack alerts",
   "Can Avery handle after-hours?",

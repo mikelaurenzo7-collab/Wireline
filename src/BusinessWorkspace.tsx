@@ -366,7 +366,7 @@ function LiveOpsPage() {
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <Title
           eyebrow="Live Operations"
-          title="The cockpit for calls in motion."
+          title="Live calls, with your Assistant on watch."
           text="Track active calls, coaching moments, escalations, and quality pulse without crowding Studio."
         />
         <button className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">

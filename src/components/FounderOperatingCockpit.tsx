@@ -121,13 +121,15 @@ export default function FounderOperatingCockpit() {
     return (
       <div className="flex items-center gap-2 text-muted text-sm py-4">
         <Loader2 className="w-4 h-4 animate-spin" />
-        Loading operating cockpit…
+        Loading operating overview…
       </div>
     );
   }
 
   if (error || !data?.ok) {
-    return <p className="text-sm text-rose-600 py-2">{error ?? "Cockpit unavailable"}</p>;
+    return (
+      <p className="text-sm text-rose-600 py-2">{error ?? "Operating overview unavailable"}</p>
+    );
   }
 
   const acquiringOk = data.acquiring.new_users_7d > 0 || data.acquiring.demo_calls_7d > 0;
@@ -143,7 +145,7 @@ export default function FounderOperatingCockpit() {
     <section className="mb-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <p className="app-section-title mb-0.5">Operating cockpit</p>
+          <p className="app-section-title mb-0.5">Operating overview</p>
           <p className="text-[12px] text-muted">
             Launch readiness {data.launch_readiness.overall_score}% ·{" "}
             {data.launch_readiness.campaign_ready ? "Campaign ready" : "Not campaign ready"}

@@ -413,7 +413,7 @@ function Landing() {
         <div className="mx-auto max-w-7xl px-6 py-20 lg:py-32">
           <SectionHeader
             eyebrow="Business line"
-            title="A full front desk in one cockpit."
+            title="A full front desk, run by the Assistant."
             description="Live operations, agent fleet, Studio, Training, analytics, integrations, and a built-in Assistant for what to improve next."
           />
           <div className="mt-12 grid gap-5 lg:grid-cols-4">
@@ -1018,7 +1018,7 @@ function Assistant({ personal }: { personal: boolean }) {
 function LiveOps() {
   return (
     <div className="space-y-6">
-      <PageTitle eyebrow="Live Operations" title="The cockpit" light />
+      <PageTitle eyebrow="Live Operations" title="Live Ops" light />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {metrics.map((m) => (
           <Panel key={m.l}>

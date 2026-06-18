@@ -66,7 +66,7 @@ export const AUTH_PORTAL_SHOWCASE = {
   title: "Mission control for your",
   titleAccent: "AI fleet",
   subtitle:
-    "Wireline runs phone, email, and SMS agents on real numbers — trained on your playbook, supervised from one calm cockpit.",
+    "Wireline runs phone, email, and SMS agents on real numbers — trained on your playbook, supervised from one calm workspace.",
   features: [
     {
       id: "studio",

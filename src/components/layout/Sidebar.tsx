@@ -257,10 +257,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                           onClick={() => {
                             if (accountType !== "business") {
                               setAccountType("business");
-                              toastSuccess(
-                                "Workspace Switched",
-                                "Switched to Business Mode (Fleet Cockpit).",
-                              );
+                              toastSuccess("Workspace Switched", "Switched to Business workspace.");
                               setUserMenuOpen(false);
                             }
                           }}

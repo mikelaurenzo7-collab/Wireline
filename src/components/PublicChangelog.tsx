@@ -102,7 +102,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "polish",
     title: "Sidebar rail — desktop chrome rebuild",
-    body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs (Live Ops · Triage · Activity · Cockpit · More).",
+    body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs (Live Ops · Triage · Activity · Assistant · More).",
   },
   {
     date: "Jan 27, 2026",

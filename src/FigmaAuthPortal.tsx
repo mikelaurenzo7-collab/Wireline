@@ -262,7 +262,7 @@ function Shell({ children, mode }: { children: ReactNode; mode: WorkspaceMode })
           <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">
             {mode === "personal"
               ? "Your private phone chief of staff."
-              : "Run the front line from one cockpit."}
+              : "Run your front line with the Assistant."}
           </h1>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
             {mode === "personal"

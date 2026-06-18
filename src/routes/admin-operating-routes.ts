@@ -39,7 +39,7 @@ router.get(
       log.error("operating-cockpit failed", { error: getErrorMessage(e) });
       return res
         .status(500)
-        .json({ ok: false, code: "INTERNAL_ERROR", error: "Operating cockpit query failed" });
+        .json({ ok: false, code: "INTERNAL_ERROR", error: "Operating overview query failed" });
     }
   },
 );

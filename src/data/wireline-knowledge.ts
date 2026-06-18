@@ -123,7 +123,7 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Worried quality will slip or agents will go off-script",
     solution:
-      "a live supervisor cockpit with listen-in and whisper-coach, full transcripts, and a self-improvement loop that learns from every call",
+      "live supervision with listen-in and whisper-coach, full transcripts, and a self-improvement loop that learns from every call",
   },
 ] as const;
 
