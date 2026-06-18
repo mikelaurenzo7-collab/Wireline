@@ -435,8 +435,7 @@ export type ComposerAccessoryKind =
   | "capabilities"
   | "coach"
   | "tools"
-  | "attach"
-  | "designSetup";
+  | "attach";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
   connectors: "Connector lanes your fleet can orchestrate through Assistant",
@@ -444,8 +443,6 @@ export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, st
   coach: "Route this thread through one agent's memory and tools",
   tools: "Abilities currently armed for the coached agent",
   attach: "Documents, fleet context rules, or playbook instructions",
-  designSetup:
-    "Company blurb, style notes, and brand assets — merged into design.md before every render",
 };
 
 export const DIRECTOR_COMPOSER_CONTEXT = {
