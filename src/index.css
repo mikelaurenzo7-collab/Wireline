@@ -322,17 +322,6 @@
     max-width: 100% !important;
   }
 
-  .flex.min-h-screen.bg-ink.text-paper .grid,
-  .flex.min-h-screen.bg-ink.text-paper [class*="grid-cols-"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .flex.min-h-screen.bg-ink.text-paper [class*="xl:grid-cols-"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="lg:grid-cols-"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="sm:grid-cols-"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
   .flex.min-h-screen.bg-ink.text-paper .font-display,
   .flex.min-h-screen.bg-ink.text-paper p,
   .flex.min-h-screen.bg-ink.text-paper span,
@@ -345,3 +334,16 @@
   .flex.min-h-screen.bg-ink.text-paper .text-4xl { font-size: 2rem !important; line-height: 1.12 !important; }
   .flex.min-h-screen.bg-ink.text-paper .text-3xl { font-size: 1.65rem !important; line-height: 1.16 !important; }
 }
+
+@media (max-width: 767px) {
+  .flex.min-h-screen.bg-ink.text-paper .grid,
+  .flex.min-h-screen.bg-ink.text-paper [class*="grid-cols-"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .flex.min-h-screen.bg-ink.text-paper [class*="xl:grid-cols-"],
+  .flex.min-h-screen.bg-ink.text-paper [class*="lg:grid-cols-"],
+  .flex.min-h-screen.bg-ink.text-paper [class*="sm:grid-cols-"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
