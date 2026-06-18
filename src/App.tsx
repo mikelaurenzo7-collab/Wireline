@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import FigmaOverhaul from "./FigmaOverhaul";
 import PersonalWorkspace from "./PersonalWorkspace";
 import AgentStudioWorkspace from "./AgentStudioWorkspace";
+import BusinessWorkspace from "./BusinessWorkspace";
 import PublicMarketingWorkspace from "./PublicMarketingWorkspace";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./studio-hotfix.css";
 
 const publicPaths = new Set(["/", "/features", "/pricing", "/showcase", "/developers", "/compare", "/training", "/about", "/blog", "/terms", "/privacy", "/security", "/contact"]);
+const businessAliases = new Set(["/business", "/ops", "/integrations", "/analytics", "/phone", "/email", "/sms", "/admin"]);
 
 function cleanPath(path: string) {
   if (path === "/") return path;
@@ -43,6 +45,7 @@ export default function App() {
   const path = useCurrentPath();
   let Surface = FigmaOverhaul;
   if (publicPaths.has(path)) Surface = PublicMarketingWorkspace;
+  if (path.indexOf("/app/business") === 0 || businessAliases.has(path)) Surface = BusinessWorkspace;
   if (path.indexOf("/app/personal") === 0 || path === "/personal-home") Surface = PersonalWorkspace;
   if (path.indexOf("/app/business/studio") === 0 || path === "/agents") Surface = AgentStudioWorkspace;
 
