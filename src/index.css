@@ -1,4 +1,4 @@
-/* Wireline — "Midnight" design system. Dark-only, token-driven. */
+/* Wireline — "Signal" design system. Light-first, token-driven. */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
@@ -11,81 +11,87 @@
   --font-size: 16px;
   color-scheme: light;
 
-  /* ── Daybreak (LIGHT, default) ─────────────────────────────────────────────
-     The luminous synthesis of Midnight: a cool porcelain canvas, the same iris
-     hue family pulled deeper for ink-on-light contrast, mint/amber/rose signals
-     re-tuned to read on light. Dark (Midnight) lives in the .dark block below;
-     both are first-class. */
-  --canvas: #f4f6fc;       /* cool luminous porcelain */
-  --canvas-deep: #e9ecf6;
+  /* ── Signal (LIGHT, default) ───────────────────────────────────────────────
+     A premium, light-first system built on the metaphor of a signal travelling
+     a wire: precision, throughput, live orchestration. Porcelain canvas, crisp
+     white panels, graphite ink, an electric Signal Blue primary and a Live Teal
+     accent. Dark ("Signal Night") lives in the .dark block below; both are
+     first-class. Every token NAME is preserved from the prior system so the
+     ~750 consuming utilities keep working — only values change. */
+  --canvas: #f8f9fb;       /* porcelain */
+  --canvas-deep: #eef0f4;
   --panel: #ffffff;
-  --panel-2: #f6f8fd;
+  --panel-2: #f5f7fa;
   --raised: #ffffff;
   --velvet: #ffffff;
 
-  --text: #14161d;         /* graphite ink */
-  --text-2: #545a6b;
-  --text-3: #868c9e;
+  --text: #0b0d12;         /* graphite ink */
+  --text-2: #52586a;
+  --text-3: #8a90a2;
 
-  --iris: #5360e0;         /* vivid iris-indigo accent for light */
-  --iris-bright: #7c9cff;  /* Midnight's iris, kept as the bright/glow tint */
-  --iris-deep: #3a44b8;
+  --iris: #2b5bf0;         /* Signal Blue — primary (name kept for consumers) */
+  --iris-bright: #5b82ff;  /* bright tint / glow */
+  --iris-deep: #1e3fb0;
+  --teal: #0fb5ba;         /* Live Teal — the "live wire" accent */
+  --teal-bright: #2fd4d9;
+  --teal-deep: #0a8a8e;
   --mint: #0f9d74;
-  --amber: #b1700c;
-  --rose: #d8503f;
+  --amber: #b06f0a;        /* readable amber-on-light for text/icons */
+  --amber-solid: #f5a623;  /* full-energy amber for fills/accents */
+  --rose: #e5484d;
 
   /* Legacy aliases. ink/paper carry the ink (text + hairline) role on light;
      the few solid bg-ink/bg-paper surfaces are remapped to the canvas/panel via
      the overrides in the light-surface block further down. */
-  --paper: #14161d;
-  --paper-deep: #0c0d11;
-  --paper-soft: #2a2e3a;
-  --ink: #14161d;
-  --ink-soft: #2a2e3a;
-  --brand: #4f5bd5;        /* deep iris — readable as primary on light */
-  --brand-deep: #3a44b8;
-  --brand-bright: #7c9cff;
+  --paper: #0b0d12;
+  --paper-deep: #06070a;
+  --paper-soft: #20242e;
+  --ink: #0b0d12;
+  --ink-soft: #20242e;
+  --brand: #2b5bf0;        /* Signal Blue — primary */
+  --brand-deep: #1e3fb0;
+  --brand-bright: #5b82ff;
 
   /* shadcn semantic tokens (drive every primitive + Tailwind color utility). */
-  --background: #f4f6fc;
-  --foreground: #14161d;
+  --background: #f8f9fb;
+  --foreground: #0b0d12;
   --card: #ffffff;
-  --card-foreground: #14161d;
+  --card-foreground: #0b0d12;
   --popover: #ffffff;
-  --popover-foreground: #14161d;
-  --primary: #4f5bd5;
+  --popover-foreground: #0b0d12;
+  --primary: #2b5bf0;
   --primary-foreground: #ffffff;
-  --secondary: #eef1f9;
-  --secondary-foreground: #14161d;
-  --muted: #eef1f9;
-  --muted-foreground: #565c6c;
-  --accent: #e7ebf7;
-  --accent-foreground: #14161d;
-  --destructive: #d92d20;
+  --secondary: #eef1f8;
+  --secondary-foreground: #0b0d12;
+  --muted: #eef1f8;
+  --muted-foreground: #52586a;
+  --accent: #e6edff;
+  --accent-foreground: #1e3fb0;
+  --destructive: #e5484d;
   --destructive-foreground: #ffffff;
-  --border: rgba(20, 22, 32, 0.1);
-  --input: rgba(20, 22, 32, 0.14);
+  --border: rgba(11, 13, 18, 0.1);
+  --input: rgba(11, 13, 18, 0.14);
   --input-background: #ffffff;
-  --switch-background: #d5d9e6;
-  --ring: #4f5bd5;
-  --chart-1: #4f5bd5;
-  --chart-2: #0f9d74;
-  --chart-3: #b1700c;
-  --chart-4: #7c9cff;
-  --chart-5: #3a44b8;
+  --switch-background: #d3d8e4;
+  --ring: #2b5bf0;
+  --chart-1: #2b5bf0;
+  --chart-2: #0fb5ba;
+  --chart-3: #f5a623;
+  --chart-4: #0f9d74;
+  --chart-5: #1e3fb0;
 
   /* Marketing showcase surfaces (the art-directed public hero + device mock).
-     Light renders clean porcelain; .dark keeps Midnight's exact purple-blacks. */
+     Light renders clean porcelain; .dark keeps a deep graphite-blue. */
   --marketing-surface: #ffffff;
-  --marketing-surface-2: #f3f5fb;
+  --marketing-surface-2: #f3f6fc;
   --marketing-deep: #fafbff;
 
   /* Theme-aware "white": utilities like text-white / border-white/10 / bg-white/5
      resolve to ink on light (so the ~750 dark-built utilities read correctly)
      and to true white in dark. */
-  --white: #14161d;
+  --white: #0b0d12;
 
-  --radius: 14px;
+  --radius: 12px;
   --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -94,65 +100,69 @@
 .dark {
   color-scheme: dark;
 
-  /* ── Midnight (DARK) ───────────────────────────────────────────────────────
-     graphite canvas, iris accent, mint/amber signals. Preserved exactly. */
-  --canvas: #0c0d11;
-  --canvas-deep: #0a0b0e;
-  --panel: #14161d;
-  --panel-2: #191c24;
-  --raised: #21242e;
-  --velvet: #16181f;
+  /* ── Signal Night (DARK) ───────────────────────────────────────────────────
+     Deep graphite canvas, brightened Signal Blue, luminous Live Teal. */
+  --canvas: #0b0d12;
+  --canvas-deep: #07080c;
+  --panel: #13151c;
+  --panel-2: #181b23;
+  --raised: #1b1e27;
+  --velvet: #15171e;
 
-  --text: #eceDF1;
-  --text-2: #9b9da8;
-  --text-3: #62646e;
+  --text: #eef0f5;
+  --text-2: #9a9fae;
+  --text-3: #5f6473;
 
-  --iris: #7c9cff;
-  --iris-bright: #a9beff;
-  --iris-deep: #5570e6;
-  --mint: #54e0b4;
-  --amber: #f4b45a;
-  --rose: #e5705f;
+  --iris: #5b82ff;
+  --iris-bright: #89a4ff;
+  --iris-deep: #3a5fe0;
+  --teal: #2fd4d9;
+  --teal-bright: #5fe4e8;
+  --teal-deep: #0fb5ba;
+  --mint: #3edca6;
+  --amber: #f7b955;
+  --amber-solid: #f7b955;
+  --rose: #ff5a5f;
 
-  --paper: #eceDF1;
-  --paper-deep: #0a0b0e;
-  --paper-soft: #16181d;
-  --ink: #0c0d11;
-  --ink-soft: #191c24;
-  --brand: #7c9cff;
-  --brand-deep: #5570e6;
-  --brand-bright: #a9beff;
+  --paper: #eef0f5;
+  --paper-deep: #07080c;
+  --paper-soft: #15171e;
+  --ink: #0b0d12;
+  --ink-soft: #181b23;
+  --brand: #5b82ff;
+  --brand-deep: #3a5fe0;
+  --brand-bright: #89a4ff;
 
-  --background: #0c0d11;
-  --foreground: #eceDF1;
-  --card: #14161d;
-  --card-foreground: #eceDF1;
-  --popover: #191c24;
-  --popover-foreground: #eceDF1;
-  --primary: #7c9cff;
-  --primary-foreground: #0a0b10;
-  --secondary: #191c24;
-  --secondary-foreground: #eceDF1;
-  --muted: #191c24;
-  --muted-foreground: #9b9da8;
-  --accent: #21242e;
-  --accent-foreground: #eceDF1;
-  --destructive: #e5484d;
+  --background: #0b0d12;
+  --foreground: #eef0f5;
+  --card: #13151c;
+  --card-foreground: #eef0f5;
+  --popover: #181b23;
+  --popover-foreground: #eef0f5;
+  --primary: #5b82ff;
+  --primary-foreground: #07080c;
+  --secondary: #181b23;
+  --secondary-foreground: #eef0f5;
+  --muted: #181b23;
+  --muted-foreground: #9a9fae;
+  --accent: #1b1e27;
+  --accent-foreground: #eef0f5;
+  --destructive: #ff5a5f;
   --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.09);
   --input: rgba(255, 255, 255, 0.12);
-  --input-background: #191c24;
-  --switch-background: #21242e;
-  --ring: #7c9cff;
-  --chart-1: #7c9cff;
-  --chart-2: #54e0b4;
-  --chart-3: #f4b45a;
-  --chart-4: #a9beff;
-  --chart-5: #5570e6;
+  --input-background: #181b23;
+  --switch-background: #1b1e27;
+  --ring: #5b82ff;
+  --chart-1: #5b82ff;
+  --chart-2: #2fd4d9;
+  --chart-3: #f7b955;
+  --chart-4: #3edca6;
+  --chart-5: #89a4ff;
 
-  --marketing-surface: #0f0b14;
-  --marketing-surface-2: #17101d;
-  --marketing-deep: #100b14;
+  --marketing-surface: #0e1118;
+  --marketing-surface-2: #141822;
+  --marketing-deep: #0b0e15;
 
   --white: #ffffff;
 }
@@ -193,17 +203,22 @@
   --color-iris: var(--iris);
   --color-iris-bright: var(--iris-bright);
   --color-iris-deep: var(--iris-deep);
+  --color-teal: var(--teal);
+  --color-teal-bright: var(--teal-bright);
+  --color-teal-deep: var(--teal-deep);
   --color-mint: var(--mint);
   --color-amber: var(--amber);
+  --color-amber-solid: var(--amber-solid);
+  --color-rose: var(--rose);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --radius-sm: 10px;
-  --radius-md: 12px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-2xl: 22px;
-  --radius-3xl: 28px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 26px;
 }
 
 @layer base {
@@ -229,9 +244,9 @@
   body {
     min-height: 100vh;
     overflow-x: hidden;
-    /* Calm, single faint iris bloom — no competing gradients or grain. */
+    /* Calm, single faint Signal Blue bloom — no competing gradients or grain. */
     background:
-      radial-gradient(62% 38% at 50% -8%, rgba(124, 156, 255, 0.08), transparent 70%),
+      radial-gradient(62% 38% at 50% -8%, rgba(43, 91, 240, 0.06), transparent 70%),
       var(--canvas);
     background-attachment: fixed;
     color: var(--foreground);
@@ -300,12 +315,13 @@
 }
 
 @layer utilities {
-  /* Surface utilities, restyled to Midnight (kept names = no consumer churn). */
+  /* Surface utilities (kept names = no consumer churn). Authored for dark;
+     re-grounded for light in the light-surface block below. */
   .wl-overhaul-surface,
   .wl-cream-surface,
   .wl-grain {
     background:
-      radial-gradient(50% 36% at 70% 0%, rgba(124, 156, 255, 0.06), transparent 70%),
+      radial-gradient(50% 36% at 70% 0%, rgba(43, 91, 240, 0.05), transparent 70%),
       var(--canvas);
   }
 
@@ -334,6 +350,20 @@
     background: var(--panel-2);
     border-radius: var(--radius-xl);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 40px 80px -50px rgba(0, 0, 0, 0.95);
+  }
+
+  /* Signal accent helpers — a subtle "live wire" vocabulary for the new system. */
+  .wl-signal-ring {
+    box-shadow: 0 0 0 1px var(--border), 0 0 0 4px color-mix(in oklab, var(--iris) 14%, transparent);
+  }
+  .wl-signal-glow {
+    box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--iris) 55%, transparent);
+  }
+  .wl-gradient-text {
+    background: linear-gradient(100deg, var(--iris) 0%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .wl-title {
@@ -378,11 +408,11 @@
 }
 
 /* ── Light-surface corrections ──────────────────────────────────────────────
-   The component layer was authored dark-first. On Daybreak (light), a handful
-   of surfaces and shadows need re-grounding: solid `bg-ink`/`bg-paper` are the
+   The component layer was authored dark-first. On light (Signal), a handful of
+   surfaces and shadows need re-grounding: solid `bg-ink`/`bg-paper` are the
    canvas/panel (ink itself stays dark so border-ink/text-ink read as hairlines
    and ink text), and the heavy graphite drop-shadows soften into airy lifts.
-   These only apply when NOT in .dark, so Midnight is untouched. */
+   These only apply when NOT in .dark, so Signal Night is untouched. */
 html:not(.dark) .bg-ink {
   background-color: var(--canvas);
 }
@@ -392,20 +422,20 @@ html:not(.dark) .bg-paper {
 html:not(.dark) .wl-premium-card {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 18px 44px -30px rgba(20, 22, 45, 0.22);
+    0 18px 44px -30px rgba(11, 22, 60, 0.18);
 }
 html:not(.dark) .wl-dark-card {
   background: var(--panel);
-  box-shadow: 0 14px 36px -26px rgba(20, 22, 45, 0.2);
+  box-shadow: 0 14px 36px -26px rgba(11, 22, 60, 0.16);
 }
 html:not(.dark) .wl-panel-elevated {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 22px 50px -34px rgba(20, 22, 45, 0.2);
+    0 22px 50px -34px rgba(11, 22, 60, 0.16);
 }
-/* The signature ambient body bloom reads warmer/softer on porcelain. */
+/* The signature ambient body bloom reads cool and airy on porcelain. */
 html:not(.dark) body {
   background:
-    radial-gradient(58% 40% at 50% -10%, rgba(83, 96, 224, 0.07), transparent 72%),
+    radial-gradient(58% 40% at 50% -10%, rgba(43, 91, 240, 0.06), transparent 72%),
     var(--canvas);
 }

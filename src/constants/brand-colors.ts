@@ -1,27 +1,38 @@
 /**
- * Wireline brand palette — rich purple + warm cream only.
- * Use for inline styles, route accents, and chrome that must not drift
- * into off-brand blues, oranges, or teals.
+ * Wireline "Signal" brand palette — electric Signal Blue + Live Teal on
+ * porcelain. Use for inline styles, route accents, and chrome. The historical
+ * `purple*` keys are retained as stable aliases (every consumer keeps working);
+ * their values now resolve to the Signal Blue family. Prefer `signal`/`teal`
+ * for new code.
  */
 export const BRAND = {
-  purple: "#7C9CFF",
-  purpleDeep: "#3B154C",
-  purpleMid: "#5570E6",
-  purpleRim: "#5A1F7A",
-  purpleLight: "#7C9CFF",
-  purpleMuted: "#8B6FA8",
-  purpleInk: "#2E0F4A",
-  cream: "#F5F1E8",
-  paper: "#F5F1E8",
-  creamWarm: "#D4C9B8",
-  creamDeep: "#C4B5A0",
-  ink: "#1A1614",
+  /* Canonical Signal tokens (preferred for new code). */
+  signal: "#2B5BF0",
+  signalBright: "#5B82FF",
+  signalDeep: "#1E3FB0",
+  teal: "#0FB5BA",
+  tealBright: "#2FD4D9",
+  amber: "#F5A623",
+
+  /* Legacy aliases — remapped to the Signal Blue family. */
+  purple: "#2B5BF0",
+  purpleDeep: "#1E3FB0",
+  purpleMid: "#3A5FE0",
+  purpleRim: "#14307E",
+  purpleLight: "#5B82FF",
+  purpleMuted: "#6B7BA8",
+  purpleInk: "#0B1A44",
+  cream: "#F8F9FB",
+  paper: "#F8F9FB",
+  creamWarm: "#EEF0F4",
+  creamDeep: "#DDE2EC",
+  ink: "#0B0D12",
   /** Dark elevated panel surface — composer, artifacts, live fades */
-  velvet: "#1A1225",
+  velvet: "#13151C",
   /** Luminous brand on dark chrome (wordmarks, focus accents) */
-  chromeGlow: "#C77DFF",
+  chromeGlow: "#5B82FF",
   /** Errors, overage, and critical compliance only — not decorative. */
-  rose: "#E8466A",
+  rose: "#E5484D",
 } as const;
 
 export type BrandAccentPair = readonly [string, string];
