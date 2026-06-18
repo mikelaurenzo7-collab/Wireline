@@ -173,7 +173,7 @@ function RequireBusiness({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading)
     return (
-      <div className="grid min-h-screen place-items-center bg-background text-ink">
+      <div className="grid min-h-screen place-items-center bg-background text-foreground">
         <Sparkles className="h-5 w-5 animate-pulse text-brand-bright" />
       </div>
     );
@@ -189,7 +189,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const active = pageFromPath(location.pathname);
   const activeLabel = nav.find(([id]) => id === active)?.[1] ?? "Business";
   return (
-    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-ink wl-overhaul-surface wl-grain">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-overhaul-surface wl-grain">
       <aside className="wl-glass-panel hidden w-64 shrink-0 flex-col p-4 2xl:flex">
         <Link
           to="/"

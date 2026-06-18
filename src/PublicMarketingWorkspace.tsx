@@ -157,7 +157,7 @@ function Logo({ light = false }: { light?: boolean }) {
       <span
         className={cn(
           "font-display text-[20px] font-semibold tracking-[-0.03em]",
-          light ? "text-paper" : "text-ink",
+          light ? "text-paper" : "text-foreground",
         )}
       >
         Wireline
@@ -197,7 +197,8 @@ function Button({
         "inline-flex h-11 items-center justify-center gap-2 rounded-[14px] px-5 text-sm font-semibold transition active:scale-[.98]",
         variant === "primary" &&
           "bg-brand text-paper shadow-[0_24px_50px_-22px_rgba(79,30,123,.8)] hover:bg-brand-deep",
-        variant === "secondary" && "border border-ink/12 bg-card text-ink hover:border-brand/40",
+        variant === "secondary" &&
+          "border border-ink/12 bg-card text-foreground hover:border-brand/40",
         variant === "dark" && "border border-white/10 bg-white/5 text-paper hover:bg-white/10",
       )}
     >
@@ -208,7 +209,7 @@ function Button({
 
 function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-dvh overflow-x-clip bg-background text-ink wl-overhaul-surface">
+    <div className="min-h-dvh overflow-x-clip bg-background text-foreground wl-overhaul-surface">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0f0b14]/90 text-paper backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5 sm:px-8">
           <Link to="/" aria-label="Wireline home">
@@ -291,7 +292,7 @@ function FooterCol({
       <p
         className={cn(
           "text-[11px] font-bold uppercase tracking-[.16em]",
-          dark ? "text-paper" : "text-ink",
+          dark ? "text-paper" : "text-foreground",
         )}
       >
         {title}
@@ -302,7 +303,7 @@ function FooterCol({
           to={path(link)}
           className={cn(
             "block text-sm",
-            dark ? "text-white/45 hover:text-paper" : "text-muted-foreground hover:text-ink",
+            dark ? "text-white/45 hover:text-paper" : "text-muted-foreground hover:text-foreground",
           )}
         >
           {link}
@@ -336,7 +337,7 @@ function SectionHeader({
       <h2
         className={cn(
           "mt-3 font-display !normal-case text-4xl font-medium leading-[1.03] tracking-[-.05em] md:text-6xl",
-          dark ? "text-paper" : "text-ink",
+          dark ? "text-paper" : "text-foreground",
         )}
       >
         {title}
@@ -359,7 +360,9 @@ function Card({ item, dark = false }: { item: CardItem; dark?: boolean }) {
     <div
       className={cn(
         "rounded-[28px] border p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]",
-        dark ? "border-paper/12 bg-paper/[0.035] text-paper" : "border-border bg-card text-ink",
+        dark
+          ? "border-paper/12 bg-card/[0.035] text-paper"
+          : "border-border bg-card text-foreground",
       )}
     >
       <div
@@ -825,7 +828,7 @@ function Pricing() {
                 "flex min-h-[430px] flex-col rounded-[30px] border p-6",
                 tier.featured
                   ? "border-brand bg-ink text-paper"
-                  : "border-border bg-background text-ink",
+                  : "border-border bg-background text-foreground",
               )}
             >
               <div className="flex items-start justify-between gap-3">

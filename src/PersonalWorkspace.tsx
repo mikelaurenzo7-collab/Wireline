@@ -267,7 +267,7 @@ function Shell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   return (
-    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-ink wl-grain">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-grain">
       <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
@@ -277,7 +277,7 @@ function Shell({ children }: { children: ReactNode }) {
             <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">
               W
             </span>
-            <span className="font-display text-[20px] font-semibold tracking-[-0.03em] text-ink">
+            <span className="font-display text-[20px] font-semibold tracking-[-0.03em] text-foreground">
               Wireline
             </span>
           </Link>
@@ -293,7 +293,7 @@ function Shell({ children }: { children: ReactNode }) {
                 void signOut();
                 navigate("/");
               }}
-              className="text-muted-foreground transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md p-1"
+              className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md p-1"
             >
               <LogOut size={17} />
             </button>
@@ -351,7 +351,7 @@ function ModelSelector() {
           <option key={name}>{name}</option>
         ))}
       </select>
-      <p className="mt-3 rounded-[16px] bg-paper-deep p-3 text-sm leading-6 text-muted-foreground transition-colors hover:bg-ink/5">
+      <p className="mt-3 rounded-[16px] bg-card-deep p-3 text-sm leading-6 text-muted-foreground transition-colors hover:bg-ink/5">
         {selected[2]}
       </p>
     </Card>
@@ -382,9 +382,9 @@ function HomeView() {
             ].map(([value, label]) => (
               <div
                 key={label}
-                className="rounded-[18px] border border-border bg-background p-4 transition-colors hover:bg-paper-deep"
+                className="rounded-[18px] border border-border bg-background p-4 transition-colors hover:bg-card-deep"
               >
-                <p className="font-display text-3xl text-ink">{value}</p>
+                <p className="font-display text-3xl text-foreground">{value}</p>
                 <p className="mt-1 text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">
                   {label}
                 </p>
@@ -400,7 +400,7 @@ function HomeView() {
             </Link>
             <Link
               to="/app/personal/automations"
-              className="rounded-[14px] border border-border bg-background px-5 py-3 text-sm font-semibold text-ink transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="rounded-[14px] border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Tune automations
             </Link>
@@ -551,7 +551,7 @@ function AutomationsView() {
                 </div>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{detail}</p>
                 <p className="mt-4 rounded-[14px] bg-background p-3 text-xs leading-5 text-muted-foreground">
-                  <span className="font-semibold text-ink">Surface:</span> {surface}
+                  <span className="font-semibold text-foreground">Surface:</span> {surface}
                 </p>
               </Card>
             ))}
@@ -588,7 +588,7 @@ function DevicesView() {
                   <Status value={status} />
                 </div>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground flex-1">{detail}</p>
-                <button className="mt-5 w-fit rounded-[14px] border border-border bg-background px-3 py-2 text-sm font-semibold text-ink transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                <button className="mt-5 w-fit rounded-[14px] border border-border bg-background px-3 py-2 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                   {action}
                 </button>
               </Card>
@@ -623,7 +623,7 @@ function NumberView() {
             <div key={label} className="rounded-[18px] border border-border bg-background p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-ink">{label}</div>
+                  <div className="text-sm font-semibold text-foreground">{label}</div>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
                 </div>
                 <Status value={status} />
@@ -662,10 +662,10 @@ function ActivityView({ compact = false }: { compact?: boolean }) {
         {activityRows.slice(0, compact ? 3 : activityRows.length).map(([who, result, status]) => (
           <div
             key={who}
-            className="grid gap-2 bg-background p-4 text-sm transition-colors hover:bg-paper-deep sm:grid-cols-[1fr_auto]"
+            className="grid gap-2 bg-background p-4 text-sm transition-colors hover:bg-card-deep sm:grid-cols-[1fr_auto]"
           >
             <div>
-              <p className="font-semibold text-ink">{who}</p>
+              <p className="font-semibold text-foreground">{who}</p>
               <p className="mt-1 text-muted-foreground">{result}</p>
             </div>
             <Status value={status} />
@@ -697,7 +697,7 @@ function SettingsView() {
             ].map((rule) => (
               <button
                 key={rule}
-                className="flex items-center gap-3 rounded-[16px] border border-border bg-background p-3 text-sm text-left transition-colors hover:bg-paper-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="flex items-center gap-3 rounded-[16px] border border-border bg-background p-3 text-sm text-left transition-colors hover:bg-card-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Check className="h-4 w-4 text-brand shrink-0" /> {rule}
               </button>
@@ -715,7 +715,7 @@ function SettingsView() {
             (item) => (
               <button
                 key={item}
-                className="group flex w-full items-center justify-between rounded-[16px] border border-border bg-background p-3 text-left text-sm font-semibold text-ink transition-all duration-200 hover:bg-ink/5 hover:border-ink/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="group flex w-full items-center justify-between rounded-[16px] border border-border bg-background p-3 text-left text-sm font-semibold text-foreground transition-all duration-200 hover:bg-ink/5 hover:border-ink/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <span>{item}</span>
                 <ChevronRight

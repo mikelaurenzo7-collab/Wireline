@@ -317,7 +317,7 @@ function Logo({ light = false }: { light?: boolean }) {
       <span
         className={cx(
           "font-display text-[19px] font-semibold tracking-[-0.03em]",
-          light ? "text-paper" : "text-ink",
+          light ? "text-paper" : "text-foreground",
         )}
       >
         Wireline
@@ -345,7 +345,7 @@ function Pill({
           ? "border-white/10 bg-white/5 text-white/65"
           : active
             ? "border-brand/20 bg-brand/10 text-brand"
-            : "border-ink/10 bg-paper-deep text-muted-foreground",
+            : "border-ink/10 bg-card-deep text-muted-foreground",
         className,
       )}
     >
@@ -370,8 +370,9 @@ function ButtonLink({
         "inline-flex h-11 items-center justify-center gap-2 rounded-[14px] px-5 text-sm font-semibold transition-all active:scale-[.98]",
         variant === "primary" &&
           "bg-brand text-paper shadow-[0_24px_50px_-22px_rgba(79,30,123,.8)] hover:bg-brand-deep",
-        variant === "secondary" && "border border-ink/12 bg-card text-ink hover:border-brand/40",
-        variant === "ghost" && "text-muted-foreground hover:bg-ink/5 hover:text-ink",
+        variant === "secondary" &&
+          "border border-ink/12 bg-card text-foreground hover:border-brand/40",
+        variant === "ghost" && "text-muted-foreground hover:bg-ink/5 hover:text-foreground",
       )}
     >
       {children}
@@ -399,7 +400,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 function MarketingFrame({ children }: { children: ReactNode }) {
   const nav = ["features", "pricing", "showcase", "developers", "about"];
   return (
-    <div className="min-h-dvh overflow-x-clip bg-background text-ink wl-overhaul-surface">
+    <div className="min-h-dvh overflow-x-clip bg-background text-foreground wl-overhaul-surface">
       <header className="sticky top-0 z-50 border-b border-border bg-background/86 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link to="/">
@@ -413,7 +414,9 @@ function MarketingFrame({ children }: { children: ReactNode }) {
                 className={({ isActive }) =>
                   cx(
                     "rounded-[12px] px-3 py-2 text-[13px] font-medium capitalize transition-colors",
-                    isActive ? "bg-ink/5 text-ink" : "text-muted-foreground hover:text-ink",
+                    isActive
+                      ? "bg-ink/5 text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )
                 }
               >
@@ -450,7 +453,9 @@ function MarketingFrame({ children }: { children: ReactNode }) {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {["Product", "Solutions", "Developers", "Company"].map((col) => (
               <div key={col} className="space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-[.16em] text-ink">{col}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[.16em] text-foreground">
+                  {col}
+                </p>
                 {["Features", "Pricing", "Security", "Contact"].map((x) => (
                   <p key={x} className="text-sm text-muted-foreground">
                     {x}
@@ -489,7 +494,7 @@ function SectionHeader({
       <h2
         className={cx(
           "mt-3 font-display text-4xl font-medium leading-[1.05] tracking-[-.04em] md:text-5xl",
-          dark ? "text-paper" : "text-ink",
+          dark ? "text-paper" : "text-foreground",
         )}
       >
         {title}
@@ -521,7 +526,7 @@ function DarkCard({ children, className = "" }: { children: ReactNode; className
   return (
     <div
       className={cx(
-        "rounded-[26px] border border-paper/12 bg-paper/[0.035] p-5 shadow-[0_24px_80px_-60px_rgba(0,0,0,.8)]",
+        "rounded-[26px] border border-paper/12 bg-card/[0.035] p-5 shadow-[0_24px_80px_-60px_rgba(0,0,0,.8)]",
         className,
       )}
     >
@@ -549,7 +554,7 @@ function HeroPhone({ mode }: { mode: "personal" | "business" }) {
   return (
     <div className="relative mx-auto w-full max-w-[520px]">
       <div className="absolute inset-6 -z-10 rounded-[40px] bg-brand/12 blur-3xl" />
-      <div className="rounded-[32px] border border-border bg-paper-deep p-3 shadow-[0_40px_120px_-70px_rgba(26,22,20,.65)]">
+      <div className="rounded-[32px] border border-border bg-card-deep p-3 shadow-[0_40px_120px_-70px_rgba(26,22,20,.65)]">
         <div className="rounded-[26px] border border-border bg-card p-5">
           <div className="flex items-center justify-between gap-4">
             <Logo />
@@ -591,12 +596,12 @@ function HeroPhone({ mode }: { mode: "personal" | "business" }) {
             {stats.map(([value, label], i) => (
               <div
                 key={label}
-                className="rounded-[18px] border border-border bg-paper-deep px-3 py-3"
+                className="rounded-[18px] border border-border bg-card-deep px-3 py-3"
               >
                 <p
                   className={cx(
                     "font-display text-2xl font-medium leading-none",
-                    i === 0 ? "text-brand" : "text-ink",
+                    i === 0 ? "text-brand" : "text-foreground",
                   )}
                 >
                   {value}
@@ -630,7 +635,7 @@ function Landing() {
               <Pill>
                 <Sparkles size={12} /> Hundreds of models · no lock-in
               </Pill>
-              <h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.02] tracking-[-0.055em] text-ink md:text-7xl">
+              <h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.02] tracking-[-0.055em] text-foreground md:text-7xl">
                 Your phone, finally <span className="italic text-brand">working for you.</span>
               </h1>
               <p className="max-w-xl text-[16px] leading-7 text-muted-foreground">
@@ -638,7 +643,7 @@ function Landing() {
                 AI agents that answer your business floor around the clock. Human-fast. Never
                 off-script.
               </p>
-              <div className="flex w-fit rounded-full border border-border bg-paper-deep p-1">
+              <div className="flex w-fit rounded-full border border-border bg-card-deep p-1">
                 {(["personal", "business"] as const).map((m) => (
                   <button
                     key={m}
@@ -713,7 +718,7 @@ function FeatureBand() {
               <div className="mb-5 grid h-11 w-11 place-items-center rounded-full bg-brand text-paper">
                 <Icon size={20} />
               </div>
-              <h3 className="font-display text-xl font-medium text-ink">{t}</h3>
+              <h3 className="font-display text-xl font-medium text-foreground">{t}</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{d}</p>
             </Card>
           ))}
@@ -761,12 +766,17 @@ function TierCard({ tier }: { tier: Tier }) {
     <div
       className={cx(
         "flex min-h-[420px] flex-col rounded-[30px] border p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]",
-        tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-ink",
+        tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-foreground",
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className={cx("text-sm font-semibold", tier.featured ? "text-paper" : "text-ink")}>
+          <p
+            className={cx(
+              "text-sm font-semibold",
+              tier.featured ? "text-paper" : "text-foreground",
+            )}
+          >
             {tier.name}
           </p>
           <p
@@ -800,7 +810,10 @@ function TierCard({ tier }: { tier: Tier }) {
         {tier.features.map((feature) => (
           <p
             key={feature}
-            className={cx("flex items-start gap-2", tier.featured ? "text-white/82" : "text-ink")}
+            className={cx(
+              "flex items-start gap-2",
+              tier.featured ? "text-white/82" : "text-foreground",
+            )}
           >
             <Check
               size={15}
@@ -815,8 +828,8 @@ function TierCard({ tier }: { tier: Tier }) {
         className={cx(
           "mt-auto inline-flex h-11 items-center justify-center rounded-[14px] px-4 text-sm font-semibold",
           tier.featured
-            ? "bg-paper text-ink hover:bg-white"
-            : "border border-border bg-background text-ink hover:border-brand",
+            ? "bg-card text-foreground hover:bg-card"
+            : "border border-border bg-background text-foreground hover:border-brand",
         )}
       >
         Start with {tier.name}
@@ -924,7 +937,7 @@ function BusinessConsole({ initial = "assistant" }: { initial?: BusinessTab }) {
                 "flex items-center gap-3 px-3 py-2.5 text-left text-[13px] transition",
                 tab === n.id
                   ? "bg-brand text-paper"
-                  : "text-paper/60 hover:bg-paper/5 hover:text-paper",
+                  : "text-paper/60 hover:bg-card/5 hover:text-paper",
               )}
             >
               {n.icon}
@@ -1067,14 +1080,16 @@ function AssistantConsole({
     <div
       className={cx(
         "mx-auto flex h-full w-full max-w-3xl flex-col min-h-0",
-        business ? "text-paper" : "text-ink",
+        business ? "text-paper" : "text-foreground",
       )}
     >
       <div>
         <Pill dark={business} active={!business}>
           <Sparkles size={12} /> Wireline Assistant
         </Pill>
-        <h1 className={cx("mt-3 font-display text-4xl", business ? "text-paper" : "text-ink")}>
+        <h1
+          className={cx("mt-3 font-display text-4xl", business ? "text-paper" : "text-foreground")}
+        >
           {business
             ? "Your operator for agents, workflows, and launch."
             : "Your personal phone chief of staff."}
@@ -1087,7 +1102,7 @@ function AssistantConsole({
       <div
         className={cx(
           "mt-6 flex min-h-0 flex-1 flex-col border p-5",
-          business ? "border-paper/12 bg-paper/[.03]" : "border-border bg-card",
+          business ? "border-paper/12 bg-card/[.03]" : "border-border bg-card",
         )}
       >
         <div className="flex-1 space-y-4 overflow-auto pr-1">
@@ -1219,7 +1234,7 @@ function LiveOps({ onCoach }: { onCoach: () => void }) {
                   <span>{x}</span>
                   <span className="text-brand-bright">{92 - i * 7}%</span>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-paper/10">
+                <div className="mt-2 h-2 rounded-full bg-card/10">
                   <div
                     className="h-2 rounded-full bg-brand-bright"
                     style={{ width: `${92 - i * 7}%` }}
@@ -1286,7 +1301,7 @@ function Fleet({
 }
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[16px] bg-paper/[.045] p-3">
+    <div className="rounded-[16px] bg-card/[.045] p-3">
       <p className="font-display text-2xl">{value}</p>
       <p className="text-[10px] uppercase tracking-[.14em] text-paper/35">{label}</p>
     </div>
@@ -1382,7 +1397,7 @@ function TrainingConsole() {
           {["Upload policies", "Run 5 simulations", "Approve escalation rules"].map((item) => (
             <div
               key={item}
-              className="border border-paper/10 bg-paper/[.035] p-4 text-sm text-paper/70"
+              className="border border-paper/10 bg-card/[.035] p-4 text-sm text-paper/70"
             >
               <Check className="mb-3 h-4 w-4 text-brand-bright" />
               {item}
@@ -1551,7 +1566,7 @@ function PersonalConsole({ initial = "overview" }: { initial?: PersonalTab }) {
     navigate(personalRoutes[next]);
   };
   return (
-    <div className="min-h-screen bg-background wl-grain text-ink">
+    <div className="min-h-screen bg-background wl-grain text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
@@ -1567,7 +1582,7 @@ function PersonalConsole({ initial = "overview" }: { initial?: PersonalTab }) {
                 onClick={() => go(n.id)}
                 className={cx(
                   "flex items-center gap-2 px-3 py-2 text-[13px] transition-colors",
-                  tab === n.id ? "text-brand" : "text-muted-foreground hover:text-ink",
+                  tab === n.id ? "text-brand" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {n.icon}
@@ -1584,7 +1599,7 @@ function PersonalConsole({ initial = "overview" }: { initial?: PersonalTab }) {
                 void signOut();
                 navigate("/");
               }}
-              className="text-muted-foreground hover:text-ink"
+              className="text-muted-foreground hover:text-foreground"
             >
               <LogOut size={17} />
             </button>
@@ -1672,7 +1687,9 @@ function PersonalOverview({ go }: { go: (t: PersonalTab) => void }) {
         <span className="text-[11px] font-bold uppercase tracking-[.18em] text-brand">
           Good morning
         </span>
-        <h1 className="mt-2 font-display text-4xl text-ink md:text-5xl">Your line is covered.</h1>
+        <h1 className="mt-2 font-display text-4xl text-foreground md:text-5xl">
+          Your line is covered.
+        </h1>
       </div>
       <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Card>
@@ -1690,7 +1707,7 @@ function PersonalOverview({ go }: { go: (t: PersonalTab) => void }) {
               ["228", "Minutes left"],
             ].map(([k, l]) => (
               <div key={l} className="bg-card p-4">
-                <span className="font-display text-3xl text-ink">{k}</span>
+                <span className="font-display text-3xl text-foreground">{k}</span>
                 <p className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">{l}</p>
               </div>
             ))}
@@ -1704,7 +1721,7 @@ function PersonalOverview({ go }: { go: (t: PersonalTab) => void }) {
             </button>
             <button
               onClick={() => go("intents")}
-              className="rounded-[14px] border border-border px-4 py-2 text-sm font-semibold text-ink"
+              className="rounded-[14px] border border-border px-4 py-2 text-sm font-semibold text-foreground"
             >
               <Wand2 size={15} className="inline" /> Tune intents
             </button>
@@ -1722,7 +1739,7 @@ function PersonalOverview({ go }: { go: (t: PersonalTab) => void }) {
             <button
               key={x}
               onClick={() => go(i < 2 ? "number" : "devices")}
-              className="mt-3 flex w-full items-center justify-between border border-paper/10 bg-paper/[.035] p-3 text-left text-sm"
+              className="mt-3 flex w-full items-center justify-between border border-paper/10 bg-card/[.035] p-3 text-left text-sm"
             >
               <span>{x}</span>
               {i < 2 ? (

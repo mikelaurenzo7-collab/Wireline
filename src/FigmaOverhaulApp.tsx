@@ -111,8 +111,8 @@ function Button({
     "inline-flex h-11 items-center justify-center gap-2 px-5 text-sm font-medium transition-all touch-press focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
     variant === "primary" && "bg-brand text-paper hover:bg-brand-deep",
     variant === "outline" &&
-      "border border-border bg-transparent text-ink hover:border-brand hover:bg-card",
-    variant === "ghost" && "text-muted-foreground hover:text-ink",
+      "border border-border bg-transparent text-foreground hover:border-brand hover:bg-card",
+    variant === "ghost" && "text-muted-foreground hover:text-foreground",
     className,
   );
   if (to)
@@ -155,7 +155,7 @@ function Logo({ light = false }: { light?: boolean }) {
     <span
       className={cn(
         "inline-flex items-center gap-2 font-display text-xl tracking-tight",
-        light ? "text-paper" : "text-ink",
+        light ? "text-paper" : "text-foreground",
       )}
     >
       <span className="flex h-7 w-7 items-center justify-center bg-brand text-[12px] text-paper">
@@ -188,13 +188,13 @@ function SectionHeader({
 }) {
   return (
     <div className="mx-auto max-w-2xl 2xl:max-w-3xl text-center">
-      <Chip active className={light ? "border-paper/20 bg-paper/5 text-paper/70" : undefined}>
+      <Chip active className={light ? "border-paper/20 bg-card/5 text-paper/70" : undefined}>
         {eyebrow}
       </Chip>
       <h2
         className={cn(
           "mt-5 font-display text-4xl leading-tight md:text-6xl",
-          light ? "text-paper" : "text-ink",
+          light ? "text-paper" : "text-foreground",
         )}
       >
         {title}
@@ -241,7 +241,7 @@ function MarketingLayout() {
                 to={path}
                 className={({ isActive }) =>
                   cn(
-                    "text-sm text-muted-foreground transition-colors hover:text-ink",
+                    "text-sm text-muted-foreground transition-colors hover:text-foreground",
                     isActive && "text-brand",
                   )
                 }
@@ -318,7 +318,7 @@ function Landing() {
             <Chip active>
               <Sparkles size={11} /> Hundreds of models — no lock-in
             </Chip>
-            <h1 className="font-display text-5xl leading-[1.02] tracking-tight text-ink md:text-7xl">
+            <h1 className="font-display text-5xl leading-[1.02] tracking-tight text-foreground md:text-7xl">
               Your phone, finally <span className="italic text-brand">working for you.</span>
             </h1>
             <p className="max-w-xl 2xl:max-w-2xl text-[16px] leading-relaxed text-muted-foreground">
@@ -335,7 +335,7 @@ function Landing() {
                     "px-3 py-1.5 text-xs capitalize transition-colors",
                     heroTab === m
                       ? "bg-brand text-paper"
-                      : "border border-border text-muted-foreground hover:text-ink",
+                      : "border border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {m}
@@ -387,7 +387,7 @@ function Landing() {
                   </span>
                   <Chip>{s.tag}</Chip>
                 </div>
-                <p className="font-display text-xl text-ink">{s.who}</p>
+                <p className="font-display text-xl text-foreground">{s.who}</p>
                 <p className="mt-3 border-l-2 border-brand/40 pl-3 text-sm text-muted-foreground">
                   {s.result}
                 </p>
@@ -404,7 +404,7 @@ function Landing() {
               “Hey Siri, have Wireline call the pharmacy.”
             </h2>
           </div>
-          <Button to="/features" className="bg-paper text-ink hover:bg-paper/90">
+          <Button to="/features" className="bg-card text-foreground hover:bg-card/90">
             See personal automation <ArrowRight size={15} />
           </Button>
         </div>
@@ -423,7 +423,7 @@ function Landing() {
                   <BarChart3 size={16} />
                   <span className="font-mono text-xs text-brand">{m.d}</span>
                 </div>
-                <div className="mt-4 font-display text-4xl text-ink">{m.k}</div>
+                <div className="mt-4 font-display text-4xl text-foreground">{m.k}</div>
                 <div className="mt-1 text-xs uppercase tracking-[.16em] text-muted-foreground">
                   {m.l}
                 </div>
@@ -445,7 +445,7 @@ function HeroDevice({ mode }: { mode: Mode }) {
           "relative w-full max-w-[440px] border p-5 overflow-hidden",
           mode === "business"
             ? "border-paper/10 bg-ink text-paper shadow-[0_24px_80px_-20px_rgba(79,30,123,0.25)]"
-            : "border-border bg-card text-ink shadow-[0_24px_80px_-20px_rgba(0,0,0,0.15)]",
+            : "border-border bg-card text-foreground shadow-[0_24px_80px_-20px_rgba(0,0,0,0.15)]",
         )}
       >
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-white/[0.12] mix-blend-overlay" />
@@ -456,7 +456,7 @@ function HeroDevice({ mode }: { mode: Mode }) {
         <div
           className={cn(
             "border p-4",
-            mode === "business" ? "border-paper/10 bg-paper/[.03]" : "border-border bg-background",
+            mode === "business" ? "border-paper/10 bg-card/[.03]" : "border-border bg-background",
           )}
         >
           <div className="flex items-center justify-between">
@@ -583,7 +583,7 @@ function Pricing() {
             </p>
             <Button
               to="/get-started"
-              className={cn("mt-6 w-full", i === 1 && "bg-paper text-ink hover:bg-paper/90")}
+              className={cn("mt-6 w-full", i === 1 && "bg-card text-foreground hover:bg-card/90")}
             >
               Choose plan
             </Button>
@@ -718,7 +718,7 @@ function GetStarted() {
         <Logo />
       </div>
       <Chip active>Step 1 of 2</Chip>
-      <h1 className="mt-5 font-display text-3xl text-ink">How will you use Wireline?</h1>
+      <h1 className="mt-5 font-display text-3xl text-foreground">How will you use Wireline?</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Choose the workspace. You can change it later.
       </p>
@@ -737,7 +737,7 @@ function GetStarted() {
             <span
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-full",
-                mode === id ? "bg-brand text-paper" : "bg-secondary text-ink",
+                mode === id ? "bg-brand text-paper" : "bg-secondary text-foreground",
               )}
             >
               <Icon size={18} />
@@ -818,7 +818,10 @@ function ConsoleShell({ personal = false }: { personal?: boolean }) {
       ];
   return (
     <div
-      className={cn("flex min-h-screen", personal ? "bg-background text-ink" : "bg-ink text-paper")}
+      className={cn(
+        "flex min-h-screen",
+        personal ? "bg-background text-foreground" : "bg-ink text-paper",
+      )}
     >
       <aside
         className={cn(
@@ -842,8 +845,8 @@ function ConsoleShell({ personal = false }: { personal?: boolean }) {
                 tab === id
                   ? "bg-brand text-paper"
                   : personal
-                    ? "text-muted-foreground hover:bg-background hover:text-ink"
-                    : "text-paper/60 hover:bg-paper/5 hover:text-paper",
+                    ? "text-muted-foreground hover:bg-background hover:text-foreground"
+                    : "text-paper/60 hover:bg-card/5 hover:text-paper",
               )}
             >
               {icon}
@@ -945,7 +948,9 @@ function Assistant({ personal }: { personal: boolean }) {
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
       <div>
         <Chip active>Wireline Assistant</Chip>
-        <h1 className={cn("mt-3 font-display text-4xl", personal ? "text-ink" : "text-paper")}>
+        <h1
+          className={cn("mt-3 font-display text-4xl", personal ? "text-foreground" : "text-paper")}
+        >
           {personal
             ? "Your personal phone chief of staff."
             : "Your operator for agents, workflows, and launch."}
@@ -958,7 +963,7 @@ function Assistant({ personal }: { personal: boolean }) {
       <div
         className={cn(
           "border p-5",
-          personal ? "border-border bg-card" : "border-paper/12 bg-paper/[.03]",
+          personal ? "border-border bg-card" : "border-paper/12 bg-card/[.03]",
         )}
       >
         <div className="space-y-4">
@@ -1147,11 +1152,16 @@ function TrainingConsole({ personal }: { personal?: boolean }) {
             key={x}
             className={cn(
               "border p-5",
-              personal ? "border-border bg-card" : "border-paper/12 bg-paper/[.03]",
+              personal ? "border-border bg-card" : "border-paper/12 bg-card/[.03]",
             )}
           >
             <FileText className="text-brand" />
-            <h3 className={cn("mt-4 font-display text-2xl", personal ? "text-ink" : "text-paper")}>
+            <h3
+              className={cn(
+                "mt-4 font-display text-2xl",
+                personal ? "text-foreground" : "text-paper",
+              )}
+            >
               {x}
             </h3>
             <p className={cn("mt-2 text-sm", personal ? "text-muted-foreground" : "text-paper/50")}>
@@ -1204,11 +1214,16 @@ function Settings({ personal }: { personal?: boolean }) {
             key={x}
             className={cn(
               "border p-5",
-              personal ? "border-border bg-card" : "border-paper/12 bg-paper/[.03]",
+              personal ? "border-border bg-card" : "border-paper/12 bg-card/[.03]",
             )}
           >
             <ShieldCheck className="text-brand" />
-            <h3 className={cn("mt-4 font-display text-2xl", personal ? "text-ink" : "text-paper")}>
+            <h3
+              className={cn(
+                "mt-4 font-display text-2xl",
+                personal ? "text-foreground" : "text-paper",
+              )}
+            >
               {x}
             </h3>
           </div>
@@ -1228,10 +1243,10 @@ function PageTitle({
 }) {
   return (
     <div>
-      <Chip active className={light ? "border-paper/20 bg-paper/5 text-paper/70" : undefined}>
+      <Chip active className={light ? "border-paper/20 bg-card/5 text-paper/70" : undefined}>
         {eyebrow}
       </Chip>
-      <h1 className={cn("mt-2 font-display text-4xl", light ? "text-paper" : "text-ink")}>
+      <h1 className={cn("mt-2 font-display text-4xl", light ? "text-paper" : "text-foreground")}>
         {title}
       </h1>
     </div>
@@ -1239,7 +1254,7 @@ function PageTitle({
 }
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("border border-paper/12 bg-paper/[.03] p-5", className)}>{children}</div>
+    <div className={cn("border border-paper/12 bg-card/[.03] p-5", className)}>{children}</div>
   );
 }
 function Eyebrow({ children }: { children: ReactNode }) {
