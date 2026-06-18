@@ -15,6 +15,31 @@ interface AuthedReq extends Request {
 }
 
 /**
+ * Launch-safe tenant resolution.
+ *
+ * The RLS layer uses tenantStore to set app.current_user_id. Accepting an
+ * arbitrary x-wireline-tenant-id header before team/workspace membership is
+ * verified would let a malicious client request another tenant context. Until
+ * true org membership checks exist, the only valid tenant is the authenticated
+ * user id. A same-id header is harmless and kept for internal compatibility.
+ */
+function resolveTenantId(req: Request, userId: string): string {
+  const requested = req.get("x-wireline-tenant-id")?.trim();
+  if (!requested || requested === userId) return userId;
+  log.warn("Ignoring unverified tenant header", {
+    userId,
+    requestedTenantId: requested,
+    path: req.path,
+    requestId: (req.res as Response | undefined)?.locals?.requestId,
+  });
+  return userId;
+}
+
+function runInTenantContext(req: Request, tenantId: string, next: NextFunction) {
+  return tenantStore.getStore() ? next() : tenantStore.run(tenantId, () => next());
+}
+
+/**
  * Basic authentication middleware.
  * Verifies the sovereign JWT against the internal secret.
  */
@@ -24,9 +49,8 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
 
     // Idempotent check
     if (authedReq.user?.id) {
-      authedReq.tenantId =
-        authedReq.tenantId || req.get("x-wireline-tenant-id") || authedReq.user.id;
-      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.tenantId!, () => next());
+      authedReq.tenantId = authedReq.tenantId || resolveTenantId(req, authedReq.user.id);
+      return runInTenantContext(req, authedReq.tenantId, next);
     }
 
     const token = getSessionTokenFromRequest(req);
@@ -95,8 +119,8 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
     // *verified*). Real sign-in events are emitted by Wireline's auth
     // system; the audit log captures failed attempts above.
 
-    authedReq.tenantId = req.get("x-wireline-tenant-id") || authedReq.user!.id;
-    return tenantStore.run(authedReq.tenantId!, () => next());
+    authedReq.tenantId = resolveTenantId(req, authedReq.user!.id);
+    return runInTenantContext(req, authedReq.tenantId, next);
   } catch (e) {
     log.error("Auth middleware failed", { error: getErrorMessage(e), path: req.path });
     return res.status(500).json({
@@ -119,9 +143,8 @@ export async function authenticateEventStream(req: Request, res: Response, next:
     const authedReq = req as AuthedReq;
 
     if (authedReq.user?.id) {
-      authedReq.tenantId =
-        authedReq.tenantId || req.get("x-wireline-tenant-id") || authedReq.user.id;
-      return tenantStore.getStore() ? next() : tenantStore.run(authedReq.tenantId!, () => next());
+      authedReq.tenantId = authedReq.tenantId || resolveTenantId(req, authedReq.user.id);
+      return runInTenantContext(req, authedReq.tenantId, next);
     }
 
     if (isProductionRuntime() && typeof req.query.token === "string" && req.query.token) {
@@ -180,8 +203,8 @@ export async function authenticateEventStream(req: Request, res: Response, next:
       created_at: new Date(payload.iat * 1000).toISOString(),
     } as User;
 
-    authedReq.tenantId = req.get("x-wireline-tenant-id") || authedReq.user!.id;
-    return tenantStore.run(authedReq.tenantId!, () => next());
+    authedReq.tenantId = resolveTenantId(req, authedReq.user!.id);
+    return runInTenantContext(req, authedReq.tenantId, next);
   } catch (e) {
     log.error("SSE auth middleware failed", { error: getErrorMessage(e), path: req.path });
     return res.status(500).json({
