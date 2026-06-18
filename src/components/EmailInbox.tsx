@@ -383,7 +383,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                 <div className="sticky top-0 z-10 px-3 pt-2 pb-2 bg-gradient-to-b from-card/95 to-card/60 backdrop-blur-sm">
                   <div className="relative">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/35 pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/55 pointer-events-none"
                       aria-hidden
                     />
                     <Input
@@ -392,7 +392,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search sender, subject or summary…"
                       aria-label="Search email threads"
-                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40 transition-all"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 transition-all"
                     />
                   </div>
                 </div>
@@ -582,7 +582,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 : "border-border text-muted",
                           )}
                         >
-                          <span className="text-[7px] uppercase tracking-[0.3em] leading-none mb-0.5">
+                          <span className="text-[10px] uppercase tracking-[0.3em] leading-none mb-0.5">
                             Intent
                           </span>
                           <span className="font-display italic text-xl leading-none tabular-nums">

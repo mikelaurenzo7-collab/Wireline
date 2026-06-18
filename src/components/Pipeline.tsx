@@ -350,7 +350,7 @@ export default function Pipeline() {
                               <Card className="border-none bg-transparent shadow-none p-0 text-left rounded-none">
                                 <CardHeader className="p-0 pb-1 flex flex-row items-center justify-between space-y-0 gap-1">
                                   <GripVertical
-                                    className="wl-pipeline-card-grip w-3 h-3 shrink-0 text-foreground/30"
+                                    className="wl-pipeline-card-grip w-3 h-3 shrink-0 text-foreground/55"
                                     aria-hidden
                                   />
                                   <CardTitle className="text-[12px] font-semibold text-foreground truncate flex items-center gap-1.5 leading-none flex-1 min-w-0">
@@ -431,7 +431,7 @@ export default function Pipeline() {
                                             → {s.label}
                                           </ShadButton>
                                         ))}
-                                      <ChevronRight className="w-3 h-3 text-foreground/40" />
+                                      <ChevronRight className="w-3 h-3 text-foreground/55" />
                                     </div>
                                   </div>
                                 </CardContent>

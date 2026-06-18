@@ -130,7 +130,7 @@ export default function AgentListPanel({
               onClick={onToggleCollapse}
               title="Collapse list"
               aria-label="Collapse agent list"
-              className="hidden md:inline-flex w-7 h-7 rounded-md text-foreground/40 hover:text-foreground touch-press hover:scale-[1.05]"
+              className="hidden md:inline-flex w-7 h-7 rounded-md text-foreground/55 hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <PanelLeftClose className="w-3.5 h-3.5" />
             </ShadButton>
@@ -222,7 +222,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-foreground/40 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press hover:scale-[1.05]"
+                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-foreground/55 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press hover:scale-[1.05]"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

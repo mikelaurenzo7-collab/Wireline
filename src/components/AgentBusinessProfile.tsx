@@ -490,7 +490,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="wl-label text-foreground/40 font-semibold block mb-1">
+              <span className="wl-label text-foreground/55 font-semibold block mb-1">
                 Escalation phone (SMS)
               </span>
               <Input
@@ -508,7 +508,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               />
             </label>
             <label className="block">
-              <span className="wl-label text-foreground/40 font-semibold block mb-1">
+              <span className="wl-label text-foreground/55 font-semibold block mb-1">
                 Escalation email
               </span>
               <Input
@@ -555,7 +555,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               <p className="text-[12px] font-semibold text-foreground leading-tight">
                 Warm-transfer the live caller
               </p>
-              <p className="text-[10.5px] text-foreground/40 leading-relaxed mt-0.5">
+              <p className="text-[10.5px] text-foreground/55 leading-relaxed mt-0.5">
                 {value.escalation_phone
                   ? "When this agent escalates, the live call transfers to the phone above instead of just sending an alert. The agent will say a brief handoff line before transferring."
                   : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
@@ -579,7 +579,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       >
         <div className="space-y-1.5">
           {variableEntries.length === 0 && (
-            <div className="text-[11px] text-foreground/40 italic px-1 py-2">
+            <div className="text-[11px] text-foreground/55 italic px-1 py-2">
               No variables yet. Add ones like{" "}
               <code className="text-foreground/80">business_name</code>,{" "}
               <code className="text-foreground/80">website</code>,{" "}
@@ -611,7 +611,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                 disableAnimations
                 onClick={() => removeVariable(k)}
                 aria-label={`Remove ${k}`}
-                className="w-9 h-9 rounded-md text-foreground/40 hover:text-rose-500 hover:bg-rose-500/8 shrink-0"
+                className="w-9 h-9 rounded-md text-foreground/55 hover:text-rose-500 hover:bg-rose-500/8 shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </ShadButton>
@@ -730,7 +730,7 @@ function Field({
 
 function CharCount({ value, max }: { value: string; max: number }) {
   const len = value.length;
-  const tone = len > max * 0.9 ? "text-brand" : "text-foreground/40";
+  const tone = len > max * 0.9 ? "text-brand" : "text-foreground/55";
   return (
     <p className={cn("wl-micro-badge tabular-nums text-right", tone)}>
       {len}/{max}
@@ -748,7 +748,7 @@ function ChipList({
   tone: "rose" | "brand";
 }) {
   if (chips.length === 0) {
-    return <p className="text-[11px] text-foreground/40 italic px-1 py-1">None yet.</p>;
+    return <p className="text-[11px] text-foreground/55 italic px-1 py-1">None yet.</p>;
   }
   const toneClass =
     tone === "rose"

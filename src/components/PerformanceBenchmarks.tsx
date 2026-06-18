@@ -94,12 +94,12 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span className="font-mono text-[11px] text-brand">
                   {item.user}
-                  <span className="text-foreground/40 ml-0.5 wl-micro-meta">{item.unit}</span>
+                  <span className="text-foreground/55 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
                 <span className="wl-micro-meta">vs</span>
                 <span className="font-mono text-[11px] text-foreground/70">
                   {item.benchmark}
-                  <span className="text-foreground/40 ml-0.5 wl-micro-meta">{item.unit}</span>
+                  <span className="text-foreground/55 ml-0.5 wl-micro-meta">{item.unit}</span>
                 </span>
               </div>
             </div>
@@ -122,7 +122,7 @@ function BenchmarkRow({ item }: { item: BenchmarkItem }) {
           </div>
 
           {/* Expand chevron */}
-          <div className="shrink-0 text-foreground/40 group-hover:text-foreground/40 transition-colors">
+          <div className="shrink-0 text-foreground/55 group-hover:text-foreground/55 transition-colors">
             {expanded ? (
               <ChevronUp className="w-3.5 h-3.5" />
             ) : (
@@ -221,7 +221,7 @@ export default function PerformanceBenchmarks() {
   if (data.total_calls === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 py-8">
-        <TrendingUp className="w-8 h-8 text-foreground/40" />
+        <TrendingUp className="w-8 h-8 text-foreground/55" />
         <p className="wl-micro-meta">No call data in the last 30 days</p>
         <Link
           to="/outbound"

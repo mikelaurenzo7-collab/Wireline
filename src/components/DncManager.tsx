@@ -376,7 +376,7 @@ export default function DncManager() {
                       placeholder="Search numbers…"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="h-8 w-44 lg:w-64 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-foreground placeholder:text-foreground/40 focus:border-brand/40 focus:outline-none"
+                      className="h-8 w-44 lg:w-64 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none"
                     />
                   </div>
                 }
@@ -546,7 +546,7 @@ export default function DncManager() {
                       value={addPhone}
                       onChange={(e) => setAddPhone(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                      className="pl-9 bg-black/10 border-input text-sm text-foreground placeholder:text-foreground/40 focus-visible:ring-rose-500/50"
+                      className="pl-9 bg-black/10 border-input text-sm text-foreground placeholder:text-foreground/55 focus-visible:ring-rose-500/50"
                     />
                   </div>
                 </div>

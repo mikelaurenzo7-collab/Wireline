@@ -810,7 +810,7 @@ function Escalations({ items }: { items: EscalationCall[] }) {
                     <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
                     <Badge
                       variant="outline"
-                      className="text-[7px] tracking-normal border-brand/20 text-brand bg-brand/5 px-1 py-0 rounded"
+                      className="text-[10px] tracking-normal border-brand/20 text-brand bg-brand/5 px-1 py-0 rounded"
                     >
                       Score: {c.lead_score}
                     </Badge>

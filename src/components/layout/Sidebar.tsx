@@ -141,7 +141,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             <TooltipContent side="right" className="ml-1">
               <span className="flex items-center gap-2">
                 Search
-                <kbd className="wl-micro-badge font-mono text-white/40">/</kbd>
+                <kbd className="wl-micro-badge font-mono text-white/55">/</kbd>
               </span>
             </TooltipContent>
           </Tooltip>
@@ -224,7 +224,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
 
                     {/* Workspace Switcher Card */}
                     <div className="px-4 py-3 border-b border-white/8 bg-black/[0.015] dark:bg-white/[0.01]">
-                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[9px] text-left">
+                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[10px] text-left">
                         Workspace Context
                       </p>
                       <div className="grid grid-cols-2 gap-1.5">
@@ -479,7 +479,7 @@ function RailItem({ item, active, badge, shortcut }: RailItemProps) {
         <span className="flex items-center gap-2">
           {item.label}
           {item.betaLabel && <span className="wl-rail-beta-badge">{item.betaLabel}</span>}
-          {shortcut && <kbd className="wl-micro-badge font-mono text-white/40">{shortcut}</kbd>}
+          {shortcut && <kbd className="wl-micro-badge font-mono text-white/55">{shortcut}</kbd>}
         </span>
       </TooltipContent>
     </Tooltip>

@@ -69,7 +69,7 @@ export default function MarketingPageFrame({
               aria-label="On this page"
               className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"
             >
-              <span className="shrink-0 wl-label text-foreground/45">On this page</span>
+              <span className="shrink-0 wl-label text-foreground/60">On this page</span>
               {sectionLinks.map((link) => {
                 const active = activeSection === link.id;
                 return (

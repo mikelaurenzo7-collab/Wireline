@@ -159,7 +159,7 @@ export default function TrustSignals() {
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <Icon className="w-3.5 h-3.5 text-foreground/70" strokeWidth={1.75} />
                 <span
-                  className={`text-[7px] uppercase tracking-[0.22em] font-semibold px-1.5 py-0.5 rounded-full border leading-none ${tone.pill}`}
+                  className={`text-[10px] uppercase tracking-[0.22em] font-semibold px-1.5 py-0.5 rounded-full border leading-none ${tone.pill}`}
                 >
                   <span
                     className={`inline-block w-1 h-1 rounded-full mr-1 align-middle ${tone.dot}`}

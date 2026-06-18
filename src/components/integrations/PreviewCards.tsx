@@ -278,7 +278,7 @@ export function CalendarPreviewCard() {
           data-confirmed={confirmed ? "true" : "false"}
         >
           <div
-            className="wl-preview-cal-check w-4 h-4 rounded-full text-[7px] font-bold text-white flex items-center justify-center"
+            className="wl-preview-cal-check w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
             data-confirmed={confirmed ? "true" : "false"}
           >
             ✓
@@ -426,7 +426,9 @@ export function DocuSignPreviewCard() {
                 {isThisSigned ? (
                   <CheckCircle2 size={9} className="wl-preview-orbit-accent-text ml-auto" />
                 ) : i === 0 ? (
-                  <span className="wl-preview-docusign-awaiting ml-auto wl-preview-micro">Awaiting</span>
+                  <span className="wl-preview-docusign-awaiting ml-auto wl-preview-micro">
+                    Awaiting
+                  </span>
                 ) : null}
               </div>
             );
@@ -568,7 +570,7 @@ export function GeminiPreviewCard() {
               data-visible={showResults ? "true" : "false"}
               data-stagger={String(i)}
             >
-              <div className="wl-preview-gemini-result-icon w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center text-[7px] font-bold text-white">
+              <div className="wl-preview-gemini-result-icon w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold text-white">
                 G
               </div>
               <div>

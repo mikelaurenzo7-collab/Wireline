@@ -635,7 +635,7 @@ function Landing() {
               <Pill>
                 <Sparkles size={12} /> Hundreds of models · no lock-in
               </Pill>
-              <h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.02] tracking-[-0.055em] text-foreground md:text-7xl">
+              <h1 className="max-w-3xl font-display text-5xl font-medium leading-[1.02] tracking-[-0.04em] text-foreground md:text-7xl">
                 Your phone, finally <span className="italic text-brand">working for you.</span>
               </h1>
               <p className="max-w-xl text-[16px] leading-7 text-muted-foreground">
@@ -750,7 +750,7 @@ function ModelBand() {
             {providers.map((p, i) => (
               <div key={p} className="rounded-[22px] border border-white/10 bg-white/[.045] p-4">
                 <p className="text-sm font-semibold">{p}</p>
-                <p className="mt-2 text-xs text-white/45">
+                <p className="mt-2 text-xs text-white/60">
                   {i === 0 ? "300+ models" : i === 1 ? "Opus/Sonnet" : "Selectable routing"}
                 </p>
               </div>
@@ -1331,7 +1331,7 @@ function Studio({
               )}
             >
               <p className="font-semibold">{a.name}</p>
-              <p className="mt-1 text-xs text-white/45">{a.role}</p>
+              <p className="mt-1 text-xs text-white/60">{a.role}</p>
             </button>
           ))}
         </div>
@@ -1360,7 +1360,7 @@ function Studio({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-bold uppercase tracking-[.16em] text-white/35">
+      <span className="text-[11px] font-bold uppercase tracking-[.16em] text-white/55">
         {label}
       </span>
       <div className="mt-2 rounded-[16px] border border-white/10 bg-white/[.045] px-3 py-3 text-sm">
@@ -1420,7 +1420,7 @@ function Analytics() {
           ["Containment", "83%"],
         ].map(([k, v]) => (
           <DarkCard key={k}>
-            <p className="text-xs text-white/40">{k}</p>
+            <p className="text-xs text-white/55">{k}</p>
             <p className="mt-2 font-display text-4xl">{v}</p>
           </DarkCard>
         ))}
@@ -1481,7 +1481,7 @@ function Integrations() {
       <div className="grid gap-5 xl:grid-cols-2">
         <DarkCard>
           <h3 className="font-display text-2xl">Personal connectors</h3>
-          <p className="mt-2 text-sm text-white/45">
+          <p className="mt-2 text-sm text-white/60">
             For one user: calls, calendar, email, mobile intents, reminders.
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -1492,7 +1492,7 @@ function Integrations() {
         </DarkCard>
         <DarkCard>
           <h3 className="font-display text-2xl">Business workspace connectors</h3>
-          <p className="mt-2 text-sm text-white/45">
+          <p className="mt-2 text-sm text-white/60">
             For teams: CRM, billing, calendars, phone stack, Slack, webhooks, audit logs.
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -1528,7 +1528,7 @@ function ConnectorCard({ connector }: { connector: Connector }) {
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold">{connector.name}</p>
-          <span className="text-[10px] uppercase tracking-[.16em] text-white/35">
+          <span className="text-[10px] uppercase tracking-[.16em] text-white/55">
             {connector.scope}
           </span>
         </div>
@@ -1542,7 +1542,7 @@ function ConnectorCard({ connector }: { connector: Connector }) {
           "mt-4 rounded-full border px-3 py-1.5 text-xs transition",
           available
             ? "border-brand/40 text-brand-bright hover:bg-brand/15"
-            : "border-white/10 text-white/35 disabled:cursor-not-allowed",
+            : "border-white/10 text-white/55 disabled:cursor-not-allowed",
         )}
       >
         {busy

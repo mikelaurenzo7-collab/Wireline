@@ -186,7 +186,7 @@ function OAuthSignInButtons({
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-foreground/45">
+      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-foreground/60">
         <span className="h-px flex-1 bg-ink/10" />
         <span>Email</span>
         <span className="h-px flex-1 bg-ink/10" />
@@ -412,7 +412,7 @@ export default function AuthPortal() {
                       Email address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/45" />
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
                       <input
                         id="auth-email"
                         type="email"
@@ -421,7 +421,7 @@ export default function AuthPortal() {
                         spellCheck={false}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-foreground/35 focus:border-brand focus:ring-4 focus:ring-brand/12"
+                        className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
                         placeholder="you@company.com"
                       />
                     </div>
@@ -451,7 +451,7 @@ export default function AuthPortal() {
                         )}
                       </div>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/45" />
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
                         <input
                           id="auth-password"
                           type={showPassword ? "text" : "password"}
@@ -460,7 +460,7 @@ export default function AuthPortal() {
                           autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-11 text-base text-foreground outline-none transition placeholder:text-foreground/35 focus:border-brand focus:ring-4 focus:ring-brand/12"
+                          className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-11 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
                           placeholder={
                             isSignUp ? "Create a secure password" : "Enter your password"
                           }
@@ -468,7 +468,7 @@ export default function AuthPortal() {
                         <button
                           type="button"
                           onClick={() => setShowPassword((value) => !value)}
-                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/45 transition hover:bg-ink/5 hover:text-foreground"
+                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
                           tabIndex={-1}
                         >
                           {showPassword ? (

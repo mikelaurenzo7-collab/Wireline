@@ -134,7 +134,7 @@ function Pill({ children, tone = "default" }: { children: ReactNode; tone?: Tone
       : tone === "warn"
         ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
         : tone === "muted"
-          ? "border-white/5 bg-white/[.02] text-white/40"
+          ? "border-white/5 bg-white/[.02] text-white/55"
           : "border-white/10 bg-white/[.04] text-white/70";
   return (
     <span
@@ -161,7 +161,7 @@ function MiniMetric({ value, label }: { value: string; label: string }) {
       <p className="font-display text-3xl sm:text-4xl text-white font-semibold tracking-tight">
         {value}
       </p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-[.14em] text-white/40 font-mono">
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-[.14em] text-white/55 font-mono">
         {label}
       </p>
     </div>
@@ -247,8 +247,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden items-center gap-2 rounded-[14px] border border-white/10 px-3 py-2 md:flex cursor-text transition-colors hover:border-white/20">
-                <Search size={14} className="text-white/35" />
-                <span className="text-xs text-white/35">Search calls, agents, contacts…</span>
+                <Search size={14} className="text-white/55" />
+                <span className="text-xs text-white/55">Search calls, agents, contacts…</span>
               </div>
               <button className="rounded-full p-1.5 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 <Bell size={17} className="text-white/60" />
@@ -324,7 +324,7 @@ function AssistantPage() {
           </div>
           <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#030303]/60 px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner">
             <input
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/30"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/55"
               placeholder="Ask Wireline…"
             />
             <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm">
@@ -382,7 +382,7 @@ function LiveOpsPage() {
         <Card>
           <h2 className="font-display text-2xl text-white">Calls in progress</h2>
           <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/5 overflow-hidden bg-[#030303]/40">
-            <div className="hidden lg:grid grid-cols-[1fr_140px_1fr_96px_100px] gap-3 bg-white/[0.02] p-4 text-[10px] font-bold uppercase tracking-[.15em] text-white/40 font-mono">
+            <div className="hidden lg:grid grid-cols-[1fr_140px_1fr_96px_100px] gap-3 bg-white/[0.02] p-4 text-[10px] font-bold uppercase tracking-[.15em] text-white/55 font-mono">
               <div>Topic</div>
               <div>Agent</div>
               <div>Detail</div>
@@ -444,7 +444,7 @@ function FleetPage() {
           <Card key={agent.name}>
             <div className="flex items-center justify-between">
               <Pill tone={statusTone(agent.status)}>{agent.status}</Pill>
-              <span className="text-xs text-white/45 font-mono">{agent.model}</span>
+              <span className="text-xs text-white/60 font-mono">{agent.model}</span>
             </div>
             <h3 className="mt-5 font-display text-3xl text-white">{agent.name}</h3>
             <p className="mt-1 text-sm text-slate-400">{agent.role}</p>
@@ -453,7 +453,7 @@ function FleetPage() {
               <MiniMetric value={agent.score} label="Score" />
             </div>
             <div className="mt-4 rounded-[16px] border border-white/5 bg-[#030303]/40 p-3 text-sm text-slate-300 shadow-inner">
-              <span className="text-white/35 font-mono text-xs">Next training:</span> {agent.next}
+              <span className="text-white/55 font-mono text-xs">Next training:</span> {agent.next}
             </div>
             <div className="mt-5 flex gap-2">
               <Link
@@ -558,7 +558,7 @@ function AnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {rows.map(([k, v, c]) => (
           <Card key={k}>
-            <p className="text-xs text-white/40 font-mono uppercase tracking-wider">{k}</p>
+            <p className="text-xs text-white/55 font-mono uppercase tracking-wider">{k}</p>
             <p className="mt-2 font-display text-4xl text-white font-semibold tracking-tight">
               {v}
             </p>

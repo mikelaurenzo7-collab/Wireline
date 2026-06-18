@@ -405,7 +405,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic text-xl text-foreground">
                         Analysis engine
                       </h3>
-                      <p className="wl-label text-foreground/40">
+                      <p className="wl-label text-foreground/55">
                         Find improvement opportunities from your calls
                       </p>
                     </div>
@@ -435,7 +435,7 @@ export default function AgentTraining({
                     className="space-y-3"
                   >
                     <div className="rounded-md bg-black/20 border border-white/8 p-4">
-                      <h4 className="wl-label text-foreground/40 mb-2">Analysis</h4>
+                      <h4 className="wl-label text-foreground/55 mb-2">Analysis</h4>
                       <p className="font-display italic text-lg text-foreground leading-snug">
                         "{optSuggestions.analysis}"
                       </p>
@@ -489,7 +489,7 @@ export default function AgentTraining({
                     </div>
                     <div>
                       <h3 className="font-display italic text-xl text-foreground">Personality</h3>
-                      <p className="wl-label text-foreground/40">
+                      <p className="wl-label text-foreground/55">
                         Base behavioral heuristics and tone
                       </p>
                     </div>
@@ -538,7 +538,7 @@ export default function AgentTraining({
                     <textarea
                       value={personalityDraft}
                       onChange={(e) => setPersonalityDraft(e.target.value)}
-                      className="w-full min-h-[180px] p-3 rounded-md bg-muted/20 border border-border text-sm text-foreground outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-foreground/40"
+                      className="w-full min-h-[180px] p-3 rounded-md bg-muted/20 border border-border text-sm text-foreground outline-none focus:border-brand/50 resize-none leading-relaxed placeholder:text-foreground/55"
                       placeholder="Define the core identity heuristics…"
                     />
                   ) : (
@@ -547,7 +547,7 @@ export default function AgentTraining({
                         {personality ? (
                           `"${personality}"`
                         ) : (
-                          <span className="text-foreground/40 not-italic text-base">
+                          <span className="text-foreground/55 not-italic text-base">
                             No personality set yet — click Edit to describe how your agent should
                             speak and behave.
                           </span>
@@ -567,7 +567,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic text-lg text-foreground leading-none">
                         Rules
                       </h3>
-                      <p className="wl-label text-foreground/40 mt-0.5">
+                      <p className="wl-label text-foreground/55 mt-0.5">
                         Lines your agent never crosses
                       </p>
                     </div>
@@ -689,7 +689,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="wl-label text-foreground/40">Add directive</label>
+                    <label className="wl-label text-foreground/55">Add directive</label>
                     <div className="flex gap-1.5">
                       <Input
                         type="text"
@@ -699,7 +699,7 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("directive", newDirective)
                         }
                         placeholder="e.g. Never discuss competitor pricing"
-                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-foreground placeholder:text-foreground/40"
+                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-rose-400/50 text-foreground placeholder:text-foreground/55"
                       />
                       <ShadButton
                         type="button"
@@ -724,7 +724,7 @@ export default function AgentTraining({
                       <h3 className="font-display italic text-lg text-foreground leading-none">
                         Fact archive
                       </h3>
-                      <p className="wl-label text-foreground/40 mt-0.5">Knowledge base</p>
+                      <p className="wl-label text-foreground/55 mt-0.5">Knowledge base</p>
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/30 text-brand wl-label leading-none">
                       Factual
@@ -826,7 +826,7 @@ export default function AgentTraining({
                     </AnimatePresence>
                   </div>
                   <div className="mt-auto pt-3 border-t border-white/8 space-y-1.5">
-                    <label className="wl-label text-foreground/40">Add fact</label>
+                    <label className="wl-label text-foreground/55">Add fact</label>
                     <div className="flex gap-1.5">
                       <Input
                         type="text"
@@ -836,7 +836,7 @@ export default function AgentTraining({
                           e.key === "Enter" && saveManualEntry("knowledge", newKnowledge)
                         }
                         placeholder="e.g. Our return policy is 30 days, no questions"
-                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40"
+                        className="flex-1 text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
                       />
                       <ShadButton
                         type="button"
@@ -884,8 +884,8 @@ export default function AgentTraining({
                           {lesson.lesson}
                         </p>
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/8">
-                          <Clock className="w-3 h-3 text-foreground/40" />
-                          <span className="wl-label text-foreground/40">
+                          <Clock className="w-3 h-3 text-foreground/55" />
+                          <span className="wl-label text-foreground/55">
                             {formatDate(lesson.created_at)}
                           </span>
                         </div>
@@ -967,7 +967,7 @@ export default function AgentTraining({
                   </div>
                   <div>
                     <h2 className="font-display italic text-4xl text-foreground mb-2">Test call</h2>
-                    <p className="text-foreground/40 text-sm leading-relaxed max-w-md mx-auto">
+                    <p className="text-foreground/55 text-sm leading-relaxed max-w-md mx-auto">
                       Test how your agent responds in a safe practice run before it takes real
                       calls.
                     </p>
@@ -977,7 +977,7 @@ export default function AgentTraining({
                       <Phone className="w-4 h-4 text-brand" />
                       <h4 className="font-display italic text-base text-foreground">Voice call</h4>
                     </div>
-                    <p className="text-[11px] text-foreground/40 leading-relaxed">
+                    <p className="text-[11px] text-foreground/55 leading-relaxed">
                       Speak directly with your agent through your browser microphone. Tests the
                       exact voice and persona your callers will hear.
                     </p>

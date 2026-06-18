@@ -149,7 +149,7 @@ export default function DirectorLayout({
                       PRD-882-ALPHA
                     </span>
                   </div>
-                  <span className="font-mono text-[9px] text-muted-foreground">14:05</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">14:05</span>
                 </div>
                 <h4 className="font-sans text-sm font-bold text-foreground mb-1">
                   Voice Core Integration
@@ -168,7 +168,7 @@ export default function DirectorLayout({
                       DB_SCHEMA_V4.JSON
                     </span>
                   </div>
-                  <span className="font-mono text-[9px] text-muted-foreground">14:03</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">14:03</span>
                 </div>
                 <div className="bg-background border border-white/5 p-2 font-mono text-[10px] text-muted-foreground line-clamp-3">
                   {`{\n  "version": "4.0",\n  "tables": [...]\n}`}

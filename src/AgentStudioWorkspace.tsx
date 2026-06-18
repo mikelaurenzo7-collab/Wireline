@@ -98,7 +98,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-bold uppercase tracking-[.16em] text-white/35">
+      <span className="text-[11px] font-bold uppercase tracking-[.16em] text-white/55">
         {label}
       </span>
       {children ?? (

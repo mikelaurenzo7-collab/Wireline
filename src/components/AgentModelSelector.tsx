@@ -150,7 +150,7 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
       </Select>
 
       {selectedOption?.note && (
-        <p className="wl-micro-meta leading-relaxed text-foreground/45">{selectedOption.note}</p>
+        <p className="wl-micro-meta leading-relaxed text-foreground/60">{selectedOption.note}</p>
       )}
       {selectedOption?.latencyWarning && (
         <p className="wl-micro-meta leading-relaxed text-amber-600 flex items-start gap-1.5">
@@ -166,7 +166,7 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
           <span
             className={cn(
               "wl-micro-badge font-medium",
-              usingDefaultTemp ? "text-foreground/40" : "text-foreground",
+              usingDefaultTemp ? "text-foreground/55" : "text-foreground",
             )}
           >
             {usingDefaultTemp ? "Default" : (temp as number).toFixed(2)}
@@ -192,7 +192,7 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
             disableAnimations
             onClick={() => onCommit({ llm_temperature: null })}
             disabled={usingDefaultTemp}
-            className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/40"
+            className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/55"
           >
             <RefreshCw className="w-2.5 h-2.5" />
             Use default

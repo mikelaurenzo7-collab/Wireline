@@ -266,7 +266,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                 <div className="sticky top-0 z-10 px-1 pb-2 bg-gradient-to-b from-card/95 to-card/60 backdrop-blur-sm">
                   <div className="relative">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/35 pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/55 pointer-events-none"
                       aria-hidden
                     />
                     <Input
@@ -275,7 +275,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search number or summary…"
                       aria-label="Search SMS threads"
-                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40 transition-all"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 transition-all"
                     />
                   </div>
                 </div>
@@ -495,7 +495,7 @@ export default function SmsThreads({ embedded = false }: { embedded?: boolean })
                         }}
                         placeholder="Type a reply…"
                         disabled={sending}
-                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-border rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-foreground placeholder:text-foreground/40 disabled:opacity-50 transition-all duration-300"
+                        className="flex-1 text-sm bg-white/50 backdrop-blur-sm border border-border rounded-md px-3 py-2.5 outline-none focus:border-brand/50 focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] text-foreground placeholder:text-foreground/55 disabled:opacity-50 transition-all duration-300"
                       />
                       <ShadButton
                         type="button"

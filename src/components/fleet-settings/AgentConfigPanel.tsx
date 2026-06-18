@@ -77,7 +77,7 @@ function QuickLink({
         <span className="block text-sm font-semibold text-foreground">{title}</span>
         <span className="mt-1 block text-xs leading-relaxed text-muted">{description}</span>
       </span>
-      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-foreground/35 transition group-hover:translate-x-0.5 group-hover:text-brand" />
+      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-foreground/55 transition group-hover:translate-x-0.5 group-hover:text-brand" />
     </Link>
   );
 }
@@ -215,7 +215,7 @@ export default function AgentConfigPanel({
           </div>
 
           <div className="space-y-2">
-            <label className="wl-label text-foreground/45">Agent name</label>
+            <label className="wl-label text-foreground/60">Agent name</label>
             <div className="flex gap-2">
               <Input
                 value={draftName}
@@ -250,7 +250,7 @@ export default function AgentConfigPanel({
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="wl-label text-foreground/45">Role</label>
+              <label className="wl-label text-foreground/60">Role</label>
               <Select
                 value={selectedAgent.role || "customer_service"}
                 onValueChange={(value) =>
@@ -271,7 +271,7 @@ export default function AgentConfigPanel({
             </div>
 
             <div className="space-y-2">
-              <label className="wl-label text-foreground/45">Channel</label>
+              <label className="wl-label text-foreground/60">Channel</label>
               <Select
                 value={selectedAgent.channel || "voice"}
                 onValueChange={(value) =>
@@ -341,7 +341,7 @@ export default function AgentConfigPanel({
           <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] p-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="wl-label text-foreground/45">Phone number</p>
+                <p className="wl-label text-foreground/60">Phone number</p>
                 <p
                   className={cn(
                     "mt-1 text-sm font-medium",
@@ -358,7 +358,7 @@ export default function AgentConfigPanel({
           </div>
 
           <div className="space-y-2">
-            <label className="wl-label text-foreground/45">Initial greeting</label>
+            <label className="wl-label text-foreground/60">Initial greeting</label>
             <textarea
               value={draftGreeting}
               onChange={(event) => setDraftGreeting(event.target.value)}

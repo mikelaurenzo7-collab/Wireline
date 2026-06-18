@@ -248,7 +248,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                 </ShadButton>
                 {active && p.id === "custom" && (
                   <div className="p-2 rounded bg-black/20 border border-border space-y-1">
-                    <label className="text-[9px] uppercase tracking-wider text-muted font-medium">
+                    <label className="text-[10px] uppercase tracking-wider text-muted font-medium">
                       Define Behavior:
                     </label>
                     <textarea
@@ -341,7 +341,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                     }`}
                   >
                     {m.role === "user" && (
-                      <span className="block text-[9px] uppercase tracking-wider opacity-60 mb-0.5">
+                      <span className="block text-[10px] uppercase tracking-wider opacity-60 mb-0.5">
                         {selectedPersona.name}
                       </span>
                     )}
@@ -361,7 +361,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                           <span>AI Coach Analysis</span>
                         </div>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                             m.coaching.score >= 90
                               ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/20"
                               : m.coaching.score >= 70

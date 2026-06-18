@@ -576,7 +576,7 @@ export const WL_APP_CLASSES = {
   /** Editorial left rail on workspace / route headers */
   pageContextAccent: "wl-page-context-accent",
   workspaceEyebrow:
-    "wl-workspace-eyebrow tracking-widest uppercase text-[9px] text-muted-foreground",
+    "wl-workspace-eyebrow tracking-widest uppercase text-[10px] text-muted-foreground",
   workspaceTitle: "wl-workspace-title font-bold tracking-tight text-3xl",
   /** 11px supporting copy — blurbs, hints, secondary lines */
   bodyCaption: "wl-body-caption text-xs text-muted-foreground",
@@ -609,7 +609,7 @@ export const WL_APP_CLASSES = {
   signalOrbRefined: WL_SIGNAL_CLASSES.signalOrbRefined,
   emptyStateSignal: WL_SIGNAL_CLASSES.emptyStateSignal,
   proTitle: "wl-pro-title font-bold tracking-tight",
-  proEyebrow: "wl-pro-eyebrow uppercase tracking-widest text-[9px]",
+  proEyebrow: "wl-pro-eyebrow uppercase tracking-widest text-[10px]",
   insightStatCard:
     "relative rounded-md wl-panel border border-white/8 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
   /** Grouped icon controls (theme, shortcuts) on cream workspace header */

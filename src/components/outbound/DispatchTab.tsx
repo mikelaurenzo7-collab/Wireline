@@ -222,7 +222,7 @@ export default function DispatchTab({
                           onChange={(e) => setCustomerNumber(e.target.value)}
                           placeholder="+1 555 000 0000"
                           className={cn(
-                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40 tabular-nums transition-all focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] focus:bg-white/50",
+                            "w-full text-sm bg-black/5 border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 tabular-nums transition-all focus:shadow-[0_0_8px_rgba(var(--brand-rgb),0.1)] focus:bg-white/50",
                             customerNumber.length > 0
                               ? /^\+?[\d\s\-()]{7,15}$/.test(customerNumber)
                                 ? "border-brand/50"
@@ -251,7 +251,7 @@ export default function DispatchTab({
                           value={customerName}
                           onChange={(e) => setCustomerName(e.target.value)}
                           placeholder="Optional"
-                          className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40"
+                          className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55"
                         />
                       </div>
 
@@ -262,7 +262,7 @@ export default function DispatchTab({
                           onChange={(e) => setContext(e.target.value)}
                           rows={4}
                           placeholder="What should the agent say?"
-                          className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40 resize-none leading-relaxed"
+                          className="w-full text-sm bg-black/5 border border-white/10 rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 resize-none leading-relaxed"
                         />
                       </div>
 

@@ -87,7 +87,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/8 dark:border-white/8">
           <div className="space-y-1.5">
-            <label className="wl-label text-foreground/40 flex items-center gap-1.5">
+            <label className="wl-label text-foreground/55 flex items-center gap-1.5">
               <MessageCircle className="w-2.5 h-2.5 text-brand" /> Slack channel
             </label>
             <Input

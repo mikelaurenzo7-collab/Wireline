@@ -148,7 +148,7 @@ export default function IntegrationDirectivePresets({
           <h3 className="font-display italic text-xl text-foreground">
             Integration directive presets
           </h3>
-          <p className="wl-label text-foreground/40">
+          <p className="wl-label text-foreground/55">
             One-click rules for calendar, CRM, and compliance tools
           </p>
         </div>

@@ -295,7 +295,7 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[15px] text-foreground placeholder:text-foreground/40 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[15px] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
                   />
                   <p className="wl-micro-meta">
                     What callers and your team will see. You can change this any time in /agents.

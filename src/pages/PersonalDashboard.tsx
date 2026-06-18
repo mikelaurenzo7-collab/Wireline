@@ -57,13 +57,13 @@ export default function PersonalDashboard() {
               <div className="p-6">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/55 mb-2">
                       Name
                     </p>
                     <p className="text-foreground font-medium">Jordan</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/55 mb-2">
                       Voice
                     </p>
                     <div className="flex items-center gap-2">

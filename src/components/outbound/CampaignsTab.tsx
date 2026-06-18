@@ -173,7 +173,7 @@ export default function CampaignsTab({
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-foreground/40 shrink-0 mt-1" />
+                      <ChevronRight className="w-3.5 h-3.5 text-foreground/55 shrink-0 mt-1" />
                     </div>
                   </motion.div>
                 );
@@ -339,7 +339,7 @@ export default function CampaignsTab({
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
-                    <RefreshCw className="w-2.5 h-2.5 text-foreground/40 animate-spin [animation-duration:3s]" />
+                    <RefreshCw className="w-2.5 h-2.5 text-foreground/55 animate-spin [animation-duration:3s]" />
                     <span className="wl-micro-meta">Refreshing every 10s</span>
                   </div>
                 </div>

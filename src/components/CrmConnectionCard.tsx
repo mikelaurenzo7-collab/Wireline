@@ -330,7 +330,7 @@ export default function CrmConnectionCard() {
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <span className="chip-brand">{connectedCount} live</span>
-          <span className="wl-label text-foreground/40">
+          <span className="wl-label text-foreground/55">
             {PROVIDERS.length - connectedCount} available
           </span>
           <ShadButton
@@ -511,7 +511,7 @@ export default function CrmConnectionCard() {
                             placeholder="your-store.myshopify.com"
                             spellCheck={false}
                             autoCapitalize="off"
-                            className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/40 outline-none focus:border-brand/40"
+                            className="w-full wl-micro-meta rounded-md bg-black/20 border border-white/10 px-2 py-1.5 text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/40"
                           />
                           {shopError ? (
                             <p className="wl-micro-meta text-rose-500 leading-snug">{shopError}</p>

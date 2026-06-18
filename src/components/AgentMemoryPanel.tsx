@@ -94,7 +94,7 @@ export default function AgentMemoryPanel({
               <h3 className="font-display italic text-xl text-foreground leading-tight">
                 What {agentName} remembers
               </h3>
-              <p className="wl-label text-foreground/40">Carried between every call</p>
+              <p className="wl-label text-foreground/55">Carried between every call</p>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic text-lg text-foreground leading-none">
                 Persistent thread
               </h4>
-              <p className="wl-label text-foreground/40 mt-0.5">
+              <p className="wl-label text-foreground/55 mt-0.5">
                 {messageCount} message{messageCount === 1 ? "" : "s"} · the thread is the memory
               </p>
             </div>
@@ -145,7 +145,7 @@ export default function AgentMemoryPanel({
             <h4 className="font-display italic text-lg text-foreground leading-none">
               Recent calls it recalls
             </h4>
-            <p className="wl-label text-foreground/40 mt-0.5">
+            <p className="wl-label text-foreground/55 mt-0.5">
               Last {recentCalls.length || "few"} conversations
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function AgentMemoryPanel({
               <h4 className="font-display italic text-lg text-foreground leading-none">
                 Rules, facts &amp; personality
               </h4>
-              <p className="wl-label text-foreground/40 mt-0.5">
+              <p className="wl-label text-foreground/55 mt-0.5">
                 {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}
                 fact{knowledge.length === 1 ? "" : "s"}
               </p>

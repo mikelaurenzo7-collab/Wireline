@@ -456,7 +456,7 @@ function SetupRail() {
             </span>
             <ChevronRight
               size={15}
-              className="text-white/40 transition-transform group-hover:translate-x-1"
+              className="text-white/55 transition-transform group-hover:translate-x-1"
             />
           </Link>
         ))}

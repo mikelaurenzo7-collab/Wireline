@@ -425,7 +425,7 @@ export default function TopBar({
 
                     {/* Workspace Switcher Card */}
                     <div className="px-4 py-3 border-b border-white/8 bg-black/[0.015] dark:bg-white/[0.01]">
-                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[9px]">
+                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[10px]">
                         Workspace Context
                       </p>
                       <div className="grid grid-cols-2 gap-1.5">

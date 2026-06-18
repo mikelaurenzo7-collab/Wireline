@@ -141,7 +141,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
           type="search"
           aria-label="Search calls"
           placeholder="Search signals…"
-          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[11px] text-foreground placeholder:text-foreground/40 focus:border-brand/40 focus:outline-none transition-all"
+          className="h-9 w-full sm:w-44 lg:w-60 xl:w-72 pl-8 pr-3 rounded-full wl-panel text-[11px] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none transition-all"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -318,7 +318,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
                                     ? "bg-brand/12 text-brand border-brand/20"
                                     : (call.lead_score || 0) >= 50
                                       ? "bg-brand/8 text-brand/80 border-brand/15"
-                                      : "bg-black/[0.06] text-foreground/40 border-transparent",
+                                      : "bg-black/[0.06] text-foreground/55 border-transparent",
                                 )}
                               >
                                 {call.lead_score || 0}
@@ -391,7 +391,7 @@ export default function CallLogs({ embedded = false }: { embedded?: boolean }) {
             <Panel title="Call Detail" hint="Select a call" icon={FileText}>
               <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-md wl-panel flex items-center justify-center">
-                  <FileText className="w-8 h-8 text-foreground/40" />
+                  <FileText className="w-8 h-8 text-foreground/55" />
                 </div>
                 <div>
                   <p className="text-sm font-display italic text-foreground/70 mb-1">
@@ -443,7 +443,7 @@ function SentimentDot({ sentiment }: { sentiment?: string | null }) {
     return <SmilePlus className="w-3 h-3 text-brand shrink-0" aria-label="Positive sentiment" />;
   if (s === "negative")
     return <Frown className="w-3 h-3 text-destructive shrink-0" aria-label="Negative sentiment" />;
-  return <Meh className="w-3 h-3 text-foreground/40 shrink-0" aria-label="Neutral sentiment" />;
+  return <Meh className="w-3 h-3 text-foreground/55 shrink-0" aria-label="Neutral sentiment" />;
 }
 
 function CallOutcomeBadge({ label }: { label: string }) {
@@ -672,7 +672,7 @@ function CallDetail({
                             ? "text-brand"
                             : (call.sentiment || "neutral") === "negative"
                               ? "text-destructive"
-                              : "text-foreground/40",
+                              : "text-foreground/55",
                         )}
                       >
                         {call.sentiment || "neutral"}
@@ -705,7 +705,7 @@ function CallDetail({
                         data-qa-color={qaColor(qaScore)}
                       >
                         {qaScore}
-                        <span className="text-xs text-foreground/40 ml-1 not-italic">/100</span>
+                        <span className="text-xs text-foreground/55 ml-1 not-italic">/100</span>
                       </div>
                     </div>
                     <div className="space-y-2 mb-3">
@@ -777,7 +777,7 @@ function CallDetail({
                 className="h-full scroll-viewport scrollbar-hide p-4 space-y-2"
               >
                 {transcriptLines.length === 0 ? (
-                  <p className="text-foreground/40 wl-label text-center py-12">
+                  <p className="text-foreground/55 wl-label text-center py-12">
                     No transcript available
                   </p>
                 ) : (
@@ -855,7 +855,7 @@ function CallDetail({
                   <RecordingPlayer url={call.recording_url} />
                 ) : (
                   <div className="h-full min-h-[200px] flex flex-col items-center justify-center gap-2">
-                    <Activity className="w-6 h-6 text-foreground/40" />
+                    <Activity className="w-6 h-6 text-foreground/55" />
                     <p className="text-eyebrow/60">No recording available</p>
                     <p className="wl-micro-meta">
                       Recordings are stored by the voice carrier when enabled
@@ -1070,7 +1070,7 @@ function RecordingPlayer({ url }: { url: string }) {
         {/* Time */}
         <span className="wl-micro-badge font-mono text-muted tabular-nums ml-1">
           {fmtTime(currentTime)}
-          <span className="text-foreground/40 mx-0.5">/</span>
+          <span className="text-foreground/55 mx-0.5">/</span>
           {fmtTime(duration)}
         </span>
 

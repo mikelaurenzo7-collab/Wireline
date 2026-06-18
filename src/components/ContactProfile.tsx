@@ -413,7 +413,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 )}
               </div>
               {event.coaching_note && (
-                <p className="text-[11px] text-foreground/40 mt-1 line-clamp-1">
+                <p className="text-[11px] text-foreground/55 mt-1 line-clamp-1">
                   {event.coaching_note}
                 </p>
               )}

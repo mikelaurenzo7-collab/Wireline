@@ -97,7 +97,7 @@ export default function HeroCallPreview() {
             transition={{ duration: 0.4, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-[86%] border border-ink/[0.1] bg-white/[0.55] px-3 py-2.5 text-[13px] leading-snug text-foreground"
           >
-            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/48">
+            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/48">
               Caller
             </span>
             Hi — do you have any openings this Saturday?
@@ -109,7 +109,7 @@ export default function HeroCallPreview() {
             transition={{ duration: 0.4, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
             className="ml-auto max-w-[86%] border border-brand/18 bg-brand/[0.045] px-3 py-2.5 text-[13px] leading-snug text-foreground"
           >
-            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/48">
+            <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/48">
               Sarah
             </span>
             We do — 9:30 or 2:15. Want me to lock one in?
@@ -137,11 +137,11 @@ export default function HeroCallPreview() {
             <strong className="font-semibold">Booking appointment</strong> — Sat 9:30 AM
           </span>
           <span className="ml-auto flex gap-1.5">
-            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/55">
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/55">
               <Calendar className="h-2.5 w-2.5" aria-hidden="true" />
               Calendar
             </span>
-            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/55">
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-foreground/55">
               <MessageSquare className="h-2.5 w-2.5" aria-hidden="true" />
               SMS
             </span>

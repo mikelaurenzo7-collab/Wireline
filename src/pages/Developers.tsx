@@ -271,7 +271,7 @@ export default function Developers() {
 
             {/* Console Log output */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-white/40 text-[10px] uppercase tracking-wider font-semibold">
+              <div className="flex items-center justify-between text-white/55 text-[10px] uppercase tracking-wider font-semibold">
                 <span>Console Egress / Carrier Logs</span>
                 <span>Real-time</span>
               </div>
@@ -293,7 +293,7 @@ export default function Developers() {
           </div>
 
           {/* Terminal Footer Status */}
-          <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[10px] text-white/40 flex justify-between items-center z-10 font-mono">
+          <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[10px] text-white/55 flex justify-between items-center z-10 font-mono">
             <div className="flex gap-4">
               <span>PATH: /networks/peering</span>
               <span>LATENCY: 14ms</span>

@@ -187,7 +187,7 @@ function ApptModal({ agents, initial, onClose, onSaved }: ApptModalProps) {
   };
 
   const inputCls =
-    "w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40 transition-all";
+    "w-full text-sm bg-muted/20 border border-border rounded-md px-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/55 transition-all";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -369,7 +369,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="wl-label text-foreground/40 flex items-center gap-1.5">
+      <label className="wl-label text-foreground/55 flex items-center gap-1.5">
         {Icon && <Icon className="w-2.5 h-2.5 text-brand" />}
         {label}
       </label>
@@ -474,7 +474,7 @@ function CalendarGrid({
 
       <div className="shrink-0 grid grid-cols-7 border-b border-border/80 min-w-[21rem]" role="row">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div key={d} role="columnheader" className="py-2 text-center wl-label text-foreground/40">
+          <div key={d} role="columnheader" className="py-2 text-center wl-label text-foreground/55">
             {d}
           </div>
         ))}
@@ -513,7 +513,7 @@ function CalendarGrid({
                     <div
                       className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center mb-1 text-[11px] ml-auto",
-                        isToday ? "bg-brand text-on-brand font-bold" : "text-foreground/40",
+                        isToday ? "bg-brand text-on-brand font-bold" : "text-foreground/55",
                       )}
                     >
                       {cell.day}
@@ -942,7 +942,7 @@ function AppointmentRow({
 
           {appt.notes && (
             <div className="flex items-start gap-1.5 mt-1">
-              <StickyNote className="w-3 h-3 text-foreground/40 shrink-0 mt-0.5" />
+              <StickyNote className="w-3 h-3 text-foreground/55 shrink-0 mt-0.5" />
               <p className="wl-micro-meta leading-snug line-clamp-2">{appt.notes}</p>
             </div>
           )}

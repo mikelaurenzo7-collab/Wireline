@@ -595,7 +595,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 <Workflow className="w-5 h-5 text-brand" />
                 Conversation Flow
               </h3>
-              <p className="wl-label text-foreground/40 mt-1">Linear stage progression</p>
+              <p className="wl-label text-foreground/55 mt-1">Linear stage progression</p>
             </div>
             <ShadButton
               type="button"
@@ -652,7 +652,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                 <Sparkles className="w-3 h-3 text-brand" />
                 Insert a snippet
               </span>
-              <span className="text-foreground/40">{showSnippets ? "−" : "+"}</span>
+              <span className="text-foreground/55">{showSnippets ? "−" : "+"}</span>
             </ShadButton>
             {showSnippets && (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -753,7 +753,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           : "wl-panel border-border hover:border-brand/30",
                       )}
                     >
-                      <div className="cursor-grab active:cursor-grabbing text-foreground/40 hover:text-foreground/70 transition-colors shrink-0">
+                      <div className="cursor-grab active:cursor-grabbing text-foreground/55 hover:text-foreground/70 transition-colors shrink-0">
                         <GripVertical className="w-4 h-4" />
                       </div>
 
@@ -790,7 +790,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleDuplicateStep(step.id, e)}
                         aria-label="Duplicate stage"
                         title="Duplicate stage"
-                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-foreground/40 hover:text-brand hover:bg-brand/10"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-foreground/55 hover:text-brand hover:bg-brand/10"
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </ShadButton>
@@ -802,7 +802,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         onClick={(e) => handleRemoveStep(step.id, e)}
                         aria-label="Delete stage"
                         title="Delete stage"
-                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-foreground/40 hover:text-rose-500 hover:bg-rose-500/10"
+                        className="w-7 h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 text-foreground/55 hover:text-rose-500 hover:bg-rose-500/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </ShadButton>
@@ -837,9 +837,9 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       value={activeStep.name}
                       onChange={(e) => handleUpdateStep(activeStep.id, "name", e.target.value)}
                       placeholder="Stage Name"
-                      className="bg-transparent text-xl font-display italic text-foreground outline-none placeholder:text-foreground/40 w-full"
+                      className="bg-transparent text-xl font-display italic text-foreground outline-none placeholder:text-foreground/55 w-full"
                     />
-                    <div className="wl-label text-foreground/40 mt-0.5">Stage definition</div>
+                    <div className="wl-label text-foreground/55 mt-0.5">Stage definition</div>
                   </div>
                 </div>
 
@@ -914,7 +914,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     <Settings2 className="w-4 h-4" />
                     <h4 className="text-[11px] uppercase tracking-[0.3em]">Agent Instructions</h4>
                   </div>
-                  <p className="text-[11px] text-foreground/40 leading-relaxed max-w-2xl">
+                  <p className="text-[11px] text-foreground/55 leading-relaxed max-w-2xl">
                     What should the agent say and do while in this stage? Be specific about the
                     goals, questions to ask, and tone to maintain.
                   </p>
@@ -924,7 +924,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       handleUpdateStep(activeStep.id, "instructions", e.target.value)
                     }
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
-                    className="w-full h-40 bg-black/10 border border-white/10 rounded-md p-4 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-foreground/40"
+                    className="w-full h-40 bg-black/10 border border-white/10 rounded-md p-4 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-foreground/55"
                   />
                   {/* Pacing / length hints — operators tend to write
                       either too terse ("be friendly") or too verbose
@@ -953,7 +953,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           {tooShort && " · too vague, agent will need more guidance"}
                         </span>
                         {words > 0 && (
-                          <span className="text-foreground/40">target 30–150 words</span>
+                          <span className="text-foreground/55">target 30–150 words</span>
                         )}
                       </div>
                     );
@@ -1039,7 +1039,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         Transition Condition
                       </h4>
                     </div>
-                    <p className="text-[11px] text-foreground/40 leading-relaxed max-w-2xl">
+                    <p className="text-[11px] text-foreground/55 leading-relaxed max-w-2xl">
                       When should the agent naturally progress to the next stage? The LLM evaluates
                       this condition continuously.
                     </p>
@@ -1051,7 +1051,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                           handleUpdateStep(activeStep.id, "transitionCondition", e.target.value)
                         }
                         placeholder="e.g. The user has provided their email address and expressed interest in a demo."
-                        className="w-full h-24 bg-black/10 border border-brand/20 rounded-md pl-12 pr-4 py-4 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:border-brand/50 transition-colors placeholder:text-foreground/40"
+                        className="w-full h-24 bg-black/10 border border-brand/20 rounded-md pl-12 pr-4 py-4 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:border-brand/50 transition-colors placeholder:text-foreground/55"
                       />
                     </div>
 
@@ -1075,7 +1075,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       <CheckCircle2 className="w-6 h-6 text-rose-500" />
                     </div>
                     <h4 className="text-sm font-medium text-foreground mb-1">Terminal Stage</h4>
-                    <p className="text-[11px] text-foreground/40 max-w-md mx-auto">
+                    <p className="text-[11px] text-foreground/55 max-w-md mx-auto">
                       The call will gracefully end when the instructions in this stage have been
                       fulfilled. No transition condition is required.
                     </p>
@@ -1086,7 +1086,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
               <div className="w-16 h-16 rounded-md wl-panel border border-border flex items-center justify-center mb-4">
-                <Workflow className="w-8 h-8 text-foreground/40" />
+                <Workflow className="w-8 h-8 text-foreground/55" />
               </div>
               <h3 className="font-display italic text-2xl text-foreground/80 mb-2">
                 Select a Stage

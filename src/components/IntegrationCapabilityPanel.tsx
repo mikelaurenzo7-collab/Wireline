@@ -94,7 +94,7 @@ export default function IntegrationCapabilityPanel({
                         "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
                         on
                           ? "wl-accent-tag border-current/25 bg-current/8"
-                          : "border-border bg-muted/10 text-foreground/40",
+                          : "border-border bg-muted/10 text-foreground/55",
                       )}
                       title={entry?.description}
                     >
@@ -137,7 +137,7 @@ export default function IntegrationCapabilityPanel({
               </span>
               <ChevronDown
                 className={cn(
-                  "w-3.5 h-3.5 text-foreground/40 transition-transform shrink-0",
+                  "w-3.5 h-3.5 text-foreground/55 transition-transform shrink-0",
                   toolsOpen && "rotate-180",
                 )}
               />

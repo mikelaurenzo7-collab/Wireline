@@ -102,7 +102,7 @@ function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string })
           <p className="text-sm text-foreground/70 mt-1 line-clamp-1">{agent.role}</p>
         </div>
         <div className="shrink-0 text-right">
-          <ArrowRight className="w-5 h-5 text-foreground/40 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+          <ArrowRight className="w-5 h-5 text-foreground/55 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
         </div>
       </div>
     </a>

@@ -577,7 +577,7 @@ export default function AuditLog() {
                     placeholder="Search events…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-foreground placeholder:text-foreground/40 focus:border-brand/40 focus:outline-none"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-foreground placeholder:text-foreground/55 focus:border-brand/40 focus:outline-none"
                   />
                 </div>
               }

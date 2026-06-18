@@ -149,7 +149,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
         <div className="relative mt-5 pt-4 border-t border-brand/10 grid grid-cols-3 gap-2 sm:gap-4">
           {data.secondary.map((s, i) => (
             <div key={`${s.label}-${i}`} className="min-w-0 flex flex-col gap-1">
-              <div className="wl-label font-semibold text-foreground/40 truncate">{s.label}</div>
+              <div className="wl-label font-semibold text-foreground/55 truncate">{s.label}</div>
               <div className="font-display italic text-xl font-bold text-foreground leading-none tabular-nums truncate">
                 {formatMetricValue(s.value, s.format)}
               </div>
@@ -164,7 +164,7 @@ export default function AgentScorecard({ agentId, days = 30, title }: Props) {
 function DeltaPill({ pct }: { pct: number }) {
   if (!Number.isFinite(pct) || pct === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label font-mono font-medium bg-muted border border-border text-foreground/40">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full wl-label font-mono font-medium bg-muted border border-border text-foreground/55">
         flat
       </span>
     );
@@ -189,7 +189,7 @@ function DeltaPill({ pct }: { pct: number }) {
 function Sparkline({ values }: { values: number[] }) {
   const safe = Array.isArray(values) ? values.map((v) => (Number.isFinite(v) ? v : 0)) : [];
   if (safe.length < 2) {
-    return <div className="wl-label text-foreground/40 text-right">no trend yet</div>;
+    return <div className="wl-label text-foreground/55 text-right">no trend yet</div>;
   }
   const max = Math.max(1, ...safe);
   const min = 0;

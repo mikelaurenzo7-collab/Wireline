@@ -39,7 +39,7 @@ export function VoiceFieldSelect({
   const selectValue = allowInherit && !value ? "inherit" : resolveVoiceSelectValue(value, catalog);
   return (
     <div className="space-y-1.5">
-      <label className="wl-label text-foreground/40">{label}</label>
+      <label className="wl-label text-foreground/55">{label}</label>
       <Select
         value={selectValue}
         onValueChange={(val) => {

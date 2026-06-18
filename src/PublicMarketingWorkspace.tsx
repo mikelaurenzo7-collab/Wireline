@@ -303,7 +303,7 @@ function FooterCol({
           to={path(link)}
           className={cn(
             "block text-sm",
-            dark ? "text-white/45 hover:text-paper" : "text-muted-foreground hover:text-foreground",
+            dark ? "text-white/60 hover:text-paper" : "text-muted-foreground hover:text-foreground",
           )}
         >
           {link}
@@ -377,7 +377,7 @@ function Card({ item, dark = false }: { item: CardItem; dark?: boolean }) {
         <p
           className={cn(
             "mb-2 text-[10px] font-bold uppercase tracking-[.16em]",
-            dark ? "text-white/35" : "text-muted-foreground",
+            dark ? "text-white/55" : "text-muted-foreground",
           )}
         >
           {item.tag}
@@ -421,14 +421,14 @@ function ProductCanvas() {
                     className="rounded-[18px] border border-white/10 bg-white/[.055] p-4"
                   >
                     <p className="font-display text-3xl leading-none">{v}</p>
-                    <p className="mt-2 text-[10px] uppercase tracking-[.15em] text-white/35">{l}</p>
+                    <p className="mt-2 text-[10px] uppercase tracking-[.15em] text-white/55">{l}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[.04] p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[.18em] text-white/35">
+                    <p className="text-[10px] uppercase tracking-[.18em] text-white/55">
                       Active call
                     </p>
                     <p className="mt-1 font-display !normal-case text-2xl">Front Desk Sarah</p>
@@ -445,7 +445,7 @@ function ProductCanvas() {
               </div>
             </div>
             <div className="bg-[#17101d] p-5">
-              <p className="text-[10px] uppercase tracking-[.18em] text-white/35">
+              <p className="text-[10px] uppercase tracking-[.18em] text-white/55">
                 Operating lanes
               </p>
               <div className="mt-4 space-y-3">
@@ -482,7 +482,7 @@ function HeroMetric({ value, label }: { value: string; label: string }) {
   return (
     <div className="rounded-[20px] border border-white/10 bg-white/[.055] px-4 py-3 backdrop-blur">
       <p className="font-display text-2xl leading-none text-paper">{value}</p>
-      <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-white/35">{label}</p>
+      <p className="mt-2 text-[10px] font-bold uppercase tracking-[.16em] text-white/55">{label}</p>
     </div>
   );
 }
@@ -499,7 +499,7 @@ function Landing() {
               <Pill tone="dark">
                 <Sparkles size={12} /> Personal Assistant + Business Agent Fleet
               </Pill>
-              <h1 className="max-w-5xl font-display !normal-case text-5xl font-medium leading-[.97] tracking-[-0.065em] text-paper md:text-7xl xl:text-8xl">
+              <h1 className="max-w-5xl font-display !normal-case text-5xl font-medium leading-[.97] tracking-[-0.04em] text-paper md:text-7xl xl:text-8xl">
                 Your Phone, Finally Working for You.
               </h1>
               <p className="max-w-2xl text-[18px] leading-8 text-white/64">

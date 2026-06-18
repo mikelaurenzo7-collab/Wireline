@@ -708,7 +708,7 @@ export default function BehavioralRegressionTests({
             <h3 className="font-display italic text-xl text-foreground">
               Behavioral regression tests
             </h3>
-            <p className="wl-label text-foreground/40">
+            <p className="wl-label text-foreground/55">
               Run synthetic test suite to guard against agent drift
             </p>
           </div>
@@ -777,7 +777,7 @@ export default function BehavioralRegressionTests({
                       </p>
                     </div>
                     <span
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold border ${
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold border ${
                         r.passed
                           ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
                           : "bg-rose-500/15 border-rose-500/30 text-rose-500"
@@ -798,7 +798,7 @@ export default function BehavioralRegressionTests({
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[10px] text-foreground/40 uppercase tracking-widest">
+                    <span className="text-[10px] text-foreground/55 uppercase tracking-widest">
                       Agent Response:
                     </span>
                     <p
@@ -815,7 +815,7 @@ export default function BehavioralRegressionTests({
                         variant="ghost"
                         disableAnimations
                         onClick={() => toggleExpand(r.scenarioId)}
-                        className="text-[9px] text-brand hover:underline p-0 h-auto hover:bg-transparent font-medium block uppercase tracking-wider"
+                        className="text-[10px] text-brand hover:underline p-0 h-auto hover:bg-transparent font-medium block uppercase tracking-wider"
                       >
                         {isExpanded ? "Collapse" : "Expand response"}
                       </ShadButton>

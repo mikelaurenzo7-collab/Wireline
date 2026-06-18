@@ -270,7 +270,7 @@ export default function Cadences() {
           <h3 className="font-display italic text-xl text-foreground leading-none">
             Multi-touch cadences
           </h3>
-          <p className="text-[11px] text-foreground/40 mt-1.5 max-w-xl leading-relaxed">
+          <p className="text-[11px] text-foreground/55 mt-1.5 max-w-xl leading-relaxed">
             Define a sequence of call → SMS → email steps with delays. Enroll any lead from
             /pipeline or the API. The job-worker ticks each step automatically.
           </p>
@@ -370,7 +370,7 @@ export default function Cadences() {
                     >
                       {stepIcon(s.type)} {s.type}
                       {s.delayHours > 0 && (
-                        <span className="text-foreground/40 normal-case">+{s.delayHours}h</span>
+                        <span className="text-foreground/55 normal-case">+{s.delayHours}h</span>
                       )}
                     </span>
                   ))}
@@ -489,7 +489,7 @@ export default function Cadences() {
                       </Select>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-foreground/40" />
+                      <Clock className="w-3 h-3 text-foreground/55" />
                       <Input
                         type="number"
                         inputMode="numeric"

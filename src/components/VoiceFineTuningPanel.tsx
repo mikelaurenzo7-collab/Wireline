@@ -78,7 +78,7 @@ function SliderRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="wl-label text-foreground/40 flex items-center gap-1.5">
+        <label className="wl-label text-foreground/55 flex items-center gap-1.5">
           {label}
           {/* Help tooltip — hover/focus to reveal. Plain English, one
               line; the comments in this file carry the deep ElevenLabs
@@ -92,7 +92,7 @@ function SliderRow({
             tabIndex={0}
           >
             <Info
-              className="w-2.5 h-2.5 text-foreground/40 hover:text-brand cursor-help"
+              className="w-2.5 h-2.5 text-foreground/55 hover:text-brand cursor-help"
               aria-label={`What does ${label} do?`}
             />
             {showTip && (
@@ -108,7 +108,7 @@ function SliderRow({
         <span
           className={cn(
             "wl-micro-badge font-medium",
-            isDefault ? "text-foreground/40" : "text-foreground",
+            isDefault ? "text-foreground/55" : "text-foreground",
           )}
         >
           {value.toFixed(2)}
@@ -235,7 +235,7 @@ export default function VoiceFineTuningPanel({
               the other "yes / no" pills elsewhere in FleetSettings. */}
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="space-y-0.5 min-w-0">
-              <label className="wl-label text-foreground/40 flex items-center gap-1.5">
+              <label className="wl-label text-foreground/55 flex items-center gap-1.5">
                 Speaker boost
               </label>
               <p className="wl-micro-meta leading-relaxed">
@@ -280,7 +280,7 @@ export default function VoiceFineTuningPanel({
               disableAnimations
               onClick={resetToDefaults}
               disabled={atDefaults}
-              className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/40"
+              className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/55"
             >
               <RefreshCw className="w-2.5 h-2.5" />
               Reset to defaults

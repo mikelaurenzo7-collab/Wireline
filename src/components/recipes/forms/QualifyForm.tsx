@@ -70,7 +70,7 @@ export function QualifyForm({
                   q.qualification_label === "cool" &&
                     "bg-black/[0.06] border border-white/15 text-foreground/50",
                   q.qualification_label === "cold" &&
-                    "bg-black/8 border border-white/15 text-foreground/40",
+                    "bg-black/8 border border-white/15 text-foreground/55",
                   q.qualification_label === "disqualified" &&
                     "bg-rose-700/15 border border-rose-700/40 text-rose-500",
                 )}
