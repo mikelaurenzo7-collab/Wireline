@@ -1017,7 +1017,7 @@ export default function AgentConfigPanel({
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {/* Directives */}
-                  <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
+                  <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[300px] md:h-[360px] max-h-[58vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-black/8">
                       <div>
                         <h3 className="font-display italic text-lg text-ink leading-none">
@@ -1157,7 +1157,7 @@ export default function AgentConfigPanel({
                   </section>
 
                   {/* Knowledge Base */}
-                  <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[560px] md:h-[400px] max-h-[70vh]">
+                  <section className="rounded-md wl-panel-elevated border border-border p-3 flex flex-col min-h-[300px] md:h-[360px] max-h-[58vh]">
                     <header className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-black/8">
                       <div>
                         <h3 className="font-display italic text-lg text-ink leading-none">
