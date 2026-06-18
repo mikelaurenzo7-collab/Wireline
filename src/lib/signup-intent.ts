@@ -1,6 +1,6 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-export const SIGNUP_PLAN_IDS = ["personal", "starter", "pro", "business"] as const;
+export const SIGNUP_PLAN_IDS = ["personal", "personal-plus", "starter", "scale"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const SIGNUP_WEDGE_KEYS = [
@@ -76,7 +76,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   sales: {
     label: "sales",
-    defaultPlanId: "pro",
+    defaultPlanId: "starter",
     templateId: "sales-sdr",
     templateLabel: "SDR — Outbound Prospecting",
   },
@@ -84,12 +84,25 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
 
 const PLAN_SET = new Set<string>(SIGNUP_PLAN_IDS);
 const WEDGE_SET = new Set<string>(SIGNUP_WEDGE_KEYS);
+const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
+  plus: "personal-plus",
+  personal_plus: "personal-plus",
+  personalplus: "personal-plus",
+  pro: "scale",
+  business: "scale",
+  enterprise: "scale",
+};
+
+function normalizePlanId(value: string | null | undefined): SignupPlanId | undefined {
+  const cleaned = value?.trim().toLowerCase();
+  if (!cleaned) return undefined;
+  if (PLAN_SET.has(cleaned)) return cleaned as SignupPlanId;
+  return LEGACY_PLAN_ALIASES[cleaned];
+}
 
 /**
- * Drop plan/wedge values outside the current allowlist. Stale
- * localStorage (e.g. preferredPlanId "enterprise" from old links) made
- * POST /api/auth/signup return 400 VALIDATION_ERROR while the UI only
- * showed "Invalid request body".
+ * Drop or normalize plan/wedge values outside the current allowlist. Stale
+ * localStorage and old marketing URLs can otherwise make signup fail silently.
  */
 export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): SignupIntent | null {
   if (!intent) return null;
@@ -98,9 +111,9 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
     capturedAt: intent.capturedAt || new Date().toISOString(),
   };
 
-  if (intent.preferredPlanId && PLAN_SET.has(intent.preferredPlanId)) {
-    out.preferredPlanId = intent.preferredPlanId;
-  }
+  const normalizedPlan = normalizePlanId(intent.preferredPlanId);
+  if (normalizedPlan) out.preferredPlanId = normalizedPlan;
+
   if (intent.signupWedge && WEDGE_SET.has(intent.signupWedge)) {
     out.signupWedge = intent.signupWedge;
   }
@@ -123,16 +136,16 @@ function cleanCampaignValue(value: string | null): string | undefined {
 
 export function parseSignupIntent(search: string): SignupIntent | null {
   const params = new URLSearchParams(search);
-  const rawPlan = params.get("plan")?.trim().toLowerCase();
+  const rawPlan = params.get("plan");
   const rawWedge = params.get("wedge")?.trim().toLowerCase();
 
   const intent: SignupIntent = {
     capturedAt: new Date().toISOString(),
   };
 
-  if (rawPlan && PLAN_SET.has(rawPlan)) {
-    intent.preferredPlanId = rawPlan as SignupPlanId;
-  }
+  const normalizedPlan = normalizePlanId(rawPlan);
+  if (normalizedPlan) intent.preferredPlanId = normalizedPlan;
+
   if (rawWedge && WEDGE_SET.has(rawWedge)) {
     intent.signupWedge = rawWedge as SignupWedgeKey;
   }
