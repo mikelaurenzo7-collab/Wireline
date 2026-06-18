@@ -292,8 +292,8 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                     dataKey="toolCallFailureRate"
                     name="Tool failures"
                     stackId="1"
-                    stroke="#8B3FD6"
-                    fill="#8B3FD633"
+                    stroke="#7C9CFF"
+                    fill="#7C9CFF33"
                   />
                   <Area
                     type="monotone"

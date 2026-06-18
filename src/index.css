@@ -16,6 +16,7 @@
   --panel: #14161d;
   --panel-2: #191c24;
   --raised: #21242e;
+  --velvet: #16181f;
 
   --text: #eceDF1;
   --text-2: #9b9da8;
@@ -101,6 +102,7 @@
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-brand-bright: var(--brand-bright);
+  --color-velvet: var(--velvet);
   --color-iris: var(--iris);
   --color-iris-bright: var(--iris-bright);
   --color-iris-deep: var(--iris-deep);

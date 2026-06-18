@@ -15,7 +15,7 @@ type BrandingSettings = {
 const DEFAULT_BRANDING: BrandingSettings = {
   brand_name: "Wireline",
   brand_logo_url: "",
-  primary_color: "#8B3FD6",
+  primary_color: "#7C9CFF",
   business_name: "",
   business_type: "",
   primary_product: "",
@@ -82,11 +82,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     [branding, updateBranding, isLoading],
   );
 
-  return (
-    <BrandingContext.Provider value={value}>
-      {children}
-    </BrandingContext.Provider>
-  );
+  return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;
 }
 
 export function useBranding() {

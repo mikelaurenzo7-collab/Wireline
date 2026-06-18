@@ -351,13 +351,13 @@ export default function Features() {
                     cx="200"
                     cy="120"
                     r="40"
-                    stroke="#8b3fd6"
+                    stroke="#7c9cff"
                     strokeDasharray="4 4"
                     strokeWidth="2"
                   ></circle>
                   <path
                     d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z"
-                    stroke="#8b3fd6"
+                    stroke="#7c9cff"
                     strokeWidth="3"
                   >
                     <animate
@@ -378,7 +378,7 @@ export default function Features() {
                   ></rect>
                   <path
                     d="M260 200V240M240 220H280"
-                    stroke="#8b3fd6"
+                    stroke="#7c9cff"
                     strokeLinecap="round"
                     strokeWidth="3"
                   ></path>

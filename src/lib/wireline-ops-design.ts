@@ -624,12 +624,12 @@ export const WL_CHANNEL_CLASSES = {
   inboxList:
     "min-h-0 flex flex-col border-b lg:border-b-0 lg:border-r border-border wl-panel rounded-none lg:rounded-l-md",
   inboxListHeader:
-    "shrink-0 px-3 py-2 border-b border-black/6 flex items-center justify-between gap-2",
+    "shrink-0 px-3 py-2 border-b border-white/6 flex items-center justify-between gap-2",
   inboxDetail: "min-h-0 flex flex-col bg-white/[0.02] lg:rounded-r-md",
   listColHeader:
-    "hidden sm:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem] gap-2 px-3 py-2 border-b border-black/6 bg-black/[0.02]",
+    "hidden sm:grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem] gap-2 px-3 py-2 border-b border-white/6 bg-black/[0.02]",
   threadRow:
-    "w-full text-left rounded-md p-3 border border-border bg-paper/40 transition-all hover:border-brand/25 touch-press",
+    "w-full text-left rounded-md p-3 border border-border bg-white/[0.04] transition-all hover:border-brand/25 touch-press",
   threadRowActive: "bg-brand/8 border-brand/30",
 } as const;
 
