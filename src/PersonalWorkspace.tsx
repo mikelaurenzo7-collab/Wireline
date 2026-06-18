@@ -16,6 +16,7 @@ import {
   Phone,
   PhoneCall,
   ShieldCheck,
+  Sliders,
   Smartphone,
   Sparkles,
   Wand2,
@@ -25,6 +26,7 @@ import { useAuth } from "./contexts/AuthContext";
 const nav = [
   ["Home", "/app/personal"],
   ["Assistant", "/app/personal/assistant"],
+  ["Assistant Studio", "/app/personal/studio"],
   ["Automations", "/app/personal/automations"],
   ["Devices", "/app/personal/devices"],
   ["Number", "/app/personal/number"],
@@ -41,6 +43,23 @@ const models = [
     "Best for complex planning, multi-step decisions, and high-trust workflows.",
   ],
   ["Auto route", "Smart", "Wireline chooses the best model by task, urgency, and cost."],
+];
+
+const voices = [
+  "Warm female",
+  "Confident male",
+  "Calm neutral",
+  "Bright support",
+  "Professional receptionist",
+];
+
+const studioSkills = [
+  ["Screen unknown callers", "Filter spam and route real callers to you.", true],
+  ["Place calls for me", "Call businesses and people with a short brief.", true],
+  ["Wait on hold", "Hold the line and bring you back when a human answers.", true],
+  ["Book & reschedule", "Handle appointments with confirmation before committing.", false],
+  ["Summarize & recap", "Send a short recap after each handled call.", true],
+  ["Take messages", "Capture details when you can't pick up.", false],
 ];
 
 const automationGroups = [
@@ -731,6 +750,200 @@ function SettingsView() {
   );
 }
 
+function StudioView() {
+  const [name, setName] = useState("Aria");
+  const [role, setRole] = useState("Personal call assistant");
+  const [model, setModel] = useState(models[0][0]);
+  const [voice, setVoice] = useState(voices[0]);
+  const [skills, setSkills] = useState(() => studioSkills.map((s) => s[2] as boolean));
+  const [saved, setSaved] = useState(false);
+  const toggle = (i: number) => {
+    setSkills((prev) => prev.map((on, idx) => (idx === i ? !on : on)));
+    setSaved(false);
+  };
+  const activeCount = skills.filter(Boolean).length;
+  return (
+    <div className="space-y-8">
+      <div>
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
+          <Sliders size={13} /> Assistant Studio
+        </div>
+        <h1 className="mt-4 font-display text-4xl sm:text-5xl">Build and customize your assistant.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Create your assistant, give it a name and voice, choose its model, and pick what it is
+          allowed to handle. Training and scenarios live on their own page.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_.85fr]">
+        <Card>
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
+            <Sparkles size={13} /> Identity
+          </div>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                Name
+              </span>
+              <input
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                What it handles
+              </span>
+              <input
+                value={role}
+                onChange={(e) => {
+                  setRole(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                Model
+              </span>
+              <select
+                value={model}
+                onChange={(e) => {
+                  setModel(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                {models.map(([m]) => (
+                  <option key={m}>{m}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                Voice
+              </span>
+              <select
+                value={voice}
+                onChange={(e) => {
+                  setVoice(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                {voices.map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                What it can do
+              </span>
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                {activeCount} of {studioSkills.length} on
+              </span>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {studioSkills.map(([title, note], i) => (
+                <button
+                  key={title as string}
+                  onClick={() => toggle(i)}
+                  aria-pressed={skills[i]}
+                  className={cx(
+                    "rounded-[18px] border p-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                    skills[i]
+                      ? "border-brand/40 bg-brand/5"
+                      : "border-border bg-background hover:bg-card-deep",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-foreground">{title}</span>
+                    <span
+                      className={cx(
+                        "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
+                        skills[i]
+                          ? "border-brand bg-brand text-paper"
+                          : "border-border text-transparent",
+                      )}
+                    >
+                      <Check size={12} />
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{note}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setSaved(true)}
+              className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold text-paper transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Save assistant
+            </button>
+            <Link
+              to="/app/personal/assistant"
+              className="rounded-[14px] border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              Open Assistant
+            </Link>
+            {saved && (
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+                <Check size={15} /> Saved
+              </span>
+            )}
+          </div>
+        </Card>
+
+        <div className="space-y-6">
+          <Card>
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
+              <PhoneCall size={13} /> Preview
+            </div>
+            <h2 className="mt-4 font-display text-2xl">{name || "Your assistant"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{role || "Personal call assistant"}</p>
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Model</span>
+                <span className="font-semibold">{model}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Voice</span>
+                <span className="font-semibold">{voice}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Number</span>
+                <span className="font-semibold">(312) 555-0198</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Active skills</span>
+                <span className="font-semibold">{activeCount}</span>
+              </div>
+            </div>
+            <p className="mt-4 rounded-[16px] bg-card-deep p-3 text-sm leading-6 text-muted-foreground">
+              This is your one personal assistant. Need more assistants for a team or business?{" "}
+              <Link to="/app/business/studio" className="font-semibold text-brand hover:underline">
+                Open the business studio
+              </Link>
+              .
+            </p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PersonalRoutes() {
   return (
     <RequirePersonal>
@@ -738,6 +951,7 @@ function PersonalRoutes() {
         <Routes>
           <Route path="/app/personal" element={<HomeView />} />
           <Route path="/app/personal/assistant" element={<AssistantView />} />
+          <Route path="/app/personal/studio" element={<StudioView />} />
           <Route path="/app/personal/automations" element={<AutomationsView />} />
           <Route
             path="/app/personal/intents"
