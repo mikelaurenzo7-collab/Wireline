@@ -31,7 +31,9 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
           </div>
           <div className="min-w-0">
             <p className="app-form-eyebrow text-brand/70">Appearance</p>
-            <h3 className="font-display italic text-lg text-ink leading-tight">Brand Identity</h3>
+            <h3 className="font-display italic text-lg text-foreground leading-tight">
+              Brand Identity
+            </h3>
           </div>
         </div>
 
@@ -91,7 +93,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
           <div className="preview-panel flex flex-col items-center justify-center p-5 border border-input bg-white/25 rounded-md">
             <p className="app-form-eyebrow text-muted/70 mb-5">Preview</p>
             <div
-              className="brand-preview-card w-full p-5 rounded-md bg-paper relative overflow-hidden group"
+              className="brand-preview-card w-full p-5 rounded-md bg-card relative overflow-hidden group"
               data-brand-color={settings.primary_color}
             >
               <div className="absolute inset-0 opacity-10 pointer-events-none brand-preview-accent-bg" />

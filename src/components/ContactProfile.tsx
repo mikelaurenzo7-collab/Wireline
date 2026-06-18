@@ -247,7 +247,7 @@ export default function ContactProfile() {
 
         <section className="wl-panel rounded-md sm:rounded-md overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between gap-3">
-            <h2 className="font-display italic text-xl sm:text-2xl flex items-center gap-2 text-ink">
+            <h2 className="font-display italic text-xl sm:text-2xl flex items-center gap-2 text-foreground">
               <Activity className="w-5 h-5 text-brand shrink-0" />
               Timeline
             </h2>
@@ -306,7 +306,7 @@ function StatCard({
           <p className="wl-label-muted">{label}</p>
           <Icon className="w-4 h-4 wl-accent-text" />
         </div>
-        <p className="font-display italic text-2xl sm:text-3xl lg:text-4xl text-ink leading-none tabular-nums">
+        <p className="font-display italic text-2xl sm:text-3xl lg:text-4xl text-foreground leading-none tabular-nums">
           {value}
         </p>
         {sparkData && (
@@ -346,7 +346,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
       to={isCall ? "/phone" : "/phone?tab=appointments"}
       className="group relative block px-4 sm:px-6 py-3 sm:py-3.5 md:pl-6 hover:bg-black/[0.02] transition-colors"
     >
-      <div className="hidden md:block absolute left-[-1.35rem] top-6 w-2.5 h-2.5 rounded-full bg-paper border-2 border-brand/40 group-hover:border-brand transition-colors" />
+      <div className="hidden md:block absolute left-[-1.35rem] top-6 w-2.5 h-2.5 rounded-full bg-card border-2 border-brand/40 group-hover:border-brand transition-colors" />
       <div className="flex items-start gap-3 sm:gap-4">
         <div
           className={cn(
@@ -383,7 +383,7 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
             )}
             <span className="wl-micro-meta--muted">{formatDateTime(event.ts)}</span>
           </div>
-          <p className="text-sm text-ink/85 mt-2 line-clamp-2">{event.summary}</p>
+          <p className="text-sm text-foreground/85 mt-2 line-clamp-2">{event.summary}</p>
           {isCall && (
             <>
               <div className="flex items-center gap-3 mt-2 wl-label-muted">
@@ -413,7 +413,9 @@ const TimelineRow: React.FC<{ event: ContactData["timeline"][number] }> = ({ eve
                 )}
               </div>
               {event.coaching_note && (
-                <p className="text-[11px] text-ink/40 mt-1 line-clamp-1">{event.coaching_note}</p>
+                <p className="text-[11px] text-foreground/40 mt-1 line-clamp-1">
+                  {event.coaching_note}
+                </p>
               )}
               {event.lesson_extracted && (
                 <span className="inline-block mt-1 wl-micro-badge px-1.5 py-0.5 rounded wl-status-success wl-text-success border border-[color-mix(in_srgb,var(--wl-signal)_20%,transparent)]">

@@ -31,7 +31,7 @@ export function Skeleton({ className, accent = "cyan", ...props }: SkeletonProps
       aria-live="polite"
       aria-label="Loading…"
       className={cn(
-        "relative overflow-hidden rounded-md bg-black/[0.07] border border-black/[0.05]",
+        "relative overflow-hidden rounded-md bg-black/[0.07] border border-white/[0.05]",
         className,
       )}
       {...props}

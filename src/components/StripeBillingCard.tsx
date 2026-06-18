@@ -200,68 +200,380 @@ export default function StripeBillingCard() {
   };
 
   if (loading) {
-    return <div className="rounded-md wl-panel border border-white/10 p-10 flex items-center gap-4"><Loader2 className="w-5 h-5 animate-spin text-brand" /><span className="app-section-title/70">Loading billing state…</span></div>;
+    return (
+      <div className="rounded-md wl-panel border border-white/10 p-10 flex items-center gap-4">
+        <Loader2 className="w-5 h-5 animate-spin text-brand" />
+        <span className="app-section-title/70">Loading billing state…</span>
+      </div>
+    );
   }
 
   if (!stripeConfigured) {
     return (
       <div className="rounded-md wl-panel border border-amber-500/25 bg-amber-500/[0.04] p-8 md:p-10 space-y-4">
-        <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0"><AlertTriangle className="w-5 h-5 text-amber-500" /></div><h3 className="font-display italic text-2xl text-ink">Billing is finishing setup</h3></div>
-        <p className="max-w-2xl text-[12px] text-ink/75 leading-relaxed">Your account is active. The billing portal is being provisioned and will be live shortly. You can keep using Wireline — we'll email you the moment self-serve plan changes are available, or write to <a href="mailto:sales@trywireline.com" className="text-brand hover:underline">sales@trywireline.com</a> if you'd like to talk to us about a plan today.</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+          </div>
+          <h3 className="font-display italic text-2xl text-foreground">
+            Billing is finishing setup
+          </h3>
+        </div>
+        <p className="max-w-2xl text-[12px] text-foreground/75 leading-relaxed">
+          Your account is active. The billing portal is being provisioned and will be live shortly.
+          You can keep using Wireline — we'll email you the moment self-serve plan changes are
+          available, or write to{" "}
+          <a href="mailto:sales@trywireline.com" className="text-brand hover:underline">
+            sales@trywireline.com
+          </a>{" "}
+          if you'd like to talk to us about a plan today.
+        </p>
       </div>
     );
   }
 
-  const hasActive = !!sub?.has_subscription && (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
+  const hasActive =
+    !!sub?.has_subscription &&
+    (sub.status === "active" || sub.status === "trialing" || sub.status === "past_due");
 
   return (
     <div className="space-y-8">
-      {sub?.has_subscription && <ActiveSubCard sub={sub} agentCount={agentCount} busy={busy === "portal"} onPortal={openPortal} />}
+      {sub?.has_subscription && (
+        <ActiveSubCard
+          sub={sub}
+          agentCount={agentCount}
+          busy={busy === "portal"}
+          onPortal={openPortal}
+        />
+      )}
       {hasActive && <UsageMeter onUpgrade={openPortal} />}
       {hasActive && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}
-      {error && <div role="alert" className="rounded-md bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"><AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" /><p className="text-[11px] text-rose-500">{error}</p></div>}
-      {hasActive ? <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5"><div className="border-b border-white/8 pb-5"><h3 className="font-display italic text-2xl text-ink">Manage plan</h3><p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">Upgrade, downgrade, update payment method, or cancel through the secure Stripe customer portal. Changes apply to your next billing cycle unless noted otherwise.</p></div><div className="flex flex-wrap items-center gap-3"><ShadButton type="button" disableAnimations variant="outline" onClick={openPortal} disabled={busy === "portal"} className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand">{busy === "portal" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}Open billing portal</ShadButton><span className="app-section-title/65 flex items-center gap-2"><Shield className="w-3 h-3" />Upgrade · cancel · invoices</span></div></div> : <PlanPicker plans={plans} signupPlanInterest={signupPlanInterest} busy={busy} onSelectPlan={startCheckout} />}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-4 wl-micro-meta--muted uppercase tracking-[0.2em]"><div className="flex items-center gap-2"><Shield className="w-3 h-3" />Stripe · PCI DSS Level 1 · Cancel anytime</div><div className="flex items-center gap-3"><a href="/privacy" className="hover:text-muted/70 transition-colors">Privacy</a><span>·</span><a href="/terms" className="hover:text-muted/70 transition-colors">Terms</a></div></div>
+      {error && (
+        <div
+          role="alert"
+          className="rounded-md bg-rose-500/8 border border-rose-500/30 p-4 flex items-center gap-3"
+        >
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+          <p className="text-[11px] text-rose-500">{error}</p>
+        </div>
+      )}
+      {hasActive ? (
+        <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
+          <div className="border-b border-white/8 pb-5">
+            <h3 className="font-display italic text-2xl text-foreground">Manage plan</h3>
+            <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+              Upgrade, downgrade, update payment method, or cancel through the secure Stripe
+              customer portal. Changes apply to your next billing cycle unless noted otherwise.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <ShadButton
+              type="button"
+              disableAnimations
+              variant="outline"
+              onClick={openPortal}
+              disabled={busy === "portal"}
+              className="inline-flex gap-2.5 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+            >
+              {busy === "portal" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4" />
+              )}
+              Open billing portal
+            </ShadButton>
+            <span className="app-section-title/65 flex items-center gap-2">
+              <Shield className="w-3 h-3" />
+              Upgrade · cancel · invoices
+            </span>
+          </div>
+        </div>
+      ) : (
+        <PlanPicker
+          plans={plans}
+          signupPlanInterest={signupPlanInterest}
+          busy={busy}
+          onSelectPlan={startCheckout}
+        />
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-4 wl-micro-meta--muted uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-2">
+          <Shield className="w-3 h-3" />
+          Stripe · PCI DSS Level 1 · Cancel anytime
+        </div>
+        <div className="flex items-center gap-3">
+          <a href="/privacy" className="hover:text-muted/70 transition-colors">
+            Privacy
+          </a>
+          <span>·</span>
+          <a href="/terms" className="hover:text-muted/70 transition-colors">
+            Terms
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
 
-function CreditTopUpCard({ busy, onBuy }: { busy: number | null; onBuy: (amountUsd: number) => void }) {
-  return <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5"><div className="border-b border-white/8 pb-5"><h3 className="font-display italic text-2xl text-ink">Add call credits</h3><p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">Most months your plan's minutes are plenty — credits are an optional safety net for the occasional spike. They cover overage at your plan rate before it's invoiced; if you're regularly over, upgrading your plan is the more economical move.</p></div><div className="flex flex-wrap items-center gap-3">{[25, 50, 100].map((a) => <ShadButton key={a} type="button" disableAnimations variant="outline" onClick={() => onBuy(a)} disabled={busy !== null} className="inline-flex gap-2 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand">{busy === a ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}${a}</ShadButton>)}<span className="app-section-title/65 flex items-center gap-2"><Shield className="w-3 h-3" />Applied to overage automatically</span></div></div>;
+function CreditTopUpCard({
+  busy,
+  onBuy,
+}: {
+  busy: number | null;
+  onBuy: (amountUsd: number) => void;
+}) {
+  return (
+    <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
+      <div className="border-b border-white/8 pb-5">
+        <h3 className="font-display italic text-2xl text-foreground">Add call credits</h3>
+        <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+          Most months your plan's minutes are plenty — credits are an optional safety net for the
+          occasional spike. They cover overage at your plan rate before it's invoiced; if you're
+          regularly over, upgrading your plan is the more economical move.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        {[25, 50, 100].map((a) => (
+          <ShadButton
+            key={a}
+            type="button"
+            disableAnimations
+            variant="outline"
+            onClick={() => onBuy(a)}
+            disabled={busy !== null}
+            className="inline-flex gap-2 px-6 py-3 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border-brand/40 text-brand"
+          >
+            {busy === a ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4" />
+            )}
+            ${a}
+          </ShadButton>
+        ))}
+        <span className="app-section-title/65 flex items-center gap-2">
+          <Shield className="w-3 h-3" />
+          Applied to overage automatically
+        </span>
+      </div>
+    </div>
+  );
 }
 
-function PlanPicker({ plans, signupPlanInterest, busy, onSelectPlan }: { plans: Plan[]; signupPlanInterest: string | null; busy: string | null; onSelectPlan: (planId: string) => void }) {
+function PlanPicker({
+  plans,
+  signupPlanInterest,
+  busy,
+  onSelectPlan,
+}: {
+  plans: Plan[];
+  signupPlanInterest: string | null;
+  busy: string | null;
+  onSelectPlan: (planId: string) => void;
+}) {
   return (
     <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-8">
-      <div className="border-b border-white/8 pb-6"><h3 className="font-display italic text-3xl text-ink">Choose a plan</h3><p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">Start small, prove the channel, then scale into more agents and minutes. No setup fees. Cancel anytime.</p></div>
+      <div className="border-b border-white/8 pb-6">
+        <h3 className="font-display italic text-3xl text-foreground">Choose a plan</h3>
+        <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+          Start small, prove the channel, then scale into more agents and minutes. No setup fees.
+          Cancel anytime.
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 stagger-children">
         {plans.map((plan) => {
           const Icon = PLAN_ICONS[plan.id] || Building2;
           const accent = PLAN_ACCENTS[plan.id] || BRAND.purple;
           const isBusy = busy === plan.id;
           const isSignupMatch = signupPlanInterest === plan.id;
-          return <motion.div key={plan.id} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 400, damping: 25 }} className={cn("relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden", isSignupMatch ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10" : "border-white/10 hover:border-white/20")} data-accent={accent}>
-            {!isSignupMatch && plan.id === "business-starter" && <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">Best entry</div>}
-            {!isSignupMatch && plan.id === "starter" && <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">Most popular</div>}
-            {isSignupMatch && <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">Matched from visit</div>}
-            <div className="flex items-center justify-between"><div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface"><Icon className="w-6 h-6 wl-accent-text" /></div><span className="wl-label-muted/70">{plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}</span></div>
-            <div><h4 className="font-display italic text-2xl text-ink">{plan.name}</h4><div className="mt-1.5 flex items-baseline gap-1"><span className="font-display italic text-4xl text-ink">${plan.price_usd_monthly.toLocaleString()}</span><span className="wl-label-muted/70">/mo</span></div></div>
-            <ul className="space-y-2 flex-1">{plan.features.map((f, i) => <li key={i} className="flex items-start gap-2 text-caption"><Check className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text" strokeWidth={2.5} /><span>{f}</span></li>)}</ul>
-            <ShadButton type="button" disableAnimations variant="outline" onClick={() => onSelectPlan(plan.id)} disabled={isBusy || !plan.configured} className={cn("w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-white/20 hover:border-white/40 text-ink bg-white/5 hover:bg-white/10 hover-premium-glow", !isBusy && plan.configured && "wl-accent-subscribe")}>{isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : plan.configured ? <>Subscribe <ArrowRight className="w-3 h-3" /></> : "Contact sales"}</ShadButton>
-            {!plan.configured && <p className="wl-label text-muted/70 text-center leading-relaxed">Stripe price pending — contact us to start on this tier</p>}
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
-          </motion.div>;
+          return (
+            <motion.div
+              key={plan.id}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className={cn(
+                "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
+                isSignupMatch
+                  ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
+                  : "border-white/10 hover:border-white/20",
+              )}
+              data-accent={accent}
+            >
+              {!isSignupMatch && plan.id === "business-starter" && (
+                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                  Best entry
+                </div>
+              )}
+              {!isSignupMatch && plan.id === "starter" && (
+                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                  Most popular
+                </div>
+              )}
+              {isSignupMatch && (
+                <div className="absolute top-0 left-0 px-3 py-1 wl-label bg-brand text-white shadow-sm shadow-brand/20">
+                  Matched from visit
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
+                  <Icon className="w-6 h-6 wl-accent-text" />
+                </div>
+                <span className="wl-label-muted/70">
+                  {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
+                </span>
+              </div>
+              <div>
+                <h4 className="font-display italic text-2xl text-foreground">{plan.name}</h4>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <span className="font-display italic text-4xl text-foreground">
+                    ${plan.price_usd_monthly.toLocaleString()}
+                  </span>
+                  <span className="wl-label-muted/70">/mo</span>
+                </div>
+              </div>
+              <ul className="space-y-2 flex-1">
+                {plan.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-caption">
+                    <Check
+                      className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
+                      strokeWidth={2.5}
+                    />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <ShadButton
+                type="button"
+                disableAnimations
+                variant="outline"
+                onClick={() => onSelectPlan(plan.id)}
+                disabled={isBusy || !plan.configured}
+                className={cn(
+                  "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-white/20 hover:border-white/40 text-foreground bg-white/5 hover:bg-white/10 hover-premium-glow",
+                  !isBusy && plan.configured && "wl-accent-subscribe",
+                )}
+              >
+                {isBusy ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : plan.configured ? (
+                  <>
+                    Subscribe <ArrowRight className="w-3 h-3" />
+                  </>
+                ) : (
+                  "Contact sales"
+                )}
+              </ShadButton>
+              {!plan.configured && (
+                <p className="wl-label text-muted/70 text-center leading-relaxed">
+                  Stripe price pending — contact us to start on this tier
+                </p>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
+            </motion.div>
+          );
         })}
       </div>
     </div>
   );
 }
 
-function ActiveSubCard({ sub, agentCount, busy, onPortal }: { sub: SubscriptionState; agentCount: number; busy: boolean; onPortal: () => void }) {
+function ActiveSubCard({
+  sub,
+  agentCount,
+  busy,
+  onPortal,
+}: {
+  sub: SubscriptionState;
+  agentCount: number;
+  busy: boolean;
+  onPortal: () => void;
+}) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.purple;
   const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
-  const daysLeft = renews ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000)) : null;
-  const statusBadge = sub.status === "active" ? { label: "Active", cls: "bg-brand/15 border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success" } : sub.status === "trialing" ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" } : sub.status === "past_due" ? { label: "Past Due", cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" } : sub.status === "canceled" ? { label: "Canceled", cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" } : { label: (sub.status || "Unknown").toLowerCase(), cls: "bg-white/10 border-white/20 text-muted" };
-  return <div className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden" data-accent={accent}><div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" /><div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8"><div className="flex items-center gap-5"><div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface"><Icon className="w-8 h-8 wl-accent-text" /></div><div className="space-y-2"><div className="flex items-center gap-2 flex-wrap"><span className="wl-label-muted opacity-70">Current plan</span><span className={cn("inline-flex items-center px-2 py-0.5 rounded-full wl-label border", statusBadge.cls)}>{statusBadge.label}</span>{sub.cancel_at_period_end && <span className="inline-flex items-center px-2 py-0.5 rounded-full wl-label border bg-rose-500/15 border-rose-500/30 text-rose-500">Cancels at period end</span>}</div><h3 className="font-display italic text-3xl md:text-4xl text-ink">{sub.plan_name || sub.plan || "—"}</h3><p className="app-section-title/60">{sub.max_agents ? <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>{agentCount} / {sub.max_agents} agents</span> : ""}{renews && <>{sub.max_agents ? " · " : ""}renews {formatDate(renews)}{daysLeft !== null ? ` · ${daysLeft}d` : ""}</>}</p></div></div><ShadButton type="button" disableAnimations variant="outline" onClick={onPortal} disabled={busy} className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}Manage subscription</ShadButton></div></div>;
+  const daysLeft = renews
+    ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000))
+    : null;
+  const statusBadge =
+    sub.status === "active"
+      ? {
+          label: "Active",
+          cls: "bg-brand/15 border-[color-mix(in_srgb,var(--wl-signal)_30%,transparent)] wl-text-success",
+        }
+      : sub.status === "trialing"
+        ? { label: "Trial", cls: "bg-brand/15 border-brand/30 text-brand" }
+        : sub.status === "past_due"
+          ? { label: "Past Due", cls: "bg-amber-500/15 border-amber-500/30 text-amber-600" }
+          : sub.status === "canceled"
+            ? { label: "Canceled", cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" }
+            : {
+                label: (sub.status || "Unknown").toLowerCase(),
+                cls: "bg-white/10 border-white/20 text-muted",
+              };
+  return (
+    <div
+      className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden"
+      data-accent={accent}
+    >
+      <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
+            <Icon className="w-8 h-8 wl-accent-text" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="wl-label-muted opacity-70">Current plan</span>
+              <span
+                className={cn(
+                  "inline-flex items-center px-2 py-0.5 rounded-full wl-label border",
+                  statusBadge.cls,
+                )}
+              >
+                {statusBadge.label}
+              </span>
+              {sub.cancel_at_period_end && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full wl-label border bg-rose-500/15 border-rose-500/30 text-rose-500">
+                  Cancels at period end
+                </span>
+              )}
+            </div>
+            <h3 className="font-display italic text-3xl md:text-4xl text-foreground">
+              {sub.plan_name || sub.plan || "—"}
+            </h3>
+            <p className="app-section-title/60">
+              {sub.max_agents ? (
+                <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
+                  {agentCount} / {sub.max_agents} agents
+                </span>
+              ) : (
+                ""
+              )}
+              {renews && (
+                <>
+                  {sub.max_agents ? " · " : ""}renews {formatDate(renews)}
+                  {daysLeft !== null ? ` · ${daysLeft}d` : ""}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+        <ShadButton
+          type="button"
+          disableAnimations
+          variant="outline"
+          onClick={onPortal}
+          disabled={busy}
+          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[11px] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
+        >
+          {busy ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ExternalLink className="w-4 h-4" />
+          )}
+          Manage subscription
+        </ShadButton>
+      </div>
+    </div>
+  );
 }

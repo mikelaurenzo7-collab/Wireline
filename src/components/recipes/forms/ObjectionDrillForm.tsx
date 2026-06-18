@@ -80,22 +80,16 @@ export function ObjectionDrillForm({
                 </span>
               </div>
               <div>
-                <div className="wl-label text-rose-500 mb-1">
-                  Prospect
-                </div>
-                <p className="text-ink/90 italic">"{s.prospect_says}"</p>
+                <div className="wl-label text-rose-500 mb-1">Prospect</div>
+                <p className="text-foreground/90 italic">"{s.prospect_says}"</p>
               </div>
               <div>
-                <div className="wl-label text-brand mb-1">
-                  Recommended Response
-                </div>
-                <p className="text-ink/90">{s.recommended_response}</p>
+                <div className="wl-label text-brand mb-1">Recommended Response</div>
+                <p className="text-foreground/90">{s.recommended_response}</p>
               </div>
               <div className="pt-2 border-t border-white/5">
-                <div className="wl-label-muted mb-1">
-                  Coaching Note
-                </div>
-                <p className="text-ink/70 text-xs leading-relaxed">{s.coaching_note}</p>
+                <div className="wl-label-muted mb-1">Coaching Note</div>
+                <p className="text-foreground/70 text-xs leading-relaxed">{s.coaching_note}</p>
               </div>
             </div>
           ))}

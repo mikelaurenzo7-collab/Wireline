@@ -41,7 +41,7 @@ export default function HeatmapView({ days }: { days: number }) {
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-7 md:p-10")}>
       <div className="mb-6">
         <p className="wl-insight-label text-brand/70">Activity · {data.window_days}d</p>
-        <h3 className="font-display italic text-2xl text-ink leading-tight">
+        <h3 className="font-display italic text-2xl text-foreground leading-tight">
           Calls by Hour × Weekday
         </h3>
       </div>

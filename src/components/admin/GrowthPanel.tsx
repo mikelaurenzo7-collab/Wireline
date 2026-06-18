@@ -103,7 +103,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-base font-bold text-ink">
+                    <h4 className="text-base font-bold text-foreground">
                       Autonomous Prospecting Protocol
                     </h4>
                     <p className="text-[11px] text-muted leading-relaxed max-w-sm">
@@ -128,7 +128,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 >
                   <div
                     className={cn(
-                      "w-5 h-5 rounded-full bg-paper transition-all shadow-lg",
+                      "w-5 h-5 rounded-full bg-card transition-all shadow-lg",
                       settings.prospecting_enabled ? "translate-x-7" : "translate-x-0",
                     )}
                   />
@@ -149,7 +149,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">Job Titles</label>
+                      <label className="wl-label text-foreground font-bold">Job Titles</label>
                     </div>
                     <span className="wl-label text-muted">Role Density</span>
                   </div>
@@ -176,7 +176,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_titles || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-foreground flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
                         <ShadButton
@@ -200,7 +200,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">Industries</label>
+                      <label className="wl-label text-foreground font-bold">Industries</label>
                     </div>
                     <span className="wl-label text-muted">Market Scope</span>
                   </div>
@@ -228,7 +228,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_industries || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-ink flex items-center gap-2 hover:border-brand/40 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-foreground flex items-center gap-2 hover:border-brand/40 transition-all"
                       >
                         {t}
                         <ShadButton
@@ -252,7 +252,9 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">Geographic Target</label>
+                      <label className="wl-label text-foreground font-bold">
+                        Geographic Target
+                      </label>
                     </div>
                     <span className="wl-label text-muted">Legal Nexus</span>
                   </div>
@@ -279,7 +281,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     {(settings.target_states || []).map((t: string) => (
                       <span
                         key={t}
-                        className="px-2.5 py-1 wl-panel border border-black/20 bg-black/5 rounded-md wl-label font-bold text-ink flex items-center gap-2 hover:border-black/30 transition-all"
+                        className="px-2.5 py-1 wl-panel border border-white/20 bg-black/5 rounded-md wl-label font-bold text-foreground flex items-center gap-2 hover:border-white/30 transition-all"
                       >
                         {t}
                         <ShadButton
@@ -303,7 +305,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-ink font-bold">Company Size</label>
+                      <label className="wl-label text-foreground font-bold">Company Size</label>
                     </div>
                     <span className="wl-label text-muted">Org Scale</span>
                   </div>
@@ -341,7 +343,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                           "px-2 py-2 rounded-md border wl-label font-bold h-auto min-h-0",
                           (settings.target_employee_ranges || []).includes(range.value)
                             ? "bg-brand/10 border-brand/40 text-brand shadow-[0_0_10px_rgba(107, 43, 153 ,0.1)]"
-                            : "bg-black/5 border-input text-muted/70 hover:border-black/20",
+                            : "bg-black/5 border-input text-muted/70 hover:border-white/20",
                         )}
                       >
                         {range.label}
@@ -370,7 +372,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 <Sparkles className="w-4 h-4 text-brand animate-pulse" />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-display text-ink">
+                <span className="text-4xl font-display text-foreground">
                   {icp.completeness}
                   <span className="text-lg text-muted">%</span>
                 </span>

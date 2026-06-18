@@ -235,7 +235,7 @@ export default function PageShell({
                   }}
                   className={cn(
                     "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 sm:min-h-10 h-auto items-center gap-1.5 px-3 py-1.5 transition-all text-[11px] uppercase tracking-[0.1em] font-medium rounded-none",
-                    active ? "app-tab-active" : "text-muted hover:text-ink hover:bg-black/4",
+                    active ? "app-tab-active" : "text-muted hover:text-foreground hover:bg-black/4",
                   )}
                 >
                   {active && (
@@ -434,7 +434,7 @@ export default function PageShell({
                   size="icon"
                   disableAnimations
                   onClick={() => setMobileActionsOpen(false)}
-                  className="w-11 h-11 text-ink/65 hover:text-ink"
+                  className="w-11 h-11 text-foreground/65 hover:text-foreground"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />
@@ -511,7 +511,9 @@ export function Panel({
               </div>
             )}
             {title && (
-              <h3 className="font-display italic text-base text-ink leading-tight">{title}</h3>
+              <h3 className="font-display italic text-base text-foreground leading-tight">
+                {title}
+              </h3>
             )}
             {hint && <span className="text-eyebrow ml-1 opacity-80">{hint}</span>}
           </div>
@@ -580,7 +582,7 @@ export function StatTile({
           )}
         </div>
 
-        <div className="metric-value font-display italic text-2xl max-md:text-[1.75rem] text-ink leading-none truncate mb-2">
+        <div className="metric-value font-display italic text-2xl max-md:text-[1.75rem] text-foreground leading-none truncate mb-2">
           {value}
         </div>
 

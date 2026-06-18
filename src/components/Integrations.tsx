@@ -230,7 +230,7 @@ export default function Integrations() {
       onClick={syncAll}
       disabled={syncing}
       variant="outline"
-      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-ink text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50 touch-press"
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full wl-panel border border-input text-foreground text-[11px] uppercase tracking-[0.22em] hover:border-brand/40 transition-colors disabled:opacity-50 touch-press"
     >
       <RotateCw className={`w-3 h-3 text-brand ${syncing ? "animate-spin" : ""}`} />
       {syncing ? "Syncing…" : OPS_CHANNEL_TOOLBAR.integrations.sync}
@@ -328,7 +328,7 @@ export default function Integrations() {
                           key={task.id}
                           className="rounded-md border border-brand/8 bg-brand/[0.02] px-3 py-2"
                         >
-                          <p className="text-[12px] text-ink font-medium leading-snug text-pretty">
+                          <p className="text-[12px] text-foreground font-medium leading-snug text-pretty">
                             {task.callerMoment}
                           </p>
                           <p className="chrome-subtle mt-1 leading-snug text-pretty">
@@ -340,17 +340,17 @@ export default function Integrations() {
                   </EmptyState>
                 ) : (
                   <>
-                    <div className="px-4 py-3 border-b border-black/6 bg-brand/5">
+                    <div className="px-4 py-3 border-b border-white/6 bg-brand/5">
                       <p className="wl-label text-brand mb-2">When email arrives</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2">
                         {EMAIL_INBOUND_TASKS.map((task) => (
                           <div
                             key={task.id}
-                            className="rounded-md border border-input bg-paper/80 px-3 py-2.5"
+                            className="rounded-md border border-input bg-card/80 px-3 py-2.5"
                           >
                             <div className="flex items-start gap-2 mb-1.5">
                               <Phone className="w-3 h-3 text-brand shrink-0 mt-0.5" />
-                              <p className="text-[12px] text-ink font-medium leading-snug text-pretty">
+                              <p className="text-[12px] text-foreground font-medium leading-snug text-pretty">
                                 {task.callerMoment}
                               </p>
                             </div>
@@ -382,7 +382,7 @@ export default function Integrations() {
                                 {getIntegrationLogo(meta.logoName) ?? <Mail className="w-4 h-4" />}
                               </div>
                               <div className="min-w-0 space-y-1">
-                                <div className="font-display italic text-lg text-ink leading-none truncate">
+                                <div className="font-display italic text-lg text-foreground leading-none truncate">
                                   {acc.email_address}
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function Integrations() {
                                 >
                                   <SelectTrigger
                                     aria-label="Route to agent"
-                                    className="text-xs bg-black/5 border border-input rounded-md pl-3 py-1.5 text-ink h-auto"
+                                    className="text-xs bg-black/5 border border-input rounded-md pl-3 py-1.5 text-foreground h-auto"
                                   >
                                     <SelectValue />
                                   </SelectTrigger>

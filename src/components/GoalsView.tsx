@@ -133,7 +133,9 @@ function GoalEditor({
         >
           <Target className="w-3.5 h-3.5" />
         </span>
-        <h3 className="font-display italic text-lg text-ink leading-tight">{metric.label}</h3>
+        <h3 className="font-display italic text-lg text-foreground leading-tight">
+          {metric.label}
+        </h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
 
@@ -150,7 +152,7 @@ function GoalEditor({
             if (e.key === "Enter" && valid && !saving) onSave(Math.round(parsed), label);
             if (e.key === "Escape") onCancel();
           }}
-          className="mt-1 w-full h-11 px-3 rounded-md wl-panel border border-border text-ink text-sm tabular-nums focus:outline-none focus:border-brand/40"
+          className="mt-1 w-full h-11 px-3 rounded-md wl-panel border border-border text-foreground text-sm tabular-nums focus:outline-none focus:border-brand/40"
         />
       </label>
 
@@ -166,7 +168,7 @@ function GoalEditor({
             if (e.key === "Enter" && valid && !saving) onSave(Math.round(parsed), label);
             if (e.key === "Escape") onCancel();
           }}
-          className="mt-1 w-full h-11 px-3 rounded-md wl-panel border border-border text-ink text-sm focus:outline-none focus:border-brand/40"
+          className="mt-1 w-full h-11 px-3 rounded-md wl-panel border border-border text-foreground text-sm focus:outline-none focus:border-brand/40"
         />
       </label>
 
@@ -229,7 +231,7 @@ function GoalCard({
       />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-display italic text-lg text-ink leading-tight truncate">
+          <h3 className="font-display italic text-lg text-foreground leading-tight truncate">
             {goal.metric_label}
           </h3>
           {goal.label && <p className="wl-label-muted opacity-80 truncate mt-0.5">{goal.label}</p>}
@@ -244,7 +246,7 @@ function GoalCard({
 
       <div className="relative flex items-center gap-4">
         <Ring fraction={goal.fraction} accent={goal.accent}>
-          <span className="font-semibold text-2xl text-ink tabular-nums leading-none">
+          <span className="font-semibold text-2xl text-foreground tabular-nums leading-none">
             {goal.percent}%
           </span>
           <span className="wl-label-muted mt-1">of target</span>
@@ -257,7 +259,7 @@ function GoalCard({
             <span className="text-sm text-muted tabular-nums">/ {num(goal.target)}</span>
           </div>
           <span className="wl-label-muted">{goal.unit}</span>
-          <div className="mt-1 text-[11px] text-ink/70 leading-relaxed">
+          <div className="mt-1 text-[11px] text-foreground/70 leading-relaxed">
             {goal.status === "achieved" ? (
               <span className="text-brand font-medium">Target reached — nice work.</span>
             ) : (
@@ -357,11 +359,13 @@ function EmptyMetricCard({
         >
           <Target className="w-3.5 h-3.5" />
         </span>
-        <h3 className="font-display italic text-lg text-ink/80 leading-tight">{metric.label}</h3>
+        <h3 className="font-display italic text-lg text-foreground/80 leading-tight">
+          {metric.label}
+        </h3>
       </div>
       <p className="text-caption leading-relaxed">{metric.description}</p>
-      <p className="text-[11px] text-ink/70 tabular-nums">
-        <span className="font-display italic text-xl text-ink/75">{num(current)}</span>{" "}
+      <p className="text-[11px] text-foreground/70 tabular-nums">
+        <span className="font-display italic text-xl text-foreground/75">{num(current)}</span>{" "}
         {metric.unit} so far this month
       </p>
       <ShadButton
@@ -477,7 +481,7 @@ export default function GoalsView() {
       <div className="relative rounded-md wl-panel-elevated border border-border overflow-hidden p-6 md:p-7 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
-          <h2 className="font-display italic text-2xl md:text-3xl text-ink leading-tight">
+          <h2 className="font-display italic text-2xl md:text-3xl text-foreground leading-tight">
             {activeGoals === 0
               ? "Set your first fleet goal"
               : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}

@@ -59,20 +59,18 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <AlertOctagon className="w-7 h-7 text-rose-500" />
               </div>
               <div>
-                <div className="wl-label text-rose-500">
-                  Something broke
-                </div>
-                <h2 className="font-display italic text-3xl text-ink leading-tight mt-1">
+                <div className="wl-label text-rose-500">Something broke</div>
+                <h2 className="font-display italic text-3xl text-foreground leading-tight mt-1">
                   This view crashed
                 </h2>
               </div>
             </div>
-            <p className="relative z-10 text-sm text-ink/65 leading-relaxed">
+            <p className="relative z-10 text-sm text-foreground/65 leading-relaxed">
               The rest of the app is fine — only this view failed. Reload the page or head back to
               the dashboard.
             </p>
-            <details className="relative z-10 rounded-md bg-muted/10 border border-border p-4 text-xs text-ink/70 font-mono overflow-x-auto">
-              <summary className="cursor-pointer wl-label-muted hover:text-ink transition-colors">
+            <details className="relative z-10 rounded-md bg-muted/10 border border-border p-4 text-xs text-foreground/70 font-mono overflow-x-auto">
+              <summary className="cursor-pointer wl-label-muted hover:text-foreground transition-colors">
                 Error details
               </summary>
               <pre className="mt-3 whitespace-pre-wrap break-words">{this.state.error.message}</pre>

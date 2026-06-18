@@ -49,16 +49,27 @@ export default function AppPageIntro({
 
   return (
     <>
-      <div className={cn("flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 md:pb-8", className)}>
+      <div
+        className={cn(
+          "flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 md:pb-8",
+          className,
+        )}
+      >
         <div className="min-w-0 w-full max-w-3xl flex-1 text-left">
           <div>
-            {eyebrow && <p className="chrome-eyebrow text-brand/80 mb-2 wl-reveal tracking-[0.2em] uppercase text-xs font-semibold">{eyebrow}</p>}
+            {eyebrow && (
+              <p className="chrome-eyebrow text-brand/80 mb-2 wl-reveal tracking-[0.2em] uppercase text-xs font-semibold">
+                {eyebrow}
+              </p>
+            )}
             <h1 className="wl-page-title font-display italic text-2xl md:text-4xl lg:text-5xl leading-tight tracking-tight text-balance hero-headline-glow pb-1">
               {title}
             </h1>
           </div>
           {subtitle && (
-            <div className="mt-2 text-muted-resolved text-base max-w-2xl text-pretty leading-relaxed">{subtitle}</div>
+            <div className="mt-2 text-muted-resolved text-base max-w-2xl text-pretty leading-relaxed">
+              {subtitle}
+            </div>
           )}
         </div>
         {actions && (
@@ -96,7 +107,7 @@ export default function AppPageIntro({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 360, damping: 32 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated rounded-t-[1.35rem] border-t border-black/10 md:hidden pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(30,0,48,0.35),0_1px_0_rgba(255,255,255,0.75)_inset]"
+              className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated rounded-t-[1.35rem] border-t border-white/10 md:hidden pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-20px_rgba(30,0,48,0.35),0_1px_0_rgba(255,255,255,0.75)_inset]"
               role="dialog"
               aria-label="Page actions"
               aria-modal="true"
@@ -113,7 +124,7 @@ export default function AppPageIntro({
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileActionsOpen(false)}
-                  className="touch-press hover:scale-[1.05] w-11 h-11 rounded-md text-ink/70 hover:text-ink hover:bg-black/5 after:hidden"
+                  className="touch-press hover:scale-[1.05] w-11 h-11 rounded-md text-foreground/70 hover:text-foreground hover:bg-black/5 after:hidden"
                   aria-label="Close actions"
                 >
                   <X className="w-4 h-4" />

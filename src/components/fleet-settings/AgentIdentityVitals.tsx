@@ -40,8 +40,10 @@ function Vital({ icon: Icon, label, value, muted }: VitalProps) {
     <div className="flex items-center gap-2 min-w-0">
       <Icon className="w-3.5 h-3.5 text-brand/70 shrink-0" />
       <div className="min-w-0 leading-tight">
-        <div className="wl-label text-ink/40">{label}</div>
-        <div className={`text-sm truncate ${muted ? "text-ink/45 italic" : "text-ink/85"}`}>
+        <div className="wl-label text-foreground/40">{label}</div>
+        <div
+          className={`text-sm truncate ${muted ? "text-foreground/45 italic" : "text-foreground/85"}`}
+        >
           {value}
         </div>
       </div>

@@ -54,7 +54,7 @@ export default function Blog() {
             <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-3">
               Featured post
             </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink/60 mb-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground/60 mb-4">
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="w-3.5 h-3.5" />
                 {dateFormatter.format(new Date(featuredPost.date))}
@@ -65,10 +65,10 @@ export default function Blog() {
               </span>
               <span>{featuredPost.author}</span>
             </div>
-            <h2 className="font-display italic text-3xl sm:text-4xl text-ink mb-4 text-balance">
+            <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-4 text-balance">
               {featuredPost.title}
             </h2>
-            <p className="text-base text-ink/75 leading-relaxed max-w-3xl mb-6">
+            <p className="text-base text-foreground/75 leading-relaxed max-w-3xl mb-6">
               {featuredPost.excerpt}
             </p>
             <Link
@@ -87,7 +87,9 @@ export default function Blog() {
               <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
                 Recent essays
               </p>
-              <h2 className="font-display italic text-3xl sm:text-4xl text-ink">Latest posts</h2>
+              <h2 className="font-display italic text-3xl sm:text-4xl text-foreground">
+                Latest posts
+              </h2>
             </div>
           </div>
 
@@ -101,7 +103,7 @@ export default function Blog() {
                 transition={{ duration: 0.45, delay: index * 0.06 }}
                 className="wl-panel border border-white/10 p-5 sm:p-6 flex flex-col"
               >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink/60 mb-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-foreground/60 mb-4">
                   <span className="inline-flex items-center gap-1.5">
                     <CalendarDays className="w-3.5 h-3.5" />
                     {dateFormatter.format(new Date(post.date))}
@@ -111,10 +113,10 @@ export default function Blog() {
                     {post.readingTimeMinutes} min read
                   </span>
                 </div>
-                <h3 className="font-display italic text-2xl text-ink mb-3 leading-tight text-balance">
+                <h3 className="font-display italic text-2xl text-foreground mb-3 leading-tight text-balance">
                   {post.title}
                 </h3>
-                <p className="text-sm text-ink/72 leading-relaxed flex-1">{post.excerpt}</p>
+                <p className="text-sm text-foreground/72 leading-relaxed flex-1">{post.excerpt}</p>
                 <Link
                   to={`/blog/${post.id}`}
                   className="inline-flex items-center gap-2 mt-6 text-[11px] uppercase tracking-[0.3em] text-brand hover:text-brand/80 transition-colors"

@@ -64,7 +64,7 @@ export default function AgentIntegrationCanvas({
         <div className="flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           <div>
-            <h3 className="font-display italic text-base text-ink">Agent capabilities</h3>
+            <h3 className="font-display italic text-base text-foreground">Agent capabilities</h3>
             <p className="wl-micro-meta--muted leading-relaxed text-pretty">
               Each connection maps to caller moments — what {agentName || "this agent"} does when
               customers ask.

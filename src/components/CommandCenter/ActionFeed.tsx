@@ -152,7 +152,7 @@ export function ActionFeed({
                   action.status === "pending"
                     ? "wl-panel hover:border-brand/30"
                     : "bg-muted/10 border-border/40 opacity-60",
-                  isExpanded && "border-brand/40 bg-paper/90 ring-1 ring-brand/10 shadow-lg",
+                  isExpanded && "border-brand/40 bg-card/90 ring-1 ring-brand/10 shadow-lg",
                 )}
               >
                 <div
@@ -190,7 +190,7 @@ export function ActionFeed({
                         <Icon className="w-4.5 h-4.5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-ink truncate leading-snug">
+                        <p className="text-sm font-medium text-foreground truncate leading-snug">
                           {action.description}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
@@ -204,7 +204,7 @@ export function ActionFeed({
                           >
                             {action.priority}
                           </span>
-                          <span className="text-[11px] text-ink/55 font-mono tabular-nums">
+                          <span className="text-[11px] text-foreground/55 font-mono tabular-nums">
                             {new Date(action.created_at).toLocaleTimeString([], {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -252,13 +252,13 @@ export function ActionFeed({
                             </div>
                           )}
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-ink/55" />
+                            <ChevronUp className="w-4 h-4 text-foreground/55" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-ink/55" />
+                            <ChevronDown className="w-4 h-4 text-foreground/55" />
                           )}
                         </div>
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-ink/55" />
+                        <AlertCircle className="w-4 h-4 text-foreground/55" />
                       )}
                     </div>
                   </div>
@@ -276,7 +276,12 @@ export function ActionFeed({
                         {action.reasoning && (
                           <div className="space-y-1.5">
                             <h4 className="wl-label text-brand font-bold">AI Reasoning</h4>
-                            <p className={cn(WL_APP_CLASSES.bodyCaption, "text-ink/70 italic")}>
+                            <p
+                              className={cn(
+                                WL_APP_CLASSES.bodyCaption,
+                                "text-foreground/70 italic",
+                              )}
+                            >
                               "{action.reasoning}"
                             </p>
                           </div>
@@ -284,7 +289,7 @@ export function ActionFeed({
 
                         <div className="space-y-2">
                           <h4 className="wl-label text-muted font-bold">Drafted Content</h4>
-                          <div className="rounded-md bg-paper/90 border border-border p-4 overflow-hidden">
+                          <div className="rounded-md bg-card/90 border border-border p-4 overflow-hidden">
                             {action.type === "send_email" ? (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -292,7 +297,7 @@ export function ActionFeed({
                                   <span
                                     className={cn(
                                       WL_APP_CLASSES.bodyCaption,
-                                      "font-medium text-ink",
+                                      "font-medium text-foreground",
                                     )}
                                   >
                                     {action.payload?.to || "—"}
@@ -301,7 +306,7 @@ export function ActionFeed({
                                 <div
                                   className={cn(
                                     WL_APP_CLASSES.bodyCaption,
-                                    "text-ink/80 whitespace-pre-wrap font-sans",
+                                    "text-foreground/80 whitespace-pre-wrap font-sans",
                                   )}
                                 >
                                   {action.payload?.body || "No content drafted."}
@@ -314,7 +319,7 @@ export function ActionFeed({
                                   <span
                                     className={cn(
                                       WL_APP_CLASSES.bodyCaption,
-                                      "font-medium text-ink",
+                                      "font-medium text-foreground",
                                     )}
                                   >
                                     {action.payload?.to || "—"}
@@ -323,7 +328,7 @@ export function ActionFeed({
                                 <div
                                   className={cn(
                                     WL_APP_CLASSES.bodyCaption,
-                                    "text-ink/80 whitespace-pre-wrap font-sans",
+                                    "text-foreground/80 whitespace-pre-wrap font-sans",
                                   )}
                                 >
                                   {action.payload?.message || "No content drafted."}
@@ -336,7 +341,7 @@ export function ActionFeed({
                                   <span
                                     className={cn(
                                       WL_APP_CLASSES.bodyCaption,
-                                      "font-medium text-ink",
+                                      "font-medium text-foreground",
                                     )}
                                   >
                                     {action.payload?.channel || "—"}
@@ -345,7 +350,7 @@ export function ActionFeed({
                                 <div
                                   className={cn(
                                     WL_APP_CLASSES.bodyCaption,
-                                    "text-ink/80 whitespace-pre-wrap font-sans",
+                                    "text-foreground/80 whitespace-pre-wrap font-sans",
                                   )}
                                 >
                                   {action.payload?.message || "No content drafted."}
@@ -357,11 +362,11 @@ export function ActionFeed({
                               <div className="grid grid-cols-2 gap-3">
                                 {Object.entries(action.payload || {}).map(([key, val]) => (
                                   <div key={key} className="flex flex-col gap-1">
-                                    <span className="wl-label text-ink/55">{key}</span>
+                                    <span className="wl-label text-foreground/55">{key}</span>
                                     <span
                                       className={cn(
                                         WL_DIRECTOR_CLASSES.metaCaption,
-                                        "font-medium text-ink truncate",
+                                        "font-medium text-foreground truncate",
                                       )}
                                     >
                                       {String(val)}
@@ -373,7 +378,7 @@ export function ActionFeed({
                               <div
                                 className={cn(
                                   WL_DIRECTOR_CLASSES.metaCaption,
-                                  "font-mono text-ink/55 break-all",
+                                  "font-mono text-foreground/55 break-all",
                                 )}
                               >
                                 {JSON.stringify(action.payload, null, 2)}

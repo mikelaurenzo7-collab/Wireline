@@ -143,7 +143,7 @@ export function KnowledgeFromDocumentForm({
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-ink leading-tight">{file.name}</p>
+                    <p className="text-sm text-foreground leading-tight">{file.name}</p>
                     <p className="wl-label-muted">
                       {(file.size / 1024 / 1024).toFixed(2)} MB · ready
                     </p>
@@ -170,10 +170,10 @@ export function KnowledgeFromDocumentForm({
                     <FileUp className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-ink/85">Drop a PDF here, or click to choose</p>
-                    <p className="wl-label-muted">
-                      Up to 32 MB · Wireline AI reads it natively
+                    <p className="text-sm text-foreground/85">
+                      Drop a PDF here, or click to choose
                     </p>
+                    <p className="wl-label-muted">Up to 32 MB · Wireline AI reads it natively</p>
                   </div>
                 </>
               )}
@@ -269,10 +269,8 @@ export function KnowledgeFromDocumentForm({
                       {isSel && <Check className="w-3 h-3" strokeWidth={3} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-ink/90">{e.fact}</div>
-                      <div className="wl-label-muted mt-1">
-                        {e.category}
-                      </div>
+                      <div className="text-sm text-foreground/90">{e.fact}</div>
+                      <div className="wl-label-muted mt-1">{e.category}</div>
                     </div>
                   </ShadButton>
                 );

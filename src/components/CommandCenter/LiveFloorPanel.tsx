@@ -279,7 +279,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                           "transition-all duration-500 hover:shadow-[0_4px_24px_rgba(var(--brand-rgb),0.12)] hover:-translate-y-0.5 group relative overflow-hidden rounded-md border",
                           escalated
                             ? "border-destructive/40 bg-destructive/[0.03] shadow-sm"
-                            : "border-ink/10 bg-paper/95 shadow-sm hover:border-brand/25",
+                            : "border-ink/10 bg-card/95 shadow-sm hover:border-brand/25",
                           escalated ? WL_OPS_CLASSES.callCardEscalated : WL_OPS_CLASSES.callCard,
                         )}
                       >
@@ -301,7 +301,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                             />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="font-mono text-sm sm:text-base text-ink truncate">
+                            <p className="font-mono text-sm sm:text-base text-foreground truncate">
                               {call.customer_number}
                             </p>
                             <p
@@ -336,7 +336,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                             <p
                               className={cn(
                                 WL_APP_CLASSES.bodyCaption,
-                                "text-ink/75 italic line-clamp-3",
+                                "text-foreground/75 italic line-clamp-3",
                               )}
                             >
                               {call.thought}
@@ -347,7 +347,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         <div className="mb-2 sm:mb-3 px-3">
                           <div className="flex justify-between chrome-subtle mb-1 text-[11px]">
                             <span>Urgency</span>
-                            <span className="font-mono font-semibold text-ink">
+                            <span className="font-mono font-semibold text-foreground">
                               {Math.round(call.urgency * 10)}%
                             </span>
                           </div>
@@ -440,7 +440,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                                 value={whisperText}
                                 onChange={(e) => setWhisperText(e.target.value)}
                                 placeholder="Whisper to agent…"
-                                className="flex-1 min-h-[40px] text-sm px-3 rounded-md bg-paper border border-border focus:border-brand/40 outline-none"
+                                className="flex-1 min-h-[40px] text-sm px-3 rounded-md bg-card border border-border focus:border-brand/40 outline-none"
                                 onKeyDown={(e) => e.key === "Enter" && sendWhisper()}
                               />
                               <ShadButton
@@ -520,7 +520,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                         "shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] border min-h-[36px]",
                         busy
                           ? "border-brand/30 bg-brand/8 text-brand"
-                          : "border-border bg-paper text-muted",
+                          : "border-border bg-card text-muted",
                       )}
                     >
                       <span
@@ -542,10 +542,10 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                       key={a.id}
                       className={cn(
                         "flex items-center justify-between rounded-md px-3 py-2 border text-sm",
-                        busy ? "bg-brand/8 border-brand/25" : "bg-paper/60 border-border",
+                        busy ? "bg-brand/8 border-brand/25" : "bg-card/60 border-border",
                       )}
                     >
-                      <span className="text-ink truncate">{a.name}</span>
+                      <span className="text-foreground truncate">{a.name}</span>
                       <span className={cn("wl-label", busy ? "text-brand" : "text-muted")}>
                         {busy ? "On call" : "Idle"}
                       </span>
@@ -573,7 +573,7 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
                   key={e.id}
                   className="rounded-md p-3 bg-destructive/8 border border-destructive/25"
                 >
-                  <p className="font-mono text-sm text-ink">{e.customer_number}</p>
+                  <p className="font-mono text-sm text-foreground">{e.customer_number}</p>
                   <p className={cn(WL_APP_CLASSES.bodyCaption, "text-destructive mt-1")}>
                     {e.sentiment_label}
                   </p>
@@ -586,13 +586,13 @@ export function LiveFloorPanel({ calls, agents, loading, agentsLoading = false }
         <div className={cn(WL_OPS_CLASSES.railCard, "shrink-0 grid grid-cols-2 gap-3")}>
           <div>
             <p className="wl-label text-muted">On call</p>
-            <p className="text-2xl font-display italic text-ink tabular-nums tracking-tight">
+            <p className="text-2xl font-display italic text-foreground tabular-nums tracking-tight">
               {busyAgentIds.size}
             </p>
           </div>
           <div>
             <p className="wl-label text-muted">Available</p>
-            <p className="text-2xl font-display italic text-ink tabular-nums tracking-tight">
+            <p className="text-2xl font-display italic text-foreground tabular-nums tracking-tight">
               {availableAgents.length}
             </p>
           </div>

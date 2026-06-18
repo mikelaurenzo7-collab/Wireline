@@ -122,9 +122,9 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden max-w-[1400px] mx-auto w-full">
-      <div className="wl-panel rounded-md p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-paper/80 backdrop-blur-xl">
+      <div className="wl-panel rounded-md p-5 md:p-6 shrink-0 flex items-center justify-between mb-6 sticky top-0 z-10 bg-card/80 backdrop-blur-xl">
         <div>
-          <h3 className="font-display italic text-2xl text-ink flex items-center gap-3">
+          <h3 className="font-display italic text-2xl text-foreground flex items-center gap-3">
             <Blocks className="w-6 h-6 text-brand" />
             Agent capabilities
           </h3>
@@ -221,7 +221,9 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
-                          <h5 className="font-medium text-ink truncate text-sm">{tool.label}</h5>
+                          <h5 className="font-medium text-foreground truncate text-sm">
+                            {tool.label}
+                          </h5>
                           {tool.integration && (
                             <span
                               className={cn(

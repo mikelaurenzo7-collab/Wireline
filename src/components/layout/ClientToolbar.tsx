@@ -65,7 +65,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
           />
           <div
             ref={sheetRef}
-            className="absolute bottom-0 inset-x-0 wl-panel-elevated border-t border-black/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3"
+            className="absolute bottom-0 inset-x-0 wl-panel-elevated border-t border-white/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-eyebrow">Actions</span>

@@ -32,7 +32,10 @@ function renderMarkdown(body: string) {
 
       if (lines.every((line) => line.startsWith("- "))) {
         return (
-          <ul key={index} className="space-y-3 pl-6 list-disc text-base sm:text-lg text-ink/80">
+          <ul
+            key={index}
+            className="space-y-3 pl-6 list-disc text-base sm:text-lg text-foreground/80"
+          >
             {lines.map((line) => (
               <li key={line}>{line.replace(/^-\s+/, "")}</li>
             ))}
@@ -42,7 +45,7 @@ function renderMarkdown(body: string) {
 
       if (lines[0].startsWith("## ")) {
         return (
-          <h2 key={index} className="font-display italic text-3xl sm:text-4xl text-ink pt-3">
+          <h2 key={index} className="font-display italic text-3xl sm:text-4xl text-foreground pt-3">
             {lines[0].replace(/^##\s+/, "")}
           </h2>
         );
@@ -50,7 +53,7 @@ function renderMarkdown(body: string) {
 
       if (lines[0].startsWith("### ")) {
         return (
-          <h3 key={index} className="font-display italic text-2xl sm:text-3xl text-ink pt-2">
+          <h3 key={index} className="font-display italic text-2xl sm:text-3xl text-foreground pt-2">
             {lines[0].replace(/^###\s+/, "")}
           </h3>
         );
@@ -58,7 +61,7 @@ function renderMarkdown(body: string) {
 
       return (
         <Fragment key={index}>
-          <p className="text-base sm:text-lg leading-8 text-ink/80">{lines.join(" ")}</p>
+          <p className="text-base sm:text-lg leading-8 text-foreground/80">{lines.join(" ")}</p>
         </Fragment>
       );
     });
@@ -109,10 +112,10 @@ export default function BlogPost() {
           <header className="pb-10 border-b border-border">
             <p className="text-eyebrow text-brand mb-4">Wireline blog</p>
             <h1 className="marketing-hero-title mb-6 text-balance">{post.title}</h1>
-            <p className="text-lg sm:text-xl text-ink/75 leading-relaxed max-w-3xl mb-6">
+            <p className="text-lg sm:text-xl text-foreground/75 leading-relaxed max-w-3xl mb-6">
               {post.excerpt}
             </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink/60">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground/60">
               <span>{post.author}</span>
               <span className="inline-flex items-center gap-1.5">
                 <CalendarDays className="w-4 h-4" />
@@ -135,7 +138,7 @@ export default function BlogPost() {
                 <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
                   Keep reading
                 </p>
-                <h2 className="font-display italic text-3xl text-ink">More from the blog</h2>
+                <h2 className="font-display italic text-3xl text-foreground">More from the blog</h2>
               </div>
               <Link
                 to="/blog"
@@ -148,13 +151,13 @@ export default function BlogPost() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {relatedPosts.map((entry) => (
                 <article key={entry.id} className="border border-border bg-white/55 p-5">
-                  <p className="text-xs text-ink/60 mb-2">
+                  <p className="text-xs text-foreground/60 mb-2">
                     {dateFormatter.format(new Date(entry.date))}
                   </p>
-                  <h3 className="font-display italic text-2xl text-ink mb-3 leading-tight">
+                  <h3 className="font-display italic text-2xl text-foreground mb-3 leading-tight">
                     {entry.title}
                   </h3>
-                  <p className="text-sm text-ink/72 leading-relaxed mb-4">{entry.excerpt}</p>
+                  <p className="text-sm text-foreground/72 leading-relaxed mb-4">{entry.excerpt}</p>
                   <Link
                     to={`/blog/${entry.id}`}
                     className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-brand hover:text-brand/80 transition-colors"

@@ -74,7 +74,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
         className={cn(
           "fixed top-0 inset-x-0 z-50 transition-all duration-500",
           scrolled
-            ? "bg-paper/75 backdrop-blur-md border-b border-ink/[0.06] shadow-sm shadow-brand/10"
+            ? "bg-card/75 backdrop-blur-md border-b border-ink/[0.06] shadow-sm shadow-brand/10"
             : "bg-transparent",
           className,
         )}
@@ -88,7 +88,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             <div className="w-8 h-8 flex items-center justify-center shrink-0 bg-brand">
               <WirelineMark className="w-4 h-4 text-white" strokeWidth={130} />
             </div>
-            <span className="font-display italic text-xl text-ink leading-none hidden sm:block chromatic-hover">
+            <span className="font-display italic text-xl text-foreground leading-none hidden sm:block chromatic-hover">
               Wireline
             </span>
           </Link>
@@ -108,8 +108,8 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                   className={cn(
                     "relative px-3 py-2 text-[13px] font-medium transition-colors after:absolute after:inset-x-3 after:-bottom-px after:h-px after:origin-left after:bg-brand after:transition-transform after:duration-300",
                     isActive
-                      ? "text-ink after:scale-x-100"
-                      : "text-ink/65 hover:text-ink after:scale-x-0 hover:after:scale-x-100 after:bg-ink/20",
+                      ? "text-foreground after:scale-x-100"
+                      : "text-foreground/65 hover:text-foreground after:scale-x-0 hover:after:scale-x-100 after:bg-ink/20",
                   )}
                 >
                   {link.label}
@@ -133,7 +133,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                   <Link
                     to="/signin"
                     data-testid="header-signin"
-                    className="hidden sm:inline-flex text-[13px] font-medium text-ink/65 hover:text-ink transition-colors"
+                    className="hidden sm:inline-flex text-[13px] font-medium text-foreground/65 hover:text-foreground transition-colors"
                   >
                     Sign in
                   </Link>
@@ -155,7 +155,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               disableAnimations
               variant="ghost"
               size="icon"
-              className="md:hidden text-ink after:hidden"
+              className="md:hidden text-foreground after:hidden"
               aria-expanded={menuOpen}
               aria-controls="public-mobile-nav"
               onClick={() => setMenuOpen((value) => !value)}
@@ -183,11 +183,11 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-paper border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
+          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-card border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
             <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] px-5 py-4">
               <div>
                 <p className="wl-label text-brand">Explore Wireline</p>
-                <h2 className="text-sm font-medium text-ink">Site navigation</h2>
+                <h2 className="text-sm font-medium text-foreground">Site navigation</h2>
               </div>
               <ShadButton
                 type="button"
@@ -196,7 +196,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 size="icon"
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close menu"
-                className="h-10 w-10 text-ink after:hidden"
+                className="h-10 w-10 text-foreground after:hidden"
               >
                 <X aria-hidden="true" className="w-4 h-4" />
               </ShadButton>
@@ -213,8 +213,8 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     className={cn(
                       "flex items-center min-h-[48px] px-5 text-[15px] font-medium border-l-2 transition-colors touch-press",
                       isActive
-                        ? "text-ink border-brand bg-brand/[0.06]"
-                        : "text-ink/80 border-transparent hover:bg-ink/[0.03]",
+                        ? "text-foreground border-brand bg-brand/[0.06]"
+                        : "text-foreground/80 border-transparent hover:bg-ink/[0.03]",
                     )}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -238,7 +238,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 <>
                   <Link
                     to="/signin"
-                    className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-ink border border-ink/15 hover:border-ink/30 transition-colors"
+                    className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-foreground border border-ink/15 hover:border-ink/30 transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     Sign in

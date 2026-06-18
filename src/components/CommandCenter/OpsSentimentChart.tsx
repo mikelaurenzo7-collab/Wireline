@@ -48,11 +48,11 @@ export default function OpsSentimentChart({ data, total }: Props) {
                 className="w-2 h-2 rounded-full wl-sentiment-dot"
                 data-sentiment-color={d.color}
               />
-              <span className="text-[11px] font-medium text-muted group-hover:text-ink transition-colors">
+              <span className="text-[11px] font-medium text-muted group-hover:text-foreground transition-colors">
                 {d.name}
               </span>
             </div>
-            <span className="text-[11px] font-mono font-bold text-ink">
+            <span className="text-[11px] font-mono font-bold text-foreground">
               {total > 0 ? `${Math.round((d.value / total) * 100)}%` : "—"}
             </span>
           </div>

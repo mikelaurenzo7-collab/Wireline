@@ -63,7 +63,7 @@ export default function DirectorStitchLiveSession({
             <LayoutTemplate className="w-10 h-10 text-brand/35" />
             <span className="absolute -inset-3 rounded-full border border-brand/20 animate-ping" />
           </div>
-          <p className="text-[12px] font-semibold text-ink/90">{phase}</p>
+          <p className="text-[12px] font-semibold text-foreground/90">{phase}</p>
           <p className="wl-micro-meta--muted max-w-[240px] leading-relaxed">{loadingHint}</p>
           {operatorPrompt && (
             <p className="wl-micro-meta text-brand/70 line-clamp-2 max-w-[260px] italic">

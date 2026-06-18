@@ -170,7 +170,7 @@ export default function PostSignupOnboarding() {
               size="icon"
               disableAnimations
               onClick={handleExploreFirst}
-              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted hover:text-ink touch-press hover:scale-[1.05]"
+              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted hover:text-foreground touch-press hover:scale-[1.05]"
               aria-label="Close and explore"
             >
               <X className="w-4 h-4" />
@@ -183,7 +183,7 @@ export default function PostSignupOnboarding() {
                 </span>
                 <div>
                   <p className="wl-label text-brand">{ONBOARDING_WELCOME.eyebrow}</p>
-                  <DialogTitle className="font-display italic text-2xl text-ink leading-tight">
+                  <DialogTitle className="font-display italic text-2xl text-foreground leading-tight">
                     {ONBOARDING_WELCOME.title}{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand-deep">
                       {ONBOARDING_WELCOME.titleAccent}
@@ -191,7 +191,7 @@ export default function PostSignupOnboarding() {
                   </DialogTitle>
                 </div>
               </div>
-              <DialogDescription className="text-sm text-ink/70 leading-relaxed">
+              <DialogDescription className="text-sm text-foreground/70 leading-relaxed">
                 {onboardingWelcomeSubtitle(signupWedge)}
               </DialogDescription>
             </DialogHeader>
@@ -210,7 +210,7 @@ export default function PostSignupOnboarding() {
                   {i + 1}
                 </span>
                 <div>
-                  <p className="text-xs font-semibold text-ink uppercase tracking-[0.12em]">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-[0.12em]">
                     {item.label}
                   </p>
                   <p className="text-[11px] text-muted leading-relaxed mt-0.5">{item.detail}</p>

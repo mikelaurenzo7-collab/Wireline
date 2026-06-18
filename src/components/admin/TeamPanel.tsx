@@ -28,7 +28,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
   const roles = [
     { id: "owner", label: "Owner", icon: Shield, color: "text-brand", bg: "bg-brand/10" },
     { id: "admin", label: "Admin", icon: Shield, color: "text-brand", bg: "bg-brand/10" },
-    { id: "member", label: "Member", icon: User, color: "text-ink", bg: "bg-black/5" },
+    { id: "member", label: "Member", icon: User, color: "text-foreground", bg: "bg-black/5" },
     { id: "auditor", label: "Auditor", icon: KeyRound, color: "text-muted", bg: "bg-black/5" },
   ];
 
@@ -47,9 +47,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-3 p-4 rounded-md wl-panel border border-input bg-brand/5">
               <div className="flex-1 space-y-1.5">
-                <label className="wl-label-muted font-bold ml-1">
-                  Invite New Member
-                </label>
+                <label className="wl-label-muted font-bold ml-1">Invite New Member</label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
@@ -132,7 +130,9 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-ink truncate">{m.email}</p>
+                            <p className="text-sm font-semibold text-foreground truncate">
+                              {m.email}
+                            </p>
                             {m.user_id ? (
                               <span
                                 className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]"
@@ -147,9 +147,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <roleInfo.icon className={cn("w-3 h-3", roleInfo.color)} />
-                            <p className="wl-label text-muted font-bold">
-                              {roleInfo.label}
-                            </p>
+                            <p className="wl-label text-muted font-bold">{roleInfo.label}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -205,7 +203,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 label: "Member",
                 role: "Agent Operator",
                 desc: "Access to specific agents and call logs for day-to-day work.",
-                color: "text-ink",
+                color: "text-foreground",
               },
               {
                 label: "Auditor",
@@ -219,14 +217,10 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 className="p-4 rounded-md wl-panel border border-white/8 space-y-1.5"
               >
                 <div className="flex items-center justify-between">
-                  <span
-                    className={cn("wl-label font-black", p.color)}
-                  >
-                    {p.label}
-                  </span>
+                  <span className={cn("wl-label font-black", p.color)}>{p.label}</span>
                   <Shield className={cn("w-3.5 h-3.5", p.color)} />
                 </div>
-                <p className="text-xs font-bold text-ink">{p.role}</p>
+                <p className="text-xs font-bold text-foreground">{p.role}</p>
                 <p className="wl-micro-meta--muted leading-relaxed">{p.desc}</p>
               </div>
             ))}

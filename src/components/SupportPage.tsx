@@ -94,7 +94,7 @@ export function SupportPage() {
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-ink transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
+          className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back home
         </Link>
@@ -120,7 +120,7 @@ export function SupportPage() {
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
               <Phone className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-sm font-semibold text-ink mb-1">Call us now</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Call us now</p>
             <p className="text-caption leading-relaxed">
               {supportAgent.display} — {supportAgent.name} picks up 24/7. Urgent issues get
               escalated to a human within minutes.
@@ -133,7 +133,7 @@ export function SupportPage() {
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
               <Mail className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-sm font-semibold text-ink mb-1">Email us</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Email us</p>
             <p className="text-caption leading-relaxed">
               support@trywireline.com — 1 business day response, faster on billing + access issues.
             </p>
@@ -145,7 +145,7 @@ export function SupportPage() {
             <div className="w-9 h-9 rounded-md bg-brand/10 flex items-center justify-center mb-3">
               <MessageSquare className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-sm font-semibold text-ink mb-1">Ask your agent</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Ask your agent</p>
             <p className="text-caption leading-relaxed">
               Already a customer? Open the Workspace tab on any of your agents and ask them directly
               — they know your account.
@@ -155,7 +155,7 @@ export function SupportPage() {
 
         {/* Ticket form */}
         <div className="marketing-panel p-6">
-          <h2 className="font-display italic text-xl text-ink mb-1">Open a ticket</h2>
+          <h2 className="font-display italic text-xl text-foreground mb-1">Open a ticket</h2>
           <p className="text-[12px] text-muted mb-6 leading-relaxed">
             Pick the closest category — it routes to the right person faster.
           </p>
@@ -165,19 +165,17 @@ export function SupportPage() {
               <div className="w-12 h-12 rounded-full wl-status-success flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-6 h-6 wl-text-success" />
               </div>
-              <p className="font-display italic text-xl text-ink mb-2">Ticket received</p>
+              <p className="font-display italic text-xl text-foreground mb-2">Ticket received</p>
               <p className="text-[12px] text-muted leading-relaxed max-w-md mx-auto">
                 You'll hear from us within 1 business day at{" "}
-                <strong className="text-ink">{email}</strong>. If it's urgent, call{" "}
+                <strong className="text-foreground">{email}</strong>. If it's urgent, call{" "}
                 {supportAgent.display}. {supportAgent.name} will route it to a human immediately.
               </p>
             </div>
           ) : (
             <form onSubmit={onSubmit} className="space-y-4">
               <div>
-                <label className="block wl-label text-muted mb-1.5">
-                  What's this about?
-                </label>
+                <label className="block wl-label text-muted mb-1.5">What's this about?</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {ISSUE_TYPES.map((t) => (
                     <ShadButton
@@ -189,8 +187,8 @@ export function SupportPage() {
                       className={
                         "h-auto px-3 py-2 rounded-md text-[11px] text-left justify-start " +
                         (issueType === t.value
-                          ? "border-brand bg-brand/10 text-ink"
-                          : "text-ink/70 hover:border-brand/40 hover:bg-black/[0.02]")
+                          ? "border-brand bg-brand/10 text-foreground"
+                          : "text-foreground/70 hover:border-brand/40 hover:bg-black/[0.02]")
                       }
                     >
                       {t.label}
@@ -200,10 +198,7 @@ export function SupportPage() {
               </div>
 
               <div>
-                <label
-                  htmlFor="support-email"
-                  className="block wl-label text-muted mb-1.5"
-                >
+                <label htmlFor="support-email" className="block wl-label text-muted mb-1.5">
                   Your email
                 </label>
                 <Input
@@ -217,15 +212,12 @@ export function SupportPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@yourcompany.com"
-                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                  className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="support-subject"
-                  className="block wl-label text-muted mb-1.5"
-                >
+                <label htmlFor="support-subject" className="block wl-label text-muted mb-1.5">
                   Subject
                 </label>
                 <Input
@@ -235,15 +227,12 @@ export function SupportPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Short summary — what's broken or what you need"
-                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
+                  className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="support-body"
-                  className="block wl-label text-muted mb-1.5"
-                >
+                <label htmlFor="support-body" className="block wl-label text-muted mb-1.5">
                   Details
                 </label>
                 <textarea
@@ -261,7 +250,7 @@ export function SupportPage() {
                           ? "Agent name, call ID or approx time, what the agent did / didn't do, what should have happened."
                           : "Be as specific as possible. We respond to specifics faster than generalities."
                   }
-                  className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
+                  className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground placeholder:text-muted/70 outline-none focus:border-brand/40 transition-colors resize-none leading-relaxed"
                 />
               </div>
 
@@ -291,7 +280,7 @@ export function SupportPage() {
 
         <p className="wl-micro-meta--muted text-center mt-8 leading-relaxed">
           Tickets are stored alongside your account data per the{" "}
-          <Link to="/privacy" className="text-muted hover:text-ink underline">
+          <Link to="/privacy" className="text-muted hover:text-foreground underline">
             Privacy Policy
           </Link>
           . You can request deletion at any time via account settings.

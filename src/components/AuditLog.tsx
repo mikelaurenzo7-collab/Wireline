@@ -141,20 +141,22 @@ const EventRow = React.memo(
           <SeverityIcon severity={event.severity} />
           <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-3">
             <div className="md:col-span-2">
-              <p className="text-sm text-ink font-medium">{event.event_type || event.action}</p>
+              <p className="text-sm text-foreground font-medium">
+                {event.event_type || event.action}
+              </p>
               <p className="text-xs text-muted">{event.actor_email || "System"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Resource</p>
-              <p className="text-sm text-ink">{event.resource_id || "—"}</p>
+              <p className="text-sm text-foreground">{event.resource_id || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted">Time</p>
-              <p className="text-sm text-ink">{timestamp}</p>
+              <p className="text-sm text-foreground">{timestamp}</p>
             </div>
             <div className="text-right">
               {event.cost_usd != null && (
-                <p className="text-sm text-ink">${Number(event.cost_usd ?? 0).toFixed(4)}</p>
+                <p className="text-sm text-foreground">${Number(event.cost_usd ?? 0).toFixed(4)}</p>
               )}
             </div>
           </div>
@@ -179,7 +181,7 @@ const EventRow = React.memo(
                       <p className="text-muted mb-1 flex items-center gap-1.5">
                         <Globe className="w-3 h-3" /> IP Address
                       </p>
-                      <p className="text-ink font-mono">{event.ip_address}</p>
+                      <p className="text-foreground font-mono">{event.ip_address}</p>
                     </div>
                   )}
                   {event.user_agent && (
@@ -187,7 +189,7 @@ const EventRow = React.memo(
                       <p className="text-muted mb-1 flex items-center gap-1.5">
                         <User className="w-3 h-3" /> User Agent
                       </p>
-                      <p className="text-ink truncate">{event.user_agent}</p>
+                      <p className="text-foreground truncate">{event.user_agent}</p>
                     </div>
                   )}
                   {event.provider && (
@@ -195,7 +197,7 @@ const EventRow = React.memo(
                       <p className="text-muted mb-1 flex items-center gap-1.5">
                         <Cpu className="w-3 h-3" /> Provider
                       </p>
-                      <p className="text-ink">
+                      <p className="text-foreground">
                         {event.provider} / {event.model || "—"}
                       </p>
                     </div>
@@ -205,7 +207,7 @@ const EventRow = React.memo(
                       <p className="text-muted mb-1 flex items-center gap-1.5">
                         <Activity className="w-3 h-3" /> Tokens
                       </p>
-                      <p className="text-ink font-mono">
+                      <p className="text-foreground font-mono">
                         {event.input_tokens || 0} in / {event.output_tokens || 0} out
                       </p>
                     </div>
@@ -215,14 +217,14 @@ const EventRow = React.memo(
                       <p className="text-muted mb-1 flex items-center gap-1.5">
                         <Clock className="w-3 h-3" /> Latency
                       </p>
-                      <p className="text-ink font-mono">{event.latency_ms}ms</p>
+                      <p className="text-foreground font-mono">{event.latency_ms}ms</p>
                     </div>
                   )}
                 </div>
                 {event.metadata && Object.keys(event.metadata).length > 0 && (
                   <div>
                     <p className="text-muted text-xs mb-2">Metadata</p>
-                    <pre className="text-xs text-ink/80 bg-black/20 rounded-md p-3 overflow-x-auto max-h-48 overflow-y-auto scrollbar-hide">
+                    <pre className="text-xs text-foreground/80 bg-black/20 rounded-md p-3 overflow-x-auto max-h-48 overflow-y-auto scrollbar-hide">
                       {JSON.stringify(event.metadata, null, 2)}
                     </pre>
                   </div>
@@ -486,7 +488,7 @@ export default function AuditLog() {
                   <p className="wl-label-muted">{label}</p>
                   <Icon className="w-3.5 h-3.5 text-brand" />
                 </div>
-                <p className="font-display italic text-3xl text-ink leading-none tabular-nums">
+                <p className="font-display italic text-3xl text-foreground leading-none tabular-nums">
                   {value}
                 </p>
               </div>
@@ -575,7 +577,7 @@ export default function AuditLog() {
                     placeholder="Search events…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-ink placeholder:text-ink/40 focus:border-brand/40 focus:outline-none"
+                    className="h-8 w-44 pl-8 pr-3 rounded-full wl-panel border border-border text-[11px] text-foreground placeholder:text-foreground/40 focus:border-brand/40 focus:outline-none"
                   />
                 </div>
               }

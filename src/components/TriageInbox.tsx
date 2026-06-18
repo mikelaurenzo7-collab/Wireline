@@ -240,7 +240,9 @@ export function TriagePanel({
         <div className="flex items-start gap-3 flex-1 min-w-[12rem] text-left">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 wl-text-success" aria-hidden />
           <div>
-            <p className="text-sm font-semibold text-ink">{OPS_TRIAGE_COPY.allClearBannerTitle}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {OPS_TRIAGE_COPY.allClearBannerTitle}
+            </p>
             <p className="text-xs text-muted mt-0.5">{OPS_TRIAGE_COPY.allClearBannerBody}</p>
           </div>
         </div>
@@ -427,7 +429,7 @@ function HotLeadStrip({ items }: { items: HotLead[] }) {
           <Link
             key={c.id}
             to={`/contact/${encodeURIComponent(c.customer_number || "unknown")}`}
-            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md wl-panel border border-border hover:border-brand/30 text-[11px] text-ink/85 hover:text-brand transition-colors touch-press hit-area-44"
+            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md wl-panel border border-border hover:border-brand/30 text-[11px] text-foreground/85 hover:text-brand transition-colors touch-press hit-area-44"
             aria-label={`View contact profile for ${c.customer_number || "unknown caller"} (lead score ${c.lead_score})`}
           >
             <span className="font-mono font-bold text-brand tabular-nums">{c.lead_score}</span>
@@ -500,7 +502,7 @@ function ComplianceList({ items }: { items: FleetTask[] }) {
                   </Badge>
                 )}
               </div>
-              <p className="text-[12px] text-ink/90 leading-snug">{t.description}</p>
+              <p className="text-[12px] text-foreground/90 leading-snug">{t.description}</p>
               <div className="wl-label text-muted mt-1.5 flex items-center gap-2">
                 <span>{formatDateTime(t.created_at)}</span>
               </div>
@@ -603,10 +605,10 @@ const KnowledgeGapRow: React.FC<{
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 rounded-md bg-black/25 border border-input outline-none text-ink text-[12px] focus:ring-1 focus:ring-brand/40 focus:border-brand/40 transition-all resize-none"
+                className="w-full px-3 py-2 rounded-md bg-black/25 border border-input outline-none text-foreground text-[12px] focus:ring-1 focus:ring-brand/40 focus:border-brand/40 transition-all resize-none"
               />
             ) : (
-              <p className="text-[12px] text-ink/90 leading-snug">{cleaned}</p>
+              <p className="text-[12px] text-foreground/90 leading-snug">{cleaned}</p>
             )}
             <div className="wl-label text-muted mt-1.5">
               Agent · <span className="font-mono">{gap.agent_id?.substring(0, 12)}</span> ·{" "}
@@ -621,7 +623,7 @@ const KnowledgeGapRow: React.FC<{
                 setEditing(!editing);
                 setContent(cleaned);
               }}
-              className="w-7 h-7 rounded-full text-muted hover:text-ink hover:bg-black/5 transition-all flex items-center justify-center p-0"
+              className="w-7 h-7 rounded-full text-muted hover:text-foreground hover:bg-black/5 transition-all flex items-center justify-center p-0"
               title={editing ? "Cancel" : "Edit before promoting"}
               aria-label={editing ? "Cancel edit" : "Edit gap content"}
             >
@@ -766,7 +768,7 @@ const OpenTaskRow: React.FC<{
               {task.priority}
             </Badge>
           </div>
-          <p className="text-[12px] text-ink/90 leading-snug">{task.description}</p>
+          <p className="text-[12px] text-foreground/90 leading-snug">{task.description}</p>
           <div className="wl-label text-muted mt-1.5 flex items-center gap-2">
             <span>{task.target_channel || "manual"}</span>
             <span className={WL_OPS_CLASSES.dotSep} aria-hidden />
@@ -797,10 +799,10 @@ function Escalations({ items }: { items: EscalationCall[] }) {
 
             <AlertOctagon className="w-4 h-4 text-destructive shrink-0 mt-0.5 relative z-10 pointer-events-none" />
             <div className="flex-1 min-w-0 relative z-10 pointer-events-none text-left">
-              <span className="text-sm font-semibold text-ink block truncate group-hover:text-brand transition-colors">
+              <span className="text-sm font-semibold text-foreground block truncate group-hover:text-brand transition-colors">
                 {c.customer_number || "Unknown caller"}
               </span>
-              <p className="text-[11px] text-ink/70 truncate">{c.summary}</p>
+              <p className="text-[11px] text-foreground/70 truncate">{c.summary}</p>
               <div className="wl-label text-muted mt-1.5 flex items-center gap-2">
                 <span>{formatDateTime(c.created_at)}</span>
                 {c.lead_score !== null && c.lead_score !== undefined && (

@@ -138,7 +138,7 @@ export function ColdEmailForm({
           </ResultCard>
           {email.personalization_notes?.length > 0 && (
             <ResultCard title="Personalization Notes">
-              <ul className="list-disc list-inside text-ink/65 space-y-1">
+              <ul className="list-disc list-inside text-foreground/65 space-y-1">
                 {email.personalization_notes.map((n: string, i: number) => (
                   <li key={i}>{n}</li>
                 ))}

@@ -200,7 +200,7 @@ export default function PronunciationDictionaryPanel() {
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto">
       <div>
-        <h2 className="font-display italic text-2xl text-ink mb-1">Pronunciation</h2>
+        <h2 className="font-display italic text-2xl text-foreground mb-1">Pronunciation</h2>
         <p className="text-[12px] text-muted leading-relaxed">
           Teach your agents to say industry jargon the way humans say it. "HVAC" reads as "H-V-A-C",
           "ACL" gets spelled out, and you can use IPA phonemes for surgical control of medical or
@@ -233,20 +233,17 @@ export default function PronunciationDictionaryPanel() {
       ) : (
         <form
           onSubmit={createDict}
-          className="rounded-md border border-border bg-paper p-5 space-y-4"
+          className="rounded-md border border-border bg-card p-5 space-y-4"
         >
           <div>
-            <h3 className="font-display italic text-lg text-ink">New dictionary</h3>
+            <h3 className="font-display italic text-lg text-foreground">New dictionary</h3>
             <p className="text-[11px] text-muted leading-relaxed mt-1">
               Group rules by vertical, agent persona, or campaign. You can edit rules anytime.
             </p>
           </div>
 
           <div>
-            <label
-              htmlFor="dict-name"
-              className="block wl-label text-muted mb-1.5"
-            >
+            <label htmlFor="dict-name" className="block wl-label text-muted mb-1.5">
               Dictionary name
             </label>
             <Input
@@ -258,7 +255,7 @@ export default function PronunciationDictionaryPanel() {
               minLength={1}
               maxLength={80}
               placeholder="e.g. HVAC service terms"
-              className="w-full rounded-md border border-border bg-paper px-3 py-2.5 text-[13px] text-ink outline-none focus:border-brand/40"
+              className="w-full rounded-md border border-border bg-card px-3 py-2.5 text-[13px] text-foreground outline-none focus:border-brand/40"
             />
           </div>
 
@@ -304,9 +301,7 @@ export default function PronunciationDictionaryPanel() {
 
       {/* Dictionary list */}
       <div className="space-y-2">
-        <p className="wl-label-muted">
-          Your dictionaries · {dicts.length}
-        </p>
+        <p className="wl-label-muted">Your dictionaries · {dicts.length}</p>
         {loading ? (
           <ClientRouteLoading
             icon={<BookOpen className="w-6 h-6" />}
@@ -325,11 +320,11 @@ export default function PronunciationDictionaryPanel() {
             <motion.div
               key={dict.id}
               layout
-              className="rounded-md border border-border bg-paper p-4 space-y-3"
+              className="rounded-md border border-border bg-card p-4 space-y-3"
             >
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-ink truncate">{dict.name}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate">{dict.name}</p>
                   <p className="wl-label-muted/70">
                     {dict.entries.length} {dict.entries.length === 1 ? "rule" : "rules"}
                     {dict.elevenlabsDictionaryId ? " · synced" : " · draft"}
@@ -434,7 +429,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 onChange(next);
               }}
               placeholder={entry.kind === "phoneme" ? "ACL" : "HVAC"}
-              className="rounded-md border border-border bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
+              className="rounded-md border border-border bg-card px-2.5 py-2 text-[12px] text-foreground outline-none focus:border-brand/40"
             />
             <Input
               type="text"
@@ -446,7 +441,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
                 onChange(next);
               }}
               placeholder={entry.kind === "phoneme" ? "ˈeɪ siː ɛl" : "H-V-A-C"}
-              className="rounded-md border border-border bg-paper px-2.5 py-2 text-[12px] text-ink outline-none focus:border-brand/40"
+              className="rounded-md border border-border bg-card px-2.5 py-2 text-[12px] text-foreground outline-none focus:border-brand/40"
             />
             <Select
               value={entry.kind}
@@ -464,7 +459,7 @@ function EntryEditor({ entries, onChange, onAddRow, onRemoveRow }: EntryEditorPr
             >
               <SelectTrigger
                 aria-label="Entry kind"
-                className="rounded-md border border-border bg-paper px-2 py-2 text-[11px] text-ink h-auto"
+                className="rounded-md border border-border bg-card px-2 py-2 text-[11px] text-foreground h-auto"
               >
                 <SelectValue />
               </SelectTrigger>

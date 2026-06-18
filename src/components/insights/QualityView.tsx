@@ -180,7 +180,7 @@ export default function QualityView({ days }: { days: number }) {
                     data-qa-color={bucket.color || QA_BRAND}
                   />
                 </div>
-                <span className="wl-micro-badge font-mono text-ink w-6 text-right shrink-0">
+                <span className="wl-micro-badge font-mono text-foreground w-6 text-right shrink-0">
                   {bucket.count}
                 </span>
               </div>
@@ -307,7 +307,7 @@ export default function QualityView({ days }: { days: number }) {
             return (
               <div key={key} className="px-5 py-3.5 flex items-center gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-ink font-medium">{label}</p>
+                  <p className="text-[11px] text-foreground font-medium">{label}</p>
                   <p className="wl-micro-meta--muted mt-0.5">{desc}</p>
                 </div>
                 <div className="w-28 flex items-center gap-2 shrink-0">
@@ -320,7 +320,9 @@ export default function QualityView({ days }: { days: number }) {
                       data-qa-color={qaColor(pct)}
                     />
                   </div>
-                  <span className="wl-micro-badge font-mono text-ink w-8 text-right">{avg}/20</span>
+                  <span className="wl-micro-badge font-mono text-foreground w-8 text-right">
+                    {avg}/20
+                  </span>
                 </div>
               </div>
             );

@@ -126,7 +126,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display italic text-2xl text-ink leading-none">
+          <h3 className="font-display italic text-2xl text-foreground leading-none">
             {title || "Pick a phone number"}
           </h3>
           <p className="text-[11px] text-muted/70 mt-1.5">
@@ -173,7 +173,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-sm text-ink font-medium leading-none">
+                  <p className="font-mono text-sm text-foreground font-medium leading-none">
                     {formatE164(n.phone_number)}
                   </p>
                   {n.region && (
@@ -214,7 +214,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
               onKeyDown={(e) => {
                 if (e.key === "Enter") searchByAreaCode();
               }}
-              className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-border text-sm text-ink placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
+              className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-border text-sm text-foreground placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
             />
           </div>
           <ShadButton

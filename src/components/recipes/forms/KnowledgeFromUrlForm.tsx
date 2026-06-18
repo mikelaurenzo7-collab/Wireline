@@ -170,7 +170,7 @@ export function KnowledgeFromUrlForm({
           <div className="flex items-center gap-3">
             <Globe className="w-4 h-4 text-brand" />
             <div>
-              <div className="text-sm text-ink">Crawl whole site</div>
+              <div className="text-sm text-foreground">Crawl whole site</div>
               <div className="wl-label-muted">
                 {crawl ? `Follow nav links · up to ${maxPages} pages` : "Single page only"}
               </div>
@@ -189,7 +189,7 @@ export function KnowledgeFromUrlForm({
           >
             <span
               className={cn(
-                "absolute top-0.5 w-5 h-5 rounded-full bg-paper transition-all",
+                "absolute top-0.5 w-5 h-5 rounded-full bg-card transition-all",
                 crawl ? "left-[22px]" : "left-0.5",
               )}
             />
@@ -197,9 +197,7 @@ export function KnowledgeFromUrlForm({
         </label>
         {crawl && (
           <div className="flex items-center gap-3 pt-1">
-            <span className="wl-label-muted shrink-0">
-              Max pages
-            </span>
+            <span className="wl-label-muted shrink-0">Max pages</span>
             <div className="flex gap-2">
               {[5, 8, 12, 20, 25].map((n) => (
                 <ShadButton
@@ -213,7 +211,7 @@ export function KnowledgeFromUrlForm({
                     "h-auto px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.25em]",
                     maxPages === n
                       ? "bg-brand/20 text-brand border border-brand/40"
-                      : "wl-panel border border-white/10 text-muted hover:text-ink",
+                      : "wl-panel border border-white/10 text-muted hover:text-foreground",
                   )}
                 >
                   {n}
@@ -242,7 +240,7 @@ export function KnowledgeFromUrlForm({
       />
 
       {crawlProgress && (
-        <div className="rounded-md wl-panel border border-brand/30 p-4 flex items-center gap-3 text-sm text-ink/80">
+        <div className="rounded-md wl-panel border border-brand/30 p-4 flex items-center gap-3 text-sm text-foreground/80">
           <Loader2 className="w-4 h-4 animate-spin text-brand shrink-0" />
           <span>{crawlProgress}</span>
         </div>
@@ -302,10 +300,8 @@ export function KnowledgeFromUrlForm({
                       {isSel && <Check className="w-3 h-3" strokeWidth={3} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-ink/90">{e.fact}</div>
-                      <div className="wl-label-muted mt-1">
-                        {e.category}
-                      </div>
+                      <div className="text-sm text-foreground/90">{e.fact}</div>
+                      <div className="wl-label-muted mt-1">{e.category}</div>
                     </div>
                   </ShadButton>
                 );

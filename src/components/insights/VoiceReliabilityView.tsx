@@ -226,7 +226,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
             <p
               className={cn(
                 "font-display italic text-2xl",
-                tile.healthy ? "text-ink" : "text-amber-900",
+                tile.healthy ? "text-foreground" : "text-amber-900",
               )}
             >
               {tile.value}
@@ -322,7 +322,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                   key={reason}
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-ink/85 truncate">{reason}</span>
+                  <span className="text-sm text-foreground/85 truncate">{reason}</span>
                   <span className="font-mono text-[11px] text-muted shrink-0">{count}</span>
                 </div>
               ))
@@ -342,7 +342,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm text-ink/85 truncate">
+                    <p className="text-sm text-foreground/85 truncate">
                       {call.outcomeTag || call.sentiment || "call"}
                     </p>
                     <p className="text-[11px] text-muted font-mono">

@@ -39,7 +39,7 @@ export function VoiceFieldSelect({
   const selectValue = allowInherit && !value ? "inherit" : resolveVoiceSelectValue(value, catalog);
   return (
     <div className="space-y-1.5">
-      <label className="wl-label text-ink/40">{label}</label>
+      <label className="wl-label text-foreground/40">{label}</label>
       <Select
         value={selectValue}
         onValueChange={(val) => {
@@ -57,7 +57,7 @@ export function VoiceFieldSelect({
       >
         <SelectTrigger
           aria-label={label}
-          className="w-full text-xs bg-black/5 border border-black/10 rounded-md pl-2.5 py-1.5 text-ink h-auto"
+          className="w-full text-xs bg-black/5 border border-white/10 rounded-md pl-2.5 py-1.5 text-foreground h-auto"
         >
           <SelectValue />
         </SelectTrigger>

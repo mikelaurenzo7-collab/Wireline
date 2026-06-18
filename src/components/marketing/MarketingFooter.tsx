@@ -31,7 +31,7 @@ export default function MarketingFooter({
   return (
     <footer
       className={cn(
-        "relative z-10 shrink-0 border-t border-black/6 bg-paper/80 backdrop-blur-sm",
+        "relative z-10 shrink-0 border-t border-white/6 bg-card/80 backdrop-blur-sm",
         compact ? "px-4 py-3" : "px-5 py-4 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
@@ -42,7 +42,7 @@ export default function MarketingFooter({
           {TRUST.map((label) => (
             <span
               key={label}
-              className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-black/8 bg-white/50 text-ink/85"
+              className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-white/8 bg-white/50 text-foreground/85"
             >
               {label}
             </span>
@@ -68,7 +68,7 @@ export default function MarketingFooter({
             Terms
           </Link>
         </nav>
-        <p className="text-[11px] text-ink/55 leading-relaxed">
+        <p className="text-[11px] text-foreground/55 leading-relaxed">
           14-day free trial · No credit card to start · Cancel anytime, no contracts.
         </p>
       </div>

@@ -146,14 +146,14 @@ export default function IntakeKeysManager() {
           </div>
           <div>
             <p className="app-section-title">Inbound Intake API</p>
-            <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
+            <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
               Capture leads from anywhere
             </h4>
             <p className="text-[11px] text-muted mt-1">
               Issue an API key, point your form / CRM / Zapier at{" "}
-              <span className="font-mono text-ink/80">POST /api/intake/lead</span>, and leads land
-              straight in Outbound + Triage. Fires{" "}
-              <span className="font-mono text-ink/80">lead.received</span> webhook events.
+              <span className="font-mono text-foreground/80">POST /api/intake/lead</span>, and leads
+              land straight in Outbound + Triage. Fires{" "}
+              <span className="font-mono text-foreground/80">lead.received</span> webhook events.
             </p>
           </div>
         </div>
@@ -202,7 +202,7 @@ export default function IntakeKeysManager() {
               <Input
                 readOnly
                 value={revealed ? justCreated.plaintext : "•".repeat(justCreated.plaintext.length)}
-                className="flex-1 h-10 px-3 rounded-md bg-background border border-brand/30 outline-none text-ink text-xs font-mono select-all"
+                className="flex-1 h-10 px-3 rounded-md bg-background border border-brand/30 outline-none text-foreground text-xs font-mono select-all"
               />
               <ShadButton
                 type="button"
@@ -243,20 +243,16 @@ export default function IntakeKeysManager() {
             <div className="rounded-md bg-muted/10 border border-border p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="space-y-1.5">
-                  <span className="wl-label-muted">
-                    Key name
-                  </span>
+                  <span className="wl-label-muted">Key name</span>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Webflow Demo Form"
-                    className="w-full h-11 px-4 rounded-md bg-muted/10 border border-border outline-none text-ink text-sm focus:border-brand/60 transition-all"
+                    className="w-full h-11 px-4 rounded-md bg-muted/10 border border-border outline-none text-foreground text-sm focus:border-brand/60 transition-all"
                   />
                 </label>
                 <label className="space-y-1.5">
-                  <span className="wl-label-muted">
-                    Default agent (optional)
-                  </span>
+                  <span className="wl-label-muted">Default agent (optional)</span>
                   <Select
                     value={defaultAgentId || "__none__"}
                     onValueChange={(v) => {
@@ -267,7 +263,7 @@ export default function IntakeKeysManager() {
                   >
                     <SelectTrigger
                       aria-label="Default agent"
-                      className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm"
+                      className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-foreground text-sm"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -294,7 +290,7 @@ export default function IntakeKeysManager() {
                     ? "bg-black/20 border-white/5 text-muted/70"
                     : autoDial
                       ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
-                      : "bg-muted/10 border-border text-ink/80 hover:border-border/60",
+                      : "bg-muted/10 border-border text-foreground/80 hover:border-border/60",
                 )}
               >
                 <div
@@ -311,7 +307,7 @@ export default function IntakeKeysManager() {
                   <div className="text-xs font-medium flex items-center gap-2">
                     <Zap className="w-3 h-3" /> Auto-dial inbound leads
                   </div>
-                  <div className="wl-micro-meta leading-snug mt-0.5 text-ink/65">
+                  <div className="wl-micro-meta leading-snug mt-0.5 text-foreground/65">
                     {defaultAgentId
                       ? "Every lead pushed via this key triggers an outbound call from the selected agent. Subscription must be active."
                       : "Pick a default agent above to enable auto-dial."}
@@ -349,7 +345,7 @@ export default function IntakeKeysManager() {
           </div>
         )}
         {!loading && keys.length === 0 && (
-          <div className="text-xs text-ink/70 italic">
+          <div className="text-xs text-foreground/70 italic">
             No keys yet. Create one to start accepting inbound leads.
           </div>
         )}
@@ -366,7 +362,7 @@ export default function IntakeKeysManager() {
             >
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="text-sm text-ink font-medium">{k.name}</div>
+                  <div className="text-sm text-foreground font-medium">{k.name}</div>
                   <span
                     className={cn(
                       "wl-label px-2 py-0.5 rounded-full border",
@@ -425,7 +421,7 @@ export default function IntakeKeysManager() {
                   size="sm"
                   disableAnimations
                   onClick={() => toggleActive(k)}
-                  className="h-9 px-3 wl-micro-meta hover:text-ink border-border hover:border-border/60"
+                  className="h-9 px-3 wl-micro-meta hover:text-foreground border-border hover:border-border/60"
                 >
                   {k.active ? "Pause" : "Resume"}
                 </ShadButton>
@@ -478,9 +474,7 @@ export default function IntakeKeysManager() {
         )}
       >
         <div>
-          <div className="wl-label text-brand-2 mb-2">
-            Quick start · curl
-          </div>
+          <div className="wl-label text-brand-2 mb-2">Quick start · curl</div>
           <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
   -H "Content-Type: application/json" \\
   -H "X-Wireline-Key: wlk_..." \\
@@ -491,23 +485,23 @@ export default function IntakeKeysManager() {
           <div>
             <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>{" "}
             — optional, any string ≤ 255 chars. Same key + same operator returns the original{" "}
-            <code className="text-ink/80">lead_id</code> with{" "}
-            <code className="text-ink/80">idempotent_replay: true</code>. Safe for form-submission
-            retries.
+            <code className="text-foreground/80">lead_id</code> with{" "}
+            <code className="text-foreground/80">idempotent_replay: true</code>. Safe for
+            form-submission retries.
           </div>
           <div>
             <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span> — 60
             requests / minute per intake key. Excess returns{" "}
-            <code className="text-ink/80">HTTP 429</code> with{" "}
-            <code className="text-ink/80">Retry-After</code>.
+            <code className="text-foreground/80">HTTP 429</code> with{" "}
+            <code className="text-foreground/80">Retry-After</code>.
           </div>
           <div>
             <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span> —
             when on, the response includes{" "}
-            <code className="text-ink/80">auto_dial_initiated: true</code> and the call is
+            <code className="text-foreground/80">auto_dial_initiated: true</code> and the call is
             dispatched in the background; the lead row gets{" "}
-            <code className="text-ink/80">call_id</code> +{" "}
-            <code className="text-ink/80">status: "Dialing"</code> on success.
+            <code className="text-foreground/80">call_id</code> +{" "}
+            <code className="text-foreground/80">status: "Dialing"</code> on success.
           </div>
         </div>
       </div>

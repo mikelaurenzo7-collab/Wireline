@@ -56,7 +56,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <Cpu className="w-3 h-3 text-brand" /> Core Engine
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display text-ink">ACTIVE</span>
+                  <span className="text-2xl font-display text-foreground">ACTIVE</span>
                   <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed">
@@ -69,7 +69,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <HardDrive className="w-3 h-3 text-brand" /> Postgres RLS
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display text-ink">SECURE</span>
+                  <span className="text-2xl font-display text-foreground">SECURE</span>
                   <ShieldCheck className="w-3.5 h-3.5 text-brand" />
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed">
@@ -82,7 +82,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <Network className="w-3 h-3 text-muted" /> Edge Ingress
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display text-ink">24ms</span>
+                  <span className="text-2xl font-display text-foreground">24ms</span>
                   <Globe className="w-3.5 h-3.5 text-muted" />
                 </div>
                 <p className="wl-micro-meta--muted leading-relaxed">
@@ -95,7 +95,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <Gauge className="w-3 h-3 text-brand" /> Throughput
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-display text-ink">
+                  <span className="text-2xl font-display text-foreground">
                     {operationalSlos?.jobs?.queue?.done_last_hour || 0}
                     <span className="wl-micro-meta--muted">/h</span>
                   </span>
@@ -116,7 +116,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-brand" />
-                  <h5 className="app-section-title font-black text-ink">
+                  <h5 className="app-section-title font-black text-foreground">
                     Launch Day Production Readiness Checklist
                   </h5>
                 </div>
@@ -132,7 +132,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">
+                      <p className="text-[11px] font-bold text-foreground leading-tight">
                         Stripe Live Mode Active
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -146,7 +146,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">
+                      <p className="text-[11px] font-bold text-foreground leading-tight">
                         SSL / TLS Domain Encryption
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -160,7 +160,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">
+                      <p className="text-[11px] font-bold text-foreground leading-tight">
                         E2E Outbound TCPA Safety Gate
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -176,12 +176,11 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">
+                      <p className="text-[11px] font-bold text-foreground leading-tight">
                         Transactional support mailbox
                       </p>
                       <p className="wl-micro-meta--muted">
-                        Resend SMTP configured with inbound redirects to
-                        support@trywireline.com.
+                        Resend SMTP configured with inbound redirects to support@trywireline.com.
                       </p>
                     </div>
                   </div>
@@ -191,7 +190,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">
+                      <p className="text-[11px] font-bold text-foreground leading-tight">
                         Voice Synthesizer (ElevenLabs)
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -205,7 +204,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold text-ink leading-tight">
+                      <p className="text-[11px] font-bold text-foreground leading-tight">
                         Obs-Latency Telemetry (Vapi)
                       </p>
                       <p className="wl-micro-meta--muted">
@@ -243,26 +242,20 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                       )}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <span className="wl-label font-black">
-                          {key.replace(/_/g, " ")}
-                        </span>
+                        <span className="wl-label font-black">{key.replace(/_/g, " ")}</span>
                         <div className={cn("w-2 h-2 rounded-full", getSloDotColor(health))} />
                       </div>
                       <div className="space-y-4">
                         {key === "jobs_queue" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Pending
-                              </p>
+                              <p className="wl-label opacity-60">Pending</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.jobs?.queue?.pending ?? 0}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Success Rate
-                              </p>
+                              <p className="wl-label opacity-60">Success Rate</p>
                               <p className="text-xl font-display">99.8%</p>
                             </div>
                           </div>
@@ -270,9 +263,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                         {key === "webhooks" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Rate
-                              </p>
+                              <p className="wl-label opacity-60">Rate</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.webhooks?.success_rate
                                   ? `${(operationalSlos.webhooks.success_rate * 100).toFixed(1)}%`
@@ -280,9 +271,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Attempts
-                              </p>
+                              <p className="wl-label opacity-60">Attempts</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.webhooks?.attempts_in_window ?? 0}
                               </p>
@@ -292,17 +281,13 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                         {key === "ai_errors" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                AI Calls
-                              </p>
+                              <p className="wl-label opacity-60">AI Calls</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.ai_reliability?.claude_calls_in_window ?? 0}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Svr Events
-                              </p>
+                              <p className="wl-label opacity-60">Svr Events</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.ai_reliability?.error_severity_events_in_window ??
                                   0}
@@ -313,17 +298,13 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                         {key === "enrichment_failures" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Dead Letter
-                              </p>
+                              <p className="wl-label opacity-60">Dead Letter</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.jobs?.enrichment?.dead ?? 0}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="wl-label opacity-60">
-                                Processing
-                              </p>
+                              <p className="wl-label opacity-60">Processing</p>
                               <p className="text-xl font-display">
                                 {operationalSlos?.jobs?.enrichment?.running ?? 0}
                               </p>
@@ -362,7 +343,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-ink">LLM Mesh</p>
+                      <p className="text-[11px] font-bold text-foreground">LLM Mesh</p>
                       <p className="wl-micro-meta--muted truncate">Cognitive Routing Active</p>
                     </div>
                   </div>
@@ -371,7 +352,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-ink">Carrier Bridge</p>
+                      <p className="text-[11px] font-bold text-foreground">Carrier Bridge</p>
                       <p className="wl-micro-meta--muted truncate">Voice + SMS Synchronized</p>
                     </div>
                   </div>
@@ -380,7 +361,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.5)]" />
                     <div className="space-y-0.5">
-                      <p className="text-[11px] font-bold text-ink">Data Vault</p>
+                      <p className="text-[11px] font-bold text-foreground">Data Vault</p>
                       <p className="wl-micro-meta--muted truncate">Postgres RLS Verified</p>
                     </div>
                   </div>

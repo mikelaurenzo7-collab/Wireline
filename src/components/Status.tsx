@@ -241,7 +241,7 @@ export default function Status() {
                     />
                     <div className="relative">
                       <div className="flex items-center justify-between mb-2.5">
-                        <Icon className="w-4 h-4 text-ink/75" strokeWidth={1.75} />
+                        <Icon className="w-4 h-4 text-foreground/75" strokeWidth={1.75} />
                         <span
                           className={`inline-flex items-center gap-1 text-[8.5px] uppercase tracking-[0.22em] font-semibold px-2 py-0.5 rounded-full border leading-none ${stateMeta.pill}`}
                         >
@@ -249,7 +249,7 @@ export default function Status() {
                           {stateMeta.label}
                         </span>
                       </div>
-                      <p className="text-sm font-semibold text-ink mb-1">{meta.label}</p>
+                      <p className="text-sm font-semibold text-foreground mb-1">{meta.label}</p>
                       <p className="text-caption leading-relaxed">{meta.description}</p>
                     </div>
                   </motion.div>
@@ -272,7 +272,7 @@ export default function Status() {
               <span className="text-muted/70">·</span>
               <span>Public cache · 60s</span>
               <span className="text-muted/70">·</span>
-              <Link to="/security" className="hover:text-ink transition-colors">
+              <Link to="/security" className="hover:text-foreground transition-colors">
                 Security practices
               </Link>
               <span className="text-muted/70">·</span>
@@ -280,7 +280,7 @@ export default function Status() {
                 href="https://twitter.com/intent/tweet?text=%40trywireline+status"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-ink transition-colors"
+                className="hover:text-foreground transition-colors"
               >
                 Report an issue
               </a>

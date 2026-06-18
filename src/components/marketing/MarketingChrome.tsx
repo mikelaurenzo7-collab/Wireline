@@ -30,8 +30,8 @@ export default function MarketingChrome({
   return (
     <div
       className={cn(
-        "marketing-surface min-h-dvh flex flex-col text-ink",
-        authCanvas ? "auth-portal-canvas" : "bg-paper",
+        "marketing-surface min-h-dvh flex flex-col text-foreground",
+        authCanvas ? "auth-portal-canvas" : "bg-card",
         className,
       )}
     >

@@ -95,7 +95,7 @@ export default function WebhooksManager() {
           </div>
           <div>
             <p className="app-section-title">Outbound Webhooks</p>
-            <h4 className="font-display italic text-2xl text-ink leading-tight mt-1">
+            <h4 className="font-display italic text-2xl text-foreground leading-tight mt-1">
               Push events anywhere
             </h4>
             <p className="text-[11px] text-muted mt-1">
@@ -195,7 +195,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Slack #sales channel"
-            className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-foreground text-sm outline-none focus:border-brand/60"
           />
         </div>
         <div className="space-y-1.5">
@@ -204,7 +204,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://hooks.slack.com/services/..."
-            className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm font-mono outline-none focus:border-brand/60"
+            className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-foreground text-sm font-mono outline-none focus:border-brand/60"
           />
         </div>
       </div>
@@ -244,7 +244,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
                   {on && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-mono text-ink/90">{e}</div>
+                  <div className="text-xs font-mono text-foreground/90">{e}</div>
                   <div className="wl-micro-meta opacity-90 leading-snug">
                     {EVENT_DESCRIPTIONS[e]}
                   </div>
@@ -266,7 +266,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           placeholder="long-random-string-only-you-and-the-receiver-know"
-          className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-ink text-sm font-mono outline-none focus:border-brand/60"
+          className="w-full h-11 px-3 rounded-md bg-muted/10 border border-border text-foreground text-sm font-mono outline-none focus:border-brand/60"
         />
       </div>
 
@@ -415,7 +415,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <span className="font-medium text-ink">{hook.name}</span>
+            <span className="font-medium text-foreground">{hook.name}</span>
             <ShadButton
               type="button"
               variant="ghost"
@@ -447,7 +447,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               </span>
             )}
           </div>
-          <div className="text-xs font-mono text-ink/70 truncate">{hook.url}</div>
+          <div className="text-xs font-mono text-foreground/70 truncate">{hook.url}</div>
           <div className="flex items-center gap-2 flex-wrap mt-2">
             {hook.events.map((e) => (
               <span
@@ -470,7 +470,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
           {hook.secret_last_four && (
             <div className="flex items-center gap-2 mt-2 wl-micro-meta--muted">
               <span className="uppercase tracking-[0.3em]">Secret</span>
-              <code className="font-mono text-ink/70">
+              <code className="font-mono text-foreground/70">
                 {"•".repeat(12)}
                 {hook.secret_last_four}
               </code>
@@ -569,7 +569,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                   disableAnimations
                   onClick={loadDeliveries}
                   disabled={loadingDeliveries}
-                  className="wl-label-muted hover:text-ink"
+                  className="wl-label-muted hover:text-foreground"
                 >
                   {loadingDeliveries ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -616,7 +616,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                         )}
                         {d.status}
                       </span>
-                      <span className="font-mono text-ink/80">{d.event}</span>
+                      <span className="font-mono text-foreground/80">{d.event}</span>
                       <span className="text-muted">
                         try {d.attempts}/{d.max_attempts}
                       </span>

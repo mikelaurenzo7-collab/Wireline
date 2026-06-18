@@ -64,7 +64,7 @@ export function VoidButton({
         "disabled:opacity-40 disabled:pointer-events-none disabled:grayscale",
         SIZE_CLASSES[size],
         variant === "primary" && "text-white",
-        variant === "secondary" && "text-ink border border-ink/12",
+        variant === "secondary" && "text-foreground border border-ink/12",
         className,
       )}
       disabled={disabled}

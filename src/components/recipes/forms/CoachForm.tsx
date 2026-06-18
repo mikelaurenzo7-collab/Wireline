@@ -38,11 +38,11 @@ export function CoachForm({
           <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span>
         </p>
       )}
-      <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
+      <label className="flex items-center gap-3 cursor-pointer text-sm text-foreground/80">
         <Checkbox
           checked={isLive}
           onChange={(e) => setIsLive(e.target.checked)}
-          className="w-4 h-4 rounded border-black/20 bg-black/5 accent-brand"
+          className="w-4 h-4 rounded border-white/20 bg-black/5 accent-brand"
         />
         Treat as in-progress (live) call
       </label>
@@ -64,7 +64,7 @@ export function CoachForm({
                   coaching.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "positive" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "neutral" &&
-                    "bg-black/[0.06] text-ink/50 border border-black/12",
+                    "bg-black/[0.06] text-foreground/50 border border-white/12",
                   coaching.sentiment === "frustrated" &&
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                   coaching.sentiment === "angry" &&
@@ -90,7 +90,7 @@ export function CoachForm({
                   coaching.escalation_risk === "medium" &&
                     "bg-amber-500/15 text-amber-500 border border-amber-500/30",
                   coaching.escalation_risk === "low" &&
-                    "bg-black/[0.06] text-ink/50 border border-black/12",
+                    "bg-black/[0.06] text-foreground/50 border border-white/12",
                   coaching.escalation_risk === "none" && "wl-status-success border wl-text-success",
                 )}
               >
@@ -99,7 +99,7 @@ export function CoachForm({
             </ResultCard>
           </div>
           <ResultCard title="Suggested Next Words" copyText={coaching.suggested_next_words}>
-            <p className="font-display italic text-xl leading-snug text-ink">
+            <p className="font-display italic text-xl leading-snug text-foreground">
               "{coaching.suggested_next_words}"
             </p>
           </ResultCard>

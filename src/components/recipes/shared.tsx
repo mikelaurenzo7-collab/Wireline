@@ -69,7 +69,7 @@ export function TextInput({ value, onChange, placeholder, ...rest }: any) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
+      className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-white/10 dark:border-white/10 outline-none text-foreground dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
       {...rest}
     />
   );
@@ -82,7 +82,7 @@ export function TextArea({ value, onChange, placeholder, rows = 5, ...rest }: an
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full px-4 py-3 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 outline-none text-ink dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
+      className="w-full px-4 py-3 rounded-md bg-black/5 dark:bg-white/5 border border-white/10 dark:border-white/10 outline-none text-foreground dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
       {...rest}
     />
   );
@@ -101,7 +101,7 @@ export function Select({
     <ShadSelect value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label="Recipe option"
-        className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-ink dark:text-foreground text-sm"
+        className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-white/10 dark:border-white/10 text-foreground dark:text-foreground text-sm"
       >
         <SelectValue />
       </SelectTrigger>
@@ -174,7 +174,7 @@ export const ResultCard: React.FC<{ title: string; copyText?: string; children?:
           </ShadButton>
         )}
       </div>
-      <div className="text-sm text-ink/85 leading-relaxed space-y-2">{children}</div>
+      <div className="text-sm text-foreground/85 leading-relaxed space-y-2">{children}</div>
     </div>
   );
 };
@@ -198,7 +198,7 @@ export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="wl-label-muted">{label}</div>
-      <div className="text-sm text-ink mt-0.5 truncate">{value}</div>
+      <div className="text-sm text-foreground mt-0.5 truncate">{value}</div>
     </div>
   );
 }
@@ -211,7 +211,7 @@ export function NoKeyInline() {
   return (
     <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
       <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-      <p className="text-xs text-ink/80 leading-relaxed">
+      <p className="text-xs text-foreground/80 leading-relaxed">
         Wireline AI is warming up — try again in a moment. If this persists, our team is on it.
       </p>
     </div>

@@ -121,7 +121,7 @@ export default function ObservabilityDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-lg font-medium text-ink">System Observability</h3>
+          <h3 className="text-lg font-medium text-foreground">System Observability</h3>
           <p className="text-sm text-muted">
             Real-time pipeline latency and agent resilience metrics.
           </p>
@@ -143,7 +143,7 @@ export default function ObservabilityDashboard() {
       {metrics?.noData && (
         <div className="rounded-md border border-border bg-background/50 p-6 text-center space-y-2">
           <Activity className="h-8 w-8 text-brand mx-auto animate-pulse" />
-          <h4 className="text-sm font-semibold text-ink">Waiting for Telemetry</h4>
+          <h4 className="text-sm font-semibold text-foreground">Waiting for Telemetry</h4>
           <p className="text-xs text-muted max-w-md mx-auto">
             Your telemetry pipelines are active. Metrics like voice TTFT, STT precision, and
             connection success rates will populate dynamically the moment your first call is
@@ -159,7 +159,7 @@ export default function ObservabilityDashboard() {
             <Zap className="h-4 w-4 wl-text-success" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-ink">
+            <span className="text-3xl font-bold text-foreground">
               {metrics?.avgTtftMs !== null && metrics?.avgTtftMs !== undefined
                 ? metrics.avgTtftMs
                 : "—"}
@@ -175,7 +175,7 @@ export default function ObservabilityDashboard() {
             <Clock className="h-4 w-4 text-amber-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-ink">
+            <span className="text-3xl font-bold text-foreground">
               {metrics?.p99TtftMs !== null && metrics?.p99TtftMs !== undefined
                 ? metrics.p99TtftMs
                 : "—"}
@@ -191,7 +191,7 @@ export default function ObservabilityDashboard() {
             <Activity className="h-4 w-4 wl-text-success" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-ink">
+            <span className="text-3xl font-bold text-foreground">
               {metrics?.pipelineSuccessRate !== null && metrics?.pipelineSuccessRate !== undefined
                 ? metrics.pipelineSuccessRate
                 : "—"}
@@ -207,7 +207,7 @@ export default function ObservabilityDashboard() {
             <ServerCrash className="h-4 w-4 wl-text-success" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-ink">
+            <span className="text-3xl font-bold text-foreground">
               {metrics?.sttErrorRate !== null && metrics?.sttErrorRate !== undefined
                 ? metrics.sttErrorRate
                 : "—"}

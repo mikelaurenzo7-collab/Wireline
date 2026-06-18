@@ -67,9 +67,13 @@ export function CallPlaybookForm({
       {playbook && (
         <div className="space-y-4 pt-3">
           <ResultCard title="Opening Hook" copyText={playbook.opening_hook}>
-            <p className="text-ink/90 italic text-sm leading-relaxed">"{playbook.opening_hook}"</p>
+            <p className="text-foreground/90 italic text-sm leading-relaxed">
+              "{playbook.opening_hook}"
+            </p>
             {playbook.purpose_statement && (
-              <p className="text-ink/70 text-sm mt-2">Then: "{playbook.purpose_statement}"</p>
+              <p className="text-foreground/70 text-sm mt-2">
+                Then: "{playbook.purpose_statement}"
+              </p>
             )}
           </ResultCard>
 
@@ -78,12 +82,14 @@ export function CallPlaybookForm({
               <div className="space-y-3">
                 {playbook.discovery_questions.map((q: any, i: number) => (
                   <div key={i} className="border-l-2 border-brand/40 pl-3">
-                    <p className="text-ink/90 text-sm font-medium">
+                    <p className="text-foreground/90 text-sm font-medium">
                       {i + 1}. "{q.question}"
                     </p>
                     <p className="text-muted text-[11px] mt-0.5">Intent: {q.intent}</p>
                     {q.follow_up && (
-                      <p className="text-ink/70 text-[11px] mt-1">Follow-up: "{q.follow_up}"</p>
+                      <p className="text-foreground/70 text-[11px] mt-1">
+                        Follow-up: "{q.follow_up}"
+                      </p>
                     )}
                   </div>
                 ))}
@@ -92,7 +98,7 @@ export function CallPlaybookForm({
           )}
 
           <ResultCard title="Value Proposition Script" copyText={playbook.value_prop_script}>
-            <p className="text-ink/90 text-sm leading-relaxed italic">
+            <p className="text-foreground/90 text-sm leading-relaxed italic">
               "{playbook.value_prop_script}"
             </p>
           </ResultCard>
@@ -103,12 +109,12 @@ export function CallPlaybookForm({
                 {playbook.objection_handlers.map((o: any, i: number) => (
                   <div key={i} className="rounded-md bg-white/5 p-4 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-ink/70 text-xs italic">"{o.objection}"</p>
+                      <p className="text-foreground/70 text-xs italic">"{o.objection}"</p>
                       <span className="shrink-0 px-2 py-0.5 rounded-full wl-label bg-amber-500/15 text-amber-500 border border-amber-500/30">
                         {TECHNIQUE_LABEL[o.technique] ?? o.technique}
                       </span>
                     </div>
-                    <p className="text-ink/90 text-sm">"{o.response}"</p>
+                    <p className="text-foreground/90 text-sm">"{o.response}"</p>
                   </div>
                 ))}
               </div>
@@ -123,7 +129,7 @@ export function CallPlaybookForm({
                     <span className="shrink-0 mt-0.5 px-2 py-0.5 rounded-full wl-label wl-status-success border wl-text-success">
                       {c.style?.replace(/_/g, " ")}
                     </span>
-                    <p className="text-ink/90 text-sm italic">"{c.script}"</p>
+                    <p className="text-foreground/90 text-sm italic">"{c.script}"</p>
                   </div>
                 ))}
               </div>
@@ -131,7 +137,7 @@ export function CallPlaybookForm({
           )}
 
           <ResultCard title="Voicemail Script" copyText={playbook.voicemail_script}>
-            <p className="text-ink/90 text-sm leading-relaxed italic">
+            <p className="text-foreground/90 text-sm leading-relaxed italic">
               "{playbook.voicemail_script}"
             </p>
           </ResultCard>

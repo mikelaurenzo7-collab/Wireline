@@ -106,7 +106,7 @@ export default function CallbacksList({
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-ink font-medium truncate">
+                  <span className="text-[11px] text-foreground font-medium truncate">
                     {cb.customer_name || cb.customer_number}
                   </span>
                   <span
@@ -122,9 +122,7 @@ export default function CallbacksList({
                   <p className="wl-micro-meta--muted mt-0.5">{cb.customer_number}</p>
                 )}
                 {cb.last_contact_summary && (
-                  <p className="wl-micro-meta mt-1 line-clamp-1">
-                    {cb.last_contact_summary}
-                  </p>
+                  <p className="wl-micro-meta mt-1 line-clamp-1">{cb.last_contact_summary}</p>
                 )}
                 <p className="wl-micro-meta mt-1">
                   {scheduledAt.toLocaleString("en-US", {

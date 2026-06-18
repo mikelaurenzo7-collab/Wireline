@@ -55,7 +55,7 @@ export default function TopicsView() {
           variant="outline"
           size="sm"
           onClick={() => load(true)}
-          className="rounded-full wl-insight-label hover:text-ink hover:border-brand/25"
+          className="rounded-full wl-insight-label hover:text-foreground hover:border-brand/25"
         >
           <RefreshCw className="w-3 h-3" /> Refresh
         </ShadButton>
@@ -80,7 +80,9 @@ export default function TopicsView() {
               />
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between gap-3">
-                  <h4 className="font-display italic text-2xl text-ink leading-tight">{t.name}</h4>
+                  <h4 className="font-display italic text-2xl text-foreground leading-tight">
+                    {t.name}
+                  </h4>
                   <span className="font-display italic text-3xl text-brand-display tabular-nums">
                     {t.count}
                   </span>
@@ -96,7 +98,7 @@ export default function TopicsView() {
                         t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
                         t.trend === "new" && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
                         t.trend === "steady" &&
-                          "bg-black/[0.06] dark:bg-white/5 text-ink/50 border border-border",
+                          "bg-black/[0.06] dark:bg-white/5 text-foreground/50 border border-border",
                         t.trend === "declining" &&
                           "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                       )}
@@ -106,7 +108,7 @@ export default function TopicsView() {
                   )}
                 </div>
                 {t.example_quote && (
-                  <p className="text-xs text-ink/65 italic leading-relaxed mt-2">
+                  <p className="text-xs text-foreground/65 italic leading-relaxed mt-2">
                     "{t.example_quote}"
                   </p>
                 )}

@@ -55,7 +55,7 @@ export default function AgentListPanel({
   // single focus. Click an avatar to switch, the chevron to reopen the list.
   if (collapsed) {
     return (
-      <aside className="hidden md:flex w-14 border-r border-black/8 h-full min-h-0 flex-col items-center gap-2 py-3 bg-paper/40 shrink-0">
+      <aside className="hidden md:flex w-14 border-r border-white/8 h-full min-h-0 flex-col items-center gap-2 py-3 bg-card/40 shrink-0">
         <ShadButton
           type="button"
           variant="ghost"
@@ -64,7 +64,7 @@ export default function AgentListPanel({
           onClick={onToggleCollapse}
           title="Show agents"
           aria-label="Show agent list"
-          className="w-9 h-9 rounded-md text-ink/50 hover:text-ink touch-press hover:scale-[1.05]"
+          className="w-9 h-9 rounded-md text-foreground/50 hover:text-foreground touch-press hover:scale-[1.05]"
         >
           <ChevronRight className="w-4 h-4" />
         </ShadButton>
@@ -87,7 +87,7 @@ export default function AgentListPanel({
                 "w-9 h-9 rounded-md shrink-0 touch-press hover:scale-[1.05]",
                 selectedAgent?.id === agent.id
                   ? "ring-2 ring-brand/40 bg-brand/10 text-brand"
-                  : "text-ink/55 hover:bg-brand/5 hover:text-ink",
+                  : "text-foreground/55 hover:bg-brand/5 hover:text-foreground",
               )}
             >
               {agent.channel === "email" ? (
@@ -105,16 +105,16 @@ export default function AgentListPanel({
   return (
     <aside
       className={cn(
-        "w-full md:w-[300px] lg:w-[340px] border-b md:border-b-0 md:border-r border-black/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden bg-paper/40",
+        "w-full md:w-[300px] lg:w-[340px] border-b md:border-b-0 md:border-r border-white/8 h-auto md:h-full md:min-h-0 flex flex-col shrink-0 overflow-hidden bg-card/40",
         selectedAgent && "hidden md:flex",
       )}
     >
-      <div className="px-4 py-3 border-b border-black/8 flex items-center justify-between gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
           <p className="app-section-title mb-0.5">
             {isPersonal ? "Personal · Assistant" : "Fleet · Agents"}
           </p>
-          <h2 className="font-display italic text-2xl text-ink leading-none mt-0.5 flex items-center gap-2">
+          <h2 className="font-display italic text-2xl text-foreground leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
             {isPersonal ? "Your assistant" : "Your agents"}
           </h2>
@@ -130,7 +130,7 @@ export default function AgentListPanel({
               onClick={onToggleCollapse}
               title="Collapse list"
               aria-label="Collapse agent list"
-              className="hidden md:inline-flex w-7 h-7 rounded-md text-ink/40 hover:text-ink touch-press hover:scale-[1.05]"
+              className="hidden md:inline-flex w-7 h-7 rounded-md text-foreground/40 hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <PanelLeftClose className="w-3.5 h-3.5" />
             </ShadButton>
@@ -184,7 +184,7 @@ export default function AgentListPanel({
                       WL_FLEET_CLASSES.agentAvatar,
                       selectedAgent?.id === agent.id && WL_FLEET_CLASSES.agentAvatarActive,
                       selectedAgent?.id !== agent.id &&
-                        "group-hover:border-brand/25 group-hover:bg-brand/5 group-hover:text-ink",
+                        "group-hover:border-brand/25 group-hover:bg-brand/5 group-hover:text-foreground",
                     )}
                   >
                     {agent.channel === "email" ? (
@@ -194,16 +194,16 @@ export default function AgentListPanel({
                     )}
                   </div>
                   <div className="overflow-hidden flex-1 min-w-0">
-                    <div className="font-display italic text-base text-ink leading-tight truncate">
+                    <div className="font-display italic text-base text-foreground leading-tight truncate">
                       {agent.name}
                     </div>
                     <div className="flex items-center flex-wrap gap-1.5 mt-1">
                       <RoleBadge role={agent.role} size="xs" />
-                      <span className="wl-label tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
+                      <span className="wl-label tracking-[0.18em] px-1.5 py-0.5 rounded-full bg-card-warm/80 border border-white/8 text-foreground/50 leading-none">
                         {agent.channel}
                       </span>
                       {agentStats[agent.id] && (
-                        <span className="wl-micro-badge font-mono px-1.5 py-0.5 rounded-full bg-paper-warm/80 border border-black/8 text-ink/50 leading-none">
+                        <span className="wl-micro-badge font-mono px-1.5 py-0.5 rounded-full bg-card-warm/80 border border-white/8 text-foreground/50 leading-none">
                           {agentStats[agent.id].callCount} calls
                         </span>
                       )}
@@ -222,7 +222,7 @@ export default function AgentListPanel({
                   disabled={isDeletingAgent === agent.id}
                   title="Delete agent"
                   aria-label={`Delete agent ${agent.name}`}
-                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-ink/40 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press hover:scale-[1.05]"
+                  className="mr-2 h-7 w-7 shrink-0 rounded-md text-foreground/40 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive disabled:opacity-40 touch-press hover:scale-[1.05]"
                 >
                   {isDeletingAgent === agent.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

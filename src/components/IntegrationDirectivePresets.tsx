@@ -145,8 +145,10 @@ export default function IntegrationDirectivePresets({
           <Link2 className="w-4 h-4" />
         </div>
         <div>
-          <h3 className="font-display italic text-xl text-ink">Integration directive presets</h3>
-          <p className="wl-label text-ink/40">
+          <h3 className="font-display italic text-xl text-foreground">
+            Integration directive presets
+          </h3>
+          <p className="wl-label text-foreground/40">
             One-click rules for calendar, CRM, and compliance tools
           </p>
         </div>
@@ -161,7 +163,7 @@ export default function IntegrationDirectivePresets({
             <div key={cat} className="rounded-md bg-black/10 border border-border p-3 space-y-3">
               <div className="flex items-center gap-2 pb-2 border-b border-border">
                 <Icon className="w-3.5 h-3.5 text-brand" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-ink">
+                <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
                   {cat}
                 </span>
               </div>
@@ -178,7 +180,9 @@ export default function IntegrationDirectivePresets({
                       className="flex items-start justify-between gap-3 p-2 rounded hover:bg-black/10 transition-colors"
                     >
                       <div className="space-y-1 min-w-0">
-                        <span className="text-xs font-medium text-ink/90">{preset.label}</span>
+                        <span className="text-xs font-medium text-foreground/90">
+                          {preset.label}
+                        </span>
                         <p className="text-[10px] text-muted font-mono leading-relaxed truncate hover:text-clip hover:whitespace-normal">
                           {preset.directive}
                         </p>

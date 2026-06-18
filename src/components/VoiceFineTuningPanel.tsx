@@ -78,7 +78,7 @@ function SliderRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="wl-label text-ink/40 flex items-center gap-1.5">
+        <label className="wl-label text-foreground/40 flex items-center gap-1.5">
           {label}
           {/* Help tooltip — hover/focus to reveal. Plain English, one
               line; the comments in this file carry the deep ElevenLabs
@@ -92,7 +92,7 @@ function SliderRow({
             tabIndex={0}
           >
             <Info
-              className="w-2.5 h-2.5 text-ink/40 hover:text-brand cursor-help"
+              className="w-2.5 h-2.5 text-foreground/40 hover:text-brand cursor-help"
               aria-label={`What does ${label} do?`}
             />
             {showTip && (
@@ -108,7 +108,7 @@ function SliderRow({
         <span
           className={cn(
             "wl-micro-badge font-medium",
-            isDefault ? "text-ink/40" : "text-ink",
+            isDefault ? "text-foreground/40" : "text-foreground",
           )}
         >
           {value.toFixed(2)}
@@ -183,7 +183,7 @@ export default function VoiceFineTuningPanel({
         className="w-full h-auto justify-between gap-2 px-3 py-2 rounded-none hover:bg-ink/[0.03]"
         aria-expanded={advancedOpen}
       >
-        <span className="flex items-center gap-1.5 wl-label text-ink/55">
+        <span className="flex items-center gap-1.5 wl-label text-foreground/55">
           <Sliders className="w-2.5 h-2.5 text-brand" />
           Voice character
           {!atDefaults && (
@@ -200,8 +200,8 @@ export default function VoiceFineTuningPanel({
       {advancedOpen && (
         <div className="px-3 pb-3 pt-1 space-y-3 border-t border-ink/[0.08]">
           <p className="wl-micro-meta leading-relaxed">
-            Shape how your agent sounds. Drag to taste — the difference is audible on your next
-            test call, and you can reset anytime.
+            Shape how your agent sounds. Drag to taste — the difference is audible on your next test
+            call, and you can reset anytime.
           </p>
 
           <SliderRow
@@ -235,7 +235,7 @@ export default function VoiceFineTuningPanel({
               the other "yes / no" pills elsewhere in FleetSettings. */}
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="space-y-0.5 min-w-0">
-              <label className="wl-label text-ink/40 flex items-center gap-1.5">
+              <label className="wl-label text-foreground/40 flex items-center gap-1.5">
                 Speaker boost
               </label>
               <p className="wl-micro-meta leading-relaxed">
@@ -280,7 +280,7 @@ export default function VoiceFineTuningPanel({
               disableAnimations
               onClick={resetToDefaults}
               disabled={atDefaults}
-              className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-ink/40"
+              className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/40"
             >
               <RefreshCw className="w-2.5 h-2.5" />
               Reset to defaults

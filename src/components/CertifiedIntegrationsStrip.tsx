@@ -41,7 +41,7 @@ export default function CertifiedIntegrationsStrip() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px]",
               row.certified
-                ? "border-brand/25 bg-brand/8 text-ink"
+                ? "border-brand/25 bg-brand/8 text-foreground"
                 : row.buyer_tier === "beta"
                   ? "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100"
                   : "border-border text-muted",

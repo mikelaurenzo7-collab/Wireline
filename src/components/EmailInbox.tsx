@@ -380,10 +380,10 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
           <ChannelInboxGrid>
             <ChannelInboxListPane label="All conversations" detailOpen={!!selectedThread}>
               {!loading && !fetchErr && threads.length > 0 && (
-                <div className="sticky top-0 z-10 px-3 pt-2 pb-2 bg-gradient-to-b from-paper/95 to-paper/60 backdrop-blur-sm">
+                <div className="sticky top-0 z-10 px-3 pt-2 pb-2 bg-gradient-to-b from-card/95 to-card/60 backdrop-blur-sm">
                   <div className="relative">
                     <Search
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink/35 pointer-events-none"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/35 pointer-events-none"
                       aria-hidden
                     />
                     <Input
@@ -392,7 +392,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search sender, subject or summary…"
                       aria-label="Search email threads"
-                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-ink placeholder:text-ink/40 transition-all"
+                      className="w-full text-sm bg-white/60 backdrop-blur-sm border border-border rounded-md pl-9 pr-3 py-2 outline-none focus:border-brand/50 text-foreground placeholder:text-foreground/40 transition-all"
                     />
                   </div>
                 </div>
@@ -502,7 +502,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               "w-9 h-9 rounded-md flex items-center justify-center font-display italic text-base shrink-0 border transition-all duration-300",
                               active
                                 ? "border-brand/30 bg-brand/10 text-brand shadow-[0_0_8px_rgba(var(--brand-rgb),0.15)] scale-110"
-                                : "border-border bg-paper/80 text-ink/70 group-hover:text-ink group-hover:shadow-sm",
+                                : "border-border bg-card/80 text-foreground/70 group-hover:text-foreground group-hover:shadow-sm",
                             )}
                           >
                             {thread.customer_email?.[0]?.toUpperCase() || "?"}
@@ -511,14 +511,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="wl-label text-ink/55 truncate">
+                              <span className="wl-label text-foreground/55 truncate">
                                 {thread.customer_email}
                               </span>
-                              <span className="wl-micro-badge tabular-nums text-ink/55 shrink-0">
+                              <span className="wl-micro-badge tabular-nums text-foreground/55 shrink-0">
                                 {formatDate(thread.last_message_at)}
                               </span>
                             </div>
-                            <h4 className="font-display italic text-sm text-ink leading-tight truncate mb-1">
+                            <h4 className="font-display italic text-sm text-foreground leading-tight truncate mb-1">
                               {thread.subject || "(no subject)"}
                             </h4>
                             <div className="flex items-center gap-2">
@@ -590,7 +590,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <h2 className="font-display italic text-xl md:text-2xl text-ink leading-tight truncate">
+                          <h2 className="font-display italic text-xl md:text-2xl text-foreground leading-tight truncate">
                             {selectedThread.subject || "(no subject)"}
                           </h2>
                           <div className="wl-label text-muted/80 mt-1 flex items-center gap-1.5 truncate">
@@ -638,14 +638,14 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                               className={cn(
                                 "rounded-md border p-4 leading-relaxed",
                                 msg.role === "ai"
-                                  ? "wl-panel border-brand/30 text-ink"
-                                  : "bg-muted/10 border-border text-ink",
+                                  ? "wl-panel border-brand/30 text-foreground"
+                                  : "bg-muted/10 border-border text-foreground",
                               )}
                             >
                               <div
                                 className={cn(
                                   "wl-label mb-2 flex items-center gap-1.5",
-                                  msg.role === "ai" ? "text-brand" : "text-ink/55",
+                                  msg.role === "ai" ? "text-brand" : "text-foreground/55",
                                 )}
                               >
                                 {msg.role === "ai" ? (
@@ -663,7 +663,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                                 {msg.content}
                               </p>
                             </div>
-                            <span className="wl-label text-ink/55 mt-1.5 tabular-nums">
+                            <span className="wl-label text-foreground/55 mt-1.5 tabular-nums">
                               {formatTime(msg.created_at)}
                             </span>
                           </motion.div>
@@ -678,7 +678,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                         <div className="space-y-2" role="status" aria-live="polite">
                           <div className="flex items-center gap-2">
                             <Zap className="w-3 h-3 text-brand" aria-hidden />
-                            <span className="wl-label text-ink/55">
+                            <span className="wl-label text-foreground/55">
                               {isLoadingQuickReplies ? "Drafting quick replies…" : "Quick replies"}
                             </span>
                           </div>
@@ -706,7 +706,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                       )}
 
                       <div className="rounded-md wl-panel focus-within:border-brand/50 focus-within:shadow-[0_0_15px_rgba(var(--brand-rgb),0.1)] transition-all duration-300 overflow-hidden bg-white/50 backdrop-blur-sm">
-                        <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-ink/55">
+                        <div className="px-3 pt-2.5 pb-1 flex items-center gap-2 text-foreground/55">
                           <Terminal className="w-3 h-3" />
                           <span className="wl-label">Compose reply</span>
                         </div>
@@ -715,7 +715,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           onChange={(e) => setReplyText(e.target.value)}
                           aria-label="Reply message"
                           placeholder="Type a reply or ask the agent to draft one…"
-                          className="w-full px-3 pb-3 min-h-[100px] border-0 shadow-none outline-none text-ink text-sm leading-relaxed resize-none bg-transparent placeholder:text-ink/55 focus-visible:ring-0"
+                          className="w-full px-3 pb-3 min-h-[100px] border-0 shadow-none outline-none text-foreground text-sm leading-relaxed resize-none bg-transparent placeholder:text-foreground/55 focus-visible:ring-0"
                         />
                       </div>
                       <div className="flex items-center justify-between gap-3">

@@ -94,7 +94,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
     >
       <div className="flex-1 min-w-0 pl-1">
         <p className="wl-label text-brand mb-1">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
-        <p className="text-xs text-ink/75 leading-relaxed">{ACTIVATION_NUDGE_COPY.body}</p>
+        <p className="text-xs text-foreground/75 leading-relaxed">{ACTIVATION_NUDGE_COPY.body}</p>
         {phoneNumber ? (
           <p className="text-[11px] font-mono text-muted mt-1 tabular-nums">{phoneNumber}</p>
         ) : null}
@@ -116,7 +116,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
           disableAnimations
           onClick={dismiss}
           aria-label="Dismiss activation reminder"
-          className="touch-press hover:scale-[1.05] h-9 w-9 rounded-full text-muted hover:text-ink"
+          className="touch-press hover:scale-[1.05] h-9 w-9 rounded-full text-muted hover:text-foreground"
         >
           <X className="w-3.5 h-3.5" />
         </ShadButton>

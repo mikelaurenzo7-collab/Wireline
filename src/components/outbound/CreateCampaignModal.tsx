@@ -83,7 +83,7 @@ export default function CreateCampaignModal({
           <DialogDescription className="wl-label text-brand mb-0.5 font-bold">
             Signal · Campaigns
           </DialogDescription>
-          <DialogTitle className="font-display italic text-2xl text-ink dark:text-foreground leading-none">
+          <DialogTitle className="font-display italic text-2xl text-foreground dark:text-foreground leading-none">
             New campaign
           </DialogTitle>
         </DialogHeader>
@@ -98,7 +98,7 @@ export default function CreateCampaignModal({
               placeholder="Q4 Win-Back Drive"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
-              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
+              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-foreground dark:text-foreground focus-visible:ring-brand/40"
             />
           </div>
           <div className="space-y-1.5">
@@ -110,7 +110,7 @@ export default function CreateCampaignModal({
               placeholder="Re-engage churned users from past 90 days"
               value={form.goal}
               onChange={(e) => set("goal", e.target.value)}
-              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
+              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-foreground dark:text-foreground focus-visible:ring-brand/40"
             />
           </div>
           {agents.length > 0 && (
@@ -124,7 +124,7 @@ export default function CreateCampaignModal({
               >
                 <SelectTrigger
                   aria-label="Default agent"
-                  className="w-full h-9 pl-3 pr-3 rounded-md border border-input bg-transparent dark:bg-white/5 text-sm text-ink dark:text-foreground"
+                  className="w-full h-9 pl-3 pr-3 rounded-md border border-input bg-transparent dark:bg-white/5 text-sm text-foreground dark:text-foreground"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -152,7 +152,7 @@ export default function CreateCampaignModal({
                 type="time"
                 value={form.call_window_start}
                 onChange={(e) => set("call_window_start", e.target.value)}
-                className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
+                className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-foreground dark:text-foreground focus-visible:ring-brand/40"
               />
             </div>
             <div className="space-y-1.5">
@@ -164,7 +164,7 @@ export default function CreateCampaignModal({
                 type="time"
                 value={form.call_window_end}
                 onChange={(e) => set("call_window_end", e.target.value)}
-                className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
+                className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-foreground dark:text-foreground focus-visible:ring-brand/40"
               />
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function CreateCampaignModal({
               max="10"
               value={form.max_attempts}
               onChange={(e) => set("max_attempts", e.target.value)}
-              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-ink dark:text-foreground focus-visible:ring-brand/40"
+              className="bg-black/10 dark:bg-white/10 border-white/10 dark:border-white/10 text-sm text-foreground dark:text-foreground focus-visible:ring-brand/40"
             />
           </div>
 
@@ -199,7 +199,7 @@ export default function CreateCampaignModal({
           <ShadButton
             variant="outline"
             onClick={onClose}
-            className="rounded-md h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-ink dark:text-foreground"
+            className="rounded-md h-9 border-white/10 dark:border-white/10 hover:bg-white/5 dark:hover:bg-white/10 uppercase tracking-[0.2em] wl-label font-bold text-muted hover:text-foreground dark:text-foreground"
           >
             Cancel
           </ShadButton>

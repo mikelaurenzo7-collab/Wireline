@@ -112,7 +112,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
                 {design.archetype}
               </span>
             </div>
-            <p className="text-ink/80 text-sm italic">"{design.first_message}"</p>
+            <p className="text-foreground/80 text-sm italic">"{design.first_message}"</p>
             {design.suggested_voice_tone && (
               <p className="text-[11px] uppercase tracking-[0.3em] text-muted">
                 Voice tone · {design.suggested_voice_tone}
@@ -129,13 +129,13 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
                   <span className="shrink-0 px-2 py-0.5 rounded-full wl-label bg-brand/15 text-brand border border-brand/30">
                     P{d.priority}
                   </span>
-                  <span className="text-ink/85">{d.content}</span>
+                  <span className="text-foreground/85">{d.content}</span>
                 </li>
               ))}
             </ul>
           </ResultCard>
           <ResultCard title="Seed Knowledge">
-            <ul className="list-disc list-inside text-ink/85 space-y-1">
+            <ul className="list-disc list-inside text-foreground/85 space-y-1">
               {design.seed_knowledge.map((k: string, i: number) => (
                 <li key={i}>{k}</li>
               ))}
@@ -152,7 +152,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
           )}
           {design.reasoning && (
             <ResultCard title="Reasoning">
-              <p className="text-ink/65">{design.reasoning}</p>
+              <p className="text-foreground/65">{design.reasoning}</p>
             </ResultCard>
           )}
 

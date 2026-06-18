@@ -37,11 +37,11 @@ export default function AgentReadinessStage({
   );
 
   return (
-    <div className="shrink-0 border-b border-border/50 bg-paper/30 px-4 py-3 dark:bg-velvet/20">
+    <div className="shrink-0 border-b border-border/50 bg-card/30 px-4 py-3 dark:bg-velvet/20">
       <div className="flex items-center gap-4">
         {/* The one number that matters. */}
         <div className="flex shrink-0 items-baseline gap-1.5">
-          <span className="font-display text-2xl leading-none text-ink/90 tabular-nums">
+          <span className="font-display text-2xl leading-none text-foreground/90 tabular-nums">
             {score}
           </span>
           <span className="text-[11px] text-muted/70">/ {total} ready</span>
@@ -73,7 +73,9 @@ export default function AgentReadinessStage({
         ) : nextStep ? (
           <span className="inline-flex shrink-0 items-center gap-2 rounded-md border border-brand/20 bg-brand/[0.05] px-2.5 py-1">
             <span className="wl-label text-brand">Next</span>
-            <span className="max-w-[220px] truncate text-[12px] text-ink/85">{nextStep.todo}</span>
+            <span className="max-w-[220px] truncate text-[12px] text-foreground/85">
+              {nextStep.todo}
+            </span>
           </span>
         ) : null}
       </div>

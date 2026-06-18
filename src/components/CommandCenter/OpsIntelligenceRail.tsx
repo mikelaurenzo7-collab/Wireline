@@ -38,25 +38,25 @@ export function OpsIntelligenceRail({
 
         <div className="space-y-1">
           <div className="flex items-center justify-between py-1 border-b border-brand/5">
-            <span className="text-[12px] text-ink/50">Active callers</span>
+            <span className="text-[12px] text-foreground/50">Active callers</span>
             <motion.span
               key={liveCalls}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="text-[12px] font-mono font-bold text-ink"
+              className="text-[12px] font-mono font-bold text-foreground"
             >
               {liveCalls}
             </motion.span>
           </div>
           <div className="flex items-center justify-between py-1">
-            <span className="text-[12px] text-ink/50">Deployed agents</span>
+            <span className="text-[12px] text-foreground/50">Deployed agents</span>
             <motion.span
               key={fleetAgents}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="text-[12px] font-mono font-bold text-ink"
+              className="text-[12px] font-mono font-bold text-foreground"
             >
               {fleetAgents}
             </motion.span>
@@ -66,7 +66,9 @@ export function OpsIntelligenceRail({
 
       <div className={clsx(WL_OPS_CLASSES.railCard, "space-y-2.5")}>
         <div>
-          <h4 className="text-sm font-semibold leading-tight text-ink">{OPS_COPY.growthTitle}</h4>
+          <h4 className="text-sm font-semibold leading-tight text-foreground">
+            {OPS_COPY.growthTitle}
+          </h4>
           <p className="text-[11px] text-muted mt-0.5 leading-relaxed">{OPS_COPY.growthBody}</p>
         </div>
 

@@ -32,7 +32,7 @@ export function Spinner() {
     <div className="py-16 flex flex-col items-center gap-4">
       <div className="relative w-12 h-12">
         <div className="absolute inset-0 rounded-full opacity-40 wl-insight-spinner-ring" />
-        <div className="absolute inset-1.5 rounded-full bg-paper" />
+        <div className="absolute inset-1.5 rounded-full bg-card" />
         <div className="absolute inset-3 rounded-full wl-panel flex items-center justify-center">
           <div className="w-3 h-3 rounded-full wl-insight-spinner-core" data-circular />
         </div>
@@ -200,7 +200,7 @@ export function SpendStat({
           <p className={WL_OPS_CLASSES.insightLabel}>{label}</p>
           <Icon className="w-4 h-4 wl-accent-text" />
         </div>
-        <p className="font-display italic text-3xl text-ink leading-none">{value}</p>
+        <p className="font-display italic text-3xl text-foreground leading-none">{value}</p>
       </div>
     </div>
   );

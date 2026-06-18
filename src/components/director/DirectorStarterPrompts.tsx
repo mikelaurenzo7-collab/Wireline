@@ -74,10 +74,13 @@ export function DirectorStarterPrompts({
 }: DirectorStarterPromptsProps) {
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
-  const isStudioSurface = location.pathname === "/agents" || location.pathname.startsWith("/agents/");
-  const resolvedPrompts = prompts ?? (isStudioSurface ? STUDIO_AGENT_STARTER_PROMPTS : DIRECTOR_STARTER_PROMPTS);
+  const isStudioSurface =
+    location.pathname === "/agents" || location.pathname.startsWith("/agents/");
+  const resolvedPrompts =
+    prompts ?? (isStudioSurface ? STUDIO_AGENT_STARTER_PROMPTS : DIRECTOR_STARTER_PROMPTS);
   const resolvedEyebrow =
-    starterEyebrow ?? (isStudioSurface ? "Tell Director what to edit" : DIRECTOR_EMPTY_HERO.starterEyebrow);
+    starterEyebrow ??
+    (isStudioSurface ? "Tell Director what to edit" : DIRECTOR_EMPTY_HERO.starterEyebrow);
   const featured = resolvedPrompts.slice(0, featuredCount);
   const rest = resolvedPrompts.slice(featuredCount);
   const hasMore = rest.length > 0;
@@ -144,8 +147,8 @@ function StarterChip({
       title={intent}
       onClick={onSelect}
       className={cn(
-        "touch-press group h-auto w-full justify-between items-start text-left wl-micro-meta text-ink/80 px-3 py-2.5 gap-2 whitespace-normal",
-        "hover:shadow-sm hover:shadow-brand/5 hover:border-brand/35 hover:bg-paper/85 dark:hover:bg-velvet/60",
+        "touch-press group h-auto w-full justify-between items-start text-left wl-micro-meta text-foreground/80 px-3 py-2.5 gap-2 whitespace-normal",
+        "hover:shadow-sm hover:shadow-brand/5 hover:border-brand/35 hover:bg-card/85 dark:hover:bg-velvet/60",
         "transition-all duration-300 hover:-translate-y-0.5",
         WL_DIRECTOR_CLASSES.starterChip,
       )}

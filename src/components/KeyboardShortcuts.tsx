@@ -56,7 +56,7 @@ const SHORTCUTS = [
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="px-2 py-0.5 rounded-md border border-white/20 bg-white/5 text-[11px] font-mono text-ink/80 inline-flex items-center justify-center min-w-[1.5rem]">
+    <kbd className="px-2 py-0.5 rounded-md border border-white/20 bg-white/5 text-[11px] font-mono text-foreground/80 inline-flex items-center justify-center min-w-[1.5rem]">
       {children}
     </kbd>
   );
@@ -150,7 +150,10 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                     <Keyboard aria-hidden="true" className="w-4 h-4 text-brand" />
                   </div>
                   <div>
-                    <h2 id="keyboard-shortcuts-title" className="text-sm font-medium text-ink">
+                    <h2
+                      id="keyboard-shortcuts-title"
+                      className="text-sm font-medium text-foreground"
+                    >
                       Keyboard shortcuts
                     </h2>
                     <p className="wl-label-muted">Quick navigation & actions</p>
@@ -183,7 +186,9 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
                       <div className="space-y-2">
                         {section.items.map((item, i) => (
                           <div key={i} className="flex items-center justify-between gap-4 py-1">
-                            <span className="text-[12px] text-ink/70">{item.description}</span>
+                            <span className="text-[12px] text-foreground/70">
+                              {item.description}
+                            </span>
                             <div className="flex items-center gap-1 shrink-0">
                               {item.keys.map((key, ki) => (
                                 <Kbd key={ki}>{key}</Kbd>
@@ -201,7 +206,7 @@ export default function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsPr
               <div className="px-6 py-3 border-t border-white/8 flex items-center justify-center gap-2 wl-micro-meta--muted">
                 <Kbd>?</Kbd>
                 <span>
-                  Press <strong className="text-ink/70">?</strong> anytime to show this panel
+                  Press <strong className="text-foreground/70">?</strong> anytime to show this panel
                 </span>
               </div>
             </div>

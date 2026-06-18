@@ -85,7 +85,9 @@ export default function LearningMetricsView() {
           const agent = agents.find((a) => a.id === d.agentId);
           return (
             <div key={d.agentId} className="wl-panel border border-border rounded-md p-4">
-              <p className="text-sm font-semibold text-ink mb-2">{agent?.name ?? d.agentId}</p>
+              <p className="text-sm font-semibold text-foreground mb-2">
+                {agent?.name ?? d.agentId}
+              </p>
               <p className="text-[12px] text-muted mb-3">
                 {d.lessonsPending} pending · {d.lessonsApproved} approved
                 {d.outcomeLiftPct != null ? ` · ${d.outcomeLiftPct}% outcome lift` : ""}

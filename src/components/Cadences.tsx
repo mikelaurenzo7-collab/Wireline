@@ -267,10 +267,10 @@ export default function Cadences() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p className="wl-label text-brand mb-1">Outbound · Sequences</p>
-          <h3 className="font-display italic text-xl text-ink leading-none">
+          <h3 className="font-display italic text-xl text-foreground leading-none">
             Multi-touch cadences
           </h3>
-          <p className="text-[11px] text-ink/40 mt-1.5 max-w-xl leading-relaxed">
+          <p className="text-[11px] text-foreground/40 mt-1.5 max-w-xl leading-relaxed">
             Define a sequence of call → SMS → email steps with delays. Enroll any lead from
             /pipeline or the API. The job-worker ticks each step automatically.
           </p>
@@ -311,7 +311,7 @@ export default function Cadences() {
                   onClick={() => loadTemplate(t)}
                   className="h-auto w-full justify-start text-left rounded-md border-border hover:border-brand/30 p-4 group touch-press hover:scale-[1.02]"
                 >
-                  <p className="text-[12px] font-semibold text-ink mb-1">{t.name}</p>
+                  <p className="text-[12px] font-semibold text-foreground mb-1">{t.name}</p>
                   <p className="wl-micro-meta mb-3">{t.description}</p>
                   <div className="flex items-center gap-1 flex-wrap">
                     {t.steps.map((s, i) => (
@@ -342,7 +342,7 @@ export default function Cadences() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-[13px] font-semibold text-ink">{c.name}</h4>
+                  <h4 className="text-[13px] font-semibold text-foreground">{c.name}</h4>
                   {c.active ? (
                     <span className="wl-label px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
                       Active
@@ -370,7 +370,7 @@ export default function Cadences() {
                     >
                       {stepIcon(s.type)} {s.type}
                       {s.delayHours > 0 && (
-                        <span className="text-ink/40 normal-case">+{s.delayHours}h</span>
+                        <span className="text-foreground/40 normal-case">+{s.delayHours}h</span>
                       )}
                     </span>
                   ))}
@@ -385,7 +385,7 @@ export default function Cadences() {
                   onClick={() => togglePause(c)}
                   title={c.active ? "Pause" : "Resume"}
                   aria-label={c.active ? "Pause cadence" : "Resume cadence"}
-                  className="w-8 h-8 rounded-md text-muted hover:text-ink"
+                  className="w-8 h-8 rounded-md text-muted hover:text-foreground"
                 >
                   {c.active ? (
                     <Pause className="w-3.5 h-3.5" />
@@ -420,7 +420,7 @@ export default function Cadences() {
             className="rounded-md wl-panel-elevated border border-brand/40 p-5"
           >
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-display italic text-lg text-ink">Build a sequence</h4>
+              <h4 className="font-display italic text-lg text-foreground">Build a sequence</h4>
               <ShadButton
                 type="button"
                 variant="ghost"
@@ -441,7 +441,7 @@ export default function Cadences() {
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
-                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-ink text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[12px] focus:outline-none focus:border-brand/50"
                 />
               </div>
               <div>
@@ -450,7 +450,7 @@ export default function Cadences() {
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
-                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-ink text-[12px] focus:outline-none focus:border-brand/50"
+                  className="w-full px-3 py-2 rounded-md bg-black/[0.03] border border-input text-foreground text-[12px] focus:outline-none focus:border-brand/50"
                 />
               </div>
             </div>
@@ -477,7 +477,7 @@ export default function Cadences() {
                       >
                         <SelectTrigger
                           aria-label="Step type"
-                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-ink text-[11px] h-auto"
+                          className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[11px] h-auto"
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -489,14 +489,14 @@ export default function Cadences() {
                       </Select>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-ink/40" />
+                      <Clock className="w-3 h-3 text-foreground/40" />
                       <Input
                         type="number"
                         inputMode="numeric"
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
-                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-ink text-[11px]"
+                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[11px]"
                       />
                       <span className="wl-micro-meta">hours delay</span>
                     </div>
@@ -509,7 +509,7 @@ export default function Cadences() {
                             ? "Hi {{name}}, ..."
                             : "Subject + body — vars: {{name}}, {{email}}"
                         }
-                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-ink text-[11px]"
+                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[11px]"
                       />
                     )}
                   </div>

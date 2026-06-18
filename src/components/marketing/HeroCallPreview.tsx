@@ -27,28 +27,30 @@ export default function HeroCallPreview() {
     >
       <div className="relative border border-ink/[0.14] bg-[#FBF8F0] shadow-[0_24px_70px_-42px_rgba(26,22,20,0.55),0_1px_0_rgba(255,255,255,0.8)_inset]">
         <div className="flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-ink/[0.1] bg-white/[0.42]">
-          <div className="relative grid h-11 w-11 shrink-0 place-items-center border border-ink/[0.12] bg-paper shadow-[0_1px_0_rgba(255,255,255,0.9)_inset]">
+          <div className="relative grid h-11 w-11 shrink-0 place-items-center border border-ink/[0.12] bg-card shadow-[0_1px_0_rgba(255,255,255,0.9)_inset]">
             <div className="grid h-8 w-8 place-items-center bg-brand text-white font-display text-lg leading-none">
               S
             </div>
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2 font-semibold text-[14px] tracking-tight text-ink">
+            <div className="flex flex-wrap items-center gap-2 font-semibold text-[14px] tracking-tight text-foreground">
               Sarah
               <span className="border border-brand/20 bg-brand/[0.05] px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-brand">
                 warm
               </span>
             </div>
-            <p className="mt-0.5 text-[12px] text-ink/58">Front desk · inbound support</p>
+            <p className="mt-0.5 text-[12px] text-foreground/58">Front desk · inbound support</p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <span className="relative flex h-2 w-2" aria-hidden="true">
-              {!reduce && <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-500/45" />}
+              {!reduce && (
+                <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-500/45" />
+              )}
               <span className="relative inline-flex h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="font-mono text-[10px] text-ink/72 tracking-[0.08em] tabular-nums">
+            <span className="font-mono text-[10px] text-foreground/72 tracking-[0.08em] tabular-nums">
               ON CALL · 0:42
             </span>
           </div>
@@ -93,9 +95,9 @@ export default function HeroCallPreview() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-[86%] border border-ink/[0.1] bg-white/[0.55] px-3 py-2.5 text-[13px] leading-snug text-ink"
+            className="max-w-[86%] border border-ink/[0.1] bg-white/[0.55] px-3 py-2.5 text-[13px] leading-snug text-foreground"
           >
-            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-ink/48">
+            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/48">
               Caller
             </span>
             Hi — do you have any openings this Saturday?
@@ -105,9 +107,9 @@ export default function HeroCallPreview() {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.82, ease: [0.16, 1, 0.3, 1] }}
-            className="ml-auto max-w-[86%] border border-brand/18 bg-brand/[0.045] px-3 py-2.5 text-[13px] leading-snug text-ink"
+            className="ml-auto max-w-[86%] border border-brand/18 bg-brand/[0.045] px-3 py-2.5 text-[13px] leading-snug text-foreground"
           >
-            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-ink/48">
+            <span className="mb-1.5 block font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/48">
               Sarah
             </span>
             We do — 9:30 or 2:15. Want me to lock one in?
@@ -131,15 +133,15 @@ export default function HeroCallPreview() {
           <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-emerald-500 text-white">
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
-          <span className="text-[12.5px] text-ink">
+          <span className="text-[12.5px] text-foreground">
             <strong className="font-semibold">Booking appointment</strong> — Sat 9:30 AM
           </span>
           <span className="ml-auto flex gap-1.5">
-            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-ink/55">
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/55">
               <Calendar className="h-2.5 w-2.5" aria-hidden="true" />
               Calendar
             </span>
-            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-ink/55">
+            <span className="inline-flex items-center gap-1 border border-ink/[0.1] px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-foreground/55">
               <MessageSquare className="h-2.5 w-2.5" aria-hidden="true" />
               SMS
             </span>

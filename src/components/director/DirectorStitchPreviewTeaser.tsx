@@ -82,7 +82,7 @@ function DeviceFrame({
               loading="lazy"
               decoding="async"
               onError={onImageError}
-              className="block w-full max-h-[420px] object-contain object-top bg-paper dark:bg-velvet"
+              className="block w-full max-h-[420px] object-contain object-top bg-card dark:bg-velvet"
             />
           )}
           {showHtml && (
@@ -154,7 +154,7 @@ export default function DirectorStitchPreviewTeaser({
       aria-live="polite"
       aria-label={WIRELINE_STITCH_UI.previewTeaserTitle}
       className={cn(
-        "w-full rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-paper/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm",
+        "w-full rounded-md border border-brand/20 bg-gradient-to-br from-brand/[0.05] to-card/95 dark:from-brand/[0.08] dark:to-velvet/50 p-3.5 shadow-sm",
         preview.deviceType === "DESKTOP" || preview.deviceType === "AGNOSTIC"
           ? "max-w-4xl"
           : "max-w-md",
@@ -174,7 +174,7 @@ export default function DirectorStitchPreviewTeaser({
               {deviceLabel(preview.deviceType)}
             </span>
           </div>
-          <p className="text-[12px] text-ink font-medium leading-snug">{preview.title}</p>
+          <p className="text-[12px] text-foreground font-medium leading-snug">{preview.title}</p>
           <p className="wl-micro-meta--muted leading-relaxed">
             {WIRELINE_STITCH_UI.previewTeaserBody}
           </p>

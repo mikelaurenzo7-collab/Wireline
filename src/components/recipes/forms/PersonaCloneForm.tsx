@@ -89,11 +89,11 @@ export function PersonaCloneForm({
         />
       </Field>
       {agentId && (
-        <label className="flex items-center gap-3 cursor-pointer text-sm text-ink/80">
+        <label className="flex items-center gap-3 cursor-pointer text-sm text-foreground/80">
           <Checkbox
             checked={apply}
             onChange={(e) => setApply(e.target.checked)}
-            className="w-4 h-4 rounded border-black/20 bg-black/5 accent-brand"
+            className="w-4 h-4 rounded border-white/20 bg-black/5 accent-brand"
           />
           Save persona block to{" "}
           <span className="text-brand">{agents.find((a) => a.id === agentId)?.name}</span>

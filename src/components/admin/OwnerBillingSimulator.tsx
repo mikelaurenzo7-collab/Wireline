@@ -60,7 +60,7 @@ export function OwnerBillingSimulator({
                   "h-auto w-full gap-1.5 rounded-md py-3 wl-label",
                   settings.subscription_status === "active"
                     ? "border-brand/40 bg-brand/15 text-brand"
-                    : "border-white/10 bg-white/5 text-ink/40 hover:border-white/20",
+                    : "border-white/10 bg-white/5 text-foreground/40 hover:border-white/20",
                 )}
               >
                 {settings.subscription_status === "active" && <CheckCircle2 className="w-3 h-3" />}
@@ -75,7 +75,7 @@ export function OwnerBillingSimulator({
                   "h-auto w-full gap-1.5 rounded-md py-3 wl-label",
                   settings.subscription_status === "past_due"
                     ? "bg-rose-500/15 border-rose-500/40 text-rose-500"
-                    : "border-white/10 bg-white/5 text-ink/40 hover:border-white/20",
+                    : "border-white/10 bg-white/5 text-foreground/40 hover:border-white/20",
                 )}
               >
                 {settings.subscription_status === "past_due" && (
@@ -90,7 +90,7 @@ export function OwnerBillingSimulator({
           </div>
 
           <div className="rounded-md wl-panel border border-white/10 p-3 space-y-3">
-            <label className="wl-label text-ink/40">Max agents</label>
+            <label className="wl-label text-foreground/40">Max agents</label>
             <div className="flex items-center gap-3">
               <Slider
                 min="1"
@@ -118,15 +118,15 @@ export function OwnerBillingSimulator({
         <div className="rounded-md wl-panel border border-input p-4 space-y-3">
           <div className="flex items-center gap-2 pb-2 border-b border-white/8">
             <ServerCog className="w-3.5 h-3.5 text-brand" />
-            <h4 className="font-display italic text-base text-ink">Developer terminal</h4>
+            <h4 className="font-display italic text-base text-foreground">Developer terminal</h4>
           </div>
           <div className="space-y-2 text-[11px] font-mono">
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="wl-label text-ink/40">Core</span>
-              <span className="text-ink">v2.0.4</span>
+              <span className="wl-label text-foreground/40">Core</span>
+              <span className="text-foreground">v2.0.4</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="wl-label text-ink/40">State</span>
+              <span className="wl-label text-foreground/40">State</span>
               <span
                 className={cn(
                   "px-1.5 py-0.5 rounded-full border wl-label leading-none",
@@ -139,11 +139,11 @@ export function OwnerBillingSimulator({
               </span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-white/5">
-              <span className="wl-label text-ink/40">Agents</span>
-              <span className="text-ink tabular-nums">{agents.length} deployed</span>
+              <span className="wl-label text-foreground/40">Agents</span>
+              <span className="text-foreground tabular-nums">{agents.length} deployed</span>
             </div>
             <div className="flex items-center justify-between py-1">
-              <span className="wl-label text-ink/40">Quota</span>
+              <span className="wl-label text-foreground/40">Quota</span>
               <span className="text-brand tabular-nums">
                 {Math.max(0, settings.max_agents - agents.length)} free
               </span>

@@ -18,7 +18,7 @@ interface ToolTogglePanelProps {
 export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: ToolTogglePanelProps) {
   return (
     <div className="rounded-md wl-panel border border-border p-3 space-y-3">
-      <div className="rounded-md border border-black/8 dark:border-white/8 bg-paper/80 dark:bg-white/3 p-3 space-y-3">
+      <div className="rounded-md border border-white/8 dark:border-white/8 bg-card/80 dark:bg-white/3 p-3 space-y-3">
         <div className="wl-label text-brand/70">Channels</div>
         <div className="flex flex-wrap gap-2">
           {(["voice", "email", "sms"] as const).map((ch) => {
@@ -49,9 +49,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
           })}
         </div>
 
-        <div className="wl-label text-brand/70 pt-2">
-          Autonomy Level
-        </div>
+        <div className="wl-label text-brand/70 pt-2">Autonomy Level</div>
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -87,9 +85,9 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
           queues for approval on high-risk actions. Draft Only always requires operator sign-off.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-black/8 dark:border-white/8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/8 dark:border-white/8">
           <div className="space-y-1.5">
-            <label className="wl-label text-ink/40 flex items-center gap-1.5">
+            <label className="wl-label text-foreground/40 flex items-center gap-1.5">
               <MessageCircle className="w-2.5 h-2.5 text-brand" /> Slack channel
             </label>
             <Input
@@ -97,10 +95,10 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
               value={selectedAgent.slack_channel_id || ""}
               onChange={(e) => updateAgentMeta({ slack_channel_id: e.target.value.trim() || null })}
               placeholder="#fleet-alerts"
-              className="w-full text-xs bg-black/5 border border-black/10 rounded-md px-3 py-2 text-ink font-mono"
+              className="w-full text-xs bg-black/5 border border-white/10 rounded-md px-3 py-2 text-foreground font-mono"
             />
           </div>
-          <div className="rounded-md border border-black/8 dark:border-white/8 bg-paper/80 dark:bg-white/3 p-3 flex items-center justify-between gap-3">
+          <div className="rounded-md border border-white/8 dark:border-white/8 bg-card/80 dark:bg-white/3 p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="wl-label text-brand/70 flex items-center gap-1.5">
                 <Video className="w-3 h-3" /> Auto Zoom link

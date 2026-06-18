@@ -25,13 +25,13 @@ export default function AuthShowcasePanel() {
     >
       <div>
         <p className="wl-label text-brand mb-2">{AUTH_PORTAL_SHOWCASE.eyebrow}</p>
-        <h2 className="font-display italic text-[clamp(1.75rem,3vw,2.35rem)] leading-[1.05] tracking-[-0.02em] text-ink text-balance">
+        <h2 className="font-display italic text-[clamp(1.75rem,3vw,2.35rem)] leading-[1.05] tracking-[-0.02em] text-foreground text-balance">
           {AUTH_PORTAL_SHOWCASE.title}{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-brand-deep">
             {AUTH_PORTAL_SHOWCASE.titleAccent}
           </span>
         </h2>
-        <p className="mt-3 text-[14px] leading-relaxed text-ink/65 max-w-md text-pretty">
+        <p className="mt-3 text-[14px] leading-relaxed text-foreground/65 max-w-md text-pretty">
           {AUTH_PORTAL_SHOWCASE.subtitle}
         </p>
       </div>
@@ -55,7 +55,7 @@ export default function AuthShowcasePanel() {
                 <Icon className="w-4 h-4" strokeWidth={1.75} />
               </span>
               <div className="min-w-0">
-                <p className="wl-label text-ink">{feature.label}</p>
+                <p className="wl-label text-foreground">{feature.label}</p>
                 <p className="text-[12px] text-muted leading-relaxed mt-0.5">{feature.detail}</p>
               </div>
             </motion.li>

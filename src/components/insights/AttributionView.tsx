@@ -64,21 +64,27 @@ export default function AttributionView({ days }: { days: number }) {
           </thead>
           <tbody>
             {rows.map((r, i) => {
-               const calls = Number(r.calls) || 0;
-               const booked = Number(r.booked) || 0;
-               const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
-               const isUntagged = r.source === "(untagged)";
-               return (
+              const calls = Number(r.calls) || 0;
+              const booked = Number(r.booked) || 0;
+              const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
+              const isUntagged = r.source === "(untagged)";
+              return (
                 <tr
                   key={`${r.source}-${i}`}
                   className="border-t border-border hover:bg-black/[0.02] dark:hover:bg-white/[0.01] transition-colors"
                 >
                   <td className="px-3 py-2.5">
-                    <span className={isUntagged ? "text-muted/80 italic" : "text-ink font-medium"}>
+                    <span
+                      className={
+                        isUntagged ? "text-muted/80 italic" : "text-foreground font-medium"
+                      }
+                    >
                       {r.source}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-ink/90">{calls}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground/90">
+                    {calls}
+                  </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-muted/80">
                     {Math.round((Number(r.total_seconds) || 0) / 60)}
                   </td>

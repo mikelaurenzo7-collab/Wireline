@@ -43,7 +43,7 @@ export default function MarketingPageFrame({
   return (
     <div
       className={cn(
-        "marketing-surface relative bg-paper text-ink flex flex-col paper-texture",
+        "marketing-surface relative bg-card text-foreground flex flex-col paper-texture",
         scroll ? "min-h-dvh" : "h-dvh max-h-dvh overflow-hidden",
         className,
       )}
@@ -64,12 +64,12 @@ export default function MarketingPageFrame({
         )}
       >
         {sectionLinks && sectionLinks.length > 0 && (
-          <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-ink/[0.08] bg-paper/80 backdrop-blur-md px-5 py-2.5 md:-mx-8 md:px-8">
+          <div className="sticky top-0 z-20 -mx-5 mb-6 border-y border-ink/[0.08] bg-card/80 backdrop-blur-md px-5 py-2.5 md:-mx-8 md:px-8">
             <nav
               aria-label="On this page"
               className="wl-measure flex items-center gap-2 overflow-x-auto tab-strip-scroll"
             >
-              <span className="shrink-0 wl-label text-ink/45">On this page</span>
+              <span className="shrink-0 wl-label text-foreground/45">On this page</span>
               {sectionLinks.map((link) => {
                 const active = activeSection === link.id;
                 return (
@@ -81,7 +81,7 @@ export default function MarketingPageFrame({
                       "touch-press shrink-0 rounded-md border px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-colors",
                       active
                         ? "border-brand/25 bg-brand/10 text-brand"
-                        : "border-black/8 bg-paper/70 text-ink/60 hover:border-brand/20 hover:text-ink",
+                        : "border-white/8 bg-card/70 text-foreground/60 hover:border-brand/20 hover:text-foreground",
                     )}
                   >
                     {link.label}

@@ -91,10 +91,10 @@ export default function AgentMemoryPanel({
               <Brain className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-display italic text-xl text-ink leading-tight">
+              <h3 className="font-display italic text-xl text-foreground leading-tight">
                 What {agentName} remembers
               </h3>
-              <p className="wl-label text-ink/40">Carried between every call</p>
+              <p className="wl-label text-foreground/40">Carried between every call</p>
             </div>
           </div>
         </div>
@@ -107,10 +107,10 @@ export default function AgentMemoryPanel({
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-display italic text-lg text-ink leading-none">
+              <h4 className="font-display italic text-lg text-foreground leading-none">
                 Persistent thread
               </h4>
-              <p className="wl-label text-ink/40 mt-0.5">
+              <p className="wl-label text-foreground/40 mt-0.5">
                 {messageCount} message{messageCount === 1 ? "" : "s"} · the thread is the memory
               </p>
             </div>
@@ -142,10 +142,10 @@ export default function AgentMemoryPanel({
             <Phone className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="font-display italic text-lg text-ink leading-none">
+            <h4 className="font-display italic text-lg text-foreground leading-none">
               Recent calls it recalls
             </h4>
-            <p className="wl-label text-ink/40 mt-0.5">
+            <p className="wl-label text-foreground/40 mt-0.5">
               Last {recentCalls.length || "few"} conversations
             </p>
           </div>
@@ -170,7 +170,7 @@ export default function AgentMemoryPanel({
                 transition={{ delay: i * 0.03 }}
                 className="rounded-md bg-black/[0.03] border border-border p-3"
               >
-                <p className="text-[13px] text-ink/90 leading-relaxed">
+                <p className="text-[13px] text-foreground/90 leading-relaxed">
                   {c.summary || "Call handled — no summary captured."}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -205,7 +205,7 @@ export default function AgentMemoryPanel({
               <Sparkles className="w-4 h-4 text-on-brand" strokeWidth={2.5} />
             </div>
             <div>
-              <h4 className="font-display italic text-lg text-ink leading-none">
+              <h4 className="font-display italic text-lg text-foreground leading-none">
                 Patterns learned from calls
               </h4>
               <p className="wl-label text-brand mt-0.5">Auto-calibration</p>
@@ -214,7 +214,7 @@ export default function AgentMemoryPanel({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {lessons.map((lesson) => (
               <div key={lesson.id} className="rounded-md bg-brand/8 border border-brand/20 p-3">
-                <p className="text-[13px] text-ink/90 leading-relaxed">{lesson.lesson}</p>
+                <p className="text-[13px] text-foreground/90 leading-relaxed">{lesson.lesson}</p>
               </div>
             ))}
           </div>
@@ -228,10 +228,10 @@ export default function AgentMemoryPanel({
               <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-display italic text-lg text-ink leading-none">
+              <h4 className="font-display italic text-lg text-foreground leading-none">
                 Rules, facts &amp; personality
               </h4>
-              <p className="wl-label text-ink/40 mt-0.5">
+              <p className="wl-label text-foreground/40 mt-0.5">
                 {directives.length} rule{directives.length === 1 ? "" : "s"} · {knowledge.length}{" "}
                 fact{knowledge.length === 1 ? "" : "s"}
               </p>
@@ -251,7 +251,7 @@ export default function AgentMemoryPanel({
           </ShadButton>
         </div>
         {personality && (
-          <p className="mt-3 font-display italic text-base text-ink/90 leading-snug">
+          <p className="mt-3 font-display italic text-base text-foreground/90 leading-snug">
             “{personality}”
           </p>
         )}

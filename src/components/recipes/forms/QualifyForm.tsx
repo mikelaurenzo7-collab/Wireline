@@ -68,9 +68,9 @@ export function QualifyForm({
                   q.qualification_label === "warm" &&
                     "bg-brand/15 border border-brand/40 text-brand",
                   q.qualification_label === "cool" &&
-                    "bg-black/[0.06] border border-black/15 text-ink/50",
+                    "bg-black/[0.06] border border-white/15 text-foreground/50",
                   q.qualification_label === "cold" &&
-                    "bg-black/8 border border-black/15 text-ink/40",
+                    "bg-black/8 border border-white/15 text-foreground/40",
                   q.qualification_label === "disqualified" &&
                     "bg-rose-700/15 border border-rose-700/40 text-rose-500",
                 )}
@@ -84,10 +84,10 @@ export function QualifyForm({
             {(["budget", "authority", "need", "timeline"] as const).map((k) => (
               <ResultCard key={k} title={k}>
                 <div className="flex items-baseline justify-between mb-2">
-                  <div className="font-display italic text-3xl text-ink">{q[k].score}</div>
+                  <div className="font-display italic text-3xl text-foreground">{q[k].score}</div>
                   <div className="wl-label-muted">/ 100</div>
                 </div>
-                <p className="text-sm text-ink/70">{q[k].evidence}</p>
+                <p className="text-sm text-foreground/70">{q[k].evidence}</p>
               </ResultCard>
             ))}
           </div>
@@ -95,7 +95,7 @@ export function QualifyForm({
             <p>{q.recommended_next_step}</p>
           </ResultCard>
           <ResultCard title="Reasoning">
-            <p className="text-ink/65">{q.reasoning}</p>
+            <p className="text-foreground/65">{q.reasoning}</p>
           </ResultCard>
         </div>
       )}

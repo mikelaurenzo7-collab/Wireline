@@ -395,7 +395,7 @@ export default function FastStartWizard({
                 <Sparkles className="w-5 h-5 text-on-brand" />
               </div>
               <div>
-                <h2 className="font-display italic text-xl text-ink">Fast Start</h2>
+                <h2 className="font-display italic text-xl text-foreground">Fast Start</h2>
                 <p className="wl-micro-meta--muted">{estimatedTimeText} to your first AI agent</p>
               </div>
             </div>
@@ -443,7 +443,9 @@ export default function FastStartWizard({
                   <p className="wl-label text-brand">
                     Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
                   </p>
-                  <h3 className="font-display italic text-2xl text-ink">{currentStep.title}</h3>
+                  <h3 className="font-display italic text-2xl text-foreground">
+                    {currentStep.title}
+                  </h3>
                 </div>
               </div>
 
@@ -479,7 +481,7 @@ export default function FastStartWizard({
                 {currentStep.id === "business" && (
                   <div className="space-y-3">
                     <label className="block">
-                      <span className="text-xs font-medium text-ink mb-1.5 block">
+                      <span className="text-xs font-medium text-foreground mb-1.5 block">
                         Describe your business
                       </span>
                       <textarea
@@ -518,7 +520,7 @@ export default function FastStartWizard({
                 {currentStep.id === "website" && (
                   <div className="space-y-4">
                     <label className="block">
-                      <span className="text-xs font-medium text-ink mb-1.5 block">
+                      <span className="text-xs font-medium text-foreground mb-1.5 block">
                         Your website URL
                       </span>
                       <Input
@@ -558,7 +560,9 @@ export default function FastStartWizard({
                           )}
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-ink">{voice.name}</span>
+                            <span className="text-sm font-medium text-foreground">
+                              {voice.name}
+                            </span>
                             {selectedVoiceId === voice.id && (
                               <Check className="w-4 h-4 text-brand" />
                             )}
@@ -574,7 +578,7 @@ export default function FastStartWizard({
                 {currentStep.id === "phone" && (
                   <div className="space-y-4">
                     <label className="block">
-                      <span className="text-xs font-medium text-ink mb-1.5 block">
+                      <span className="text-xs font-medium text-foreground mb-1.5 block">
                         Preferred area code (optional)
                       </span>
                       <Input
@@ -587,7 +591,7 @@ export default function FastStartWizard({
                       />
                     </label>
                     <div className="p-4 rounded-md bg-brand/5 border border-brand/20">
-                      <p className="text-xs text-ink/80">
+                      <p className="text-xs text-foreground/80">
                         Leave blank for any available US local number. If your preferred area code
                         is out of stock, we assign the nearest match. Skip this step only if you
                         want browser testing first — you can add a line later under Phone.
@@ -603,21 +607,25 @@ export default function FastStartWizard({
                         <Building2 className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs text-muted">Business</p>
-                          <p className="text-sm text-ink line-clamp-2">{businessDescription}</p>
+                          <p className="text-sm text-foreground line-clamp-2">
+                            {businessDescription}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
                         <Globe className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs text-muted">Website</p>
-                          <p className="text-sm text-ink">{websiteUrl || "Skipped — add later"}</p>
+                          <p className="text-sm text-foreground">
+                            {websiteUrl || "Skipped — add later"}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
                         <Mic className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs text-muted">Voice</p>
-                          <p className="text-sm text-ink">
+                          <p className="text-sm text-foreground">
                             {PREMIUM_VOICES.find((v) => v.id === selectedVoiceId)?.name}
                           </p>
                         </div>
@@ -626,7 +634,7 @@ export default function FastStartWizard({
                         <Phone className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs text-muted">Phone</p>
-                          <p className="text-sm text-ink">
+                          <p className="text-sm text-foreground">
                             {phoneStepSkipped
                               ? "Skipped — browser test first"
                               : areaCode

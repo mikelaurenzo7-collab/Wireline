@@ -705,8 +705,10 @@ export default function BehavioralRegressionTests({
             <PlayCircle className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-display italic text-xl text-ink">Behavioral regression tests</h3>
-            <p className="wl-label text-ink/40">
+            <h3 className="font-display italic text-xl text-foreground">
+              Behavioral regression tests
+            </h3>
+            <p className="wl-label text-foreground/40">
               Run synthetic test suite to guard against agent drift
             </p>
           </div>
@@ -739,7 +741,7 @@ export default function BehavioralRegressionTests({
           {/* Overall score */}
           <div className="rounded-md bg-black/20 border border-white/8 p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-ink/75 uppercase tracking-wider">
+              <span className="text-xs text-foreground/75 uppercase tracking-wider">
                 Suite Performance
               </span>
               <span
@@ -767,11 +769,11 @@ export default function BehavioralRegressionTests({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h4 className="text-xs font-semibold text-ink uppercase tracking-wider">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">
                         {r.name}
                       </h4>
                       <p className="text-[11px] text-muted mt-0.5">
-                        Prompt: <strong className="text-ink/80">"{r.prompt}"</strong>
+                        Prompt: <strong className="text-foreground/80">"{r.prompt}"</strong>
                       </p>
                     </div>
                     <span
@@ -796,7 +798,7 @@ export default function BehavioralRegressionTests({
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[10px] text-ink/40 uppercase tracking-widest">
+                    <span className="text-[10px] text-foreground/40 uppercase tracking-widest">
                       Agent Response:
                     </span>
                     <p

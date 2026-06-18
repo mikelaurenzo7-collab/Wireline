@@ -426,7 +426,7 @@ export default function CommandBar() {
                 }
                 aria-autocomplete="list"
                 placeholder="Jump anywhere or take an action…"
-                className="flex-1 bg-transparent border-none outline-none text-[14px] text-ink placeholder:text-ink/40 font-normal"
+                className="flex-1 bg-transparent border-none outline-none text-[14px] text-foreground placeholder:text-foreground/40 font-normal"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
@@ -451,7 +451,7 @@ export default function CommandBar() {
                       if (catCmds.length === 0) return null;
                       return (
                         <div key={category} className="mb-1 last:mb-0">
-                          <div className="px-5 pt-3 pb-1.5 wl-label text-ink/40 flex items-center gap-2">
+                          <div className="px-5 pt-3 pb-1.5 wl-label text-foreground/40 flex items-center gap-2">
                             <span className="h-px flex-1 bg-border/40" />
                             {category}
                             <span className="h-px flex-1 bg-border/40" />
@@ -500,7 +500,7 @@ export default function CommandBar() {
                                     <div
                                       className={cn(
                                         "text-[13px] leading-none mb-0.5 transition-colors",
-                                        isSelected ? "text-ink" : "text-ink/80",
+                                        isSelected ? "text-foreground" : "text-foreground/80",
                                       )}
                                     >
                                       {cmd.label}
@@ -518,7 +518,7 @@ export default function CommandBar() {
                                           "hidden sm:flex items-center px-1.5 py-0.5 rounded-md border wl-label leading-none transition-all",
                                           isSelected
                                             ? "bg-brand/15 border-brand/30 text-brand"
-                                            : "wl-panel border border-border/80 text-ink/40",
+                                            : "wl-panel border border-border/80 text-foreground/40",
                                         )}
                                       >
                                         {cmd.shortcut}
@@ -530,7 +530,7 @@ export default function CommandBar() {
                                         "w-3.5 h-3.5 transition-all",
                                         isSelected
                                           ? "text-brand opacity-100"
-                                          : "text-ink/40 opacity-0 group-hover:opacity-100",
+                                          : "text-foreground/40 opacity-0 group-hover:opacity-100",
                                       )}
                                     />
                                   </div>
@@ -554,8 +554,8 @@ export default function CommandBar() {
               </ScrollArea>
 
               {/* Footer */}
-              <div className="shrink-0 px-5 py-2.5 border-t border-border flex items-center justify-between bg-paper/60 backdrop-blur-sm">
-                <div className="flex items-center gap-3 wl-label text-ink/40">
+              <div className="shrink-0 px-5 py-2.5 border-t border-border flex items-center justify-between bg-card/60 backdrop-blur-sm">
+                <div className="flex items-center gap-3 wl-label text-foreground/40">
                   <span className="flex items-center gap-1">
                     <kbd
                       className="px-1.5 py-0.5 rounded wl-panel border border-border wl-micro-badge font-mono leading-none"
@@ -584,7 +584,7 @@ export default function CommandBar() {
                     Close
                   </span>
                 </div>
-                <span className="wl-label text-ink/40">WIRELINE</span>
+                <span className="wl-label text-foreground/40">WIRELINE</span>
               </div>
             </div>
           </motion.div>

@@ -143,7 +143,7 @@ export default function CampaignsTab({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="font-display italic text-base text-ink truncate">
+                          <span className="font-display italic text-base text-foreground truncate">
                             {c.name}
                           </span>
                           <span
@@ -173,7 +173,7 @@ export default function CampaignsTab({
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-ink/40 shrink-0 mt-1" />
+                      <ChevronRight className="w-3.5 h-3.5 text-foreground/40 shrink-0 mt-1" />
                     </div>
                   </motion.div>
                 );
@@ -323,9 +323,7 @@ export default function CampaignsTab({
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-brand" />
                       </span>
-                      <span className="wl-label text-brand">
-                        Live · Dialing in progress
-                      </span>
+                      <span className="wl-label text-brand">Live · Dialing in progress</span>
                     </div>
                     <span className="wl-micro-badge font-mono text-muted tabular-nums">
                       {selectedCampaign.dialed_count ?? 0} / {selectedCampaign.leads_count} dialed
@@ -341,7 +339,7 @@ export default function CampaignsTab({
                     />
                   </div>
                   <div className="flex items-center gap-1 mt-1.5">
-                    <RefreshCw className="w-2.5 h-2.5 text-ink/40 animate-spin [animation-duration:3s]" />
+                    <RefreshCw className="w-2.5 h-2.5 text-foreground/40 animate-spin [animation-duration:3s]" />
                     <span className="wl-micro-meta">Refreshing every 10s</span>
                   </div>
                 </div>
@@ -361,9 +359,7 @@ export default function CampaignsTab({
                     {analyticsLoading ? (
                       <div className="flex items-center justify-center py-6 gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-brand" />
-                        <span className="wl-label-muted">
-                          Loading analytics
-                        </span>
+                        <span className="wl-label-muted">Loading analytics</span>
                       </div>
                     ) : campaignAnalytics ? (
                       <div className="space-y-3 pb-3">
@@ -400,9 +396,7 @@ export default function CampaignsTab({
                             >
                               <div className="flex items-center gap-1.5 mb-1.5">
                                 <Icon className="w-3 h-3 shrink-0 text-brand" />
-                                <span className="wl-label text-muted">
-                                  {label}
-                                </span>
+                                <span className="wl-label text-muted">{label}</span>
                               </div>
                               <div className="font-display italic text-lg leading-none tabular-nums text-brand">
                                 {value}
@@ -433,7 +427,7 @@ export default function CampaignsTab({
                                       )}
                                     />
                                   </div>
-                                  <span className="wl-micro-badge font-mono text-ink/70 w-8 text-right shrink-0 tabular-nums">
+                                  <span className="wl-micro-badge font-mono text-foreground/70 w-8 text-right shrink-0 tabular-nums">
                                     {o.count}
                                   </span>
                                   <span className="wl-micro-meta w-7 text-right shrink-0 tabular-nums">
@@ -452,7 +446,7 @@ export default function CampaignsTab({
             </AnimatePresence>
 
             {/* Stats row */}
-            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-black/8">
+            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2 border-b border-white/8">
               {[
                 { label: "Leads", value: selectedCampaign.leads_count },
                 { label: "Dialed", value: selectedCampaign.dialed_count },
@@ -463,10 +457,10 @@ export default function CampaignsTab({
                 },
               ].map((s) => (
                 <div key={s.label} className="rounded-md wl-panel border border-border p-2.5">
-                  <div className="wl-label mb-1 text-brand">
-                    {s.label}
+                  <div className="wl-label mb-1 text-brand">{s.label}</div>
+                  <div className="font-display italic text-xl text-foreground leading-none">
+                    {s.value}
                   </div>
-                  <div className="font-display italic text-xl text-ink leading-none">{s.value}</div>
                 </div>
               ))}
             </div>
@@ -526,7 +520,7 @@ export default function CampaignsTab({
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="font-display italic text-sm text-ink truncate">
+                          <span className="font-display italic text-sm text-foreground truncate">
                             {lead.customer_name || "Unknown"}
                           </span>
                           <span

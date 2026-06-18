@@ -46,7 +46,7 @@ export default function FunnelView({ days }: { days: number }) {
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-5 md:p-6 space-y-3")}>
       <div className="mb-2">
         <p className="wl-insight-label text-brand/70">Conversion · {data.window_days}d</p>
-        <h3 className="font-display italic text-2xl text-ink leading-tight">Funnel</h3>
+        <h3 className="font-display italic text-2xl text-foreground leading-tight">Funnel</h3>
       </div>
       {stages.map((s: any, i: number) => {
         const pct = (s.count / max) * 100;
@@ -61,7 +61,7 @@ export default function FunnelView({ days }: { days: number }) {
             className="space-y-1.5"
           >
             <div className="flex items-baseline justify-between text-sm">
-              <span className="font-display italic text-2xl text-ink">{s.name}</span>
+              <span className="font-display italic text-2xl text-foreground">{s.name}</span>
               <span className="font-display italic text-3xl text-brand-display tabular-nums">
                 {s.count.toLocaleString()}
               </span>

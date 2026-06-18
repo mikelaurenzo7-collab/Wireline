@@ -100,7 +100,7 @@ export function AuditActivityPanel() {
               onClick={() => setDays(d)}
               className={cn(
                 "h-auto px-3 py-1 rounded-full wl-label",
-                days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-ink",
+                days === d ? "bg-brand/20 text-brand" : "text-muted hover:text-foreground",
               )}
             >
               {d}d
@@ -164,7 +164,9 @@ export function AuditActivityPanel() {
                     <div key={a.action} className="space-y-1.5">
                       <div className="flex justify-between items-end wl-label">
                         <span className="text-muted">{formatActionName(a.action)}</span>
-                        <span className="font-mono text-ink/70">${Number(a.cost).toFixed(4)}</span>
+                        <span className="font-mono text-foreground/70">
+                          ${Number(a.cost).toFixed(4)}
+                        </span>
                       </div>
                       <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
                         <motion.div
@@ -250,7 +252,7 @@ export function AuditActivityPanel() {
                 recent.map((entry: any) => (
                   <div
                     key={entry.id}
-                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-black/5 rounded-md transition-all border-b border-black/[0.03] last:border-0 group"
+                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-black/5 rounded-md transition-all border-b border-white/[0.03] last:border-0 group"
                   >
                     <div
                       className={cn(
@@ -263,7 +265,7 @@ export function AuditActivityPanel() {
                       <Cpu className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-medium text-ink truncate uppercase tracking-wider">
+                      <p className="text-[11px] font-medium text-foreground truncate uppercase tracking-wider">
                         {formatActionName(entry.action)}
                       </p>
                       <p className="wl-micro-meta--muted truncate">
@@ -277,7 +279,7 @@ export function AuditActivityPanel() {
                           {entry.latencyMs || entry.latency_ms}ms
                         </span>
                       )}
-                      <span className="wl-micro-badge font-mono text-ink/70 tabular-nums w-16 text-right">
+                      <span className="wl-micro-badge font-mono text-foreground/70 tabular-nums w-16 text-right">
                         {(entry.costUsd ?? entry.cost_usd) != null
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
                           : "—"}

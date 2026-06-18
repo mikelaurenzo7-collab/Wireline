@@ -93,7 +93,7 @@ export default function CookieConsent() {
             </div>
 
             {/* Copy */}
-            <p className="text-[12px] leading-relaxed flex-1 min-w-0 text-ink/80">
+            <p className="text-[12px] leading-relaxed flex-1 min-w-0 text-foreground/80">
               Essential cookies only — no ad or cross-site tracking.{" "}
               <Link
                 to="/privacy"
@@ -120,7 +120,7 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Dismiss cookie notice"
-              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-ink touch-press hover:scale-[1.05]"
+              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <X className="w-4 h-4" />
             </ShadButton>

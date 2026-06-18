@@ -50,7 +50,7 @@ export default function IntegrationCapabilityPanel({
   return (
     <div className={cn("space-y-3", compact && "space-y-2")} data-accent={accentColor}>
       {!compact && (
-        <p className="text-[11px] text-ink/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
+        <p className="text-[11px] text-foreground/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
           {playbook.headline}
         </p>
       )}
@@ -62,7 +62,7 @@ export default function IntegrationCapabilityPanel({
             <div
               key={task.id}
               className={cn(
-                "rounded-md border bg-paper/80",
+                "rounded-md border bg-card/80",
                 compact ? "px-2.5 py-2 border-border" : "px-3 py-2.5 border-border",
               )}
             >
@@ -70,7 +70,7 @@ export default function IntegrationCapabilityPanel({
                 <Phone className="w-3 h-3 shrink-0 mt-0.5 wl-accent-text" aria-hidden />
                 <p
                   className={cn(
-                    "text-ink font-medium leading-snug text-pretty",
+                    "text-foreground font-medium leading-snug text-pretty",
                     compact ? "wl-micro-badge" : "text-eyebrow",
                   )}
                 >
@@ -79,33 +79,28 @@ export default function IntegrationCapabilityPanel({
               </div>
               <div className="flex items-start gap-2 mb-2">
                 <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" aria-hidden />
-                <p
-                  className={cn(
-                    "text-muted/80 leading-relaxed text-pretty",
-                    "wl-micro-meta",
-                  )}
-                >
+                <p className={cn("text-muted/80 leading-relaxed text-pretty", "wl-micro-meta")}>
                   {task.agentAction}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1 pl-5">
                 {task.tools.map((toolName) => {
-                   const entry = getCatalogEntry(toolName);
-                   const on = enabledSet.has(toolName);
-                   return (
-                     <span
-                       key={toolName}
-                       className={cn(
-                         "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
-                         on
-                           ? "wl-accent-tag border-current/25 bg-current/8"
-                           : "border-border bg-muted/10 text-ink/40",
-                       )}
-                       title={entry?.description}
-                     >
-                       {entry?.label ?? toolName}
-                     </span>
-                   );
+                  const entry = getCatalogEntry(toolName);
+                  const on = enabledSet.has(toolName);
+                  return (
+                    <span
+                      key={toolName}
+                      className={cn(
+                        "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
+                        on
+                          ? "wl-accent-tag border-current/25 bg-current/8"
+                          : "border-border bg-muted/10 text-foreground/40",
+                      )}
+                      title={entry?.description}
+                    >
+                      {entry?.label ?? toolName}
+                    </span>
+                  );
                 })}
               </div>
             </div>
@@ -142,7 +137,7 @@ export default function IntegrationCapabilityPanel({
               </span>
               <ChevronDown
                 className={cn(
-                  "w-3.5 h-3.5 text-ink/40 transition-transform shrink-0",
+                  "w-3.5 h-3.5 text-foreground/40 transition-transform shrink-0",
                   toolsOpen && "rotate-180",
                 )}
               />
@@ -185,10 +180,10 @@ export default function IntegrationCapabilityPanel({
                         className="mt-0.5 rounded border-white/20 text-brand focus:ring-brand/40"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[11px] text-ink font-medium">{tool.label}</span>
-                        <span className="block wl-micro-meta leading-snug">
-                          {tool.description}
+                        <span className="block text-[11px] text-foreground font-medium">
+                          {tool.label}
                         </span>
+                        <span className="block wl-micro-meta leading-snug">{tool.description}</span>
                       </span>
                     </label>
                   </li>

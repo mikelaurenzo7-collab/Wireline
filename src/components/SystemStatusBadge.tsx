@@ -98,7 +98,7 @@ export default function SystemStatusBadge() {
             dot alone communicates status, and the title attribute
             provides the full label on hover. Frees ~90px of TopBar
             width which Mike's ThinkPad needed back. */}
-        <span className="hidden xl:inline wl-label text-ink/70">
+        <span className="hidden xl:inline wl-label text-foreground/70">
           {overall === "ok"
             ? "Live"
             : overall === "degraded"
@@ -119,7 +119,7 @@ export default function SystemStatusBadge() {
               size="sm"
               disableAnimations
               onClick={() => setOpen(false)}
-              className="h-auto px-1 py-0 text-xs text-ink/65 hover:text-ink"
+              className="h-auto px-1 py-0 text-xs text-foreground/65 hover:text-foreground"
               aria-label="Close system health panel"
             >
               ✕
@@ -180,9 +180,11 @@ function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: 
         ) : (
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
         )}
-        <span className="text-[11px] text-ink/80">{label}</span>
+        <span className="text-[11px] text-foreground/80">{label}</span>
       </div>
-      <span className={cn("wl-micro-meta", ok ? "text-ink/65" : "text-rose-400/80")}>{detail}</span>
+      <span className={cn("wl-micro-meta", ok ? "text-foreground/65" : "text-rose-400/80")}>
+        {detail}
+      </span>
     </div>
   );
 }

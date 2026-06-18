@@ -120,9 +120,7 @@ export function AgentReviewForm({
             </ResultCard>
           </div>
           <div className="space-y-2.5">
-            <h4 className="wl-label text-brand">
-              Suggested Directives — One-Click Apply
-            </h4>
+            <h4 className="wl-label text-brand">Suggested Directives — One-Click Apply</h4>
             {review.suggested_directives.map((d: any, i: number) => (
               <div
                 key={i}
@@ -135,14 +133,15 @@ export function AgentReviewForm({
                       "bg-rose-500/15 text-rose-500 border border-rose-500/30",
                     d.priority === "high" && "bg-brand-3/15 text-brand-3 border border-brand-3/30",
                     d.priority === "medium" && "bg-brand/15 text-brand border border-brand/30",
-                    d.priority === "low" && "bg-black/[0.06] text-ink/40 border border-black/12",
+                    d.priority === "low" &&
+                      "bg-black/[0.06] text-foreground/40 border border-white/12",
                   )}
                 >
                   {d.priority}
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-sm text-ink/90">{d.directive}</p>
-                  <p className="text-xs text-ink/65 italic">{d.rationale}</p>
+                  <p className="text-sm text-foreground/90">{d.directive}</p>
+                  <p className="text-xs text-foreground/65 italic">{d.rationale}</p>
                 </div>
                 <ShadButton
                   type="button"

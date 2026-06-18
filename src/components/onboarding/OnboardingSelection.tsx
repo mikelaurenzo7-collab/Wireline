@@ -23,7 +23,7 @@ export default function OnboardingSelection() {
   return (
     <>
       <PageMeta title="Choose your workspace — Wireline" />
-      <div className="min-h-screen bg-paper flex items-center justify-center p-6 font-sans text-ink">
+      <div className="min-h-screen bg-card flex items-center justify-center p-6 font-sans text-foreground">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -34,10 +34,10 @@ export default function OnboardingSelection() {
             <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand/10 text-brand">
               <span className="font-display italic text-2xl font-bold">W</span>
             </div>
-            <h1 className="font-display text-4xl md:text-5xl text-ink tracking-tight mb-4">
+            <h1 className="font-display text-4xl md:text-5xl text-foreground tracking-tight mb-4">
               How will you use Wireline?
             </h1>
-            <p className="text-ink/70 text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="text-foreground/70 text-lg max-w-xl mx-auto leading-relaxed">
               Select your primary use case to tailor your workspace. You can always switch between
               modes later from the command menu.
             </p>
@@ -47,18 +47,18 @@ export default function OnboardingSelection() {
             {/* Personal Mode */}
             <button
               onClick={() => handleSelect("personal")}
-              className="text-left group relative wl-panel p-8 md:p-10 border border-ink/10 bg-paper hover:border-brand/40 hover:bg-paper-warm/30 transition-all rounded-md flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5"
+              className="text-left group relative wl-panel p-8 md:p-10 border border-ink/10 bg-card hover:border-brand/40 hover:bg-card-warm/30 transition-all rounded-md flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
               <div>
-                <div className="w-12 h-12 rounded-md bg-ink/5 group-hover:bg-brand/10 text-ink/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
+                <div className="w-12 h-12 rounded-md bg-ink/5 group-hover:bg-brand/10 text-foreground/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
                   <User className="w-6 h-6" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
                   Personal Assistant
                 </h2>
-                <p className="text-ink/80 leading-relaxed text-sm">
+                <p className="text-foreground/80 leading-relaxed text-sm">
                   A streamlined workspace focused on setting up a single AI agent for your personal
                   number. Connect to your iOS or Android app, configure Siri Shortcuts, and
                   seamlessly route calls.
@@ -73,18 +73,18 @@ export default function OnboardingSelection() {
             {/* Business Mode */}
             <button
               onClick={() => handleSelect("business")}
-              className="text-left group relative wl-panel p-8 md:p-10 border border-ink/10 bg-paper hover:border-brand/40 hover:bg-paper-warm/30 transition-all rounded-md flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5"
+              className="text-left group relative wl-panel p-8 md:p-10 border border-ink/10 bg-card hover:border-brand/40 hover:bg-card-warm/30 transition-all rounded-md flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5"
             >
               <div className="absolute inset-0 bg-gradient-to-bl from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
               <div>
-                <div className="w-12 h-12 rounded-md bg-ink/5 group-hover:bg-brand/10 text-ink/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
+                <div className="w-12 h-12 rounded-md bg-ink/5 group-hover:bg-brand/10 text-foreground/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
                   <Building className="w-6 h-6" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
                   Business Fleet
                 </h2>
-                <p className="text-ink/80 leading-relaxed text-sm">
+                <p className="text-foreground/80 leading-relaxed text-sm">
                   The heavy-duty command center. Build complex workflows, manage multiple agent
                   roles, monitor live floor operations, and handle escalations for your business or
                   enterprise.
