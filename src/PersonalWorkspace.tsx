@@ -22,6 +22,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext";
+import { AssistantComposer } from "./components/AssistantComposer";
 
 const nav = [
   ["Home", "/app/personal"],
@@ -524,14 +525,12 @@ function AssistantView() {
             </button>
           ))}
         </div>
-        <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-border bg-background px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50">
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+        <div className="mt-5">
+          <AssistantComposer
+            tone="light"
             placeholder="Ask Assistant to call, screen, summarize, wait on hold…"
+            sendLabel="Send"
           />
-          <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-paper transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-card shadow-sm">
-            Send
-          </button>
         </div>
       </Card>
     </div>
