@@ -210,7 +210,7 @@ function Button({
 function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh overflow-x-clip bg-background text-foreground wl-overhaul-surface">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0f0b14]/90 text-paper backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-marketing-surface/90 text-paper backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-5 sm:px-8">
           <Link to="/" aria-label="Wireline home">
             <Logo light />
@@ -246,7 +246,7 @@ function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       {children}
-      <footer className="border-t border-white/10 bg-[#0f0b14] text-paper">
+      <footer className="border-t border-white/10 bg-marketing-surface text-paper">
         <div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_2fr]">
           <div className="space-y-4">
             <Logo light />
@@ -401,7 +401,7 @@ function ProductCanvas() {
     <div className="relative">
       <div className="absolute inset-7 -z-10 rounded-[52px] bg-brand/30 blur-3xl" />
       <div className="rounded-[34px] border border-white/10 bg-white/[.08] p-3 shadow-[0_50px_140px_-80px_rgba(0,0,0,.9)] backdrop-blur">
-        <div className="overflow-hidden rounded-[28px] bg-[#100b14] text-paper">
+        <div className="overflow-hidden rounded-[28px] bg-marketing-deep text-paper">
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <Logo light />
             <Pill tone="dark">
@@ -409,7 +409,7 @@ function ProductCanvas() {
             </Pill>
           </div>
           <div className="grid gap-px bg-white/10 lg:grid-cols-[1fr_.88fr]">
-            <div className="bg-[#100b14] p-5">
+            <div className="bg-marketing-deep p-5">
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   ["142", "calls today"],
@@ -444,7 +444,7 @@ function ProductCanvas() {
                 </div>
               </div>
             </div>
-            <div className="bg-[#17101d] p-5">
+            <div className="bg-marketing-surface-2 p-5">
               <p className="text-[10px] uppercase tracking-[.18em] text-white/55">
                 Operating lanes
               </p>
@@ -491,7 +491,7 @@ function Landing() {
   return (
     <Layout>
       <main>
-        <section className="relative overflow-hidden border-b border-white/10 bg-[#0f0b14] text-paper">
+        <section className="relative overflow-hidden border-b border-white/10 bg-marketing-surface text-paper">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(106,45,163,.35),transparent_30rem),radial-gradient(circle_at_82%_22%,rgba(239,233,220,.12),transparent_26rem)]" />
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
           <div className="relative mx-auto grid max-w-[1500px] gap-12 px-5 py-20 sm:px-8 lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-[1fr_.96fr] lg:items-center lg:py-24">
@@ -746,7 +746,7 @@ function FeatureRows() {
 
 function TrainingPreview() {
   return (
-    <section className="border-b border-white/10 bg-[#0f0b14] text-paper">
+    <section className="border-b border-white/10 bg-marketing-surface text-paper">
       <div className="mx-auto grid max-w-[1500px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.86fr_1.14fr] lg:items-center">
         <SectionHeader
           dark
@@ -894,7 +894,7 @@ function Pricing() {
 
 function FinalCTA() {
   return (
-    <section className="bg-[#0f0b14] text-paper">
+    <section className="bg-marketing-surface text-paper">
       <div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8">
         <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-white/[.045] p-8 sm:p-12">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_10%,rgba(106,45,163,.38),transparent_26rem)]" />
