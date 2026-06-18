@@ -26,7 +26,7 @@ import { voiceMinutesDailyQuotaForTier } from "./plan-entitlements";
 // Plan defaults
 // ─────────────────────────────────────────────────────────────────
 
-export type PlanTier = "free" | "personal" | "starter" | "pro" | "business" | "enterprise";
+export type PlanTier = "free" | "personal" | "personal-plus" | "starter" | "scale";
 
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
@@ -41,53 +41,44 @@ export interface QuotaProfile {
   intake_rpm: number;
 }
 
-// Daily voice-minute caps are tuned at ~2× of the monthly plan cap divided
-// by 30 days — generous enough to absorb a campaign-spike day, tight enough
-// that an abusive single day can't blow through the monthly cap. Real
-// monthly cap enforcement (with overage billing) lives in plan-catalog.ts
-// + Stripe metered usage when wired.
+// Daily voice-minute caps are derived from the current catalog by
+// voiceMinutesDailyQuotaForTier(plan). The defaults below are fallback profile
+// values for non-voice dimensions and for degraded catalog lookups.
 export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
   free: {
     claude_tokens_daily: 200_000,
-    voice_minutes_daily: 10, // ~5 min/day average → 5 min spike headroom
+    voice_minutes_daily: 10,
     concurrent_dials: 1,
     knowledge_rows: 200,
     intake_rpm: 10,
   },
   personal: {
     claude_tokens_daily: 300_000,
-    voice_minutes_daily: 15, // 100/mo ÷ 30 × 4.5 buffer for spike days
+    voice_minutes_daily: 10,
     concurrent_dials: 2,
     knowledge_rows: 500,
     intake_rpm: 30,
   },
-  starter: {
-    claude_tokens_daily: 1_500_000,
-    voice_minutes_daily: 60, // 500/mo ÷ 30 × 3.6 buffer for campaign days
-    concurrent_dials: 5,
-    knowledge_rows: 2_000,
-    intake_rpm: 60,
+  "personal-plus": {
+    claude_tokens_daily: 600_000,
+    voice_minutes_daily: 20,
+    concurrent_dials: 3,
+    knowledge_rows: 1_000,
+    intake_rpm: 45,
   },
-  pro: {
+  starter: {
     claude_tokens_daily: 8_000_000,
-    voice_minutes_daily: 300, // 2,500/mo ÷ 30 × 3.6 buffer for heavy campaigns
+    voice_minutes_daily: 120,
     concurrent_dials: 25,
     knowledge_rows: 20_000,
     intake_rpm: 240,
   },
-  business: {
+  scale: {
     claude_tokens_daily: 20_000_000,
-    voice_minutes_daily: 600, // 5,000/mo ÷ 30 × 3.6 buffer
+    voice_minutes_daily: 360,
     concurrent_dials: 50,
     knowledge_rows: 50_000,
     intake_rpm: 600,
-  },
-  enterprise: {
-    claude_tokens_daily: 50_000_000,
-    voice_minutes_daily: 50_000,
-    concurrent_dials: 250,
-    knowledge_rows: 250_000,
-    intake_rpm: 1_200,
   },
 };
 
@@ -188,7 +179,7 @@ export function buildDecision(opts: {
     dimension: opts.dimension,
     limit: opts.limit,
     used: opts.used,
-    remaining: Math.max(0, opts.limit - opts.used),
+    remaining: Math.max(0, limit - opts.used),
     period_key: opts.period_key,
     reset_at: opts.reset_at,
   };
