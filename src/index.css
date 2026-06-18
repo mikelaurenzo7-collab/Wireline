@@ -14,28 +14,29 @@
   /* ── Signal (LIGHT, default) ───────────────────────────────────────────────
      A premium, light-first system built on the metaphor of a signal travelling
      a wire: precision, throughput, live orchestration. Porcelain canvas, crisp
-     white panels, graphite ink, an electric Signal Blue primary and a Live Teal
-     accent. Dark ("Signal Night") lives in the .dark block below; both are
-     first-class. Every token NAME is preserved from the prior system so the
-     ~750 consuming utilities keep working — only values change. */
-  --canvas: #f8f9fb;       /* porcelain */
-  --canvas-deep: #eef0f4;
+     white panels, graphite ink, a vivid Emerald primary and an electric Cyan
+     "live wire" accent with warm Amber energy. Dark ("Signal Night") lives in
+     the .dark block below; both are first-class. Every token NAME is preserved
+     from the prior system so the ~750 consuming utilities keep working — only
+     values change. */
+  --canvas: #f7f9f8;       /* porcelain, faint warm-green cast */
+  --canvas-deep: #eef2f0;
   --panel: #ffffff;
-  --panel-2: #f5f7fa;
+  --panel-2: #f4f7f5;
   --raised: #ffffff;
   --velvet: #ffffff;
 
-  --text: #0b0d12;         /* graphite ink */
-  --text-2: #52586a;
-  --text-3: #8a90a2;
+  --text: #0a0f0d;         /* graphite ink */
+  --text-2: #4d5a55;
+  --text-3: #828f8a;
 
-  --iris: #2b5bf0;         /* Signal Blue — primary (name kept for consumers) */
-  --iris-bright: #5b82ff;  /* bright tint / glow */
-  --iris-deep: #1e3fb0;
-  --teal: #0fb5ba;         /* Live Teal — the "live wire" accent */
-  --teal-bright: #2fd4d9;
-  --teal-deep: #0a8a8e;
-  --mint: #0f9d74;
+  --iris: #0d9f6e;         /* Emerald — primary (name kept for consumers) */
+  --iris-bright: #10b981;  /* bright tint / glow */
+  --iris-deep: #047857;
+  --teal: #0891b2;         /* electric Cyan — the "live wire" accent */
+  --teal-bright: #22d3ee;
+  --teal-deep: #0e7490;
+  --mint: #059669;
   --amber: #b06f0a;        /* readable amber-on-light for text/icons */
   --amber-solid: #f5a623;  /* full-energy amber for fills/accents */
   --rose: #e5484d;
@@ -43,53 +44,53 @@
   /* Legacy aliases. ink/paper carry the ink (text + hairline) role on light;
      the few solid bg-ink/bg-paper surfaces are remapped to the canvas/panel via
      the overrides in the light-surface block further down. */
-  --paper: #0b0d12;
-  --paper-deep: #06070a;
-  --paper-soft: #20242e;
-  --ink: #0b0d12;
-  --ink-soft: #20242e;
-  --brand: #2b5bf0;        /* Signal Blue — primary */
-  --brand-deep: #1e3fb0;
-  --brand-bright: #5b82ff;
+  --paper: #0a0f0d;
+  --paper-deep: #050807;
+  --paper-soft: #1d2521;
+  --ink: #0a0f0d;
+  --ink-soft: #1d2521;
+  --brand: #0d9f6e;        /* Emerald — primary */
+  --brand-deep: #047857;
+  --brand-bright: #10b981;
 
   /* shadcn semantic tokens (drive every primitive + Tailwind color utility). */
-  --background: #f8f9fb;
-  --foreground: #0b0d12;
+  --background: #f7f9f8;
+  --foreground: #0a0f0d;
   --card: #ffffff;
-  --card-foreground: #0b0d12;
+  --card-foreground: #0a0f0d;
   --popover: #ffffff;
-  --popover-foreground: #0b0d12;
-  --primary: #2b5bf0;
+  --popover-foreground: #0a0f0d;
+  --primary: #0d9f6e;
   --primary-foreground: #ffffff;
-  --secondary: #eef1f8;
-  --secondary-foreground: #0b0d12;
-  --muted: #eef1f8;
-  --muted-foreground: #52586a;
-  --accent: #e6edff;
-  --accent-foreground: #1e3fb0;
+  --secondary: #eaf2ee;
+  --secondary-foreground: #0a0f0d;
+  --muted: #eaf2ee;
+  --muted-foreground: #4d5a55;
+  --accent: #d1fae5;
+  --accent-foreground: #047857;
   --destructive: #e5484d;
   --destructive-foreground: #ffffff;
-  --border: rgba(11, 13, 18, 0.1);
-  --input: rgba(11, 13, 18, 0.14);
+  --border: rgba(10, 15, 13, 0.1);
+  --input: rgba(10, 15, 13, 0.14);
   --input-background: #ffffff;
-  --switch-background: #d3d8e4;
-  --ring: #2b5bf0;
-  --chart-1: #2b5bf0;
-  --chart-2: #0fb5ba;
+  --switch-background: #d2dcd7;
+  --ring: #0d9f6e;
+  --chart-1: #0d9f6e;
+  --chart-2: #0891b2;
   --chart-3: #f5a623;
-  --chart-4: #0f9d74;
-  --chart-5: #1e3fb0;
+  --chart-4: #059669;
+  --chart-5: #047857;
 
   /* Marketing showcase surfaces (the art-directed public hero + device mock).
-     Light renders clean porcelain; .dark keeps a deep graphite-blue. */
+     Light renders clean porcelain; .dark keeps a deep graphite-green. */
   --marketing-surface: #ffffff;
-  --marketing-surface-2: #f3f6fc;
-  --marketing-deep: #fafbff;
+  --marketing-surface-2: #f1f7f4;
+  --marketing-deep: #f9fbfa;
 
   /* Theme-aware "white": utilities like text-white / border-white/10 / bg-white/5
      resolve to ink on light (so the ~750 dark-built utilities read correctly)
      and to true white in dark. */
-  --white: #0b0d12;
+  --white: #0a0f0d;
 
   --radius: 12px;
   --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
@@ -101,68 +102,68 @@
   color-scheme: dark;
 
   /* ── Signal Night (DARK) ───────────────────────────────────────────────────
-     Deep graphite canvas, brightened Signal Blue, luminous Live Teal. */
-  --canvas: #0b0d12;
-  --canvas-deep: #07080c;
-  --panel: #13151c;
-  --panel-2: #181b23;
-  --raised: #1b1e27;
-  --velvet: #15171e;
+     Deep graphite-green canvas, brightened Emerald, luminous Cyan. */
+  --canvas: #080b0a;
+  --canvas-deep: #050706;
+  --panel: #101513;
+  --panel-2: #151b18;
+  --raised: #19201c;
+  --velvet: #121815;
 
-  --text: #eef0f5;
-  --text-2: #9a9fae;
-  --text-3: #5f6473;
+  --text: #eef3f0;
+  --text-2: #99a59f;
+  --text-3: #5e6a64;
 
-  --iris: #5b82ff;
-  --iris-bright: #89a4ff;
-  --iris-deep: #3a5fe0;
-  --teal: #2fd4d9;
-  --teal-bright: #5fe4e8;
-  --teal-deep: #0fb5ba;
-  --mint: #3edca6;
+  --iris: #34d399;
+  --iris-bright: #6ee7b7;
+  --iris-deep: #10b981;
+  --teal: #22d3ee;
+  --teal-bright: #67e8f9;
+  --teal-deep: #0891b2;
+  --mint: #34d399;
   --amber: #f7b955;
   --amber-solid: #f7b955;
   --rose: #ff5a5f;
 
-  --paper: #eef0f5;
-  --paper-deep: #07080c;
-  --paper-soft: #15171e;
-  --ink: #0b0d12;
-  --ink-soft: #181b23;
-  --brand: #5b82ff;
-  --brand-deep: #3a5fe0;
-  --brand-bright: #89a4ff;
+  --paper: #eef3f0;
+  --paper-deep: #050706;
+  --paper-soft: #121815;
+  --ink: #080b0a;
+  --ink-soft: #151b18;
+  --brand: #34d399;
+  --brand-deep: #10b981;
+  --brand-bright: #6ee7b7;
 
-  --background: #0b0d12;
-  --foreground: #eef0f5;
-  --card: #13151c;
-  --card-foreground: #eef0f5;
-  --popover: #181b23;
-  --popover-foreground: #eef0f5;
-  --primary: #5b82ff;
-  --primary-foreground: #07080c;
-  --secondary: #181b23;
-  --secondary-foreground: #eef0f5;
-  --muted: #181b23;
-  --muted-foreground: #9a9fae;
-  --accent: #1b1e27;
-  --accent-foreground: #eef0f5;
+  --background: #080b0a;
+  --foreground: #eef3f0;
+  --card: #101513;
+  --card-foreground: #eef3f0;
+  --popover: #151b18;
+  --popover-foreground: #eef3f0;
+  --primary: #34d399;
+  --primary-foreground: #04130d;
+  --secondary: #151b18;
+  --secondary-foreground: #eef3f0;
+  --muted: #151b18;
+  --muted-foreground: #99a59f;
+  --accent: #19201c;
+  --accent-foreground: #eef3f0;
   --destructive: #ff5a5f;
   --destructive-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.09);
   --input: rgba(255, 255, 255, 0.12);
-  --input-background: #181b23;
-  --switch-background: #1b1e27;
-  --ring: #5b82ff;
-  --chart-1: #5b82ff;
-  --chart-2: #2fd4d9;
+  --input-background: #151b18;
+  --switch-background: #19201c;
+  --ring: #34d399;
+  --chart-1: #34d399;
+  --chart-2: #22d3ee;
   --chart-3: #f7b955;
-  --chart-4: #3edca6;
-  --chart-5: #89a4ff;
+  --chart-4: #6ee7b7;
+  --chart-5: #10b981;
 
-  --marketing-surface: #0e1118;
-  --marketing-surface-2: #141822;
-  --marketing-deep: #0b0e15;
+  --marketing-surface: #0c1110;
+  --marketing-surface-2: #121a17;
+  --marketing-deep: #090f0d;
 
   --white: #ffffff;
 }
@@ -244,9 +245,9 @@
   body {
     min-height: 100vh;
     overflow-x: hidden;
-    /* Calm, single faint Signal Blue bloom — no competing gradients or grain. */
+    /* Calm, single faint Emerald bloom — no competing gradients or grain. */
     background:
-      radial-gradient(62% 38% at 50% -8%, rgba(43, 91, 240, 0.06), transparent 70%),
+      radial-gradient(62% 38% at 50% -8%, rgba(13, 159, 110, 0.07), transparent 70%),
       var(--canvas);
     background-attachment: fixed;
     color: var(--foreground);
@@ -321,7 +322,7 @@
   .wl-cream-surface,
   .wl-grain {
     background:
-      radial-gradient(50% 36% at 70% 0%, rgba(43, 91, 240, 0.05), transparent 70%),
+      radial-gradient(50% 36% at 70% 0%, rgba(13, 159, 110, 0.05), transparent 70%),
       var(--canvas);
   }
 
@@ -422,20 +423,20 @@ html:not(.dark) .bg-paper {
 html:not(.dark) .wl-premium-card {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 18px 44px -30px rgba(11, 22, 60, 0.18);
+    0 18px 44px -30px rgba(6, 40, 28, 0.18);
 }
 html:not(.dark) .wl-dark-card {
   background: var(--panel);
-  box-shadow: 0 14px 36px -26px rgba(11, 22, 60, 0.16);
+  box-shadow: 0 14px 36px -26px rgba(6, 40, 28, 0.16);
 }
 html:not(.dark) .wl-panel-elevated {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 22px 50px -34px rgba(11, 22, 60, 0.16);
+    0 22px 50px -34px rgba(6, 40, 28, 0.16);
 }
 /* The signature ambient body bloom reads cool and airy on porcelain. */
 html:not(.dark) body {
   background:
-    radial-gradient(58% 40% at 50% -10%, rgba(43, 91, 240, 0.06), transparent 72%),
+    radial-gradient(58% 40% at 50% -10%, rgba(13, 159, 110, 0.07), transparent 72%),
     var(--canvas);
 }

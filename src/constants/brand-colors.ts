@@ -1,36 +1,36 @@
 /**
- * Wireline "Signal" brand palette — electric Signal Blue + Live Teal on
- * porcelain. Use for inline styles, route accents, and chrome. The historical
- * `purple*` keys are retained as stable aliases (every consumer keeps working);
- * their values now resolve to the Signal Blue family. Prefer `signal`/`teal`
- * for new code.
+ * Wireline "Signal" brand palette — vivid Emerald + electric Cyan on
+ * porcelain, with warm Amber energy. Use for inline styles, route accents, and
+ * chrome. The historical `purple*` keys are retained as stable aliases (every
+ * consumer keeps working); their values now resolve to the Emerald family.
+ * Prefer `signal`/`teal`/`amber` for new code.
  */
 export const BRAND = {
   /* Canonical Signal tokens (preferred for new code). */
-  signal: "#2B5BF0",
-  signalBright: "#5B82FF",
-  signalDeep: "#1E3FB0",
-  teal: "#0FB5BA",
-  tealBright: "#2FD4D9",
+  signal: "#0D9F6E",
+  signalBright: "#10B981",
+  signalDeep: "#047857",
+  teal: "#0891B2",
+  tealBright: "#22D3EE",
   amber: "#F5A623",
 
-  /* Legacy aliases — remapped to the Signal Blue family. */
-  purple: "#2B5BF0",
-  purpleDeep: "#1E3FB0",
-  purpleMid: "#3A5FE0",
-  purpleRim: "#14307E",
-  purpleLight: "#5B82FF",
-  purpleMuted: "#6B7BA8",
-  purpleInk: "#0B1A44",
-  cream: "#F8F9FB",
-  paper: "#F8F9FB",
-  creamWarm: "#EEF0F4",
-  creamDeep: "#DDE2EC",
-  ink: "#0B0D12",
+  /* Legacy aliases — remapped to the Emerald family. */
+  purple: "#0D9F6E",
+  purpleDeep: "#047857",
+  purpleMid: "#0FA873",
+  purpleRim: "#03543F",
+  purpleLight: "#10B981",
+  purpleMuted: "#6B8F82",
+  purpleInk: "#04231A",
+  cream: "#F7F9F8",
+  paper: "#F7F9F8",
+  creamWarm: "#EEF2F0",
+  creamDeep: "#DCE6E1",
+  ink: "#0A0F0D",
   /** Dark elevated panel surface — composer, artifacts, live fades */
-  velvet: "#13151C",
+  velvet: "#101513",
   /** Luminous brand on dark chrome (wordmarks, focus accents) */
-  chromeGlow: "#5B82FF",
+  chromeGlow: "#34D399",
   /** Errors, overage, and critical compliance only — not decorative. */
   rose: "#E5484D",
 } as const;
