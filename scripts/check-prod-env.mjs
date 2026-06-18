@@ -5,92 +5,69 @@
 // secrets BEFORE they manifest as 500s in production.
 //
 // Usage:
-//   node scripts/check-prod-env.mjs            # checks process.env
-//   PRODUCTION_CHECK=1 npm run check-prod-env  # forces strict mode in CI
+//   node scripts/check-prod-env.mjs
+//   PRODUCTION_CHECK=1 npm run check-prod-env
 //
 // Exit codes:
 //   0 — all required vars present, recommended vars present
-//   1 — missing required vars (always a hard fail)
-//   2 — missing recommended vars and PRODUCTION_CHECK=1 (CI hardening)
+//   1 — missing required vars
+//   2 — missing recommended vars and PRODUCTION_CHECK=1
 
 const required = [
-  [
-    "POSTGRES_URL",
-    "Postgres connection string for Drizzle-backed API routes",
-    process.env.POSTGRES_URL,
-  ],
+  ["POSTGRES_URL", "Postgres connection string for Drizzle-backed API routes", process.env.POSTGRES_URL],
   [
     "INTERNAL_JWT_SECRET",
     "Session JWT signing — canonical Wireline session secret (legacy alias: SUPABASE_JWT_SECRET)",
     process.env.INTERNAL_JWT_SECRET || process.env.SUPABASE_JWT_SECRET,
   ],
-  [
-    "OAUTH_STATE_SECRET",
-    "HMAC secret for OAuth CSRF state tokens — required in prod; dev falls back to STRIPE_WEBHOOK_SECRET",
-    process.env.OAUTH_STATE_SECRET,
-  ],
-  [
-    "UPSTASH_REDIS_REST_URL",
-    "Distributed rate-limit store — required for global abuse protection on Vercel",
-    process.env.UPSTASH_REDIS_REST_URL,
-  ],
-  [
-    "UPSTASH_REDIS_REST_TOKEN",
-    "Upstash Redis token",
-    process.env.UPSTASH_REDIS_REST_TOKEN,
-  ],
-  [
-    "VAPI_WEBHOOK_SECRET",
-    "Vapi webhook HMAC — voice observability rejects unsigned callbacks in prod when unset",
-    process.env.VAPI_WEBHOOK_SECRET,
-  ],
+  ["OAUTH_STATE_SECRET", "HMAC secret for OAuth CSRF state tokens", process.env.OAUTH_STATE_SECRET],
+  ["UPSTASH_REDIS_REST_URL", "Distributed rate-limit store for Vercel", process.env.UPSTASH_REDIS_REST_URL],
+  ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
+  ["VAPI_WEBHOOK_SECRET", "Vapi webhook HMAC secret", process.env.VAPI_WEBHOOK_SECRET],
 ];
 
 const recommended = [
   ["ANTHROPIC_API_KEY", "Claude — required for /api/claude/* recipes"],
   ["OPENROUTER_API_KEY", "OpenRouter — required for default Grok tenant voice routing"],
-  [
-    "WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL",
-    "Default tenant voice model via OpenRouter; launch default is x-ai/grok-4.3",
-  ],
+  ["WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL", "Launch default: x-ai/grok-4.3"],
   ["GEMINI_API_KEY", "Gemini Flash fallback when OpenRouter/Grok is unavailable"],
-  ["VITE_VAPI_PUBLIC_KEY", "Vapi — required for browser-side test calls from the dashboard"],
-  ["VAPI_PRIVATE_KEY", "Vapi — required for outbound/inbound voice agents"],
-  [
-    "TWILIO_AUTH_TOKEN",
-    "Twilio — inbound SMS webhook rejects unsigned requests in prod when unset",
-    process.env.TWILIO_AUTH_TOKEN,
-  ],
-  ["APP_URL", "Canonical URL — required for OAuth redirects + email links"],
-  ["CORS_ORIGINS", "CORS allowlist — required in prod or browser API calls fail"],
-  ["STRIPE_SECRET_KEY", "Stripe — billing endpoints return 503 when unset"],
+  ["VITE_VAPI_PUBLIC_KEY", "Vapi browser-side test calls"],
+  ["VAPI_PRIVATE_KEY", "Vapi outbound/inbound voice agents"],
+  ["TWILIO_AUTH_TOKEN", "Twilio inbound SMS signature validation", process.env.TWILIO_AUTH_TOKEN],
+  ["APP_URL", "Canonical URL for OAuth redirects and email links"],
+  ["CORS_ORIGINS", "Production CORS allowlist"],
+  ["STRIPE_SECRET_KEY", "Stripe billing endpoints"],
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["VITE_STRIPE_PUBLIC_KEY", "Stripe publishable key for client-side checkout UI"],
-  ["STRIPE_PERSONAL_PRICE_ID", "Stripe monthly price — Personal"],
-  ["STRIPE_PERSONAL_ANNUAL_PRICE_ID", "Stripe annual price — Personal"],
-  ["STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID", "Stripe extra-agent add-on — Personal"],
-  ["STRIPE_STARTER_PRICE_ID", "Stripe monthly price — Starter"],
-  ["STRIPE_STARTER_ANNUAL_PRICE_ID", "Stripe annual price — Starter"],
-  ["STRIPE_STARTER_EXTRA_AGENT_PRICE_ID", "Stripe extra-agent add-on — Starter"],
-  ["STRIPE_PRO_PRICE_ID", "Stripe monthly price — Pro"],
-  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Stripe annual price — Pro"],
-  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Stripe extra-agent add-on — Pro"],
-  ["STRIPE_BUSINESS_PRICE_ID", "Stripe monthly price — Business"],
-  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Stripe annual price — Business"],
-  ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Stripe extra-agent add-on — Business"],
-  ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Personal"],
-  ["STRIPE_STARTER_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Starter"],
-  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Pro"],
-  ["STRIPE_BUSINESS_OVERAGE_PRICE_ID", "Stripe metered voice-overage price — Business"],
-  [
-    "STRIPE_VOICE_OVERAGE_METER_EVENT_NAME",
-    "Stripe meter event name for voice-minute overage (voice_minutes_overage)",
-  ],
-  [
-    "WIRELINE_DATA_KEY",
-    "AES-256-GCM key for encrypting webhook secrets at rest — webhooks with signing secrets fail when unset",
-  ],
-  ["CRON_SECRET", "Bearer token for cron job authentication — scheduled jobs fail when unset"],
+
+  // Current customer-facing plan catalog:
+  // personal, personal-plus, starter(Business Growth), scale.
+  // Runtime compatibility note: Business Growth currently uses historical
+  // STRIPE_PRO_* env names and Scale uses historical STRIPE_BUSINESS_* env
+  // names until new Stripe prices are created and synced.
+  ["STRIPE_PERSONAL_PRICE_ID", "Personal monthly price ($9/mo)"],
+  ["STRIPE_PERSONAL_ANNUAL_PRICE_ID", "Personal annual price ($86/yr)"],
+  ["STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID", "Personal extra-agent add-on"],
+  ["STRIPE_PERSONAL_OVERAGE_PRICE_ID", "Personal metered voice-overage price"],
+
+  ["STRIPE_PERSONAL_PLUS_PRICE_ID", "Personal+ monthly price ($19/mo) — currently missing blocks self-serve checkout for this tier"],
+  ["STRIPE_PERSONAL_PLUS_ANNUAL_PRICE_ID", "Personal+ annual price ($182/yr)"],
+  ["STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID", "Personal+ extra-agent add-on"],
+  ["STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID", "Personal+ metered voice-overage price"],
+
+  ["STRIPE_PRO_PRICE_ID", "Business Growth monthly price ($249/mo), legacy env name"],
+  ["STRIPE_PRO_ANNUAL_PRICE_ID", "Business Growth annual price ($2,390/yr), legacy env name"],
+  ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Business Growth extra-agent add-on, legacy env name"],
+  ["STRIPE_PRO_OVERAGE_PRICE_ID", "Business Growth metered overage, legacy env name"],
+
+  ["STRIPE_BUSINESS_PRICE_ID", "Scale monthly price ($699/mo), legacy env name"],
+  ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "Scale annual price ($6,710/yr), legacy env name"],
+  ["STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID", "Scale extra-agent add-on, legacy env name"],
+  ["STRIPE_BUSINESS_OVERAGE_PRICE_ID", "Scale metered overage, legacy env name"],
+
+  ["STRIPE_VOICE_OVERAGE_METER_EVENT_NAME", "Stripe meter event name for voice-minute overage"],
+  ["WIRELINE_DATA_KEY", "AES-256-GCM key for encrypting webhook secrets at rest"],
+  ["CRON_SECRET", "Bearer token for cron job authentication"],
 ];
 
 const optional = [
@@ -101,10 +78,7 @@ const optional = [
   ["MICROSOFT_CLIENT_SECRET", "Outlook OAuth"],
   ["SENTRY_DSN", "Backend error monitoring"],
   ["VITE_SENTRY_DSN", "Frontend error monitoring"],
-  [
-    "CLAUDE_MONTHLY_BUDGET_USD",
-    "Optional rolling-24h Claude spend alert threshold (telemetry only; 0 = off)",
-  ],
+  ["CLAUDE_MONTHLY_BUDGET_USD", "Optional rolling-24h Claude spend alert threshold"],
 ];
 
 const jwtSecretConflict =
