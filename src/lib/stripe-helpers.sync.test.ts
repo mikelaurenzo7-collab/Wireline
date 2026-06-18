@@ -2,9 +2,7 @@
  * stripe-helpers.sync.test.ts — subscription mirror on plan change / dunning states.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const dispatchWebhook = vi.fn().mockResolvedValue(undefined);
-const invalidateDashboard = vi.fn();
+import { syncSubscriptionFromStripe } from "./stripe-helpers";
 
 const h = vi.hoisted(() => ({
   subscription: {
@@ -13,6 +11,8 @@ const h = vi.hoisted(() => ({
     status: "active",
     plan: "starter",
   },
+  dispatchWebhook: vi.fn().mockResolvedValue(undefined),
+  invalidateDashboard: vi.fn(),
 }));
 
 vi.mock("./server-context", () => ({
@@ -37,15 +37,14 @@ vi.mock("../db/schema", () => ({
   spendBudgets: { userId: "userId", monthlyLimitUsd: "monthlyLimitUsd" },
 }));
 vi.mock("drizzle-orm", () => ({ eq: vi.fn() }));
-vi.mock("./webhook-helpers", () => ({ dispatchWebhook }));
-vi.mock("./dashboard-cache", () => ({ invalidateDashboard }));
+vi.mock("./webhook-helpers", () => ({ dispatchWebhook: h.dispatchWebhook }));
+vi.mock("./dashboard-cache", () => ({ invalidateDashboard: h.invalidateDashboard }));
 vi.mock("./workspace-usage-snapshot", () => ({
   ensureDefaultAiSpendBudget: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("syncSubscriptionFromStripe", () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
     process.env.STRIPE_PRO_PRICE_ID = "price_pro_monthly";
     process.env.STRIPE_BUSINESS_STARTER_PRICE_ID = "price_business_starter_monthly";
@@ -58,7 +57,6 @@ describe("syncSubscriptionFromStripe", () => {
   });
 
   it("dispatches subscription.changed with starter plan on upgrade price id", async () => {
-    const { syncSubscriptionFromStripe } = await import("./stripe-helpers");
     await syncSubscriptionFromStripe({
       id: "sub_1",
       customer: "cus_1",
@@ -68,8 +66,8 @@ describe("syncSubscriptionFromStripe", () => {
       items: { data: [{ price: { id: "price_pro_monthly" } }] },
     } as any);
 
-    expect(invalidateDashboard).toHaveBeenCalledWith("user-1");
-    expect(dispatchWebhook).toHaveBeenCalledWith(
+    expect(h.invalidateDashboard).toHaveBeenCalledWith("user-1");
+    expect(h.dispatchWebhook).toHaveBeenCalledWith(
       "user-1",
       "subscription.changed",
       expect.objectContaining({
@@ -81,7 +79,6 @@ describe("syncSubscriptionFromStripe", () => {
   });
 
   it("maps past_due Stripe status to legacy past_due for feature gates", async () => {
-    const { syncSubscriptionFromStripe } = await import("./stripe-helpers");
     await syncSubscriptionFromStripe({
       id: "sub_1",
       customer: "cus_1",
@@ -91,7 +88,7 @@ describe("syncSubscriptionFromStripe", () => {
       items: { data: [{ price: { id: "price_business_starter_monthly" } }] },
     } as any);
 
-    expect(dispatchWebhook).toHaveBeenCalledWith(
+    expect(h.dispatchWebhook).toHaveBeenCalledWith(
       "user-1",
       "subscription.changed",
       expect.objectContaining({
