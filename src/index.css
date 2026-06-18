@@ -196,10 +196,37 @@
       var(--background);
   }
 
+  .wl-overhaul-surface h1,
+  .wl-grain h1,
+  .bg-ink.text-paper h1 {
+    letter-spacing: -0.066em !important;
+    line-height: 0.9 !important;
+    text-transform: uppercase !important;
+    text-wrap: balance;
+  }
+
+  .wl-overhaul-surface h2,
+  .wl-grain h2,
+  .bg-ink.text-paper h2 {
+    letter-spacing: -0.056em !important;
+    line-height: 0.96 !important;
+    text-transform: uppercase !important;
+    text-wrap: balance;
+  }
+
+  .wl-overhaul-surface h3,
+  .wl-grain h3,
+  .bg-ink.text-paper h3 {
+    letter-spacing: -0.04em !important;
+    line-height: 1.01 !important;
+    text-transform: uppercase !important;
+    text-wrap: balance;
+  }
+
   .wl-title {
     font-family: var(--font-display);
     font-weight: 620;
-    letter-spacing: -0.062em;
+    letter-spacing: -0.066em;
     line-height: 0.9;
     text-transform: uppercase;
     text-wrap: balance;
