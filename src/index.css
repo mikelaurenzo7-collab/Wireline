@@ -101,6 +101,8 @@
     font-size: var(--font-size);
     scroll-behavior: smooth;
     background: var(--background);
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    font-optical-sizing: auto;
   }
 
   body {
@@ -110,6 +112,7 @@
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: geometricPrecision;
   }
 
@@ -126,8 +129,35 @@
   h4,
   .font-display {
     font-family: var(--font-display);
-    font-weight: 500;
-    letter-spacing: -0.03em;
+    font-weight: 560;
+    letter-spacing: -0.035em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  h1 {
+    letter-spacing: -0.06em;
+    line-height: 0.92;
+  }
+
+  h2 {
+    letter-spacing: -0.052em;
+    line-height: 0.98;
+  }
+
+  h3 {
+    letter-spacing: -0.038em;
+    line-height: 1.02;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
   }
 
   input,
@@ -164,6 +194,36 @@
       radial-gradient(circle at 92% 0%, rgba(79, 30, 123, 0.08), transparent 30rem),
       radial-gradient(circle at 5% 18%, rgba(79, 30, 123, 0.045), transparent 24rem),
       var(--background);
+  }
+
+  .wl-title {
+    font-family: var(--font-display);
+    font-weight: 620;
+    letter-spacing: -0.062em;
+    line-height: 0.9;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .wl-subtitle {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .wl-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .wl-numeral {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.055em;
   }
 
   .wl-grain {
@@ -257,15 +317,4 @@
   .flex.min-h-screen.bg-ink.text-paper .text-5xl { font-size: 2.25rem !important; line-height: 1.05 !important; }
   .flex.min-h-screen.bg-ink.text-paper .text-4xl { font-size: 2rem !important; line-height: 1.08 !important; }
   .flex.min-h-screen.bg-ink.text-paper .text-3xl { font-size: 1.65rem !important; line-height: 1.12 !important; }
-
-  .flex.min-h-screen.bg-ink.text-paper [class*="p-6"] { padding: 1rem !important; }
-  .flex.min-h-screen.bg-ink.text-paper [class*="px-6"] { padding-left: 1rem !important; padding-right: 1rem !important; }
-
-  .flex.min-h-screen.bg-ink.text-paper [class*="sm:grid-cols"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="md:grid-cols"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="lg:grid-cols"],
-  .flex.min-h-screen.bg-ink.text-paper [class*="xl:grid-cols"] {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
