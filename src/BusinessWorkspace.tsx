@@ -307,7 +307,7 @@ function AssistantPage() {
           text="This is the owner/operator command center. It explains what changed, what needs approval, and which agents need training."
         />
         <Card className="min-h-[420px] flex flex-col justify-between">
-          <div className="rounded-[20px] border border-white/5 bg-[#030303]/90 p-5 text-sm leading-7 text-slate-300 shadow-inner">
+          <div className="rounded-[20px] border border-white/5 bg-secondary p-5 text-sm leading-7 text-muted-foreground shadow-inner">
             I reviewed the last 24 hours. Sarah is strong on scheduling. Liam needs billing
             escalation language. Tyler needs webhook timeout simulations. Recommended next step:
             update refund policy, then run five billing scenarios in Training.
@@ -322,7 +322,7 @@ function AssistantPage() {
               </button>
             ))}
           </div>
-          <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#030303]/60 px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner">
+          <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-white/10 bg-secondary px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner">
             <input
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/55"
               placeholder="Ask Wireline…"
@@ -334,24 +334,24 @@ function AssistantPage() {
         </Card>
       </div>
       <div className="space-y-5">
-        <Card className="border-brand/30 bg-[#0d091c]/30 shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+        <Card className="border-brand/30 bg-secondary shadow-[0_0_20px_rgba(139,92,246,0.1)]">
           <Pill tone="warn">Needs approval</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">Refund call</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Sarah needs a human approval rule before promising refund timing.
           </p>
         </Card>
-        <Card className="border-cyan-500/25 bg-[#08121a]/30 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+        <Card className="border-cyan-500/25 bg-secondary shadow-[0_0_20px_rgba(34,211,238,0.1)]">
           <Pill tone="brand">Training win</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">12 improved calls</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Updated objection handling reduced repeated escalations.
           </p>
         </Card>
         <Card>
           <Pill>Next action</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">Run simulations</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Five billing scenarios should be tested before expanding permissions.
           </p>
         </Card>
@@ -381,7 +381,7 @@ function LiveOpsPage() {
       <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <Card>
           <h2 className="font-display text-2xl text-white">Calls in progress</h2>
-          <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/5 overflow-hidden bg-[#030303]/40">
+          <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/5 overflow-hidden bg-secondary">
             <div className="hidden lg:grid grid-cols-[1fr_140px_1fr_96px_100px] gap-3 bg-white/[0.02] p-4 text-[10px] font-bold uppercase tracking-[.15em] text-white/55 font-mono">
               <div>Topic</div>
               <div>Agent</div>
@@ -412,7 +412,7 @@ function LiveOpsPage() {
               ["Appointment routing", "78%"],
             ].map(([name, value]) => (
               <div key={name}>
-                <div className="flex justify-between text-sm text-slate-300">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{name}</span>
                   <span className="text-cyan-400 font-semibold font-mono">{value}</span>
                 </div>
@@ -447,12 +447,12 @@ function FleetPage() {
               <span className="text-xs text-white/60 font-mono">{agent.model}</span>
             </div>
             <h3 className="mt-5 font-display text-3xl text-white">{agent.name}</h3>
-            <p className="mt-1 text-sm text-slate-400">{agent.role}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{agent.role}</p>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <MiniMetric value={agent.calls} label="Calls" />
               <MiniMetric value={agent.score} label="Score" />
             </div>
-            <div className="mt-4 rounded-[16px] border border-white/5 bg-[#030303]/40 p-3 text-sm text-slate-300 shadow-inner">
+            <div className="mt-4 rounded-[16px] border border-white/5 bg-secondary p-3 text-sm text-muted-foreground shadow-inner">
               <span className="text-white/55 font-mono text-xs">Next training:</span> {agent.next}
             </div>
             <div className="mt-5 flex gap-2">
@@ -503,7 +503,7 @@ function TrainingPage() {
           <Card key={title}>
             <Icon className="text-brand-bright" />
             <h3 className="mt-4 font-display text-2xl text-white">{title}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
           </Card>
         ))}
       </div>
@@ -514,7 +514,7 @@ function TrainingPage() {
             {["Upload policies", "Run 5 simulations", "Approve escalation rules"].map((x, i) => (
               <button
                 key={x}
-                className="flex flex-col text-left rounded-[18px] border border-white/5 bg-[#030303]/40 p-4 text-sm text-white/60 transition-all duration-200 hover:bg-white/5 hover:border-brand/30 active:scale-95"
+                className="flex flex-col text-left rounded-[18px] border border-white/5 bg-secondary p-4 text-sm text-white/60 transition-all duration-200 hover:bg-white/5 hover:border-brand/30 active:scale-95"
               >
                 <Check
                   className={cx(
@@ -529,10 +529,10 @@ function TrainingPage() {
             ))}
           </div>
         </Card>
-        <Card className="border-brand/30 bg-[#0d091c]/30">
+        <Card className="border-brand/30 bg-secondary">
           <Pill tone="warn">Next before launch</Pill>
           <h3 className="mt-4 font-display text-2xl text-white">Billing scenario pack</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Refund timing, failed payment, discount request, disputed charge, and manager callback.
           </p>
         </Card>
@@ -572,7 +572,7 @@ function AnalyticsPage() {
           {["Billing objections", "Refund approvals", "Webhook timeouts"].map((x) => (
             <div
               key={x}
-              className="rounded-[18px] border border-white/5 bg-[#030303]/40 p-4 text-sm text-slate-300 font-semibold text-center hover:border-brand/30 transition-all duration-300"
+              className="rounded-[18px] border border-white/5 bg-secondary p-4 text-sm text-muted-foreground font-semibold text-center hover:border-brand/30 transition-all duration-300"
             >
               {x}
             </div>
@@ -601,7 +601,7 @@ function TeamPage() {
           <Card key={role}>
             <Icon className="text-brand-bright" />
             <h3 className="mt-4 font-display text-2xl text-white">{role}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{text}</p>
             <button className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white hover:border-brand/30 active:scale-95">
               Configure role
             </button>
@@ -629,7 +629,7 @@ function IntegrationsPage() {
                 <h3 className="font-display text-xl text-white">{name}</h3>
                 <Pill tone={statusTone(status)}>{status}</Pill>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-300">{detail}</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{detail}</p>
             </div>
             <button className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white hover:border-brand/30 active:scale-95">
               {status === "Review" ? "Verify" : status === "Available" ? "Connect" : "View plan"}
@@ -669,7 +669,7 @@ function SettingsPage() {
             <h3 className="mt-4 font-display text-xl transition-colors duration-200 text-white group-hover:text-brand-bright">
               {title}
             </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-300 transition-colors duration-200">
+            <p className="mt-2 text-sm leading-6 text-muted-foreground transition-colors duration-200">
               {text}
             </p>
           </Card>

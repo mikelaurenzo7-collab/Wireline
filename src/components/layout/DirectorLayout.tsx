@@ -43,7 +43,7 @@ export default function DirectorLayout({
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row relative overflow-hidden dark">
       {/* SideNavBar */}
-      <nav className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 z-40 py-8 bg-[#15111b] border-r border-white/5 transition-all duration-300">
+      <nav className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 z-40 py-8 bg-secondary border-r border-white/5 transition-all duration-300">
         <div className="px-6 mb-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-none bg-card/50 border border-white/10 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
@@ -111,7 +111,7 @@ export default function DirectorLayout({
 
       {/* Main Workspace Area */}
       <main className="flex-1 ml-0 md:ml-64 flex h-screen relative bg-background">
-        <div className="flex-1 flex flex-col h-full bg-[#15111b] relative border-r border-white/5">
+        <div className="flex-1 flex flex-col h-full bg-secondary relative border-r border-white/5">
           {/* Header */}
           <header className="h-14 flex items-center justify-between px-6 border-b border-white/5 bg-velvet/90 backdrop-blur-md z-20 shrink-0">
             <div className="flex items-center gap-4">
@@ -141,7 +141,7 @@ export default function DirectorLayout({
             </header>
             <div className="flex-1 scroll-viewport p-6 flex flex-col gap-4">
               {/* Dummy Artifacts from the Premium Design */}
-              <div className="bg-[#15111b] border border-white/10 p-4 rounded-none hover:border-primary/50 transition-colors cursor-pointer group shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="bg-secondary border border-white/10 p-4 rounded-none hover:border-primary/50 transition-colors cursor-pointer group shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 text-primary">
                     <FileText className="w-4 h-4" />
@@ -160,7 +160,7 @@ export default function DirectorLayout({
                 </p>
               </div>
 
-              <div className="bg-[#15111b] border border-white/10 p-4 rounded-none hover:border-primary/50 transition-colors cursor-pointer group shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="bg-secondary border border-white/10 p-4 rounded-none hover:border-primary/50 transition-colors cursor-pointer group shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
                     <Network className="w-4 h-4" />

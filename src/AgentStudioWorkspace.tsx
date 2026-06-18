@@ -135,7 +135,7 @@ function StudioShell() {
 
   return (
     <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-ink text-paper">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 lg:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-secondary p-4 lg:flex">
         <Link to="/" className="mb-8 inline-flex items-center gap-2 px-2 pt-2">
           <span className="grid h-7 w-7 place-items-center rounded-[10px] bg-brand">W</span>
           <span className="font-display text-[19px] font-semibold">Wireline</span>

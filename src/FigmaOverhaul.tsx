@@ -921,7 +921,7 @@ function BusinessConsole({ initial = "assistant" }: { initial?: BusinessTab }) {
   };
   return (
     <div className="flex min-h-screen bg-ink text-paper">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 lg:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-secondary p-4 lg:flex">
         <Link to="/" className="mb-8 px-2 pt-2">
           <Logo light />
         </Link>
