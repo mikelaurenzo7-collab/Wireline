@@ -1,6 +1,6 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-export const SIGNUP_PLAN_IDS = ["personal", "personal-plus", "starter", "scale"] as const;
+export const SIGNUP_PLAN_IDS = ["personal", "personal-plus", "business-starter", "starter", "scale"] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const SIGNUP_WEDGE_KEYS = [
@@ -34,7 +34,7 @@ export type SignupWedgeRecommendation = {
 export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRecommendation> = {
   "home-services": {
     label: "home services",
-    defaultPlanId: "starter",
+    defaultPlanId: "business-starter",
     templateId: "lead-qualifier-inbound",
     templateLabel: "Inbound Lead Qualifier",
   },
@@ -52,7 +52,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   "real-estate": {
     label: "real estate",
-    defaultPlanId: "starter",
+    defaultPlanId: "business-starter",
     templateId: "scheduler-realestate",
     templateLabel: "Real Estate Tour Booker",
   },
@@ -70,7 +70,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   restaurants: {
     label: "restaurants",
-    defaultPlanId: "starter",
+    defaultPlanId: "business-starter",
     templateId: "ecommerce-phone-order",
     templateLabel: "Phone Order Agent",
   },
@@ -88,7 +88,12 @@ const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   plus: "personal-plus",
   personal_plus: "personal-plus",
   personalplus: "personal-plus",
-  pro: "scale",
+  lite: "business-starter",
+  business_lite: "business-starter",
+  businesslite: "business-starter",
+  business_starter: "business-starter",
+  businessstarter: "business-starter",
+  pro: "starter",
   business: "scale",
   enterprise: "scale",
 };
@@ -203,7 +208,7 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
   if (intent?.preferredPlanId) return intent.preferredPlanId;
   if (intent?.signupWedge) return SIGNUP_WEDGE_RECOMMENDATIONS[intent.signupWedge].defaultPlanId;
-  return "starter";
+  return "business-starter";
 }
 
 export function getSignupWedgeRecommendation(
@@ -216,20 +221,4 @@ export function getSignupWedgeRecommendation(
 export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId): string {
   const plan = planId || SIGNUP_WEDGE_RECOMMENDATIONS[wedge].defaultPlanId;
   return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(plan)}`;
-}
-
-export async function syncSignupIntent(intent: SignupIntent | null): Promise<void> {
-  if (!hasSignupIntent(intent)) return;
-  const response = await fetch("/api/auth/signup-intent", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(intent),
-  });
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    console.error("signup intent sync failed", response.status, body.slice(0, 240));
-  }
 }
