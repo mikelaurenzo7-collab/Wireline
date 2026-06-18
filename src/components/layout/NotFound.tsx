@@ -122,7 +122,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               to="/chat"
               icon={MessageSquare}
               label="Chat"
-              hint="Director & agents"
+              hint="Assistant & agents"
               accent={BRAND.purple}
             />
             <NotFoundCard

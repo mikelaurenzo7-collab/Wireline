@@ -74,10 +74,13 @@ export function DirectorStarterPrompts({
 }: DirectorStarterPromptsProps) {
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
-  const isStudioSurface = location.pathname === "/agents" || location.pathname.startsWith("/agents/");
-  const resolvedPrompts = prompts ?? (isStudioSurface ? STUDIO_AGENT_STARTER_PROMPTS : DIRECTOR_STARTER_PROMPTS);
+  const isStudioSurface =
+    location.pathname === "/agents" || location.pathname.startsWith("/agents/");
+  const resolvedPrompts =
+    prompts ?? (isStudioSurface ? STUDIO_AGENT_STARTER_PROMPTS : DIRECTOR_STARTER_PROMPTS);
   const resolvedEyebrow =
-    starterEyebrow ?? (isStudioSurface ? "Tell Director what to edit" : DIRECTOR_EMPTY_HERO.starterEyebrow);
+    starterEyebrow ??
+    (isStudioSurface ? "Tell the Assistant what to edit" : DIRECTOR_EMPTY_HERO.starterEyebrow);
   const featured = resolvedPrompts.slice(0, featuredCount);
   const rest = resolvedPrompts.slice(featuredCount);
   const hasMore = rest.length > 0;
