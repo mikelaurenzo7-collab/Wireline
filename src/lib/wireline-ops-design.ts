@@ -339,7 +339,7 @@ export const OPS_TRIAGE_COPY = {
 } as const;
 
 /**
- * Training "Director assists" — replaces the old recipe pop-out modals with
+ * Training "Assistant assists" — replaces the old recipe pop-out modals with
  * deep-links that prefill Director chat (mobile-safe, no modal to fail).
  */
 export const OPS_TRAINING_ASSISTS = [
@@ -397,8 +397,7 @@ export const OPS_STUDIO_ASSISTS = [
   },
   {
     label: "Set the schedule",
-    prompt:
-      "Help me set this agent's business hours and an out-of-hours message for my timezone.",
+    prompt: "Help me set this agent's business hours and an out-of-hours message for my timezone.",
   },
   {
     label: "Pick the right tools",
@@ -726,9 +725,9 @@ export const OPS_INSIGHTS_EMPTY = {
     eyebrow: "AI spend",
     title: "No AI usage in this window",
     description:
-      "Try a longer date range, or run Director recipes and live calls to accumulate usage.",
+      "Try a longer date range, or run Assistant recipes and live calls to accumulate usage.",
     actions: [
-      { label: "Ask Director", to: "/chat", primary: true },
+      { label: "Ask Assistant", to: "/chat", primary: true },
       { label: "Live Ops", to: "/ops" },
     ],
   },

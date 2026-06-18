@@ -436,7 +436,7 @@ export default function LiveOps() {
   return (
     <PageTransition>
       <DirectorLayout
-        title={`Director Sync // Protocol 7 — ${activeTab.toUpperCase()}`}
+        title={`Assistant Sync // Protocol 7 — ${activeTab.toUpperCase()}`}
         showArtifacts={false}
       >
         <div
