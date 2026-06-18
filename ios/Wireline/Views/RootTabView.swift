@@ -7,19 +7,23 @@ struct RootTabView: View {
     @EnvironmentObject private var auth: AuthService
 
     var body: some View {
-        TabView {
+        TabView(selection: $router.selectedTab) {
             WorkspaceView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
-            
+                .tag(WirelineRouter.Tab.home)
+
             if auth.accountType == "business" {
                 CallsView()
                     .tabItem { Label("Calls", systemImage: "phone.fill") }
+                    .tag(WirelineRouter.Tab.calls)
                 NavigationStack { WalletView() }
                     .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
+                    .tag(WirelineRouter.Tab.wallet)
             }
 
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tag(WirelineRouter.Tab.settings)
         }
         .tint(Brand.purple)
         .sheet(isPresented: $router.showAsk) { AskWirelineView() }

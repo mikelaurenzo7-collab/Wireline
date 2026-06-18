@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wireline "Midnight" palette (mirror of src/index.css). -->
+<resources>
+    <color name="wl_canvas">#FF0C0D11</color>
+    <color name="wl_panel">#FF14161D</color>
+    <color name="wl_iris">#FF7C9CFF</color>
+    <color name="wl_iris_bright">#FFA9BEFF</color>
+    <color name="wl_mint">#FF54E0B4</color>
+    <color name="wl_amber">#FFF4B45A</color>
+    <color name="wl_text">#FFECEDF1</color>
+</resources>

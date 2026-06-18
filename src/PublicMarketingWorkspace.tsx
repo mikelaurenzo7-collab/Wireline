@@ -318,12 +318,16 @@ function SectionHeader({
   title,
   text,
   dark = false,
+  as = "h2",
 }: {
   eyebrow: string;
   title: string;
   text: string;
   dark?: boolean;
+  /** Use "h1" when this is the page's primary title (one per page for SEO/a11y). */
+  as?: "h1" | "h2";
 }) {
+  const Heading = as;
   return (
     <div className="max-w-3xl">
       <p
@@ -334,14 +338,14 @@ function SectionHeader({
       >
         {eyebrow}
       </p>
-      <h2
+      <Heading
         className={cn(
           "mt-3 font-display !normal-case text-4xl font-medium leading-[1.03] tracking-[-.05em] md:text-6xl",
           dark ? "text-paper" : "text-foreground",
         )}
       >
         {title}
-      </h2>
+      </Heading>
       <p
         className={cn(
           "mt-5 max-w-2xl text-[16px] leading-7",
@@ -811,7 +815,7 @@ function ModelSection() {
   );
 }
 
-function Pricing() {
+function Pricing({ as = "h2" }: { as?: "h1" | "h2" }) {
   return (
     <section className="bg-card">
       <div className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8">
@@ -819,6 +823,7 @@ function Pricing() {
           eyebrow="Pricing"
           title="Personal, starter business, and scale pricing."
           text="Start low for personal use, launch a real business line at $99, then grow into higher-volume agents as the front desk proves itself."
+          as={as}
         />
         <div className="mt-10 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
           {tiers.map((tier) => (
@@ -1146,7 +1151,7 @@ function LegalPage({ kind }: { kind: "terms" | "privacy" | "security" | "contact
   return (
     <Layout>
       <main className="mx-auto max-w-[1100px] px-5 py-20 sm:px-8">
-        <SectionHeader eyebrow="Trust" title={copy[0]} text={copy[1]} />
+        <SectionHeader eyebrow="Trust" title={copy[0]} text={copy[1]} as="h1" />
         <div className="mt-10">
           <Button to="/get-started">Get started</Button>
         </div>
@@ -1170,7 +1175,7 @@ function Page({
     <Layout>
       <main className="mx-auto max-w-[1500px] px-5 py-20 sm:px-8">
         <div className="grid gap-10 lg:grid-cols-[.75fr_1fr] lg:items-end">
-          <SectionHeader eyebrow={eyebrow} title={title} text={text} />
+          <SectionHeader eyebrow={eyebrow} title={title} text={text} as="h1" />
           <ProductCanvas />
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1212,7 +1217,7 @@ function PublicRoutes() {
         element={
           <Layout>
             <main>
-              <Pricing />
+              <Pricing as="h1" />
               <FinalCTA />
             </main>
           </Layout>

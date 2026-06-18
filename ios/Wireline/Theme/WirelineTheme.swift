@@ -2,26 +2,37 @@ import SwiftUI
 
 /// Wireline's brand layer. Direction: **iOS-native first, brand accent second** —
 /// we keep SF Pro, system materials, and standard controls (best HIG + App Store
-/// fit), and layer Wireline's "Rich Cream + Purple" identity on top as the accent
-/// tint and surface tints. Tokens mirror `src/index.css` so the app stays in sync
-/// with the web design system.
+/// fit), and layer Wireline's **"Midnight"** identity on top as the accent tint
+/// and dark surfaces. Tokens mirror `src/index.css` + `DESIGN.md` (dark-only,
+/// iris accent) so the app stays in sync with the web design system.
 enum Brand {
-    /// Primary purple (`--primary` #8B5CF6). Used as the global accent/tint.
-    static let purple = Color(hex: 0x8B5CF6)
-    /// Deep purple (`--color-brand-deep` #4C1D95) for pressed/gradient ends.
-    static let purpleDeep = Color(hex: 0x4C1D95)
-    /// Warm dark paper (`--paper` #09090B).
-    static let paper = Color(hex: 0x09090B)
-    /// A hair-warmer dark for raised surfaces (`--paper-warm` #020204).
-    static let paperWarm = Color(hex: 0x020204)
-    /// Near-white ink (`--ink` #F8FAFC).
-    static let ink = Color(hex: 0xF8FAFC)
-    /// Success / live signal (`--wl-signal` #10B981).
-    static let signal = Color(hex: 0x10B981)
+    /// Primary accent — iris (`--iris` / `--primary` #7C9CFF). Global tint.
+    /// (Kept the name `purple` to avoid churn across 30+ call sites; the value
+    /// is the Midnight iris blue.)
+    static let purple = Color(hex: 0x7C9CFF)
+    /// Deep iris (`--iris-deep` #5570E6) for pressed / gradient ends.
+    static let purpleDeep = Color(hex: 0x5570E6)
+    /// Bright iris (`--iris-bright` #A9BEFF) for emphasis on dark.
+    static let irisBright = Color(hex: 0xA9BEFF)
+    /// Canvas (`--canvas` #0C0D11) — the app background.
+    static let paper = Color(hex: 0x0C0D11)
+    /// Deepest canvas (`--canvas-deep` #0A0B0E) for raised separation.
+    static let paperWarm = Color(hex: 0x0A0B0E)
+    /// Panel surface (`--panel` #14161D) for cards / sheets.
+    static let panel = Color(hex: 0x14161D)
+    /// Primary text (`--text` #ECEDF1).
+    static let ink = Color(hex: 0xECEDF1)
+    /// Live / positive signal (`--mint` #54E0B4).
+    static let signal = Color(hex: 0x54E0B4)
+    /// Attention (`--amber` #F4B45A).
+    static let amber = Color(hex: 0xF4B45A)
     /// Destructive (`--destructive` #EF4444).
     static let destructive = Color(hex: 0xEF4444)
-    /// Faint purple wash for tinted chips/selected rows (`--accent`).
-    static let accentTint = Color(hex: 0x8B5CF6, opacity: 0.15)
+    /// Faint iris wash for tinted chips / selected rows (`--accent`).
+    static let accentTint = Color(hex: 0x7C9CFF, opacity: 0.15)
+
+    /// Explicit alias for new code (prefer `Brand.iris` going forward).
+    static let iris = Color(hex: 0x7C9CFF)
 }
 
 extension Color {
@@ -35,9 +46,11 @@ extension Color {
 }
 
 extension Font {
-    /// Wireline display font — uses iOS native serif to approximate Fraunces with premium display editorial scale
+    /// Wireline display font. Midnight is sans-only (Plus Jakarta Sans on web);
+    /// on iOS we approximate with SF Pro at a tight, bold display weight — no
+    /// serif (the old Fraunces-era serif was removed in the Midnight rebuild).
     static func display(_ style: Font.TextStyle, weight: Font.Weight = .bold) -> Font {
-        return Font.system(style, design: .serif).weight(weight)
+        return Font.system(style, design: .default).weight(weight)
     }
     
     /// Wireline mono font — uses iOS native monospaced to approximate JetBrains Mono

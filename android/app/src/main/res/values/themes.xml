@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wireline Android theme — "Midnight" (dark-only), mirroring src/index.css and
+  DESIGN.md. The accent is iris (#7C9CFF); the canvas is #0C0D11. Jetpack Compose
+  drives the real surfaces (see ui/theme/WirelineTheme.kt); this XML theme covers
+  the window background + status bar before Compose takes over so there's no
+  white flash on launch.
+-->
 <resources>
 
-    <style name="Theme.Wireline" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Wireline" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/wl_canvas</item>
+        <item name="android:statusBarColor">@color/wl_canvas</item>
+        <item name="android:navigationBarColor">@color/wl_canvas</item>
+        <item name="android:colorAccent">@color/wl_iris</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

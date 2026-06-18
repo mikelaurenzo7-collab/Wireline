@@ -12,9 +12,10 @@ public enum WirelineWidgetShared {
     /// must match the App Group capability in BOTH targets' entitlements.
     public static let appGroupId = "group.com.wireline.assistant"
 
-    /// Brand accent (Silky Purple), mirrored from `WirelineTheme` because the
-    /// widget target cannot see the app's `Brand` tokens.
-    public static let accentHex = "8B3FD6"
+    /// Brand accent (Midnight iris #7C9CFF), mirrored from `WirelineTheme` /
+    /// `WidgetTheme` because the widget target cannot see the app's `Brand`
+    /// tokens. Keep in sync with `--iris` in `src/index.css`.
+    public static let accentHex = "7C9CFF"
 }
 
 /// One glanceable recent call. Pre-formatted by the app so the widget stays a

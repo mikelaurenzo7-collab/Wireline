@@ -1,6 +1,30 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import baseline from "../../scripts/csp-inventory-baseline.json";
-import { buildConnectSrcs, buildCSP, generateCspNonce } from "./csp";
+import { buildConnectSrcs, buildCSP, generateCspNonce, INLINE_SCRIPT_HASHES } from "./csp";
+
+/**
+ * Recompute the CSP hashes of every *executable* inline <script> in index.html.
+ * External (`src=`) tags and `application/ld+json` data blocks are excluded —
+ * neither needs a script-src hash. This is the drift guard: if anyone edits an
+ * inline boot script without updating INLINE_SCRIPT_HASHES, this fails.
+ */
+function liveInlineScriptHashes(): string[] {
+  const indexHtmlPath = fileURLToPath(new URL("../../index.html", import.meta.url));
+  const html = readFileSync(indexHtmlPath, "utf8");
+  const matches = html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g);
+  const hashes: string[] = [];
+  for (const m of matches) {
+    const attrs = m[1];
+    if (/\bsrc\s*=/.test(attrs)) continue; // external script, no inline hash
+    if (/type\s*=\s*["']application\/(ld\+json|json)["']/.test(attrs)) continue; // data, not executed
+    const digest = createHash("sha256").update(m[2], "utf8").digest("base64");
+    hashes.push(`'sha256-${digest}'`);
+  }
+  return hashes;
+}
 
 describe("buildConnectSrcs", () => {
   it("includes the core third-party origins in base mode", () => {
@@ -39,15 +63,61 @@ describe("buildCSP", () => {
       .split(";")
       .map((d) => d.trim())
       .find((d) => d.startsWith("script-src"))!;
-    // 'self' first, then the three static inline-script hashes, then marketing origins.
+    // 'self' first, then the static inline-script hashes, then marketing origins.
     expect(scriptDirective.startsWith("script-src 'self' 'sha256-")).toBe(true);
-    expect(scriptDirective).toContain("'sha256-SX5Oce7MqKqZrv+KX1uSJDriRWzqlnlmu11LcJ5U8aM='");
+    // Every allowlisted inline hash must appear in the emitted directive.
+    for (const hash of INLINE_SCRIPT_HASHES) {
+      expect(scriptDirective).toContain(hash);
+    }
     expect(scriptDirective).toContain("https://plausible.io");
     expect(scriptDirective).toContain("https://connect.facebook.net");
     expect(scriptDirective).toContain("https://www.googletagmanager.com");
     // script-src must never carry 'unsafe-inline' / 'unsafe-eval' in prod.
     expect(scriptDirective).not.toContain("'unsafe-inline'");
     expect(scriptDirective).not.toContain("'unsafe-eval'");
+  });
+
+  it("allowlists exactly the executable inline scripts in index.html (drift guard)", () => {
+    // This is the test that would have caught the prod regression where the
+    // Meta Pixel + GTM loader was edited but its CSP hash was left stale,
+    // silently blocking analytics on every page. Hashes are derived live.
+    const live = liveInlineScriptHashes().sort();
+    const allow = [...INLINE_SCRIPT_HASHES].sort();
+    expect(live.length).toBeGreaterThan(0);
+    expect(allow).toEqual(live);
+    // And the emitted prod CSP must carry each live hash (no blocked inline).
+    const scriptDirective = buildCSP(false)
+      .split(";")
+      .map((d) => d.trim())
+      .find((d) => d.startsWith("script-src"))!;
+    for (const hash of live) {
+      expect(scriptDirective).toContain(hash);
+    }
+  });
+
+  it("vercel.json static-shell CSP stays in sync with csp.ts inline hashes", () => {
+    // Vercel serves the static index.html at the edge with the header from
+    // vercel.json — bypassing server.ts. That header is the CSP real users
+    // get on the marketing shell, so it MUST carry the same inline hashes as
+    // csp.ts (CLAUDE.md: "CSP — one source"). This guards the duplication.
+    const vercelConfig = JSON.parse(
+      readFileSync(fileURLToPath(new URL("../../vercel.json", import.meta.url)), "utf8"),
+    ) as { headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }> };
+    const cspHeader = vercelConfig.headers
+      .flatMap((h) => h.headers)
+      .find((h) => h.key.toLowerCase() === "content-security-policy");
+    expect(cspHeader).toBeTruthy();
+    const scriptDirective = cspHeader!.value
+      .split(";")
+      .map((d) => d.trim())
+      .find((d) => d.startsWith("script-src"))!;
+    for (const hash of INLINE_SCRIPT_HASHES) {
+      expect(scriptDirective).toContain(hash);
+    }
+    // No stale hashes: the only sha256 tokens in vercel.json script-src must be
+    // the allowlisted ones.
+    const sha256Tokens = scriptDirective.match(/'sha256-[^']+'/g) ?? [];
+    expect(sha256Tokens.sort()).toEqual([...INLINE_SCRIPT_HASHES].sort());
   });
 
   it("injects a nonce into script-src when one is provided in prod mode", () => {

@@ -62,8 +62,6 @@ private struct WalletWidgetView: View {
 
     @Environment(\.widgetFamily) private var family
 
-    private let brandPurple = Color(red: 0.545, green: 0.247, blue: 0.839)
-
     private func formattedBalance(short: Bool = false) -> String {
         guard let balance = balance else { return "$0.00" }
         if short {
@@ -109,19 +107,22 @@ private struct WalletWidgetView: View {
                     HStack {
                         Image(systemName: "creditcard.fill")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(brandPurple)
+                            .foregroundStyle(WidgetTheme.irisBright)
                         Spacer()
                     }
                     Spacer()
                     Text(formattedBalance())
                         .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundStyle(WidgetTheme.mint)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                     Text("available credits")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(WidgetTheme.textSecondary)
                 }
                 .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .background(WidgetTheme.panelGradient)
             }
         }
     }
@@ -137,15 +138,16 @@ private struct WalletWidgetView: View {
         case .accessoryRectangular:
             Text("Sign in to Wireline").font(.headline)
         default:
-            VStack {
+            VStack(spacing: 6) {
                 Image(systemName: "person.crop.circle.badge.questionmark")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetTheme.textSecondary)
                 Text("Sign in to see balance")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetTheme.textSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(WidgetTheme.panelGradient)
         }
     }
 }

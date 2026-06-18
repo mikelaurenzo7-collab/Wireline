@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wireline Android launcher shortcuts + Google Assistant App Actions.
+
+  Parity with the iOS App Shortcuts (ios/Wireline/Intents/WirelineIntents.swift)
+  and the web catalog (src/data/personal-mobile.ts). Static <shortcut> entries
+  show on long-press of the launcher icon; <capability> entries map Google
+  Assistant Built-In Intents ("Hey Google, ask Wireline…") to the same surfaces
+  via wireline:// deep links.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- "Ask Wireline" — the general entry point. -->
+    <shortcut
+        android:shortcutId="ask_wireline"
+        android:enabled="true"
+        android:icon="@drawable/ic_mic"
+        android:shortcutShortLabel="@string/shortcut_ask_short"
+        android:shortcutLongLabel="@string/shortcut_ask_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="wireline://ask"
+            android:targetPackage="com.wireline.app"
+            android:targetClass="com.wireline.app.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE" />
+    </shortcut>
+
+    <!-- "What needs my attention" — jump to the calls / follow-up list. -->
+    <shortcut
+        android:shortcutId="needs_attention"
+        android:enabled="true"
+        android:icon="@drawable/ic_mic"
+        android:shortcutShortLabel="@string/shortcut_attention_short"
+        android:shortcutLongLabel="@string/shortcut_attention_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="wireline://calls"
+            android:targetPackage="com.wireline.app"
+            android:targetClass="com.wireline.app.MainActivity" />
+    </shortcut>
+
+    <!-- "Place a call" — opens Ask Wireline ready to dial. -->
+    <shortcut
+        android:shortcutId="place_call"
+        android:enabled="true"
+        android:icon="@drawable/ic_mic"
+        android:shortcutShortLabel="@string/shortcut_call_short"
+        android:shortcutLongLabel="@string/shortcut_call_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="wireline://ask"
+            android:targetPackage="com.wireline.app"
+            android:targetClass="com.wireline.app.MainActivity" />
+    </shortcut>
+
+    <!-- App Action: "Hey Google, open Wireline" / "ask Wireline". -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.wireline.app"
+            android:targetClass="com.wireline.app.MainActivity">
+            <parameter
+                android:name="feature"
+                android:key="featureParam" />
+            <url-template android:value="wireline://ask" />
+        </intent>
+    </capability>
+
+    <!-- App Action: "Hey Google, call with Wireline". -->
+    <capability android:name="actions.intent.CREATE_CALL">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.wireline.app"
+            android:targetClass="com.wireline.app.MainActivity">
+            <url-template android:value="wireline://ask" />
+        </intent>
+    </capability>
+
+</shortcuts>

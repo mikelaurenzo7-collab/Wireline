@@ -20,8 +20,9 @@ struct WirelineApp: App {
             .environmentObject(router)
             .wirelineBrand()
             .onOpenURL { url in
-                // wireline://ask (from a widget / Control Center) → Ask surface.
-                if url.host == "ask" { router.showAsk = true }
+                // wireline://ask | calls | wallet | settings — from widgets,
+                // Control Center, Shortcuts, or universal links.
+                router.handle(url: url)
             }
         }
     }

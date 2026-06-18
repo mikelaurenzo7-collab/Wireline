@@ -63,10 +63,6 @@ private struct NeedsAttentionWidgetView: View {
 
     @Environment(\.widgetFamily) private var family
 
-    private let brandPurple = Color(red: 0.310, green: 0.118, blue: 0.482) // #4F1E7B
-    private let richCream = Color(red: 0.937, green: 0.914, blue: 0.863) // #EFE9DC
-    private let deepInk = Color(red: 0.102, green: 0.086, blue: 0.078) // #1A1614
-
     var body: some View {
         if !signedIn {
             signedOutView
@@ -91,7 +87,7 @@ private struct NeedsAttentionWidgetView: View {
                 HStack(spacing: 10) {
                     Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(count == 0 ? .green : .primary)
+                        .foregroundStyle(count == 0 ? WidgetTheme.mint : WidgetTheme.amber)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(count == 0 ? "All caught up" : "\(count) need attention")
                             .font(.headline.weight(.bold))
@@ -103,30 +99,22 @@ private struct NeedsAttentionWidgetView: View {
             default: // .systemSmall
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        ZStack {
-                            if count > 0 {
-                                Circle()
-                                    .fill(brandPurple.opacity(0.2))
-                                    .blur(radius: 12)
-                                    .scaleEffect(1.5)
-                            }
-                            Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(count == 0 ? .green : brandPurple)
-                        }
+                        Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(count == 0 ? WidgetTheme.mint : WidgetTheme.amber)
                         Spacer()
                     }
                     Spacer()
                     Text("\(count)")
-                        .font(Font.system(size: 48, design: .serif).weight(.bold))
-                        .foregroundStyle(count == 0 ? .secondary : brandPurple)
+                        .font(.system(size: 48, weight: .heavy, design: .rounded))
+                        .foregroundStyle(count == 0 ? WidgetTheme.mint : WidgetTheme.irisBright)
                     Text(count == 1 ? "needs follow-up" : "need follow-up")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(count == 0 ? .secondary : deepInk.opacity(0.8))
+                        .foregroundStyle(WidgetTheme.textSecondary)
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .background(richCream)
+                .background(WidgetTheme.panelGradient)
             }
         }
     }
@@ -142,15 +130,16 @@ private struct NeedsAttentionWidgetView: View {
         case .accessoryRectangular:
             Text("Sign in to Wireline").font(.headline)
         default:
-            VStack {
+            VStack(spacing: 6) {
                 Image(systemName: "person.crop.circle.badge.questionmark")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetTheme.textSecondary)
                 Text("Sign in to see status")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetTheme.textSecondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(WidgetTheme.panelGradient)
         }
     }
 }

@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Wireline</string>
+
+    <!-- Launcher shortcuts / App Actions (parity with iOS App Shortcuts). -->
+    <string name="shortcut_ask_short">Ask Wireline</string>
+    <string name="shortcut_ask_long">Ask Wireline to handle a call</string>
+    <string name="shortcut_attention_short">Needs attention</string>
+    <string name="shortcut_attention_long">See calls that need follow-up</string>
+    <string name="shortcut_call_short">Place a call</string>
+    <string name="shortcut_call_long">Have Wireline place a call</string>
 </resources>

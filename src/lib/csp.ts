@@ -7,22 +7,26 @@
 import { randomBytes } from "node:crypto";
 
 /**
- * SHA-256 hashes of the three static inline <script> blocks in index.html.
+ * SHA-256 hashes of the static inline <script> blocks in index.html.
  * Production CSP is nonce-less for the static SPA shell (Vercel serves a
  * static index.html — there is no per-request SSR to inject a nonce), so the
  * inline boot scripts are allowlisted by content hash instead. If you edit any
  * of these inline scripts, recompute the hash (the browser console prints the
- * expected `sha256-…` on mismatch) and update it here — `csp.test.ts` and the
- * `csp-inventory` baseline guard against silent drift.
+ * expected `sha256-…` on mismatch) and update it here — `csp.test.ts` derives
+ * the live hashes straight from index.html and fails on any drift.
  *
  *   1. Plausible custom-event helper (`window.plausible` queue shim)
  *   2. Meta Pixel + Google Tag Manager production loader
- *   3. Theme anti-flash checker (adds `.dark` before first paint → no FOUC)
+ *
+ * (The Midnight rebuild hardcoded `<html class="dark">`, so the old theme
+ * anti-flash checker — and its hash — no longer exist.)
+ *
+ * NOTE: `type="application/ld+json"` blocks are data, not executed scripts, so
+ * they need no hash. Only executable inline `<script>` blocks are listed here.
  */
 export const INLINE_SCRIPT_HASHES = [
   "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
-  "'sha256-kL8ItXVCZUMxClmT83CWl7fbMgHsJ50yiZrOHmp/ys8='",
-  "'sha256-SX5Oce7MqKqZrv+KX1uSJDriRWzqlnlmu11LcJ5U8aM='",
+  "'sha256-7GlTJ5OVUVcj4mDkEoGHJKEJ39odS0CsrHczcFqRNAE='",
 ] as const;
 
 /**
