@@ -5,6 +5,7 @@
 import express from "express";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import voiceObservabilityRoutes from "./voice-observability-routes";
 import {
   mountRouteTestRequestContext,
   mountTestErrorHandler,
@@ -181,11 +182,10 @@ vi.mock("../lib/webhook-helpers", () => ({
 }));
 
 async function buildApp() {
-  const routerModule = await import("./voice-observability-routes");
   const app = express();
   mountRouteTestRequestContext(app);
   app.use(express.json());
-  app.use("/api", routerModule.default);
+  app.use("/api", voiceObservabilityRoutes);
   mountTestErrorHandler(app);
   return app;
 }

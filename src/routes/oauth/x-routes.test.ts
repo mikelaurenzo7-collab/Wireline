@@ -1,6 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import xRoutes from "./x";
 import {
   mountRouteTestRequestContext,
   mountTestErrorHandler,
@@ -57,11 +58,9 @@ vi.mock("../../lib/x-service", () => ({
 }));
 
 async function buildApp() {
-  vi.resetModules();
-  const mod = await import("./x");
   const app = express();
   mountRouteTestRequestContext(app);
-  app.use(mod.default);
+  app.use(xRoutes);
   mountTestErrorHandler(app);
   return app;
 }

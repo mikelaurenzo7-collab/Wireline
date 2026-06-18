@@ -39,7 +39,13 @@ const router = Router();
 
 function sendAuthSuccess(
   res: Response,
-  user: { id: string; email: string; full_name?: string | null; is_owner?: boolean },
+  user: {
+    id: string;
+    email: string;
+    full_name?: string | null;
+    is_owner?: boolean;
+    account_type?: "personal" | "business";
+  },
   token: string,
 ) {
   setSessionCookie(res, token);
@@ -331,17 +337,28 @@ router.get(
   "/api/auth/session",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    const [row] = await drizzle
-      .select({ fullName: schema.users.fullName, email: schema.users.email })
-      .from(schema.users)
-      .where(eq(schema.users.id, req.user.id))
-      .limit(1);
+    const [[row], [sub]] = await Promise.all([
+      drizzle
+        .select({ fullName: schema.users.fullName, email: schema.users.email })
+        .from(schema.users)
+        .where(eq(schema.users.id, req.user.id))
+        .limit(1),
+      drizzle
+        .select({ plan: schema.subscriptions.plan })
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, req.user.id))
+        .limit(1),
+    ]);
+    const { resolveAccountType } = await import("../lib/account-type");
+    const account_type = resolveAccountType(sub?.plan);
+
     return res.json({
       user: {
         id: req.user.id,
         email: row?.email ?? req.user.email,
         full_name: row?.fullName ?? undefined,
         is_owner: isOwnerEmail(req.user.email),
+        account_type,
       },
     });
   },

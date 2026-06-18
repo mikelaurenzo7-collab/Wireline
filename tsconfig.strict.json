@@ -149,6 +149,16 @@
     "src/lib/internal-jwt-secret.test.ts",
     "src/lib/action-types.test.ts",
     "src/lib/api-row.test.ts",
-    "src/lib/audit-summary.test.ts"
+    "src/lib/audit-summary.test.ts",
+    "src/lib/design-preview.ts",
+    "src/lib/design-preview.test.ts",
+    "src/lib/director-artifact-dedupe.ts",
+    "src/lib/director-artifact-dedupe.test.ts",
+    "src/lib/director-creative-turn.ts",
+    "src/lib/director-creative-turn.test.ts",
+    "src/lib/director-design-ensemble.ts",
+    "src/lib/director-design-ensemble.test.ts",
+    "src/lib/director-design-path.ts",
+    "src/lib/director-design-path.test.ts"
   ]
 }

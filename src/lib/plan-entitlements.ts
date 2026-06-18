@@ -12,17 +12,17 @@ import type { PlanTier } from "./tenant-quotas";
 /** Platform owners dogfood on scale entitlements without a Stripe row. */
 export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "scale";
 
-const OPENROUTER_PLANS = new Set<StripePlanId>(["pro", "business", "enterprise"]);
+const OPENROUTER_PLANS = new Set<StripePlanId>(["starter", "scale"]);
 
 /** Map wireline_subscriptions.plan → quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
   switch (planId) {
     case "enterprise":
     case "scale":
-      return "scale" as PlanTier;
     case "business":
+      return "scale" as PlanTier;
     case "business-growth":
-      return "business-growth" as PlanTier;
+      return "starter" as PlanTier;
     case "business-starter":
     case "business-lite":
     case "lite":
@@ -77,15 +77,12 @@ export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
   switch (tier) {
     case "personal":
       return 15;
+    case "personal-plus":
+      return 25;
     case "starter":
-      return 35;
+      return 75;
     case "business-starter":
       return 45;
-    case "pro":
-      return 75;
-    case "business":
-      return 200;
-    case "enterprise":
     case "scale":
       return 500;
     default:

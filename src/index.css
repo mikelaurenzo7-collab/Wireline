@@ -1,6 +1,5 @@
 /* Wireline Figma UI/UX Overhaul — design source: Figma Make P3ESVszYd8FarNQNJvMnfa */
-@import "@fontsource-variable/plus-jakarta-sans/wght.css";
-@import "@fontsource-variable/fraunces/wght.css";
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
@@ -10,41 +9,41 @@
 
 :root {
   --font-size: 16px;
-  --paper: #efe9dc;
-  --paper-deep: #e6dccb;
-  --ink: #000000;
-  --brand: #4f1e7b;
-  --brand-deep: #3b154c;
-  --brand-bright: #6a2da3;
-  --background: #efe9dc;
-  --foreground: #000000;
-  --card: #f6f1e7;
-  --card-foreground: #000000;
-  --popover: #f6f1e7;
-  --popover-foreground: #000000;
-  --primary: #4f1e7b;
-  --primary-foreground: #f6f1e7;
-  --secondary: #e6dccb;
-  --secondary-foreground: #000000;
-  --muted: #e6dccb;
-  --muted-foreground: #6b5f54;
-  --accent: #ede4f3;
-  --accent-foreground: #3b154c;
-  --destructive: #a8341f;
-  --destructive-foreground: #f6f1e7;
-  --border: rgba(0, 0, 0, 0.12);
+  --paper: #09090b;
+  --paper-deep: #020204;
+  --ink: #f8fafc;
+  --brand: #8b5cf6;
+  --brand-deep: #4c1d95;
+  --brand-bright: #a78bfa;
+  --background: #000000;
+  --foreground: #f8fafc;
+  --card: rgba(255, 255, 255, 0.035);
+  --card-foreground: #f8fafc;
+  --popover: rgba(15, 13, 21, 0.95);
+  --popover-foreground: #f8fafc;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #f8fafc;
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: #94a3b8;
+  --accent: rgba(139, 92, 246, 0.15);
+  --accent-foreground: #a78bfa;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
   --input: transparent;
-  --input-background: #f6f1e7;
-  --switch-background: #cbbfae;
-  --ring: #4f1e7b;
-  --chart-1: #4f1e7b;
-  --chart-2: #6a2da3;
-  --chart-3: #8b5cb8;
-  --chart-4: #b08fce;
-  --chart-5: #3b154c;
-  --radius: 0px;
-  --font-display: "Fraunces", Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --input-background: rgba(0, 0, 0, 0.3);
+  --switch-background: rgba(255, 255, 255, 0.1);
+  --ring: #8b5cf6;
+  --chart-1: #8b5cf6;
+  --chart-2: #a78bfa;
+  --chart-3: #c084fc;
+  --chart-4: #e9d5ff;
+  --chart-5: #4c1d95;
+  --radius: 12px;
+  --font-display: "Geist", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -79,10 +78,10 @@
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 @layer base {
@@ -165,6 +164,26 @@
   select,
   button {
     font: inherit;
+    transition: border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--brand) !important;
+    box-shadow: 
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--brand),
+      0 0 16px var(--brand) !important;
+  }
+
+  button:focus-visible {
+    outline: none;
+    box-shadow: 
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--brand),
+      0 0 16px var(--brand) !important;
   }
 
   img,
@@ -185,14 +204,17 @@
       animation-duration: 0.001ms !important;
       transition-duration: 0.001ms !important;
     }
+    .signal-thread-pulse {
+      display: none !important;
+    }
   }
 }
 
 @layer utilities {
   .wl-overhaul-surface {
     background:
-      radial-gradient(circle at 92% 0%, rgba(79, 30, 123, 0.08), transparent 30rem),
-      radial-gradient(circle at 5% 18%, rgba(79, 30, 123, 0.045), transparent 24rem),
+      radial-gradient(circle at 85% 5%, rgba(139, 92, 246, 0.12), transparent 45rem),
+      radial-gradient(circle at 10% 25%, rgba(139, 92, 246, 0.08), transparent 35rem),
       var(--background);
   }
 
@@ -254,7 +276,7 @@
   }
 
   .wl-grain {
-    background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     background-size: 4px 4px;
   }
 
@@ -262,6 +284,53 @@
   .touch-press:active { transform: scale(0.98); }
 
   .text-balance { text-wrap: balance; }
+
+  .wl-glass-card {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 24px 80px -62px rgba(0, 0, 0, 0.9);
+  }
+
+  .wl-glass-panel {
+    background: rgba(5, 5, 8, 0.7);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .hover-glow {
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-glow:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 12px 36px -10px rgba(139, 92, 246, 0.35),
+      inset 0 0 16px -4px rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.45) !important;
+  }
+
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .shimmer-skeleton {
+    background: linear-gradient(
+      110deg,
+      rgba(255, 255, 255, 0.03) 30%,
+      rgba(255, 255, 255, 0.08) 45%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0.08) 55%,
+      rgba(255, 255, 255, 0.03) 70%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.6s infinite linear;
+  }
 }
 
 /*

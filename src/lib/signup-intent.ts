@@ -1,6 +1,12 @@
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 
-export const SIGNUP_PLAN_IDS = ["personal", "personal-plus", "business-starter", "starter", "scale"] as const;
+export const SIGNUP_PLAN_IDS = [
+  "personal",
+  "personal-plus",
+  "business-starter",
+  "starter",
+  "scale",
+] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const SIGNUP_WEDGE_KEYS = [
@@ -221,4 +227,18 @@ export function getSignupWedgeRecommendation(
 export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId): string {
   const plan = planId || SIGNUP_WEDGE_RECOMMENDATIONS[wedge].defaultPlanId;
   return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(plan)}`;
+}
+
+export async function syncSignupIntent(intent: SignupIntent | null): Promise<void> {
+  if (!hasSignupIntent(intent)) return;
+  const response = await fetch("/api/auth/signup-intent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(intent),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    console.error("signup intent sync failed", response.status, body.slice(0, 240));
+  }
 }

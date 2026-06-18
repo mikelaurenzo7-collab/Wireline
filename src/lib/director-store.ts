@@ -208,7 +208,13 @@ export async function loadDirectorMessages(
       )
       .orderBy(desc(schema.directorConversationMessages.createdAt))
       .limit(limit);
-    return { messages, degraded: false };
+    return {
+      messages: messages.map((m) => ({
+        ...m,
+        metadata: m.metadata as Record<string, unknown> | null,
+      })),
+      degraded: false,
+    };
   } catch (e) {
     if (isPostgresMissingColumn(e, "thread_key")) {
       log.warn("director messages: thread_key column missing, falling back without filter", {
@@ -229,7 +235,13 @@ export async function loadDirectorMessages(
           .where(eq(schema.directorConversationMessages.userId, userId))
           .orderBy(desc(schema.directorConversationMessages.createdAt))
           .limit(limit);
-        return { messages: rows, degraded: true };
+        return {
+          messages: rows.map((r) => ({
+            ...r,
+            metadata: r.metadata as Record<string, unknown> | null,
+          })),
+          degraded: true,
+        };
       } catch (threadKeyFallbackError) {
         log.warn("director messages thread_key fallback failed", {
           userId,

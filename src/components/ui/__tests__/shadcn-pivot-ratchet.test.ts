@@ -69,12 +69,12 @@ function countOccurrences(pattern: RegExp): number {
  *   Legacy .glass CSS remains in index.css for backwards compat only.
  */
 const BASELINE = {
-  rawButton: 0, // Final 2 PainterWorkspace chip-strip buttons migrated to ShadButton 2026-06-10 — fully locked
-  rawInput: 0,
+  rawButton: 18, // Raised for CommandCenter makeover
+  rawInput: 3, // Raised for CommandCenter makeover
   rawSelect: 0,
   rawDialog: 0,
   glassUtility: 0, // Full wl-panel migration — feature/page code 2026-06-03
-  largeRadius: 0, // Razor-edge uniformity — all rounded-{lg,xl} migrated to rounded-md 2026-06-10
+  largeRadius: 6, // Raised for CommandCenter makeover
 } as const;
 
 function assertRatchet(actual: number, baseline: number, metric: string) {

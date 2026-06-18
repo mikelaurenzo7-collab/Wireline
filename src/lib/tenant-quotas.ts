@@ -26,7 +26,13 @@ import { voiceMinutesDailyQuotaForTier } from "./plan-entitlements";
 // Plan defaults
 // ─────────────────────────────────────────────────────────────────
 
-export type PlanTier = "free" | "personal" | "personal-plus" | "starter" | "scale";
+export type PlanTier =
+  | "free"
+  | "personal"
+  | "personal-plus"
+  | "business-starter"
+  | "starter"
+  | "scale";
 
 export interface QuotaProfile {
   /** Anthropic input+output tokens per UTC day. */
@@ -65,6 +71,13 @@ export const PLAN_DEFAULTS: Record<PlanTier, QuotaProfile> = {
     concurrent_dials: 3,
     knowledge_rows: 1_000,
     intake_rpm: 45,
+  },
+  "business-starter": {
+    claude_tokens_daily: 4_000_000,
+    voice_minutes_daily: 36,
+    concurrent_dials: 10,
+    knowledge_rows: 5_000,
+    intake_rpm: 100,
   },
   starter: {
     claude_tokens_daily: 8_000_000,
@@ -179,7 +192,7 @@ export function buildDecision(opts: {
     dimension: opts.dimension,
     limit: opts.limit,
     used: opts.used,
-    remaining: Math.max(0, limit - opts.used),
+    remaining: Math.max(0, opts.limit - opts.used),
     period_key: opts.period_key,
     reset_at: opts.reset_at,
   };

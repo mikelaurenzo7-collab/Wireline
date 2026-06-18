@@ -3,6 +3,7 @@ package com.wireline.app.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -119,7 +120,10 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             onDismissRequest = { showAskWireline = false },
             containerColor = com.wireline.app.ui.theme.Brand.Paper
         ) {
-            com.wireline.app.ui.ask.AskWirelineScreen(onBack = { showAskWireline = false })
+            com.wireline.app.ui.ask.AskWirelineScreen(
+                model = model,
+                onBack = { showAskWireline = false }
+            )
         }
     }
 }
@@ -316,12 +320,19 @@ private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model
 @Composable
 fun SectionCard(content: @Composable () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = com.wireline.app.ui.theme.Brand.PaperWarm
+        ),
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x288B5CF6)), // 16% brand purple border
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             content()
         }

@@ -70,6 +70,7 @@ export type AuthUserPayload = {
   email: string;
   full_name?: string | null;
   is_owner?: boolean;
+  account_type?: "personal" | "business";
 };
 
 /** JSON body for login/signup/oauth — token is never returned to the client. */

@@ -6,6 +6,7 @@ import {
   mountRouteTestRequestContext,
   mountTestErrorHandler,
 } from "../../tests/helpers/express-test-app";
+import billingRoutes from "./billing-routes";
 
 const h = vi.hoisted(() => {
   const state = {
@@ -392,13 +393,11 @@ vi.mock("../lib/workspace-usage-snapshot", () => ({
 }));
 
 async function buildApp() {
-  const billingModule = await import("./billing-routes");
-  const billingRouter = billingModule.default as any;
   const app = express();
   mountRouteTestRequestContext(app);
   app.use("/api/stripe-webhook", express.raw({ type: "application/json" }));
   app.use(express.json());
-  app.use("/api", billingRouter);
+  app.use("/api", billingRoutes);
   mountTestErrorHandler(app);
   return app;
 }
@@ -409,7 +408,7 @@ describe("billing routes integration", () => {
     h.state.subscriptions = {
       "user-1": {
         userId: "user-1",
-        plan: "starter",
+        plan: "business-starter",
         status: "active",
         stripeCustomerId: "cus_existing",
         stripeSubscriptionId: "sub_live",
@@ -419,7 +418,7 @@ describe("billing routes integration", () => {
       "user-1": {
         userId: "user-1",
         extraAgents: 2,
-        signupPlanInterest: "starter",
+        signupPlanInterest: "business-starter",
         signupWedge: "sales",
         acquisitionSource: "ads",
         acquisitionMedium: "search",
@@ -434,7 +433,7 @@ describe("billing routes integration", () => {
     };
 
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-    process.env.STRIPE_STARTER_EXTRA_AGENT_PRICE_ID = "price_extra_starter";
+    process.env.STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID = "price_extra_starter";
 
     vi.clearAllMocks();
     h.stripeAvailable.mockReturnValue(true);
@@ -547,10 +546,10 @@ describe("billing routes integration", () => {
     expect(response.body.plans).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: "personal", price_usd_monthly: 9 }),
-        expect.objectContaining({ id: "starter", price_usd_monthly: 79 }),
-        expect.objectContaining({ id: "pro", price_usd_monthly: 249 }),
-        expect.objectContaining({ id: "business", price_usd_monthly: 699 }),
-        expect.objectContaining({ id: "enterprise", price_usd_monthly: 0, contact_sales: true }),
+        expect.objectContaining({ id: "personal-plus", price_usd_monthly: 19 }),
+        expect.objectContaining({ id: "business-starter", price_usd_monthly: 99 }),
+        expect.objectContaining({ id: "starter", price_usd_monthly: 249 }),
+        expect.objectContaining({ id: "scale", price_usd_monthly: 699 }),
       ]),
     );
   });
@@ -568,7 +567,7 @@ describe("billing routes integration", () => {
 
     expect(getResponse.status).toBe(200);
     expect(getResponse.body).toEqual({
-      plan_id: "starter",
+      plan_id: "business-starter",
       plan_name: "Business Starter",
       included_agents: 2,
       extra_agents: 2,

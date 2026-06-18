@@ -22,14 +22,14 @@ describe("STRIPE_PLANS catalog shape", () => {
   it("ships the five canonical tiers in the documented order", () => {
     expect(STRIPE_PLANS.map((p) => p.id)).toEqual([
       "personal",
+      "personal-plus",
+      "business-starter",
       "starter",
-      "pro",
-      "business",
-      "enterprise",
+      "scale",
     ]);
   });
 
-  it.each(["personal", "starter", "pro", "business"] as StripePlanId[])(
+  it.each(["personal", "personal-plus", "business-starter", "starter", "scale"] as StripePlanId[])(
     "%s has all required pricing fields",
     (id) => {
       const plan = STRIPE_PLANS.find((p) => p.id === id)!;
@@ -42,39 +42,39 @@ describe("STRIPE_PLANS catalog shape", () => {
       expect(plan.priceIdEnv).toMatch(/^STRIPE_/);
     },
   );
-
-  it("enterprise is gated as 'contact sales' (price 0 sentinel)", () => {
-    const ent = STRIPE_PLANS.find((p) => p.id === "enterprise")!;
-    expect(ent.price_usd_monthly).toBe(0);
-    // Enterprise is the top of the ladder — at least the Scale agent count,
-    // with custom bundles negotiated via sales.
-    expect(ent.max_agents).toBeGreaterThanOrEqual(25);
-  });
 });
 
 describe("pricing ladder — overage drops as tier rises (upgrade math)", () => {
   it("each consumer tier has a strictly lower overage rate than the previous", () => {
     const personal = STRIPE_PLANS.find((p) => p.id === "personal")!;
+    const personalPlus = STRIPE_PLANS.find((p) => p.id === "personal-plus")!;
+    const businessStarter = STRIPE_PLANS.find((p) => p.id === "business-starter")!;
     const starter = STRIPE_PLANS.find((p) => p.id === "starter")!;
-    const pro = STRIPE_PLANS.find((p) => p.id === "pro")!;
-    const business = STRIPE_PLANS.find((p) => p.id === "business")!;
+    const scale = STRIPE_PLANS.find((p) => p.id === "scale")!;
 
-    expect(starter.overage_per_min_usd).toBeLessThan(personal.overage_per_min_usd);
-    expect(pro.overage_per_min_usd).toBeLessThan(starter.overage_per_min_usd);
-    expect(business.overage_per_min_usd).toBeLessThan(pro.overage_per_min_usd);
+    expect(personalPlus.overage_per_min_usd).toBeLessThan(personal.overage_per_min_usd);
+    expect(businessStarter.overage_per_min_usd).toBeLessThan(personalPlus.overage_per_min_usd);
+    expect(starter.overage_per_min_usd).toBeLessThan(businessStarter.overage_per_min_usd);
+    expect(scale.overage_per_min_usd).toBeLessThan(starter.overage_per_min_usd);
   });
 
   it("each tier ships at least 2x the previous tier's minute allowance", () => {
     const personal = STRIPE_PLANS.find((p) => p.id === "personal")!;
+    const personalPlus = STRIPE_PLANS.find((p) => p.id === "personal-plus")!;
+    const businessStarter = STRIPE_PLANS.find((p) => p.id === "business-starter")!;
     const starter = STRIPE_PLANS.find((p) => p.id === "starter")!;
-    const pro = STRIPE_PLANS.find((p) => p.id === "pro")!;
-    const business = STRIPE_PLANS.find((p) => p.id === "business")!;
+    const scale = STRIPE_PLANS.find((p) => p.id === "scale")!;
 
-    expect(starter.voice_minutes_monthly).toBeGreaterThanOrEqual(
+    expect(personalPlus.voice_minutes_monthly).toBeGreaterThanOrEqual(
       personal.voice_minutes_monthly * 2,
     );
-    expect(pro.voice_minutes_monthly).toBeGreaterThanOrEqual(starter.voice_minutes_monthly * 2);
-    expect(business.voice_minutes_monthly).toBeGreaterThanOrEqual(pro.voice_minutes_monthly * 2);
+    expect(businessStarter.voice_minutes_monthly).toBeGreaterThanOrEqual(
+      personalPlus.voice_minutes_monthly * 2,
+    );
+    expect(starter.voice_minutes_monthly).toBeGreaterThanOrEqual(
+      businessStarter.voice_minutes_monthly * 2,
+    );
+    expect(scale.voice_minutes_monthly).toBeGreaterThanOrEqual(starter.voice_minutes_monthly * 2);
   });
 });
 
@@ -98,12 +98,12 @@ describe("planById / planByPriceId resolution", () => {
   });
 
   it("planByPriceId resolves a configured price id back to its plan", () => {
-    // Stub the env var the Pro plan reads from, look it up, then restore.
-    const env = STRIPE_PLANS.find((p) => p.id === "pro")!.priceIdEnv;
+    // Stub the env var the starter plan reads from, look it up, then restore.
+    const env = STRIPE_PLANS.find((p) => p.id === "starter")!.priceIdEnv;
     const old = process.env[env];
     process.env[env] = "price_test_pro_123";
     try {
-      expect(planByPriceId("price_test_pro_123")?.id).toBe("pro");
+      expect(planByPriceId("price_test_pro_123")?.id).toBe("starter");
     } finally {
       if (old === undefined) delete process.env[env];
       else process.env[env] = old;
@@ -112,23 +112,6 @@ describe("planById / planByPriceId resolution", () => {
 });
 
 describe("plansForClient — public-facing payload safety", () => {
-  it("never marks enterprise as configured even with an env var set", () => {
-    // Enterprise is contact_sales — exposing it as checkout-able would
-    // let anyone subscribe at $0/mo if the env was left from an older tier.
-    const env = STRIPE_PLANS.find((p) => p.id === "enterprise")!.priceIdEnv;
-    const old = process.env[env];
-    process.env[env] = "price_test_should_not_matter";
-    try {
-      const out = plansForClient();
-      const enterprise = out.find((p) => p.id === "enterprise")!;
-      expect(enterprise.contact_sales).toBe(true);
-      expect(enterprise.configured).toBe(false);
-    } finally {
-      if (old === undefined) delete process.env[env];
-      else process.env[env] = old;
-    }
-  });
-
   it("exposes only the public-safe fields (no priceIdEnv leakage)", () => {
     const out = plansForClient();
     for (const p of out) {

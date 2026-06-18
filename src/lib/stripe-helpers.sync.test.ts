@@ -48,7 +48,7 @@ describe("syncSubscriptionFromStripe", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.STRIPE_PRO_PRICE_ID = "price_pro_monthly";
-    process.env.STRIPE_STARTER_PRICE_ID = "price_starter_monthly";
+    process.env.STRIPE_BUSINESS_STARTER_PRICE_ID = "price_business_starter_monthly";
     h.subscription = {
       userId: "user-1",
       stripeCustomerId: "cus_1",
@@ -57,7 +57,7 @@ describe("syncSubscriptionFromStripe", () => {
     };
   });
 
-  it("dispatches subscription.changed with pro plan on upgrade price id", async () => {
+  it("dispatches subscription.changed with starter plan on upgrade price id", async () => {
     const { syncSubscriptionFromStripe } = await import("./stripe-helpers");
     await syncSubscriptionFromStripe({
       id: "sub_1",
@@ -73,7 +73,7 @@ describe("syncSubscriptionFromStripe", () => {
       "user-1",
       "subscription.changed",
       expect.objectContaining({
-        plan: "pro",
+        plan: "starter",
         status: "active",
         legacy_status: "active",
       }),
@@ -88,14 +88,14 @@ describe("syncSubscriptionFromStripe", () => {
       status: "past_due",
       current_period_end: Math.floor(Date.now() / 1000) + 86400,
       cancel_at_period_end: false,
-      items: { data: [{ price: { id: "price_starter_monthly" } }] },
+      items: { data: [{ price: { id: "price_business_starter_monthly" } }] },
     } as any);
 
     expect(dispatchWebhook).toHaveBeenCalledWith(
       "user-1",
       "subscription.changed",
       expect.objectContaining({
-        plan: "starter",
+        plan: "business-starter",
         status: "past_due",
         legacy_status: "past_due",
       }),

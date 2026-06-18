@@ -155,7 +155,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "/cockpit": "Live Ops",
   "/knowledge": "Knowledge",
   "/agents": "Studio",
-  "/chat": "Assistant",
+  "/personal-home": "Assistant",
   "/training": "Training",
   "/founder": "Founder",
   "/integrations": "Integrations",

@@ -218,7 +218,7 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
   return (
     <section
       className={cx(
-        "rounded-[28px] border border-border bg-card p-5 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_30px_80px_-56px_rgba(26,22,20,.75)]",
+        "wl-glass-card hover-glow rounded-[28px] p-5 sm:p-6 lg:p-8 transition-all duration-300 hover:-translate-y-0.5",
         className,
       )}
     >
@@ -230,16 +230,16 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 function Status({ value }: { value: string }) {
   const tone =
     value === "Ready" || value === "Done"
-      ? "bg-brand/10 text-brand"
+      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/15"
       : value === "Setup" || value === "Configure" || value === "Needs pickup" || value === "Open"
-        ? "bg-amber-200/50 text-amber-950"
+        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
         : value === "Manual"
-          ? "bg-ink/8 text-ink"
-          : "bg-ink/5 text-muted-foreground";
+          ? "bg-white/5 text-white/70 border border-white/10"
+          : "bg-white/5 text-white/50 border border-white/10";
   return (
     <span
       className={cx(
-        "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.12em]",
+        "rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[.12em]",
         tone,
       )}
     >
@@ -268,7 +268,7 @@ function Shell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-ink wl-grain">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
@@ -309,8 +309,8 @@ function Shell({ children }: { children: ReactNode }) {
                 location.pathname === path ||
                   (path.includes("automations") &&
                     (location.pathname.includes("intents") || location.pathname.includes("siri")))
-                  ? "bg-brand text-paper shadow-[0_0_12px_rgba(79,30,123,0.35)]"
-                  : "text-muted-foreground hover:bg-ink/5 hover:text-ink",
+                  ? "bg-brand text-white shadow-[0_0_15px_rgba(139,92,246,0.45)] hover:brightness-110"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-white",
               )}
             >
               {label}
@@ -318,7 +318,7 @@ function Shell({ children }: { children: ReactNode }) {
           ))}
         </nav>
       </header>
-      <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-9">
+      <main className="mx-auto w-full max-w-[1500px] px-4 py-8 sm:px-6 lg:px-10 xl:px-12 lg:py-12 xl:py-16">
         {children}
       </main>
     </div>
@@ -430,31 +430,33 @@ function SetupRail() {
     ["Connect context", "/app/personal/settings", "Email, calendar, contacts, reminders", "Setup"],
   ];
   return (
-    <Card className="bg-ink text-paper">
-      <div className="text-[11px] font-semibold uppercase tracking-[.14em] text-paper/60">
+    <Card className="border-brand/40 bg-[#0d091c]/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] p-6 sm:p-8">
+      <div className="text-[11px] font-bold uppercase tracking-[.14em] text-brand-bright">
         Setup path
       </div>
-      <h2 className="mt-4 font-display text-2xl">Make Assistant useful in five steps.</h2>
+      <h2 className="mt-4 font-display text-2xl text-white">
+        Make Assistant useful in five steps.
+      </h2>
       <div className="mt-5 space-y-3">
         {steps.map(([title, path, note, status], index) => (
           <Link
             key={title}
             to={path}
-            className="flex items-center gap-3 rounded-[18px] border border-paper/10 bg-paper/[.035] p-3 text-sm transition-all duration-200 hover:bg-paper/[.08] hover:border-paper/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-paper shadow-sm">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white font-semibold shadow-sm">
               {index + 1}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-paper">{title}</span>
-              <span className="block text-xs leading-5 text-paper/45">{note}</span>
+              <span className="block font-semibold text-white">{title}</span>
+              <span className="block text-xs leading-5 text-muted-foreground">{note}</span>
             </span>
-            <span className="hidden text-[10px] uppercase tracking-[.12em] text-paper/35 sm:block">
+            <span className="hidden text-[10px] uppercase tracking-[.12em] text-cyan-400 font-mono sm:block">
               {status}
             </span>
             <ChevronRight
               size={15}
-              className="text-paper/40 transition-transform group-hover:translate-x-1"
+              className="text-white/40 transition-transform group-hover:translate-x-1"
             />
           </Link>
         ))}
@@ -481,7 +483,7 @@ function AssistantView() {
             I reviewed your calls. One appointment is confirmed and three unknown callers were
             blocked.
           </div>
-          <div className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-paper shadow-sm">
+          <div className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(139,92,246,0.35)]">
             Call the office and say I am running 10 minutes late.
           </div>
           <div className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm">
@@ -630,10 +632,10 @@ function NumberView() {
           ))}
         </div>
       </Card>
-      <Card className="bg-ink text-paper">
+      <Card className="border-brand/40 bg-[#0d091c]/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] p-6 sm:p-8">
         <PhoneCall className="text-brand-bright" />
-        <h2 className="mt-4 font-display text-2xl">Handoff rule</h2>
-        <p className="mt-3 text-sm leading-6 text-paper/55">
+        <h2 className="mt-4 font-display text-2xl text-white">Handoff rule</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-300">
           Assistant asks before transferring sensitive calls, committing money, canceling
           appointments, or sharing details.
         </p>

@@ -6,6 +6,7 @@ import {
   mountRouteTestRequestContext,
   mountTestErrorHandler,
 } from "../../tests/helpers/express-test-app";
+import agentRoutes from "./agent-routes";
 
 const h = vi.hoisted(() => {
   type Table = { __name: string } & Record<string, string>;
@@ -204,11 +205,10 @@ vi.mock("../lib/agent-entitlements", () => ({
 vi.mock("../data/voice-roster", () => ({ pickRotatedVoiceId: vi.fn(() => "voice-1") }));
 
 async function buildApp() {
-  const agentModule = await import("./agent-routes");
   const app = express();
   mountRouteTestRequestContext(app);
   app.use(express.json());
-  app.use(agentModule.default);
+  app.use(agentRoutes);
   mountTestErrorHandler(app);
   return app;
 }

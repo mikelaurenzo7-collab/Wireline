@@ -11,22 +11,32 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCE = readFileSync(join(__dirname, "tenant-quotas.ts"), "utf8");
 
-type PlanTier = "free" | "personal" | "starter" | "pro" | "business" | "enterprise";
+type PlanTier = "free" | "personal" | "personal-plus" | "business-starter" | "starter" | "scale";
 
 describe("tenant-quotas — source guards", () => {
-  const tiers: PlanTier[] = ["free", "personal", "starter", "pro", "business", "enterprise"];
+  const tiers: PlanTier[] = [
+    "free",
+    "personal",
+    "personal-plus",
+    "business-starter",
+    "starter",
+    "scale",
+  ];
 
   it("exports PLAN_DEFAULTS with entries for all plan tiers", () => {
     expect(SOURCE).toContain("export const PLAN_DEFAULTS");
     for (const tier of tiers) {
-      expect(SOURCE).toContain(`${tier}:`);
+      const match = SOURCE.includes(`"${tier}":`) || SOURCE.includes(`${tier}:`);
+      expect(match).toBe(true);
     }
   });
 
   it("every tier defines claude_tokens_daily", () => {
     for (const tier of tiers) {
-      // Find the tier block and verify it has the field
-      const tierIdx = SOURCE.indexOf(`${tier}:`);
+      const tierIdx =
+        SOURCE.indexOf(`"${tier}":`) !== -1
+          ? SOURCE.indexOf(`"${tier}":`)
+          : SOURCE.indexOf(`${tier}:`);
       expect(tierIdx).toBeGreaterThan(-1);
       const block = SOURCE.slice(tierIdx, tierIdx + 500);
       expect(block).toContain("claude_tokens_daily:");
@@ -35,7 +45,10 @@ describe("tenant-quotas — source guards", () => {
 
   it("every tier defines voice_minutes_daily", () => {
     for (const tier of tiers) {
-      const tierIdx = SOURCE.indexOf(`${tier}:`);
+      const tierIdx =
+        SOURCE.indexOf(`"${tier}":`) !== -1
+          ? SOURCE.indexOf(`"${tier}":`)
+          : SOURCE.indexOf(`${tier}:`);
       const block = SOURCE.slice(tierIdx, tierIdx + 500);
       expect(block).toContain("voice_minutes_daily:");
     }
@@ -43,7 +56,10 @@ describe("tenant-quotas — source guards", () => {
 
   it("every tier defines concurrent_dials", () => {
     for (const tier of tiers) {
-      const tierIdx = SOURCE.indexOf(`${tier}:`);
+      const tierIdx =
+        SOURCE.indexOf(`"${tier}":`) !== -1
+          ? SOURCE.indexOf(`"${tier}":`)
+          : SOURCE.indexOf(`${tier}:`);
       const block = SOURCE.slice(tierIdx, tierIdx + 500);
       expect(block).toContain("concurrent_dials:");
     }
@@ -51,7 +67,10 @@ describe("tenant-quotas — source guards", () => {
 
   it("every tier defines knowledge_rows", () => {
     for (const tier of tiers) {
-      const tierIdx = SOURCE.indexOf(`${tier}:`);
+      const tierIdx =
+        SOURCE.indexOf(`"${tier}":`) !== -1
+          ? SOURCE.indexOf(`"${tier}":`)
+          : SOURCE.indexOf(`${tier}:`);
       const block = SOURCE.slice(tierIdx, tierIdx + 500);
       expect(block).toContain("knowledge_rows:");
     }
@@ -59,7 +78,10 @@ describe("tenant-quotas — source guards", () => {
 
   it("every tier defines intake_rpm", () => {
     for (const tier of tiers) {
-      const tierIdx = SOURCE.indexOf(`${tier}:`);
+      const tierIdx =
+        SOURCE.indexOf(`"${tier}":`) !== -1
+          ? SOURCE.indexOf(`"${tier}":`)
+          : SOURCE.indexOf(`${tier}:`);
       const block = SOURCE.slice(tierIdx, tierIdx + 500);
       expect(block).toContain("intake_rpm:");
     }

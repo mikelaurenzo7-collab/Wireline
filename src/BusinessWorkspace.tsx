@@ -118,7 +118,7 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
   return (
     <section
       className={cx(
-        "rounded-[28px] border border-white/10 bg-white/[.045] p-5 shadow-[0_24px_80px_-62px_rgba(0,0,0,.9)] transition-all duration-300 hover:bg-white/[.06] hover:border-white/20 hover:shadow-[0_24px_80px_-60px_rgba(0,0,0,.95)]",
+        "wl-glass-card hover-glow rounded-[28px] p-5 sm:p-6 lg:p-8 transition-all duration-300",
         className,
       )}
     >
@@ -130,16 +130,16 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 function Pill({ children, tone = "default" }: { children: ReactNode; tone?: Tone }) {
   const styles =
     tone === "brand"
-      ? "border-brand/35 bg-brand/15 text-brand-bright"
+      ? "border-brand/35 bg-brand/15 text-brand-bright shadow-[0_0_15px_rgba(139,92,246,0.15)]"
       : tone === "warn"
-        ? "border-amber-300/30 bg-amber-300/10 text-amber-100"
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
         : tone === "muted"
-          ? "border-white/10 bg-white/[.035] text-paper/35"
-          : "border-white/10 bg-white/[.045] text-paper/55";
+          ? "border-white/5 bg-white/[.02] text-white/40"
+          : "border-white/10 bg-white/[.04] text-white/70";
   return (
     <span
       className={cx(
-        "inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.15em]",
+        "inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.15em] transition-all duration-300",
         styles,
       )}
     >
@@ -157,9 +157,13 @@ function statusTone(status: string): Tone {
 
 function MiniMetric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[18px] border border-white/10 bg-black/15 p-4">
-      <p className="font-display text-3xl text-paper">{value}</p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-[.14em] text-paper/35">{label}</p>
+    <div className="wl-glass-card hover-glow rounded-[18px] p-4 sm:p-5">
+      <p className="font-display text-3xl sm:text-4xl text-white font-semibold tracking-tight">
+        {value}
+      </p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-[.14em] text-white/40 font-mono">
+        {label}
+      </p>
     </div>
   );
 }
@@ -169,7 +173,7 @@ function RequireBusiness({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading)
     return (
-      <div className="grid min-h-screen place-items-center bg-ink text-paper">
+      <div className="grid min-h-screen place-items-center bg-background text-ink">
         <Sparkles className="h-5 w-5 animate-pulse text-brand-bright" />
       </div>
     );
@@ -185,53 +189,55 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const active = pageFromPath(location.pathname);
   const activeLabel = nav.find(([id]) => id === active)?.[1] ?? "Business";
   return (
-    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-ink text-paper">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 2xl:flex">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-ink wl-overhaul-surface wl-grain">
+      <aside className="wl-glass-panel hidden w-64 shrink-0 flex-col p-4 2xl:flex">
         <Link
           to="/"
           className="mb-8 inline-flex items-center gap-2 px-2 pt-2 transition-opacity hover:opacity-80"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-white font-bold shadow-[0_0_15px_rgba(139,92,246,0.4)]">
             W
           </span>
-          <span className="font-display text-[20px] font-semibold">Wireline</span>
+          <span className="font-display text-[20px] font-semibold text-white">Wireline</span>
         </Link>
-        <Pill>Business workspace</Pill>
-        <nav className="mt-5 flex flex-1 flex-col gap-1">
+        <div className="px-2 mb-6">
+          <Pill>Business workspace</Pill>
+        </div>
+        <nav className="flex flex-1 flex-col gap-1">
           {nav.map(([id, label, path]) => (
             <Link
               key={id}
               to={path}
               className={cx(
-                "rounded-[14px] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ink",
+                "rounded-[14px] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 active === id
-                  ? "bg-brand text-paper shadow-[0_0_15px_rgba(79,30,123,0.5)]"
-                  : "text-paper/55 hover:bg-white/5 hover:text-paper",
+                  ? "bg-brand text-white shadow-[0_0_20px_rgba(139,92,246,0.45)] hover:brightness-110"
+                  : "text-white/60 hover:bg-white/5 hover:text-white",
               )}
             >
               {label}
             </Link>
           ))}
         </nav>
-        <div className="border-t border-paper/10 pt-4 text-xs text-paper/45">
+        <div className="border-t border-white/10 pt-4 text-xs text-white/50">
           <div className="truncate">{user?.email ?? "Owner"}</div>
           <button
             onClick={() => {
               void signOut();
               navigate("/");
             }}
-            className="mt-3 inline-flex items-center gap-2 transition-colors hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md px-1 -mx-1"
+            className="mt-3 inline-flex items-center gap-2 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md p-1 -mx-1"
           >
             <LogOut size={14} /> Sign out
           </button>
         </div>
       </aside>
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-40 border-b border-white/10 bg-ink/92 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-background/60 backdrop-blur-2xl">
           <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
               <Link to="/" className="2xl:hidden transition-opacity hover:opacity-80">
-                <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">
+                <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-white font-bold">
                   W
                 </span>
               </Link>
@@ -241,13 +247,13 @@ function BusinessShell({ children }: { children: ReactNode }) {
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden items-center gap-2 rounded-[14px] border border-white/10 px-3 py-2 md:flex cursor-text transition-colors hover:border-white/20">
-                <Search size={14} className="text-paper/35" />
-                <span className="text-xs text-paper/35">Search calls, agents, contacts…</span>
+                <Search size={14} className="text-white/35" />
+                <span className="text-xs text-white/35">Search calls, agents, contacts…</span>
               </div>
               <button className="rounded-full p-1.5 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                <Bell size={17} className="text-paper/55" />
+                <Bell size={17} className="text-white/60" />
               </button>
-              <button className="grid h-8 w-8 place-items-center rounded-full bg-brand text-xs text-paper transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ink">
+              <button className="grid h-8 w-8 place-items-center rounded-full bg-brand text-xs text-white font-semibold transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 {user?.email?.[0]?.toUpperCase() ?? "W"}
               </button>
             </div>
@@ -260,8 +266,8 @@ function BusinessShell({ children }: { children: ReactNode }) {
                 className={cx(
                   "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   active === id
-                    ? "bg-brand text-paper shadow-[0_0_10px_rgba(79,30,123,0.5)]"
-                    : "text-paper/45 hover:text-paper hover:bg-white/5",
+                    ? "bg-brand text-white shadow-[0_0_15px_rgba(139,92,246,0.45)]"
+                    : "text-white/50 hover:text-white hover:bg-white/5",
                 )}
               >
                 {label}
@@ -269,7 +275,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-10 xl:px-12 lg:py-12 xl:py-16">
           {children}
         </main>
       </div>
@@ -283,10 +289,10 @@ function Title({ eyebrow, title, text }: { eyebrow: string; title: string; text:
       <p className="font-mono text-[11px] font-bold uppercase tracking-[.18em] text-brand-bright">
         {eyebrow}
       </p>
-      <h1 className="mt-3 font-display text-4xl leading-[1.03] tracking-[-.05em] text-paper sm:text-5xl">
+      <h1 className="mt-3 font-display text-4xl font-medium leading-[1.03] tracking-[-.05em] text-white sm:text-5xl">
         {title}
       </h1>
-      <p className="mt-4 text-sm leading-6 text-paper/55">{text}</p>
+      <p className="mt-4 text-sm leading-6 text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -300,8 +306,8 @@ function AssistantPage() {
           title="Ask what to improve, route, or train next."
           text="This is the owner/operator command center. It explains what changed, what needs approval, and which agents need training."
         />
-        <Card className="min-h-[420px]">
-          <div className="rounded-[20px] border border-white/10 bg-black/20 p-5 text-sm leading-7 text-paper/70 shadow-inner">
+        <Card className="min-h-[420px] flex flex-col justify-between">
+          <div className="rounded-[20px] border border-white/5 bg-[#030303]/90 p-5 text-sm leading-7 text-slate-300 shadow-inner">
             I reviewed the last 24 hours. Sarah is strong on scheduling. Liam needs billing
             escalation language. Tyler needs webhook timeout simulations. Recommended next step:
             update refund policy, then run five billing scenarios in Training.
@@ -310,42 +316,42 @@ function AssistantPage() {
             {["Audit my fleet", "Fix billing calls", "Train Sarah", "Show escalations"].map((x) => (
               <button
                 key={x}
-                className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-paper/55 transition-all duration-200 hover:border-white/20 hover:bg-white/5 hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95"
+                className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-all duration-200 hover:border-white/25 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95"
               >
                 {x}
               </button>
             ))}
           </div>
-          <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-white/10 bg-black/20 px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner">
+          <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#030303]/60 px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner">
             <input
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-paper/30"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/30"
               placeholder="Ask Wireline…"
             />
-            <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ink shadow-sm">
+            <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm">
               Ask
             </button>
           </div>
         </Card>
       </div>
       <div className="space-y-5">
-        <Card>
+        <Card className="border-brand/30 bg-[#0d091c]/30 shadow-[0_0_20px_rgba(139,92,246,0.1)]">
           <Pill tone="warn">Needs approval</Pill>
-          <h2 className="mt-4 font-display text-2xl">Refund call</h2>
-          <p className="mt-2 text-sm leading-6 text-paper/52">
+          <h2 className="mt-4 font-display text-2xl text-white">Refund call</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
             Sarah needs a human approval rule before promising refund timing.
           </p>
         </Card>
-        <Card>
+        <Card className="border-cyan-500/25 bg-[#08121a]/30 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
           <Pill tone="brand">Training win</Pill>
-          <h2 className="mt-4 font-display text-2xl">12 improved calls</h2>
-          <p className="mt-2 text-sm leading-6 text-paper/52">
+          <h2 className="mt-4 font-display text-2xl text-white">12 improved calls</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
             Updated objection handling reduced repeated escalations.
           </p>
         </Card>
         <Card>
           <Pill>Next action</Pill>
-          <h2 className="mt-4 font-display text-2xl">Run simulations</h2>
-          <p className="mt-2 text-sm leading-6 text-paper/52">
+          <h2 className="mt-4 font-display text-2xl text-white">Run simulations</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
             Five billing scenarios should be tested before expanding permissions.
           </p>
         </Card>
@@ -363,7 +369,7 @@ function LiveOpsPage() {
           title="The cockpit for calls in motion."
           text="Track active calls, coaching moments, escalations, and quality pulse without crowding Studio."
         />
-        <button className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-ink">
+        <button className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
           Start outbound
         </button>
       </div>
@@ -374,9 +380,9 @@ function LiveOpsPage() {
       </div>
       <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <Card>
-          <h2 className="font-display text-2xl">Calls in progress</h2>
-          <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/10 overflow-hidden bg-black/10">
-            <div className="hidden lg:grid grid-cols-[1fr_140px_1fr_96px_100px] gap-3 bg-white/5 p-4 text-[10px] font-bold uppercase tracking-[.15em] text-paper/40">
+          <h2 className="font-display text-2xl text-white">Calls in progress</h2>
+          <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/5 overflow-hidden bg-[#030303]/40">
+            <div className="hidden lg:grid grid-cols-[1fr_140px_1fr_96px_100px] gap-3 bg-white/[0.02] p-4 text-[10px] font-bold uppercase tracking-[.15em] text-white/40 font-mono">
               <div>Topic</div>
               <div>Agent</div>
               <div>Detail</div>
@@ -388,17 +394,17 @@ function LiveOpsPage() {
                 key={topic}
                 className="grid gap-3 p-4 text-sm transition-colors hover:bg-white/5 lg:grid-cols-[1fr_140px_1fr_96px_100px]"
               >
-                <div className="font-semibold">{topic}</div>
-                <div className="text-paper/55">{agent}</div>
-                <div className="text-paper/45">{detail}</div>
-                <div className="font-mono text-paper/35">{time}</div>
+                <div className="font-semibold text-white">{topic}</div>
+                <div className="text-white/60">{agent}</div>
+                <div className="text-white/50">{detail}</div>
+                <div className="font-mono text-cyan-400">{time}</div>
                 <Pill tone={statusTone(action)}>{action}</Pill>
               </div>
             ))}
           </div>
         </Card>
         <Card>
-          <h2 className="font-display text-2xl">Quality pulse</h2>
+          <h2 className="font-display text-2xl text-white">Quality pulse</h2>
           <div className="mt-5 space-y-4">
             {[
               ["Billing objection", "92%"],
@@ -406,13 +412,13 @@ function LiveOpsPage() {
               ["Appointment routing", "78%"],
             ].map(([name, value]) => (
               <div key={name}>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm text-slate-300">
                   <span>{name}</span>
-                  <span className="text-brand-bright">{value}</span>
+                  <span className="text-cyan-400 font-semibold font-mono">{value}</span>
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-2 rounded-full bg-brand shadow-[0_0_8px_rgba(79,30,123,0.8)]"
+                    className="h-2 rounded-full bg-brand shadow-[0_0_8px_rgba(139,92,246,0.8)]"
                     style={{ width: value }}
                   />
                 </div>
@@ -438,27 +444,27 @@ function FleetPage() {
           <Card key={agent.name}>
             <div className="flex items-center justify-between">
               <Pill tone={statusTone(agent.status)}>{agent.status}</Pill>
-              <span className="text-xs text-paper/35">{agent.model}</span>
+              <span className="text-xs text-white/45 font-mono">{agent.model}</span>
             </div>
-            <h3 className="mt-5 font-display text-3xl">{agent.name}</h3>
-            <p className="mt-1 text-sm text-paper/50">{agent.role}</p>
+            <h3 className="mt-5 font-display text-3xl text-white">{agent.name}</h3>
+            <p className="mt-1 text-sm text-slate-400">{agent.role}</p>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <MiniMetric value={agent.calls} label="Calls" />
               <MiniMetric value={agent.score} label="Score" />
             </div>
-            <div className="mt-4 rounded-[16px] border border-white/10 bg-black/15 p-3 text-sm text-paper/55 shadow-inner">
-              <span className="text-paper/35">Next training:</span> {agent.next}
+            <div className="mt-4 rounded-[16px] border border-white/5 bg-[#030303]/40 p-3 text-sm text-slate-300 shadow-inner">
+              <span className="text-white/35 font-mono text-xs">Next training:</span> {agent.next}
             </div>
             <div className="mt-5 flex gap-2">
               <Link
                 to="/app/business/studio"
-                className="flex-1 rounded-[14px] bg-brand px-3 py-2 text-center text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-[--color-card]"
+                className="flex-1 rounded-[14px] bg-brand px-3 py-2 text-center text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm"
               >
                 Edit setup
               </Link>
               <Link
                 to="/app/business/training"
-                className="flex-1 rounded-[14px] border border-white/10 px-3 py-2 text-center text-sm text-paper/65 transition-all duration-200 hover:bg-white/5 hover:text-paper active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-[--color-card]"
+                className="flex-1 rounded-[14px] border border-white/10 bg-white/[0.02] px-3 py-2 text-center text-sm font-semibold text-white transition-all duration-200 hover:bg-white/[0.05] hover:border-brand/40 active:scale-95"
               >
                 Train
               </Link>
@@ -496,26 +502,26 @@ function TrainingPage() {
         {items.map(([Icon, title, text]) => (
           <Card key={title}>
             <Icon className="text-brand-bright" />
-            <h3 className="mt-4 font-display text-2xl">{title}</h3>
-            <p className="mt-2 text-sm leading-6 text-paper/52">{text}</p>
+            <h3 className="mt-4 font-display text-2xl text-white">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
           </Card>
         ))}
       </div>
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <Card>
-          <h3 className="font-display text-2xl">Launch checklist</h3>
+          <h3 className="font-display text-2xl text-white">Launch checklist</h3>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             {["Upload policies", "Run 5 simulations", "Approve escalation rules"].map((x, i) => (
               <button
                 key={x}
-                className="flex flex-col text-left rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-paper/65 transition-all duration-200 hover:bg-white/5 hover:border-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="flex flex-col text-left rounded-[18px] border border-white/5 bg-[#030303]/40 p-4 text-sm text-white/60 transition-all duration-200 hover:bg-white/5 hover:border-brand/30 active:scale-95"
               >
                 <Check
                   className={cx(
                     "mb-3 h-4 w-4",
                     i < 2
-                      ? "text-brand-bright drop-shadow-[0_0_4px_rgba(106,45,163,0.5)]"
-                      : "text-paper/30",
+                      ? "text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.5)]"
+                      : "text-white/20",
                   )}
                 />
                 {x}
@@ -523,10 +529,10 @@ function TrainingPage() {
             ))}
           </div>
         </Card>
-        <Card>
+        <Card className="border-brand/30 bg-[#0d091c]/30">
           <Pill tone="warn">Next before launch</Pill>
-          <h3 className="mt-4 font-display text-2xl">Billing scenario pack</h3>
-          <p className="mt-2 text-sm leading-6 text-paper/52">
+          <h3 className="mt-4 font-display text-2xl text-white">Billing scenario pack</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
             Refund timing, failed payment, discount request, disputed charge, and manager callback.
           </p>
         </Card>
@@ -552,19 +558,21 @@ function AnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {rows.map(([k, v, c]) => (
           <Card key={k}>
-            <p className="text-xs text-paper/40">{k}</p>
-            <p className="mt-2 font-display text-4xl">{v}</p>
-            <p className="mt-2 text-xs text-brand-bright">{c}</p>
+            <p className="text-xs text-white/40 font-mono uppercase tracking-wider">{k}</p>
+            <p className="mt-2 font-display text-4xl text-white font-semibold tracking-tight">
+              {v}
+            </p>
+            <p className="mt-2 text-xs text-cyan-400 font-semibold font-mono">{c}</p>
           </Card>
         ))}
       </div>
       <Card>
-        <h2 className="font-display text-2xl">Training opportunities</h2>
+        <h2 className="font-display text-2xl text-white">Training opportunities</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {["Billing objections", "Refund approvals", "Webhook timeouts"].map((x) => (
             <div
               key={x}
-              className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-paper/60"
+              className="rounded-[18px] border border-white/5 bg-[#030303]/40 p-4 text-sm text-slate-300 font-semibold text-center hover:border-brand/30 transition-all duration-300"
             >
               {x}
             </div>
@@ -592,9 +600,9 @@ function TeamPage() {
         {roles.map(({ role, Icon, text }) => (
           <Card key={role}>
             <Icon className="text-brand-bright" />
-            <h3 className="mt-4 font-display text-2xl">{role}</h3>
-            <p className="mt-2 text-sm leading-6 text-paper/52">{text}</p>
-            <button className="mt-5 rounded-[14px] border border-white/10 px-3 py-2 text-sm text-paper/65 transition-all duration-200 hover:bg-white/5 hover:text-paper hover:border-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+            <h3 className="mt-4 font-display text-2xl text-white">{role}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+            <button className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white hover:border-brand/30 active:scale-95">
               Configure role
             </button>
           </Card>
@@ -614,14 +622,16 @@ function IntegrationsPage() {
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {connectors.map(([name, status, detail]) => (
-          <Card key={name}>
-            <Plug className="text-brand-bright" />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <h3 className="font-display text-xl">{name}</h3>
-              <Pill tone={statusTone(status)}>{status}</Pill>
+          <Card key={name} className="flex flex-col justify-between">
+            <div>
+              <Plug className="text-brand-bright" />
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <h3 className="font-display text-xl text-white">{name}</h3>
+                <Pill tone={statusTone(status)}>{status}</Pill>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{detail}</p>
             </div>
-            <p className="mt-3 text-sm leading-6 text-paper/52">{detail}</p>
-            <button className="mt-5 rounded-[14px] border border-white/10 px-3 py-2 text-sm text-paper/65 transition-all duration-200 hover:bg-white/5 hover:text-paper hover:border-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+            <button className="mt-5 rounded-[14px] border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white/70 transition-all duration-200 hover:bg-white/5 hover:text-white hover:border-brand/30 active:scale-95">
               {status === "Review" ? "Verify" : status === "Available" ? "Connect" : "View plan"}
             </button>
           </Card>
@@ -651,12 +661,15 @@ function SettingsPage() {
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {settings.map(({ title, Icon, text }) => (
-          <Card key={title} className="cursor-pointer group">
+          <Card
+            key={title}
+            className="cursor-pointer group hover:border-brand/30 transition-all duration-300"
+          >
             <Icon className="text-brand-bright transition-transform duration-300 group-hover:scale-110" />
-            <h3 className="mt-4 font-display text-xl transition-colors duration-200 group-hover:text-white">
+            <h3 className="mt-4 font-display text-xl transition-colors duration-200 text-white group-hover:text-brand-bright">
               {title}
             </h3>
-            <p className="mt-2 text-sm leading-6 text-paper/52 transition-colors duration-200 group-hover:text-paper/70">
+            <p className="mt-2 text-sm leading-6 text-slate-300 transition-colors duration-200">
               {text}
             </p>
           </Card>

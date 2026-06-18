@@ -136,12 +136,22 @@ export const authService = {
       return null;
     }
 
+    const [sub] = await drizzle
+      .select({ plan: schema.subscriptions.plan })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, user.id))
+      .limit(1);
+
+    const { resolveAccountType } = await import("./account-type");
+    const account_type = resolveAccountType(sub?.plan);
+
     return {
       user: {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
         is_owner: isOwnerEmail(user.email),
+        account_type,
       },
       token: generateToken({ id: user.id, email: user.email }),
     };
@@ -187,12 +197,16 @@ export const authService = {
         const { startTrialForUser } = await import("./trial-gate");
         await startTrialForUser(user.id, signupAttribution, tx);
 
+        const { resolveAccountType } = await import("./account-type");
+        const account_type = resolveAccountType(signupAttribution?.preferredPlanId);
+
         return {
           user: {
             id: user.id,
             email: user.email,
             full_name: user.fullName,
             is_owner: isOwnerEmail(user.email),
+            account_type,
           },
           token: generateToken({ id: user.id, email: user.email }),
         };
@@ -345,12 +359,22 @@ export const authService = {
       .limit(1);
     if (!user) return null;
 
+    const [sub] = await drizzle
+      .select({ plan: schema.subscriptions.plan })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, user.id))
+      .limit(1);
+
+    const { resolveAccountType } = await import("./account-type");
+    const account_type = resolveAccountType(sub?.plan);
+
     return {
       user: {
         id: user.id,
         email: user.email,
         full_name: user.fullName,
         is_owner: isOwnerEmail(user.email),
+        account_type,
       },
       token: generateToken({ id: user.id, email: user.email }),
     };

@@ -36,7 +36,7 @@ const PERSONAL_ONLY_GROUPS = new Set<string>(["Personal"]);
  * stripped out from under it.
  */
 export function resolveAccountType(planId: string | null | undefined): AccountType {
-  return planId === "personal" ? "personal" : "business";
+  return planId === "personal" || planId === "personal-plus" ? "personal" : "business";
 }
 
 /** True when a nav item's section is a business-only group. */

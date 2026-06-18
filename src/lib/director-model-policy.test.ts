@@ -23,8 +23,8 @@ vi.mock("./plan-entitlements", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./plan-entitlements")>();
   return {
     ...actual,
-    getSubscriptionPlanId: vi.fn(async () => "pro"),
-    getEffectiveSubscriptionPlanId: vi.fn(async () => "pro"),
+    getSubscriptionPlanId: vi.fn(async () => "starter"),
+    getEffectiveSubscriptionPlanId: vi.fn(async () => "starter"),
   };
 });
 
@@ -46,7 +46,7 @@ describe("validateDirectorChatModelSelection", () => {
         provider: "openrouter",
         modelId: "evil/unknown-model",
       },
-      { planId: "pro" },
+      { planId: "starter" },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.status).toBe(400);
@@ -58,18 +58,18 @@ describe("validateDirectorChatModelSelection", () => {
         provider: "openrouter",
         modelId: "openai/gpt-4o",
       },
-      { planId: "pro" },
+      { planId: "starter" },
     );
     expect(result.ok).toBe(true);
   });
 
-  it("rejects openrouter on Starter", async () => {
+  it("rejects openrouter on Business Starter", async () => {
     const result = await validateDirectorChatModelSelection(
       {
         provider: "openrouter",
         modelId: "openai/gpt-4o",
       },
-      { planId: "starter" },
+      { planId: "business-starter" },
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.status).toBe(403);

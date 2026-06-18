@@ -13,7 +13,7 @@ import {
   User,
 } from "lucide-react";
 
-import { useAuth } from "./contexts/AuthContext";
+import { useAuth, type User as AuthUser } from "./contexts/AuthContext";
 import {
   captureSignupIntentFromLocation,
   getStoredSignupIntent,
@@ -701,7 +701,7 @@ export function FigmaOAuthComplete() {
         };
         if (!user.id || !user.email)
           throw new Error("Sign-in response was incomplete. Please try again.");
-        signIn({ user });
+        signIn({ user: user as AuthUser });
         navigate(targetAfterAuth(readStoredWorkspaceMode()), { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");

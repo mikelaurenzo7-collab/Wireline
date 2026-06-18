@@ -7,13 +7,21 @@ import { describe, expect, it } from "vitest";
 import { NAV_GROUPS, PAGE_TITLES, APP_KEYBOARD_SHORTCUTS, SIDEBAR_NAV_ITEMS } from "./navigation";
 
 describe("Top-bar navigation IA", () => {
-  it("ships exactly four logical groups in the documented order", () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual(["Build", "Run", "Channels", "Admin"]);
+  it("ships exactly five logical groups in the documented order", () => {
+    expect(NAV_GROUPS.map((g) => g.label)).toEqual([
+      "Personal",
+      "Build",
+      "Run",
+      "Channels",
+      "Admin",
+    ]);
   });
 
   it("desktop rail is a single flat list without Admin footer items", () => {
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.path)).toEqual([
+      "/personal-home",
       "/agents",
+      "/training",
       "/ops",
       "/insights",
       "/pipeline",
@@ -22,6 +30,8 @@ describe("Top-bar navigation IA", () => {
       "/sms",
     ]);
     expect(SIDEBAR_NAV_ITEMS.map((i) => i.section)).toEqual([
+      "Personal",
+      "Build",
       "Build",
       "Run",
       "Run",
@@ -44,8 +54,8 @@ describe("Top-bar navigation IA", () => {
 
   it("Build group leads with the agent canvas", () => {
     const build = NAV_GROUPS.find((g) => g.label === "Build")!;
-    expect(build.items.map((i) => i.path)).toEqual(["/agents"]);
-    expect(NAV_GROUPS[0].label).toBe("Build");
+    expect(build.items.map((i) => i.path)).toEqual(["/agents", "/training"]);
+    expect(NAV_GROUPS[1].label).toBe("Build");
   });
 
   it("Admin group keeps Settings in footer-only navigation", () => {
@@ -78,9 +88,8 @@ describe("Top-bar navigation IA", () => {
     expect(paths).not.toContain("/triage");
   });
 
-  it("Training/Knowledge are route redirects, not standalone rail items", () => {
+  it("Knowledge is a route redirect, not standalone rail item", () => {
     const paths = SIDEBAR_NAV_ITEMS.map((i) => i.path);
-    expect(paths).not.toContain("/training");
     expect(paths).not.toContain("/knowledge");
   });
 

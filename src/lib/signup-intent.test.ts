@@ -14,7 +14,7 @@ describe("signup intent", () => {
     );
 
     expect(intent).toMatchObject({
-      preferredPlanId: "pro",
+      preferredPlanId: "starter", // legacy pro normalizes to starter
       signupWedge: "medical",
       utmSource: "linkedin",
       utmMedium: "dm",
@@ -23,12 +23,12 @@ describe("signup intent", () => {
   });
 
   it("ignores unknown plan and wedge values", () => {
-    expect(parseSignupIntent("?plan=enterprise&wedge=unknown")).toBeNull();
+    expect(parseSignupIntent("?plan=unknown&wedge=unknown")).toBeNull();
   });
 
-  it("defaults upgrade recommendations to starter without intent", () => {
-    expect(recommendedPlanFromIntent(null)).toBe("starter");
-    expect(recommendedPlanFromIntent(parseSignupIntent("?plan=business"))).toBe("business");
+  it("defaults upgrade recommendations to business-starter without intent", () => {
+    expect(recommendedPlanFromIntent(null)).toBe("business-starter");
+    expect(recommendedPlanFromIntent(parseSignupIntent("?plan=business"))).toBe("scale");
   });
 
   it("recommends plans and templates from wedge-only intent", () => {
@@ -38,19 +38,19 @@ describe("signup intent", () => {
 
     expect(recommendedPlanFromIntent(medical)).toBe("starter");
     expect(recommendedPlanFromIntent(personal)).toBe("personal");
-    expect(recommendedPlanFromIntent(sales)).toBe("pro");
+    expect(recommendedPlanFromIntent(sales)).toBe("starter");
     expect(getSignupWedgeRecommendation("medical")?.templateId).toBe("scheduler-medical");
   });
 
   it("builds signup URLs with wedge default plan", () => {
-    expect(signupHrefForWedge("sales")).toBe("/signup?wedge=sales&plan=pro");
-    expect(signupHrefForWedge("medical", "business")).toBe("/signup?wedge=medical&plan=business");
+    expect(signupHrefForWedge("sales")).toBe("/signup?wedge=sales&plan=starter");
+    expect(signupHrefForWedge("medical", "scale")).toBe("/signup?wedge=medical&plan=scale");
   });
 
   it("sanitizes stale localStorage intent with invalid plan or wedge", () => {
     const stale = {
-      preferredPlanId: "enterprise",
-      signupWedge: "unknown",
+      preferredPlanId: "unknown-stale-plan" as any,
+      signupWedge: "unknown" as any,
       utmSource: "linkedin",
       capturedAt: "2025-01-01T00:00:00.000Z",
     } as const;
@@ -65,12 +65,12 @@ describe("signup intent", () => {
   it("keeps valid attribution fields when sanitizing", () => {
     expect(
       sanitizeSignupIntent({
-        preferredPlanId: "pro",
+        preferredPlanId: "starter",
         signupWedge: "medical",
         capturedAt: "2025-01-01T00:00:00.000Z",
       }),
     ).toMatchObject({
-      preferredPlanId: "pro",
+      preferredPlanId: "starter",
       signupWedge: "medical",
     });
   });

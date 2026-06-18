@@ -259,17 +259,20 @@ struct WorkspaceView: View {
         return "\(q.count) agents"
     }
 
+    @MainActor
     private func load() async {
         do {
             async let meReq = WirelineAPI.shared.me()
             async let agentsReq = WirelineAPI.shared.agents()
             async let activeReq = WirelineAPI.shared.activeCalls()
             async let recentReq = WirelineAPI.shared.recentCalls()
-            self.me = try await meReq
+            let resolvedMe = try await meReq
+            self.me = resolvedMe
             self.agents = try await agentsReq
             self.activeCallsCount = (try? await activeReq.count) ?? 0
             self.needsAttentionCount = (try? await recentReq.needsAttention) ?? 0
             self.loadError = nil
+            auth.accountType = resolvedMe.account.mode.rawValue
         } catch {
             self.loadError = error.localizedDescription
         }

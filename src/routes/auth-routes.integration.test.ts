@@ -43,6 +43,11 @@ const h = vi.hoisted(() => {
       expiresAt: "emailVerificationTokens.expiresAt",
       usedAt: "emailVerificationTokens.usedAt",
     },
+    subscriptions: {
+      __name: "subscriptions",
+      userId: "subscriptions.userId",
+      plan: "subscriptions.plan",
+    },
   };
 
   function findEqValue(condition: any, left: string): unknown {
@@ -125,6 +130,9 @@ const h = vi.hoisted(() => {
           .map((row) => ({ raw: row, columns: hydrateEmailVerificationColumns(row) }))
           .filter((row) => matchesCondition(whereCondition, row.columns))
           .map((row) => (shape ? project(shape, row.columns) : row.raw));
+      }
+      if (fromTable?.__name === "subscriptions") {
+        return [];
       }
       return [];
     };

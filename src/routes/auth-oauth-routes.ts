@@ -635,12 +635,23 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
   clearOAuthBridgeStateCookie(res);
   const sessionToken = generateToken({ id: entry.user.id, email: entry.user.email });
   setSessionCookie(res, sessionToken);
+
+  const [sub] = await drizzle
+    .select({ plan: schema.subscriptions.plan })
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.userId, entry.user.id))
+    .limit(1);
+
+  const { resolveAccountType } = await import("../lib/account-type");
+  const account_type = resolveAccountType(sub?.plan);
+
   return res.json({
     ...authSuccessBody({
       id: entry.user.id,
       email: entry.user.email,
       full_name: entry.user.fullName,
       is_owner: entry.isOwner,
+      account_type,
     }),
     user_id: entry.user.id,
     email: entry.user.email,

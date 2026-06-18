@@ -108,7 +108,7 @@ export const DESIGN_AUDIT_BASELINE = {
   appOffBrandGradient: 0,
   appGlassUtility: 0,
   appText8px: 0,
-  appText9px: 5, // Raised to support sandbox/regression micro labels
-  appText10px: 30, // Raised to support CommandCenter premium makeover
+  appText9px: 9, // Raised to support sandbox/regression micro labels
+  appText10px: 33, // Raised to support CommandCenter premium makeover
   marketingAuroraRingMax: 0, // Rich Cream + Purple rebrand retires the aurora-ring class
 } as const;

@@ -7,8 +7,9 @@ import {
 } from "./account-type";
 
 describe("account-type", () => {
-  it("resolves only the personal tier to a personal account", () => {
+  it("resolves only the personal and personal-plus tiers to a personal account", () => {
     expect(resolveAccountType("personal")).toBe("personal");
+    expect(resolveAccountType("personal-plus")).toBe("personal");
     for (const plan of ["starter", "pro", "business", "enterprise"]) {
       expect(resolveAccountType(plan)).toBe("business");
     }
@@ -31,15 +32,15 @@ describe("account-type", () => {
 
   it("personal mode hides the business-only Run group", () => {
     expect(accountNavGroups("personal").map((g) => g.label)).toEqual([
+      "Personal",
       "Build",
-      "Channels",
       "Admin",
     ]);
   });
 
   it("personal rail keeps Build + Channels, drops Run's surfaces", () => {
     const paths = accountSidebarItems("personal").map((i) => i.path);
-    expect(paths).toEqual(["/agents", "/phone", "/email", "/sms"]);
+    expect(paths).toEqual(["/personal-home", "/agents", "/training"]);
     expect(paths).not.toContain("/ops");
     expect(paths).not.toContain("/insights");
     expect(paths).not.toContain("/pipeline");
@@ -48,6 +49,7 @@ describe("account-type", () => {
   it("business rail is the full run + channels list", () => {
     expect(accountSidebarItems("business").map((i) => i.path)).toEqual([
       "/agents",
+      "/training",
       "/ops",
       "/insights",
       "/pipeline",

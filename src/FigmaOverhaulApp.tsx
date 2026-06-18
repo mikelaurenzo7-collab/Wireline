@@ -313,7 +313,7 @@ function Landing() {
     <main>
       <section className="relative overflow-hidden border-b border-border">
         <div className="pointer-events-none absolute right-[-18rem] top-[-18rem] h-[36rem] w-[36rem] rounded-full bg-brand/10 blur-3xl" />
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_.9fr] lg:py-28">
+        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_.9fr] lg:py-36 xl:py-40">
           <div className="flex flex-col justify-center gap-7">
             <Chip active>
               <Sparkles size={11} /> Hundreds of models — no lock-in
@@ -369,7 +369,7 @@ function Landing() {
         </div>
       </section>
       <section className="border-b border-border bg-card">
-        <div className="mx-auto max-w-7xl px-6 py-20">
+        <div className="mx-auto max-w-7xl px-6 py-20 lg:py-32">
           <SectionHeader
             eyebrow="Personal line"
             title="It just handles it."
@@ -410,7 +410,7 @@ function Landing() {
         </div>
       </section>
       <section className="border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-20">
+        <div className="mx-auto max-w-7xl px-6 py-20 lg:py-32">
           <SectionHeader
             eyebrow="Business line"
             title="A full front desk in one cockpit."
@@ -442,12 +442,13 @@ function HeroDevice({ mode }: { mode: Mode }) {
       <div className="absolute inset-0 rounded-full bg-brand/8 blur-3xl" />
       <div
         className={cn(
-          "relative w-full max-w-[440px] border p-5 shadow-2xl",
+          "relative w-full max-w-[440px] border p-5 overflow-hidden",
           mode === "business"
-            ? "border-paper/10 bg-ink text-paper"
-            : "border-border bg-card text-ink",
+            ? "border-paper/10 bg-ink text-paper shadow-[0_24px_80px_-20px_rgba(79,30,123,0.25)]"
+            : "border-border bg-card text-ink shadow-[0_24px_80px_-20px_rgba(0,0,0,0.15)]",
         )}
       >
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-white/[0.12] mix-blend-overlay" />
         <div className="mb-5 flex items-center justify-between">
           <Logo light={mode === "business"} />
           <LiveDot label={mode === "business" ? "Fleet live" : "Aria live"} />
