@@ -55,6 +55,11 @@ const recommended = [
   ["STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID", "Personal+ extra-agent add-on"],
   ["STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID", "Personal+ metered voice-overage price"],
 
+  ["STRIPE_BUSINESS_STARTER_PRICE_ID", "Business Starter monthly price ($99/mo)"],
+  ["STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID", "Business Starter annual price ($950/yr)"],
+  ["STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID", "Business Starter extra-agent add-on"],
+  ["STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID", "Business Starter metered voice-overage price"],
+
   ["STRIPE_PRO_PRICE_ID", "Business Growth monthly price ($249/mo), legacy env name"],
   ["STRIPE_PRO_ANNUAL_PRICE_ID", "Business Growth annual price ($2,390/yr), legacy env name"],
   ["STRIPE_PRO_EXTRA_AGENT_PRICE_ID", "Business Growth extra-agent add-on, legacy env name"],

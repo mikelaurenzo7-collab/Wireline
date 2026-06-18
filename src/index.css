@@ -12,27 +12,27 @@
   --font-size: 16px;
   --paper: #efe9dc;
   --paper-deep: #e6dccb;
-  --ink: #1a1614;
+  --ink: #000000;
   --brand: #4f1e7b;
   --brand-deep: #3b154c;
   --brand-bright: #6a2da3;
   --background: #efe9dc;
-  --foreground: #1a1614;
+  --foreground: #000000;
   --card: #f6f1e7;
-  --card-foreground: #1a1614;
+  --card-foreground: #000000;
   --popover: #f6f1e7;
-  --popover-foreground: #1a1614;
+  --popover-foreground: #000000;
   --primary: #4f1e7b;
   --primary-foreground: #f6f1e7;
   --secondary: #e6dccb;
-  --secondary-foreground: #1a1614;
+  --secondary-foreground: #000000;
   --muted: #e6dccb;
   --muted-foreground: #6b5f54;
   --accent: #ede4f3;
   --accent-foreground: #3b154c;
   --destructive: #a8341f;
   --destructive-foreground: #f6f1e7;
-  --border: rgba(26, 22, 20, 0.12);
+  --border: rgba(0, 0, 0, 0.12);
   --input: transparent;
   --input-background: #f6f1e7;
   --switch-background: #cbbfae;
@@ -254,7 +254,7 @@
   }
 
   .wl-grain {
-    background-image: radial-gradient(rgba(26, 22, 20, 0.025) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
     background-size: 4px 4px;
   }
 

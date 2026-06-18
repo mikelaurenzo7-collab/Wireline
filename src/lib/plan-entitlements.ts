@@ -9,8 +9,8 @@ import { planById, type StripePlanId } from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
-/** Platform owners dogfood on enterprise entitlements without a Stripe row. */
-export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "enterprise";
+/** Platform owners dogfood on scale entitlements without a Stripe row. */
+export const FOUNDER_EFFECTIVE_PLAN_ID: StripePlanId = "scale";
 
 const OPENROUTER_PLANS = new Set<StripePlanId>(["pro", "business", "enterprise"]);
 
@@ -18,15 +18,22 @@ const OPENROUTER_PLANS = new Set<StripePlanId>(["pro", "business", "enterprise"]
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
   switch (planId) {
     case "enterprise":
-      return "enterprise";
+    case "scale":
+      return "scale" as PlanTier;
     case "business":
-      return "business";
+    case "business-growth":
+      return "business-growth" as PlanTier;
+    case "business-starter":
+    case "business-lite":
+    case "lite":
+      return "business-starter" as PlanTier;
     case "pro":
-      return "pro";
     case "starter":
-      return "starter";
+      return "starter" as PlanTier;
+    case "personal-plus":
+      return "personal-plus" as PlanTier;
     case "personal":
-      return "personal";
+      return "personal" as PlanTier;
     default:
       return "free";
   }
@@ -72,11 +79,14 @@ export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
       return 15;
     case "starter":
       return 35;
+    case "business-starter":
+      return 45;
     case "pro":
       return 75;
     case "business":
       return 200;
     case "enterprise":
+    case "scale":
       return 500;
     default:
       return 5;

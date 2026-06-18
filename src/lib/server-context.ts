@@ -161,18 +161,25 @@ export const quotaTracker = new QuotaTracker({
       if (!stripeActive) return "free";
 
       switch (sub?.plan) {
-        case "enterprise":
-          return "enterprise";
+        case "scale":
         case "business":
-          return "business";
+        case "enterprise":
+          return "scale" as PlanTier;
+        case "business-growth":
+          return "business-growth" as PlanTier;
+        case "business-starter":
+        case "business-lite":
+        case "lite":
+          return "business-starter" as PlanTier;
         case "pro":
-          return "pro";
         case "starter":
-          return "starter";
+          return "starter" as PlanTier;
+        case "personal-plus":
+          return "personal-plus" as PlanTier;
         case "personal":
-          return "personal";
+          return "personal" as PlanTier;
         default:
-          return "free";
+          return "free" as PlanTier;
       }
     } catch {
       return "free";
