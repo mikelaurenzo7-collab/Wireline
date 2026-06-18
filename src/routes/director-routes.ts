@@ -440,9 +440,8 @@ async function enrichDirectorTurnPayload(
   turnData: Record<string, unknown>,
   featureFlags: DirectorFeatureFlags,
 ): Promise<Record<string, unknown>> {
-  const withPreview = await attachDesignHtmlPrototypeToTurn(userId, operatorMessage, turnData);
-  const reply = typeof withPreview.reply === "string" ? withPreview.reply : "";
-  return attachDeliverableArtifactToTurn(userId, operatorMessage, reply, featureFlags, withPreview);
+  const reply = typeof turnData.reply === "string" ? turnData.reply : "";
+  return attachDeliverableArtifactToTurn(userId, operatorMessage, reply, featureFlags, turnData);
 }
 
 function withSignedUrl(
@@ -789,10 +788,6 @@ router.post(
       const operatorMessage = String(req.body.content || "").trim();
       const focusAgentId = String(req.body.focusAgentId || "").trim() || undefined;
       const approval = req.body.approval as DirectorApprovalRequest | undefined;
-      const stitchOptions =
-        threadKey === PAINTER_THREAD_KEY
-          ? { ...(req.body?.stitchOptions ?? {}), designMode: true as const }
-          : req.body?.stitchOptions;
 
       const fleet = await loadFleetSafe(req.user.id);
 
@@ -900,48 +895,8 @@ router.post(
         reply = creative.reply;
         approvals = creative.approvals;
         clarifyingQuestions = creative.clarifyingQuestions;
-      } else if (
-        operatorMessage &&
-        threadKey === DIRECTOR_THREAD_KEY &&
-        featureFlags.designStudio &&
-        wantsStitchMediaRequest(operatorMessage) &&
-        !isStitchDesignModeActive(stitchOptions) &&
-        !hasPendingStitchClarifyInHistory(history)
-      ) {
-        reply = WIRELINE_PAINTER_UI.buildHandoffReply(operatorMessage);
-        modelLabel = "Director";
-        modelProvider = "wireline";
       } else {
-        let stitchDesignFallback: DesignLlmFallback | undefined;
-        const stitchPath =
-          operatorMessage && featureFlags.designStudio
-            ? await resolveDesignDirectorPath({
-                userId: req.user.id,
-                operatorMessage,
-                history,
-                stitchOptions,
-              })
-            : { kind: "none" as const };
-
-        if (stitchPath.kind === "design") {
-          const stitchTurn = stitchPath.turn;
-          reply = stitchTurn.reply;
-          previews = stitchTurn.previews;
-          artifacts = stitchTurn.artifacts;
-          clarifyingQuestions = stitchTurn.clarifyingQuestions ?? clarifyingQuestions;
-          modelLabel =
-            threadKey === PAINTER_THREAD_KEY
-              ? WIRELINE_PAINTER_UI.modelLabel
-              : WIRELINE_STITCH_UI.modelLabel;
-          modelProvider = "wireline";
-          thinkingDurationMs = stitchTurn.durationMs;
-          reasoning = stitchTurn.thinkingSummary;
-        } else {
-          if (stitchPath.kind === "llm-fallback") {
-            stitchDesignFallback = stitchPath.fallback;
-            artifacts = stitchPath.fallback.artifacts;
-          }
-
+        {
           const resolved = await resolveDirectorModelSelection(
             req.user.id,
             req.body ?? {},
@@ -970,16 +925,14 @@ router.post(
                 focusAgentId,
                 forceDeep: req.body?.forceDeep === true,
                 modelSelection: resolved.selection,
-                deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
-                designRenderFallback: Boolean(stitchDesignFallback),
               });
               reply = turn.reply;
               suggestions = turn.suggestions;
               model = turn.model;
-              modelLabel = stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : turn.modelLabel;
-              modelProvider = stitchDesignFallback ? "wireline" : turn.modelProvider;
+              modelLabel = turn.modelLabel;
+              modelProvider = turn.modelProvider;
               modelId = turn.modelId;
-              reasoning = stitchDesignFallback ? DESIGN_LLM_REASONING : turn.reasoning;
+              reasoning = turn.reasoning;
               thinkingDurationMs = turn.thinkingDurationMs;
               changes = turn.changes;
               toolToggles = turn.toolToggles;
@@ -997,7 +950,6 @@ router.post(
             }
 
             if (
-              !stitchDesignFallback &&
               isDirectorStubReply(reply) &&
               wantsLongDeliverable(operatorMessage) &&
               resolved.selection.provider === "wireline"
@@ -1014,17 +966,15 @@ router.post(
                   forceDeep: false,
                   shallowOnly: true,
                   modelSelection: { provider: "wireline", tier: "sonnet" },
-                  deliverableGuidance: undefined,
-                  designRenderFallback: false,
                 });
                 if (!isDirectorStubReply(retry.reply)) {
                   reply = retry.reply;
                   suggestions = retry.suggestions;
                   model = retry.model;
-                  modelLabel = stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : retry.modelLabel;
-                  modelProvider = stitchDesignFallback ? "wireline" : retry.modelProvider;
+                  modelLabel = retry.modelLabel;
+                  modelProvider = retry.modelProvider;
                   modelId = retry.modelId;
-                  reasoning = stitchDesignFallback ? DESIGN_LLM_REASONING : retry.reasoning;
+                  reasoning = retry.reasoning;
                   thinkingDurationMs = retry.thinkingDurationMs;
                   changes = retry.changes;
                   toolToggles = retry.toolToggles;
@@ -1249,44 +1199,6 @@ router.post(
       const featureFlags = loadDirectorFeatureFlags();
 
       if (
-        threadKey === DIRECTOR_THREAD_KEY &&
-        featureFlags.designStudio &&
-        wantsStitchMediaRequest(operatorMessage) &&
-        !isStitchDesignModeActive(req.body?.stitchOptions) &&
-        !hasPendingStitchClarifyInHistory(history)
-      ) {
-        const reply = WIRELINE_PAINTER_UI.buildHandoffReply(operatorMessage);
-        const metadata = packDirectorMetadata(
-          buildDirectorMetadataFromTurn({
-            reply,
-          }),
-        );
-        sse.write("meta", {
-          model: "sonnet",
-          modelLabel: "Director",
-          modelProvider: "wireline",
-          deep: false,
-          mode: "fleet",
-        });
-        sse.write("thinking_end", { thinking: "", durationMs: 0 });
-        sse.write("done", { reply });
-        sse.end();
-        void insertDirectorReplyIfAbsent({
-          userId: req.user.id,
-          operatorMessage,
-          reply,
-          threadKey,
-          metadata,
-        }).catch((err) =>
-          log.error("director design handoff stream persist failed", {
-            error: getErrorMessage(err),
-            userId: req.user.id,
-          }),
-        );
-        return;
-      }
-
-      if (
         featureFlags.toolExecution &&
         featureFlags.creativeTools &&
         isCreativeIntent(operatorMessage)
@@ -1323,89 +1235,6 @@ router.post(
         return;
       }
 
-      let stitchMetaSent = false;
-      let designActionId: string | undefined;
-      const sendStitchMeta = () => {
-        if (!stitchMetaSent) {
-          stitchMetaSent = true;
-          sse.write("meta", {
-            model: "stitch",
-            modelLabel: WIRELINE_STITCH_UI.modelLabel,
-            modelProvider: "wireline",
-            deep: false,
-            mode: "fleet",
-          });
-          sse.write("thinking_start", {});
-          designActionId = turnLog.start("design", "Design studio render");
-        }
-      };
-
-      let stitchDesignFallback: DesignLlmFallback | undefined;
-      const stitchPath =
-        featureFlags.designStudio && !focusAgentId
-          ? await resolveDesignDirectorPath({
-              userId: req.user.id,
-              operatorMessage,
-              history,
-              stitchOptions: req.body?.stitchOptions,
-              onProgress: (text) => {
-                sendStitchMeta();
-                sse.write("thinking_chunk", { text });
-              },
-              signal: streamAbort.signal,
-            })
-          : { kind: "none" as const };
-
-      if (stitchPath.kind === "design") {
-        const stitchTurn = stitchPath.turn;
-        sendStitchMeta();
-        if (designActionId) {
-          turnLog.end(designActionId, "done", { durationMs: stitchTurn.durationMs });
-        }
-        sse.write("thinking_end", {
-          thinking: stitchTurn.thinkingSummary,
-          durationMs: stitchTurn.durationMs,
-        });
-        const donePayload: Record<string, unknown> = {
-          reply: stitchTurn.reply,
-          previews: stitchTurn.previews,
-          artifacts: stitchTurn.artifacts,
-          clarifyingQuestions: stitchTurn.clarifyingQuestions,
-          model: "sonnet",
-          modelLabel: WIRELINE_STITCH_UI.modelLabel,
-          modelProvider: "wireline",
-          mode: "fleet",
-          thinkingDurationMs: stitchTurn.durationMs,
-          reasoning: stitchTurn.thinkingSummary,
-          turnActions: turnLog.actions,
-        };
-        await finalizeDirectorStreamTurn(
-          sse,
-          req.user.id,
-          operatorMessage,
-          stitchTurn.reply,
-          donePayload,
-          stitchTurn.thinkingSummary,
-          featureFlags,
-          threadKey,
-        );
-        return;
-      }
-
-      if (stitchPath.kind === "llm-fallback") {
-        stitchDesignFallback = stitchPath.fallback;
-        if (designActionId) {
-          turnLog.end(designActionId, "failed", { detail: "Falling back to deliverable LLM" });
-          designActionId = undefined;
-        }
-        sse.write("thinking_start", {});
-        sse.write("thinking_chunk", { text: DESIGN_LLM_REASONING });
-        sse.write("thinking_end", {
-          thinking: DESIGN_LLM_REASONING,
-          durationMs: 0,
-        });
-      }
-
       const researchExpected = wantsDirectorWebResearch(operatorMessage);
       const researchActionId = researchExpected
         ? turnLog.start("research", "Grounded web research", operatorMessage.slice(0, 140))
@@ -1419,8 +1248,6 @@ router.post(
         focusAgentId,
         forceDeep: req.body?.forceDeep === true,
         modelSelection,
-        deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
-        designRenderFallback: Boolean(stitchDesignFallback),
       });
 
       if (researchActionId) {
@@ -1445,7 +1272,7 @@ router.post(
       }
       sse.write("meta", {
         model: streamMeta.model,
-        modelLabel: stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : streamCtx.modelLabel,
+        modelLabel: streamCtx.modelLabel,
         modelProvider: streamCtx.llmProvider,
         modelId: streamCtx.modelId,
         deep: streamMeta.deep,
@@ -1457,11 +1284,7 @@ router.post(
       let streamFinalized = false;
       try {
         const streamWireline = streamCtx.llmProvider === "wireline";
-        const composeActionId = turnLog.start(
-          "compose",
-          stitchDesignFallback ? "Composing design deliverable" : "Composing reply",
-          streamCtx.modelLabel,
-        );
+        const composeActionId = turnLog.start("compose", "Composing reply", streamCtx.modelLabel);
         let composeEnded = false;
         const endCompose = (
           status: "done" | "failed",
@@ -1510,7 +1333,6 @@ router.post(
         let reply = normalized.reply || "";
 
         if (
-          !stitchDesignFallback &&
           isDirectorStubReply(reply) &&
           wantsLongDeliverable(operatorMessage) &&
           streamCtx.llmProvider === "wireline"
@@ -1548,8 +1370,8 @@ router.post(
               focusAgentId: retry.focusAgentId,
               focusAgentName: retry.focusAgentName,
               model: retry.model,
-              modelLabel: stitchDesignFallback ? DESIGN_LLM_MODEL_LABEL : retry.modelLabel,
-              modelProvider: stitchDesignFallback ? "wireline" : retry.modelProvider,
+              modelLabel: retry.modelLabel,
+              modelProvider: retry.modelProvider,
               modelId: retry.modelId,
             };
             reply = retry.reply;
@@ -1579,7 +1401,7 @@ router.post(
               modelProvider: meta.modelProvider ?? normalized.modelProvider,
               modelId: meta.modelId ?? normalized.modelId,
             };
-          } else if (wantsLongDeliverable(operatorMessage) && !stitchDesignFallback) {
+          } else if (wantsLongDeliverable(operatorMessage)) {
             sse.write("error", {
               message: "Could not generate a complete deliverable — try again in a moment.",
             });
@@ -1599,16 +1421,13 @@ router.post(
           focusAgentId: normalized.focusAgentId,
           focusAgentName: normalized.focusAgentName,
           model: normalized.model,
-          modelLabel: stitchDesignFallback
-            ? DESIGN_LLM_MODEL_LABEL
-            : (normalized.modelLabel ?? streamCtx.modelLabel),
-          modelProvider: stitchDesignFallback ? "wireline" : streamCtx.llmProvider,
+          modelLabel: normalized.modelLabel ?? streamCtx.modelLabel,
+          modelProvider: streamCtx.llmProvider,
           modelId: streamCtx.modelId,
-          reasoning: stitchDesignFallback ? DESIGN_LLM_REASONING : thinking,
+          reasoning: thinking,
           thinkingDurationMs,
           researchSources: streamCtx.researchSources,
           turnActions: turnLog.actions,
-          ...(stitchDesignFallback ? { artifacts: stitchDesignFallback.artifacts } : {}),
         };
 
         donePayload = await enrichDirectorTurnPayload(
@@ -1648,7 +1467,7 @@ router.post(
           return;
         }
         log.error("director stream failed", { error: getErrorMessage(e) });
-        const deliverableTurn = wantsLongDeliverable(operatorMessage) && !stitchDesignFallback;
+        const deliverableTurn = wantsLongDeliverable(operatorMessage);
         const fallbackActionId = turnLog.start(
           "retry",
           "Recovering with non-streaming fallback",
@@ -1664,13 +1483,9 @@ router.post(
             focusAgentId,
             forceDeep: deliverableTurn ? false : req.body?.forceDeep === true,
             shallowOnly: deliverableTurn,
-            modelSelection: stitchDesignFallback
-              ? { provider: "wireline", tier: "opus" }
-              : deliverableTurn
-                ? { provider: "wireline", tier: "sonnet" }
-                : modelSelection,
-            deliverableGuidance: stitchDesignFallback?.deliverableGuidance,
-            designRenderFallback: Boolean(stitchDesignFallback),
+            modelSelection: deliverableTurn
+              ? { provider: "wireline", tier: "sonnet" }
+              : modelSelection,
           });
           if (
             isDirectorStubReply(turn.reply) &&
