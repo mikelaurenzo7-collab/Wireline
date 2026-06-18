@@ -206,10 +206,10 @@ export default function TopBar({
           isDrawer
             ? active
               ? "shadow-md shadow-brand/20"
-              : "text-ink/70 hover:text-ink hover:bg-black/5"
+              : "text-foreground/70 hover:text-foreground hover:bg-black/5"
             : active
               ? "shadow-md shadow-brand-deep/10"
-              : "text-ink/60 hover:text-ink hover:bg-brand/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/8",
+              : "text-foreground/60 hover:text-foreground hover:bg-brand/5 dark:text-white/60 dark:hover:text-white dark:hover:bg-white/8",
           activeTextClass,
         )}
       >
@@ -226,7 +226,7 @@ export default function TopBar({
             isDrawer
               ? active
                 ? activeTextClass
-                : "text-ink/65 group-hover:text-ink"
+                : "text-foreground/65 group-hover:text-foreground"
               : active
                 ? activeTextClass
                 : "chrome-muted group-hover:text-brand dark:group-hover:text-paper-warm",
@@ -249,7 +249,7 @@ export default function TopBar({
           <span className="relative z-10 wl-rail-beta-badge shrink-0">{item.betaLabel}</span>
         )}
         {isDrawer && NAV_SHORTCUT_HINTS[item.path] && !badge && !item.betaLabel && (
-          <kbd className="relative z-10 ml-auto shrink-0 wl-micro-badge font-mono px-1.5 py-0.5 rounded border border-black/10 bg-black/[0.03] text-muted leading-none">
+          <kbd className="relative z-10 ml-auto shrink-0 wl-micro-badge font-mono px-1.5 py-0.5 rounded border border-white/10 bg-black/[0.03] text-muted leading-none">
             {NAV_SHORTCUT_HINTS[item.path]}
           </kbd>
         )}
@@ -278,7 +278,7 @@ export default function TopBar({
           "shrink-0 sticky top-0 z-50 border-b lg:hidden transition-all duration-300 wl-panel-elevated elev-1",
           "pt-[max(0px,env(safe-area-inset-top,0))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]",
           theme === "light"
-            ? "border-brand/10 text-ink animate-fade-in"
+            ? "border-brand/10 text-foreground animate-fade-in"
             : "border-brand/20 text-white animate-fade-in",
         )}
       >
@@ -311,7 +311,7 @@ export default function TopBar({
           {/* Mobile (<lg) compact label for full-bleed routes so /chat shows a clean short title. */}
           {breadcrumb && showTopBarTheme && (
             <div className="lg:hidden flex items-center min-w-0 ml-1">
-              <span className="text-[13px] font-semibold tracking-[-0.01em] text-ink truncate">
+              <span className="text-[13px] font-semibold tracking-[-0.01em] text-foreground truncate">
                 {breadcrumb.title}
               </span>
             </div>
@@ -339,7 +339,7 @@ export default function TopBar({
                   )}
                   <span
                     aria-hidden="true"
-                    className="text-[15px] font-semibold leading-none tracking-[-0.02em] truncate text-ink dark:text-[color:var(--wl-paper)]"
+                    className="text-[15px] font-semibold leading-none tracking-[-0.02em] truncate text-foreground dark:text-[color:var(--wl-paper)]"
                   >
                     {breadcrumb.title}
                   </span>
@@ -412,19 +412,19 @@ export default function TopBar({
                     id={accountMenuId}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md border border-black/10 bg-paper dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[90]"
+                    className="absolute right-0 top-full mt-2 min-w-[240px] w-64 md:w-72 max-w-[90vw] rounded-md border border-white/10 bg-card dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[90]"
                   >
                     {/* Account header — brand-tinted */}
-                    <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden">
+                    <div className="relative px-4 py-3.5 border-b border-white/8 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.04] to-transparent pointer-events-none" />
                       <p className="wl-label-muted mb-1">Signed in as</p>
-                      <p className="text-[12px] font-semibold text-ink truncate relative z-10">
+                      <p className="text-[12px] font-semibold text-foreground truncate relative z-10">
                         {user?.email || "—"}
                       </p>
                     </div>
 
                     {/* Workspace Switcher Card */}
-                    <div className="px-4 py-3 border-b border-black/8 bg-black/[0.015] dark:bg-white/[0.01]">
+                    <div className="px-4 py-3 border-b border-white/8 bg-black/[0.015] dark:bg-white/[0.01]">
                       <p className="wl-label-muted mb-2 uppercase tracking-wider text-[9px]">
                         Workspace Context
                       </p>
@@ -445,7 +445,7 @@ export default function TopBar({
                             "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
                             accountType === "personal"
                               ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
-                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                              : "border-white/[0.08] hover:border-brand/30 bg-card dark:bg-velvet/50 text-foreground/70 hover:text-foreground",
                           )}
                         >
                           <User className="w-4 h-4 mb-1" />
@@ -467,7 +467,7 @@ export default function TopBar({
                             "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
                             accountType === "business"
                               ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
-                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                              : "border-white/[0.08] hover:border-brand/30 bg-card dark:bg-velvet/50 text-foreground/70 hover:text-foreground",
                           )}
                         >
                           <Building className="w-4 h-4 mb-1" />
@@ -480,7 +480,7 @@ export default function TopBar({
                       <Link
                         to="/admin?tab=subscription"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <CreditCard className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -489,7 +489,7 @@ export default function TopBar({
                       <Link
                         to="/admin"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <Settings className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -498,7 +498,7 @@ export default function TopBar({
                       <Link
                         to="/integrations"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <PlugZap className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -507,7 +507,7 @@ export default function TopBar({
                       <Link
                         to="/help"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -518,7 +518,7 @@ export default function TopBar({
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                          className="flex items-center gap-2.5 px-4 py-2.5 md:py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                           role="menuitem"
                         >
                           <Crown className="w-3.5 h-3.5 text-brand/50 group-hover:text-brand transition-colors" />
@@ -526,7 +526,7 @@ export default function TopBar({
                         </Link>
                       )}
                     </div>
-                    <div className="border-t border-black/8 py-1">
+                    <div className="border-t border-white/8 py-1">
                       <ShadButton
                         type="button"
                         variant="ghost"
@@ -589,7 +589,7 @@ export default function TopBar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 340, damping: 32 }}
-              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-black/8 flex flex-col p-4 lg:hidden pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] focus:outline-none"
+              className="fixed top-0 bottom-0 left-0 w-[min(21rem,calc(100vw-0.75rem))] z-[85] wl-panel-elevated elev-2 border-r border-white/8 flex flex-col p-4 lg:hidden pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] focus:outline-none"
               role="dialog"
               aria-modal="true"
               aria-labelledby="mobile-navigation-title"
@@ -618,7 +618,7 @@ export default function TopBar({
                   size="icon"
                   disableAnimations
                   onClick={() => onDrawerChange(false)}
-                  className="touch-press w-8 h-8 rounded-md text-ink/70 hover:text-ink hit-area-44 hover:scale-[1.05]"
+                  className="touch-press w-8 h-8 rounded-md text-foreground/70 hover:text-foreground hit-area-44 hover:scale-[1.05]"
                   aria-label="Close navigation"
                 >
                   <X className="w-4 h-4" />
@@ -680,7 +680,7 @@ export default function TopBar({
                     {user?.email?.slice(0, 1).toUpperCase() ?? "?"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium text-ink truncate leading-none mb-0.5">
+                    <p className="text-[12px] font-medium text-foreground truncate leading-none mb-0.5">
                       {user?.email?.split("@")[0]}
                     </p>
                     <p className="wl-label text-muted truncate">{user?.email?.split("@")[1]}</p>
@@ -692,7 +692,7 @@ export default function TopBar({
                     disableAnimations
                     onClick={() => signOut()}
                     aria-label="Sign out"
-                    className="touch-press w-8 h-8 rounded-md text-ink/65 hover:text-rose-600 hover:bg-rose-500/8 hit-area-44 hover:scale-[1.05]"
+                    className="touch-press w-8 h-8 rounded-md text-foreground/65 hover:text-rose-600 hover:bg-rose-500/8 hit-area-44 hover:scale-[1.05]"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </ShadButton>

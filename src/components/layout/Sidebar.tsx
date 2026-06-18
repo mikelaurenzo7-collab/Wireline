@@ -211,19 +211,19 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     role="menu"
                     aria-label="Account menu"
-                    className="absolute left-[48px] bottom-0 min-w-[240px] w-64 md:w-72 rounded-md border border-black/10 bg-paper dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[99]"
+                    className="absolute left-[48px] bottom-0 min-w-[240px] w-64 md:w-72 rounded-md border border-white/10 bg-card dark:bg-card wl-card-shine shadow-2xl shadow-brand/12 overflow-hidden z-[99]"
                   >
                     {/* Account header — brand-tinted */}
-                    <div className="relative px-4 py-3.5 border-b border-black/8 overflow-hidden text-left">
+                    <div className="relative px-4 py-3.5 border-b border-white/8 overflow-hidden text-left">
                       <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.04] to-transparent pointer-events-none" />
                       <p className="wl-label-muted mb-1">Signed in as</p>
-                      <p className="text-[12px] font-semibold text-ink truncate relative z-10">
+                      <p className="text-[12px] font-semibold text-foreground truncate relative z-10">
                         {user.email || "—"}
                       </p>
                     </div>
 
                     {/* Workspace Switcher Card */}
-                    <div className="px-4 py-3 border-b border-black/8 bg-black/[0.015] dark:bg-white/[0.01]">
+                    <div className="px-4 py-3 border-b border-white/8 bg-black/[0.015] dark:bg-white/[0.01]">
                       <p className="wl-label-muted mb-2 uppercase tracking-wider text-[9px] text-left">
                         Workspace Context
                       </p>
@@ -244,7 +244,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                             "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
                             accountType === "personal"
                               ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
-                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                              : "border-white/[0.08] hover:border-brand/30 bg-card dark:bg-velvet/50 text-foreground/70 hover:text-foreground",
                           )}
                         >
                           <User className="w-4 h-4 mb-1" />
@@ -268,7 +268,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                             "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
                             accountType === "business"
                               ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
-                              : "border-black/[0.08] hover:border-brand/30 bg-paper dark:bg-velvet/50 text-ink/70 hover:text-ink",
+                              : "border-white/[0.08] hover:border-brand/30 bg-card dark:bg-velvet/50 text-foreground/70 hover:text-foreground",
                           )}
                         >
                           <Building className="w-4 h-4 mb-1" />
@@ -283,7 +283,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/admin?tab=subscription"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <CreditCard className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -292,7 +292,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/admin"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <Settings className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -301,7 +301,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/integrations"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <PlugZap className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -310,7 +310,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <Link
                         to="/help"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                        className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
                       >
                         <LifeBuoy className="w-3.5 h-3.5 text-brand/40 group-hover:text-brand/60 transition-colors" />
@@ -321,7 +321,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         <Link
                           to="/founder"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-ink/70 hover:bg-brand/[0.04] hover:text-ink transition-colors group"
+                          className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                           role="menuitem"
                         >
                           <Crown className="w-3.5 h-3.5 text-brand/50 group-hover:text-brand transition-colors" />
@@ -329,7 +329,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         </Link>
                       )}
                     </div>
-                    <div className="border-t border-black/8 py-1 text-left">
+                    <div className="border-t border-white/8 py-1 text-left">
                       <ShadButton
                         type="button"
                         variant="ghost"

@@ -313,7 +313,7 @@ export default function AppShell() {
         <CreamBackdrop />
         <div className="relative w-36 h-36 md:w-44 md:h-44 mb-10 md:mb-12 animate-spin-slow">
           <div className="absolute inset-0 rounded-full wl-loading-conic-ring" />
-          <div className="absolute inset-2 rounded-full bg-paper" />
+          <div className="absolute inset-2 rounded-full bg-card" />
           <div className="absolute inset-4 rounded-full wl-panel flex items-center justify-center">
             <div className="animate-pulse">
               <WirelineMark className="w-14 h-14 md:w-16 md:h-16 text-brand" strokeWidth={90} />
@@ -341,7 +341,7 @@ export default function AppShell() {
   return (
     <div
       data-testid="client-console"
-      className="client-console flex flex-col h-dvh max-h-dvh text-ink font-sans overflow-hidden relative"
+      className="client-console flex flex-col h-dvh max-h-dvh text-foreground font-sans overflow-hidden relative"
     >
       <a
         href="#main-content"
@@ -424,7 +424,7 @@ export default function AppShell() {
           />
         )}
 
-        <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0 bg-paper/30 dark:bg-black/20">
+        <div className="client-console__stage-wrap flex-1 relative flex flex-col min-h-0 bg-card/30 dark:bg-black/20">
           <div
             ref={stageRef}
             className="client-console__stage workspace-stage scroll-viewport flex-1 overflow-x-hidden overflow-y-auto relative z-10 min-h-0 px-0 md:px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-4"
