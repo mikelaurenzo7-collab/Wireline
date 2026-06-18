@@ -1,5 +1,7 @@
 /* Wireline — "Signal" design system. Light-first, token-driven. */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
+@import "@fontsource-variable/fraunces/wght.css";
+@import "@fontsource-variable/fraunces/wght-italic.css";
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 @import "@fontsource/jetbrains-mono/600.css";
@@ -93,7 +95,7 @@
   --white: #0a0f0d;
 
   --radius: 12px;
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Fraunces Variable", "Plus Jakarta Sans", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
@@ -439,4 +441,45 @@ html:not(.dark) body {
   background:
     radial-gradient(58% 40% at 50% -10%, rgba(13, 159, 110, 0.07), transparent 72%),
     var(--canvas);
+}
+
+/* ── Marketing motion vocabulary ────────────────────────────────────────────
+   A small, purposeful set of animations for the public site's live-call
+   centerpiece, capability marquee, and on-scroll reveals. All respect
+   prefers-reduced-motion via the global reduce block above. */
+@keyframes wlEqualize {
+  0%, 100% { transform: scaleY(0.28); }
+  50% { transform: scaleY(1); }
+}
+@keyframes wlMarquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes wlPing {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  70%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes wlRise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wl-eq-bar {
+  transform-origin: bottom;
+  animation: wlEqualize 1.1s ease-in-out infinite;
+}
+.wl-marquee-track {
+  display: inline-flex;
+  width: max-content;
+  animation: wlMarquee 38s linear infinite;
+}
+.wl-marquee:hover .wl-marquee-track { animation-play-state: paused; }
+.wl-ping { animation: wlPing 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+.wl-rise { animation: wlRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Fraunces reads best as a refined editorial display — slightly lighter and
+   optically sized for large headlines. */
+.font-display {
+  font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 0, "WONK" 0;
 }
