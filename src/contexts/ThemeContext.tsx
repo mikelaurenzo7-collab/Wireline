@@ -1,11 +1,12 @@
 /**
- * ThemeContext — Wireline is "Midnight": a single, dark-only design system.
+ * ThemeContext — Wireline ships two first-class themes:
+ *   • Daybreak (light) — the default, luminous porcelain + deep iris.
+ *   • Midnight (dark)  — graphite canvas + iris accent.
  *
- * The light/Rich-Cream path has been retired. This provider keeps its original
- * API surface (theme, resolvedTheme, setTheme, toggleTheme) so existing
- * consumers and theme toggles keep compiling, but every value resolves to
- * "dark" and the `.dark` class is always present on `<html>`. Re-introducing a
- * light variant later is a matter of restoring the resolve/apply logic below.
+ * It resolves the preference (light / dark / system), persists it, and toggles
+ * the `.dark` class on `<html>` so the token system flips between palettes.
+ * Light is the default and matches the pre-paint bootstrap in index.html (no
+ * stored preference → light), so there is no first-load theme flash.
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
@@ -23,19 +24,32 @@ const STORAGE_KEY = "wireline.theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredTheme(): Theme {
-  // Midnight is dark-only.
-  return "dark";
+  if (typeof window === "undefined") return "light";
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw === "light" || raw === "dark" || raw === "system") return raw;
+  } catch {
+    /* localStorage unavailable — fall back to light */
+  }
+  return "light";
 }
 
-function resolveTheme(_theme: Theme): "light" | "dark" {
-  return "dark";
+function resolveTheme(theme: Theme): "light" | "dark" {
+  if (theme !== "system") return theme;
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches
+  ) {
+    return "dark";
+  }
+  return "light";
 }
 
-function applyTheme(_resolved: "light" | "dark"): void {
+function applyTheme(resolved: "light" | "dark"): void {
   if (typeof document !== "undefined") {
     const root = document.documentElement;
-    root.classList.add("dark");
-    root.style.colorScheme = "dark";
+    root.classList.toggle("dark", resolved === "dark");
+    root.style.colorScheme = resolved;
   }
 }
 
@@ -65,9 +79,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    // Dark-only: toggling is a no-op until a light variant is reintroduced.
-    setTheme("dark");
-  }, [setTheme]);
+    setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light");
+  }, [theme, setTheme]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ theme, resolvedTheme, setTheme, toggleTheme }),
@@ -81,8 +94,8 @@ export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
     return {
-      theme: "dark",
-      resolvedTheme: "dark",
+      theme: "light",
+      resolvedTheme: "light",
       setTheme: () => {},
       toggleTheme: () => {},
     };

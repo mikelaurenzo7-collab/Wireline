@@ -9,8 +9,93 @@
 
 :root {
   --font-size: 16px;
+  color-scheme: light;
 
-  /* Midnight palette — graphite canvas, iris accent, mint/amber signals. */
+  /* ── Daybreak (LIGHT, default) ─────────────────────────────────────────────
+     The luminous synthesis of Midnight: a cool porcelain canvas, the same iris
+     hue family pulled deeper for ink-on-light contrast, mint/amber/rose signals
+     re-tuned to read on light. Dark (Midnight) lives in the .dark block below;
+     both are first-class. */
+  --canvas: #f4f6fc;       /* cool luminous porcelain */
+  --canvas-deep: #e9ecf6;
+  --panel: #ffffff;
+  --panel-2: #f6f8fd;
+  --raised: #ffffff;
+  --velvet: #ffffff;
+
+  --text: #14161d;         /* graphite ink */
+  --text-2: #545a6b;
+  --text-3: #868c9e;
+
+  --iris: #5360e0;         /* vivid iris-indigo accent for light */
+  --iris-bright: #7c9cff;  /* Midnight's iris, kept as the bright/glow tint */
+  --iris-deep: #3a44b8;
+  --mint: #0f9d74;
+  --amber: #b1700c;
+  --rose: #d8503f;
+
+  /* Legacy aliases. ink/paper carry the ink (text + hairline) role on light;
+     the few solid bg-ink/bg-paper surfaces are remapped to the canvas/panel via
+     the overrides in the light-surface block further down. */
+  --paper: #14161d;
+  --paper-deep: #0c0d11;
+  --paper-soft: #2a2e3a;
+  --ink: #14161d;
+  --ink-soft: #2a2e3a;
+  --brand: #4f5bd5;        /* deep iris — readable as primary on light */
+  --brand-deep: #3a44b8;
+  --brand-bright: #7c9cff;
+
+  /* shadcn semantic tokens (drive every primitive + Tailwind color utility). */
+  --background: #f4f6fc;
+  --foreground: #14161d;
+  --card: #ffffff;
+  --card-foreground: #14161d;
+  --popover: #ffffff;
+  --popover-foreground: #14161d;
+  --primary: #4f5bd5;
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f9;
+  --secondary-foreground: #14161d;
+  --muted: #eef1f9;
+  --muted-foreground: #565c6c;
+  --accent: #e7ebf7;
+  --accent-foreground: #14161d;
+  --destructive: #d92d20;
+  --destructive-foreground: #ffffff;
+  --border: rgba(20, 22, 32, 0.1);
+  --input: rgba(20, 22, 32, 0.14);
+  --input-background: #ffffff;
+  --switch-background: #d5d9e6;
+  --ring: #4f5bd5;
+  --chart-1: #4f5bd5;
+  --chart-2: #0f9d74;
+  --chart-3: #b1700c;
+  --chart-4: #7c9cff;
+  --chart-5: #3a44b8;
+
+  /* Marketing showcase surfaces (the art-directed public hero + device mock).
+     Light renders clean porcelain; .dark keeps Midnight's exact purple-blacks. */
+  --marketing-surface: #ffffff;
+  --marketing-surface-2: #f3f5fb;
+  --marketing-deep: #fafbff;
+
+  /* Theme-aware "white": utilities like text-white / border-white/10 / bg-white/5
+     resolve to ink on light (so the ~750 dark-built utilities read correctly)
+     and to true white in dark. */
+  --white: #14161d;
+
+  --radius: 14px;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* ── Midnight (DARK) ───────────────────────────────────────────────────────
+     graphite canvas, iris accent, mint/amber signals. Preserved exactly. */
   --canvas: #0c0d11;
   --canvas-deep: #0a0b0e;
   --panel: #14161d;
@@ -29,18 +114,15 @@
   --amber: #f4b45a;
   --rose: #e5705f;
 
-  /* Legacy aliases kept so existing class names map onto Midnight without churn.
-     bg-ink/text-paper (the app shell pattern) → dark canvas + light text. */
-  --paper: #eceDF1;        /* used as text-paper (light text on dark shell) */
+  --paper: #eceDF1;
   --paper-deep: #0a0b0e;
   --paper-soft: #16181d;
-  --ink: #0c0d11;          /* used as bg-ink (dark canvas) */
+  --ink: #0c0d11;
   --ink-soft: #191c24;
   --brand: #7c9cff;
   --brand-deep: #5570e6;
   --brand-bright: #a9beff;
 
-  /* shadcn semantic tokens (drive every primitive + Tailwind color utility). */
   --background: #0c0d11;
   --foreground: #eceDF1;
   --card: #14161d;
@@ -68,13 +150,18 @@
   --chart-4: #a9beff;
   --chart-5: #5570e6;
 
-  --radius: 14px;
-  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --marketing-surface: #0f0b14;
+  --marketing-surface-2: #17101d;
+  --marketing-deep: #100b14;
+
+  --white: #ffffff;
 }
 
 @theme inline {
+  --color-white: var(--white);
+  --color-marketing-surface: var(--marketing-surface);
+  --color-marketing-surface-2: var(--marketing-surface-2);
+  --color-marketing-deep: var(--marketing-deep);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -137,7 +224,6 @@
     background: var(--canvas);
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
     font-optical-sizing: auto;
-    color-scheme: dark;
   }
 
   body {
@@ -200,8 +286,8 @@
   }
 
   ::selection {
-    background: var(--iris);
-    color: #0a0b10;
+    background: var(--primary);
+    color: var(--primary-foreground);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -289,4 +375,37 @@
   .scroll-viewport { overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 
   .text-balance { text-wrap: balance; }
+}
+
+/* ── Light-surface corrections ──────────────────────────────────────────────
+   The component layer was authored dark-first. On Daybreak (light), a handful
+   of surfaces and shadows need re-grounding: solid `bg-ink`/`bg-paper` are the
+   canvas/panel (ink itself stays dark so border-ink/text-ink read as hairlines
+   and ink text), and the heavy graphite drop-shadows soften into airy lifts.
+   These only apply when NOT in .dark, so Midnight is untouched. */
+html:not(.dark) .bg-ink {
+  background-color: var(--canvas);
+}
+html:not(.dark) .bg-paper {
+  background-color: var(--panel);
+}
+html:not(.dark) .wl-premium-card {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 18px 44px -30px rgba(20, 22, 45, 0.22);
+}
+html:not(.dark) .wl-dark-card {
+  background: var(--panel);
+  box-shadow: 0 14px 36px -26px rgba(20, 22, 45, 0.2);
+}
+html:not(.dark) .wl-panel-elevated {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 22px 50px -34px rgba(20, 22, 45, 0.2);
+}
+/* The signature ambient body bloom reads warmer/softer on porcelain. */
+html:not(.dark) body {
+  background:
+    radial-gradient(58% 40% at 50% -10%, rgba(83, 96, 224, 0.07), transparent 72%),
+    var(--canvas);
 }
