@@ -130,7 +130,7 @@
   .font-display {
     font-family: var(--font-display);
     font-weight: 560;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.028em;
   }
 
   h1,
@@ -141,18 +141,18 @@
   }
 
   h1 {
-    letter-spacing: -0.06em;
-    line-height: 0.92;
+    letter-spacing: -0.044em;
+    line-height: 0.99;
   }
 
   h2 {
-    letter-spacing: -0.052em;
-    line-height: 0.98;
+    letter-spacing: -0.034em;
+    line-height: 1.03;
   }
 
   h3 {
-    letter-spacing: -0.038em;
-    line-height: 1.02;
+    letter-spacing: -0.024em;
+    line-height: 1.08;
   }
 
   p,
@@ -199,8 +199,8 @@
   .wl-overhaul-surface h1,
   .wl-grain h1,
   .bg-ink.text-paper h1 {
-    letter-spacing: -0.066em !important;
-    line-height: 0.9 !important;
+    letter-spacing: -0.046em !important;
+    line-height: 0.98 !important;
     text-transform: uppercase !important;
     text-wrap: balance;
   }
@@ -208,8 +208,8 @@
   .wl-overhaul-surface h2,
   .wl-grain h2,
   .bg-ink.text-paper h2 {
-    letter-spacing: -0.056em !important;
-    line-height: 0.96 !important;
+    letter-spacing: -0.036em !important;
+    line-height: 1.03 !important;
     text-transform: uppercase !important;
     text-wrap: balance;
   }
@@ -217,25 +217,25 @@
   .wl-overhaul-surface h3,
   .wl-grain h3,
   .bg-ink.text-paper h3 {
-    letter-spacing: -0.04em !important;
-    line-height: 1.01 !important;
+    letter-spacing: -0.024em !important;
+    line-height: 1.08 !important;
     text-transform: uppercase !important;
     text-wrap: balance;
   }
 
   .wl-title {
     font-family: var(--font-display);
-    font-weight: 620;
-    letter-spacing: -0.066em;
-    line-height: 0.9;
+    font-weight: 600;
+    letter-spacing: -0.048em;
+    line-height: 0.98;
     text-transform: uppercase;
     text-wrap: balance;
   }
 
   .wl-subtitle {
     font-family: var(--font-sans);
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-weight: 760;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
   }
 
@@ -250,7 +250,7 @@
   .wl-numeral {
     font-family: var(--font-display);
     font-variant-numeric: tabular-nums lining-nums;
-    letter-spacing: -0.055em;
+    letter-spacing: -0.035em;
   }
 
   .wl-grain {
@@ -341,7 +341,7 @@
     overflow-wrap: anywhere;
   }
 
-  .flex.min-h-screen.bg-ink.text-paper .text-5xl { font-size: 2.25rem !important; line-height: 1.05 !important; }
-  .flex.min-h-screen.bg-ink.text-paper .text-4xl { font-size: 2rem !important; line-height: 1.08 !important; }
-  .flex.min-h-screen.bg-ink.text-paper .text-3xl { font-size: 1.65rem !important; line-height: 1.12 !important; }
+  .flex.min-h-screen.bg-ink.text-paper .text-5xl { font-size: 2.25rem !important; line-height: 1.08 !important; }
+  .flex.min-h-screen.bg-ink.text-paper .text-4xl { font-size: 2rem !important; line-height: 1.12 !important; }
+  .flex.min-h-screen.bg-ink.text-paper .text-3xl { font-size: 1.65rem !important; line-height: 1.16 !important; }
 }
