@@ -18,6 +18,7 @@ type OAuthProvider = "google" | "microsoft" | "yahoo";
 type WorkspaceMode = "personal" | "business";
 
 const WORKSPACE_MODE_KEY = "wireline.mode";
+const AUTH_REDIRECT_KEY = "wireline.auth.redirect";
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
@@ -39,6 +40,39 @@ function persistWorkspaceMode(mode: WorkspaceMode) {
 
 function targetFor(mode: WorkspaceMode) {
   return mode === "personal" ? "/app/personal" : "/app/business";
+}
+
+function isSafeInternalPath(value: string | null): value is string {
+  if (!value) return false;
+  if (!value.startsWith("/") || value.startsWith("//")) return false;
+  return !/^\/auth\b|^\/signin\b|^\/login\b|^\/signup\b|^\/get-started\b|^\/reset\b/.test(value);
+}
+
+function readRedirectFromSearch(search: string): string | null {
+  const value = new URLSearchParams(search).get("redirect");
+  return isSafeInternalPath(value) ? value : null;
+}
+
+function persistAuthRedirect(value: string | null) {
+  if (typeof window === "undefined") return;
+  if (isSafeInternalPath(value)) window.localStorage.setItem(AUTH_REDIRECT_KEY, value);
+}
+
+function readStoredAuthRedirect() {
+  if (typeof window === "undefined") return null;
+  const value = window.localStorage.getItem(AUTH_REDIRECT_KEY);
+  return isSafeInternalPath(value) ? value : null;
+}
+
+function consumeAuthRedirect() {
+  if (typeof window === "undefined") return null;
+  const value = readStoredAuthRedirect();
+  window.localStorage.removeItem(AUTH_REDIRECT_KEY);
+  return value;
+}
+
+function targetAfterAuth(mode: WorkspaceMode) {
+  return consumeAuthRedirect() ?? targetFor(mode);
 }
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -93,7 +127,7 @@ const providers: Array<{ id: OAuthProvider; label: string; sub: string; mark: Re
   { id: "yahoo", label: "Yahoo", sub: "Yahoo Mail", mark: <span className="font-semibold text-brand">Y</span> },
 ];
 
-function OAuthButtons({ disabled, mode, intent, onError }: { disabled?: boolean; mode: WorkspaceMode; intent: SignupIntent | null; onError: (message: string | null) => void }) {
+function OAuthButtons({ disabled, mode, intent, redirectTarget, onError }: { disabled?: boolean; mode: WorkspaceMode; intent: SignupIntent | null; redirectTarget: string | null; onError: (message: string | null) => void }) {
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 
   const start = async (provider: OAuthProvider) => {
@@ -102,6 +136,7 @@ function OAuthButtons({ disabled, mode, intent, onError }: { disabled?: boolean;
     onError(null);
     persistWorkspaceMode(mode);
     persistSignupIntent(intent);
+    persistAuthRedirect(redirectTarget);
     try {
       await syncSignupIntent(intent).catch(() => {});
       const res = await fetch(`/api/auth/${provider}/url`, {
@@ -166,7 +201,7 @@ function Shell({ children, mode }: { children: ReactNode; mode: WorkspaceMode })
           <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">{mode === "personal" ? "Your private phone chief of staff." : "Run the front line from one cockpit."}</h1>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
             {mode === "personal"
-              ? "Screen calls, kill spam, set mobile intents, and keep your day moving without opening a business console."
+              ? "Screen calls, kill spam, set mobile automations, and keep your day moving without opening a business console."
               : "Deploy AI voice, SMS, and email agents with real OAuth, training, integrations, and operator controls."
             }
           </p>
@@ -218,8 +253,9 @@ export default function FigmaAuthPortal() {
   const { signIn } = useAuth();
   const capturedIntent = useMemo(() => captureSignupIntentFromLocation(), [location.search]);
   const initialMode: AuthMode = location.pathname === "/signup" || location.pathname === "/get-started" ? "signup" : location.pathname === "/reset" ? "reset" : "signin";
+  const redirectTarget = useMemo(() => readRedirectFromSearch(location.search), [location.search]);
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [workspaceMode, setWorkspaceModeState] = useState<WorkspaceMode>(() => workspaceFromIntent(capturedIntent) || readStoredWorkspaceMode());
+  const [workspaceMode, setWorkspaceModeState] = useState<WorkspaceMode>(() => capturedIntent ? workspaceFromIntent(capturedIntent) : readStoredWorkspaceMode());
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -243,6 +279,10 @@ export default function FigmaAuthPortal() {
     persistWorkspaceMode(workspaceMode);
   }, [workspaceMode]);
 
+  useEffect(() => {
+    persistAuthRedirect(redirectTarget);
+  }, [redirectTarget]);
+
   const isSignup = mode === "signup";
   const isReset = mode === "reset";
   const intent = getStoredSignupIntent() ?? capturedIntent;
@@ -258,6 +298,7 @@ export default function FigmaAuthPortal() {
 
     setLoading(true);
     persistWorkspaceMode(workspaceMode);
+    persistAuthRedirect(redirectTarget);
     try {
       if (isReset) {
         const res = await fetch("/api/auth/forgot-password", {
@@ -283,7 +324,7 @@ export default function FigmaAuthPortal() {
         if (!user?.id || !user.email) throw new Error("Authentication succeeded but user payload was missing.");
         await syncSignupIntent(intent).catch(() => {});
         signIn({ user: { id: user.id, email: user.email, full_name: user.full_name, is_owner: user.is_owner } });
-        navigate(targetFor(workspaceMode), { replace: true });
+        navigate(targetAfterAuth(workspaceMode), { replace: true });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed. Please try again.");
@@ -293,7 +334,7 @@ export default function FigmaAuthPortal() {
   };
 
   const title = isReset ? "Reset your password" : isSignup ? "Create your Wireline account" : "Sign in to Wireline";
-  const subtitle = isReset ? "Enter your email and Wireline will send a secure reset link." : isSignup ? "Choose personal or business, then use OAuth or email to create your workspace." : "Use OAuth or email to return to your workspace.";
+  const subtitle = isReset ? "Enter your email and Wireline will send a secure reset link." : isSignup ? "Choose personal or business, then use OAuth or email to create your workspace." : redirectTarget ? "Sign in to continue where you left off." : "Use OAuth or email to return to your workspace.";
 
   return (
     <Shell mode={workspaceMode}>
@@ -301,6 +342,7 @@ export default function FigmaAuthPortal() {
       <Chip>{isReset ? "Account recovery" : "Wireline account"}</Chip>
       <h1 className="mt-5 font-display text-4xl leading-tight tracking-tight text-ink">{title}</h1>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
+      {redirectTarget && !isReset && <div className="mt-4 rounded-[16px] border border-brand/20 bg-brand/8 p-3 text-xs leading-5 text-brand">After sign-in, Wireline will return you to <span className="font-semibold">{redirectTarget}</span>.</div>}
 
       {!isReset && (
         <div className="mt-7 grid grid-cols-2 gap-px border border-border bg-border p-1">
@@ -311,7 +353,7 @@ export default function FigmaAuthPortal() {
 
       <section className="mt-4 border border-border bg-card p-5 shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)] sm:p-6">
         {isSignup && <div className="mb-5"><WorkspaceSelector mode={workspaceMode} setMode={setWorkspaceMode} /></div>}
-        {!isReset && <OAuthButtons disabled={loading} mode={workspaceMode} intent={intent} onError={setError} />}
+        {!isReset && <OAuthButtons disabled={loading} mode={workspaceMode} intent={intent} redirectTarget={redirectTarget} onError={setError} />}
         <form onSubmit={submit} className="mt-5 space-y-4">
           <label className="block space-y-2 text-sm font-semibold text-ink">
             <span>Email address</span>
@@ -393,7 +435,7 @@ export function FigmaOAuthComplete() {
         if (!user.id || !user.email) throw new Error("Sign-in response was incomplete. Please try again.");
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        navigate(targetFor(readStoredWorkspaceMode()), { replace: true });
+        navigate(targetAfterAuth(readStoredWorkspaceMode()), { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
       }
