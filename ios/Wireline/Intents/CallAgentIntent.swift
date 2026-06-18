@@ -13,7 +13,7 @@ struct CallAgentIntent: AppIntent {
     // Opening the app is unnecessary — this runs in the background via Siri.
     static var openAppWhenRun = false
 
-    @Parameter(title: "Agent")
+    @Parameter(title: "Agent", default: "")
     var agentName: String
 
     @Parameter(title: "Phone number")
@@ -29,9 +29,19 @@ struct CallAgentIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let agents = try await WirelineAPI.shared.agents()
-        guard let agent = agents.first(where: {
+        guard !agents.isEmpty else {
+            return .result(dialog: "Add an agent in Wireline first.")
+        }
+        // Resolve by name when given; otherwise use the default (first) agent so
+        // "Have Wireline call the doctor" works without naming an agent.
+        let agent: Agent
+        if agentName.isEmpty {
+            agent = agents[0]
+        } else if let match = agents.first(where: {
             $0.name.localizedCaseInsensitiveContains(agentName)
-        }) else {
+        }) {
+            agent = match
+        } else {
             return .result(dialog: "I couldn't find an agent named \(agentName).")
         }
         try await WirelineAPI.shared.placeCall(

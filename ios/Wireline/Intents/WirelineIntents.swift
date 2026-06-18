@@ -76,6 +76,75 @@ struct WhatNeedsAttentionIntent: AppIntent {
     }
 }
 
+/// "Take this call" — hand the latest active call to the user by transferring
+/// it to their saved callback number. Reports setup/conflict states cleanly so
+/// the everyday "Have Wireline take this" flow never fails silently.
+struct TakeThisCallIntent: AppIntent {
+    static var title: LocalizedStringResource = "Take this call"
+    static var description = IntentDescription("Transfer an active Wireline call to your phone.")
+    static var openAppWhenRun = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard KeychainStore.loadToken() != nil else {
+            return .result(dialog: "Open Wireline and sign in first.")
+        }
+        do {
+            let me = try await WirelineAPI.shared.me()
+            guard let callback = me.settings?.handoffPhone, !callback.isEmpty else {
+                return .result(dialog: "Set a callback number in Wireline first, then I can transfer calls to you.")
+            }
+            let active = try await WirelineAPI.shared.activeCalls()
+            let eligible = active.first { call in
+                let s = (call.status ?? "").lowercased()
+                return s.contains("active") || s.contains("progress") || s.contains("live")
+            } ?? active.first
+            guard let call = eligible else {
+                return .result(dialog: "There's no active call to take right now.")
+            }
+            try await WirelineAPI.shared.handoffCall(callId: call.callId, to: callback)
+            let who = call.customerNumber ?? "the caller"
+            return .result(dialog: "Transferring \(who) to your phone now.")
+        } catch {
+            return .result(dialog: "I couldn't reach Wireline just now. Try again in a moment.")
+        }
+    }
+}
+
+/// "Call back my last missed call" — the strongest hands-free, CarPlay-safe
+/// driving shortcut. Returns the most recent inbound call via the default agent.
+struct CallBackMissedCallIntent: AppIntent {
+    static var title: LocalizedStringResource = "Call back missed call"
+    static var description = IntentDescription("Wireline calls back your most recent missed call.")
+    static var openAppWhenRun = false
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard KeychainStore.loadToken() != nil else {
+            return .result(dialog: "Open Wireline and sign in first.")
+        }
+        do {
+            let recent = try await WirelineAPI.shared.recentCalls(limit: 20)
+            let missed = recent.calls.first { call in
+                (call.direction ?? "").lowercased() == "inbound" && (call.customerNumber?.isEmpty == false)
+            }
+            guard let call = missed, let number = call.customerNumber else {
+                return .result(dialog: "I don't see a recent missed call to return.")
+            }
+            let agents = try await WirelineAPI.shared.agents()
+            guard let agentId = call.agentId ?? agents.first?.id else {
+                return .result(dialog: "Add an agent in Wireline first.")
+            }
+            _ = try await WirelineAPI.shared.placeCall(
+                agentId: agentId, to: number, context: "Returning your earlier call."
+            )
+            return .result(dialog: "Calling \(number) back now.")
+        } catch {
+            return .result(dialog: "I couldn't reach Wireline just now. Try again in a moment.")
+        }
+    }
+}
+
 /// "Open Wireline" — foreground the app on the workspace.
 struct OpenWirelineIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Wireline"
@@ -128,6 +197,25 @@ struct WirelineShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "What needs attention",
             systemImageName: "bell.badge"
+        )
+        AppShortcut(
+            intent: TakeThisCallIntent(),
+            phrases: [
+                "Have \(.applicationName) take this",
+                "\(.applicationName) take this call",
+                "Let \(.applicationName) handle this call",
+            ],
+            shortTitle: "Take this call",
+            systemImageName: "phone.arrow.down.left"
+        )
+        AppShortcut(
+            intent: CallBackMissedCallIntent(),
+            phrases: [
+                "Call back my last missed call with \(.applicationName)",
+                "Have \(.applicationName) return my missed call",
+            ],
+            shortTitle: "Call back missed call",
+            systemImageName: "phone.arrow.up.right.fill"
         )
         AppShortcut(
             intent: OpenWirelineIntent(),

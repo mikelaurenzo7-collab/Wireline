@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   ALL_INTENTS,
   APP_DISTRIBUTION,
@@ -48,9 +50,31 @@ describe("personal-mobile catalog", () => {
       "WhatNeedsAttentionIntent",
       "OpenWirelineIntent",
       "TakeThisCallIntent",
+      "CallBackMissedCallIntent",
     ]);
     for (const intent of ALL_INTENTS) {
       if (intent.nativeIntent) expect(shipped.has(intent.nativeIntent)).toBe(true);
+    }
+  });
+
+  it("every nativeIntent actually exists as an AppIntent in the iOS source", () => {
+    // Cross-language parity guard: the web must never claim a native intent
+    // ships unless the Swift struct really exists. This would have caught the
+    // missing TakeThisCallIntent. Reads the real iOS intent files.
+    const intentDir = fileURLToPath(new URL("../../ios/Wireline/Intents/", import.meta.url));
+    const swift = ["WirelineIntents.swift", "CallAgentIntent.swift"]
+      .map((f) => {
+        try {
+          return readFileSync(intentDir + f, "utf8");
+        } catch {
+          return "";
+        }
+      })
+      .join("\n");
+    const referenced = [...new Set(ALL_INTENTS.map((i) => i.nativeIntent).filter(Boolean))];
+    expect(referenced.length).toBeGreaterThan(0);
+    for (const name of referenced) {
+      expect(swift).toMatch(new RegExp(`struct\\s+${name}\\s*:\\s*AppIntent`));
     }
   });
 

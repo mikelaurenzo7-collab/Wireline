@@ -48,7 +48,7 @@ import com.wireline.app.data.WalletEntry
 private enum class Tab { Home, Calls, Wallet, Settings }
 
 @Composable
-fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
+fun WirelineAndroidApp(model: WirelineViewModel = viewModel(), deepLinkHost: String? = null) {
     val state = model.state
     if (!state.isSignedIn) {
         SignInScreen(state, model::signIn)
@@ -57,6 +57,17 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 
     var tab by rememberSaveable { mutableStateOf(Tab.Home) }
     var showAskWireline by rememberSaveable { mutableStateOf(false) }
+
+    // wireline:// deep links (widgets, Assistant App Actions, shortcuts) →
+    // route to the matching surface. Parity with iOS WirelineRouter.handle(url:).
+    androidx.compose.runtime.LaunchedEffect(deepLinkHost) {
+        when (deepLinkHost) {
+            "ask" -> showAskWireline = true
+            "calls" -> tab = Tab.Calls
+            "wallet" -> tab = Tab.Wallet
+            "settings" -> tab = Tab.Settings
+        }
+    }
 
     Scaffold(
         topBar = { WirelineTopBar(state.me?.account?.businessName ?: "Wireline") },

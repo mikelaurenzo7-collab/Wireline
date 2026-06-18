@@ -136,6 +136,7 @@ export const INTENT_GROUPS: IntentGroup[] = [
       },
       {
         id: "call-back-missed",
+        nativeIntent: "CallBackMissedCallIntent",
         title: "Call back missed call",
         summary:
           "Return your last relevant missed call safely \u2014 the strongest hands-free driving shortcut.",
