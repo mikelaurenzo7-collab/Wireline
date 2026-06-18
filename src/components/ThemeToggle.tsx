@@ -1,22 +1,15 @@
 /**
- * ThemeToggle — chrome control that cycles light → dark → system.
- *
- * Designed for the TopBar; tiny footprint (single icon button) but
- * communicates the current resolved theme via the icon (sun = light,
- * moon = dark, monitor = system). Uses the shadcn token system so it
- * looks correct against both light and dark TopBars.
+ * ThemeToggle — retired. Wireline ships light-only now, so the theme switcher
+ * renders nothing. The component (and the label helper) are kept so every
+ * TopBar / WorkspaceTopBar / Sidebar consumer keeps compiling without churn.
  */
-import React, { forwardRef } from "react";
-import { Moon, Sun, Monitor } from "lucide-react";
-import { useTheme } from "../contexts/ThemeContext";
-import { cn } from "../lib/utils";
-import { ShadButton } from "./ui/shadcn/ShadButton";
+import { forwardRef } from "react";
 
 interface Props {
   className?: string;
-  /** Inverse styling sits on the dark purple TopBar (light-on-purple). */
+  /** Legacy styling hint — ignored now that the control is a no-op. */
   variant?: "default" | "inverse";
-  /** Fixed icon-only control for page chrome toolbars. */
+  /** Legacy compact flag — ignored now that the control is a no-op. */
   compact?: boolean;
 }
 
@@ -31,40 +24,8 @@ export function buildThemeToggleLabel(
   return `Theme: ${currentMode}. Activate ${nextMode}.`;
 }
 
-const ThemeToggle = forwardRef<HTMLButtonElement, Props>(
-  ({ className, variant = "inverse", compact = false }, ref) => {
-    const { theme, toggleTheme, resolvedTheme } = useTheme();
-
-    const Icon = theme === "system" ? Monitor : theme === "dark" ? Moon : Sun;
-    const label = buildThemeToggleLabel(theme, resolvedTheme);
-
-    return (
-      <ShadButton
-        ref={ref}
-        type="button"
-        variant="chrome"
-        size="icon"
-        onClick={toggleTheme}
-        aria-label={label}
-        title={label}
-        data-testid="theme-toggle"
-        disableAnimations
-        className={cn(
-          compact
-            ? "touch-press hover:scale-[1.05] h-8 w-8 min-w-8 px-0 [&_svg]:size-4"
-            : "touch-press hover:scale-[1.05] md:w-auto md:h-7 md:px-2 md:[&_svg]:size-4",
-          variant === "inverse"
-            ? "chrome-muted chrome-inverse-hover focus-visible:ring-offset-transparent"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent",
-          className,
-        )}
-      >
-        <Icon className="w-4 h-4" aria-hidden />
-      </ShadButton>
-    );
-  }
-);
-
-ThemeToggle.displayName = "ThemeToggle";
+const ThemeToggle = forwardRef<HTMLButtonElement, Props>(function ThemeToggle() {
+  return null;
+});
 
 export default ThemeToggle;

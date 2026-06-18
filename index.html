@@ -27,27 +27,23 @@
       name="domain-verification"
       content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61"
     />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F6FC" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0C0D11" />
-    <meta name="msapplication-TileColor" content="#0C0D11" />
+    <meta name="theme-color" content="#F7F9F8" />
+    <meta name="msapplication-TileColor" content="#F7F9F8" />
     <meta name="apple-mobile-web-app-title" content="Wireline" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="light" />
 
-    <!-- Pre-paint theme: Daybreak (light) is the default; apply .dark only when
-         the operator chose dark, or chose system and the OS prefers dark. Runs
-         synchronously before first paint so there is no theme flash. -->
+    <!-- Wireline is light-only: clear any stale dark preference before first
+         paint so there is never a dark flash for returning visitors. -->
     <script>
       (function () {
         try {
-          var t = localStorage.getItem("wireline.theme");
-          var dark = t === "dark" || (t === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
           var el = document.documentElement;
-          el.classList.toggle("dark", !!dark);
-          el.style.colorScheme = dark ? "dark" : "light";
+          el.classList.remove("dark");
+          el.style.colorScheme = "light";
         } catch (e) {}
       })();
     </script>
