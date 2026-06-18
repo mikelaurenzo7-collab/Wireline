@@ -88,28 +88,13 @@ import {
   patchDirectorMessageResolved,
 } from "../lib/director-store";
 import { persistDirectorDeliverableArtifact } from "../lib/director-deliverable-artifacts";
-import { attachDesignHtmlPrototypeToTurn } from "../lib/director-html-prototype";
 import type { DirectorFeatureFlags } from "../lib/director-feature-flags";
 import { wantsLongDeliverable } from "../lib/director-deliverables";
-import { WIRELINE_STITCH_UI } from "../lib/wireline-director-design";
-import {
-  resolveDesignDirectorPath,
-  DESIGN_LLM_MODEL_LABEL,
-  DESIGN_LLM_REASONING,
-  type DesignLlmFallback,
-} from "../lib/director-design-path";
 import {
   DIRECTOR_THREAD_KEY,
-  PAINTER_THREAD_KEY,
   parseDirectorThreadKey,
   type DirectorConversationThreadKey,
 } from "../lib/director-thread-keys";
-import { WIRELINE_PAINTER_UI } from "../lib/wireline-painter-design";
-import {
-  hasPendingStitchClarifyInHistory,
-  isStitchDesignModeActive,
-  wantsStitchMediaRequest,
-} from "../lib/director-stitch-intent";
 import {
   collapseDirectorThreadDuplicates,
   insertDirectorReplyIfAbsent,
