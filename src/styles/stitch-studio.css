@@ -28,3 +28,32 @@
 .wireline-stitch-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(199, 196, 216, 0.55);
 }
+
+.stitch-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  background: linear-gradient(180deg, rgba(31, 31, 35, 0.78), rgba(21, 21, 24, 0.72));
+  box-shadow: 0 24px 80px -56px rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(18px);
+}
+
+.stitch-icon-tile {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c1c1ff;
+}
+
+.stitch-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #908fa1;
+}
