@@ -19,15 +19,18 @@ struct WorkspaceView: View {
                 if let me {
                     List {
                         heroSection
+                        statusSection
                         accountSection(me)
                         agentSection(me)
                         activationSection
                     }
+                    .listStyle(.insetGrouped)
                 } else if let loadError {
                     BrandEmptyState(title: "Couldn't load", message: loadError,
                                     systemImage: "wifi.exclamationmark")
                 } else {
                     ProgressView("Loading workspace…")
+                        .tint(Brand.violetSoft)
                 }
             }
             .navigationTitle("WIRELINE")
@@ -38,6 +41,7 @@ struct WorkspaceView: View {
                         Image(systemName: "phone.arrow.up.right")
                     }
                     .disabled(agents.isEmpty)
+                    .accessibilityLabel("Place outbound call")
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
@@ -57,132 +61,106 @@ struct WorkspaceView: View {
 
     // MARK: - Sections
 
-    /// Gradient "Ask Wireline" hero card — the primary on-screen entry point.
-    /// Mirrors the Siri phrase, Action button, and widget tap-through.
+    /// Primary consumer launch surface: one obvious action, then proof that the
+    /// assistant is live and watching the line.
     private var heroSection: some View {
         Section {
-            if activeCallsCount < 0 {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("CONSOLE")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Brand.purple)
-                    
-                    HStack(spacing: 12) {
-                        // Card 1: Active Calls
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: "phone.fill")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white)
-                                Spacer()
-                                if activeCallsCount > 0 {
-                                    Circle()
-                                        .fill(.green)
-                                        .frame(width: 8, height: 8)
-                                }
-                            }
-                            Spacer()
-                            Text("\(activeCallsCount)")
-                                .font(.title.weight(.bold))
-                                .foregroundStyle(.white)
-                            Text("ACTIVE CALLS")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
-                        .background(Brand.purple)
-                        .cornerRadius(10)
-                        
-                        // Card 2: Needs Attention
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: "bell.badge.fill")
-                                    .font(.subheadline)
-                                    .foregroundStyle(needsAttentionCount > 0 ? Brand.purple : .secondary)
-                                Spacer()
-                            }
-                            Spacer()
-                            Text("\(needsAttentionCount)")
-                                .font(.title.weight(.bold))
-                                .foregroundStyle(needsAttentionCount > 0 ? Brand.purple : .primary)
-                            Text("NEED ATTENTION")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color(.separator), lineWidth: 0.5)
-                        )
-                        
-                        // Card 3: Roster count
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: "person.3.fill")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            Spacer()
-                            Text("\(agents.count)")
-                                .font(.title.weight(.bold))
-                            Text("AGENTS")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color(.separator), lineWidth: 0.5)
-                        )
-                    }
-                }
-                .padding(.vertical, 8)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            } else {
-                Button { router.showAsk = true } label: {
-                    HStack(spacing: 16) {
+            Button { router.showAsk = true } label: {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(spacing: 14) {
                         ZStack {
                             Circle()
-                                .fill(.white.opacity(0.18))
-                                .frame(width: 52, height: 52)
+                                .fill(.white.opacity(0.16))
+                                .frame(width: 56, height: 56)
                             Image(systemName: "mic.fill")
                                 .font(.system(size: 22, weight: .semibold))
                                 .foregroundStyle(.white)
                         }
-                        VStack(alignment: .leading, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text("Ask Wireline")
-                                .font(.title3.weight(.bold))
+                                .font(.title2.weight(.bold))
                                 .foregroundStyle(.white)
-                            Text("Place calls, get recaps, and more")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.65))
+                            Text("Have your AI call, wait, summarize, and follow up.")
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.74))
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        Spacer()
+                        Spacer(minLength: 8)
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.45))
+                            .foregroundStyle(.white.opacity(0.52))
                     }
-                    .padding(20)
-                    .background(
-                        Brand.purple, // Sharp solid brand purple (matches web editorial CTAs)
-                        in: RoundedRectangle(cornerRadius: 12)
-                    )
-                    .shadow(color: Brand.purple.opacity(0.3), radius: 14, y: 5)
+
+                    HStack(spacing: 8) {
+                        LaunchPill(icon: "phone.fill", text: "Calls")
+                        LaunchPill(icon: "text.bubble.fill", text: "Recaps")
+                        LaunchPill(icon: "bell.badge.fill", text: "Alerts")
+                    }
                 }
-                .buttonStyle(.plain)
-                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+                .padding(20)
+                .background(
+                    ZStack {
+                        LinearGradient(
+                            colors: [Brand.violet, Brand.violetDeep],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        Circle()
+                            .fill(Brand.violetSoft.opacity(0.28))
+                            .frame(width: 180, height: 180)
+                            .blur(radius: 34)
+                            .offset(x: 122, y: -60)
+                        Circle()
+                            .fill(Color.white.opacity(0.10))
+                            .frame(width: 130, height: 130)
+                            .blur(radius: 38)
+                            .offset(x: -96, y: 70)
+                    },
+                    in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(.white.opacity(0.16), lineWidth: 1)
+                )
+                .shadow(color: Brand.violet.opacity(0.34), radius: 24, y: 12)
             }
+            .buttonStyle(.plain)
+            .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 8, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
+    }
+
+    private var statusSection: some View {
+        Section {
+            HStack(spacing: 10) {
+                ConsoleMetricCard(
+                    title: "Live",
+                    value: "\(activeCallsCount)",
+                    icon: "phone.fill",
+                    highlighted: activeCallsCount > 0
+                )
+                ConsoleMetricCard(
+                    title: "Needs attention",
+                    value: "\(needsAttentionCount)",
+                    icon: "bell.badge.fill",
+                    highlighted: needsAttentionCount > 0
+                )
+                ConsoleMetricCard(
+                    title: "Agents",
+                    value: "\(agents.count)",
+                    icon: "person.3.fill",
+                    highlighted: false
+                )
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 12, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        } header: {
+            Text("Console")
+                .font(.mono(.caption2, weight: .semibold))
+                .foregroundStyle(Brand.text3)
+                .textCase(.uppercase)
         }
     }
 
@@ -208,14 +186,15 @@ struct WorkspaceView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(me.account.businessName ?? me.user.fullName ?? me.user.email)
                         .font(.headline)
+                        .foregroundStyle(Brand.text)
                     HStack(spacing: 6) {
                         Text(me.account.planName)
-                            .font(.caption).foregroundStyle(.secondary)
-                        Text("·").foregroundStyle(.tertiary).font(.caption)
+                            .font(.caption).foregroundStyle(Brand.text2)
+                        Text("·").foregroundStyle(Brand.text3).font(.caption)
                         Text(agentCountLabel(me.agents))
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(Brand.text2)
                         if me.account.subscriptionStatus != "active" {
-                            Text("⚠ Inactive")
+                            Text("Inactive")
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(Brand.destructive)
                         }
@@ -243,12 +222,12 @@ struct WorkspaceView: View {
             if me.agents.canAddMore, let price = me.extraAgent.priceUsd,
                me.extraAgent.configured {
                 Label("Add an agent · $\(Int(price))/mo", systemImage: "plus.circle")
-                    .foregroundStyle(Brand.purple)
+                    .foregroundStyle(Brand.violetSoft)
             }
         } header: {
             Text("Agents")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Brand.text3)
                 .textCase(nil)
         }
     }
@@ -276,5 +255,57 @@ struct WorkspaceView: View {
         } catch {
             self.loadError = error.localizedDescription
         }
+    }
+}
+
+private struct LaunchPill: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: icon)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.88))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.white.opacity(0.12), in: Capsule())
+    }
+}
+
+private struct ConsoleMetricCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let highlighted: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(highlighted ? .white : Brand.violetSoft)
+                Spacer(minLength: 0)
+            }
+            Text(value)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(highlighted ? .white : Brand.text)
+            Text(title)
+                .font(.mono(.caption2, weight: .semibold))
+                .foregroundStyle(highlighted ? .white.opacity(0.72) : Brand.text3)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+        }
+        .frame(maxWidth: .infinity, minHeight: 98, alignment: .leading)
+        .padding(12)
+        .background(
+            highlighted
+                ? AnyShapeStyle(LinearGradient(colors: [Brand.violet, Brand.violetDeep], startPoint: .topLeading, endPoint: .bottomTrailing))
+                : AnyShapeStyle(LinearGradient(colors: [Brand.panel2.opacity(0.92), Brand.panel.opacity(0.88)], startPoint: .topLeading, endPoint: .bottomTrailing)),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(.white.opacity(highlighted ? 0.16 : 0.10), lineWidth: 1)
+        )
     }
 }
