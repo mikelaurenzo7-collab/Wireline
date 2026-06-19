@@ -2,21 +2,23 @@
 
 ## 2026-06-19 cleanup passes
 
-Wireline is in an active Stitch Studio migration. The health goal is to keep the product surface small, buildable, and free of stale agent scratch work, duplicated design rules, and dead framework paths.
+Wireline is in an active Stitch Studio migration. The health goal is to keep the product surface small, buildable, and free of stale agent scratch work, duplicated design rules, dead framework paths, and unsafe local automation defaults.
 
 ### Purged
 
 - Removed tracked `.agents/` scratch work, including stale project rules and multi-agent handoff material.
 - Removed `.cursor/skills/` dogfood and QA playbooks that duplicated work, embedded temporary test context, and enforced retired design directions.
 - Removed `terminals/` QA reports and unreferenced visual sweep scripts that were writing local artifacts and carried stale demo context.
-- Removed the retired Grok Flair design stub, stale UI audit, unused iOS token wrapper, and the obsolete Next-style director route.
-- Added `.agents/`, `.cursor/`, `scratch/`, and `terminals/` to `.gitignore` so temporary artifacts cannot return through normal commits.
+- Removed the retired Grok Flair design stub, stale UI audit, unused iOS token wrapper, obsolete Next-style director route, and dead CSS compatibility sheets.
+- Removed duplicate local QA utilities and the unreferenced demo-provisioning utility instead of carrying test-account defaults in source control.
+- Added `.agents/`, `.cursor/`, `scratch/`, `terminals/`, and `.tmp/` to `.gitignore` so temporary artifacts cannot return through normal commits.
 
 ### Normalized
 
-- iOS widgets and Android widgets now derive from one current Stitch Noir palette per platform instead of duplicated Lavender Noir constants.
+- iOS widgets and Android widgets derive from one current Stitch Noir palette per platform instead of duplicated Lavender Noir constants.
+- Authenticated web workspaces receive a scoped Stitch Noir token bridge and mesh treatment through `src/styles/stitch-console.css`; public marketing remains light-first by design.
 - The active Studio remains the visual source of truth: `src/components/AgentStudioCanvas.tsx` and `src/styles/stitch-studio.css`.
-- The public marketing shell remains isolated from the authenticated Studio so a Studio migration cannot accidentally change public first-paint behavior.
+- Dogfood utilities require explicit environment-provided credentials and write results into ignored local output rather than tracked directories.
 
 ### Guardrail
 
@@ -27,6 +29,7 @@ Do not add planning-output folders, AI-agent transcripts, local QA reports, temp
 - Current migration gate: `npm run verify` (`build` + bundled-server smoke)
 - Full legacy gate when intentionally hardening: `npm run verify:full`
 - Strictness inventory: `npm run lint:strict`
+- Production health probe: `GET /api/health`
 
 ## TypeScript strictness progress
 
