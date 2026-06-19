@@ -1,7 +1,6 @@
 package com.wireline.app.widget
 
 import android.content.Context
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -25,14 +24,6 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.wireline.app.MainActivity
 import com.wireline.app.R
-
-/** Lavender Noir — mirrors `Brand` / `src/index.css`. */
-private object WidgetPalette {
-    val Violet = Color(0xFF7C3AED)
-    val Panel = Color(0xFF2A2540)
-    val Text = Color(0xFFF3EFFA)
-    val Text2 = Color(0xFFB8B0CA)
-}
 
 class AskWirelineWidget : GlanceAppWidget() {
     override suspend fun provideContent(context: Context, id: GlanceId) {
