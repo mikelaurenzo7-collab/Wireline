@@ -40,19 +40,15 @@
   }
 
   /* ── TEXT-WHITE RESCUE ─────────────────────────────────────────────
-   * --color-white is remapped to #2A2520 (warm dark) so border-white/*
-   * and bg-white/* produce subtle dark tints on cream. But text-white
-   * also resolves through --color-white, rendering dark brown text
-   * instead of the expected white. This single rule restores text-white
-   * to actual #FFFFFF everywhere. Background/border utilities are
-   * unaffected since they use different CSS properties. */
+   * Ensures text-white always resolves to actual #FFFFFF regardless
+   * of --color-white remapping in any theme context. */
   [class*="text-white"] {
     --tw-text-opacity: 1;
     color: rgba(255, 255, 255, var(--tw-text-opacity)) !important;
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
     /* iOS auto-resizes text in landscape rotation by default — pin to 100%
      * so our type scale stays consistent across orientations. */
     -webkit-text-size-adjust: 100%;
@@ -101,19 +97,17 @@
   }
 
   :root {
-    --wl-purple: var(--iris);
-    --wl-purple-light: var(--iris-bright);
-    --wl-purple-deep: var(--iris-deep);
-    --wl-purple-muted: var(--text-2);
-    /* Lightened June 2026 — track the index.css canvas (#f0e6d4 → #f5f1e8).
-     * --wl-paper was the old rich tan; lifted so the marketing robot and
-     * dark-mode wordmark match the lighter cream canvas. */
-    --wl-cream: var(--panel);
-    --wl-paper: var(--canvas);
-    --wl-cream-warm: var(--panel-2);
-    --wl-ink: var(--text);
-    --wl-emerald: var(--mint);
-    --wl-emerald-soft: var(--mint);
+    --wl-purple: var(--violet);
+    --wl-purple-light: var(--violet-soft);
+    --wl-purple-deep: var(--violet-deep);
+    --wl-purple-muted: var(--charcoal-muted);
+    --wl-cream: var(--lavender-bright);
+    --wl-paper: var(--lavender);
+    --wl-cream-warm: var(--lavender-warm);
+    --wl-ink: var(--charcoal);
+    --wl-emerald: var(--violet);
+    --wl-emerald-soft: var(--violet-soft);
+    --wl-signal: var(--violet);
   }
 
   /* iOS Safari zooms the viewport when a form field has font-size < 16px.
@@ -139,8 +133,8 @@
     inset: 0;
     pointer-events: none;
     z-index: 1;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0 0.1 0 0 0 0.04 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-    opacity: 0.15;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.24 0 0 0 0.03 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+    opacity: 0.12;
     mix-blend-mode: multiply;
   }
 
@@ -491,15 +485,15 @@
     background: transparent;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb {
-    background: rgba(124, 156, 255, 0.18);
+    background: rgba(124, 58, 237, 0.18);
     border-radius: 999px;
   }
   .scrollbar-hide::-webkit-scrollbar-thumb:hover {
-    background: rgba(124, 156, 255, 0.42);
+    background: rgba(124, 58, 237, 0.42);
   }
   .scrollbar-hide {
     scrollbar-width: thin;
-    scrollbar-color: rgba(124, 156, 255, 0.18) transparent;
+    scrollbar-color: rgba(124, 58, 237, 0.18) transparent;
   }
 
   /* Horizontal tab strips — scroll when cramped, no phantom scrollbar when content fits */
@@ -542,14 +536,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(124, 156, 255, 0.35);
+    background: rgba(124, 58, 237, 0.35);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(124, 156, 255, 0.6);
+    background: rgba(124, 58, 237, 0.6);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -566,11 +560,11 @@
      kind of detail that makes the whole product feel hand-finished on
      every device that can select text (desktop drag, mobile long-press). */
   ::selection {
-    background: rgba(124, 156, 255, 0.18);
+    background: rgba(124, 58, 237, 0.18);
     color: var(--text);
   }
   ::-moz-selection {
-    background: rgba(124, 156, 255, 0.18);
+    background: rgba(124, 58, 237, 0.18);
     color: var(--text);
   }
 
@@ -583,7 +577,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgba(124, 156, 255, 0.6);
+    outline: 2px solid rgba(124, 58, 237, 0.6);
     outline-offset: 2px;
   }
 

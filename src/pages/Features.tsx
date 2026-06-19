@@ -331,7 +331,7 @@ export default function Features() {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
+                  <div className="w-3 h-3 rounded-full bg-violet-400" />
                 </div>
                 <span className="font-mono text-[11px] text-brand uppercase tracking-widest font-semibold">
                   iOS / CarPlay Architecture
@@ -346,18 +346,18 @@ export default function Features() {
                   className="w-full h-full"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <rect fill="#f5f1e8" height="300" rx="8" width="400"></rect>
+                  <rect fill="#F3EFFA" height="300" rx="8" width="400"></rect>
                   <circle
                     cx="200"
                     cy="120"
                     r="40"
-                    stroke="#7c9cff"
+                    stroke="#7C3AED"
                     strokeDasharray="4 4"
                     strokeWidth="2"
                   ></circle>
                   <path
                     d="M180 120C180 110 220 110 220 120C220 130 180 130 180 120Z"
-                    stroke="#7c9cff"
+                    stroke="#7C3AED"
                     strokeWidth="3"
                   >
                     <animate
@@ -370,7 +370,7 @@ export default function Features() {
                   <rect
                     height="40"
                     rx="4"
-                    stroke="#1a1614"
+                    stroke="#1E1B2E"
                     strokeWidth="1.5"
                     width="60"
                     x="80"
@@ -378,12 +378,12 @@ export default function Features() {
                   ></rect>
                   <path
                     d="M260 200V240M240 220H280"
-                    stroke="#7c9cff"
+                    stroke="#7C3AED"
                     strokeLinecap="round"
                     strokeWidth="3"
                   ></path>
                   <text
-                    fill="#1a1614"
+                    fill="#1E1B2E"
                     fontFamily="sans-serif"
                     fontSize="12"
                     textAnchor="middle"

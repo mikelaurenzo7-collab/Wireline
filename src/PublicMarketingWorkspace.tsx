@@ -194,11 +194,11 @@ function Button({
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200",
         variant === "primary" &&
-          "bg-brand text-[#fff] shadow-[0_16px_36px_-16px_rgba(13,159,110,.9)] hover:-translate-y-0.5 hover:shadow-[0_22px_46px_-16px_rgba(13,159,110,.95)]",
+          "bg-brand text-[#fff] shadow-[0_16px_36px_-16px_rgba(124,58,237,.9)] hover:-translate-y-0.5 hover:shadow-[0_22px_46px_-16px_rgba(124,58,237,.95)]",
         variant === "secondary" &&
           "border border-border bg-card text-foreground hover:border-brand/50 hover:text-brand",
         variant === "ghost" && "text-foreground hover:text-brand",
-        variant === "invert" && "bg-[#f7f9f8] text-[#0a0f0d] hover:-translate-y-0.5 hover:bg-white",
+        variant === "invert" && "bg-[#F3EFFA] text-[#1E1B2E] hover:-translate-y-0.5 hover:bg-white",
         className,
       )}
     >
@@ -210,13 +210,13 @@ function Button({
 function WordMark({ invert = false }: { invert?: boolean }) {
   return (
     <Link to="/" className="group inline-flex items-center gap-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-[#fff] shadow-[0_14px_30px_-12px_rgba(13,159,110,.85)]">
+      <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-[#fff] shadow-[0_14px_30px_-12px_rgba(124,58,237,.85)]">
         <span className="font-mono text-sm font-bold">W</span>
       </span>
       <span
         className={cn(
           "font-display text-[22px] font-semibold tracking-[-0.04em]",
-          invert ? "text-[#f7f9f8]" : "text-foreground",
+          invert ? "text-[#F3EFFA]" : "text-foreground",
         )}
       >
         Wireline
@@ -346,7 +346,7 @@ function SectionHeader({
 function Card({ item }: { item: CardItem }) {
   const Icon = item.icon;
   return (
-    <div className="group relative flex flex-col rounded-3xl border border-border bg-card p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_48px_-28px_rgba(13,159,110,.45)]">
+    <div className="group relative flex flex-col rounded-3xl border border-border bg-card p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_48px_-28px_rgba(124,58,237,.45)]">
       <div className="flex items-center justify-between">
         <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand/10 text-brand">
           <Icon size={20} />
@@ -368,7 +368,7 @@ function Waveform() {
       {bars.map((h, i) => (
         <span
           key={i}
-          className="wl-eq-bar w-1 rounded-full bg-[#34d399]"
+          className="wl-eq-bar w-1 rounded-full bg-[#A78BFA]"
           style={{ height: `${h * 100}%`, animationDelay: `${i * 90}ms` }}
         />
       ))}
@@ -408,27 +408,27 @@ function HeroPanel() {
         className="absolute -inset-6 rounded-[40px] opacity-60 blur-3xl"
         style={{
           background:
-            "radial-gradient(60% 50% at 70% 20%, rgba(13,159,110,.28), transparent 70%), radial-gradient(50% 50% at 20% 80%, rgba(4,120,87,.22), transparent 70%)",
+            "radial-gradient(60% 50% at 70% 20%, rgba(124,58,237,.28), transparent 70%), radial-gradient(50% 50% at 20% 80%, rgba(91,33,182,.22), transparent 70%)",
         }}
         aria-hidden="true"
       />
-      <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0f0d] p-6 shadow-[0_40px_90px_-40px_rgba(0,0,0,.7)]">
+      <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#1E1B2E] p-6 shadow-[0_40px_90px_-40px_rgba(0,0,0,.7)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-[#fff]">
               <PhoneCall size={16} />
             </span>
             <div>
-              <p className="text-sm font-semibold text-[#f7f9f8]">Personal Assistant</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#34d399]">
+              <p className="text-sm font-semibold text-[#F3EFFA]">Personal Assistant</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#A78BFA]">
                 On a call now
               </p>
             </div>
           </div>
           <span className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5">
             <span className="relative grid place-items-center">
-              <span className="wl-ping absolute h-2 w-2 rounded-full bg-[#34d399]" />
-              <span className="h-2 w-2 rounded-full bg-[#34d399]" />
+              <span className="wl-ping absolute h-2 w-2 rounded-full bg-[#A78BFA]" />
+              <span className="h-2 w-2 rounded-full bg-[#A78BFA]" />
             </span>
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#dfe6e2]">
               Live
@@ -494,7 +494,7 @@ function Hero() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(50% 38% at 82% 8%, rgba(13,159,110,.10), transparent 70%), radial-gradient(40% 30% at 6% 70%, rgba(4,120,87,.08), transparent 70%)",
+            "radial-gradient(50% 38% at 82% 8%, rgba(124,58,237,.10), transparent 70%), radial-gradient(40% 30% at 6% 70%, rgba(91,33,182,.08), transparent 70%)",
         }}
         aria-hidden="true"
       />
@@ -592,10 +592,10 @@ function TwoWorlds() {
         </div>
 
         {/* Business */}
-        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#0a0f0d] p-8 text-[#f7f9f8]">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#1E1B2E] p-8 text-[#F3EFFA]">
           <div
             className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full opacity-50 blur-3xl"
-            style={{ background: "radial-gradient(circle, rgba(13,159,110,.5), transparent 70%)" }}
+            style={{ background: "radial-gradient(circle, rgba(124,58,237,.5), transparent 70%)" }}
             aria-hidden="true"
           />
           <div className="relative flex items-center gap-3">
@@ -603,7 +603,7 @@ function TwoWorlds() {
               <Building2 size={22} />
             </span>
             <div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#34d399]">
+              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#A78BFA]">
                 For your business
               </span>
               <h3 className="font-display text-2xl font-medium tracking-[-0.02em]">
@@ -621,14 +621,14 @@ function TwoWorlds() {
               "Route urgent calls and escalate to your team",
               "Push notes and outcomes into your CRM",
             ].map((l) => (
-              <li key={l} className="flex items-start gap-3 text-sm text-[#f7f9f8]">
-                <Check size={16} className="mt-0.5 shrink-0 text-[#34d399]" /> {l}
+              <li key={l} className="flex items-start gap-3 text-sm text-[#F3EFFA]">
+                <Check size={16} className="mt-0.5 shrink-0 text-[#A78BFA]" /> {l}
               </li>
             ))}
           </ul>
           <Link
             to="/pricing"
-            className="relative mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#34d399] hover:gap-3 transition-all"
+            className="relative mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#A78BFA] hover:gap-3 transition-all"
           >
             Build your front desk <ArrowUpRight size={16} />
           </Link>
@@ -687,17 +687,17 @@ function AssistantShowcase() {
 
 function Manifesto() {
   return (
-    <section className="relative overflow-hidden bg-[#0a0f0d] py-24 text-[#f7f9f8]">
+    <section className="relative overflow-hidden bg-[#1E1B2E] py-24 text-[#F3EFFA]">
       <div
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            "radial-gradient(50% 60% at 50% 0%, rgba(13,159,110,.18), transparent 70%), radial-gradient(40% 40% at 80% 100%, rgba(4,120,87,.14), transparent 70%)",
+            "radial-gradient(50% 60% at 50% 0%, rgba(124,58,237,.18), transparent 70%), radial-gradient(40% 40% at 80% 100%, rgba(91,33,182,.14), transparent 70%)",
         }}
         aria-hidden="true"
       />
       <div className="relative mx-auto max-w-[1000px] px-5 text-center sm:px-8">
-        <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#34d399]">
+        <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#A78BFA]">
           Why Wireline
         </span>
         <p className="mt-7 font-display text-3xl font-medium leading-[1.18] tracking-[-0.02em] text-balance md:text-[2.6rem]">
@@ -734,7 +734,7 @@ function Pricing() {
             className={cn(
               "relative flex flex-col rounded-3xl border p-6",
               tier.featured
-                ? "border-brand/50 bg-[#0a0f0d] text-[#f7f9f8] shadow-[0_30px_70px_-40px_rgba(13,159,110,.7)] xl:scale-[1.03]"
+                ? "border-brand/50 bg-[#1E1B2E] text-[#F3EFFA] shadow-[0_30px_70px_-40px_rgba(124,58,237,.7)] xl:scale-[1.03]"
                 : "border-border bg-card",
             )}
           >
@@ -784,14 +784,14 @@ function Pricing() {
                   key={it}
                   className={cn(
                     "flex items-start gap-2 text-sm",
-                    tier.featured ? "text-[#f7f9f8]" : "text-foreground",
+                    tier.featured ? "text-[#F3EFFA]" : "text-foreground",
                   )}
                 >
                   <Check
                     size={15}
                     className={cn(
                       "mt-0.5 shrink-0",
-                      tier.featured ? "text-[#34d399]" : "text-brand",
+                      tier.featured ? "text-[#A78BFA]" : "text-brand",
                     )}
                   />
                   {it}
@@ -803,7 +803,7 @@ function Pricing() {
               className={cn(
                 "mt-7 inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all",
                 tier.featured
-                  ? "bg-[#f7f9f8] text-[#0a0f0d] hover:bg-white"
+                  ? "bg-[#F3EFFA] text-[#1E1B2E] hover:bg-white"
                   : "border border-border text-foreground hover:border-brand/50 hover:text-brand",
               )}
             >
@@ -823,7 +823,7 @@ function FinalCTA() {
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
-            background: "radial-gradient(50% 70% at 50% 0%, rgba(13,159,110,.12), transparent 70%)",
+            background: "radial-gradient(50% 70% at 50% 0%, rgba(124,58,237,.12), transparent 70%)",
           }}
           aria-hidden="true"
         />

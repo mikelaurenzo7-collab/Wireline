@@ -10,12 +10,12 @@ import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
 export const WIRELINE_DIRECTOR_BRAND = {
   /** Primary brand violet — matches --color-brand */
-  violet: "#8B3FD6",
-  violetDeep: "#6B2FA8",
+  violet: "#7C3AED",
+  violetDeep: "#5B21B6",
   /** Success rail for executed approvals */
-  signal: "#10B981",
+  signal: "#7C3AED",
   /** Deep analysis (Opus) accent */
-  opus: "#D97706",
+  opus: "#5B21B6",
 } as const;
 
 /** Tailwind/CSS utility bundles — referenced in components + tests */
@@ -76,7 +76,7 @@ export const WL_DIRECTOR_CLASSES = {
   /** Turn Ledger — collapsible strata inside a Director message */
   turnStratum:
     "wl-turn-stratum rounded-md border border-brand/10 bg-black/[0.02] dark:bg-white/[0.03] overflow-hidden",
-  turnStratumDeep: "border-l-2 border-l-[var(--wl-opus,#d97706)]",
+  turnStratumDeep: "border-l-2 border-l-[var(--wl-opus,#5B21B6)]",
   turnStratumHeader:
     "w-full h-auto justify-start gap-2 rounded-md px-2 py-1.5 hover:bg-brand/5 active:bg-brand/8",
   turnSummaryStrip: "wl-turn-summary-strip flex flex-wrap items-center gap-1.5 mb-2",

@@ -182,7 +182,7 @@ export default function AgentActionEngine({ agentId }: AgentActionEngineProps) {
                       "relative p-5 rounded-md border transition-all cursor-pointer overflow-hidden group",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
                       isEnabled && !isMissingIntegration
-                        ? "bg-brand/5 border-brand/30 shadow-[0_4px_24px_rgba(139,63,214,0.08)] hover:-translate-y-px"
+                        ? "bg-brand/5 border-brand/30 shadow-[0_4px_24px_rgba(124,58,237,0.08)] hover:-translate-y-px"
                         : "wl-panel hover:border-brand/30 hover:-translate-y-px",
                       isMissingIntegration && "opacity-75 cursor-not-allowed grayscale",
                     )}

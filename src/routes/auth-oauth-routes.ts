@@ -1,6 +1,9 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
+ * @deprecated Sign-in OAuth — replaced by Clerk (`src/routes/clerk-auth-routes.ts`).
+ * Mailbox/integration OAuth remains in `src/routes/oauth/`.
+ *
  * OAuth-based SIGN-IN (distinct from the mailbox-connect OAuth in oauth/).
  *
  * The flow:

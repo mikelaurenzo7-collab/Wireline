@@ -10,19 +10,19 @@
 
 /* ── PulseRing — concentric sonar ripple ── */
 .pulse-ring {
-  --pulse-color: rgba(139, 63, 214, 0.55);
+  --pulse-color: rgba(124, 58, 237, 0.55);
 }
 .pulse-ring--brand {
-  --pulse-color: rgba(139, 63, 214, 0.55);
+  --pulse-color: rgba(124, 58, 237, 0.55);
 }
 .pulse-ring--emerald {
-  --pulse-color: rgba(16, 185, 129, 0.55);
+  --pulse-color: rgba(124, 58, 237, 0.55);
 }
 .pulse-ring--destructive {
   --pulse-color: rgba(220, 38, 38, 0.5);
 }
 .pulse-ring--muted {
-  --pulse-color: rgba(26, 22, 20, 0.3);
+  --pulse-color: rgba(30, 27, 46, 0.3);
 }
 
 .pulse-ring__core {
@@ -78,7 +78,7 @@
 .status-orb__halo {
   background: radial-gradient(
     circle at center,
-    var(--orb-color, rgba(139, 63, 214, 0.4)),
+    var(--orb-color, rgba(124, 58, 237, 0.4)),
     transparent 70%
   );
 }
@@ -133,7 +133,7 @@
   border-radius: 9999px;
   background: radial-gradient(
     circle at center,
-    var(--plasma-color, rgba(139, 63, 214, 0.28)),
+    var(--plasma-color, rgba(124, 58, 237, 0.28)),
     transparent 72%
   );
   filter: blur(40px);
@@ -295,25 +295,25 @@
 }
 
 .prism-badge-surface {
-  background: rgba(245, 240, 230, 0.92);
-  border: 1px solid rgba(26, 22, 20, 0.12);
-  color: #1a1614;
+  background: rgba(243, 239, 250, 0.92);
+  border: 1px solid rgba(30, 27, 46, 0.12);
+  color: #1E1B2E;
 }
 
 .dark .prism-badge-surface {
-  background: rgba(26, 22, 20, 0.85);
-  border-color: rgba(245, 240, 230, 0.16);
-  color: #f5f1e8;
+  background: rgba(30, 27, 46, 0.85);
+  border-color: rgba(243, 239, 250, 0.16);
+  color: #F3EFFA;
 }
 
 .prism-holo-layer {
   background: conic-gradient(
     from var(--prism-angle),
-    rgba(139, 63, 214, 0.22),
-    rgba(214, 63, 150, 0.16),
-    rgba(88, 28, 135, 0.2),
-    rgba(183, 63, 214, 0.16),
-    rgba(139, 63, 214, 0.22)
+    rgba(124, 58, 237, 0.22),
+    rgba(167, 139, 250, 0.16),
+    rgba(91, 33, 182, 0.2),
+    rgba(167, 139, 250, 0.16),
+    rgba(124, 58, 237, 0.22)
   );
   opacity: 0.7;
 }
@@ -347,12 +347,12 @@
 }
 
 .void-bg {
-  background: radial-gradient(120% 140% at 50% 0%, #3b154c 0%, #1a1614 62%, #0d0a09 100%);
+  background: radial-gradient(120% 140% at 50% 0%, #2A2540 0%, #1E1B2E 62%, #151221 100%);
   z-index: -1;
 }
 
 .void-warp-ring {
-  border: 1px solid rgba(139, 63, 214, 0.55);
+  border: 1px solid rgba(124, 58, 237, 0.55);
   border-radius: 9999px;
   transform: scale(0.5);
   transition:

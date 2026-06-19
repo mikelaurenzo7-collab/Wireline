@@ -351,7 +351,7 @@ export default function AuthPortal() {
         noIndex
       />
       <div className="auth-launch min-h-screen bg-card text-foreground flex flex-col relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(circle_at_50%_0%,rgba(139,63,214,0.14),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(circle_at_50%_0%,rgba(124,58,237,0.14),transparent_60%)]" />
         <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
 
         <main className="relative z-10 flex flex-1 items-center justify-center px-5 py-24 sm:px-6">
@@ -373,7 +373,7 @@ export default function AuthPortal() {
               )}
             </div>
 
-            <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)]">
+            <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(30,27,46,0.55)]">
               {!isReset && (
                 <div className="grid grid-cols-2 border-b border-ink/10 p-1">
                   <button
@@ -541,7 +541,7 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-md bg-brand px-5 text-base font-semibold text-white shadow-[0_18px_50px_-28px_rgba(139,63,214,0.9)] transition hover:bg-brand-deep focus:outline-none focus:ring-4 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-55"
+                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-md bg-brand px-5 text-base font-semibold text-white shadow-[0_18px_50px_-28px_rgba(124,58,237,0.9)] transition hover:bg-brand-deep focus:outline-none focus:ring-4 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-55"
                   >
                     {loading ? (
                       <>

@@ -1,4 +1,4 @@
-/* Wireline — "GROK-FLAIR" design system. Dark-sovereign, token-driven. */
+/* Wireline — "Lavender Noir" design system. Light-sovereign, three-color. */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "@fontsource-variable/fraunces/wght.css";
 @import "@fontsource-variable/fraunces/wght-italic.css";
@@ -11,101 +11,114 @@
 
 :root {
   --font-size: 16px;
-  color-scheme: dark;
+  color-scheme: light;
 
   /* ═══════════════════════════════════════════════════════════════════════════
-     GROK-FLAIR — The Flawless Wireline Design Language (2026)
-     Sovereign dark canvas for all operator surfaces. Deep void, electric iris,
-     warm cream highlights, generous air, purposeful spring motion.
-     Marketing & auth keep a soft porcelain variant for approachability.
-     Disregards all prior Signal/Midnight contracts. One source of truth.
+     LAVENDER NOIR — Wireline's Final Design Language (2026)
+     Three colors. That's it. Soft lavender canvas, vivid violet electricity,
+     charcoal depth. Light-sovereign — every surface breathes. Spacious air
+     in tooling, confident density in data. No fourth color. No compromise.
      ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* Core Canvas (GROK-FLAIR Dark Sovereign) */
-  --canvas: #050507;          /* deepest void */
-  --canvas-deep: #020203;
-  --panel: #0F1118;           /* primary surface */
-  --panel-2: #161A24;         /* nested / inputs */
-  --raised: #1F242F;          /* hover / elevated */
-  --velvet: #0A0C12;          /* deepest cards */
+  /* ── The Three ── */
+  --lavender: #F3EFFA;         /* canvas — the air you breathe */
+  --violet: #7C3AED;           /* electricity — every action, accent, focus */
+  --charcoal: #1E1B2E;         /* depth — text, weight, grounding */
+
+  /* ── Derived from The Three (tints & shades only) ── */
+  --lavender-deep: #E8E0F5;    /* subtle card borders, hover states */
+  --lavender-warm: #EDE7F6;    /* secondary surfaces, inputs */
+  --lavender-bright: #FAF8FF;  /* elevated cards, popovers */
+  --violet-soft: #A78BFA;      /* lighter violet for muted accents */
+  --violet-deep: #5B21B6;      /* pressed states, deep emphasis */
+  --violet-wash: rgba(124, 58, 237, 0.06);  /* faintest violet tint */
+  --violet-glass: rgba(124, 58, 237, 0.10); /* subtle violet fills */
+  --charcoal-soft: #3D3654;    /* secondary text */
+  --charcoal-muted: #6E6584;   /* tertiary text, placeholders */
+
+  /* ── Core Canvas ── */
+  --canvas: var(--lavender);
+  --canvas-deep: var(--lavender-deep);
+  --panel: var(--lavender-bright);
+  --panel-2: var(--lavender-warm);
+  --raised: #FFFFFF;
+  --velvet: var(--charcoal);
 
   /* Text */
-  --text: #F5F6FA;
-  --text-2: #A8ABB8;
-  --text-3: #6B6F7C;
+  --text: var(--charcoal);
+  --text-2: var(--charcoal-soft);
+  --text-3: var(--charcoal-muted);
 
-  /* Signature Accent — Electric Iris + Warm Cream */
-  --iris: #6E8CFF;            /* primary action / focus */
-  --iris-bright: #9FB3FF;
-  --iris-deep: #4A63C0;
-  --cream: #F4EDE3;           /* Wireline signature highlight (used sparingly) */
-  --cream-soft: #EDE5D9;
+  /* Signature Accent — only violet */
+  --iris: var(--violet);
+  --iris-bright: var(--violet-soft);
+  --iris-deep: var(--violet-deep);
+  --cream: var(--lavender-bright);
+  --cream-soft: var(--lavender-deep);
 
-  /* Semantic */
-  --mint: #4DE0B0;
-  --amber: #F5B55A;
-  --rose: #FF5A5F;
+  /* Semantic (violet-derived where possible) */
+  --mint: #7C3AED;
+  --amber: #7C3AED;
+  --rose: #DC2626;
 
   /* Borders & Inputs */
-  --border: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.14);
-  --input: rgba(255,255,255,0.10);
-  --input-background: #161A24;
-  --switch-background: #1F242F;
+  --border: rgba(30, 27, 46, 0.08);
+  --border-strong: rgba(30, 27, 46, 0.16);
+  --input: rgba(30, 27, 46, 0.06);
+  --input-background: var(--lavender-warm);
+  --switch-background: var(--lavender-deep);
 
-  /* Legacy aliases — hundreds of existing consumers depend on these names.
-     Mapped to GROK-FLAIR equivalents so nothing breaks. */
-  --paper: #F5F6FA;
-  --paper-deep: #020203;
-  --paper-soft: #161A24;
-  --ink: #050507;
-  --ink-soft: #0A0C12;
-  --brand: #6E8CFF;
-  --brand-deep: #4A63C0;
-  --brand-bright: #9FB3FF;
-  --teal: #4DE0B0;
-  --teal-bright: #6EE8C4;
-  --teal-deep: #35B88E;
-  --amber-solid: #F5B55A;
+  /* Legacy aliases */
+  --paper: var(--lavender-bright);
+  --paper-deep: var(--charcoal);
+  --paper-soft: var(--lavender-warm);
+  --ink: var(--charcoal);
+  --ink-soft: var(--charcoal-soft);
+  --brand: var(--violet);
+  --brand-deep: var(--violet-deep);
+  --brand-bright: var(--violet-soft);
+  --teal: var(--violet-soft);
+  --teal-bright: var(--violet);
+  --teal-deep: var(--violet-deep);
+  --amber-solid: var(--violet);
 
-  /* shadcn semantic (mapped to GROK-FLAIR) */
-  --background: #050507;
-  --foreground: #F5F6FA;
-  --card: #0F1118;
-  --card-foreground: #F5F6FA;
-  --popover: #161A24;
-  --popover-foreground: #F5F6FA;
-  --primary: #6E8CFF;
-  --primary-foreground: #050507;
-  --secondary: #161A24;
-  --secondary-foreground: #F5F6FA;
-  --muted: #161A24;
-  --muted-foreground: #A8ABB8;
-  --accent: #1F242F;
-  --accent-foreground: #F5F6FA;
-  --destructive: #FF5A5F;
-  --destructive-foreground: #ffffff;
-  --ring: #6E8CFF;
-  --chart-1: #6E8CFF;
-  --chart-2: #4DE0B0;
-  --chart-3: #F5B55A;
-  --chart-4: #9FB3FF;
-  --chart-5: #F4EDE3;
+  /* shadcn semantic */
+  --background: var(--lavender);
+  --foreground: var(--charcoal);
+  --card: var(--lavender-bright);
+  --card-foreground: var(--charcoal);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--charcoal);
+  --primary: var(--violet);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--lavender-deep);
+  --secondary-foreground: var(--charcoal);
+  --muted: var(--lavender-warm);
+  --muted-foreground: var(--charcoal-muted);
+  --accent: var(--lavender-deep);
+  --accent-foreground: var(--charcoal);
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --ring: var(--violet);
+  --chart-1: var(--violet);
+  --chart-2: var(--violet-soft);
+  --chart-3: var(--violet-deep);
+  --chart-4: var(--charcoal-soft);
+  --chart-5: var(--lavender-deep);
 
-  /* Marketing (soft porcelain for public surfaces) */
-  --marketing-surface: #F8F4ED;
-  --marketing-surface-2: #F0E9DE;
-  --marketing-deep: #EDE5D9;
+  /* Marketing (same lavender family — unified now) */
+  --marketing-surface: var(--lavender);
+  --marketing-surface-2: var(--lavender-deep);
+  --marketing-deep: var(--lavender-warm);
 
-  /* Theme-aware white for legacy utilities */
-  --white: #ffffff;
+  --white: #FFFFFF;
 
-  /* Typography (editorial + precise) */
+  /* Typography */
   --font-display: "Fraunces Variable", "Plus Jakarta Sans", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Radius (generous, signature) */
+  /* Radius (generous, airy) */
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -115,13 +128,46 @@
 }
 
 .dark {
-  /* GROK-FLAIR Dark is now the sovereign default on :root.
-     This block is kept for any explicit .dark consumers but inherits the new tokens. */
+  /* Lavender Noir inverted for dark contexts (modals on dark overlays, etc.) */
   color-scheme: dark;
+  --canvas: var(--charcoal);
+  --panel: #2A2540;
+  --panel-2: #342E4C;
+  --raised: #3D3654;
+  --text: #F3EFFA;
+  --text-2: #B8B0CA;
+  --text-3: #7A7194;
+  --border: rgba(243, 239, 250, 0.10);
+  --border-strong: rgba(243, 239, 250, 0.18);
+  --background: var(--charcoal);
+  --foreground: #F3EFFA;
+  --card: #2A2540;
+  --card-foreground: #F3EFFA;
+  --popover: #2A2540;
+  --popover-foreground: #F3EFFA;
+  --primary-foreground: #FFFFFF;
+  --secondary: #342E4C;
+  --secondary-foreground: #F3EFFA;
+  --muted: #342E4C;
+  --muted-foreground: #B8B0CA;
+  --accent: #3D3654;
+  --accent-foreground: #F3EFFA;
 }
 
 @theme inline {
-  /* GROK-FLAIR surface tokens */
+  /* Lavender Noir — The Three */
+  --color-lavender: var(--lavender);
+  --color-lavender-deep: var(--lavender-deep);
+  --color-lavender-warm: var(--lavender-warm);
+  --color-lavender-bright: var(--lavender-bright);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --color-violet-deep: var(--violet-deep);
+  --color-charcoal: var(--charcoal);
+  --color-charcoal-soft: var(--charcoal-soft);
+  --color-charcoal-muted: var(--charcoal-muted);
+
+  /* Surface tokens */
   --color-canvas: var(--canvas);
   --color-canvas-deep: var(--canvas-deep);
   --color-panel: var(--panel);
@@ -134,7 +180,7 @@
   --color-text-2: var(--text-2);
   --color-text-3: var(--text-3);
 
-  /* Accent tokens */
+  /* Accent tokens (iris aliases → violet) */
   --color-iris: var(--iris);
   --color-iris-bright: var(--iris-bright);
   --color-iris-deep: var(--iris-deep);
@@ -223,9 +269,9 @@
   body {
     min-height: 100vh;
     overflow-x: hidden;
-    /* GROK-FLAIR: single faint iris bloom on the void canvas. */
+    /* Lavender Noir: soft violet bloom at top, clean lavender everywhere. */
     background:
-      radial-gradient(62% 38% at 50% -8%, rgba(110, 140, 255, 0.06), transparent 70%),
+      radial-gradient(80% 45% at 50% -6%, var(--violet-wash), transparent 60%),
       var(--canvas);
     background-attachment: fixed;
     color: var(--foreground);
@@ -294,13 +340,12 @@
 }
 
 @layer utilities {
-  /* Surface utilities (kept names = no consumer churn). Authored for dark;
-     re-grounded for light in the light-surface block below. */
+  /* Surface utilities — Lavender Noir: light, airy, violet-kissed. */
   .wl-overhaul-surface,
   .wl-cream-surface,
   .wl-grain {
     background:
-      radial-gradient(50% 36% at 70% 0%, rgba(110, 140, 255, 0.04), transparent 70%),
+      radial-gradient(60% 40% at 65% 0%, var(--violet-wash), transparent 60%),
       var(--canvas);
   }
 
@@ -308,14 +353,14 @@
     border: 1px solid var(--border);
     background: var(--panel);
     border-radius: var(--radius-xl);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 30px 60px -42px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 1px 2px rgba(30, 27, 46, 0.04), 0 20px 50px -32px rgba(124, 58, 237, 0.08);
   }
 
   .wl-dark-card {
     border: 1px solid var(--border);
     background: var(--panel);
     border-radius: var(--radius-xl);
-    box-shadow: 0 30px 60px -42px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 20px 50px -32px rgba(124, 58, 237, 0.08);
   }
 
   .wl-panel {
@@ -325,21 +370,20 @@
   }
 
   .wl-panel-elevated {
-    border: 1px solid var(--input);
-    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    background: #FFFFFF;
     border-radius: var(--radius-xl);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 40px 80px -50px rgba(0, 0, 0, 0.95);
+    box-shadow: 0 1px 2px rgba(30, 27, 46, 0.06), 0 32px 64px -40px rgba(124, 58, 237, 0.10);
   }
 
-  /* Signal accent helpers — a subtle "live wire" vocabulary for the new system. */
   .wl-signal-ring {
-    box-shadow: 0 0 0 1px var(--border), 0 0 0 4px color-mix(in oklab, var(--iris) 14%, transparent);
+    box-shadow: 0 0 0 1px var(--border), 0 0 0 4px color-mix(in oklab, var(--violet) 14%, transparent);
   }
   .wl-signal-glow {
-    box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--iris) 55%, transparent);
+    box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--violet) 40%, transparent);
   }
   .wl-gradient-text {
-    background: linear-gradient(100deg, var(--iris) 0%, var(--cream) 100%);
+    background: linear-gradient(100deg, var(--violet) 0%, var(--violet-soft) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -386,32 +430,14 @@
   .text-balance { text-wrap: balance; }
 }
 
-/* ── Marketing (light porcelain) surface corrections ────────────────────────
-   GROK-FLAIR is dark-sovereign (:root = dark). The marketing/public pages use a
-   warm cream canvas for approachability. .marketing-launch locally overrides the
-   semantic tokens so text, cards, and CTAs read correctly on a light surface. */
+/* ── Marketing surface ──────────────────────────────────────────────────────
+   Lavender Noir is light-sovereign — marketing inherits naturally. This block
+   exists only for any edge cases where marketing surfaces need subtle tuning. */
 .marketing-launch {
-  --foreground: #1A1D26;
-  --card: #ffffff;
-  --card-foreground: #1A1D26;
-  --popover: #ffffff;
-  --popover-foreground: #1A1D26;
-  --muted-foreground: #5A5D68;
-  --border: rgba(26, 29, 38, 0.10);
-  --input: rgba(26, 29, 38, 0.14);
-  --input-background: #ffffff;
-  color: #1A1D26;
-}
-.marketing-launch .wl-premium-card,
-.marketing-launch .wl-dark-card {
-  background: #ffffff;
-  box-shadow: 0 14px 36px -26px rgba(26, 29, 38, 0.12);
-}
-.marketing-launch .wl-panel-elevated {
-  background: #ffffff;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 22px 50px -34px rgba(26, 29, 38, 0.12);
+  --foreground: var(--charcoal);
+  --card: #FFFFFF;
+  --card-foreground: var(--charcoal);
+  color: var(--charcoal);
 }
 
 /* ── Marketing motion vocabulary ────────────────────────────────────────────

@@ -23,7 +23,7 @@ type AnalyticsWindow = Window & {
 
 export default function BrowserCallWidget({
   agentName,
-  tintColor: _tintColor = "#8B3FD6",
+  tintColor: _tintColor = "#7C3AED",
   buttonLabel = "Talk in browser",
 }: BrowserCallWidgetProps) {
   const [vapi, setVapi] = useState<Vapi | null>(null);
@@ -141,7 +141,7 @@ export default function BrowserCallWidget({
           "relative h-12 px-6 rounded-full font-mono text-[11px] uppercase tracking-[0.2em] font-semibold z-10 select-none shadow-md",
           callActive
             ? "shadow-rose-500/20"
-            : "bg-[#1A1614] text-[#EFE9DC] hover:text-white border-[#EFE9DC]/10 hover:border-[#EFE9DC]/30 hover:shadow-lg",
+            : "bg-[#1E1B2E] text-[#F3EFFA] hover:text-white border-[#F3EFFA]/10 hover:border-[#F3EFFA]/30 hover:shadow-lg",
         )}
       >
         {connecting ? (

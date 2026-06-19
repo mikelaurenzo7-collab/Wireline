@@ -224,15 +224,15 @@ export default function Developers() {
               <div className="flex gap-1.5" aria-hidden="true">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+                <div className="w-2.5 h-2.5 rounded-full bg-violet-500/60" />
               </div>
               <span className="font-mono text-[10px] text-white/50 tracking-wider">
                 bash — wireline-shell
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5 text-[10px] text-green-400 font-mono font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 text-[10px] text-violet-400 font-mono font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
                 LIVE CONNECTED
               </span>
             </div>
@@ -277,8 +277,8 @@ export default function Developers() {
               </div>
               <div className="bg-black/40 p-4 border border-white/5 rounded-md space-y-2 min-h-[140px]">
                 {logs.map((log, i) => {
-                  let badgeColor = "text-blue-400";
-                  if (log.includes("[INFO]")) badgeColor = "text-green-400";
+                  let badgeColor = "text-violet-400";
+                  if (log.includes("[INFO]")) badgeColor = "text-violet-400";
                   if (log.includes("[WARN]")) badgeColor = "text-yellow-500";
                   return (
                     <p key={i} className="text-white/70 leading-relaxed font-mono text-xs">

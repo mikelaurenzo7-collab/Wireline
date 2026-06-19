@@ -52,6 +52,9 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
 
   app.use("/api/twilio-webhook", express.urlencoded({ extended: false }));
 
+  // Clerk user lifecycle webhooks — Svix signs the raw JSON body.
+  app.use("/api/auth/clerk/webhook", express.raw({ type: "application/json" }));
+
   // Vapi webhook — JSON parser with verify callback to populate req.rawBody for signature verification.
   app.use(
     "/api/vapi-webhook",

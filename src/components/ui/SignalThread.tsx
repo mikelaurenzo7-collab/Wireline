@@ -43,9 +43,9 @@ interface SignalThreadProps {
 
 const COLOR_MAP: Record<ThreadColor, { stroke: string; pulse: string; glow: string }> = {
   brand: {
-    stroke: "rgba(139, 63, 214, 0.2)",
+    stroke: "rgba(124, 58, 237, 0.2)",
     pulse: BRAND.purple,
-    glow: "rgba(139, 63, 214, 0.6)",
+    glow: "rgba(124, 58, 237, 0.6)",
   },
   emerald: {
     stroke: "rgba(139, 111, 168, 0.2)",
@@ -54,12 +54,12 @@ const COLOR_MAP: Record<ThreadColor, { stroke: string; pulse: string; glow: stri
   },
   rose: {
     stroke: "rgba(232, 70, 106, 0.2)",
-    pulse: "#E8466A",
+    pulse: "#DC2626",
     glow: "rgba(232, 70, 106, 0.6)",
   },
   muted: {
     stroke: "rgba(90, 83, 74, 0.15)",
-    pulse: "#5A534A",
+    pulse: "#6E6584",
     glow: "rgba(90, 83, 74, 0.4)",
   },
 };

@@ -31,11 +31,11 @@ export default function OpsSentimentChart({ data, total }: Props) {
             <Tooltip
               contentStyle={{
                 background: "rgba(28, 25, 23, 0.95)",
-                border: "1px solid rgba(139, 63, 214, 0.3)",
+                border: "1px solid rgba(124, 58, 237, 0.3)",
                 borderRadius: 0,
                 boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
               }}
-              itemStyle={{ color: "#E0D8CC", fontSize: "11px" }}
+              itemStyle={{ color: "#6E6584", fontSize: "11px" }}
             />
           </PieChart>
         </ResponsiveContainer>

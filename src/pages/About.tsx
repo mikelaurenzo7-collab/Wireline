@@ -138,7 +138,7 @@ export default function About() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.06)]"
+                className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(124,58,237,0.06)]"
               >
                 <div
                   className="w-8 h-8 flex items-center justify-center mb-3 bg-brand"

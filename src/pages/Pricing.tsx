@@ -182,7 +182,7 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.12 + index * 0.04, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className={`relative flex flex-col rounded-md border bg-card p-6 shadow-[0_18px_50px_-44px_rgba(26,22,20,0.55)] ${
+                className={`relative flex flex-col rounded-md border bg-card p-6 shadow-[0_18px_50px_-44px_rgba(30,27,46,0.55)] ${
                   isHighlighted ? "border-brand ring-1 ring-brand/20" : "border-ink/10"
                 }`}
               >

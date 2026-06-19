@@ -389,8 +389,8 @@
 }
 
 .wl-preview-docusign-field[data-signed="true"] {
-  background: rgba(124, 156, 255, 0.08);
-  border: 1px solid rgba(124, 156, 255, 0.25);
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
 .wl-preview-docusign-dot {
@@ -414,7 +414,7 @@
 }
 
 .wl-preview-docusign-label[data-signed="true"] {
-  color: rgba(124, 156, 255, 0.85);
+  color: rgba(124, 58, 237, 0.85);
 }
 
 .wl-preview-docusign-awaiting {
@@ -578,12 +578,12 @@
 }
 
 .wl-preview-sheets-thead {
-  background: rgba(15, 157, 88, 0.25);
+  background: rgba(124, 58, 237, 0.25);
 }
 
 .wl-preview-sheets-th {
-  color: #8b6fa8;
-  border-bottom: 1px solid rgba(15, 157, 88, 0.3);
+  color: #A78BFA;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.3);
 }
 
 .wl-preview-sheets-row {
@@ -596,11 +596,11 @@
 }
 
 .wl-preview-sheets-row[data-new-row="true"][data-highlight="false"] {
-  background: rgba(15, 157, 88, 0.1);
+  background: rgba(124, 58, 237, 0.1);
 }
 
 .wl-preview-sheets-row[data-new-row="true"][data-highlight="true"] {
-  background: rgba(15, 157, 88, 0.25);
+  background: rgba(124, 58, 237, 0.25);
 }
 
 .wl-preview-sheets-cell[data-primary="true"] {

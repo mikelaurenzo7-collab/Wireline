@@ -40,7 +40,7 @@ export function stitchBrandingFromSnake(settings: {
 export function hasConfiguredTenantBranding(branding: StitchTenantBranding): boolean {
   if (branding.brandLogoUrl) return true;
   const color = branding.primaryColor?.toLowerCase();
-  if (color && color !== BRAND.purple.toLowerCase() && color !== "#8b3fd6") return true;
+  if (color && color !== BRAND.purple.toLowerCase() && color !== "#7c3aed") return true;
   const displayName = (branding.brandName || branding.businessName || "").trim();
   if (displayName && displayName.toLowerCase() !== "wireline") return true;
   if (branding.businessType?.trim()) return true;

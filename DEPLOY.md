@@ -62,6 +62,8 @@ specific branch for Preview which is awkward — prefer the UI.
 | `CORS_ORIGINS`                                      | Allowed origins for cross-origin API requests                                               |
 | `POSTGRES_URL`                                      | Supabase Postgres connection                                                                |
 | `INTERNAL_JWT_SECRET`                               | Wireline session JWT signing. Canonical name; `SUPABASE_JWT_SECRET` is only a legacy alias. |
+| `VITE_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`  | Clerk sign-in (social, Apple, phone, passkeys). Bridge issues `wireline_session` for the API. |
+| `CLERK_WEBHOOK_SIGNING_SECRET`                      | Clerk → `POST /api/auth/clerk/webhook` user profile sync (optional but recommended). |
 | `VAPI_PRIVATE_KEY`                                  | Server-side Vapi API calls                                                                  |
 | `VITE_VAPI_PUBLIC_KEY`                              | In-browser Vapi widget                                                                      |
 | `VAPI_WEBHOOK_SECRET`                               | Auth on `/api/vapi-webhook` and `/api/escalate`                                             |

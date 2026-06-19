@@ -183,7 +183,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-card border border-ink/10 shadow-[0_24px_60px_-20px_rgba(26,22,20,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
+          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-card border border-ink/10 shadow-[0_24px_60px_-20px_rgba(30,27,46,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
             <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] px-5 py-4">
               <div>
                 <p className="wl-label text-brand">Explore Wireline</p>

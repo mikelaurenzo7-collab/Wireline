@@ -214,7 +214,7 @@ export default function Training() {
                   agentId={selectedAgentId}
                   agentName={selectedAgent?.name ?? "Agent"}
                   onPublish={() => {
-                    clientLog.info("[Training] Publish to live", { agentId: selectedAgentId });
+                    clientLog.debug("[Training]", "Publish to live", { agentId: selectedAgentId });
                   }}
                 />
               </motion.div>

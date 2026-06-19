@@ -205,7 +205,7 @@ export default function AgentStudioCanvas({
             strokeWidth="2"
             strokeOpacity="0.6"
           />
-          <circle cx={x2} cy={y2} r="4" fill="#6E8CFF" />
+          <circle cx={x2} cy={y2} r="4" fill="#7C3AED" />
         </g>
       );
     });
@@ -291,7 +291,7 @@ export default function AgentStudioCanvas({
         {/* Infinite Canvas */}
         <div
           ref={canvasRef}
-          className="relative flex-1 overflow-hidden bg-[#050507] select-none"
+          className="relative flex-1 overflow-hidden bg-[#F3EFFA] select-none"
           onDrop={(e) => {
             const type = e.dataTransfer.getData("text/plain") as TrainingModuleType;
             if (type && MODULE_DEFS[type]) handleDrop(e, type);
@@ -323,8 +323,8 @@ export default function AgentStudioCanvas({
           >
             <defs>
               <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#6E8CFF" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#F4EDE3" stopOpacity="0.7" />
+                <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.7" />
               </linearGradient>
             </defs>
             {renderWires()}

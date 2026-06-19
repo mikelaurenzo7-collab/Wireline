@@ -339,7 +339,7 @@ export default function YoureLiveModal({
         ? "Time to activation"
         : "Setup complete";
 
-  const signalClass = "text-[color:var(--wl-signal,#10B981)]";
+  const signalClass = "text-[color:var(--wl-signal,#7C3AED)]";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>

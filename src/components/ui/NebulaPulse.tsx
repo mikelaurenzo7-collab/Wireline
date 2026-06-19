@@ -42,7 +42,7 @@ const INTENSITY_OPACITY: Record<NebulaIntensity, number> = {
 
 /** Wireline plasma palette — violet, magenta, deep indigo, soft rose. */
 const PLASMA_COLORS = [
-  "rgba(139, 63, 214, VAR)", // brand violet
+  "rgba(124, 58, 237, VAR)", // brand violet
   "rgba(183, 63, 214, VAR)", // magenta
   "rgba(88, 28, 135, VAR)", // deep indigo
   "rgba(214, 63, 150, VAR)", // soft rose

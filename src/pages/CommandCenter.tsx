@@ -589,7 +589,7 @@ export default function LiveOps() {
                         <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
                           {fleetAgentCount}
                         </h3>
-                        <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1.5 font-medium">
+                        <p className="text-[10px] text-violet-400 flex items-center gap-1 mt-1.5 font-medium">
                           <TrendingUp className="w-3.5 h-3.5" />
                           <span>+12% vs last hour</span>
                         </p>
@@ -600,8 +600,8 @@ export default function LiveOps() {
                     </div>
 
                     {/* Calls Handled Bento Card */}
-                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-emerald-500/10 bg-card-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-emerald-500/30">
-                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/15 transition-all duration-500 pointer-events-none" />
+                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-violet-500/10 bg-card-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-violet-500/30">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl group-hover:bg-violet-500/15 transition-all duration-500 pointer-events-none" />
                       <div>
                         <span className="wl-label text-[10px] text-muted-foreground block mb-1">
                           Calls Handled
@@ -613,19 +613,19 @@ export default function LiveOps() {
                               (stats.sentimentBreakdown.negative ?? 0)
                             : 1402}
                         </h3>
-                        <p className="text-[10px] text-emerald-400 flex items-center gap-1 mt-1.5 font-medium">
+                        <p className="text-[10px] text-violet-400 flex items-center gap-1 mt-1.5 font-medium">
                           <TrendingUp className="w-3.5 h-3.5" />
                           <span>+8% vs yesterday</span>
                         </p>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center relative z-10">
-                        <Phone className="w-5 h-5 text-emerald-400" />
+                      <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center relative z-10">
+                        <Phone className="w-5 h-5 text-violet-400" />
                       </div>
                     </div>
 
                     {/* Resolution Rate Bento Card */}
-                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-blue-500/10 bg-card-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-blue-500/30">
-                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/15 transition-all duration-500 pointer-events-none" />
+                    <div className="wl-card-lift transition-all duration-300 wl-panel border border-violet-500/10 bg-card-warm rounded-md p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-violet-500/30">
+                      <div className="absolute -top-12 -right-12 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl group-hover:bg-violet-500/15 transition-all duration-500 pointer-events-none" />
                       <div>
                         <span className="wl-label text-[10px] text-muted-foreground block mb-1">
                           Resolution Rate
@@ -633,13 +633,13 @@ export default function LiveOps() {
                         <h3 className="text-3xl font-bold font-mono tracking-tight text-foreground">
                           {stats?.unitEconomics?.efficiencyScore ?? 94.2}%
                         </h3>
-                        <p className="text-[10px] text-blue-400 flex items-center gap-1 mt-1.5 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        <p className="text-[10px] text-violet-400 flex items-center gap-1 mt-1.5 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
                           <span>Stable performance</span>
                         </p>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center relative z-10">
-                        <ShieldCheck className="w-5 h-5 text-blue-400" />
+                      <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center relative z-10">
+                        <ShieldCheck className="w-5 h-5 text-violet-400" />
                       </div>
                     </div>
 
@@ -834,9 +834,9 @@ export default function LiveOps() {
                                 14%
                               </span>
                             </div>
-                            <div className="w-full bg-emerald-500/5 h-1.5 rounded-full overflow-hidden border border-emerald-500/5">
+                            <div className="w-full bg-violet-500/5 h-1.5 rounded-full overflow-hidden border border-violet-500/5">
                               <div
-                                className="bg-emerald-400 h-full rounded-full"
+                                className="bg-violet-400 h-full rounded-full"
                                 style={{ width: "14%" }}
                               />
                             </div>
@@ -867,7 +867,7 @@ export default function LiveOps() {
                                 <div className="w-9 h-9 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-xs font-bold text-brand uppercase">
                                   AS
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
                                   ✓
                                 </div>
                               </div>
@@ -888,7 +888,7 @@ export default function LiveOps() {
                                 <div className="w-9 h-9 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-400 uppercase">
                                   SC
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
                                   ✓
                                 </div>
                               </div>
@@ -905,13 +905,13 @@ export default function LiveOps() {
                           </div>
 
                           {/* Agent #3 */}
-                          <div className="flex items-center justify-between p-2.5 rounded border border-emerald-500/5 bg-emerald-500/[0.01] hover:bg-emerald-500/[0.03] transition-colors">
+                          <div className="flex items-center justify-between p-2.5 rounded border border-violet-500/5 bg-violet-500/[0.01] hover:bg-violet-500/[0.03] transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="relative">
-                                <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-400 uppercase">
+                                <div className="w-9 h-9 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-xs font-bold text-violet-400 uppercase">
                                   CJ
                                 </div>
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">
                                   ✓
                                 </div>
                               </div>
@@ -951,23 +951,23 @@ export default function LiveOps() {
                             Operational Logs
                           </h3>
                           <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500" />
                           </span>
                         </div>
 
-                        <div className="font-mono text-[10px] text-emerald-400 bg-black/45 border border-brand/10 rounded-md p-3.5 h-44 overflow-y-auto scrollbar-thin space-y-2 select-text">
+                        <div className="font-mono text-[10px] text-violet-400 bg-black/45 border border-brand/10 rounded-md p-3.5 h-44 overflow-y-auto scrollbar-thin space-y-2 select-text">
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[19:42:01]</span>
                             <span className="text-foreground">SYSTEM:</span>
-                            <span className="text-emerald-400">
+                            <span className="text-violet-400">
                               Deployed Refund Logic v4 to fleet clusters
                             </span>
                           </div>
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[18:15:30]</span>
                             <span className="text-foreground">CONFIG:</span>
-                            <span className="text-emerald-400">
+                            <span className="text-violet-400">
                               Updated Night Shift Routing playbook
                             </span>
                           </div>
@@ -981,7 +981,7 @@ export default function LiveOps() {
                           <div className="flex items-start gap-1.5 text-muted-foreground">
                             <span>[16:55:00]</span>
                             <span className="text-foreground">SIGNAL:</span>
-                            <span className="text-emerald-400">
+                            <span className="text-violet-400">
                               Escalation safely handled on Agent-402 (Connected)
                             </span>
                           </div>

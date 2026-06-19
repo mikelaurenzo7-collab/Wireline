@@ -193,9 +193,9 @@ export function sanitizeLogoSvgForExport(svg: string): string {
 
 function paletteFromColors(colors: string): [string, string, string] {
   const presets: Array<[RegExp, [string, string, string]]> = [
-    [/cream|#f5f0e6|wireline|#4f1e7b/i, ["#4F1E7B", "#F5F0E6", "#2d1048"]],
+    [/cream|#f3effa|wireline|#7c3aed/i, ["#7C3AED", "#F3EFFA", "#5B21B6"]],
     [/blue|navy|indigo/i, ["#1d4ed8", "#0ea5e9", "#0f172a"]],
-    [/green|emerald|mint/i, ["#059669", "#34d399", "#064e3b"]],
+    [/green|emerald|mint/i, ["#7C3AED", "#A78BFA", "#5B21B6"]],
     [/red|rose|crimson/i, ["#dc2626", "#fb7185", "#450a0a"]],
     [/purple|violet/i, ["#7c3aed", "#a78bfa", "#2e1065"]],
   ];

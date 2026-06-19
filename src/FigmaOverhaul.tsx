@@ -41,7 +41,9 @@ import {
   Workflow,
 } from "lucide-react";
 
-import FigmaAuthPortal, { FigmaOAuthComplete } from "./FigmaAuthPortal";
+import FigmaAuthPortal from "./FigmaAuthPortal";
+import ClerkAuthComplete from "./components/ClerkAuthComplete";
+import WirelineClerkProvider from "./components/WirelineClerkProvider";
 import { useAuth } from "./contexts/AuthContext";
 
 type BusinessTab =
@@ -307,7 +309,7 @@ function Logo({ light = false }: { light?: boolean }) {
           <path
             d="M8 10l4.5 16L18 14l5.5 12L28 10"
             fill="none"
-            stroke="#f5efe6"
+            stroke="#F3EFFA"
             strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -514,7 +516,7 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
   return (
     <div
       className={cx(
-        "rounded-[28px] border border-border bg-card p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]",
+        "rounded-[28px] border border-border bg-card p-6 shadow-[0_20px_70px_-56px_rgba(30,27,46,.65)]",
         className,
       )}
     >
@@ -554,7 +556,7 @@ function HeroPhone({ mode }: { mode: "personal" | "business" }) {
   return (
     <div className="relative mx-auto w-full max-w-[520px]">
       <div className="absolute inset-6 -z-10 rounded-[40px] bg-brand/12 blur-3xl" />
-      <div className="rounded-[32px] border border-border bg-card-deep p-3 shadow-[0_40px_120px_-70px_rgba(26,22,20,.65)]">
+      <div className="rounded-[32px] border border-border bg-card-deep p-3 shadow-[0_40px_120px_-70px_rgba(30,27,46,.65)]">
         <div className="rounded-[26px] border border-border bg-card p-5">
           <div className="flex items-center justify-between gap-4">
             <Logo />
@@ -765,7 +767,7 @@ function TierCard({ tier }: { tier: Tier }) {
   return (
     <div
       className={cx(
-        "flex min-h-[420px] flex-col rounded-[30px] border p-6 shadow-[0_20px_70px_-56px_rgba(26,22,20,.65)]",
+        "flex min-h-[420px] flex-col rounded-[30px] border p-6 shadow-[0_20px_70px_-56px_rgba(30,27,46,.65)]",
         tier.featured ? "border-brand bg-ink text-paper" : "border-border bg-card text-foreground",
       )}
     >
@@ -921,7 +923,7 @@ function BusinessConsole({ initial = "assistant" }: { initial?: BusinessTab }) {
   };
   return (
     <div className="flex min-h-screen bg-ink text-paper">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 lg:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-[#1E1B2E] p-4 lg:flex">
         <Link to="/" className="mb-8 px-2 pt-2">
           <Logo light />
         </Link>
@@ -1834,7 +1836,8 @@ function PersonalRoute({ tab }: { tab: PersonalTab }) {
 export default function FigmaOverhaul() {
   return (
     <BrowserRouter>
-      <Routes>
+      <WirelineClerkProvider>
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route
           path="/features"
@@ -1908,14 +1911,14 @@ export default function FigmaOverhaul() {
           }
         />
         <Route path="/get-started" element={<FigmaAuthPortal />} />
-        <Route path="/signup" element={<FigmaAuthPortal />} />
-        <Route path="/signin" element={<FigmaAuthPortal />} />
-        <Route path="/login" element={<FigmaAuthPortal />} />
-        <Route path="/auth" element={<FigmaAuthPortal />} />
-        <Route path="/reset" element={<FigmaAuthPortal />} />
-        <Route path="/auth/oauth-complete" element={<FigmaOAuthComplete />} />
-        <Route path="/auth/*" element={<FigmaAuthPortal />} />
-        <Route path="/oauth-complete" element={<Navigate to="/auth/oauth-complete" replace />} />
+        <Route path="/signup/*" element={<FigmaAuthPortal />} />
+        <Route path="/signin/*" element={<FigmaAuthPortal />} />
+        <Route path="/login" element={<Navigate to="/signin" replace />} />
+        <Route path="/auth" element={<Navigate to="/signin" replace />} />
+        <Route path="/reset" element={<Navigate to="/signin" replace />} />
+        <Route path="/auth/clerk-complete" element={<ClerkAuthComplete />} />
+        <Route path="/auth/oauth-complete" element={<Navigate to="/auth/clerk-complete" replace />} />
+        <Route path="/oauth-complete" element={<Navigate to="/auth/clerk-complete" replace />} />
         <Route path="/app/personal" element={<PersonalRoute tab="overview" />} />
         <Route path="/app/personal/assistant" element={<PersonalRoute tab="assistant" />} />
         <Route path="/app/personal/intents" element={<PersonalRoute tab="intents" />} />
@@ -1947,6 +1950,7 @@ export default function FigmaOverhaul() {
         <Route path="/admin" element={<Navigate to="/app/business/settings" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </WirelineClerkProvider>
     </BrowserRouter>
   );
 }

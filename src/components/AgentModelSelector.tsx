@@ -33,8 +33,8 @@ const SPEED_LABEL: Record<VoiceModelSpeed, string> = {
 };
 
 const SPEED_TONE: Record<VoiceModelSpeed, string> = {
-  fastest: "text-emerald-600 bg-emerald-500/10",
-  fast: "text-emerald-600 bg-emerald-500/10",
+  fastest: "text-violet-600 bg-violet-500/10",
+  fast: "text-violet-600 bg-violet-500/10",
   balanced: "text-foreground/55 bg-ink/[0.05]",
   heavy: "text-amber-600 bg-amber-500/10",
 };

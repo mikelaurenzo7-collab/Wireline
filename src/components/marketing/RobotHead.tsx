@@ -21,14 +21,14 @@ interface RobotHeadProps {
 }
 
 const COLORS = {
-  purple: "var(--wl-purple, #8B3FD6)",
-  purpleLight: "var(--wl-purple-light, #8B3FD6)",
-  purpleDeep: "var(--wl-purple-deep, #3B154C)",
-  emerald: "var(--wl-emerald, #8B3FD6)",
-  emeraldSoft: "var(--wl-emerald-soft, #8B6FA8)",
-  cream: "var(--wl-cream, #F5F1E8)",
-  paper: "var(--wl-paper, #F5F1E8)",
-  ink: "var(--wl-ink, #1F2937)",
+  purple: "var(--wl-purple, #7C3AED)",
+  purpleLight: "var(--wl-purple-light, #A78BFA)",
+  purpleDeep: "var(--wl-purple-deep, #5B21B6)",
+  emerald: "var(--wl-emerald, #7C3AED)",
+  emeraldSoft: "var(--wl-emerald-soft, #A78BFA)",
+  cream: "var(--wl-cream, #FAF8FF)",
+  paper: "var(--wl-paper, #F3EFFA)",
+  ink: "var(--wl-ink, #1E1B2E)",
 };
 
 const POSE_LAYOUT: Record<RobotPose, { viewBox: string; heightRatio: number }> = {
@@ -605,7 +605,7 @@ export function RobotHead({
         </linearGradient>
         <linearGradient id={`phoneGrad-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor={COLORS.emeraldSoft} />
-          <stop offset="100%" stopColor="#059669" />
+          <stop offset="100%" stopColor="#5B21B6" />
         </linearGradient>
       </defs>
 

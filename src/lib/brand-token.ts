@@ -12,7 +12,7 @@
  * literal Emerald is kept only as an SSR-safe fallback for the brief moment
  * before `document` is available.
  */
-export const BRAND_FALLBACK = "#0D9F6E";
+export const BRAND_FALLBACK = "#7C3AED";
 
 export function resolveBrandAccent(override?: string): string {
   if (override) return override;

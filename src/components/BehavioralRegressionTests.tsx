@@ -745,14 +745,14 @@ export default function BehavioralRegressionTests({
                 Suite Performance
               </span>
               <span
-                className={`text-xs font-bold uppercase ${scorePercent >= 80 ? "text-emerald-500" : "text-amber-500"}`}
+                className={`text-xs font-bold uppercase ${scorePercent >= 80 ? "text-violet-500" : "text-amber-500"}`}
               >
                 {passCount} / {results.length} Scenarios Passed
               </span>
             </div>
             <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
               <div
-                className={`h-full transition-all duration-500 ${scorePercent >= 80 ? "bg-emerald-500" : "bg-amber-500"}`}
+                className={`h-full transition-all duration-500 ${scorePercent >= 80 ? "bg-violet-500" : "bg-amber-500"}`}
                 data-pct={`${scorePercent}%`}
               />
             </div>
@@ -779,7 +779,7 @@ export default function BehavioralRegressionTests({
                     <span
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold border ${
                         r.passed
-                          ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-500"
+                          ? "bg-violet-500/15 border-violet-500/30 text-violet-500"
                           : "bg-rose-500/15 border-rose-500/30 text-rose-500"
                       }`}
                     >

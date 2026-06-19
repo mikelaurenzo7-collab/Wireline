@@ -25,7 +25,7 @@ export default function HeroCallPreview() {
       className="relative mx-auto w-full max-w-xl text-left"
       aria-label="Live call preview: a Wireline agent answering an inbound call and booking an appointment"
     >
-      <div className="relative border border-ink/[0.14] bg-[#FBF8F0] shadow-[0_24px_70px_-42px_rgba(26,22,20,0.55),0_1px_0_rgba(255,255,255,0.8)_inset]">
+      <div className="relative border border-ink/[0.14] bg-[#FAF8FF] shadow-[0_24px_70px_-42px_rgba(30,27,46,0.55),0_1px_0_rgba(255,255,255,0.8)_inset]">
         <div className="flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-ink/[0.1] bg-white/[0.42]">
           <div className="relative grid h-11 w-11 shrink-0 place-items-center border border-ink/[0.12] bg-card shadow-[0_1px_0_rgba(255,255,255,0.9)_inset]">
             <div className="grid h-8 w-8 place-items-center bg-brand text-white font-display text-lg leading-none">
@@ -46,9 +46,9 @@ export default function HeroCallPreview() {
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <span className="relative flex h-2 w-2" aria-hidden="true">
               {!reduce && (
-                <span className="absolute inline-flex h-full w-full animate-ping bg-emerald-500/45" />
+                <span className="absolute inline-flex h-full w-full animate-ping bg-violet-500/45" />
               )}
-              <span className="relative inline-flex h-2 w-2 bg-emerald-500" />
+              <span className="relative inline-flex h-2 w-2 bg-violet-500" />
             </span>
             <span className="font-mono text-[10px] text-foreground/72 tracking-[0.08em] tabular-nums">
               ON CALL · 0:42
@@ -57,7 +57,7 @@ export default function HeroCallPreview() {
         </div>
 
         <div
-          className="flex h-14 items-end justify-center gap-[2.5px] border-b border-ink/[0.1] bg-[linear-gradient(180deg,rgba(255,255,255,0.42),rgba(26,22,20,0.025))] px-4"
+          className="flex h-14 items-end justify-center gap-[2.5px] border-b border-ink/[0.1] bg-[linear-gradient(180deg,rgba(255,255,255,0.42),rgba(30,27,46,0.025))] px-4"
           aria-hidden="true"
         >
           {Array.from({ length: BAR_COUNT }).map((_, i) => {
@@ -130,7 +130,7 @@ export default function HeroCallPreview() {
           transition={{ duration: 0.42, delay: 1.08, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-wrap items-center gap-2.5 border-t border-ink/[0.1] bg-white/[0.48] px-4 sm:px-5 py-3"
         >
-          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-emerald-500 text-white">
+          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-violet-500 text-white">
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
           <span className="text-[12.5px] text-foreground">
@@ -153,10 +153,10 @@ export default function HeroCallPreview() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.42, delay: 1.24, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-emerald-500/22 bg-[#F7F3EA]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(26,22,20,0.5)] backdrop-blur-sm"
+        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-violet-500/22 bg-[#FAF8FF]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(30,27,46,0.5)] backdrop-blur-sm"
       >
-        <PhoneCall className="h-3 w-3 text-emerald-600" aria-hidden="true" />
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-emerald-700">
+        <PhoneCall className="h-3 w-3 text-violet-600" aria-hidden="true" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-violet-700">
           Live · handled by agent
         </span>
       </motion.div>

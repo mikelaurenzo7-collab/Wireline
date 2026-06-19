@@ -72,6 +72,11 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://*.google-analytics.com",
     "https://*.analytics.google.com",
     "https://stats.g.doubleclick.net",
+    // Clerk authentication (social, Apple, phone OTP, passkeys, MFA)
+    "https://*.clerk.accounts.dev",
+    "https://clerk.com",
+    "https://api.clerk.com",
+    "https://challenges.cloudflare.com",
   ];
   if (isDev) {
     // Vite HMR opens a WebSocket on a port it picks at startup. Allow the
@@ -105,11 +110,13 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   // marketing pages all execute the same index.html inline scripts cleanly.
   const inlineHashes = INLINE_SCRIPT_HASHES.join(" ");
   const marketingSrcs = MARKETING_SCRIPT_SRCS.join(" ");
+  const clerkScriptSrcs =
+    "https://*.clerk.accounts.dev https://clerk.com https://challenges.cloudflare.com";
   const scriptSrc = isDev
-    ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io"
+    ? `'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io ${clerkScriptSrcs}`
     : nonce
-      ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}`
-      : `'self' ${inlineHashes} ${marketingSrcs}`;
+      ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs} ${clerkScriptSrcs}`
+      : `'self' ${inlineHashes} ${marketingSrcs} ${clerkScriptSrcs}`;
 
   // style-src-elem blocks injected <style> tags (XSS). style-src-attr allows
   // library-generated style="" attributes (Framer Motion, Recharts) without
@@ -128,7 +135,8 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     `media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io`,
     `worker-src 'self' blob:`,
     // Director Stitch live HTML previews load artifact HTML via blob: iframes.
-    `frame-src 'self' blob:`,
+    // Clerk CAPTCHA / challenge iframes during sign-in.
+    `frame-src 'self' blob: https://challenges.cloudflare.com https://*.clerk.accounts.dev`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

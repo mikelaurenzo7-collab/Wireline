@@ -35,7 +35,7 @@ function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="wl-panel card-shimmer border border-ink/[0.1] p-6 sm:p-8 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(139,63,214,0.08)]"
+      className="wl-panel card-shimmer border border-ink/[0.1] p-6 sm:p-8 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(124,58,237,0.08)]"
     >
       <div className="flex items-start gap-4 mb-5">
         <div
