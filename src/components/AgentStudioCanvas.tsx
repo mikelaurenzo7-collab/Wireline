@@ -117,12 +117,9 @@ export default function AgentStudioCanvas({
   const canvasRef = useRef<HTMLDivElement>(null);
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
-  // Drag node
-  const moveNode = useCallback((id: string, dx: number, dy: number) => {
+  const setNodePosition = useCallback((id: string, x: number, y: number) => {
     setNodes((prev) =>
-      prev.map((n) =>
-        n.id === id ? { ...n, x: n.x + dx, y: n.y + dy } : n
-      )
+      prev.map((n) => (n.id === id ? { ...n, x, y } : n))
     );
   }, []);
 
@@ -237,9 +234,9 @@ export default function AgentStudioCanvas({
 
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-2xl bg-panel-2 p-1 text-xs">
-            <button onClick={() => zoom(-0.15)} className="px-3 py-1 hover:text-iris">- </button>
+            <button onClick={() => zoom(-0.15)} className="px-3 py-1.5 hover:text-iris transition-colors">&minus;</button>
             <div className="font-mono tabular-nums px-2 text-text-2">{(scale * 100).toFixed(0)}%</div>
-            <button onClick={() => zoom(0.15)} className="px-3 py-1 hover:text-iris"> +</button>
+            <button onClick={() => zoom(0.15)} className="px-3 py-1.5 hover:text-iris transition-colors">+</button>
           </div>
 
           <ShadButton
@@ -273,7 +270,7 @@ export default function AgentStudioCanvas({
                   className="group flex cursor-grab items-center gap-3 rounded-2xl border border-border bg-raised px-4 py-3.5 active:cursor-grabbing hover:border-iris/40 hover:bg-panel-2 transition-all"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-canvas text-iris group-hover:bg-iris group-hover:text-canvas transition-colors">
-                    <Icon className="h-4.5 w-4.5" />
+                    <Icon className="h-[18px] w-[18px]" />
                   </div>
                   <div className="flex-1">
                     <div className="font-medium tracking-[-0.01em]">{def.label}</div>
@@ -320,7 +317,9 @@ export default function AgentStudioCanvas({
           {/* SVG Wires Layer */}
           <svg
             className="absolute inset-0 pointer-events-none z-10"
-            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
+            width="100%"
+            height="100%"
+            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0" }}
           >
             <defs>
               <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -334,7 +333,7 @@ export default function AgentStudioCanvas({
           {/* Nodes Layer */}
           <div
             className="absolute inset-0"
-            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
+            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0" }}
           >
             <AnimatePresence>
               {nodes.map((node) => {
@@ -360,15 +359,16 @@ export default function AgentStudioCanvas({
                     onClick={() => setSelectedNodeId(node.id)}
                     onMouseDown={(e) => {
                       if ((e.target as HTMLElement).closest("button")) return;
+                      e.stopPropagation();
                       const startX = e.clientX;
                       const startY = e.clientY;
-                      const startNodeX = node.x;
-                      const startNodeY = node.y;
+                      const originX = node.x;
+                      const originY = node.y;
 
                       const onMove = (ev: MouseEvent) => {
-                        const dx = (ev.clientX - startX) / scale;
-                        const dy = (ev.clientY - startY) / scale;
-                        moveNode(node.id, dx, dy);
+                        const nx = originX + (ev.clientX - startX) / scale;
+                        const ny = originY + (ev.clientY - startY) / scale;
+                        setNodePosition(node.id, nx, ny);
                       };
                       const onUp = () => {
                         window.removeEventListener("mousemove", onMove);
@@ -381,7 +381,7 @@ export default function AgentStudioCanvas({
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-canvas text-iris">
-                          <Icon className="h-4.5 w-4.5" />
+                          <Icon className="h-[18px] w-[18px]" />
                         </div>
                         <div>
                           <div className="font-medium tracking-[-0.01em] text-[15px]">{node.label}</div>

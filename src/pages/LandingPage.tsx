@@ -68,31 +68,31 @@ export default function LandingPage() {
                 <span className="h-px w-3 bg-iris/60" /> LIVE ON THE WIRE
               </div>
 
-              <h1 className="font-display text-[72px] leading-[0.96] tracking-[-0.052em] text-balance sm:text-[88px] md:text-[104px]">
+              <h1 className="font-display text-[clamp(3rem,9vw,6.5rem)] leading-[0.96] tracking-[-0.052em] text-balance text-[#1A1D26]">
                 Your phone.<br />Finally answering for you.
               </h1>
 
-              <p className="mx-auto mt-8 max-w-[46ch] text-2xl tracking-[-0.012em] text-foreground/75">
+              <p className="mx-auto mt-8 max-w-[46ch] text-xl leading-relaxed tracking-[-0.012em] text-[#1A1D26]/70 sm:text-2xl">
                 Wireline deploys calm, intelligent voice agents that answer, qualify, book, and follow up — so every call feels handled.
               </p>
 
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
                   to="/signup"
-                  className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground px-10 text-base font-semibold text-marketing-surface transition-all hover:bg-iris hover:text-white active:scale-[0.985]"
+                  className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-[#1A1D26] px-10 text-base font-semibold text-white shadow-lg shadow-black/10 transition-all hover:bg-iris hover:shadow-iris/20 active:scale-[0.985]"
                 >
                   Start free trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/showcase"
-                  className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl border border-foreground/15 px-9 text-base font-medium text-foreground transition hover:border-iris/40 hover:text-iris"
+                  className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl border border-[#1A1D26]/15 px-9 text-base font-medium text-[#1A1D26] transition hover:border-iris/40 hover:text-iris"
                 >
                   See it in action
                 </Link>
               </div>
 
-              <div className="mt-9 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-foreground/50">
+              <div className="mt-9 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-[#1A1D26]/50">
                 {["No call-center contracts", "Real phone numbers", "Studio + Training included"].map((t) => (
                   <span key={t} className="inline-flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-iris" /> {t}
@@ -110,7 +110,7 @@ export default function LandingPage() {
           ═══════════════════════════════════════════════════════════════ */}
           <section className="mx-auto max-w-3xl text-center pt-8">
             <div className="font-mono text-[10px] uppercase tracking-[0.26em] text-iris/70">WHY IT MATTERS</div>
-            <p className="mt-4 text-[21px] leading-tight tracking-[-0.01em] text-foreground/80">
+            <p className="mt-4 text-lg leading-snug tracking-[-0.01em] text-[#1A1D26]/75 sm:text-[21px]">
               The phone is still where deals close, jobs get booked, and customers decide to stay.<br />Most calls go to voicemail. Wireline makes sure every one gets a great answer.
             </p>
           </section>
@@ -122,9 +122,9 @@ export default function LandingPage() {
                 <div className="flex items-center justify-between pb-5">
                   <div>
                     <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-iris">LIVE IN YOUR BROWSER</div>
-                    <div className="font-display text-3xl tracking-[-0.02em]">Talk to a real Wireline agent</div>
+                    <div className="font-display text-2xl tracking-[-0.02em] text-[#1A1D26] sm:text-3xl">Talk to a real Wireline agent</div>
                   </div>
-                  <div className="hidden text-right text-xs text-foreground/50 md:block">No account required</div>
+                  <div className="hidden text-right text-xs text-[#1A1D26]/45 md:block">No account required</div>
                 </div>
                 <BrowserCallWidget agentName={csDemo.name} />
               </div>
@@ -133,23 +133,23 @@ export default function LandingPage() {
 
           {/* Quiet integration endorsement */}
           <section className="pt-12 text-center">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40 mb-5">Already works with the tools you trust</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#1A1D26]/35 mb-5">Already works with the tools you trust</div>
             <div className="opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0">
               <IntegrationLogos />
             </div>
           </section>
         </main>
 
-        <footer className="border-t border-border/60 bg-marketing-surface px-6 py-12 text-sm text-foreground/50">
+        <footer className="border-t border-[#1A1D26]/8 bg-marketing-surface px-6 py-12 text-sm text-[#1A1D26]/45">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 md:flex-row">
             <div>© {new Date().getFullYear()} Wireline</div>
             <div className="flex gap-8">
-              <Link className="hover:text-foreground" to="/terms">Terms</Link>
-              <Link className="hover:text-foreground" to="/privacy">Privacy</Link>
-              <Link className="hover:text-foreground" to="/status">Status</Link>
+              <Link className="hover:text-[#1A1D26]" to="/terms">Terms</Link>
+              <Link className="hover:text-[#1A1D26]" to="/privacy">Privacy</Link>
+              <Link className="hover:text-[#1A1D26]" to="/status">Status</Link>
             </div>
             <div className="inline-flex items-center gap-2 text-xs tracking-[0.14em] uppercase">
-              <span className="h-px w-4 bg-foreground/30" /> Systems online
+              <span className="h-px w-4 bg-[#1A1D26]/25" /> Systems online
             </div>
           </div>
         </footer>

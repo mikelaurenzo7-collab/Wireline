@@ -6,6 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { GraduationCap, Bot, Mail } from "lucide-react";
 import AgentStudioCanvas from "../components/AgentStudioCanvas";
+import { clientLog } from "../lib/client-log";
 import { useAgents } from "../contexts/AgentsContext";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
@@ -107,7 +108,7 @@ export default function Training() {
         className={cn(
           "touch-press w-full h-auto justify-start text-left gap-2.5 group relative overflow-hidden rounded-md border",
           compact ? "shrink-0 min-w-[140px] px-3 py-2" : "px-3 py-3",
-          selected ? "border-brand/35 bg-brand/[0.06]" : "wl-panel hover:border-brand/30",
+          selected ? "border-iris/35 bg-iris/[0.06]" : "wl-panel hover:border-iris/30",
         )}
       >
         <div
@@ -115,8 +116,8 @@ export default function Training() {
             "rounded-md flex items-center justify-center shrink-0 transition-all border",
             compact ? "w-8 h-8" : "w-9 h-9",
             selected
-              ? "border-brand/35 bg-brand/12 text-brand"
-              : "border-border bg-card/70 text-foreground/70 group-hover:bg-brand/5",
+              ? "border-iris/35 bg-iris/12 text-iris"
+              : "border-border bg-card/70 text-foreground/70 group-hover:bg-iris/5",
           )}
         >
           {agent.channel === "email" ? (
@@ -172,7 +173,7 @@ export default function Training() {
           <div className={cn(WL_OPS_CLASSES.railCard, "hidden lg:flex flex-1 min-h-0 flex-col")}>
             <div className="flex items-center justify-between mb-3 shrink-0">
               <p className="wl-label flex items-center gap-2">
-                <GraduationCap className="w-3.5 h-3.5 text-brand" />
+                <GraduationCap className="w-3.5 h-3.5 text-iris" />
                 Agents
               </p>
               <span className="chrome-subtle tabular-nums">{agents.length}</span>
@@ -187,8 +188,8 @@ export default function Training() {
           <header className="shrink-0 border-b border-border bg-card/85 px-3 sm:px-4 py-2.5 lg:py-2">
             <div className="lg:hidden flex items-center gap-2 min-w-0">
               <span className="wl-orbit" data-active="true">
-                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-brand/15 to-brand/8 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-4 h-4 text-brand" />
+                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-iris/15 to-iris/8 flex items-center justify-center shrink-0">
+                  <GraduationCap className="w-4 h-4 text-iris" />
                 </span>
               </span>
               <div className="min-w-0">
@@ -213,8 +214,7 @@ export default function Training() {
                   agentId={selectedAgentId}
                   agentName={selectedAgent?.name ?? "Agent"}
                   onPublish={() => {
-                    // In real impl this would call the publish mutation
-                    console.log("Publish to live", selectedAgentId);
+                    clientLog.info("[Training] Publish to live", { agentId: selectedAgentId });
                   }}
                 />
               </motion.div>
