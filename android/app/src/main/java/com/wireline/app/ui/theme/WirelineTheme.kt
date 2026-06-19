@@ -13,30 +13,30 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 /**
- * Wireline Design System — **Lavender Noir** (native dark).
- * Tokens mirror `src/index.css` `.dark` + `:root` violet scale and
- * `ios/Wireline/Theme/WirelineTheme.swift`.
+ * Wireline Design System — Stitch Noir native.
+ * Mirrors the web Stitch Studio migration and the iOS native tokens.
  */
 object Brand {
-    // ── Surfaces (`.dark`) ───────────────────────────────────────────────────
-    val Canvas = Color(0xFF1E1B2E)
-    val Panel = Color(0xFF2A2540)
-    val Panel2 = Color(0xFF342E4C)
-    val Raised = Color(0xFF3D3654)
+    // ── Surfaces ─────────────────────────────────────────────────────────────
+    val Canvas = Color(0xFF0A0A0C)
+    val Panel = Color(0xFF131315)
+    val Panel2 = Color(0xFF1B1B1D)
+    val Raised = Color(0xFF242428)
 
     // ── Text ─────────────────────────────────────────────────────────────────
-    val Text = Color(0xFFF3EFFA)
-    val Text2 = Color(0xFFB8B0CA)
-    val Text3 = Color(0xFF7A7194)
+    val Text = Color(0xFFF4F2F7)
+    val Text2 = Color(0xFFC7C4D8)
+    val Text3 = Color(0xFF908FA1)
 
     // ── Violet accent ────────────────────────────────────────────────────────
-    val Violet = Color(0xFF7C3AED)
-    val VioletSoft = Color(0xFFA78BFA)
-    val VioletDeep = Color(0xFF5B21B6)
-    val VioletGlass = Color(0x1A7C3AED) // ~10% violet wash
+    val Violet = Color(0xFF5D5CFF)
+    val VioletSoft = Color(0xFFC1C1FF)
+    val VioletDeep = Color(0xFF4643E9)
+    val VioletGlass = Color(0x245D5CFF)
 
     // ── Semantic ───────────────────────────────────────────────────────────
-    val Destructive = Color(0xFFDC2626)
+    val Destructive = Color(0xFFEF4444)
+    val Success = Color(0xFF3DDCBA)
     val Signal = VioletSoft
 
     // ── Legacy aliases ─────────────────────────────────────────────────────
@@ -50,12 +50,12 @@ object Brand {
     val VelvetSurface = Panel
     val VelvetInk = Text
 
-    val Border = Color(0x1AF3EFFA) // 10% lavender hairline
-    val BorderViolet = Color(0x2E7C3AED) // 18% violet outline
+    val Border = Color(0x1AF4F2F7)
+    val BorderViolet = Color(0x385D5CFF)
 
-    val RadiusSm = 6.dp
-    val RadiusMd = 10.dp
-    val RadiusLg = 14.dp
+    val RadiusSm = 8.dp
+    val RadiusMd = 14.dp
+    val RadiusLg = 24.dp
 }
 
 private val DarkColors = darkColorScheme(
@@ -112,7 +112,9 @@ fun WirelineTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window ?: return@SideEffect
             window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
         }
     }
 
@@ -124,7 +126,7 @@ fun WirelineTheme(
                 small = RoundedCornerShape(10.dp),
                 medium = RoundedCornerShape(Brand.RadiusMd),
                 large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(18.dp),
+                extraLarge = RoundedCornerShape(28.dp),
             ),
             typography = AppTypography,
             content = content,
