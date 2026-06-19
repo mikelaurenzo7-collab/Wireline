@@ -5,7 +5,7 @@ import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { GraduationCap, Bot, Mail } from "lucide-react";
-import AgentTraining from "../components/AgentTraining";
+import AgentStudioCanvas from "../components/AgentStudioCanvas";
 import { useAgents } from "../contexts/AgentsContext";
 import ClientRouteViewport from "../components/layout/ClientRouteViewport";
 import ClientRouteLoading from "../components/layout/ClientRouteLoading";
@@ -209,10 +209,13 @@ export default function Training() {
                 transition={{ duration: 0.18 }}
                 className="h-full min-h-0"
               >
-                <AgentTraining
-                  embeddedAgentId={selectedAgentId}
-                  initialSubTab={activeSubTab}
-                  onSubTabChange={setSubTab}
+                <AgentStudioCanvas
+                  agentId={selectedAgentId}
+                  agentName={selectedAgent?.name ?? "Agent"}
+                  onPublish={() => {
+                    // In real impl this would call the publish mutation
+                    console.log("Publish to live", selectedAgentId);
+                  }}
                 />
               </motion.div>
             )}

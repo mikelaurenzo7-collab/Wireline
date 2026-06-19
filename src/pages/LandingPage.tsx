@@ -54,122 +54,102 @@ export default function LandingPage() {
         image="/og-image.jpg"
       />
 
-      <div className="marketing-launch min-h-screen bg-card font-sans text-foreground selection:bg-primary/20 selection:text-foreground overflow-x-hidden">
+      <div className="marketing-launch min-h-screen bg-marketing-surface font-sans text-foreground selection:bg-iris/20 selection:text-foreground overflow-x-hidden">
         <PublicSiteHeader active="home" />
 
-        <main
-          id="main-content"
-          className="relative mx-auto max-w-7xl space-y-24 px-5 pb-24 pt-36 sm:px-6 sm:pt-40 md:px-12"
-        >
-          <section className="relative z-10 grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-            <motion.div {...REVEAL} className="mx-auto max-w-3xl text-center lg:mx-0 lg:text-left">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/8 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
-                <span className="h-2 w-2 rounded-full bg-brand" />
-                Live agent platform
+        <main id="main-content" className="relative mx-auto max-w-6xl space-y-24 px-6 pb-24 pt-24 sm:pt-28 md:px-10">
+          {/* ═══════════════════════════════════════════════════════════════
+               GROK-FLAIR SIGNATURE HERO — Editorial, Spacious, Flawless
+               One powerful promise. One clear action. A live wire motif.
+          ═══════════════════════════════════════════════════════════════ */}
+          <section className="relative pt-12 pb-8">
+            <div className="mx-auto max-w-4xl text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-iris/20 bg-iris/5 px-4 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-iris">
+                <span className="h-px w-3 bg-iris/60" /> LIVE ON THE WIRE
               </div>
 
-              <h1 className="font-display text-[clamp(3rem,8vw,6rem)] leading-[0.98] tracking-[-0.045em] text-foreground text-balance">
-                AI voice agents that pick up the phone.
+              <h1 className="font-display text-[72px] leading-[0.96] tracking-[-0.052em] text-balance sm:text-[88px] md:text-[104px]">
+                Your phone.<br />Finally answering for you.
               </h1>
 
-              <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-foreground/70 lg:mx-0">
-                Wireline gives businesses a simple way to deploy phone agents that answer, qualify,
-                book, escalate, and send follow-ups without sounding like a menu tree.
+              <p className="mx-auto mt-8 max-w-[46ch] text-2xl tracking-[-0.012em] text-foreground/75">
+                Wireline deploys calm, intelligent voice agents that answer, qualify, book, and follow up — so every call feels handled.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
                   to="/signup"
-                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-md bg-brand px-7 text-sm font-semibold text-white shadow-[0_18px_50px_-28px_rgba(139,63,214,0.9)] transition hover:bg-brand-deep"
+                  className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-foreground px-10 text-base font-semibold text-marketing-surface transition-all hover:bg-iris hover:text-white active:scale-[0.985]"
                 >
                   Start free trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   to="/showcase"
-                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-md border border-ink/12 bg-card px-7 text-sm font-semibold text-foreground transition hover:border-brand/30 hover:bg-card-warm/50"
+                  className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl border border-foreground/15 px-9 text-base font-medium text-foreground transition hover:border-iris/40 hover:text-iris"
                 >
-                  Call a demo agent
-                  <PhoneCall className="h-4 w-4" />
+                  See it in action
                 </Link>
               </div>
 
-              <div className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-foreground/62 lg:justify-start">
-                {["Real phone numbers", "Agent Studio included", "Call logs and coaching"].map(
-                  (item) => (
-                    <span key={item} className="inline-flex items-center gap-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-brand" />
-                      {item}
-                    </span>
-                  ),
-                )}
+              <div className="mt-9 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-foreground/50">
+                {["No call-center contracts", "Real phone numbers", "Studio + Training included"].map((t) => (
+                  <span key={t} className="inline-flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-iris" /> {t}
+                  </span>
+                ))}
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              {...REVEAL}
-              transition={{ ...REVEAL.transition, delay: 0.08 }}
-              className="mx-auto w-full max-w-xl"
-            >
-              <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(26,22,20,0.55)]">
-                <div className="border-b border-ink/10 px-5 py-4">
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
-                    Try it in browser
-                  </p>
-                  <p className="mt-1 text-sm text-foreground/62">
-                    Talk to a live Wireline demo agent before creating an account.
-                  </p>
-                </div>
-                <div className="p-5 sm:p-6">
-                  <BrowserCallWidget agentName={csDemo.name} />
-                </div>
-              </div>
-            </motion.div>
+            {/* Subtle live-wire motif (editorial accent) */}
+            <div className="pointer-events-none absolute -bottom-8 left-1/2 hidden h-px w-[620px] -translate-x-1/2 bg-gradient-to-r from-transparent via-iris/30 to-transparent md:block" />
           </section>
 
-          <section className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {PRODUCT_POINTS.map(({ icon: Icon, title, body }) => (
-              <motion.article
-                key={title}
-                {...REVEAL}
-                className="rounded-md border border-ink/10 bg-card p-6 shadow-[0_18px_48px_-42px_rgba(26,22,20,0.55)]"
-              >
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-md border border-brand/15 bg-brand/8 text-brand">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h2 className="font-display text-2xl italic text-foreground">{title}</h2>
-                <p className="mt-3 text-sm leading-7 text-foreground/66">{body}</p>
-              </motion.article>
-            ))}
-          </section>
-
-          <section className="rounded-md border border-ink/10 bg-card-warm/25 px-6 py-10 text-center">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
-              Works with the tools your team already uses
+          {/* ═══════════════════════════════════════════════════════════════
+               Narrative proof — not a feature grid
+          ═══════════════════════════════════════════════════════════════ */}
+          <section className="mx-auto max-w-3xl text-center pt-8">
+            <div className="font-mono text-[10px] uppercase tracking-[0.26em] text-iris/70">WHY IT MATTERS</div>
+            <p className="mt-4 text-[21px] leading-tight tracking-[-0.01em] text-foreground/80">
+              The phone is still where deals close, jobs get booked, and customers decide to stay.<br />Most calls go to voicemail. Wireline makes sure every one gets a great answer.
             </p>
-            <div className="mt-8 opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0">
+          </section>
+
+          {/* Demo widget — now secondary, generous breathing room */}
+          <section className="mx-auto max-w-[820px] pt-6">
+            <div className="rounded-3xl border border-border bg-white p-2 shadow-xl shadow-black/5">
+              <div className="rounded-[22px] border border-border/60 bg-marketing-surface-2 px-8 py-8">
+                <div className="flex items-center justify-between pb-5">
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-iris">LIVE IN YOUR BROWSER</div>
+                    <div className="font-display text-3xl tracking-[-0.02em]">Talk to a real Wireline agent</div>
+                  </div>
+                  <div className="hidden text-right text-xs text-foreground/50 md:block">No account required</div>
+                </div>
+                <BrowserCallWidget agentName={csDemo.name} />
+              </div>
+            </div>
+          </section>
+
+          {/* Quiet integration endorsement */}
+          <section className="pt-12 text-center">
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40 mb-5">Already works with the tools you trust</div>
+            <div className="opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0">
               <IntegrationLogos />
             </div>
           </section>
         </main>
 
-        <footer className="border-t border-ink/10 bg-card px-5 py-10">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-foreground/55 md:flex-row">
+        <footer className="border-t border-border/60 bg-marketing-surface px-6 py-12 text-sm text-foreground/50">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 md:flex-row">
             <div>© {new Date().getFullYear()} Wireline</div>
-            <div className="flex gap-6">
-              <Link className="hover:text-brand" to="/terms">
-                Terms
-              </Link>
-              <Link className="hover:text-brand" to="/privacy">
-                Privacy
-              </Link>
-              <Link className="hover:text-brand" to="/status">
-                Status
-              </Link>
+            <div className="flex gap-8">
+              <Link className="hover:text-foreground" to="/terms">Terms</Link>
+              <Link className="hover:text-foreground" to="/privacy">Privacy</Link>
+              <Link className="hover:text-foreground" to="/status">Status</Link>
             </div>
-            <div className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-brand" />
-              Systems online
+            <div className="inline-flex items-center gap-2 text-xs tracking-[0.14em] uppercase">
+              <span className="h-px w-4 bg-foreground/30" /> Systems online
             </div>
           </div>
         </footer>

@@ -11,163 +11,97 @@
 
 :root {
   --font-size: 16px;
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* ── Signal (LIGHT, default) ───────────────────────────────────────────────
-     A premium, light-first system built on the metaphor of a signal travelling
-     a wire: precision, throughput, live orchestration. Porcelain canvas, crisp
-     white panels, graphite ink, a vivid Emerald primary and an electric Cyan
-     "live wire" accent with warm Amber energy. Dark ("Signal Night") lives in
-     the .dark block below; both are first-class. Every token NAME is preserved
-     from the prior system so the ~750 consuming utilities keep working — only
-     values change. */
-  --canvas: #f7f9f8;       /* porcelain, faint warm-green cast */
-  --canvas-deep: #eef2f0;
-  --panel: #ffffff;
-  --panel-2: #f4f7f5;
-  --raised: #ffffff;
-  --velvet: #ffffff;
+  /* ═══════════════════════════════════════════════════════════════════════════
+     GROK-FLAIR — The Flawless Wireline Design Language (2026)
+     Sovereign dark canvas for all operator surfaces. Deep void, electric iris,
+     warm cream highlights, generous air, purposeful spring motion.
+     Marketing & auth keep a soft porcelain variant for approachability.
+     Disregards all prior Signal/Midnight contracts. One source of truth.
+     ═══════════════════════════════════════════════════════════════════════════ */
 
-  --text: #0a0f0d;         /* graphite ink */
-  --text-2: #4d5a55;
-  --text-3: #828f8a;
+  /* Core Canvas (GROK-FLAIR Dark Sovereign) */
+  --canvas: #050507;          /* deepest void */
+  --canvas-deep: #020203;
+  --panel: #0F1118;           /* primary surface */
+  --panel-2: #161A24;         /* nested / inputs */
+  --raised: #1F242F;          /* hover / elevated */
+  --velvet: #0A0C12;          /* deepest cards */
 
-  --iris: #0d9f6e;         /* Emerald — primary (name kept for consumers) */
-  --iris-bright: #10b981;  /* bright tint / glow */
-  --iris-deep: #047857;
-  --teal: #0891b2;         /* electric Cyan — the "live wire" accent */
-  --teal-bright: #22d3ee;
-  --teal-deep: #0e7490;
-  --mint: #059669;
-  --amber: #b06f0a;        /* readable amber-on-light for text/icons */
-  --amber-solid: #f5a623;  /* full-energy amber for fills/accents */
-  --rose: #e5484d;
+  /* Text */
+  --text: #F5F6FA;
+  --text-2: #A8ABB8;
+  --text-3: #6B6F7C;
 
-  /* Legacy aliases. ink/paper carry the ink (text + hairline) role on light;
-     the few solid bg-ink/bg-paper surfaces are remapped to the canvas/panel via
-     the overrides in the light-surface block further down. */
-  --paper: #0a0f0d;
-  --paper-deep: #050807;
-  --paper-soft: #1d2521;
-  --ink: #0a0f0d;
-  --ink-soft: #1d2521;
-  --brand: #0d9f6e;        /* Emerald — primary */
-  --brand-deep: #047857;
-  --brand-bright: #10b981;
+  /* Signature Accent — Electric Iris + Warm Cream */
+  --iris: #6E8CFF;            /* primary action / focus */
+  --iris-bright: #9FB3FF;
+  --iris-deep: #4A63C0;
+  --cream: #F4EDE3;           /* Wireline signature highlight (used sparingly) */
+  --cream-soft: #EDE5D9;
 
-  /* shadcn semantic tokens (drive every primitive + Tailwind color utility). */
-  --background: #f7f9f8;
-  --foreground: #0a0f0d;
-  --card: #ffffff;
-  --card-foreground: #0a0f0d;
-  --popover: #ffffff;
-  --popover-foreground: #0a0f0d;
-  --primary: #0d9f6e;
-  --primary-foreground: #ffffff;
-  --secondary: #eaf2ee;
-  --secondary-foreground: #0a0f0d;
-  --muted: #eaf2ee;
-  --muted-foreground: #4d5a55;
-  --accent: #d1fae5;
-  --accent-foreground: #047857;
-  --destructive: #e5484d;
+  /* Semantic */
+  --mint: #4DE0B0;
+  --amber: #F5B55A;
+  --rose: #FF5A5F;
+
+  /* Borders & Inputs */
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --input: rgba(255,255,255,0.10);
+  --input-background: #161A24;
+
+  /* shadcn semantic (mapped to GROK-FLAIR) */
+  --background: #050507;
+  --foreground: #F5F6FA;
+  --card: #0F1118;
+  --card-foreground: #F5F6FA;
+  --popover: #161A24;
+  --popover-foreground: #F5F6FA;
+  --primary: #6E8CFF;
+  --primary-foreground: #050507;
+  --secondary: #161A24;
+  --secondary-foreground: #F5F6FA;
+  --muted: #161A24;
+  --muted-foreground: #A8ABB8;
+  --accent: #1F242F;
+  --accent-foreground: #F5F6FA;
+  --destructive: #FF5A5F;
   --destructive-foreground: #ffffff;
-  --border: rgba(10, 15, 13, 0.1);
-  --input: rgba(10, 15, 13, 0.14);
-  --input-background: #ffffff;
-  --switch-background: #d2dcd7;
-  --ring: #0d9f6e;
-  --chart-1: #0d9f6e;
-  --chart-2: #0891b2;
-  --chart-3: #f5a623;
-  --chart-4: #059669;
-  --chart-5: #047857;
+  --ring: #6E8CFF;
+  --chart-1: #6E8CFF;
+  --chart-2: #4DE0B0;
+  --chart-3: #F5B55A;
+  --chart-4: #9FB3FF;
+  --chart-5: #F4EDE3;
 
-  /* Marketing showcase surfaces (the art-directed public hero + device mock).
-     Light renders clean porcelain; .dark keeps a deep graphite-green. */
-  --marketing-surface: #ffffff;
-  --marketing-surface-2: #f1f7f4;
-  --marketing-deep: #f9fbfa;
+  /* Marketing (soft porcelain for public surfaces) */
+  --marketing-surface: #F8F4ED;
+  --marketing-surface-2: #F0E9DE;
+  --marketing-deep: #EDE5D9;
 
-  /* Theme-aware "white": utilities like text-white / border-white/10 / bg-white/5
-     resolve to ink on light (so the ~750 dark-built utilities read correctly)
-     and to true white in dark. */
-  --white: #0a0f0d;
+  /* Theme-aware white for legacy utilities */
+  --white: #ffffff;
 
-  --radius: 12px;
+  /* Typography (editorial + precise) */
   --font-display: "Fraunces Variable", "Plus Jakarta Sans", Georgia, serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Radius (generous, signature) */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+  --radius-3xl: 48px;
 }
 
 .dark {
+  /* GROK-FLAIR Dark is now the sovereign default on :root.
+     This block is kept for any explicit .dark consumers but inherits the new tokens. */
   color-scheme: dark;
-
-  /* ── Signal Night (DARK) ───────────────────────────────────────────────────
-     Deep graphite-green canvas, brightened Emerald, luminous Cyan. */
-  --canvas: #080b0a;
-  --canvas-deep: #050706;
-  --panel: #101513;
-  --panel-2: #151b18;
-  --raised: #19201c;
-  --velvet: #121815;
-
-  --text: #eef3f0;
-  --text-2: #99a59f;
-  --text-3: #5e6a64;
-
-  --iris: #34d399;
-  --iris-bright: #6ee7b7;
-  --iris-deep: #10b981;
-  --teal: #22d3ee;
-  --teal-bright: #67e8f9;
-  --teal-deep: #0891b2;
-  --mint: #34d399;
-  --amber: #f7b955;
-  --amber-solid: #f7b955;
-  --rose: #ff5a5f;
-
-  --paper: #eef3f0;
-  --paper-deep: #050706;
-  --paper-soft: #121815;
-  --ink: #080b0a;
-  --ink-soft: #151b18;
-  --brand: #34d399;
-  --brand-deep: #10b981;
-  --brand-bright: #6ee7b7;
-
-  --background: #080b0a;
-  --foreground: #eef3f0;
-  --card: #101513;
-  --card-foreground: #eef3f0;
-  --popover: #151b18;
-  --popover-foreground: #eef3f0;
-  --primary: #34d399;
-  --primary-foreground: #04130d;
-  --secondary: #151b18;
-  --secondary-foreground: #eef3f0;
-  --muted: #151b18;
-  --muted-foreground: #99a59f;
-  --accent: #19201c;
-  --accent-foreground: #eef3f0;
-  --destructive: #ff5a5f;
-  --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.09);
-  --input: rgba(255, 255, 255, 0.12);
-  --input-background: #151b18;
-  --switch-background: #19201c;
-  --ring: #34d399;
-  --chart-1: #34d399;
-  --chart-2: #22d3ee;
-  --chart-3: #f7b955;
-  --chart-4: #6ee7b7;
-  --chart-5: #10b981;
-
-  --marketing-surface: #0c1110;
-  --marketing-surface-2: #121a17;
-  --marketing-deep: #090f0d;
-
-  --white: #ffffff;
 }
 
 @theme inline {
@@ -206,22 +140,20 @@
   --color-iris: var(--iris);
   --color-iris-bright: var(--iris-bright);
   --color-iris-deep: var(--iris-deep);
-  --color-teal: var(--teal);
-  --color-teal-bright: var(--teal-bright);
-  --color-teal-deep: var(--teal-deep);
+  --color-cream: var(--cream);
+  --color-cream-soft: var(--cream-soft);
   --color-mint: var(--mint);
   --color-amber: var(--amber);
-  --color-amber-solid: var(--amber-solid);
   --color-rose: var(--rose);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
-  --radius-3xl: 26px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
+  --radius-3xl: 48px;
 }
 
 @layer base {
