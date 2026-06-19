@@ -2,17 +2,19 @@ import { ClerkProvider } from "@clerk/react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import ClerkSignOutRegistrar from "./ClerkSignOutRegistrar";
+import { isClerkAuthEnabled } from "../lib/auth-provider";
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
+/** @deprecated Use isClerkAuthEnabled() — respects VITE_AUTH_PROVIDER. */
 export function isClerkClientConfigured(): boolean {
-  return Boolean(publishableKey?.trim());
+  return isClerkAuthEnabled();
 }
 
 export default function WirelineClerkProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
-  if (!isClerkClientConfigured()) {
+  if (!isClerkAuthEnabled() || !publishableKey?.trim()) {
     return <>{children}</>;
   }
 

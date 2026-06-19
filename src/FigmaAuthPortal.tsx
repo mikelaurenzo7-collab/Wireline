@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { SignIn, SignUp } from "@clerk/react";
 import { Building2, Check, User } from "lucide-react";
 
+import AuthPortal from "./components/AuthPortal";
 import {
   captureSignupIntentFromLocation,
   persistSignupIntent,
@@ -11,7 +12,7 @@ import {
   type SignupIntent,
 } from "./lib/signup-intent";
 import { wirelineClerkAppearance } from "./lib/clerk-appearance";
-import { isClerkClientConfigured } from "./components/WirelineClerkProvider";
+import { isClerkAuthEnabled } from "./lib/auth-provider";
 
 type WorkspaceMode = "personal" | "business";
 
@@ -189,14 +190,15 @@ function WorkspaceSelector({
 function ClerkNotConfigured() {
   return (
     <div className="border border-destructive/25 bg-destructive/10 p-4 text-sm text-destructive">
-      Clerk is not configured. Set <code className="font-mono">VITE_CLERK_PUBLISHABLE_KEY</code> and{" "}
-      <code className="font-mono">CLERK_SECRET_KEY</code> in your environment, then enable social
-      providers in the Clerk dashboard.
+      Clerk is not configured. Set <code className="font-mono">VITE_AUTH_PROVIDER=clerk</code>,{" "}
+      <code className="font-mono">VITE_CLERK_PUBLISHABLE_KEY</code>, and{" "}
+      <code className="font-mono">CLERK_SECRET_KEY</code>, then enable social providers in the Clerk
+      dashboard.
     </div>
   );
 }
 
-export default function FigmaAuthPortal() {
+function FigmaClerkAuthPortal() {
   const location = useLocation();
   const capturedIntent = useMemo(
     () => captureSignupIntentFromLocation(),
@@ -263,26 +265,28 @@ export default function FigmaAuthPortal() {
           </div>
         )}
 
-        {!isClerkClientConfigured() ? (
-          <ClerkNotConfigured />
-        ) : isSignup ? (
-          <SignUp
-            routing="path"
-            path="/signup"
-            signInUrl="/signin"
-            forceRedirectUrl={clerkRedirect}
-            fallbackRedirectUrl={clerkRedirect}
-            appearance={wirelineClerkAppearance}
-          />
+        {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.trim() ? (
+          isSignup ? (
+            <SignUp
+              routing="path"
+              path="/signup"
+              signInUrl="/signin"
+              forceRedirectUrl={clerkRedirect}
+              fallbackRedirectUrl={clerkRedirect}
+              appearance={wirelineClerkAppearance}
+            />
+          ) : (
+            <SignIn
+              routing="path"
+              path="/signin"
+              signUpUrl="/signup"
+              forceRedirectUrl={clerkRedirect}
+              fallbackRedirectUrl={clerkRedirect}
+              appearance={wirelineClerkAppearance}
+            />
+          )
         ) : (
-          <SignIn
-            routing="path"
-            path="/signin"
-            signUpUrl="/signup"
-            forceRedirectUrl={clerkRedirect}
-            fallbackRedirectUrl={clerkRedirect}
-            appearance={wirelineClerkAppearance}
-          />
+          <ClerkNotConfigured />
         )}
       </section>
 
@@ -321,7 +325,14 @@ export default function FigmaAuthPortal() {
   );
 }
 
-/** @deprecated OAuth sign-in complete — Clerk uses /auth/clerk-complete */
+export default function FigmaAuthPortal() {
+  if (!isClerkAuthEnabled()) {
+    return <AuthPortal />;
+  }
+  return <FigmaClerkAuthPortal />;
+}
+
+/** @deprecated OAuth sign-in complete — native auth uses /auth/oauth-complete */
 export function FigmaOAuthComplete() {
   return null;
 }

@@ -44,6 +44,8 @@ import {
 import FigmaAuthPortal from "./FigmaAuthPortal";
 import AdminSettings from "./components/AdminSettings";
 import ClerkAuthComplete from "./components/ClerkAuthComplete";
+import OAuthComplete from "./pages/OAuthComplete";
+import { isClerkAuthEnabled } from "./lib/auth-provider";
 import WirelineClerkProvider from "./components/WirelineClerkProvider";
 import OnboardingSelection from "./components/onboarding/OnboardingSelection";
 import { useAuth } from "./contexts/AuthContext";
@@ -1922,12 +1924,25 @@ export default function FigmaOverhaul() {
         <Route path="/signup/*" element={<FigmaAuthPortal />} />
         <Route path="/signin/*" element={<FigmaAuthPortal />} />
         <Route path="/login" element={<Navigate to="/signin" replace />} />
-        <Route path="/auth" element={<Navigate to="/signin" replace />} />
+        <Route path="/auth" element={<FigmaAuthPortal />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
-        <Route path="/auth/clerk-complete" element={<ClerkAuthComplete />} />
+        <Route
+          path="/auth/clerk-complete"
+          element={isClerkAuthEnabled() ? <ClerkAuthComplete /> : <Navigate to="/signin" replace />}
+        />
         <Route path="/onboarding" element={<RequireAuth><OnboardingSelection /></RequireAuth>} />
-        <Route path="/auth/oauth-complete" element={<Navigate to="/auth/clerk-complete" replace />} />
-        <Route path="/oauth-complete" element={<Navigate to="/auth/clerk-complete" replace />} />
+        <Route
+          path="/auth/oauth-complete"
+          element={
+            isClerkAuthEnabled() ? <Navigate to="/auth/clerk-complete" replace /> : <OAuthComplete />
+          }
+        />
+        <Route
+          path="/oauth-complete"
+          element={
+            isClerkAuthEnabled() ? <Navigate to="/auth/clerk-complete" replace /> : <OAuthComplete />
+          }
+        />
         <Route path="/app/personal" element={<PersonalRoute tab="overview" />} />
         <Route path="/app/personal/assistant" element={<PersonalRoute tab="assistant" />} />
         <Route path="/app/personal/intents" element={<PersonalRoute tab="intents" />} />

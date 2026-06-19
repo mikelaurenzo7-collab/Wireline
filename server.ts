@@ -113,6 +113,7 @@ import integrationsCertRouter from "./src/routes/integrations-cert-routes";
 import learningRouter from "./src/routes/learning-routes";
 import teamRouter from "./src/routes/team-routes";
 import authRouter from "./src/routes/auth-routes";
+import authOAuthRouter from "./src/routes/auth-oauth-routes";
 
 // Startup env validation
 validateStartupEnv();
@@ -332,6 +333,7 @@ app.use(oauthRouter);
 app.use(metaWebhookRouter);
 app.use(publicStatsRouter);
 app.use(teamRouter);
+app.use(authOAuthRouter);
 app.use(authRouter);
 
 // 404 API catch-all (Must be mounted after all valid API routes and before global error handler)
