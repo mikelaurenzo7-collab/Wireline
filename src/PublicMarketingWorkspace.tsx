@@ -46,7 +46,7 @@ const tiers: Tier[] = [
     items: ["Call screening", "Spam guard", "Call summaries", "Siri & widget triggers"],
   },
   {
-    name: "Personal+",
+    name: "Plus",
     price: "$19",
     plan: "personal-plus",
     note: "For heavier personal use",
@@ -59,37 +59,32 @@ const tiers: Tier[] = [
     ],
   },
   {
-    name: "Business Starter",
-    price: "$99",
+    name: "Studio",
+    price: "$29",
     plan: "business-starter",
-    note: "For your first business line",
-    text: "Launch one serious AI front desk — no call-center stack, no forcing your team into complicated software.",
+    note: "Best value for customization",
+    text: "Unlock the full Studio for personal, side-project, or business workflows — without a complicated call-center stack.",
     items: [
-      "2 business assistants",
-      "300 voice minutes",
-      "2 business numbers",
+      "4 configurable agents",
+      "500 voice minutes",
+      "2 dedicated numbers",
       "Studio + Training",
     ],
     badge: "Best entry",
   },
   {
-    name: "Business Growth",
-    price: "$249",
+    name: "Operator",
+    price: "$59",
     plan: "starter",
-    note: "For growing front desks",
-    text: "A full AI phone team with Studio, Training, Live Ops, analytics, integrations, and model selection.",
-    items: [
-      "5 assistants",
-      "1,000 voice minutes",
-      "Live Ops + analytics",
-      "CRM & calendar routing",
-    ],
+    note: "For heavier call volume",
+    text: "More agents, minutes, live review, analytics, and workflows for people or teams.",
+    items: ["8 agents", "1,200 voice minutes", "Live Ops + analytics", "CRM & calendar routing"],
     featured: true,
     badge: "Most popular",
   },
   {
-    name: "Scale",
-    price: "$699+",
+    name: "Custom",
+    price: "Custom",
     plan: "scale",
     note: "For high-volume teams",
     text: "Advanced approvals, webhooks, audit logs, custom routing, and hands-on launch support.",
@@ -502,7 +497,7 @@ function Hero() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
             <Sparkles size={13} className="text-brand" />
-            <Mono className="text-foreground">Personal + Business · One platform</Mono>
+            <Mono className="text-foreground">Personal first · Business-ready</Mono>
           </div>
           <h1 className="mt-7 font-display text-[clamp(2.75rem,6vw,5.25rem)] font-medium leading-[0.98] tracking-[-0.045em] text-balance">
             Your phone,
@@ -607,7 +602,7 @@ function TwoWorlds() {
                 For your business
               </span>
               <h3 className="font-display text-2xl font-medium tracking-[-0.02em]">
-                Business Wireline Assistants
+                Configurable Wireline Agents
               </h3>
             </div>
           </div>
@@ -723,7 +718,7 @@ function Pricing() {
     <section className="mx-auto w-full max-w-[1280px] px-5 py-20 sm:px-8 lg:py-28">
       <SectionHeader
         eyebrow="Pricing"
-        title="Start at $9. Scale when you're ready."
+        title="Start at $9. Custom when you're ready."
         text="Personal plans for individuals, business plans for teams. No call-center contract, no setup fees."
         align="center"
       />

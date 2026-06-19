@@ -34,7 +34,7 @@
     "vapi:patch-webhooks": "node scripts/patch-vapi-prod-webhooks.mjs",
     "vapi:patch-flux-ab": "node scripts/patch-vapi-showcase-flux-ab.mjs",
     "vapi:sync-showcase": "tsx scripts/sync-wireline-showcase.mts",
-    "docs:check": "node scripts/check-readme-pricing.mjs",
+    "docs:check": "node scripts/check-readme-pricing.mjs && node scripts/check-positioning-drift.mjs",
     "csp:check": "node scripts/check-csp-drift.mjs && node scripts/csp-inventory.mjs",
     "csp:sync": "node scripts/check-csp-drift.mjs --write",
     "csp:inventory:update": "node scripts/csp-inventory.mjs --update",
@@ -58,7 +58,8 @@
     "dogfood:marketing": "node scripts/dogfood-marketing.mjs",
     "dogfood:director": "node scripts/dogfood-director.mjs",
     "analyze": "VISUALIZE=1 vite build",
-    "tenant-insert:check": "node scripts/check-user-id-inserts.mjs"
+    "tenant-insert:check": "node scripts/check-user-id-inserts.mjs",
+    "positioning:check": "node scripts/check-positioning-drift.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

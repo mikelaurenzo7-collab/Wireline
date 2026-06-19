@@ -1,157 +1,109 @@
 # Wireline Marketing Kit
 
-**Last updated:** May 2026
+**Last updated:** June 2026
 
-Assets, copy, and brand guidelines for trywireline.com marketing, social,
-paid ads, sales decks, and partner materials.
+Approved marketing, social, sales, and partner copy for Wireline's consumer-first call concierge positioning.
 
 ---
 
 ## Brand Identity
 
 | Element | Value |
-|---------|-------|
+| --- | --- |
 | **Name** | Wireline |
-| **Tagline** | AI voice + email agents for every customer conversation. |
-| **Positioning** | The horizontal AI agent platform for businesses that pick up the phone. |
-| **Brand voice** | Confident, direct, warm. Never corporate-speak. |
-| **Primary color** | `#4F1E7B` (brand purple) |
-| **Secondary** | `#1A1A2E` (deep navy) |
-| **Accent** | `#22C55E` (success green) |
-| **Typeface** | Geist (UI), Instrument Serif (display), JetBrains Mono (code) |
+| **Tagline** | Your personal AI call concierge. |
+| **Positioning** | A consumer-first agent that handles everyday phone calls and can be configured for business workflows. |
+| **Brand voice** | Direct, calm, useful, warm. Never corporate-speak. |
+| **Primary color** | `#7C3AED` (violet) |
+| **Canvas** | `#F3EFFA` (lavender) |
+| **Text/depth** | `#1E1B2E` (charcoal) |
+| **Typeface** | Plus Jakarta Sans (UI), Fraunces (display), JetBrains Mono (labels) |
 
-## Key Differentiators (use in all copy)
+## Key Differentiators
 
-1. **Never fabricates actions** — hard rule: the agent never claims it did
-   something it doesn't have a tool for. Competitors hallucinate actions.
-2. **One platform, every channel** — voice inbound + outbound, SMS, email
-   from a single console. Competitors are voice-only.
-3. **Personality that holds** — three vibes (warm, playful, authoritative),
-   one voice per agent, consistent for the entire call. No tone-lurching.
-4. **Sub-second response** — 700–900 ms perceived dead air. Under the
-   "did they hang up?" threshold.
-5. **Supervisor cockpit** — listen live, see transcripts in real-time,
-   pause and inject corrections mid-call.
+1. **Everyday call delegation** — pharmacy, doctor, school, airline, landlord, restaurant, or support line.
+2. **One configurable console** — use the same Agent Studio for personal errands, side projects, and business workflows.
+3. **Never fabricates actions** — if the agent lacks a tool, it takes a message, asks for confirmation, or escalates.
+4. **Fast handoff-ready voice** — short, steady responses that do not feel like an IVR.
+5. **Capacity scales cleanly** — start at $7, upgrade only for more agents, minutes, review tools, or custom business needs.
 
-## Live Demo Lines (always current)
+## Live Demo Lines
 
-| Agent | Vibe | Number | Vertical |
-|-------|------|--------|----------|
-| Sarah | warm | (630) 642-5661 | General support |
-| Liam | playful | (630) 581-1834 | Sales & plans |
+| Agent | Vibe | Number | Plays |
+| --- | --- | --- | --- |
+| Sarah | warm | (630) 642-5661 | Everyday support |
+| Liam | playful | (630) 581-1834 | Plans and setup |
 | Tyler | warm | (564) 238-9455 | Technical support |
-| Maya | playful | (630) 642-5927 | Onboarding & demos |
-| Devon | warm | (207) 593-5155 | Billing |
-| Priya | warm | (572) 726-9365 | Customer success |
-| Marcus | authoritative | (617) 313-4469 | Medical intake (demo) |
-| Aisha | playful | (973) 363-8874 | Real estate (demo) |
-| Elena | authoritative | (904) 460-1596 | Insurance claims (demo) |
-| Jake | playful | (469) 257-1581 | Outbound SDR (demo) |
+| Maya | playful | (630) 642-5927 | Onboarding and demos |
 
-**CTA:** "Call any number right now — no signup, no card, just talk."
+**CTA:** "Call a demo agent now — no signup, no card."
 
-## Pricing (mirrors plan-catalog.ts — CI enforces sync)
+## Pricing
 
 | Tier | Price | Agents | Minutes | Overage |
-|------|-------|--------|---------|---------|
-| Personal | $9/mo | 1 | 30 | $0.25/min |
-| Personal+ | $19/mo | 2 | 100 | $0.22/min |
-| Business Starter | $99/mo | 2 | 300 | $0.20/min |
-| Business Growth | $249/mo | 5 | 1,000 | $0.18/min |
-| Scale | $699/mo | 10 | 3,000 | $0.16/min |
-| Enterprise | Custom | 25+ | 15,000+ | $0.14/min |
+| --- | --- | --- | --- | --- |
+| Everyday | $7/mo | 1 | 60 | $0.20/min |
+| Plus | $15/mo | 2 | 180 | $0.18/min |
+| Studio | $29/mo | 4 | 500 | $0.16/min |
+| Operator | $59/mo | 8 | 1,200 | $0.14/min |
+| Custom | Talk to sales | 25+ | 5,000+ | Custom |
 
 ## Social Copy Templates
 
-### LinkedIn (founder-led)
+### LinkedIn / founder-led
 
-> We built Wireline because every voice AI in 2026 still sounds like a
-> corporate bot afraid to be wrong.
+> Wireline started with a simple question: why am I still making routine calls myself?
 >
-> Our agents hold one personality for the entire call. They never
-> fabricate an action they don't have a tool for. And response time
-> lands at 700ms — not 2 seconds of dead air.
+> Ask Wireline to call the pharmacy, doctor, restaurant, school, airline, landlord, or support line. It calls, waits, asks, summarizes, and tells you what happened.
 >
-> Call (630) 642-5661 right now and hear for yourself. No signup.
+> If you run a business, use the same Agent Studio to configure hours, scripts, routing, and handoffs.
 >
-> #VoiceAI #CustomerExperience #StartupLife
+> Start with one agent for $7/month.
 
-### Twitter/X (hook → proof → CTA)
+### X / short hook
 
-> Most AI phone agents sound like a corporate IVR trained on ChatGPT.
+> "Hey Siri, have Wireline call the pharmacy."
 >
-> Wireline agents hold one personality, respond in <1 second, and never
-> pretend they booked something they can't.
+> That's the product. Your AI call concierge handles routine phone work and reports back.
 >
-> Call (630) 642-5661. No signup. Just talk.
+> Starts at $7/month.
 
-### Instagram/TikTok Reel Script (15s)
+### Reel script
 
-```
-[0–3s] "Call this number. Right now."
-[3–7s] Show dialing (630) 642-5661, agent picks up instantly
-[7–12s] Agent responds naturally, handles a question
-[12–15s] "AI agents that actually sound human. trywireline.com"
+```text
+[0–3s] "Say: Hey Siri, have Wireline call the pharmacy."
+[3–8s] Show Wireline placing the call and waiting.
+[8–12s] Show a short result: "Prescription ready after 3pm."
+[12–15s] "Routine calls, handled. trywireline.com"
 ```
 
-## Objection Handling (for sales deck / landing page)
+## Objection Handling
 
 | Objection | Response |
-|-----------|----------|
-| "Will it sound robotic?" | Call our demo line. Sub-second response, natural cadence, consistent personality. |
-| "What if it hallucinates?" | Hard rule: never claims an action without a tool. Takes a message or escalates instead. |
-| "We already have a phone system" | Wireline layers on top. Keep your existing number — we port or forward. |
-| "Is it secure?" | SOC 2-ready architecture. TLS 1.3, encrypted secrets, full audit log, data retention controls. |
-| "Can we try before we buy?" | 14-day free trial, no card. Or call any demo agent right now. |
+| --- | --- |
+| "Is this only for businesses?" | No. Wireline is consumer-first. Business setup is just a configuration layer. |
+| "Will it sound robotic?" | Call a demo line. The agent speaks briefly, steadily, and hands off when needed. |
+| "What if it makes something up?" | It cannot claim an action without a tool. It asks, summarizes, or escalates. |
+| "Can I use it for my business?" | Yes. Studio and Operator add more agents, minutes, routing, review, and integrations. |
+| "Can I try before I commit?" | Start with one agent; upgrade only when your call volume proves it. |
 
 ## Screenshot Generation
 
 ```bash
-# Regenerate all marketing screenshots
 npm run marketing:kit
 
-# With production data (requires demo credentials)
 E2E_BASE_URL="https://trywireline.com" \
   DEMO_EMAIL="composer.demo@trywireline.com" \
   DEMO_PASSWORD="$DEMO_PASSWORD" \
   npm run marketing:kit
 ```
 
-## Verticals (landing page wedges)
-
-Each has a dedicated `/for/<slug>` page with vertical-specific hero, pain
-points, sample script, and CTA:
-
-- `/for/home-services` — HVAC, plumbing, electrical
-- `/for/medical` — patient intake, appointment scheduling
-- `/for/legal` — client intake, consultation booking
-- `/for/real-estate` — showing scheduling, lead qualification
-- `/for/insurance` — claims intake, policy questions
-- `/for/restaurants` — reservations, takeout orders
-- `/for/sales` — outbound SDR, lead qualification
-- `/for/personal` — personal assistant, concierge
-
 ## File Structure
 
-```
+```text
 marketing-kit/
-├── README.md          ← this file
-├── brand/             ← logos, color swatches, font specimens
-├── copy/              ← long-form copy blocks, email sequences
-└── screenshots/       ← regenerated via `npm run marketing:kit`
+├── README.md
+├── brand/
+├── copy/
+└── screenshots/
 ```
-
-## Brand Assets (in /public)
-
-- `wireline-lockup.svg` / `wireline-lockup-white.svg`
-- `wireline-wordmark.svg` / `wireline-wordmark-white.svg`
-- `wireline-icon.svg` / `wireline-icon-1024.png` / `wireline-icon-512.png`
-- `og-image.svg`
-
-## Usage Rules
-
-1. Never modify the logomark proportions
-2. Minimum clear space = 1× the height of the "W" mark
-3. On dark backgrounds, use `-white` variants
-4. Brand purple `#4F1E7B` is the primary accent — don't replace with blue
-5. All social posts should include a live phone number as CTA

@@ -1,63 +1,52 @@
 # Wireline Brand Guidelines
 
+Wireline is a consumer-first AI call concierge. Business workflows are supported through configuration, not a separate brand story.
+
 ## Colors
 
 | Name | Hex | Usage |
-|------|-----|-------|
-| Brand Purple | `#4F1E7B` | Primary accent, CTAs, links |
-| Deep Navy | `#1A1A2E` | Backgrounds, dark mode base |
-| Surface | `#0F0F23` | Card backgrounds, panels |
-| Success Green | `#22C55E` | Positive states, live indicators |
-| Warning Amber | `#F59E0B` | Caution states |
-| Error Red | `#EF4444` | Error states, destructive actions |
-| Text Primary | `#F1F5F9` | Body text on dark backgrounds |
-| Text Muted | `#94A3B8` | Secondary text, labels |
+| --- | --- | --- |
+| Lavender | `#F3EFFA` | Primary canvas |
+| Violet | `#7C3AED` | CTAs, focus, active states |
+| Charcoal | `#1E1B2E` | Text, depth, dark console canvas |
+| Lavender Bright | `#FAF8FF` | Cards and raised surfaces |
+| Destructive Red | `#DC2626` | Errors and destructive actions only |
 
 ## Typography
 
-| Typeface | Weight | Usage |
-|----------|--------|-------|
-| Geist | 400–700 | UI text, body copy |
-| Instrument Serif | 400 | Display headings, hero text |
-| JetBrains Mono | 400 | Code, technical values, phone numbers |
-
-## Logo Usage
-
-- **Lockup** (icon + wordmark): Use in headers, social profiles, press
-- **Wordmark only**: Use when the icon context is already established
-- **Icon only**: Use as favicon, app icon, or in tight spaces (≥32px)
-- **White variants**: Use on brand purple or dark navy backgrounds
-- **Minimum size**: Icon 24px, lockup 120px wide
+| Typeface | Usage |
+| --- | --- |
+| Plus Jakarta Sans | UI and body copy |
+| Fraunces | Major display titles only |
+| JetBrains Mono | Labels, small metadata, technical values |
 
 ## Voice & Tone
 
-### Do:
-- Be direct and confident ("Wireline picks up the call")
-- Use specific numbers ("700ms response time", "10 live agents")
-- Acknowledge limitations honestly ("SOC 2 in progress")
-- Lead with the demo ("Call this number right now")
+### Do
 
-### Don't:
-- Use corporate jargon ("leverage", "synergize", "paradigm")
-- Make unsubstantiated claims ("best in class" without proof)
-- Sound apologetic ("we're just a startup")
-- Hide behind passive voice ("mistakes were made")
+- Lead with the job: "Call the pharmacy," "wait on hold," "report back."
+- Keep copy short and concrete.
+- Say business support is configuration, not a separate product.
+- Be honest about limits and handoffs.
 
-## Photography & Imagery
+### Don't
 
-- No stock photos of people on phones
-- Use product screenshots (real UI, not mockups)
-- Dark-mode aesthetic throughout
-- Motion is subtle and purposeful (Framer Motion library)
+- Lead with "platform for businesses."
+- Use enterprise jargon for consumer surfaces.
+- Stack subtitles, paragraphs, and decorative claims.
+- Invent a new palette or visual mode.
 
-## Competitive Positioning
+## Positioning
 
-Wireline is NOT:
-- A chatbot company (we do voice-first, multi-channel)
-- An API-only developer tool (we're a full platform with UI)
-- A vertical-only solution (horizontal platform, vertical onboarding)
+Wireline is not:
 
-Wireline IS:
-- The full-stack AI agent platform for businesses
-- Voice + SMS + Email in one console
-- The only platform where agents never fabricate actions
+- A business-only receptionist product.
+- A chatbot.
+- An API-only developer tool.
+- A vertical-only solution.
+
+Wireline is:
+
+- A personal AI call concierge.
+- One configurable console for everyday life, side projects, and business workflows.
+- A product where agents never fabricate actions.

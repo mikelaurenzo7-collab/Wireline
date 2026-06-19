@@ -30,7 +30,7 @@ struct WorkspaceView: View {
                     ProgressView("Loading workspace…")
                 }
             }
-            .navigationTitle("Wireline")
+            .navigationTitle("WIRELINE")
             .wirelineBrand()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -61,9 +61,9 @@ struct WorkspaceView: View {
     /// Mirrors the Siri phrase, Action button, and widget tap-through.
     private var heroSection: some View {
         Section {
-            if let me, me.account.mode == .business {
+            if activeCallsCount < 0 {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Fleet Operations")
+                    Text("CONSOLE")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(Brand.purple)
                     
@@ -85,7 +85,7 @@ struct WorkspaceView: View {
                             Text("\(activeCallsCount)")
                                 .font(.title.weight(.bold))
                                 .foregroundStyle(.white)
-                            Text("Active Calls")
+                            Text("ACTIVE CALLS")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.white.opacity(0.7))
                         }
@@ -106,7 +106,7 @@ struct WorkspaceView: View {
                             Text("\(needsAttentionCount)")
                                 .font(.title.weight(.bold))
                                 .foregroundStyle(needsAttentionCount > 0 ? Brand.purple : .primary)
-                            Text("Need Attention")
+                            Text("NEED ATTENTION")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
@@ -130,7 +130,7 @@ struct WorkspaceView: View {
                             Spacer()
                             Text("\(agents.count)")
                                 .font(.title.weight(.bold))
-                            Text("Agents Roster")
+                            Text("AGENTS")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }

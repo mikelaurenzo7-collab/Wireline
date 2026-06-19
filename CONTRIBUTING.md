@@ -126,7 +126,7 @@ All migrations use `IF NOT EXISTS` — safe to re-run.
 ### Styling
 
 - Read `DESIGN.md` before changing UI — Lavender Noir (marketing) + `.wl-console-surface` (app), shadcn primitives, ratchet rules
-- Director / mission-control surfaces: use `WL_DIRECTOR_CLASSES` and shared copy from `wireline-director-design.ts`; run `npm run test:design` when the contract changes
+- Director / mission-control surfaces: use `WL_DIRECTOR_CLASSES` and shared copy from `wireline-director-design.ts`; run `npm run lint` and focused tests when the contract changes
 - Tailwind CSS 4 — no raw CSS except `src/index.css` globals
 - All viewports equal: design at 390px, but treat laptop and desktop as first-class — escalate layouts past `md:` into `lg:`/`xl:`/`2xl:` so 1440px+ screens never render like tablets
 - Touch targets: minimum 44×44px hit area on mobile, achieved via invisible `::after` pseudo-elements or transparent padding — NOT by inflating visual container size. Visual heights stay compact (36px inputs, 32px secondary buttons, 20px icons).

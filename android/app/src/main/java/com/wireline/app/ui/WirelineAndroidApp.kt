@@ -76,9 +76,9 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 
     Scaffold(
         containerColor = Brand.Canvas,
-        topBar = { WirelineTopBar(state.me?.account?.businessName ?: "Wireline") },
+        topBar = { WirelineTopBar("Wireline") },
         floatingActionButton = {
-            if (tab == Tab.Home && state.me?.account?.mode == "personal") {
+            if (tab == Tab.Home) {
                 FloatingActionButton(
                     onClick = { showAskWireline = true },
                     containerColor = Brand.Violet,
@@ -96,20 +96,18 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
                     label = { Text("Home") },
                 )
                 
-                if (state.me?.account?.mode != "personal") {
-                    NavigationBarItem(
-                        selected = tab == Tab.Calls,
-                        onClick = { tab = Tab.Calls },
-                        icon = { Icon(Icons.Default.Call, contentDescription = null) },
-                        label = { Text("Calls") },
-                    )
-                    NavigationBarItem(
-                        selected = tab == Tab.Wallet,
-                        onClick = { tab = Tab.Wallet },
-                        icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
-                        label = { Text("Wallet") },
-                    )
-                }
+                NavigationBarItem(
+                    selected = tab == Tab.Calls,
+                    onClick = { tab = Tab.Calls },
+                    icon = { Icon(Icons.Default.Call, contentDescription = null) },
+                    label = { Text("Calls") },
+                )
+                NavigationBarItem(
+                    selected = tab == Tab.Wallet,
+                    onClick = { tab = Tab.Wallet },
+                    icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
+                    label = { Text("Wallet") },
+                )
 
                 NavigationBarItem(
                     selected = tab == Tab.Settings,
@@ -122,8 +120,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     ) { padding ->
         when (tab) {
             Tab.Home -> HomeScreen(padding, state, model)
-            Tab.Calls -> if (state.me?.account?.mode != "personal") CallsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall) else HomeScreen(padding, state, model)
-            Tab.Wallet -> if (state.me?.account?.mode != "personal") WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty()) else HomeScreen(padding, state, model)
+            Tab.Calls -> CallsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
+            Tab.Wallet -> WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
             Tab.Settings -> SettingsScreen(padding, state, model)
         }
     }
@@ -160,11 +158,11 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
             .background(Brand.Canvas)
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.Start,
     ) {
-        Medallion(Icons.Default.PhoneInTalk, size = 72.dp)
+        Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
-        Text("Wireline", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = Brand.Text)
+        Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
         Text(
             "Your AI agents, on every line.",
             style = MaterialTheme.typography.bodyMedium,
@@ -221,7 +219,6 @@ private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: Wi
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
     var showAsk by rememberSaveable { mutableStateOf(false) }
     val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
-    val isPersonal = state.me?.account?.mode == "personal"
     val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
 
     LazyColumn(
@@ -232,32 +229,30 @@ private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: Wi
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item { AskWirelineHeroCard(onClick = { showAsk = true }) }
+
         item {
-            if (isPersonal) {
-                AskWirelineHeroCard(onClick = { showAsk = true })
-            } else {
-                LavenderCard {
-                    Text("Fleet Operations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Violet)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        FleetStatCard(
-                            value = "${state.activeCalls.size}",
-                            label = "Active Calls",
-                            highlighted = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        FleetStatCard(
-                            value = "$followUps",
-                            label = "Need Attention",
-                            highlighted = followUps > 0,
-                            modifier = Modifier.weight(1f),
-                        )
-                        FleetStatCard(
-                            value = "${state.agents.size}",
-                            label = "Agents",
-                            highlighted = false,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+            LavenderCard {
+                Text("CONSOLE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Violet)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    FleetStatCard(
+                        value = "${state.activeCalls.size}",
+                        label = "LIVE CALLS",
+                        highlighted = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    FleetStatCard(
+                        value = "$followUps",
+                        label = "FOLLOW UPS",
+                        highlighted = followUps > 0,
+                        modifier = Modifier.weight(1f),
+                    )
+                    FleetStatCard(
+                        value = "${state.agents.size}",
+                        label = "AGENTS",
+                        highlighted = false,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -266,7 +261,7 @@ private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: Wi
             item {
                 LavenderCard {
                     Text(
-                        me.account.businessName ?: me.user.fullName ?: me.user.email,
+                        me.user.fullName ?: me.account.businessName ?: me.user.email,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Brand.Text,
@@ -282,12 +277,12 @@ private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: Wi
 
         item {
             LavenderCard {
-                Text("Outbound", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                Text("PLACE A CALL", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
                 AgentChips(state.agents, selectedAgent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(
                     value = outboundNumber,
                     onValueChange = { outboundNumber = it },
-                    label = { Text("Customer number") },
+                    label = { Text("Phone number, contact, or business") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(Brand.RadiusMd),

@@ -32,7 +32,7 @@ const indexHtml = readFileSync(resolve(repoRoot, "index.html"), "utf8");
 // we parse the four numeric fields per tier with a forgiving regex against
 // each `{ id: "...", ... }` block. Enterprise's price_usd_monthly: 0 is
 // intentional (contact-sales sentinel); the README renders it as "Custom".
-const planBlocks = [...catalogSource.matchAll(/\{\s*id:\s*"(\w+)"[\s\S]*?\}/g)]
+const planBlocks = [...catalogSource.matchAll(/\{\s*id:\s*"([\w-]+)"[\s\S]*?\}/g)]
   .map((m) => m[0])
   .filter((b) => /price_usd_monthly:/.test(b));
 
@@ -63,7 +63,7 @@ const issues = [];
 for (const plan of plans) {
   const label = plan.label;
   // Match the README's en-US comma formatting for prices >= 1000.
-  const priceStr = `$${plan.price.toLocaleString("en-US")}`;
+  const priceStr = plan.price === 0 ? "Custom" : `$${plan.price.toLocaleString("en-US")}`;
   const overageStr = `$${plan.overage.toFixed(2)}`;
 
   // README column order: Plan | Price | Minutes | Overage | Agents | Extra agent
@@ -78,7 +78,7 @@ for (const plan of plans) {
   }
 
   const jsonLdOffer = new RegExp(
-    `"name":\\s*"${escapeRe(label)}"[\\s\\S]*?"price":\\s*"${plan.price}"[\\s\\S]*?"url":\\s*"https://trywireline.com/get-started\\?plan=${plan.id}`,
+    `"name":\\s*"${escapeRe(label)}"[\\s\\S]*?"price":\\s*"${plan.price}"[\\s\\S]*?"url":\\s*"https://trywireline.com/(?:get-started\\?plan=${plan.id}|contact\\?intent=sales)`,
   );
   if (!jsonLdOffer.test(indexHtml)) {
     issues.push(`❌  index.html JSON-LD offer missing/out of sync for ${label}.`);
@@ -92,12 +92,11 @@ if (!/STRIPE_PLANS\.map/.test(pricingSource)) {
   issues.push("❌  Pricing.tsx must render tiers from STRIPE_PLANS.map()");
 }
 for (const plan of plans) {
-  const priceToken = `$${plan.price.toLocaleString("en-US")}`;
+  const priceToken = plan.price === 0 ? "Custom" : `$${plan.price.toLocaleString("en-US")}`;
   if (!pricingSource.includes(priceToken) && !pricingSource.includes(`$${plan.price}`)) {
     issues.push(`❌  Pricing.tsx missing visible price for ${plan.label}: ${priceToken}`);
   }
 }
-
 
 checkClaudeModelDocs();
 checkStaleMarketingPricing();
@@ -139,9 +138,24 @@ function checkClaudeModelDocs() {
 
   const requiredMentions = [
     { docName: "README.md", source: readme, modelName: voiceModelName, layer: "voice runtime" },
-    { docName: "README.md", source: readme, modelName: reasoningModelName, layer: "reasoning default" },
-    { docName: "ARCHITECTURE.md", source: architecture, modelName: voiceModelName, layer: "voice runtime" },
-    { docName: "ARCHITECTURE.md", source: architecture, modelName: reasoningModelName, layer: "reasoning default" },
+    {
+      docName: "README.md",
+      source: readme,
+      modelName: reasoningModelName,
+      layer: "reasoning default",
+    },
+    {
+      docName: "ARCHITECTURE.md",
+      source: architecture,
+      modelName: voiceModelName,
+      layer: "voice runtime",
+    },
+    {
+      docName: "ARCHITECTURE.md",
+      source: architecture,
+      modelName: reasoningModelName,
+      layer: "reasoning default",
+    },
   ];
 
   for (const mention of requiredMentions) {

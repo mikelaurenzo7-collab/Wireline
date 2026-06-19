@@ -4,19 +4,15 @@ import SwiftUI
 /// sheet presentable from anywhere via the router (Siri / widget / button).
 struct RootTabView: View {
     @EnvironmentObject private var router: WirelineRouter
-    @EnvironmentObject private var auth: AuthService
-
     var body: some View {
         TabView {
             WorkspaceView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
             
-            if auth.accountType == "business" {
-                CallsView()
-                    .tabItem { Label("Calls", systemImage: "phone.fill") }
-                NavigationStack { WalletView() }
-                    .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
-            }
+            CallsView()
+                .tabItem { Label("Calls", systemImage: "phone.fill") }
+            NavigationStack { WalletView() }
+                .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
 
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }

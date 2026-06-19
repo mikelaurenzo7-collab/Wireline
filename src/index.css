@@ -311,7 +311,7 @@
     letter-spacing: -0.028em;
     line-height: 1.08;
     text-wrap: balance;
-    text-transform: none;
+    text-transform: uppercase;
   }
 
   h1 { letter-spacing: -0.034em; line-height: 1.02; }
@@ -321,6 +321,10 @@
   p,
   li {
     text-wrap: pretty;
+  }
+
+  p {
+    max-width: 56ch;
   }
 
   input,
@@ -478,8 +482,26 @@
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.04;
-    text-transform: none;
+    text-transform: uppercase;
     text-wrap: balance;
+  }
+
+  .wl-page-gutter {
+    padding-inline: clamp(1rem, 3vw, 2.5rem);
+  }
+
+  .wl-section-stack {
+    margin-block: clamp(3rem, 7vw, 6rem);
+  }
+
+  .wl-display-scale {
+    font-size: clamp(2.25rem, 7vw, 5.75rem);
+    line-height: 0.98;
+  }
+
+  .wl-body-scale {
+    font-size: clamp(0.98rem, 1.6vw, 1.2rem);
+    line-height: 1.55;
   }
 
   .wl-subtitle {

@@ -53,9 +53,9 @@ object Brand {
     val Border = Color(0x1AF3EFFA) // 10% lavender hairline
     val BorderViolet = Color(0x2E7C3AED) // 18% violet outline
 
-    val RadiusSm = 8.dp
-    val RadiusMd = 14.dp
-    val RadiusLg = 20.dp
+    val RadiusSm = 6.dp
+    val RadiusMd = 10.dp
+    val RadiusLg = 14.dp
 }
 
 private val DarkColors = darkColorScheme(
@@ -124,7 +124,7 @@ fun WirelineTheme(
                 small = RoundedCornerShape(10.dp),
                 medium = RoundedCornerShape(Brand.RadiusMd),
                 large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(28.dp),
+                extraLarge = RoundedCornerShape(18.dp),
             ),
             typography = AppTypography,
             content = content,

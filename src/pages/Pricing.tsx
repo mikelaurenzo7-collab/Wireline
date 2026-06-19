@@ -15,34 +15,34 @@ const PRICING_SECTION_LINKS = [
 ] as const;
 
 const PLAN_BLURBS: Record<string, string> = {
-  personal: "A low-cost personal assistant for light call coverage.",
-  "personal-plus": "Higher monthly personal call volume with calendar and email integrations.",
-  "business-starter": "An entry-point business workspace with 2 AI agents and 300 voice minutes.",
-  starter: "For growing teams running more calls, coaching, workflows, and priority support.",
+  personal: "One agent for everyday calls: pharmacy, doctor, school, restaurant, support line.",
+  "personal-plus": "More minutes and two agents for home, family, side projects, or work.",
+  "business-starter": "The full studio: configure agents for personal or business workflows.",
+  starter: "Higher call volume, more agents, live call review, analytics, and team sharing.",
   scale:
-    "Uncapped operations with 10 AI agents, 3,000 voice minutes, and dedicated success management.",
+    "Talk to sales for special business packages, high volume, security, or custom integrations.",
 };
 
 const VALUE_BULLETS = [
   {
     icon: Phone,
-    title: "Real phone coverage",
-    text: "Every paid plan includes voice minutes and phone number coverage so the agent can actually answer calls.",
+    title: "Real call delegation",
+    text: "Every self-serve plan includes minutes, a phone number, summaries, and a simple console.",
   },
   {
     icon: Sparkles,
-    title: "Model choice",
-    text: "Agent Studio supports low-cost defaults and premium model overrides where your workflow needs them.",
+    title: "Agent Studio",
+    text: "Start with a plain-language setup, then tune instructions, hours, routing, memory, and handoffs.",
   },
   {
     icon: ShieldCheck,
-    title: "Operational controls",
-    text: "Plans scale around routing, users, coaching, call review, escalation rules, and support needs.",
+    title: "Use it however you want",
+    text: "The same agent can call a pharmacy, handle a landlord, or run a small business front desk.",
   },
   {
     icon: Zap,
-    title: "Add-on friendly",
-    text: "Included agents are a bundle, not a hard ceiling. Add more agents as the business grows.",
+    title: "Capacity scales",
+    text: "Upgrade for more agents, minutes, phone numbers, workflows, and review tools.",
   },
 ] as const;
 
@@ -53,9 +53,9 @@ const FAQS = [
       "Yes. Paid plans include a starter bundle and support add-on agents when you need more roles, departments, or workflows.",
   },
   {
-    question: "Is Personal different from Business?",
+    question: "Do I have to choose personal or business?",
     answer:
-      "Yes. Personal is priced for light individual coverage. Business plans include more minutes, numbers, team features, routing, coaching, and operational controls.",
+      "No. Wireline is one console. Use your agents for everyday life, a side project, or a business; higher plans simply add capacity and customization.",
   },
   {
     question: "Do I need a credit card to start?",
@@ -95,7 +95,7 @@ export default function Pricing() {
         name: "How much does Wireline cost?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: `Wireline starts at ${formatUsd(personal.price_usd_monthly)}/month for Personal. Personal+ is $19/month, Business Starter is $99/month, Business Growth is $249/month, and Scale is $699/month.`,
+          text: `Wireline starts at ${formatUsd(personal.price_usd_monthly)}/month for Everyday. Plus is $15/month, Studio is $29/month, Operator is $59/month, and Custom packages are available for specialized business use.`,
         },
       },
       ...FAQS.map((item) => ({
@@ -112,13 +112,13 @@ export default function Pricing() {
       sectionLinks={[...PRICING_SECTION_LINKS]}
     >
       <PageMeta
-        title="Plans & Pricing"
-        description="Wireline pricing starts at $9/month for Personal. Business plans include more agents, voice minutes, phone numbers, routing, coaching, and support."
+        title="Simple Wireline Pricing"
+        description="Wireline starts at $7/month. Use one console to set up agents for everyday calls, side projects, or business workflows."
         path="/pricing"
         structuredData={pricingStructuredData}
       />
 
-      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-12 pt-4 text-center lg:px-12">
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-12 pt-4 text-left lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -137,17 +137,17 @@ export default function Pricing() {
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="font-display text-[clamp(3rem,8vw,5.75rem)] italic leading-[0.98] tracking-[-0.045em] text-foreground text-balance"
         >
-          Choose the plan that fits your call volume.
+          START WITH ONE AGENT. SCALE WHEN YOU NEED TO.
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.6 }}
-          className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-foreground/70"
+          className="mt-6 max-w-2xl text-lg leading-8 text-foreground/70"
         >
-          Start with a small bundle, then add agents as your business grows. Personal stays
-          inexpensive; business plans scale around minutes, routing, teams, coaching, and support.
+          Use Wireline for the pharmacy, the doctor, the landlord, or your business. One console,
+          more agents and minutes only when you need them.
         </motion.p>
       </section>
 
@@ -155,7 +155,7 @@ export default function Pricing() {
         id="pricing-plans"
         className="relative z-10 mx-auto max-w-7xl scroll-mt-28 px-6 pb-20 lg:px-12"
       >
-        <div className="mb-10 flex items-center justify-center gap-3">
+        <div className="mb-10 flex items-center justify-start gap-3">
           {(["month", "year"] as const).map((interval) => (
             <button
               key={interval}
@@ -175,7 +175,8 @@ export default function Pricing() {
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
           {STRIPE_PLANS.map((plan, index) => {
-            const isHighlighted = plan.id === "starter";
+            const isHighlighted = plan.id === "business-starter";
+            const isContactSales = plan.price_usd_monthly === 0;
             return (
               <motion.article
                 key={plan.id}
@@ -188,7 +189,7 @@ export default function Pricing() {
               >
                 {isHighlighted && (
                   <span className="mb-4 inline-flex self-start rounded-full bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand">
-                    Recommended
+                    Best value
                   </span>
                 )}
 
@@ -209,9 +210,9 @@ export default function Pricing() {
                 </div>
 
                 <p className="mb-5 rounded-sm border border-brand/15 bg-brand/8 px-3 py-2 text-xs font-semibold text-brand">
-                  {plan.max_agents} agent{plan.max_agents === 1 ? "" : "s"} ·{" "}
-                  {plan.voice_minutes_monthly.toLocaleString("en-US")} minutes ·{" "}
-                  {plan.included_phone_numbers} number{plan.included_phone_numbers === 1 ? "" : "s"}
+                  {isContactSales
+                    ? "Custom agents · custom minutes · custom support"
+                    : `${plan.max_agents} agent${plan.max_agents === 1 ? "" : "s"} · ${plan.voice_minutes_monthly.toLocaleString("en-US")} minutes · ${plan.included_phone_numbers} number${plan.included_phone_numbers === 1 ? "" : "s"}`}
                 </p>
 
                 <div className="mb-6">
@@ -221,10 +222,11 @@ export default function Pricing() {
                     asChild
                   >
                     <Link
-                      to={signupHref(plan)}
+                      to={isContactSales ? "/contact?intent=sales" : signupHref(plan)}
                       className="inline-flex items-center justify-center gap-2"
                     >
-                      Select plan <ArrowRight className="h-4 w-4" />
+                      {isContactSales ? "Talk to sales" : "Select plan"}{" "}
+                      <ArrowRight className="h-4 w-4" />
                     </Link>
                   </ShadButton>
                 </div>
@@ -250,10 +252,10 @@ export default function Pricing() {
         <div className="mx-auto max-w-6xl px-6 lg:px-12">
           <div className="mx-auto mb-10 max-w-2xl text-center">
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
-              What scales with you
+              WHAT SCALES WITH YOU
             </p>
             <h2 className="mt-3 font-display text-4xl italic text-foreground">
-              The same product, more capacity.
+              ONE PRODUCT, MORE CAPACITY.
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -279,7 +281,7 @@ export default function Pricing() {
             FAQ
           </p>
           <h2 className="mt-3 font-display text-4xl italic text-foreground">
-            Straight answers before checkout.
+            STRAIGHT ANSWERS BEFORE CHECKOUT.
           </h2>
         </div>
         <div className="space-y-4">
@@ -294,11 +296,11 @@ export default function Pricing() {
 
       <section className="relative z-10 mx-auto max-w-3xl px-6 pb-20 pt-4 text-center">
         <h2 className="font-display text-4xl italic text-foreground sm:text-5xl text-balance">
-          Launch your first agent today.
+          LAUNCH YOUR FIRST AGENT TODAY.
         </h2>
         <p className="mx-auto mb-8 mt-4 max-w-xl text-base leading-7 text-foreground/70">
-          Start with the plan that matches your call volume. Upgrade, add agents, or talk to sales
-          when you need more coverage.
+          Start with the everyday plan. Upgrade for more minutes, more agents, or specialized
+          business support when the use case proves itself.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <ShadButton variant="editorial" size="lg" asChild>

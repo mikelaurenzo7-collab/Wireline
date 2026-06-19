@@ -48,7 +48,7 @@ These checks are part of `npm run verify`; keep new security ratchets wired into
 | [`src/lib/wireline-director-design.ts`](../src/lib/wireline-director-design.ts) | Director copy, class names, capability catalog — single source of truth |
 | [`src/lib/wireline-director-design.test.ts`](../src/lib/wireline-director-design.test.ts) | Contract tests for Director design constants |
 | [`.cursor/skills/wireline-design/`](../.cursor/skills/wireline-design/) | Agent skill for UI upgrades (surfaces map, token reference) |
-| `npm run test:design` | Vitest: design audit, shadcn ratchet, director contract |
+| `npm run lint` / `npm run test:run` | Type and behavior checks for UI changes |
 
 Keep **DESIGN.md** (visual system) and **wireline-director-design.ts** (Director mission control) in sync when changing chat chrome, composer, or live-session UI.
 
