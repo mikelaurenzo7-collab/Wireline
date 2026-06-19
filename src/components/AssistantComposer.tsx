@@ -39,8 +39,7 @@ export function simulateAssistantReply(input: string, attachmentCount = 0): stri
   return "Got it. I'll take care of that and let you know the moment it's done.";
 }
 
-const cx = (...parts: Array<string | false | null | undefined>) =>
-  parts.filter(Boolean).join(" ");
+const cx = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
 
 export function AssistantComposer({
   tone = "light",
@@ -197,7 +196,7 @@ export function AssistantComposer({
           addFiles(e.dataTransfer.files);
         }}
         className={cx(
-          "relative flex items-end gap-2 rounded-[18px] border px-2.5 py-2 transition-colors",
+          "relative flex flex-col gap-2 rounded-[18px] border px-2.5 py-2 transition-colors",
           shell,
           dragOver && "border-brand ring-2 ring-brand/40",
         )}
@@ -212,85 +211,6 @@ export function AssistantComposer({
             Drop files to attach
           </div>
         )}
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-haspopup="listbox"
-            aria-expanded={menuOpen}
-            className={cx(
-              "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-              pickerBtn,
-            )}
-          >
-            <Cpu size={14} />
-            <span className="max-w-[120px] truncate">{model.label}</span>
-            <ChevronDown size={13} className={cx("transition-transform", menuOpen && "rotate-180")} />
-          </button>
-          {menuOpen && (
-            <div
-              role="listbox"
-              className={cx(
-                "absolute bottom-11 left-0 z-20 w-60 overflow-hidden rounded-[16px] border p-1.5",
-                menuBg,
-              )}
-            >
-              {models.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  role="option"
-                  aria-selected={m.id === model.id}
-                  onClick={() => {
-                    setModel(m);
-                    setMenuOpen(false);
-                  }}
-                  className={cx(
-                    "flex w-full items-start gap-2 rounded-[12px] px-3 py-2 text-left transition-colors",
-                    m.id === model.id
-                      ? "bg-brand/10"
-                      : dark
-                        ? "hover:bg-white/5"
-                        : "hover:bg-card-deep",
-                  )}
-                >
-                  <Cpu size={14} className="mt-0.5 shrink-0 text-brand" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold">{m.label}</span>
-                    {m.hint && (
-                      <span
-                        className={cx(
-                          "block text-[11px]",
-                          dark ? "text-white/50" : "text-muted-foreground",
-                        )}
-                      >
-                        {m.hint}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          aria-label="Attach a file"
-          className={cx("grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand", iconBtn)}
-        >
-          <Paperclip size={17} />
-        </button>
-        <button
-          type="button"
-          onClick={() => imageRef.current?.click()}
-          aria-label="Attach an image"
-          className={cx("grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand", iconBtn)}
-        >
-          <ImagePlus size={17} />
-        </button>
-
         <textarea
           ref={taRef}
           rows={1}
@@ -304,27 +224,117 @@ export function AssistantComposer({
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           className={cx(
-            "min-h-9 max-h-40 min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-sm outline-none",
+            "min-h-9 max-h-40 w-full resize-none bg-transparent px-1 py-1.5 text-sm outline-none",
             dark ? "placeholder:text-white/45 text-white" : "placeholder:text-muted-foreground/50",
           )}
         />
 
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!canSend}
-          className={cx(
-            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-            canSend
-              ? "bg-brand text-paper hover:brightness-110 active:scale-95 shadow-sm"
-              : dark
-                ? "bg-white/10 text-white/40 cursor-not-allowed"
-                : "bg-ink/10 text-muted-foreground cursor-not-allowed",
-          )}
-        >
-          <span>{sendLabel}</span>
-          <ArrowUp size={15} />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-haspopup="listbox"
+              aria-expanded={menuOpen}
+              className={cx(
+                "inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                pickerBtn,
+              )}
+            >
+              <Cpu size={14} />
+              <span className="max-w-[110px] truncate sm:max-w-[140px]">{model.label}</span>
+              <ChevronDown
+                size={13}
+                className={cx("transition-transform", menuOpen && "rotate-180")}
+              />
+            </button>
+            {menuOpen && (
+              <div
+                role="listbox"
+                className={cx(
+                  "absolute bottom-11 left-0 z-20 w-[min(15rem,calc(100vw-3rem))] overflow-hidden rounded-[16px] border p-1.5",
+                  menuBg,
+                )}
+              >
+                {models.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="option"
+                    aria-selected={m.id === model.id}
+                    onClick={() => {
+                      setModel(m);
+                      setMenuOpen(false);
+                    }}
+                    className={cx(
+                      "flex w-full items-start gap-2 rounded-[12px] px-3 py-2 text-left transition-colors",
+                      m.id === model.id
+                        ? "bg-brand/10"
+                        : dark
+                          ? "hover:bg-white/5"
+                          : "hover:bg-card-deep",
+                    )}
+                  >
+                    <Cpu size={14} className="mt-0.5 shrink-0 text-brand" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{m.label}</span>
+                      {m.hint && (
+                        <span
+                          className={cx(
+                            "block text-[11px]",
+                            dark ? "text-white/50" : "text-muted-foreground",
+                          )}
+                        >
+                          {m.hint}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            aria-label="Attach a file"
+            className={cx(
+              "grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              iconBtn,
+            )}
+          >
+            <Paperclip size={17} />
+          </button>
+          <button
+            type="button"
+            onClick={() => imageRef.current?.click()}
+            aria-label="Attach an image"
+            className={cx(
+              "grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              iconBtn,
+            )}
+          >
+            <ImagePlus size={17} />
+          </button>
+
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!canSend}
+            className={cx(
+              "ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              canSend
+                ? "bg-brand text-paper hover:brightness-110 active:scale-95 shadow-sm"
+                : dark
+                  ? "bg-white/10 text-white/40 cursor-not-allowed"
+                  : "bg-ink/10 text-muted-foreground cursor-not-allowed",
+            )}
+          >
+            <span>{sendLabel}</span>
+            <ArrowUp size={15} />
+          </button>
+        </div>
 
         <input
           ref={fileRef}

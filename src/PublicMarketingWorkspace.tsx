@@ -368,7 +368,7 @@ function Waveform() {
       {bars.map((h, i) => (
         <span
           key={i}
-          className="wl-eq-bar w-1 rounded-full bg-[#22d3ee]"
+          className="wl-eq-bar w-1 rounded-full bg-[#34d399]"
           style={{ height: `${h * 100}%`, animationDelay: `${i * 90}ms` }}
         />
       ))}
@@ -408,7 +408,7 @@ function HeroPanel() {
         className="absolute -inset-6 rounded-[40px] opacity-60 blur-3xl"
         style={{
           background:
-            "radial-gradient(60% 50% at 70% 20%, rgba(13,159,110,.28), transparent 70%), radial-gradient(50% 50% at 20% 80%, rgba(8,145,178,.22), transparent 70%)",
+            "radial-gradient(60% 50% at 70% 20%, rgba(13,159,110,.28), transparent 70%), radial-gradient(50% 50% at 20% 80%, rgba(4,120,87,.22), transparent 70%)",
         }}
         aria-hidden="true"
       />
@@ -420,15 +420,15 @@ function HeroPanel() {
             </span>
             <div>
               <p className="text-sm font-semibold text-[#f7f9f8]">Personal Assistant</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#22d3ee]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#34d399]">
                 On a call now
               </p>
             </div>
           </div>
           <span className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5">
             <span className="relative grid place-items-center">
-              <span className="wl-ping absolute h-2 w-2 rounded-full bg-[#22d3ee]" />
-              <span className="h-2 w-2 rounded-full bg-[#22d3ee]" />
+              <span className="wl-ping absolute h-2 w-2 rounded-full bg-[#34d399]" />
+              <span className="h-2 w-2 rounded-full bg-[#34d399]" />
             </span>
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#dfe6e2]">
               Live
@@ -494,7 +494,7 @@ function Hero() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(50% 38% at 82% 8%, rgba(13,159,110,.10), transparent 70%), radial-gradient(40% 30% at 6% 70%, rgba(8,145,178,.08), transparent 70%)",
+            "radial-gradient(50% 38% at 82% 8%, rgba(13,159,110,.10), transparent 70%), radial-gradient(40% 30% at 6% 70%, rgba(4,120,87,.08), transparent 70%)",
         }}
         aria-hidden="true"
       />
@@ -603,7 +603,7 @@ function TwoWorlds() {
               <Building2 size={22} />
             </span>
             <div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#22d3ee]">
+              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#34d399]">
                 For your business
               </span>
               <h3 className="font-display text-2xl font-medium tracking-[-0.02em]">
@@ -622,13 +622,13 @@ function TwoWorlds() {
               "Push notes and outcomes into your CRM",
             ].map((l) => (
               <li key={l} className="flex items-start gap-3 text-sm text-[#f7f9f8]">
-                <Check size={16} className="mt-0.5 shrink-0 text-[#22d3ee]" /> {l}
+                <Check size={16} className="mt-0.5 shrink-0 text-[#34d399]" /> {l}
               </li>
             ))}
           </ul>
           <Link
             to="/pricing"
-            className="relative mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#22d3ee] hover:gap-3 transition-all"
+            className="relative mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#34d399] hover:gap-3 transition-all"
           >
             Build your front desk <ArrowUpRight size={16} />
           </Link>
@@ -692,12 +692,12 @@ function Manifesto() {
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            "radial-gradient(50% 60% at 50% 0%, rgba(13,159,110,.18), transparent 70%), radial-gradient(40% 40% at 80% 100%, rgba(8,145,178,.14), transparent 70%)",
+            "radial-gradient(50% 60% at 50% 0%, rgba(13,159,110,.18), transparent 70%), radial-gradient(40% 40% at 80% 100%, rgba(4,120,87,.14), transparent 70%)",
         }}
         aria-hidden="true"
       />
       <div className="relative mx-auto max-w-[1000px] px-5 text-center sm:px-8">
-        <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#22d3ee]">
+        <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#34d399]">
           Why Wireline
         </span>
         <p className="mt-7 font-display text-3xl font-medium leading-[1.18] tracking-[-0.02em] text-balance md:text-[2.6rem]">
@@ -791,7 +791,7 @@ function Pricing() {
                     size={15}
                     className={cn(
                       "mt-0.5 shrink-0",
-                      tier.featured ? "text-[#22d3ee]" : "text-brand",
+                      tier.featured ? "text-[#34d399]" : "text-brand",
                     )}
                   />
                   {it}
