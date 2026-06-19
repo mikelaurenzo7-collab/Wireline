@@ -27,34 +27,28 @@
       name="domain-verification"
       content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61"
     />
-    <meta name="theme-color" content="#F3EFFA" />
-    <meta name="msapplication-TileColor" content="#F3EFFA" />
+    <meta name="theme-color" content="#0A0A0C" />
+    <meta name="msapplication-TileColor" content="#0A0A0C" />
     <meta name="apple-mobile-web-app-title" content="Wireline" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-    <meta name="color-scheme" content="light" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="color-scheme" content="dark" />
 
-    <!-- Wireline is light-only: clear any stale dark preference before first
-         paint so there is never a dark flash for returning visitors. -->
+    <!-- Keep the first paint aligned with the active Stitch Noir shell. -->
     <script>
       (function () {
         try {
           var el = document.documentElement;
-          el.classList.remove("dark");
-          el.style.colorScheme = "light";
+          el.classList.add("dark");
+          el.style.colorScheme = "dark";
         } catch (e) {}
       })();
     </script>
 
     <link rel="canonical" href="https://trywireline.com/" />
 
-    <script
-      defer
-      data-domain="trywireline.com"
-      src="https://plausible.io/js/script.tagged-events.js"
-    ></script>
+    <script defer data-domain="trywireline.com" src="https://plausible.io/js/script.tagged-events.js"></script>
     <script>
       window.plausible =
         window.plausible ||
@@ -83,14 +77,8 @@
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-K2M2L84B');
         } else {
-          window.fbq = function(action, event, data) {
-            console.log("[wireline:dev-pixel] fbq('" + action + "', '" + event + "')", data || "");
-          };
-          window.dataLayer = {
-            push: function(data) {
-              console.log("[wireline:dev-gtm] dataLayer.push()", data);
-            }
-          };
+          window.fbq = function() {};
+          window.dataLayer = { push: function() {} };
         }
       })();
     </script>
@@ -107,10 +95,7 @@
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Wireline — your personal AI call concierge"
-    />
+    <meta property="og:image:alt" content="Wireline — your personal AI call concierge" />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -173,46 +158,11 @@
             "url": "https://trywireline.com/",
             "description": "Wireline is a personal AI call concierge for everyday phone tasks, with the same Agent Studio and console available for side projects and business workflows.",
             "offers": [
-              {
-                "@type": "Offer",
-                "name": "Everyday",
-                "price": "7",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=personal"
-              },
-              {
-                "@type": "Offer",
-                "name": "Plus",
-                "price": "15",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=personal-plus"
-              },
-              {
-                "@type": "Offer",
-                "name": "Studio",
-                "price": "29",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=business-starter"
-              },
-              {
-                "@type": "Offer",
-                "name": "Operator",
-                "price": "59",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=starter"
-              },
-              {
-                "@type": "Offer",
-                "name": "Custom",
-                "price": "0",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/contact?intent=sales"
-              }
+              { "@type": "Offer", "name": "Everyday", "price": "7", "priceCurrency": "USD", "billingDuration": "P1M", "url": "https://trywireline.com/get-started?plan=personal" },
+              { "@type": "Offer", "name": "Plus", "price": "15", "priceCurrency": "USD", "billingDuration": "P1M", "url": "https://trywireline.com/get-started?plan=personal-plus" },
+              { "@type": "Offer", "name": "Studio", "price": "29", "priceCurrency": "USD", "billingDuration": "P1M", "url": "https://trywireline.com/get-started?plan=business-starter" },
+              { "@type": "Offer", "name": "Operator", "price": "59", "priceCurrency": "USD", "billingDuration": "P1M", "url": "https://trywireline.com/get-started?plan=starter" },
+              { "@type": "Offer", "name": "Custom", "price": "0", "priceCurrency": "USD", "billingDuration": "P1M", "url": "https://trywireline.com/contact?intent=sales" }
             ],
             "publisher": { "@id": "https://trywireline.com/#organization" }
           },
@@ -232,7 +182,7 @@
     <link rel="dns-prefetch" href="https://api.vapi.ai" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="mask-icon" href="/favicon.svg" color="#7C3AED" />
+    <link rel="mask-icon" href="/favicon.svg" color="#5D5CFF" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
   </head>
