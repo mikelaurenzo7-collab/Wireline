@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./styles/stitch-console.css";
 
 // Figma overhaul migration: legacy shell/style layers are intentionally not
 // imported here. They carried old Tailwind @apply contracts and color tokens
