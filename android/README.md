@@ -2,7 +2,7 @@
 
 Native Kotlin + Jetpack Compose client for the Wireline mobile API.
 
-The Android app mirrors the iOS operator surface:
+The Android app mirrors the iOS consumer/operator surface:
 
 - Sign in through `POST /api/auth/signin`, then reuse the `wireline_session`
   JWT as `Authorization: Bearer` on `/api/mobile/*`.
@@ -13,11 +13,22 @@ The Android app mirrors the iOS operator surface:
   `ConnectionService`.
 - Dispatch in-call device actions to Maps, Calendar, or media search.
 
+## Consumer launch promise
+
+Wireline should be instantly understandable to Android users:
+
+> Ask Wireline to call the pharmacy, doctor, school, airline, landlord,
+> restaurant, or support line. It calls, waits, asks, summarizes, and tells you
+> what happened.
+
+The native Android app is the everyday control surface for asking Wireline,
+reviewing live calls and recaps, taking over a call, and managing callback
+handoff.
+
 ## Build
 
 Open the `android/` folder in Android Studio and let it sync the Gradle project.
-The project targets API 35, matching the current Google Play requirement for new
-apps and updates.
+The project targets API 35.
 
 Before a real device build:
 
@@ -41,10 +52,9 @@ Inbound FCM data messages with `type=incoming_call` call
 `POST /api/mobile/calls/:callId/handoff`, which transfers the live Vapi call to
 the operator callback number saved in Settings.
 
-Android Auto compatibility is through the system Telecom surface. A full
-branded Android Auto communication experience still depends on Google Play
-review and platform eligibility, but the phone/car call primitive is now in the
-native app.
+Android Auto compatibility is through the system Telecom surface. A full branded
+Android Auto communication experience still depends on platform eligibility and
+review, but the phone/car call primitive is in the native app.
 
 ## Backend Contract
 
@@ -58,3 +68,17 @@ The app intentionally stays thin. Business rules remain server-side:
 
 See `src/routes/mobile-routes.ts`, `src/lib/mobile-push.ts`, and
 `src/lib/fcm-push.ts` for the backend side.
+
+## Design
+
+Android follows the same Stitch Noir direction as web and iOS:
+
+- canvas: `#0A0A0C`
+- panel: `#131315`
+- raised panel: `#1B1B1D`
+- primary action: `#5D5CFF`
+- lavender accent: `#C1C1FF`
+
+Keep Compose screens native-first: Material 3 components, system Telecom for
+calls, compact dense cards, strong touch targets, and no fake phone-call claims
+outside the backend/Telecom contract.
