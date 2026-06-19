@@ -1,0 +1,84 @@
+/* Scoped console token bridge. Marketing remains light; workspaces use Stitch Noir. */
+
+html:has(.wl-console-surface),
+html.wl-console-active {
+  background: #0a0a0c;
+}
+
+html:has(.wl-console-surface) body,
+html.wl-console-active body {
+  background: #0a0a0c !important;
+  background-image: none !important;
+  background-attachment: scroll !important;
+}
+
+.wl-console-surface {
+  color-scheme: dark;
+  --canvas: #0a0a0c;
+  --canvas-deep: #08080b;
+  --panel: #131315;
+  --panel-2: #1b1b1d;
+  --raised: #242428;
+  --text: #f4f2f7;
+  --text-2: #c7c4d8;
+  --text-3: #908fa1;
+  --paper: #f4f2f7;
+  --paper-soft: #c7c4d8;
+  --ink: #0a0a0c;
+  --ink-soft: #242428;
+  --background: #0a0a0c;
+  --foreground: #f4f2f7;
+  --card: #131315;
+  --card-foreground: #f4f2f7;
+  --popover: #1b1b1d;
+  --popover-foreground: #f4f2f7;
+  --primary: #5d5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #1b1b1d;
+  --secondary-foreground: #f4f2f7;
+  --muted: #1b1b1d;
+  --muted-foreground: #c7c4d8;
+  --accent: #242428;
+  --accent-foreground: #f4f2f7;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --input: rgba(255, 255, 255, 0.1);
+  --input-background: #1b1b1d;
+  --switch-background: #242428;
+  --iris: #5d5cff;
+  --iris-bright: #c1c1ff;
+  --iris-deep: #4643e9;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(112, 95, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 84% 76%, rgba(93, 92, 255, 0.14), transparent 32%),
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    #0a0a0c;
+  background-size: auto, auto, 40px 40px, 40px 40px, auto;
+}
+
+.wl-console-surface .wl-glass-panel {
+  background: linear-gradient(180deg, rgba(31, 31, 35, 0.9), rgba(19, 19, 21, 0.88));
+  border-color: var(--border);
+}
+
+.wl-console-surface .wl-glass-card,
+.wl-console-surface .wl-premium-card,
+.wl-console-surface .wl-dark-card,
+.wl-console-surface .wl-panel {
+  border-color: var(--border);
+  background: linear-gradient(180deg, rgba(31, 31, 35, 0.92), rgba(19, 19, 21, 0.9));
+  box-shadow: 0 24px 70px -56px rgba(0, 0, 0, 0.95);
+}
+
+.wl-console-surface .wl-panel-elevated {
+  border-color: var(--border-strong);
+  background: linear-gradient(180deg, rgba(36, 36, 40, 0.96), rgba(27, 27, 29, 0.94));
+  color: var(--foreground);
+  box-shadow: 0 24px 70px -56px rgba(0, 0, 0, 0.95);
+}
+
+.wl-console-surface .hover-glow:hover {
+  border-color: rgba(193, 193, 255, 0.46);
+  box-shadow: 0 0 0 1px rgba(93, 92, 255, 0.18), 0 22px 54px -30px rgba(93, 92, 255, 0.36);
+}
