@@ -1,9 +1,9 @@
 package com.wireline.app.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,38 +12,54 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wireline.app.data.ActiveCall
 import com.wireline.app.data.Agent
 import com.wireline.app.data.RecentCall
 import com.wireline.app.data.WalletEntry
+import com.wireline.app.ui.ask.AskWirelineScreen
+import com.wireline.app.ui.components.AskWirelineHeroCard
+import com.wireline.app.ui.components.FleetStatCard
+import com.wireline.app.ui.components.LavenderCard
+import com.wireline.app.ui.components.Medallion
+import com.wireline.app.ui.theme.Brand
 
 private enum class Tab { Home, Calls, Wallet, Settings }
 
@@ -59,18 +75,15 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     var showAskWireline by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = Brand.Canvas,
         topBar = { WirelineTopBar(state.me?.account?.businessName ?: "Wireline") },
         floatingActionButton = {
-            if (tab == Tab.Home) {
-                androidx.compose.material3.FloatingActionButton(
+            if (tab == Tab.Home && state.me?.account?.mode == "personal") {
+                FloatingActionButton(
                     onClick = { showAskWireline = true },
-                    containerColor = com.wireline.app.ui.theme.Brand.Purple
+                    containerColor = Brand.Violet,
                 ) {
-                    Icon(
-                        Icons.Default.Call, // fallback icon, could use sparkles
-                        contentDescription = "Ask Wireline",
-                        tint = androidx.compose.ui.graphics.Color.White
-                    )
+                    Icon(Icons.Default.Mic, contentDescription = "Ask Wireline", tint = Color.White)
                 }
             }
         },
@@ -116,14 +129,11 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     }
     
     if (showAskWireline) {
-        androidx.compose.material3.ModalBottomSheet(
+        ModalBottomSheet(
             onDismissRequest = { showAskWireline = false },
-            containerColor = com.wireline.app.ui.theme.Brand.Paper
+            containerColor = Brand.Canvas,
         ) {
-            com.wireline.app.ui.ask.AskWirelineScreen(
-                model = model,
-                onBack = { showAskWireline = false }
-            )
+            AskWirelineScreen(model = model, onBack = { showAskWireline = false })
         }
     }
 }
@@ -131,7 +141,13 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WirelineTopBar(title: String) {
-    TopAppBar(title = { Text(title, fontWeight = FontWeight.SemiBold) })
+    TopAppBar(
+        title = { Text(title, fontWeight = FontWeight.SemiBold, color = Brand.Text) },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Brand.Canvas,
+            titleContentColor = Brand.Text,
+        ),
+    )
 }
 
 @Composable
@@ -141,11 +157,19 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Brand.Canvas)
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("Wireline", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text("Operator console", style = MaterialTheme.typography.titleMedium)
+        Medallion(Icons.Default.PhoneInTalk, size = 72.dp)
+        Spacer(Modifier.height(16.dp))
+        Text("Wireline", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = Brand.Text)
+        Text(
+            "Your AI agents, on every line.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Brand.Text2,
+        )
         Spacer(Modifier.height(24.dp))
         OutlinedTextField(
             value = email,
@@ -153,6 +177,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            shape = RoundedCornerShape(Brand.RadiusMd),
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
@@ -162,44 +187,102 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
+            shape = RoundedCornerShape(Brand.RadiusMd),
         )
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = { onSignIn(email, password) },
             enabled = !state.isWorking && email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(Brand.RadiusMd),
         ) {
-            Text(if (state.isWorking) "Signing in" else "Sign in")
+            if (state.isWorking) {
+                CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
+            } else {
+                Text("Sign in")
+            }
         }
         ErrorText(state.error)
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "New to Wireline? Create an account on the web.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Brand.Text3,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel) {
     var outboundNumber by rememberSaveable { mutableStateOf("") }
     var outboundContext by rememberSaveable { mutableStateOf("") }
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
+    var showAsk by rememberSaveable { mutableStateOf(false) }
     val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
+    val isPersonal = state.me?.account?.mode == "personal"
+    val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(Brand.Canvas)
             .padding(padding),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            SectionCard {
-                Text("Today", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text("${state.activeCalls.size} live calls")
-                Text("${state.recentCalls.count { it.outcomeTag == "followup" }} follow-ups need attention")
-                Text("${state.agents.size} agents on roster")
+            if (isPersonal) {
+                AskWirelineHeroCard(onClick = { showAsk = true })
+            } else {
+                LavenderCard {
+                    Text("Fleet Operations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Violet)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        FleetStatCard(
+                            value = "${state.activeCalls.size}",
+                            label = "Active Calls",
+                            highlighted = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        FleetStatCard(
+                            value = "$followUps",
+                            label = "Need Attention",
+                            highlighted = followUps > 0,
+                            modifier = Modifier.weight(1f),
+                        )
+                        FleetStatCard(
+                            value = "${state.agents.size}",
+                            label = "Agents",
+                            highlighted = false,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
+
+        state.me?.let { me ->
+            item {
+                LavenderCard {
+                    Text(
+                        me.account.businessName ?: me.user.fullName ?: me.user.email,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Brand.Text,
+                    )
+                    Text(
+                        "${me.account.planName} · ${state.agents.size} agents",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Brand.Text2,
+                    )
+                }
+            }
+        }
+
         item {
-            SectionCard {
-                Text("Outbound", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            LavenderCard {
+                Text("Outbound", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
                 AgentChips(state.agents, selectedAgent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(
                     value = outboundNumber,
@@ -207,22 +290,31 @@ private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: Wi
                     label = { Text("Customer number") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = RoundedCornerShape(Brand.RadiusMd),
                 )
                 OutlinedTextField(
                     value = outboundContext,
                     onValueChange = { outboundContext = it },
                     label = { Text("Context") },
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(Brand.RadiusMd),
                 )
                 Button(
                     onClick = { selectedAgent?.let { model.placeCall(it.id, outboundNumber, outboundContext) } },
                     enabled = selectedAgent != null && outboundNumber.isNotBlank() && !state.isWorking,
+                    shape = RoundedCornerShape(Brand.RadiusMd),
                 ) {
                     Text("Place call")
                 }
             }
         }
         item { ErrorText(state.error) }
+    }
+
+    if (showAsk) {
+        ModalBottomSheet(onDismissRequest = { showAsk = false }, containerColor = Brand.Canvas) {
+            AskWirelineScreen(model = model, onBack = { showAsk = false })
+        }
     }
 }
 
@@ -319,24 +411,7 @@ private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model
 
 @Composable
 fun SectionCard(content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = com.wireline.app.ui.theme.Brand.PaperWarm
-        ),
-        shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x288B5CF6)), // 16% brand purple border
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            content()
-        }
-    }
+    LavenderCard { content() }
 }
 
 @Composable

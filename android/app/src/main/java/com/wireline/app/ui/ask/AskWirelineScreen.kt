@@ -129,7 +129,7 @@ fun AskWirelineScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brand.Velvet)
+                .background(Brand.Canvas)
         ) {
             Column(
                 modifier = Modifier
@@ -189,7 +189,7 @@ fun AskWirelineScreen(
                             .padding(bottom = 20.dp),
                         colors = CardDefaults.cardColors(containerColor = Brand.PaperWarm),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color(0x288B5CF6))
+                        border = BorderStroke(1.dp, Brand.BorderViolet)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -246,7 +246,7 @@ fun AskWirelineScreen(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Brand.PaperWarm),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color(0x188B5CF6))
+                        border = BorderStroke(1.dp, Brand.VioletGlass)
                     ) {
                         Column {
                             Row(
@@ -291,7 +291,7 @@ fun AskWirelineScreen(
                                         .padding(bottom = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Divider(color = Color(0x1E8B5CF6))
+                                    Divider(color = Brand.VioletGlass)
                                     
                                     Text("Select Agent:", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
                                     Row(
@@ -310,7 +310,7 @@ fun AskWirelineScreen(
                                                     containerColor = containerColor,
                                                     labelColor = contentColor
                                                 ),
-                                                border = AssistChipDefaults.assistChipBorder(borderColor = Color(0x388B5CF6))
+                                                border = AssistChipDefaults.assistChipBorder(borderColor = Brand.BorderViolet)
                                             )
                                         }
                                     }
@@ -323,7 +323,7 @@ fun AskWirelineScreen(
                                         singleLine = true,
                                         colors = OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = Brand.Purple,
-                                            unfocusedBorderColor = Color(0x388B5CF6)
+                                            unfocusedBorderColor = Brand.BorderViolet
                                         )
                                     )
 
@@ -335,7 +335,7 @@ fun AskWirelineScreen(
                                         singleLine = true,
                                         colors = OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = Brand.Purple,
-                                            unfocusedBorderColor = Color(0x388B5CF6)
+                                            unfocusedBorderColor = Brand.BorderViolet
                                         )
                                     )
 
@@ -422,7 +422,7 @@ fun AskWirelineScreen(
                             unfocusedTextColor = Color.White,
                             containerColor = Brand.PaperWarm,
                             focusedBorderColor = Brand.Purple,
-                            unfocusedBorderColor = Color(0x288B5CF6)
+                            unfocusedBorderColor = Brand.BorderViolet
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -458,7 +458,7 @@ private fun ActionRowCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Brand.PaperWarm),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color(0x188B5CF6))
+        border = BorderStroke(1.dp, Brand.VioletGlass)
     ) {
         Row(
             modifier = Modifier

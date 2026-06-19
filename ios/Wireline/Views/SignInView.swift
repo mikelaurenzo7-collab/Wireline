@@ -22,12 +22,12 @@ struct SignInView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .padding(14)
-                    .background(Brand.paperWarm, in: Rectangle())
+                    .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusMd))
 
                 SecureField("Password", text: $password)
                     .textContentType(.password)
                     .padding(14)
-                    .background(Brand.paperWarm, in: Rectangle())
+                    .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusMd))
             }
 
             if let error = auth.errorMessage {
@@ -47,8 +47,8 @@ struct SignInView: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
         .padding(24)
-        .background(Brand.paper.ignoresSafeArea())
-        .tint(Brand.purple)
+        .background(Brand.canvas.ignoresSafeArea())
+        .tint(Brand.violet)
     }
 }
 

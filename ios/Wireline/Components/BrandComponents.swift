@@ -33,7 +33,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(Brand.purple.opacity(configuration.isPressed ? 0.85 : 1), in: Rectangle())
+            .background(Brand.violet.opacity(configuration.isPressed ? 0.85 : 1), in: RoundedRectangle(cornerRadius: Brand.radiusMd))
     }
 }
 

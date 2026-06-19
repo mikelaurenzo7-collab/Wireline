@@ -26,42 +26,46 @@ import androidx.glance.unit.ColorProvider
 import com.wireline.app.MainActivity
 import com.wireline.app.R
 
+/** Lavender Noir — mirrors `Brand` / `src/index.css`. */
+private object WidgetPalette {
+    val Violet = Color(0xFF7C3AED)
+    val Panel = Color(0xFF2A2540)
+    val Text = Color(0xFFF3EFFA)
+    val Text2 = Color(0xFFB8B0CA)
+}
+
 class AskWirelineWidget : GlanceAppWidget() {
     override suspend fun provideContent(context: Context, id: GlanceId) {
         provideContent {
-            WidgetContent(context)
+            WidgetContent()
         }
     }
 
     @androidx.compose.runtime.Composable
-    private fun WidgetContent(context: Context) {
+    private fun WidgetContent() {
         val intentAction = actionStartActivity<MainActivity>()
-        
-        // Brand color: Rich Purple #8B3FD6
-        val brandPurple = Color(0xFF8B3FD6)
-        
+
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(brandPurple)
+                .background(WidgetPalette.Violet)
                 .padding(16.dp)
                 .clickable(intentAction),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_mic),
                 contentDescription = "Ask Wireline",
-                modifier = GlanceModifier
             )
             Spacer(modifier = GlanceModifier.height(8.dp))
             Text(
                 text = "Ask Wireline",
                 style = TextStyle(
-                    color = ColorProvider(Color.White),
+                    color = ColorProvider(WidgetPalette.Text),
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                    fontWeight = FontWeight.Bold,
+                ),
             )
         }
     }

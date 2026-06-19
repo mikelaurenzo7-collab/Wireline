@@ -8,23 +8,35 @@ import Foundation
 // self-contained (no app-only models) so both targets compile against them.
 
 public enum WirelineWidgetShared {
-    /// App Group container shared by the app + widget extension. This string
-    /// must match the App Group capability in BOTH targets' entitlements.
+    /// App Group container shared by the app + widget extension.
     public static let appGroupId = "group.com.wireline.assistant"
+}
 
-    /// Brand accent (Silky Purple), mirrored from `WirelineTheme` because the
-    /// widget target cannot see the app's `Brand` tokens.
-    public static let accentHex = "8B3FD6"
+/// Lavender Noir palette — mirrors `src/index.css` (widget target cannot import app `Brand`).
+public enum WirelinePalette {
+    public static let violet = "7C3AED"
+    public static let violetDeep = "5B21B6"
+    public static let violetSoft = "A78BFA"
+    public static let canvas = "1E1B2E"
+    public static let panel = "2A2540"
+    public static let panel2 = "342E4C"
+    public static let text = "F3EFFA"
+    public static let text2 = "B8B0CA"
+    public static let text3 = "7A7194"
+    public static let destructive = "DC2626"
+
+    /// @deprecated Use `violet` — kept for older widget code paths.
+    public static let accentHex = violet
 }
 
 /// One glanceable recent call. Pre-formatted by the app so the widget stays a
 /// dumb renderer (no date math / business logic in the extension).
 public struct WirelineWidgetCall: Codable, Identifiable, Hashable {
     public let id: String
-    public let title: String // display name or number
-    public let subtitle: String // outcome / summary · relative time
-    public let direction: String? // "inbound" | "outbound"
-    public let sentiment: String? // "positive" | "neutral" | "negative"
+    public let title: String
+    public let subtitle: String
+    public let direction: String?
+    public let sentiment: String?
     public let needsFollowUp: Bool
 
     public init(
@@ -101,11 +113,8 @@ public struct WirelineWidgetSnapshot: Codable, Hashable {
     )
 }
 
-/// UserDefaults-backed store for the snapshot. Both the app and the widget
-/// extension can read/write here once the App Group is configured.
 public enum WirelineWidgetStore {
     private static let defaults = UserDefaults(suiteName: WirelineWidgetShared.appGroupId)
-
     private static let snapshotKey = "wireline_widget_snapshot"
 
     public static func load() -> WirelineWidgetSnapshot {

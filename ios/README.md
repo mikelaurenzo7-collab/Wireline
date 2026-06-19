@@ -137,8 +137,8 @@ restricts CarPlay template categories and Wireline is a communication app.
 
 **Direction: iOS-native first, brand accent second.** Wireline keeps SF Pro,
 system materials, and standard controls — best HIG fit and the smoothest App
-Store review — and layers Wireline's "Rich Cream + Purple" identity on top as
-the accent tint (`#8B3FD6`) and cream surfaces (`#F5F1E8`). `Theme/WirelineTheme.swift`
+Store review — and layers Wireline's **Lavender Noir** identity on top as
+the accent tint (`#7C3AED` violet) and charcoal surfaces (`#1E1B2E`). `Theme/WirelineTheme.swift`
 holds the tokens, mirrored from the web's `src/index.css`; apply them with
 `.tint(Brand.purple)` and the `.wirelineBrand()` view modifier. The CallKit and
 CarPlay call surfaces are system-rendered (Apple's, not themeable) — we only

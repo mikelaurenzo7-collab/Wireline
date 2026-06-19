@@ -32,16 +32,6 @@ struct AskWirelineWidget: Widget {
 private struct AskWirelineWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
-    /// Brand purple gradient matching the web and iOS app design system.
-    private let brandGradient = LinearGradient(
-        colors: [
-            Color(red: 0.545, green: 0.247, blue: 0.839), // #8B3FD6
-            Color(red: 0.420, green: 0.184, blue: 0.722), // #6B2FB8
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
     var body: some View {
         switch family {
         case .accessoryCircular:
@@ -73,18 +63,18 @@ private struct AskWirelineWidgetView: View {
                         .foregroundStyle(.white)
                     Text("Place calls, get recaps, and more")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.white.opacity(0.75))
                         .lineLimit(2)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.white.opacity(0.45))
             }
             .padding(16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(brandGradient)
-        default: // .systemSmall
+            .background(WidgetColors.violetGradient)
+        default:
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: "mic.fill")
                     .font(.title.weight(.semibold))
@@ -97,11 +87,11 @@ private struct AskWirelineWidgetView: View {
                     .lineLimit(2)
                 Text("Tap to start")
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.75))
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(brandGradient)
+            .background(WidgetColors.violetGradient)
         }
     }
 }

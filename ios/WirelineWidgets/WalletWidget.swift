@@ -1,9 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-/// Home Screen + Lock Screen widget showing the user's current wallet credit balance.
-/// Reads from the shared `WirelineWidgetSnapshot` written by the app. Tapping
-/// deep-links to `wireline://wallet` to surface the wallet tab/view.
+/// Home Screen + Lock Screen widget showing wallet credit balance.
 struct WalletWidget: Widget {
     let kind = "WalletWidget"
 
@@ -62,8 +60,6 @@ private struct WalletWidgetView: View {
 
     @Environment(\.widgetFamily) private var family
 
-    private let brandPurple = Color(red: 0.545, green: 0.247, blue: 0.839)
-
     private func formattedBalance(short: Bool = false) -> String {
         guard let balance = balance else { return "$0.00" }
         if short {
@@ -104,24 +100,27 @@ private struct WalletWidgetView: View {
                             .font(.headline.weight(.bold))
                     }
                 }
-            default: // .systemSmall
+            default:
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Image(systemName: "creditcard.fill")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(brandPurple)
+                            .foregroundStyle(WidgetColors.violet)
                         Spacer()
                     }
                     Spacer()
                     Text(formattedBalance())
                         .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundStyle(WidgetColors.text)
                         .minimumScaleFactor(0.7)
                         .lineLimit(1)
                     Text("available credits")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(WidgetColors.text2)
                 }
                 .padding(16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .background(WidgetColors.panel)
             }
         }
     }
@@ -140,12 +139,13 @@ private struct WalletWidgetView: View {
             VStack {
                 Image(systemName: "person.crop.circle.badge.questionmark")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetColors.text2)
                 Text("Sign in to see balance")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetColors.text2)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(WidgetColors.panel)
         }
     }
 }

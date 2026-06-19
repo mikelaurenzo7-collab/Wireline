@@ -1,12 +1,11 @@
 package com.wireline.app.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
@@ -14,86 +13,70 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 /**
- * Wireline Design System — Rich Cream + Purple
- *
- * Tokens mirror the web (`src/index.css`) and iOS (`WirelineTheme.swift`) so
- * all three platforms feel like the same product. Light mode uses the warm cream
- * paper with dark ink typography; dark mode uses deep velvet purple-blacks.
+ * Wireline Design System — **Lavender Noir** (native dark).
+ * Tokens mirror `src/index.css` `.dark` + `:root` violet scale and
+ * `ios/Wireline/Theme/WirelineTheme.swift`.
  */
 object Brand {
-    // ── Core brand ──────────────────────────────────────────────────────
-    /** Primary purple (`--primary` #8B5CF6). Global accent / tint. */
-    val Purple = Color(0xFF8B5CF6)
-    /** Deep purple (`--color-brand-deep` #4C1D95). Pressed states, gradient end. */
-    val PurpleDeep = Color(0xFF4C1D95)
-    /** Muted purple for tertiary accents. */
-    val PurpleMuted = Color(0xFFC084FC)
+    // ── Surfaces (`.dark`) ───────────────────────────────────────────────────
+    val Canvas = Color(0xFF1E1B2E)
+    val Panel = Color(0xFF2A2540)
+    val Panel2 = Color(0xFF342E4C)
+    val Raised = Color(0xFF3D3654)
 
-    // ── Paper / Ink ─────────────────────────────────────────────────────
-    /** Warm dark paper (`--paper` #09090B). Canvas. */
-    val Paper = Color(0xFF09090B)
-    /** Slightly warmer dark for cards (`--paper-warm` #020204). */
-    val PaperWarm = Color(0xFF020204)
-    /** Near-white ink (`--ink` #F8FAFC). Text. */
-    val Ink = Color(0xFFF8FAFC)
+    // ── Text ─────────────────────────────────────────────────────────────────
+    val Text = Color(0xFFF3EFFA)
+    val Text2 = Color(0xFFB8B0CA)
+    val Text3 = Color(0xFF7A7194)
 
-    // ── Dark surfaces ───────────────────────────────────────────────────
-    /** Deep velvet background (`--background` dark #000000). */
-    val Velvet = Color(0xFF000000)
-    /** Dark mode card surface. */
-    val VelvetSurface = Color(0xFF09090B)
-    /** Dark mode text. */
-    val VelvetInk = Color(0xFFF8FAFC)
+    // ── Violet accent ────────────────────────────────────────────────────────
+    val Violet = Color(0xFF7C3AED)
+    val VioletSoft = Color(0xFFA78BFA)
+    val VioletDeep = Color(0xFF5B21B6)
+    val VioletGlass = Color(0x1A7C3AED) // ~10% violet wash
 
-    // ── Semantic ────────────────────────────────────────────────────────
-    /** Success / live signal (`--wl-signal` #10B981). */
-    val Signal = Color(0xFF10B981)
-    /** Destructive / error (`--destructive` #EF4444). */
-    val Destructive = Color(0xFFEF4444)
+    // ── Semantic ───────────────────────────────────────────────────────────
+    val Destructive = Color(0xFFDC2626)
+    val Signal = VioletSoft
+
+    // ── Legacy aliases ─────────────────────────────────────────────────────
+    val Purple = Violet
+    val PurpleDeep = VioletDeep
+    val PurpleMuted = VioletSoft
+    val Paper = Canvas
+    val PaperWarm = Panel
+    val Ink = Text
+    val Velvet = Canvas
+    val VelvetSurface = Panel
+    val VelvetInk = Text
+
+    val Border = Color(0x1AF3EFFA) // 10% lavender hairline
+    val BorderViolet = Color(0x2E7C3AED) // 18% violet outline
+
+    val RadiusSm = 8.dp
+    val RadiusMd = 14.dp
+    val RadiusLg = 20.dp
 }
 
-private val LightColors = darkColorScheme(
-    primary = Brand.Purple,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFF1E1530),
-    onPrimaryContainer = Color(0xFFD4B3FF),
-    secondary = Brand.PurpleDeep,
-    onSecondary = Color.White,
-    secondaryContainer = Brand.PurpleDeep,
-    onSecondaryContainer = Color(0xFFD4B3FF),
-    tertiary = Brand.PurpleMuted,
-    onTertiary = Color.White,
-    background = Brand.Velvet,
-    onBackground = Brand.VelvetInk,
-    surface = Brand.VelvetSurface,
-    onSurface = Brand.VelvetInk,
-    surfaceVariant = Brand.PaperWarm,
-    onSurfaceVariant = Brand.VelvetInk,
-    outline = Color(0x2E8B5CF6),
-    outlineVariant = Color(0x1E8B5CF6),
-    error = Brand.Destructive,
-    onError = Color.White,
-)
-
 private val DarkColors = darkColorScheme(
-    primary = Brand.Purple,
+    primary = Brand.Violet,
     onPrimary = Color.White,
-    primaryContainer = Brand.PurpleDeep,
-    onPrimaryContainer = Color(0xFFD4B3FF),
-    secondary = Color(0xFF020204),
-    onSecondary = Color(0xFFF8FAFC),
-    secondaryContainer = Brand.PurpleDeep,
-    onSecondaryContainer = Color(0xFFD4B3FF),
-    tertiary = Brand.PurpleMuted,
+    primaryContainer = Brand.VioletDeep,
+    onPrimaryContainer = Brand.Text,
+    secondary = Brand.Panel2,
+    onSecondary = Brand.Text,
+    secondaryContainer = Brand.VioletDeep,
+    onSecondaryContainer = Brand.Text,
+    tertiary = Brand.VioletSoft,
     onTertiary = Color.White,
-    background = Brand.Velvet,
-    onBackground = Brand.VelvetInk,
-    surface = Brand.VelvetSurface,
-    onSurface = Brand.VelvetInk,
-    surfaceVariant = Color(0xFF020204),
-    onSurfaceVariant = Color(0xFFF8FAFC),
-    outline = Color(0x2E8B5CF6),        // 18% purple
-    outlineVariant = Color(0x1E8B5CF6), // 12% purple
+    background = Brand.Canvas,
+    onBackground = Brand.Text,
+    surface = Brand.Panel,
+    onSurface = Brand.Text,
+    surfaceVariant = Brand.Panel2,
+    onSurfaceVariant = Brand.Text2,
+    outline = Brand.BorderViolet,
+    outlineVariant = Brand.VioletGlass,
     error = Brand.Destructive,
     onError = Color.White,
 )
@@ -124,7 +107,6 @@ fun WirelineTheme(
 ) {
     val colorScheme = DarkColors
 
-    // Tint the system status bar to match the theme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -134,21 +116,15 @@ fun WirelineTheme(
         }
     }
 
-    val customRippleConfiguration = RippleConfiguration(
-        color = Brand.Purple
-    )
-
-    CompositionLocalProvider(
-        LocalRippleConfiguration provides customRippleConfiguration
-    ) {
+    CompositionLocalProvider(LocalRippleConfiguration provides RippleConfiguration(color = Brand.Violet)) {
         MaterialTheme(
             colorScheme = colorScheme,
             shapes = Shapes(
-                extraSmall = RoundedCornerShape(4.dp),
-                small = RoundedCornerShape(6.dp),
-                medium = RoundedCornerShape(8.dp),
-                large = RoundedCornerShape(12.dp),
-                extraLarge = RoundedCornerShape(16.dp),
+                extraSmall = RoundedCornerShape(Brand.RadiusSm),
+                small = RoundedCornerShape(10.dp),
+                medium = RoundedCornerShape(Brand.RadiusMd),
+                large = RoundedCornerShape(Brand.RadiusLg),
+                extraLarge = RoundedCornerShape(28.dp),
             ),
             typography = AppTypography,
             content = content,

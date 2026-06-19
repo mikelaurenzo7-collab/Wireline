@@ -27,7 +27,7 @@ struct LiveCallView: View {
         ZStack {
             // Deep purple → near-black gradient
             LinearGradient(
-                colors: [Brand.purpleDeep, Color(hex: 0x0D0120)],
+                colors: [Brand.violetDeep, Brand.canvas],
                 startPoint: .top,
                 endPoint: .bottom
             )

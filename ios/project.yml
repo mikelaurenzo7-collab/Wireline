@@ -36,6 +36,7 @@ targets:
     platform: iOS
     sources:
       - path: Wireline
+      - path: WirelineShared
     dependencies:
       - target: WirelineWidgets
     settings:
@@ -53,6 +54,7 @@ targets:
     platform: iOS
     sources:
       - path: WirelineWidgets
+      - path: WirelineShared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wireline.app.widgets

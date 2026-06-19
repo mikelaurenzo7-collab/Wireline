@@ -25,6 +25,15 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.wireline.app.MainActivity
 
+/** Lavender Noir — mirrors `Brand` / `src/index.css`. */
+private object WidgetPalette {
+    val Violet = Color(0xFF7C3AED)
+    val VioletSoft = Color(0xFFA78BFA)
+    val Panel = Color(0xFF2A2540)
+    val Text = Color(0xFFF3EFFA)
+    val Text2 = Color(0xFFB8B0CA)
+}
+
 class AgentWidgetProvider : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = AgentStatusWidget()
 }
@@ -32,69 +41,59 @@ class AgentWidgetProvider : GlanceAppWidgetReceiver() {
 class AgentStatusWidget : GlanceAppWidget() {
     override suspend fun provideContent(context: Context, id: GlanceId) {
         provideContent {
-            WidgetContent(context)
+            WidgetContent()
         }
     }
 
     @androidx.compose.runtime.Composable
-    private fun WidgetContent(context: Context) {
+    private fun WidgetContent() {
         val intentAction = actionStartActivity<MainActivity>()
-        
-        // Brand color: Rich Cream (#F5F1E8) background, Rich Purple (#8B3FD6) text
-        val brandCream = Color(0xFFF5F1E8)
-        val brandPurple = Color(0xFF8B3FD6)
-        
+
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(brandCream)
+                .background(WidgetPalette.Panel)
                 .padding(16.dp)
                 .clickable(intentAction),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 text = "Wireline Fleet",
                 style = TextStyle(
-                    color = ColorProvider(brandPurple),
+                    color = ColorProvider(WidgetPalette.Violet),
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                    fontWeight = FontWeight.Bold,
+                ),
             )
             Spacer(modifier = GlanceModifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "• Live calls: ",
-                    style = TextStyle(
-                        color = ColorProvider(Color.Black),
-                        fontSize = 12.sp
-                    )
+                    style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
                     text = "Active",
                     style = TextStyle(
-                        color = ColorProvider(brandPurple),
+                        color = ColorProvider(WidgetPalette.VioletSoft),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                        fontWeight = FontWeight.Bold,
+                    ),
                 )
             }
             Spacer(modifier = GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "• Roster: ",
-                    style = TextStyle(
-                        color = ColorProvider(Color.Black),
-                        fontSize = 12.sp
-                    )
+                    style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
                     text = "Connected",
                     style = TextStyle(
-                        color = ColorProvider(Color.DarkGray),
+                        color = ColorProvider(WidgetPalette.Text),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                        fontWeight = FontWeight.Bold,
+                    ),
                 )
             }
         }
