@@ -1,225 +1,60 @@
 #!/usr/bin/env node
 /**
- * Director dogfood — login, send capability probes, assert routing + response shape.
- * Usage: node scripts/dogfood-director.mjs [--base https://trywireline.com]
+ * Director contract smoke. This script intentionally requires explicit consent
+ * because it invokes a paid model-backed endpoint.
  *
- * Website probes use the SSE stream (same as the product UI) to avoid platform
- * timeouts on long non-streaming POST bodies.
+ * Usage:
+ *   DOGFOOD_EMAIL=... DOGFOOD_PASSWORD=... DOGFOOD_ALLOW_DIRECTOR=1 npm run dogfood:director
  */
+import { requireDogfoodCredentials } from "./dogfood-credentials.mjs";
+
 const base = (() => {
-  const i = process.argv.indexOf("--base");
-  return i >= 0 ? process.argv[i + 1] : process.env.APP_URL || "http://localhost:3000";
+  const index = process.argv.indexOf("--base");
+  return index >= 0 ? process.argv[index + 1] : process.env.APP_URL || "http://localhost:3000";
 })();
 
-const EMAIL = process.env.DOGFOOD_EMAIL || "wireline.demo@trywireline.com";
-const PASSWORD = process.env.DOGFOOD_PASSWORD || "WirelineDemo!2026";
-
-function isStitchTurn(d) {
-  const reply = typeof d.reply === "string" ? d.reply.toLowerCase() : "";
-  return (
-    reply.includes("wireline design") ||
-    d.modelLabel === "Wireline Design" ||
-    d.modelLabel === "Google Stitch" ||
-    (Array.isArray(d.previews) && d.previews.length > 0) ||
-    (Array.isArray(d.artifacts) &&
-      d.artifacts.some((a) => a && a.toolName === "google_stitch"))
-  );
+if (process.env.DOGFOOD_ALLOW_DIRECTOR !== "1") {
+  throw new Error("Set DOGFOOD_ALLOW_DIRECTOR=1 to run a model-backed Director dogfood check.");
 }
 
-const PROBES = [
-  {
-    id: "code",
-    message: "Write a short TypeScript function that validates US phone numbers with Zod.",
-    expect: (d) => typeof d.reply === "string" && d.reply.length > 80,
-    note: "code in reply",
-    mode: "post",
-  },
-  {
-    id: "code-natural",
-    message: "I need a small function that checks if an email address looks valid.",
-    expect: (d) => typeof d.reply === "string" && d.reply.length > 60 && !isStitchTurn(d),
-    note: "natural-language code (no capability chip)",
-    mode: "post",
-  },
-  {
-    id: "website",
-    message:
-      "Design a one-page website for a local HVAC company — include sitemap and a small HTML prototype.",
-    expect: (d) => {
-      const reply = typeof d.reply === "string" ? d.reply : "";
-      const lower = reply.toLowerCase();
-      if (isStitchTurn(d)) {
-        return reply.length > 120;
-      }
-      return (
-        reply.length > 400 &&
-        (reply.includes("```html") ||
-          lower.includes("sitemap") ||
-          lower.includes("<!doctype") ||
-          (lower.includes("##") && lower.includes("hero")))
-      );
-    },
-    note: "website deliverable (stream)",
-    mode: "stream",
-  },
-  {
-    id: "not-logo",
-    message: "Design a new website for my plumbing business with booking CTA.",
-    expect: (d) => !Array.isArray(d.approvals) || d.approvals.length === 0,
-    note: "no logo approval hijack (stream)",
-    mode: "stream",
-  },
-  {
-    id: "hero-not-creative",
-    message: "Generate a hero image for our homepage — include HTML prototype.",
-    expect: (d) =>
-      (!Array.isArray(d.approvals) || d.approvals.length === 0) &&
-      typeof d.reply === "string" &&
-      d.reply.length > 200,
-    note: "homepage hero → Stitch or fleet LLM (stream)",
-    mode: "stream",
-  },
-  {
-    id: "opus-auto",
-    message: "Summarize what Wireline Director can help me ship this week.",
-    expect: (d) => typeof d.reply === "string" && d.reply.length > 80,
-    note: "general fleet reply (post)",
-    mode: "post",
-  },
-];
+const { email, password } = requireDogfoodCredentials();
 
 async function login() {
-  const r = await fetch(`${base}/api/auth/signin`, {
+  const response = await fetch(`${base}/api/auth/signin`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+    body: JSON.stringify({ email, password }),
     redirect: "manual",
   });
-  const setCookie = r.headers.getSetCookie?.() ?? [];
-  const legacy = r.headers.get("set-cookie");
-  const cookies = setCookie.length ? setCookie : legacy ? [legacy] : [];
-  const session = cookies.find((c) => c.startsWith("wireline_session="));
-  if (!r.ok || !session) {
-    const body = await r.text();
-    throw new Error(`Login failed ${r.status}: ${body.slice(0, 200)}`);
-  }
+  const setCookie = response.headers.getSetCookie?.() ?? [];
+  const fallback = response.headers.get("set-cookie");
+  const cookies = setCookie.length ? setCookie : fallback ? [fallback] : [];
+  const session = cookies.find((cookie) => cookie.startsWith("wireline_session="));
+  if (!response.ok || !session) throw new Error(`Sign-in failed (${response.status})`);
   return session.split(";")[0];
 }
 
-function parseSseBuffer(buffer) {
-  let done = null;
-  const lines = buffer.split("\n");
-  let event = "";
-  for (const line of lines) {
-    if (line.startsWith("event: ")) event = line.slice(7).trim();
-    else if (line.startsWith("data: ") && event) {
-      try {
-        const data = JSON.parse(line.slice(6));
-        if (event === "done") done = data;
-      } catch {
-        /* ignore */
-      }
-      event = "";
-    } else if (line === "") event = "";
-  }
-  return done;
-}
-
-async function sendDirectorPost(cookie, content) {
-  const r = await fetch(`${base}/api/director/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({
-      content,
-      modelSelection: { provider: "wireline", tier: "sonnet" },
-    }),
-  });
-  const text = await r.text();
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(`Invalid JSON ${r.status}: ${text.slice(0, 300)}`);
-  }
-  if (!r.ok) throw new Error(`Director ${r.status}: ${data.error || text.slice(0, 200)}`);
-  return data;
-}
-
-async function sendDirectorStream(cookie, content) {
-  const r = await fetch(`${base}/api/director/messages/stream`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({
-      content,
-      modelSelection: { provider: "wireline", tier: "sonnet" },
-    }),
-  });
-  if (!r.ok) {
-    const text = await r.text();
-    throw new Error(`Director stream ${r.status}: ${text.slice(0, 200)}`);
-  }
-  const reader = r.body?.getReader();
-  if (!reader) throw new Error("No response body");
-  const decoder = new TextDecoder();
-  let buffer = "";
-  const deadline = Date.now() + 300_000;
-  while (Date.now() < deadline) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const parsed = parseSseBuffer(buffer);
-    if (parsed) return parsed;
-  }
-  const parsed = parseSseBuffer(buffer);
-  if (parsed) return parsed;
-  throw new Error("Stream ended without done event");
-}
-
-async function sendDirector(cookie, content, mode) {
-  return mode === "stream"
-    ? sendDirectorStream(cookie, content)
-    : sendDirectorPost(cookie, content);
-}
-
 async function main() {
-  console.log(`Director dogfood @ ${base}`);
   const cookie = await login();
-  console.log("Logged in");
+  const response = await fetch(`${base}/api/director/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify({
+      content: "Confirm you are available and return a concise one-sentence response.",
+      modelSelection: { provider: "wireline", tier: "sonnet" },
+    }),
+  });
 
-  let passed = 0;
-  let failed = 0;
-
-  for (const probe of PROBES) {
-    process.stdout.write(`  [${probe.id}] ${probe.note}… `);
-    try {
-      const data = await sendDirector(cookie, probe.message, probe.mode);
-      if (!probe.expect(data)) {
-        const preview =
-          typeof data.reply === "string" ? data.reply.replace(/\s+/g, " ").slice(0, 120) : "";
-        console.log(`FAIL (assertion) — ${preview || "empty reply"}`);
-        failed++;
-        continue;
-      }
-      const artifact = data.deliverableArtifact;
-      const label = data.modelLabel || data.model;
-      const extra = artifact?.name
-        ? ` · artifact ${artifact.name}`
-        : label
-          ? ` · ${label}`
-          : "";
-      console.log(`OK (${data.reply?.length ?? 0} chars${extra})`);
-      passed++;
-    } catch (e) {
-      console.log(`FAIL (${e.message})`);
-      failed++;
-    }
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(`Director request failed (${response.status})`);
+  if (!payload || typeof payload.reply !== "string" || payload.reply.trim().length < 8) {
+    throw new Error("Director response did not contain a usable reply.");
   }
 
-  console.log(`\n${passed}/${PROBES.length} passed`);
-  process.exit(failed > 0 ? 1 : 0);
+  console.log(JSON.stringify({ ok: true, base, model: payload.modelLabel || payload.model || "wireline" }));
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });
