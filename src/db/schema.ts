@@ -19,10 +19,36 @@ import {
 import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
-// Schema version: latest migration is `drizzle/migrations/0054_add_agent_llm_overrides.sql`.
+// Schema version: latest migration is `drizzle/migrations/0059_add_accounts.sql`.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
 // 0. IDENTITY & ACCOUNTS
+
+/**
+ * A user can own one or two accounts — a personal account (single agent,
+ * streamlined UI) and/or a business account (fleet, command centre, SDR
+ * pipeline). The first account type created at signup becomes the
+ * "primary" account. Agents, settings, and billing scope to an account,
+ * not directly to a user.
+ */
+export const accounts = pgTable(
+  "wireline_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type", { enum: ["personal", "business"] }).notNull(),
+    label: text("label"),
+    isPrimary: boolean("is_primary").default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  () => ({
+    userTypeIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_user_type ON wireline_accounts USING btree (user_id, type)`,
+  }),
+);
+
 export const users = pgTable("wireline_users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").unique().notNull(),
@@ -240,6 +266,10 @@ export const agents = pgTable(
   {
     id: text("id").primaryKey(),
     userId: uuid("user_id").notNull(),
+    /** Scopes the agent to a specific account. NULL for legacy agents
+     *  created before account separation — backfilled lazily on first
+     *  account-scoped request. */
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     voiceId: text("voice_id"),
     voiceIdInbound: text("voice_id_inbound"),
@@ -1786,7 +1816,13 @@ export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
 });
 
 // Relations
-export const agentRelations = relations(agents, ({ many }: any) => ({
+export const accountRelations = relations(accounts, ({ one, many }: any) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+  agents: many(agents),
+}));
+
+export const agentRelations = relations(agents, ({ one, many }: any) => ({
+  account: one(accounts, { fields: [agents.accountId], references: [accounts.id] }),
   callLogs: many(callLogs),
 }));
 

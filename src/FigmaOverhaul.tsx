@@ -42,9 +42,12 @@ import {
 } from "lucide-react";
 
 import FigmaAuthPortal from "./FigmaAuthPortal";
+import AdminSettings from "./components/AdminSettings";
 import ClerkAuthComplete from "./components/ClerkAuthComplete";
 import WirelineClerkProvider from "./components/WirelineClerkProvider";
+import OnboardingSelection from "./components/onboarding/OnboardingSelection";
 import { useAuth } from "./contexts/AuthContext";
+import { AccountProvider } from "./contexts/AccountContext";
 
 type BusinessTab =
   | "assistant"
@@ -63,7 +66,8 @@ type PersonalTab =
   | "siri"
   | "devices"
   | "number"
-  | "activity";
+  | "activity"
+  | "settings";
 type Tier = {
   name: string;
   price: string;
@@ -191,6 +195,7 @@ const personalRoutes: Record<PersonalTab, string> = {
   devices: "/app/personal/devices",
   number: "/app/personal/number",
   activity: "/app/personal/activity",
+  settings: "/app/personal/settings",
 };
 
 const businessNav: Array<{ id: BusinessTab; label: string; icon: ReactNode }> = [
@@ -213,6 +218,7 @@ const personalNav: Array<{ id: PersonalTab; label: string; icon: ReactNode }> = 
   { id: "devices", label: "Devices", icon: <Smartphone size={17} /> },
   { id: "number", label: "My Number", icon: <Phone size={17} /> },
   { id: "activity", label: "Activity", icon: <Activity size={17} /> },
+  { id: "settings", label: "Settings", icon: <Lock size={17} /> },
 ];
 
 const personalConnectors: Connector[] = [
@@ -1675,6 +1681,7 @@ function PersonalConsole({ initial = "overview" }: { initial?: PersonalTab }) {
               ]}
             />
           )}
+          {tab === "settings" && <AdminSettings />}
         </main>
       )}
     </div>
@@ -1837,6 +1844,7 @@ export default function FigmaOverhaul() {
   return (
     <BrowserRouter>
       <WirelineClerkProvider>
+        <AccountProvider>
         <Routes>
         <Route path="/" element={<Landing />} />
         <Route
@@ -1917,6 +1925,7 @@ export default function FigmaOverhaul() {
         <Route path="/auth" element={<Navigate to="/signin" replace />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
         <Route path="/auth/clerk-complete" element={<ClerkAuthComplete />} />
+        <Route path="/onboarding" element={<RequireAuth><OnboardingSelection /></RequireAuth>} />
         <Route path="/auth/oauth-complete" element={<Navigate to="/auth/clerk-complete" replace />} />
         <Route path="/oauth-complete" element={<Navigate to="/auth/clerk-complete" replace />} />
         <Route path="/app/personal" element={<PersonalRoute tab="overview" />} />
@@ -1926,6 +1935,7 @@ export default function FigmaOverhaul() {
         <Route path="/app/personal/devices" element={<PersonalRoute tab="devices" />} />
         <Route path="/app/personal/number" element={<PersonalRoute tab="number" />} />
         <Route path="/app/personal/activity" element={<PersonalRoute tab="activity" />} />
+        <Route path="/app/personal/settings" element={<PersonalRoute tab="settings" />} />
         <Route path="/personal-home" element={<Navigate to="/app/personal" replace />} />
         <Route path="/app/business" element={<BusinessRoute tab="assistant" />} />
         <Route path="/app/business/live" element={<BusinessRoute tab="liveops" />} />
@@ -1950,6 +1960,7 @@ export default function FigmaOverhaul() {
         <Route path="/admin" element={<Navigate to="/app/business/settings" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+        </AccountProvider>
       </WirelineClerkProvider>
     </BrowserRouter>
   );

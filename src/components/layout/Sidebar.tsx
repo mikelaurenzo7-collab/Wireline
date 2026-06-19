@@ -46,7 +46,7 @@ interface SidebarProps {
 export default function Sidebar({ navBadges }: SidebarProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { accountType, setAccountType } = useAccount();
+  const { accountType } = useAccount();
   const { success: toastSuccess } = useToast();
   const { branding } = useBranding();
   const liveCalls = useLivePresence();
@@ -220,63 +220,6 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                       <p className="text-[12px] font-semibold text-foreground truncate relative z-10">
                         {user.email || "—"}
                       </p>
-                    </div>
-
-                    {/* Workspace Switcher Card */}
-                    <div className="px-4 py-3 border-b border-white/8 bg-black/[0.015] dark:bg-white/[0.01]">
-                      <p className="wl-label-muted mb-2 uppercase tracking-wider text-[10px] text-left">
-                        Workspace Context
-                      </p>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (accountType !== "personal") {
-                              setAccountType("personal");
-                              toastSuccess(
-                                "Workspace Switched",
-                                "Switched to Personal Mode (Single-Agent focus).",
-                              );
-                              setUserMenuOpen(false);
-                            }
-                          }}
-                          className={cn(
-                            "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
-                            accountType === "personal"
-                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
-                              : "border-white/[0.08] hover:border-brand/30 bg-card dark:bg-velvet/50 text-foreground/70 hover:text-foreground",
-                          )}
-                        >
-                          <User className="w-4 h-4 mb-1" />
-                          <span className="text-[11px] leading-tight block font-medium">
-                            Personal
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (accountType !== "business") {
-                              setAccountType("business");
-                              toastSuccess(
-                                "Workspace Switched",
-                                "Switched to Business Mode (Fleet Cockpit).",
-                              );
-                              setUserMenuOpen(false);
-                            }
-                          }}
-                          className={cn(
-                            "flex flex-col items-center justify-center p-2 rounded-md border text-center transition-all duration-150 touch-press",
-                            accountType === "business"
-                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-inner"
-                              : "border-white/[0.08] hover:border-brand/30 bg-card dark:bg-velvet/50 text-foreground/70 hover:text-foreground",
-                          )}
-                        >
-                          <Building className="w-4 h-4 mb-1" />
-                          <span className="text-[11px] leading-tight block font-medium">
-                            Business
-                          </span>
-                        </button>
-                      </div>
                     </div>
 
                     <div className="py-1 text-left">

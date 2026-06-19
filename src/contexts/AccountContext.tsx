@@ -1,17 +1,14 @@
 /**
- * AccountContext — derives the Personal vs Business account mode once and shares
- * it across the authed app, so navigation and (later) onboarding/home all read
- * a single source instead of each re-fetching the plan.
+ * AccountContext — server-backed account state.
  *
- * Resolution order:
- *   1. An explicit override (the mode switcher, or a `?account=personal|business`
- *      preview link), persisted in localStorage.
- *   2. Otherwise derived from the billing plan (`/api/billing/usage`) via
- *      resolveAccountType — only the "personal" tier is a personal account.
+ * Fetches the user's accounts from /api/accounts on mount and exposes:
+ *   - accountType: the active account's type ("personal" | "business")
+ *   - activeAccount: the full active account object
+ *   - accounts: all accounts for the user
+ *   - switchAccount / addAccount: mutations
  *
- * Slice 1 persists the override client-side. A server-backed account_type +
- * onboarding choice is a deliberate follow-up; this module's shape stays the
- * same when that lands (only the source of `planId`/override moves server-side).
+ * The active account is persisted in localStorage ("wl_active_account")
+ * so page refreshes resume in the same workspace without a fetch.
  */
 import {
   createContext,
@@ -23,103 +20,123 @@ import {
   type ReactNode,
 } from "react";
 import { authFetch } from "../lib/api";
-import { resolveAccountType, type AccountType } from "../lib/account-type";
+import type { AccountType } from "../lib/account-type";
 
-const STORAGE_KEY = "wl_account_mode";
+const STORAGE_KEY = "wl_active_account";
+
+export interface Account {
+  id: string;
+  userId: string;
+  type: AccountType;
+  label: string | null;
+  isPrimary: boolean;
+}
 
 interface AccountState {
-  /** The effective mode: explicit override if set, else derived from plan. */
   accountType: AccountType;
-  /** The raw billing plan id, once loaded. */
-  planId: string | null;
-  /** True while the plan is still being fetched. */
+  activeAccount: Account | null;
+  accounts: Account[];
   loading: boolean;
-  /** True when the mode was explicitly chosen (switcher/preview), not derived. */
-  overridden: boolean;
-  /** Set an explicit mode (persisted), or pass null to clear and derive from plan. */
+  switchAccount: (accountId: string) => void;
+  addAccount: (type: AccountType, label?: string) => Promise<Account | null>;
   setAccountType: (type: AccountType | null) => void;
+  planId: string | null;
+  overridden: boolean;
 }
 
 const AccountContext = createContext<AccountState | undefined>(undefined);
 
-function readStoredOverride(): AccountType | null {
+function readStoredAccountId(): string | null {
   try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return v === "personal" || v === "business" ? v : null;
-  } catch {
-    return null;
-  }
-}
-
-/** One-time read of a `?account=personal|business` preview param, then strip it. */
-function readUrlOverride(): AccountType | null {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const v = params.get("account");
-    if (v !== "personal" && v !== "business") return null;
-    params.delete("account");
-    const qs = params.toString();
-    const next = window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
-    window.history.replaceState(window.history.state, "", next);
-    return v;
+    return localStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
 }
 
 export function AccountProvider({ children }: { children: ReactNode }) {
-  const [planId, setPlanId] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(readStoredAccountId);
   const [loading, setLoading] = useState(true);
-  const [override, setOverride] = useState<AccountType | null>(
-    () => readUrlOverride() ?? readStoredOverride(),
-  );
-
-  // Persist any URL-driven override discovered on first render.
-  useEffect(() => {
-    if (!override) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, override);
-    } catch {
-      /* non-fatal */
-    }
-    // Only on mount-resolved override; setAccountType handles later changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const r = await authFetch("/api/billing/usage");
+        const r = await authFetch("/api/accounts");
         if (!r.ok || cancelled) return;
         const data = await r.json();
-        if (!cancelled) setPlanId((data?.plan_id as string) ?? null);
+        const fetched = (data?.accounts ?? []) as Account[];
+        if (!cancelled) {
+          setAccounts(fetched);
+          if (!activeId && fetched.length > 0) {
+            const primary = fetched.find((a) => a.isPrimary) ?? fetched[0];
+            setActiveId(primary.id);
+            try {
+              localStorage.setItem(STORAGE_KEY, primary.id);
+            } catch { /* non-fatal */ }
+          }
+        }
       } catch {
-        /* derive() falls back to business */
+        /* API might not be ready yet — fallback to localStorage */
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activeAccount = useMemo(
+    () => accounts.find((a) => a.id === activeId) ?? accounts[0] ?? null,
+    [accounts, activeId],
+  );
+
+  const accountType: AccountType = activeAccount?.type ?? "business";
+
+  const switchAccount = useCallback((accountId: string) => {
+    setActiveId(accountId);
+    try {
+      localStorage.setItem(STORAGE_KEY, accountId);
+    } catch { /* non-fatal */ }
   }, []);
+
+  const addAccount = useCallback(async (type: AccountType, label?: string): Promise<Account | null> => {
+    try {
+      const r = await authFetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, label }),
+      });
+      if (!r.ok) return null;
+      const data = await r.json();
+      const created = data.account as Account;
+      setAccounts((prev) => [...prev, created]);
+      switchAccount(created.id);
+      return created;
+    } catch {
+      return null;
+    }
+  }, [switchAccount]);
 
   const setAccountType = useCallback((type: AccountType | null) => {
-    setOverride(type);
-    try {
-      if (type) localStorage.setItem(STORAGE_KEY, type);
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* non-fatal */
-    }
-  }, []);
-
-  const accountType = override ?? resolveAccountType(planId);
+    if (!type) return;
+    const target = accounts.find((a) => a.type === type);
+    if (target) switchAccount(target.id);
+  }, [accounts, switchAccount]);
 
   const value = useMemo(
-    () => ({ accountType, planId, loading, overridden: override !== null, setAccountType }),
-    [accountType, planId, loading, override, setAccountType],
+    () => ({
+      accountType,
+      activeAccount,
+      accounts,
+      loading,
+      switchAccount,
+      addAccount,
+      setAccountType,
+      planId: null,
+      overridden: false,
+    }),
+    [accountType, activeAccount, accounts, loading, switchAccount, addAccount, setAccountType],
   );
 
   return (
@@ -129,19 +146,19 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Read the account mode. Returns a safe business default when used outside the
- * provider (e.g. isolated component tests), so nav components never crash.
- */
 export function useAccount(): AccountState {
   const ctx = useContext(AccountContext);
   if (!ctx) {
     return {
       accountType: "business",
-      planId: null,
+      activeAccount: null,
+      accounts: [],
       loading: false,
-      overridden: false,
+      switchAccount: () => {},
+      addAccount: async () => null,
       setAccountType: () => {},
+      planId: null,
+      overridden: false,
     };
   }
   return ctx;

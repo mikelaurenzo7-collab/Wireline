@@ -90,10 +90,16 @@ export default function ClerkAuthComplete() {
               email?: string;
               full_name?: string | null;
               is_owner?: boolean;
+              account_type?: "personal" | "business";
+              account_id?: string;
             }
           | undefined;
         if (!user?.id || !user.email) {
           throw new Error("Sign-in succeeded but user payload was incomplete.");
+        }
+
+        if (user.account_id) {
+          window.localStorage.setItem("wl_active_account", user.account_id);
         }
 
         signIn({
@@ -105,8 +111,9 @@ export default function ClerkAuthComplete() {
           },
         });
 
+        const effectiveMode = user.account_type ?? workspaceMode;
         await syncSignupIntent(getStoredSignupIntent());
-        navigate(targetAfterAuth(workspaceMode), { replace: true });
+        navigate(targetAfterAuth(effectiveMode), { replace: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Sign-in failed. Please try again.");
       }

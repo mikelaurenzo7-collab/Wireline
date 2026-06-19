@@ -1,29 +1,30 @@
-import React from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Building, ArrowRight } from "lucide-react";
+import { User, Building, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAccount } from "../../contexts/AccountContext";
 import { PageMeta } from "../../lib/page-meta";
 
 export default function OnboardingSelection() {
   const navigate = useNavigate();
-  const { setAccountType } = useAccount();
+  const { addAccount } = useAccount();
+  const [creating, setCreating] = useState<"personal" | "business" | null>(null);
 
-  const handleSelect = (mode: "personal" | "business") => {
-    setAccountType(mode);
-    // Add a small flag to local storage so we don't show this again
-    localStorage.setItem("wl_onboarded", "true");
-    if (mode === "personal") {
-      navigate("/personal-home", { replace: true });
-    } else {
-      navigate("/ops", { replace: true });
+  const handleSelect = async (mode: "personal" | "business") => {
+    setCreating(mode);
+    try {
+      await addAccount(mode);
+      localStorage.setItem("wl_onboarded", "true");
+      navigate(mode === "personal" ? "/app/personal" : "/app/business/live", { replace: true });
+    } catch {
+      setCreating(null);
     }
   };
 
   return (
     <>
       <PageMeta title="Choose your workspace — Wireline" />
-      <div className="min-h-screen bg-card flex items-center justify-center p-6 font-sans text-foreground">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6 font-sans text-foreground">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -31,31 +32,30 @@ export default function OnboardingSelection() {
           className="max-w-4xl w-full"
         >
           <div className="text-center mb-12">
-            <div className="mb-6 inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand/10 text-brand">
-              <span className="font-display italic text-2xl font-bold">W</span>
+            <div className="mb-6 inline-flex items-center justify-center w-12 h-12 bg-violet-100 text-violet-600">
+              <span className="font-display text-2xl font-bold">W</span>
             </div>
             <h1 className="font-display text-4xl md:text-5xl text-foreground tracking-tight mb-4">
               How will you use Wireline?
             </h1>
             <p className="text-foreground/70 text-lg max-w-xl mx-auto leading-relaxed">
-              Select your primary use case to tailor your workspace. You can always switch between
-              modes later from the command menu.
+              Choose your primary workspace. You can always add the other later
+              from your account settings.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Personal Mode */}
             <button
               onClick={() => handleSelect("personal")}
-              className="text-left group relative wl-panel p-8 md:p-10 border border-ink/10 bg-card hover:border-brand/40 hover:bg-card-warm/30 transition-all rounded-md flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5"
+              disabled={creating !== null}
+              className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-violet-400/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-violet-500/5 disabled:opacity-60"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-violet-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <div>
-                <div className="w-12 h-12 rounded-md bg-ink/5 group-hover:bg-brand/10 text-foreground/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
+                <div className="w-12 h-12 bg-violet-50 group-hover:bg-violet-100 text-charcoal/60 group-hover:text-violet-600 flex items-center justify-center mb-6 transition-colors">
                   <User className="w-6 h-6" />
                 </div>
-                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
+                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-violet-600 transition-colors">
                   Personal Assistant
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
@@ -64,24 +64,26 @@ export default function OnboardingSelection() {
                   seamlessly route calls.
                 </p>
               </div>
-
-              <div className="mt-8 flex items-center text-brand font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
-                Select Personal <ArrowRight className="w-4 h-4 ml-2" />
+              <div className="mt-8 flex items-center text-violet-600 font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                {creating === "personal" ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <>Select Personal <ArrowRight className="w-4 h-4 ml-2" /></>
+                )}
               </div>
             </button>
 
-            {/* Business Mode */}
             <button
               onClick={() => handleSelect("business")}
-              className="text-left group relative wl-panel p-8 md:p-10 border border-ink/10 bg-card hover:border-brand/40 hover:bg-card-warm/30 transition-all rounded-md flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5"
+              disabled={creating !== null}
+              className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-violet-400/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-violet-500/5 disabled:opacity-60"
             >
-              <div className="absolute inset-0 bg-gradient-to-bl from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
+              <div className="absolute inset-0 bg-gradient-to-bl from-violet-500/0 to-violet-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <div>
-                <div className="w-12 h-12 rounded-md bg-ink/5 group-hover:bg-brand/10 text-foreground/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
+                <div className="w-12 h-12 bg-violet-50 group-hover:bg-violet-100 text-charcoal/60 group-hover:text-violet-600 flex items-center justify-center mb-6 transition-colors">
                   <Building className="w-6 h-6" />
                 </div>
-                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
+                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-violet-600 transition-colors">
                   Business Fleet
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
@@ -90,12 +92,19 @@ export default function OnboardingSelection() {
                   enterprise.
                 </p>
               </div>
-
-              <div className="mt-8 flex items-center text-brand font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
-                Select Business <ArrowRight className="w-4 h-4 ml-2" />
+              <div className="mt-8 flex items-center text-violet-600 font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                {creating === "business" ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <>Select Business <ArrowRight className="w-4 h-4 ml-2" /></>
+                )}
               </div>
             </button>
           </div>
+
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            Your first workspace becomes your primary account. You can add the other account type later.
+          </p>
         </motion.div>
       </div>
     </>

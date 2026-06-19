@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import { drizzle, log } from "./server-context";
 import { isOwnerEmail } from "./auth-service";
 import { resolveAccountType } from "./account-type";
+import { ensureDefaultAccount } from "./account-service";
 
 export type WirelineAuthUser = {
   id: string;
@@ -14,6 +15,7 @@ export type WirelineAuthUser = {
   full_name?: string | null;
   is_owner: boolean;
   account_type: "personal" | "business";
+  account_id: string;
 };
 
 export async function findOrCreateUserFromClerkIdentity(input: {
@@ -50,12 +52,15 @@ export async function findOrCreateUserFromClerkIdentity(input: {
       .where(eq(schema.subscriptions.userId, existing.id))
       .limit(1);
 
+    const account = await ensureDefaultAccount(existing.id);
+
     return {
       id: existing.id,
       email: existing.email,
       full_name: input.fullName ?? existing.fullName,
       is_owner: isOwnerEmail(existing.email),
-      account_type: resolveAccountType(sub?.plan),
+      account_type: account.type,
+      account_id: account.id,
     };
   }
 
@@ -72,13 +77,20 @@ export async function findOrCreateUserFromClerkIdentity(input: {
   const created = inserted[0];
   const { startTrialForUser } = await import("./trial-gate");
   await startTrialForUser(created.id);
-  log.info("clerk bridge: created wireline user", { email: normalized });
+
+  const account = await ensureDefaultAccount(created.id);
+  log.info("clerk bridge: created wireline user + account", {
+    email: normalized,
+    accountId: account.id,
+    accountType: account.type,
+  });
 
   return {
     id: created.id,
     email: created.email,
     full_name: created.fullName,
     is_owner: isOwnerEmail(created.email),
-    account_type: resolveAccountType(null),
+    account_type: account.type,
+    account_id: account.id,
   };
 }

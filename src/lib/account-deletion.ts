@@ -40,6 +40,7 @@ export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
   "wireline_phone_numbers",
   "wireline_agent_conversation_messages",
   "wireline_agents",
+  "wireline_accounts",
   "wireline_director_conversation_messages",
   "wireline_director_artifact_objects",
   "wireline_director_artifacts",

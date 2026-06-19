@@ -540,6 +540,7 @@ export const OPS_ADMIN = {
   loading: "Loading settings",
   saving: "Saving…",
   tabLabels: {
+    accounts: "Accounts",
     branding: "Branding",
     carrier: "Carrier & routing",
     subscription: "Billing",

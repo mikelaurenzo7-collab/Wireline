@@ -18,6 +18,7 @@ import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 
 // Modularized Panels
+import { AccountsPanel } from "./admin/AccountsPanel";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
 // Voice library + pronunciation dictionary panels moved to AgentTraining
@@ -92,8 +93,9 @@ export default function AdminSettings() {
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  type AdminTab = "branding" | "carrier" | "subscription" | "team" | "flywheel" | "activity";
+  type AdminTab = "accounts" | "branding" | "carrier" | "subscription" | "team" | "flywheel" | "activity";
   const VALID_TABS: AdminTab[] = [
+    "accounts",
     "branding",
     "carrier",
     "subscription",
@@ -137,7 +139,7 @@ export default function AdminSettings() {
     }
     if (qsRaw === "growth") return "flywheel";
     const qs = qsRaw as AdminTab;
-    return VALID_TABS.includes(qs) ? qs : "branding";
+    return VALID_TABS.includes(qs) ? qs : "accounts";
   })();
 
   const [carrierNumbers, setCarrierNumbers] = useState<any[]>([]);
@@ -381,6 +383,18 @@ export default function AdminSettings() {
                 />
               ) : (
                 <>
+                  {activeTab === "accounts" && (
+                    <motion.div
+                      key="accounts"
+                      role="tabpanel"
+                      id="admin-panel-accounts"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="h-full"
+                    >
+                      <AccountsPanel />
+                    </motion.div>
+                  )}
                   {activeTab === "branding" && (
                     <motion.div
                       key="branding"
