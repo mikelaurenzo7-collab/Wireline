@@ -63,7 +63,9 @@ htmlcov/
 *.log
 *.tmp
 .agents/
+.cursor/
 scratch/
+terminals/
 
 # Environment
 .env
