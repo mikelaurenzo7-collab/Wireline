@@ -153,7 +153,7 @@ export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
 
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
-    "Wireline plans start at $9/mo (Personal) with a 14-day free trial and included phone number.",
+    "Wireline plans start at $7/mo (Everyday) with a free trial path and an included phone number.",
     "Operators configure agents via Chat (coaching), Training (knowledge + lessons), and Integrations.",
     "Escalations route to the operator's configured phone/email; use escalate_to_human when risk is high.",
   ],

@@ -27,7 +27,9 @@ export default function Training() {
   const selectedAgentId = searchParams.get("agent") || (agents[0]?.id ?? "");
   const activeSubTab = resolveAppPageSubTabId(TRAINING_ROUTE, searchParams.get("tab"));
 
-  const setSubTab = useCallback(
+  // Reserved for future sub-tab navigation; kept as an underscore-prefixed
+  // callback so it survives lint without removing the wiring.
+  const _setSubTab = useCallback(
     (id: string) => {
       setSearchParams(
         (prev) => {
@@ -40,6 +42,7 @@ export default function Training() {
     },
     [setSearchParams],
   );
+  void _setSubTab;
 
   const selectAgent = (id: string) => {
     setSearchParams((prev) => {

@@ -155,8 +155,8 @@ export default function DirectorLayout({
                   Voice Core Integration
                 </h4>
                 <p className="font-sans text-xs text-muted-foreground line-clamp-2">
-                  Detailed specification for wiring the new Opus 4.8 reasoning engine into the
-                  legacy telephony database via GraphQL endpoints.
+                  Detailed specification for wiring the Opus 4.7 reasoning engine into the legacy
+                  telephony database via GraphQL endpoints.
                 </p>
               </div>
 

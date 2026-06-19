@@ -157,6 +157,40 @@ export default function AppRoutes() {
           {/* Legacy Wizard/Chat deep links → redirect to unified Studio */}
           <Route path="/chat" element={<Navigate to="/agents" replace />} />
           <Route path="/chat/:id" element={<Navigate to="/agents" replace />} />
+          {/* Pre-unification workspace paths — kept as bookmarks. The 2026
+              consumer-pivot collapsed PersonalWorkspace / BusinessWorkspace /
+              AgentStudioWorkspace into this one shell, so every legacy
+              `/app/personal/*` and `/app/business/*` path lands on its
+              canonical home. */}
+          <Route path="/app" element={<Navigate to="/personal-home" replace />} />
+          <Route path="/app/personal" element={<Navigate to="/personal-home" replace />} />
+          <Route path="/app/personal/assistant" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/personal/automations" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/personal/intents" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/personal/siri" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/personal/devices" element={<Navigate to="/personal-home" replace />} />
+          <Route
+            path="/app/personal/number"
+            element={<Navigate to="/admin?tab=carrier" replace />}
+          />
+          <Route path="/app/personal/activity" element={<Navigate to="/phone" replace />} />
+          <Route path="/app/personal/settings" element={<Navigate to="/admin" replace />} />
+          <Route path="/app/personal/studio" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/personal/*" element={<Navigate to="/personal-home" replace />} />
+          <Route path="/app/business" element={<Navigate to="/ops" replace />} />
+          <Route path="/app/business/live" element={<Navigate to="/ops" replace />} />
+          <Route path="/app/business/fleet" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/business/studio" element={<Navigate to="/agents" replace />} />
+          <Route path="/app/business/training" element={<Navigate to="/training" replace />} />
+          <Route path="/app/business/analytics" element={<Navigate to="/insights" replace />} />
+          <Route path="/app/business/team" element={<Navigate to="/admin?tab=team" replace />} />
+          <Route
+            path="/app/business/integrations"
+            element={<Navigate to="/integrations" replace />}
+          />
+          <Route path="/app/business/settings" element={<Navigate to="/admin" replace />} />
+          <Route path="/app/business/*" element={<Navigate to="/ops" replace />} />
+          <Route path="/business" element={<Navigate to="/ops" replace />} />
           <Route
             path="/agents"
             element={

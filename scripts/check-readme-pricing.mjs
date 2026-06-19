@@ -166,7 +166,7 @@ function checkClaudeModelDocs() {
     }
   }
 
-  const priorOpusName = displayNameForClaudeModel(extractClaudeModelId("OPUS_4_7"));
+  const priorOpusName = displayNameForClaudeModel(extractClaudeModelId("OPUS_4_8"));
   if (readme.includes(priorOpusName)) {
     issues.push(
       `❌  README.md still mentions ${priorOpusName}; README should describe the current reasoning default ${reasoningModelName}.`,
@@ -228,14 +228,16 @@ function escapeRe(s) {
 function checkStaleMarketingPricing() {
   const srcRoot = resolve(repoRoot, "src");
   const banned = [
-    { re: /\$49\/mo/gi, hint: "Personal starts at $9/mo (see plan-catalog.ts)" },
-    { re: /\$49\/month/gi, hint: "Personal starts at $9/mo (see plan-catalog.ts)" },
+    { re: /\$49\/mo/gi, hint: "Everyday starts at $7/mo (see plan-catalog.ts)" },
+    { re: /\$49\/month/gi, hint: "Everyday starts at $7/mo (see plan-catalog.ts)" },
     { re: /personal:\s*49\b/gi, hint: "Use STRIPE_PLANS / plan-catalog for checkout analytics" },
+    { re: /\$9\/mo \(Personal\)/gi, hint: "Everyday is $7/mo (consumer pivot)" },
     {
       re: /\*\*Business Starter\*\*\s*\|\s*\$79\b/gi,
-      hint: "Business Starter is $99/mo in plan-catalog.ts",
+      hint: "Studio is $29/mo (renamed from Business Starter)",
     },
-    { re: /Business Starter[^\n$]{0,40}\$79\/mo/gi, hint: "Business Starter is $99/mo" },
+    { re: /Business Starter[^\n$]{0,40}\$79\/mo/gi, hint: "Studio is $29/mo" },
+    { re: /Business Starter[^\n$]{0,40}\$99\/mo/gi, hint: "Studio is $29/mo after the consumer pivot" },
   ];
 
   const files = collectSourceFiles(srcRoot);

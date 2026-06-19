@@ -16,7 +16,6 @@ import {
   Loader2,
   Megaphone,
   MessageCircle,
-  LayoutTemplate,
   Paperclip,
   Phone,
   Plug,
@@ -312,7 +311,9 @@ export function DirectorComposerAccessory({
                 >
                   <Brain className="w-4 h-4 text-brand" />
                   <span className="text-left">
-                    <span className="block wl-micro-meta font-semibold text-foreground">Context</span>
+                    <span className="block wl-micro-meta font-semibold text-foreground">
+                      Context
+                    </span>
                     <span className="block wl-micro-meta--muted-foreground">Global rule</span>
                   </span>
                 </ShadButton>

@@ -27,7 +27,8 @@ export default function PersonalDashboard() {
             <h1 className="font-display text-3xl font-semibold text-foreground">My Assistant</h1>
           </div>
           <p className="text-foreground/70 text-lg ml-13 leading-relaxed">
-            Manage your personal AI, phone number, and mobile integrations.
+            Hand off the calls you avoid — pharmacy, doctor, school, restaurant, landlord, airline,
+            support lines. Tune the agent, set your line, keep tabs.
           </p>
         </header>
 
@@ -99,8 +100,8 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-6">
                 <p className="text-foreground/80 leading-relaxed mb-6">
-                  Take your assistant everywhere. Setup Siri Shortcuts and download the native apps
-                  for a seamless experience.
+                  Wire it into Siri and your phone so "Hey Siri, have Wireline call the pharmacy"
+                  actually happens.
                 </p>
 
                 <div className="space-y-4">

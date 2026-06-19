@@ -7,17 +7,7 @@
  */
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Crown,
-  LifeBuoy,
-  LogOut,
-  Search,
-  Settings,
-  User,
-  Building,
-  CreditCard,
-  PlugZap,
-} from "lucide-react";
+import { Crown, LifeBuoy, LogOut, Search, Settings, CreditCard, PlugZap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WirelineMark from "../WirelineMark";
 import ThemeToggle from "../ThemeToggle";
@@ -47,7 +37,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { accountType } = useAccount();
-  const { success: toastSuccess } = useToast();
+  useToast();
   const { branding } = useBranding();
   const liveCalls = useLivePresence();
   const [userMenuOpen, setUserMenuOpen] = useState(false);

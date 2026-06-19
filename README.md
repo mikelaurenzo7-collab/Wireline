@@ -48,7 +48,7 @@ Wireline makes phone work feel delegable. Three personality vibes (warm · playf
 | **Tyler** | warm    | (564) 238-9455 | Technical support        |
 | **Maya**  | playful | (630) 642-5927 | Onboarding & demos       |
 
-Every agent runs **Claude Sonnet 4.6** on the live voice path — the smartest model in the latency class voice can tolerate. **Claude Opus 4.8** runs the _reasoning_ layer behind every call: pre-call briefs, post-call analysis, daily brief generation, and agent coaching. Deepgram Nova-3 STT handles inbound audio; ElevenLabs Flash v2.5 handles synthesis.
+Every agent runs **Claude Sonnet 4.6** on the live voice path — the smartest model in the latency class voice can tolerate. **Claude Opus 4.7** runs the _reasoning_ layer behind every call: pre-call briefs, post-call analysis, daily brief generation, and agent coaching. Deepgram Nova-3 STT handles inbound audio; ElevenLabs Flash v2.5 handles synthesis.
 
 ---
 
@@ -84,7 +84,7 @@ npm run build && npm run start
 | **API**           | Express on Vercel serverless functions | One handler tree, deployed as one function                                     |
 | **Database**      | Postgres on Supabase, Drizzle ORM      | Type-safe queries, idempotent migrations, B-tree indexed hot paths             |
 | **Voice runtime** | Vapi + ElevenLabs Flash v2.5           | Live latency under 250 ms                                                      |
-| **LLM**           | Claude Sonnet 4.6 & Opus 4.8           | Quality-first tiering                                                          |
+| **LLM**           | Claude Sonnet 4.6 & Opus 4.7           | Quality-first tiering                                                          |
 
 ## Contributing
 

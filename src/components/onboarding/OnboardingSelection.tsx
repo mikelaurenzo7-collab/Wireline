@@ -15,7 +15,9 @@ export default function OnboardingSelection() {
     try {
       await addAccount(mode);
       localStorage.setItem("wl_onboarded", "true");
-      navigate(mode === "personal" ? "/app/personal" : "/app/business/live", { replace: true });
+      // One unified workspace — both modes land in the wired app shell; the
+      // sidebar trims itself for personal mode via `accountSidebarItems`.
+      navigate(mode === "personal" ? "/personal-home" : "/ops", { replace: true });
     } catch {
       setCreating(null);
     }
@@ -39,8 +41,8 @@ export default function OnboardingSelection() {
               How will you use Wireline?
             </h1>
             <p className="text-foreground/70 text-lg max-w-xl mx-auto leading-relaxed">
-              Choose your primary workspace. You can always add the other later
-              from your account settings.
+              Same console either way. Pick the mode that fits your day — you can change it in
+              Settings whenever.
             </p>
           </div>
 
@@ -56,19 +58,20 @@ export default function OnboardingSelection() {
                   <User className="w-6 h-6" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-violet-600 transition-colors">
-                  Personal Assistant
+                  Personal
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  A streamlined workspace focused on setting up a single AI agent for your personal
-                  number. Connect to your iOS or Android app, configure Siri Shortcuts, and
-                  seamlessly route calls.
+                  One agent for the calls you avoid — pharmacy, doctor, school, landlord, airline,
+                  support lines. Siri, widgets, and the mobile app come with it.
                 </p>
               </div>
               <div className="mt-8 flex items-center text-violet-600 font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
                 {creating === "personal" ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
-                  <>Select Personal <ArrowRight className="w-4 h-4 ml-2" /></>
+                  <>
+                    Use it for me <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
                 )}
               </div>
             </button>
@@ -84,26 +87,27 @@ export default function OnboardingSelection() {
                   <Building className="w-6 h-6" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-violet-600 transition-colors">
-                  Business Fleet
+                  Business
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  The heavy-duty command center. Build complex workflows, manage multiple agent
-                  roles, monitor live floor operations, and handle escalations for your business or
-                  enterprise.
+                  Multiple agents, live call review, routing, analytics, outbound, and integrations.
+                  Same Studio for setup — more power on the rail.
                 </p>
               </div>
               <div className="mt-8 flex items-center text-violet-600 font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
                 {creating === "business" ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
-                  <>Select Business <ArrowRight className="w-4 h-4 ml-2" /></>
+                  <>
+                    Use it for my business <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
                 )}
               </div>
             </button>
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Your first workspace becomes your primary account. You can add the other account type later.
+            Same agent, same Studio. The choice just trims the sidebar.
           </p>
         </motion.div>
       </div>

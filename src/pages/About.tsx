@@ -16,20 +16,20 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const PRINCIPLES = [
   {
-    title: "Build the product the customer would build for themselves.",
-    body: "Every feature in Wireline came out of a real conversation about a real business — not a roadmap whiteboard. If a paying client asks for something and it's true to the platform, it ships within a week.",
+    title: "Build the product the user would build for themselves.",
+    body: "Every feature in Wireline came out of a real call someone didn't want to make — not a roadmap whiteboard. If a real user asks for something that fits the product, it ships within a week.",
   },
   {
     title: "Honesty over polish.",
-    body: "Wireline isn't HIPAA-certified yet. We say so out loud. Marcus's medical-intake demo is labeled \"healthcare-style demo, not HIPAA-certified.\" Investors and clients both reward that kind of clarity.",
+    body: 'Wireline isn\'t HIPAA-certified yet. We say so out loud. Demos that look healthcare-shaped are labeled "healthcare-style demo, not HIPAA-certified." Users and clients both reward that kind of clarity.',
   },
   {
     title: "Solo founder, faster ship.",
-    body: "No committees, no consensus rituals. When something breaks, the person who built it fixes it within the hour. When a customer wants something new, the person you talk to is the person who decides.",
+    body: "No committees, no consensus rituals. When something breaks, the person who built it fixes it within the hour. When a user wants something new, the person they talk to is the person who decides.",
   },
   {
-    title: "Horizontal platform, vertical wedge.",
-    body: "Wireline runs the same way for home services, medical, legal, real estate, agencies, retail. We lead outbound with vertical-specific copy because it converts, but the platform is built for any business that picks up the phone.",
+    title: "Personal first, business when you want it.",
+    body: "Wireline runs the same way for a parent calling the pediatrician and a clinic running its whole front desk. Same console, same studio — capacity scales, the product doesn't fork.",
   },
 ];
 
@@ -43,8 +43,8 @@ export default function About() {
   return (
     <>
       <PageMeta
-        title="About Wireline — Built by an Operator, for Operators"
-        description="Wireline is a solo-founder AI voice + email agent platform built by Michael Laurenzo. Mission, principles, and the infra stack behind every customer conversation."
+        title="About Wireline"
+        description="Wireline is a personal AI call concierge built by Michael Laurenzo. Same console scales to a business when you want it to."
         path="/about"
       />
 
@@ -64,13 +64,13 @@ export default function About() {
               The mission
             </p>
             <h1 className="marketing-hero-title mb-6">
-              Every business deserves a 24/7 front desk that actually answers.
+              Nobody should dread their next phone call.
             </h1>
             <p className="marketing-hero-lead mx-auto">
-              Wireline is the AI agent platform for businesses that pick up the phone — service
-              companies, clinics, law firms, agencies, retail, anyone with a customer on the other
-              end of a call or an inbox. We built it because the cheapest hour an owner can buy back
-              is the hour they spend triaging calls and emails.
+              Wireline is an AI call concierge for everyday phone work — pharmacies, doctors,
+              schools, landlords, airlines, support lines. The same console scales into a sales line
+              or front desk when you want it to. Built because the cheapest hour anyone can buy back
+              is the hour they spend on hold.
             </p>
           </motion.div>
         </section>
@@ -102,9 +102,8 @@ export default function About() {
               </h2>
               <p className="text-sm text-foreground/80 leading-relaxed mb-3">
                 Michael is a builder, leader, competitor — and an operator before he was a founder.
-                Wireline started as a tool he wanted for his own businesses: an AI agent that picks
-                up every call, every email, every text, and treats the customer like the owner would
-                if the owner had unlimited time.
+                Wireline started as a tool he wanted for himself: an AI agent that picks up the
+                phone for him, treats the call like he would, and brings back the answer.
               </p>
               <p className="text-sm text-foreground/80 leading-relaxed">
                 He runs Wireline as a team of one by design. Shipping decisions don't go through

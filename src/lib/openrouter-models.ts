@@ -57,8 +57,8 @@ export const CURATED_OPENROUTER_MODELS: OpenRouterModelOption[] = [
     outputPerMillion: 15,
   },
   {
-    id: "anthropic/claude-opus-4.8",
-    label: "Claude Opus 4.8",
+    id: "anthropic/claude-opus-4.7",
+    label: "Claude Opus 4.7",
     description: "Deep reasoning and complex plans",
     category: "reasoning",
     inputPerMillion: 5,

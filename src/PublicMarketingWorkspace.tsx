@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { BrowserRouter, Link, NavLink, Route, Routes } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, NavLink, Route, Routes } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -38,24 +38,24 @@ const nav = ["features", "pricing", "showcase", "developers", "compare", "traini
 
 const tiers: Tier[] = [
   {
-    name: "Personal",
-    price: "$9",
+    name: "Everyday",
+    price: "$7",
     plan: "personal",
     note: "For one person",
-    text: "A private assistant for your own phone — screening, summaries, reminders, and the routine calls that should never interrupt your day.",
-    items: ["Call screening", "Spam guard", "Call summaries", "Siri & widget triggers"],
+    text: "One agent for the calls you avoid — pharmacy, doctor, school, restaurant, landlord. Screens, calls, summarizes.",
+    items: ["1 configurable agent", "60 voice minutes", "Siri & widget triggers", "Call summaries"],
   },
   {
     name: "Plus",
-    price: "$19",
+    price: "$15",
     plan: "personal-plus",
     note: "For heavier personal use",
-    text: "More handled calls, deeper calendar and email context, and appointment workflows for real personal productivity.",
+    text: "Two agents, more minutes, calendar and email context for appointments and follow-ups.",
     items: [
-      "Higher monthly usage",
+      "2 agents · 180 minutes",
       "Calendar & email context",
-      "Appointment workflows",
       "Priority personal memory",
+      "Appointment workflows",
     ],
   },
   {
@@ -88,7 +88,7 @@ const tiers: Tier[] = [
     plan: "scale",
     note: "For high-volume teams",
     text: "Advanced approvals, webhooks, audit logs, custom routing, and hands-on launch support.",
-    items: ["10 assistants", "3,000 voice minutes", "Audit logs", "Launch support"],
+    items: ["25+ agents", "5,000+ minutes", "Audit logs & SSO", "Launch support"],
   },
 ];
 
@@ -482,7 +482,59 @@ function CapabilityMarquee() {
 
 /* ── Sections ────────────────────────────────────────────────────────────── */
 
+// Two short hero beats. One consumer cue ("call the pharmacy"), one
+// "you can also run a business" cue. Rotates on a 5s cadence so the
+// page tells both stories without stacking subtitles.
+const HERO_BEATS: ReadonlyArray<{
+  kicker: string;
+  line1: ReactNode;
+  line2: ReactNode;
+  sub: string;
+  proof: ReadonlyArray<[string, LucideIcon]>;
+}> = [
+  {
+    kicker: "Live on the wire",
+    line1: <>Hey Siri,</>,
+    line2: (
+      <>
+        have Wireline call the <span className="italic text-brand">pharmacy</span>.
+      </>
+    ),
+    sub: "Pharmacy refills, doctor's office, school, restaurant, landlord, airline, support lines. Ask once; get a clear result back.",
+    proof: [
+      ["Calls humans for you", PhoneCall],
+      ["Waits on hold", Radio],
+      ["Texts you the answer", MessageSquare],
+    ],
+  },
+  {
+    kicker: "Customize an employee",
+    line1: <>Sales agent? Front desk?</>,
+    line2: (
+      <>
+        Wireline <span className="italic text-brand">covers it all</span>.
+      </>
+    ),
+    sub: "Same console, same studio. Spin up an agent for one line or a whole business — capacity scales, the product doesn't fork.",
+    proof: [
+      ["Books appointments", CalendarCheck],
+      ["Routes the urgent stuff", ShieldCheck],
+      ["CRM + email follow-up", Database],
+    ],
+  },
+];
+
 function Hero() {
+  const [beatIndex, setBeatIndex] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+    const id = window.setInterval(() => setBeatIndex((c) => (c + 1) % HERO_BEATS.length), 5200);
+    return () => window.clearInterval(id);
+  }, []);
+  const beat = HERO_BEATS[beatIndex];
+
   return (
     <section className="relative overflow-hidden">
       <div
@@ -495,44 +547,58 @@ function Hero() {
       />
       <div className="relative mx-auto grid w-full max-w-[1280px] items-center gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
+          <div
+            key={`kicker-${beatIndex}`}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 motion-safe:animate-[wlRise_0.5s_ease-out_both]"
+          >
             <Sparkles size={13} className="text-brand" />
-            <Mono className="text-foreground">Personal first · Business-ready</Mono>
+            <Mono className="text-foreground">{beat.kicker}</Mono>
           </div>
-          <h1 className="mt-7 font-display text-[clamp(2.75rem,6vw,5.25rem)] font-medium leading-[0.98] tracking-[-0.045em] text-balance">
-            Your phone,
+          <h1
+            key={`title-${beatIndex}`}
+            className="mt-7 font-display text-[clamp(2.75rem,6vw,5.25rem)] font-medium leading-[0.98] tracking-[-0.045em] text-balance motion-safe:animate-[wlRise_0.65s_ease-out_both]"
+          >
+            {beat.line1}
             <br />
-            <span className="italic text-brand">finally</span> answering for you.
+            {beat.line2}
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty">
-            Wireline answers, screens, books, and follows up on calls — for one person or an entire
-            business. Start with a personal assistant, grow into a team of trained business
-            assistants.
+          <p
+            key={`sub-${beatIndex}`}
+            className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground text-pretty motion-safe:animate-[wlRise_0.8s_ease-out_both]"
+          >
+            {beat.sub}
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Button to="/get-started">
-              Get started free <ArrowRight size={16} />
+              Start at $7 <ArrowRight size={16} />
             </Button>
             <Button to="/showcase" variant="secondary">
               <Phone size={16} /> Hear an assistant
             </Button>
           </div>
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
-            {[
-              ["Answers 24/7", Radio],
-              ["Books appointments", CalendarCheck],
-              ["Texts follow-ups", MessageSquare],
-            ].map(([label, Icon]) => {
-              const I = Icon as LucideIcon;
-              return (
-                <span
-                  key={label as string}
-                  className="inline-flex items-center gap-2 text-sm text-muted-foreground"
-                >
-                  <I size={15} className="text-brand" /> {label as string}
-                </span>
-              );
-            })}
+            {beat.proof.map(([label, Icon]) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground motion-safe:animate-[wlRise_0.9s_ease-out_both]"
+              >
+                <Icon size={15} className="text-brand" /> {label}
+              </span>
+            ))}
+          </div>
+          <div className="mt-7 flex items-center gap-2" aria-hidden="true">
+            {HERO_BEATS.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setBeatIndex(i)}
+                aria-label={`Show hero beat ${i + 1}`}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-500",
+                  i === beatIndex ? "w-8 bg-brand" : "w-3 bg-border hover:bg-foreground/30",
+                )}
+              />
+            ))}
           </div>
         </div>
         <HeroPanel />
@@ -718,8 +784,8 @@ function Pricing() {
     <section className="mx-auto w-full max-w-[1280px] px-5 py-20 sm:px-8 lg:py-28">
       <SectionHeader
         eyebrow="Pricing"
-        title="Start at $9. Custom when you're ready."
-        text="Personal plans for individuals, business plans for teams. No call-center contract, no setup fees."
+        title="Start at $7. Scale when you want to."
+        text="Everyday plans for one person, Studio + Operator for households and businesses. No contract, no setup fees."
         align="center"
       />
       <div className="mt-14 grid gap-5 lg:grid-cols-3 xl:grid-cols-5">
@@ -824,15 +890,15 @@ function FinalCTA() {
         />
         <div className="relative">
           <h2 className="mx-auto max-w-2xl font-display text-4xl font-medium leading-[1.05] tracking-[-0.03em] text-balance md:text-5xl">
-            Put your phone to work today.
+            One agent. Every routine call.
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Set up a personal assistant in minutes, or launch your first business line this
-            afternoon.
+            Start with one agent for the everyday phone work. Add more when a side project or
+            business needs them.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Button to="/get-started">
-              Get started free <ArrowRight size={16} />
+              Start at $7 <ArrowRight size={16} />
             </Button>
             <Button to="/pricing" variant="secondary">
               View pricing
@@ -896,14 +962,19 @@ function SimplePage({
 function Features() {
   return (
     <SimplePage
-      eyebrow="Features"
-      title="The full AI phone layer."
-      text="Everything you need to answer, book, follow up, and improve — on personal and business lines alike."
+      eyebrow="What Wireline does"
+      title="Routine calls, handled."
+      text="Pharmacy, doctor, school, restaurant, landlord, airline, support lines — and a sales agent or front desk when you want one. Same console."
       items={[
         {
           icon: PhoneCall,
-          title: "Real-time voice",
-          text: "Natural conversations that screen, answer, and resolve calls live.",
+          title: "Outbound concierge",
+          text: "Wireline calls the human, waits on hold, and brings back the answer.",
+        },
+        {
+          icon: Radio,
+          title: "Inbound screening",
+          text: "Spam guard, summaries, urgent-only routing — your phone stops running your day.",
         },
         {
           icon: CalendarCheck,
@@ -913,22 +984,17 @@ function Features() {
         {
           icon: MessageSquare,
           title: "SMS follow-up",
-          text: "Confirmations, reminders, and follow-ups the instant a call ends.",
+          text: "Confirmations, reminders, and recaps the instant a call ends.",
         },
         {
           icon: Database,
-          title: "CRM sync",
-          text: "Notes, contacts, and outcomes flow into your existing tools.",
+          title: "Studio + CRM sync",
+          text: "Tune instructions, hours, routing, memory, and handoffs. Notes flow into your tools.",
         },
         {
           icon: ShieldCheck,
-          title: "Approvals",
-          text: "Decide what runs on its own and what needs a human.",
-        },
-        {
-          icon: Radio,
-          title: "Live Ops",
-          text: "Watch calls, escalations, and outcomes in one simple view.",
+          title: "Never fakes an action",
+          text: "Hard rule: the agent only claims what it actually has the tool to do.",
         },
       ]}
     />
@@ -1072,23 +1138,23 @@ function About() {
   return (
     <SimplePage
       eyebrow="About"
-      title="Make the phone work for people again."
-      text="Wireline is building the AI phone layer for individuals and businesses — so no call goes unanswered."
+      title="Nobody should dread their next phone call."
+      text="Wireline is an AI call concierge for everyday phone work — and the same console runs a sales line or front desk when you want it to."
       items={[
         {
           icon: Sparkles,
-          title: "Our mission",
-          text: "Give everyone a capable assistant on the other end of the line.",
+          title: "Personal first",
+          text: "Built for the calls you avoid: pharmacy, doctor, school, landlord, airline, support.",
         },
         {
           icon: ShieldCheck,
-          title: "Trust first",
-          text: "Scoped tools, approvals, and audit-friendly behavior by design.",
+          title: "Honest by design",
+          text: "Scoped tools, approvals, and a hard rule against fake confirmations.",
         },
         {
           icon: Building2,
-          title: "Built for scale",
-          text: "From one personal line to a full business fleet.",
+          title: "Business-ready, not business-only",
+          text: "Same console scales from one line to a household, side project, or full fleet.",
         },
       ]}
     />
@@ -1168,9 +1234,7 @@ function PublicRoutes() {
 }
 
 export default function PublicMarketingWorkspace() {
-  return (
-    <BrowserRouter>
-      <PublicRoutes />
-    </BrowserRouter>
-  );
+  // The single root BrowserRouter lives in App.tsx — this surface only renders
+  // its own Routes tree so deep links share the same history with the auth shell.
+  return <PublicRoutes />;
 }

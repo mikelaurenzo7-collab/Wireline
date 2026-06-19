@@ -83,7 +83,7 @@ interface AgentStudioCanvasProps {
 }
 
 export default function AgentStudioCanvas({
-  agentId,
+  agentId: _agentId,
   agentName,
   onPublish,
 }: AgentStudioCanvasProps) {
@@ -105,9 +105,7 @@ export default function AgentStudioCanvas({
       config: { tone: "warm-reassuring", speed: 0.95 },
     },
   ]);
-  const [wires, setWires] = useState<StudioWire[]>([
-    { id: "w1", from: "n1", to: "n2" },
-  ]);
+  const [wires, setWires] = useState<StudioWire[]>([{ id: "w1", from: "n1", to: "n2" }]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -118,9 +116,7 @@ export default function AgentStudioCanvas({
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
   const setNodePosition = useCallback((id: string, x: number, y: number) => {
-    setNodes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, x, y } : n))
-    );
+    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, x, y } : n)));
   }, []);
 
   // Drop from palette
@@ -146,7 +142,7 @@ export default function AgentStudioCanvas({
       setNodes((prev) => [...prev, newNode]);
       setSelectedNodeId(newNode.id);
     },
-    [offset, scale]
+    [offset, scale],
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -234,15 +230,24 @@ export default function AgentStudioCanvas({
 
         <div className="flex items-center gap-3">
           <div className="flex items-center rounded-2xl bg-panel-2 p-1 text-xs">
-            <button onClick={() => zoom(-0.15)} className="px-3 py-1.5 hover:text-iris transition-colors">&minus;</button>
-            <div className="font-mono tabular-nums px-2 text-text-2">{(scale * 100).toFixed(0)}%</div>
-            <button onClick={() => zoom(0.15)} className="px-3 py-1.5 hover:text-iris transition-colors">+</button>
+            <button
+              onClick={() => zoom(-0.15)}
+              className="px-3 py-1.5 hover:text-iris transition-colors"
+            >
+              &minus;
+            </button>
+            <div className="font-mono tabular-nums px-2 text-text-2">
+              {(scale * 100).toFixed(0)}%
+            </div>
+            <button
+              onClick={() => zoom(0.15)}
+              className="px-3 py-1.5 hover:text-iris transition-colors"
+            >
+              +
+            </button>
           </div>
 
-          <ShadButton
-            onClick={onPublish}
-            className="bg-iris text-canvas hover:bg-iris-bright"
-          >
+          <ShadButton onClick={onPublish} className="bg-iris text-canvas hover:bg-iris-bright">
             <Play className="mr-2 h-4 w-4" /> Publish to Live
           </ShadButton>
         </div>
@@ -284,7 +289,8 @@ export default function AgentStudioCanvas({
 
           <div className="mt-8 rounded-2xl border border-border bg-panel-2 p-4 text-[11px] text-text-3">
             <div className="font-mono uppercase tracking-[0.18em] mb-1">PRO TIP</div>
-            Connect nodes by dragging a wire from a port. The agent will follow the flow in real time.
+            Connect nodes by dragging a wire from a port. The agent will follow the flow in real
+            time.
           </div>
         </div>
 
@@ -319,7 +325,10 @@ export default function AgentStudioCanvas({
             className="absolute inset-0 pointer-events-none z-10"
             width="100%"
             height="100%"
-            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0" }}
+            style={{
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transformOrigin: "0 0",
+            }}
           >
             <defs>
               <linearGradient id="wireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -333,7 +342,10 @@ export default function AgentStudioCanvas({
           {/* Nodes Layer */}
           <div
             className="absolute inset-0"
-            style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "0 0" }}
+            style={{
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transformOrigin: "0 0",
+            }}
           >
             <AnimatePresence>
               {nodes.map((node) => {
@@ -353,7 +365,7 @@ export default function AgentStudioCanvas({
                       "absolute w-[260px] rounded-3xl border p-5 shadow-xl cursor-move select-none",
                       isSelected
                         ? "border-iris bg-raised shadow-2xl ring-1 ring-iris/30"
-                        : "border-border bg-panel hover:border-iris/30"
+                        : "border-border bg-panel hover:border-iris/30",
                     )}
                     style={{ left: node.x, top: node.y }}
                     onClick={() => setSelectedNodeId(node.id)}
@@ -384,7 +396,9 @@ export default function AgentStudioCanvas({
                           <Icon className="h-[18px] w-[18px]" />
                         </div>
                         <div>
-                          <div className="font-medium tracking-[-0.01em] text-[15px]">{node.label}</div>
+                          <div className="font-medium tracking-[-0.01em] text-[15px]">
+                            {node.label}
+                          </div>
                           <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-3">
                             {node.type.toUpperCase()}
                           </div>
@@ -403,11 +417,17 @@ export default function AgentStudioCanvas({
 
                     {/* Mini config preview */}
                     <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
-                      {Object.entries(node.config).slice(0, 4).map(([k, v]) => (
-                        <div key={k} className="rounded-xl bg-canvas/70 px-3 py-1.5 font-mono tabular-nums">
-                          <span className="text-text-3">{k}:</span> <span className="text-cream">{String(v)}</span>
-                        </div>
-                      ))}
+                      {Object.entries(node.config)
+                        .slice(0, 4)
+                        .map(([k, v]) => (
+                          <div
+                            key={k}
+                            className="rounded-xl bg-canvas/70 px-3 py-1.5 font-mono tabular-nums"
+                          >
+                            <span className="text-text-3">{k}:</span>{" "}
+                            <span className="text-cream">{String(v)}</span>
+                          </div>
+                        ))}
                     </div>
 
                     {/* Connection ports hint */}
@@ -430,7 +450,8 @@ export default function AgentStudioCanvas({
                 </div>
                 <div className="font-display text-2xl tracking-[-0.02em]">Your canvas is ready</div>
                 <p className="mt-2 max-w-[260px] text-sm text-text-2">
-                  Drag training primitives from the left palette. Connect them to define how your agent thinks.
+                  Drag training primitives from the left palette. Connect them to define how your
+                  agent thinks.
                 </p>
               </div>
             </div>
@@ -438,20 +459,34 @@ export default function AgentStudioCanvas({
 
           {/* Floating Zoom Controls */}
           <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-1 rounded-2xl border border-border bg-panel/90 p-1 backdrop-blur">
-            <button onClick={() => zoom(0.2)} className="px-3 py-1 text-xl leading-none hover:text-iris">+</button>
-            <button onClick={() => zoom(-0.2)} className="px-3 py-1 text-xl leading-none hover:text-iris">−</button>
+            <button
+              onClick={() => zoom(0.2)}
+              className="px-3 py-1 text-xl leading-none hover:text-iris"
+            >
+              +
+            </button>
+            <button
+              onClick={() => zoom(-0.2)}
+              className="px-3 py-1 text-xl leading-none hover:text-iris"
+            >
+              −
+            </button>
           </div>
         </div>
 
         {/* Inspector */}
         <div className="w-80 border-l border-border bg-panel overflow-y-auto p-6 text-sm">
-          <div className="font-mono uppercase tracking-[0.2em] text-xs text-text-3 mb-3">INSPECTOR</div>
+          <div className="font-mono uppercase tracking-[0.2em] text-xs text-text-3 mb-3">
+            INSPECTOR
+          </div>
 
           {selectedNode ? (
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-10 w-10 rounded-2xl bg-raised flex items-center justify-center text-iris">
-                  {React.createElement(MODULE_DEFS[selectedNode.type].icon, { className: "h-5 w-5" })}
+                  {React.createElement(MODULE_DEFS[selectedNode.type].icon, {
+                    className: "h-5 w-5",
+                  })}
                 </div>
                 <div>
                   <div className="font-medium text-lg tracking-[-0.01em]">{selectedNode.label}</div>
@@ -474,8 +509,8 @@ export default function AgentStudioCanvas({
                           prev.map((n) =>
                             n.id === selectedNode.id
                               ? { ...n, config: { ...n.config, [key]: val } }
-                              : n
-                          )
+                              : n,
+                          ),
                         );
                       }}
                     />
@@ -484,7 +519,9 @@ export default function AgentStudioCanvas({
               </div>
 
               <div className="mt-8 pt-6 border-t border-border">
-                <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-text-3 mb-2">LIVE PREVIEW</div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-text-3 mb-2">
+                  LIVE PREVIEW
+                </div>
                 <div className="rounded-2xl bg-canvas p-4 text-xs text-text-2 font-mono leading-relaxed">
                   “Hi, this is Jordan from Acme. How can I help you today?”
                   <div className="mt-2 text-iris">→ Matches policy gate “support-first”</div>
