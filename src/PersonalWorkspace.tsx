@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   BrowserRouter,
   Link,
@@ -22,7 +22,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext";
-import { AssistantComposer } from "./components/AssistantComposer";
+import { AssistantComposer, simulateAssistantReply } from "./components/AssistantComposer";
 
 const nav = [
   ["Home", "/app/personal"],
@@ -329,7 +329,7 @@ function Shell({ children }: { children: ReactNode }) {
                 location.pathname === path ||
                   (path.includes("automations") &&
                     (location.pathname.includes("intents") || location.pathname.includes("siri")))
-                  ? "bg-brand text-white shadow-[0_0_15px_rgba(139,92,246,0.45)] hover:brightness-110"
+                  ? "bg-brand text-white shadow-[0_0_15px_rgba(43,91,240,0.45)] hover:brightness-110"
                   : "text-muted-foreground hover:bg-white/5 hover:text-white",
               )}
             >
@@ -450,7 +450,7 @@ function SetupRail() {
     ["Connect context", "/app/personal/settings", "Email, calendar, contacts, reminders", "Setup"],
   ];
   return (
-    <Card className="border-brand/40 bg-[#0d091c]/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] p-6 sm:p-8">
+    <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(43,91,240,0.15)] p-6 sm:p-8">
       <div className="text-[11px] font-bold uppercase tracking-[.14em] text-brand-bright">
         Setup path
       </div>
@@ -462,7 +462,7 @@ function SetupRail() {
           <Link
             key={title}
             to={path}
-            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(43,91,240,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white font-semibold shadow-sm">
               {index + 1}
@@ -485,7 +485,51 @@ function SetupRail() {
   );
 }
 
+type ChatMessage = { id: string; role: "user" | "assistant"; text: string; pending?: boolean };
+
+const PERSONAL_SEED: ChatMessage[] = [
+  {
+    id: "seed-1",
+    role: "assistant",
+    text: "I reviewed your calls. One appointment is confirmed and three unknown callers were blocked.",
+  },
+];
+
 function AssistantView() {
+  const [messages, setMessages] = useState<ChatMessage[]>(PERSONAL_SEED);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const send = (text: string, attachmentCount = 0) => {
+    const clean = text.trim();
+    if (!clean && attachmentCount === 0) return;
+    const userText =
+      clean || `Sent ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}`;
+    const pendingId = `a-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "user", text: userText },
+      { id: pendingId, role: "assistant", text: "", pending: true },
+    ]);
+    timers.current.push(
+      setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === pendingId
+              ? { ...m, text: simulateAssistantReply(clean, attachmentCount), pending: false }
+              : m,
+          ),
+        );
+      }, 850),
+    );
+  };
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-5xl flex-col">
       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
@@ -498,17 +542,33 @@ function AssistantView() {
         No named persona. Assistant is where you ask, review, approve, and hand off.
       </p>
       <Card className="mt-6 flex flex-1 flex-col">
-        <div className="space-y-4">
-          <div className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm">
-            I reviewed your calls. One appointment is confirmed and three unknown callers were
-            blocked.
-          </div>
-          <div className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(139,92,246,0.35)]">
-            Call the office and say I am running 10 minutes late.
-          </div>
-          <div className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm">
-            Ready. I will keep it brief, ask for confirmation, and report back.
-          </div>
+        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto pr-1">
+          {messages.map((m) =>
+            m.role === "assistant" ? (
+              <div
+                key={m.id}
+                className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm"
+                aria-live={m.pending ? "polite" : undefined}
+              >
+                {m.pending ? (
+                  <span className="flex items-center gap-1.5 py-0.5" aria-label="Assistant is typing">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:0ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:150ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:300ms]" />
+                  </span>
+                ) : (
+                  m.text
+                )}
+              </div>
+            ) : (
+              <div
+                key={m.id}
+                className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(43,91,240,0.35)]"
+              >
+                {m.text}
+              </div>
+            ),
+          )}
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
           {[
@@ -519,6 +579,7 @@ function AssistantView() {
           ].map((item) => (
             <button
               key={item}
+              onClick={() => send(item)}
               className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:text-brand hover:border-brand/30 hover:bg-brand/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {item}
@@ -530,6 +591,7 @@ function AssistantView() {
             tone="light"
             placeholder="Ask Assistant to call, screen, summarize, wait on hold…"
             sendLabel="Send"
+            onSend={({ text, attachments }) => send(text, attachments.length)}
           />
         </div>
       </Card>
@@ -650,7 +712,7 @@ function NumberView() {
           ))}
         </div>
       </Card>
-      <Card className="border-brand/40 bg-[#0d091c]/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] p-6 sm:p-8">
+      <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(43,91,240,0.15)] p-6 sm:p-8">
         <PhoneCall className="text-brand-bright" />
         <h2 className="mt-4 font-display text-2xl text-white">Handoff rule</h2>
         <p className="mt-3 text-sm leading-6 text-slate-300">

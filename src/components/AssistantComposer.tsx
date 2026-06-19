@@ -15,6 +15,30 @@ type Attachment = { id: string; name: string; kind: "image" | "file"; url?: stri
 
 type Tone = "light" | "dark";
 
+/**
+ * Lightweight, keyword-driven reply generator so the assistant transcript feels
+ * alive in the product demo without wiring a live model. Deterministic per input.
+ */
+export function simulateAssistantReply(input: string, attachmentCount = 0): string {
+  const t = input.toLowerCase();
+  if (attachmentCount > 0 && t.trim().length === 0) {
+    return `Got it — I've got ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}. Want me to summarize ${attachmentCount > 1 ? "them" : "it"} or pull out the key details?`;
+  }
+  if (/(hold|wait)/.test(t))
+    return "On it. I'll wait on hold and bring you back the moment a real person picks up — you won't have to listen to the music.";
+  if (/(screen|spam|block|unknown)/.test(t))
+    return "I'll screen incoming callers, filter the spam, and only put through the ones that look real. I'll log the rest.";
+  if (/(summar|recap|notes?)/.test(t))
+    return "Here's the recap: 1 appointment confirmed, 3 unknown callers blocked, and 1 callback waiting. Want the full transcript?";
+  if (/(call|dial|phone|reschedul|book|appointment)/.test(t))
+    return "Ready. I'll keep it brief, confirm the details before committing, and report back with what they said.";
+  if (/(refund|billing|charge|invoice)/.test(t))
+    return "I'll handle the billing call carefully — I'll state the policy, stay calm if they push, and escalate to you before agreeing to anything.";
+  if (/(train|improve|fix|better)/.test(t))
+    return "Good call. I'll line up a few practice scenarios and flag exactly where the responses need tightening.";
+  return "Got it. I'll take care of that and let you know the moment it's done.";
+}
+
 const cx = (...parts: Array<string | false | null | undefined>) =>
   parts.filter(Boolean).join(" ");
 
@@ -35,6 +59,7 @@ export function AssistantComposer({
   const [text, setText] = useState("");
   const [model, setModel] = useState<ComposerModel>(models[0]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
@@ -46,8 +71,15 @@ export function AssistantComposer({
     const onDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [menuOpen]);
 
   useEffect(() => {
@@ -57,14 +89,17 @@ export function AssistantComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addFiles = (list: FileList | null, kind: "image" | "file") => {
+  const addFiles = (list: FileList | null, kind?: "image" | "file") => {
     if (!list) return;
-    const next: Attachment[] = Array.from(list).map((f) => ({
-      id: `${f.name}-${f.size}-${Math.random().toString(36).slice(2, 7)}`,
-      name: f.name,
-      kind,
-      url: kind === "image" ? URL.createObjectURL(f) : undefined,
-    }));
+    const next: Attachment[] = Array.from(list).map((f) => {
+      const resolved: "image" | "file" = kind ?? (f.type.startsWith("image/") ? "image" : "file");
+      return {
+        id: `${f.name}-${f.size}-${Math.random().toString(36).slice(2, 7)}`,
+        name: f.name,
+        kind: resolved,
+        url: resolved === "image" ? URL.createObjectURL(f) : undefined,
+      };
+    });
     setAttachments((prev) => [...prev, ...next]);
   };
 
@@ -104,7 +139,7 @@ export function AssistantComposer({
     ? "border-white/10 bg-white/5 text-white/80"
     : "border-border bg-card-deep text-foreground";
   const menuBg = dark
-    ? "border-white/10 bg-[#0b0b12] text-white shadow-[0_18px_40px_rgba(0,0,0,.5)]"
+    ? "border-white/10 bg-[#0B0D12] text-white shadow-[0_18px_40px_rgba(0,0,0,.5)]"
     : "border-border bg-card text-foreground shadow-lg";
   const pickerBtn = dark
     ? "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
@@ -148,7 +183,35 @@ export function AssistantComposer({
         </div>
       )}
 
-      <div className={cx("flex items-end gap-2 rounded-[18px] border px-2.5 py-2 transition-colors", shell)}>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!dragOver) setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          addFiles(e.dataTransfer.files);
+        }}
+        className={cx(
+          "relative flex items-end gap-2 rounded-[18px] border px-2.5 py-2 transition-colors",
+          shell,
+          dragOver && "border-brand ring-2 ring-brand/40",
+        )}
+      >
+        {dragOver && (
+          <div
+            className={cx(
+              "pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[18px] text-xs font-semibold",
+              dark ? "bg-[#0B0D12]/85 text-white" : "bg-background/85 text-brand",
+            )}
+          >
+            Drop files to attach
+          </div>
+        )}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
