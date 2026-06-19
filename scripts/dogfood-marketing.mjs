@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 /**
  * Marketing-only dogfood when API is down — public routes + viewports.
+ * Output defaults to a local ignored directory.
  */
 import { chromium } from "playwright";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import path from "path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
 const base = process.env.APP_URL || "https://trywireline.com";
-const OUT = process.env.DOGFOOD_OUT || path.join(process.cwd(), "terminals", "dogfood-prod");
-const SS = path.join(OUT, "screenshots", "marketing");
-[SS].forEach((d) => {
-  if (!existsSync(d)) mkdirSync(d, { recursive: true });
-});
+const out = process.env.DOGFOOD_OUT || path.join(process.cwd(), ".tmp", "wireline-marketing-dogfood");
+const screenshots = path.join(out, "screenshots");
+if (!existsSync(screenshots)) mkdirSync(screenshots, { recursive: true });
 
-const ROUTES = ["/", "/pricing", "/showcase", "/compare", "/about", "/support", "/auth"];
-const VIEWPORTS = [
+const routes = ["/", "/pricing", "/showcase", "/compare", "/about", "/support", "/auth"];
+const viewports = [
   { name: "mobile", width: 390, height: 844 },
   { name: "tablet", width: 834, height: 1112 },
   { name: "desktop", width: 1440, height: 900 },
@@ -22,87 +21,73 @@ const VIEWPORTS = [
 
 const report = { base, at: new Date().toISOString(), passed: [], failed: [], warnings: [] };
 
-function pass(id, note) {
-  report.passed.push({ id, note });
-  console.log(`  ✓ ${id}${note ? ` — ${note}` : ""}`);
-}
-function fail(id, note) {
-  report.failed.push({ id, note });
-  console.log(`  ✗ ${id}${note ? ` — ${note}` : ""}`);
-}
-function warn(id, note) {
-  report.warnings.push({ id, note });
-  console.log(`  ! ${id}${note ? ` — ${note}` : ""}`);
+function record(kind, id, note) {
+  report[kind].push({ id, note });
+  const symbol = kind === "passed" ? "✓" : kind === "failed" ? "✗" : "!";
+  console.log(`${symbol} ${id}${note ? ` — ${note}` : ""}`);
 }
 
 async function gotoStable(page, url) {
-  await page.goto(url, { waitUntil: "commit", timeout: 45_000 });
-  await page
-    .waitForFunction(
-      () => {
-        const el = document.getElementById("root");
-        return !!el && el.innerText.trim().length > 20;
-      },
-      { timeout: 25_000 },
-    )
-    .catch(() => {});
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+  await page.waitForTimeout(1_200);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(800);
-  await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(400);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(300);
 }
 
 async function main() {
   console.log(`Marketing dogfood @ ${base}`);
-  const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-gpu"] });
 
-  for (const vp of VIEWPORTS) {
-    const context = await browser.newContext({
-      viewport: { width: vp.width, height: vp.height },
-      deviceScaleFactor: 2,
-    });
-    const page = await context.newPage();
-    const consoleErrors = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") consoleErrors.push(msg.text());
-    });
+  try {
+    for (const viewport of viewports) {
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+        deviceScaleFactor: 1,
+      });
+      const page = await context.newPage();
+      const consoleErrors = [];
+      page.on("console", (message) => {
+        if (message.type() === "error") consoleErrors.push(message.text());
+      });
 
-    for (const route of ROUTES) {
-      const id = `marketing:${vp.name}${route}`;
-      try {
-        await gotoStable(page, `${base}${route}`);
-        const body = await page.locator("body").innerText();
-        if (/something went wrong|error boundary/i.test(body)) {
-          fail(id, "error copy visible");
-          continue;
+      for (const route of routes) {
+        const id = `marketing:${viewport.name}${route}`;
+        try {
+          await gotoStable(page, `${base}${route}`);
+          const body = await page.locator("body").innerText();
+          const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+          if (/something went wrong|error boundary|failed to load/i.test(body)) {
+            record("failed", id, "error state visible");
+            continue;
+          }
+          if (body.trim().length < 30) record("warnings", id, "thin content");
+          if (overflow) record("warnings", id, "horizontal overflow");
+          const fileName = route.replace(/[^a-z0-9]+/gi, "_") || "home";
+          await page.screenshot({
+            path: path.join(screenshots, `${viewport.name}_${fileName}.png`),
+            fullPage: route === "/",
+          });
+          record("passed", id, route);
+        } catch (error) {
+          record("failed", id, error instanceof Error ? error.message : String(error));
         }
-        if (body.trim().length < 30) {
-          warn(id, "thin content");
-        }
-        const safe = route.replace(/\//g, "_") || "home";
-        await page.screenshot({
-          path: path.join(SS, `${vp.name}_${safe}.png`),
-          fullPage: route === "/",
-        });
-        pass(id, route);
-      } catch (e) {
-        fail(id, e.message);
       }
-    }
 
-    if (consoleErrors.length) {
-      warn(`console:${vp.name}`, `${consoleErrors.length} errors`);
+      if (consoleErrors.length) record("warnings", `console:${viewport.name}`, `${consoleErrors.length} errors`);
+      await context.close();
     }
-    await context.close();
+  } finally {
+    await browser.close();
   }
 
-  await browser.close();
-  writeFileSync(path.join(OUT, "marketing-report.json"), JSON.stringify(report, null, 2));
-  console.log(`\n${report.passed.length} passed, ${report.failed.length} failed`);
-  process.exit(report.failed.length > 0 ? 1 : 0);
+  writeFileSync(path.join(out, "report.json"), JSON.stringify(report, null, 2));
+  console.log(`Report: ${path.join(out, "report.json")}`);
+  process.exit(report.failed.length ? 1 : 0);
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });
