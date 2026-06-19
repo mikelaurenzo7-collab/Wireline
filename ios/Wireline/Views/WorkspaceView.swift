@@ -98,7 +98,7 @@ struct WorkspaceView: View {
                     }
                 }
                 .padding(20)
-                .background(
+                .background {
                     ZStack {
                         LinearGradient(
                             colors: [Brand.violet, Brand.violetDeep],
@@ -115,9 +115,9 @@ struct WorkspaceView: View {
                             .frame(width: 130, height: 130)
                             .blur(radius: 38)
                             .offset(x: -96, y: 70)
-                    },
-                    in: RoundedRectangle(cornerRadius: 24, style: .continuous)
-                )
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .stroke(.white.opacity(0.16), lineWidth: 1)
