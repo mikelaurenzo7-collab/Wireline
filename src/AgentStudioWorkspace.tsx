@@ -80,7 +80,7 @@ const nav = [
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <section
-      className={`rounded-[28px] border border-white/10 bg-white/[.045] p-5 shadow-[0_24px_80px_-62px_rgba(0,0,0,.9)] ${className}`}
+      className={`rounded-[28px] border border-border bg-card p-5 shadow-[0_24px_80px_-62px_rgba(0,0,0,.16)] ${className}`}
     >
       {children}
     </section>
@@ -98,13 +98,13 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-bold uppercase tracking-[.16em] text-white/55">
+      <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground/55">
         {label}
       </span>
       {children ?? (
         <input
           defaultValue={value}
-          className="mt-2 h-12 w-full rounded-[16px] border border-white/10 bg-black/20 px-3 text-sm text-paper outline-none focus:border-brand-bright"
+          className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-brand"
         />
       )}
     </label>
@@ -116,7 +116,7 @@ function RequireStudio({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading)
     return (
-      <div className="grid min-h-screen place-items-center bg-ink text-paper">
+      <div className="grid min-h-screen place-items-center bg-background text-foreground">
         <Sparkles className="h-5 w-5 animate-pulse text-brand-bright" />
       </div>
     );
@@ -135,12 +135,12 @@ function StudioShell() {
 
   return (
     <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-ink text-paper">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-[#160f24] p-4 lg:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card p-4 lg:flex">
         <Link to="/" className="mb-8 inline-flex items-center gap-2 px-2 pt-2">
           <span className="grid h-7 w-7 place-items-center rounded-[10px] bg-brand">W</span>
           <span className="font-display text-[19px] font-semibold">Wireline</span>
         </Link>
-        <div className="mb-3 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[.16em] text-white/60">
+        <div className="mb-3 rounded-full border border-border bg-muted px-3 py-1.5 text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
           Business workspace
         </div>
         <nav className="flex flex-1 flex-col gap-1">
@@ -148,27 +148,27 @@ function StudioShell() {
             <Link
               key={path}
               to={path}
-              className={`flex items-center gap-3 px-3 py-2.5 text-[13px] transition ${path === "/app/business/studio" ? "bg-brand text-paper" : "text-paper/60 hover:bg-card/5 hover:text-paper"}`}
+              className={`flex items-center gap-3 px-3 py-2.5 text-[13px] transition ${path === "/app/business/studio" ? "bg-brand text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             >
               {label}
             </Link>
           ))}
         </nav>
-        <div className="border-t border-paper/10 pt-4 text-xs text-paper/50">
+        <div className="border-t border-border pt-4 text-xs text-foreground/50">
           <div className="truncate">{user?.email ?? "Owner"}</div>
           <button
             onClick={() => {
               void signOut();
               navigate("/");
             }}
-            className="mt-3 inline-flex items-center gap-2 text-paper/50 hover:text-paper"
+            className="mt-3 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"
           >
             <LogOut size={14} /> Sign out
           </button>
         </div>
       </aside>
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-ink/92 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-border bg-card/85 backdrop-blur">
           <div className="flex h-14 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-3">
               <Link to="/app/business/live" className="lg:hidden">
@@ -181,21 +181,21 @@ function StudioShell() {
             <div className="flex items-center gap-2">
               <Link
                 to="/app/business/training"
-                className="hidden rounded-[14px] border border-white/10 px-3 py-2 text-sm text-paper/70 hover:text-paper sm:inline-flex"
+                className="hidden rounded-[14px] border border-border px-3 py-2 text-sm text-foreground/70 hover:text-foreground sm:inline-flex"
               >
                 Open Training
               </Link>
-              <button className="rounded-[14px] bg-card px-3 py-2 text-sm font-semibold text-foreground">
+              <button className="rounded-[14px] bg-brand px-3 py-2 text-sm font-semibold text-white">
                 Save changes
               </button>
             </div>
           </div>
-          <div className="flex gap-1 overflow-x-auto border-t border-white/10 px-3 py-2 lg:hidden">
+          <div className="flex gap-1 overflow-x-auto border-t border-border px-3 py-2 lg:hidden">
             {nav.map(([label, path]) => (
               <Link
                 key={path}
                 to={path}
-                className={`shrink-0 px-3 py-1.5 text-[12px] ${path === "/app/business/studio" ? "text-brand-bright" : "text-paper/45"}`}
+                className={`shrink-0 px-3 py-1.5 text-[12px] ${path === "/app/business/studio" ? "text-brand-bright" : "text-foreground/45"}`}
               >
                 {label}
               </Link>
@@ -210,7 +210,7 @@ function StudioShell() {
                   Fleet selector
                 </span>
                 <h1 className="mt-2 font-display text-3xl">Pick an agent.</h1>
-                <p className="mt-2 text-sm leading-6 text-paper/50">
+                <p className="mt-2 text-sm leading-6 text-foreground/50">
                   Studio configures identity, runtime, and permissions. Training teaches the agent
                   what to know.
                 </p>
@@ -223,16 +223,16 @@ function StudioShell() {
                     setModel(item.model);
                     setVoice(item.voice);
                   }}
-                  className={`w-full rounded-[22px] border p-4 text-left transition ${agentIndex === index ? "border-brand-bright bg-brand/18" : "border-white/10 bg-white/[.035] hover:bg-white/[.06]"}`}
+                  className={`w-full rounded-[22px] border p-4 text-left transition ${agentIndex === index ? "border-brand-bright bg-brand/18" : "border-border bg-card hover:bg-muted"}`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-display text-2xl">{item.name}</span>
-                    <span className="rounded-full bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[.14em] text-paper/55">
+                    <span className="rounded-full bg-muted px-2 py-1 text-[10px] uppercase tracking-[.14em] text-muted-foreground">
                       {item.status}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-paper/48">{item.role}</p>
-                  <div className="mt-3 flex items-center justify-between text-xs text-paper/35">
+                  <p className="mt-1 text-sm text-foreground/48">{item.role}</p>
+                  <div className="mt-3 flex items-center justify-between text-xs text-foreground/35">
                     <span>
                       {item.model} · {item.voice}
                     </span>
@@ -242,7 +242,7 @@ function StudioShell() {
               ))}
               <Link
                 to="/app/business/fleet"
-                className="flex items-center justify-between rounded-[18px] border border-white/10 bg-white/[.035] p-4 text-sm text-paper/65 hover:text-paper"
+                className="flex items-center justify-between rounded-[18px] border border-border bg-card p-4 text-sm text-foreground/65 hover:text-foreground"
               >
                 <span>Manage full fleet</span>
                 <ChevronRight size={15} />
@@ -256,7 +256,7 @@ function StudioShell() {
                       <Sliders size={13} /> Basic setup
                     </div>
                     <h2 className="mt-5 font-display text-4xl sm:text-5xl">{agent.name}</h2>
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-paper/55">
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-foreground/55">
                       Configure identity, model, voice, phone number, workflows, and handoff. Keep
                       scripts, docs, and scenario testing in Training.
                     </p>
@@ -264,11 +264,11 @@ function StudioShell() {
                   <div className="flex flex-wrap gap-2">
                     <Link
                       to="/app/business/training"
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-white/10 px-4 text-sm font-semibold text-paper/75 hover:text-paper"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-border px-4 text-sm font-semibold text-foreground/75 hover:text-foreground"
                     >
                       Train agent <ArrowRight size={15} />
                     </Link>
-                    <button className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-brand px-4 text-sm font-semibold text-paper">
+                    <button className="inline-flex h-11 items-center justify-center gap-2 rounded-[14px] bg-brand px-4 text-sm font-semibold text-white">
                       <PhoneCall size={15} /> Run test call
                     </button>
                   </div>
@@ -280,10 +280,10 @@ function StudioShell() {
                     <select
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
-                      className="mt-2 h-12 w-full rounded-[16px] border border-white/10 bg-black/20 px-3 text-sm text-paper outline-none focus:border-brand-bright"
+                      className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-brand"
                     >
                       {models.map((item) => (
-                        <option key={item} className="bg-ink">
+                        <option key={item} className="bg-card">
                           {item}
                         </option>
                       ))}
@@ -293,10 +293,10 @@ function StudioShell() {
                     <select
                       value={voice}
                       onChange={(e) => setVoice(e.target.value)}
-                      className="mt-2 h-12 w-full rounded-[16px] border border-white/10 bg-black/20 px-3 text-sm text-paper outline-none focus:border-brand-bright"
+                      className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-brand"
                     >
                       {voices.map((item) => (
-                        <option key={item} className="bg-ink">
+                        <option key={item} className="bg-card">
                           {item}
                         </option>
                       ))}
@@ -316,13 +316,15 @@ function StudioShell() {
                     {workflows.map(([item, note], index) => (
                       <button
                         key={item}
-                        className={`rounded-[16px] border p-3 text-left text-sm ${index < 5 ? "border-brand/35 bg-brand/12 text-paper" : "border-white/10 bg-white/[.035] text-paper/55"}`}
+                        className={`rounded-[16px] border p-3 text-left text-sm ${index < 5 ? "border-brand/35 bg-brand/10 text-foreground" : "border-border bg-card text-muted-foreground"}`}
                       >
                         <Check
-                          className={`mb-3 h-4 w-4 ${index < 5 ? "text-brand-bright" : "text-paper/30"}`}
+                          className={`mb-3 h-4 w-4 ${index < 5 ? "text-brand-bright" : "text-foreground/30"}`}
                         />
                         <span className="block font-semibold">{item}</span>
-                        <span className="mt-1 block text-xs leading-5 text-paper/42">{note}</span>
+                        <span className="mt-1 block text-xs leading-5 text-foreground/42">
+                          {note}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -331,7 +333,7 @@ function StudioShell() {
                   <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-brand-bright">
                     <ShieldCheck size={13} /> Setup health
                   </div>
-                  <div className="mt-5 space-y-3 text-sm text-paper/65">
+                  <div className="mt-5 space-y-3 text-sm text-foreground/65">
                     {[
                       "Identity ready",
                       "Model selected",
@@ -341,10 +343,10 @@ function StudioShell() {
                     ].map((item, index) => (
                       <div
                         key={item}
-                        className="flex items-center justify-between rounded-[16px] border border-white/10 bg-black/15 p-3"
+                        className="flex items-center justify-between rounded-[16px] border border-border bg-muted p-3"
                       >
                         <span>{item}</span>
-                        <span className={index < 4 ? "text-brand-bright" : "text-paper/35"}>
+                        <span className={index < 4 ? "text-brand-bright" : "text-foreground/35"}>
                           {index < 4 ? "Done" : "Next"}
                         </span>
                       </div>
@@ -356,21 +358,21 @@ function StudioShell() {
                 <Card>
                   <Bot className="text-brand-bright" />
                   <h3 className="mt-4 font-display text-2xl">Studio</h3>
-                  <p className="mt-2 text-sm leading-6 text-paper/50">
+                  <p className="mt-2 text-sm leading-6 text-foreground/50">
                     Name, role, model, voice, number, workflows, handoff.
                   </p>
                 </Card>
                 <Card>
                   <Database className="text-brand-bright" />
                   <h3 className="mt-4 font-display text-2xl">Training</h3>
-                  <p className="mt-2 text-sm leading-6 text-paper/50">
+                  <p className="mt-2 text-sm leading-6 text-foreground/50">
                     Policies, scripts, scenarios, FAQs, objection handling.
                   </p>
                 </Card>
                 <Card>
                   <Radio className="text-brand-bright" />
                   <h3 className="mt-4 font-display text-2xl">Live Ops</h3>
-                  <p className="mt-2 text-sm leading-6 text-paper/50">
+                  <p className="mt-2 text-sm leading-6 text-foreground/50">
                     Calls in progress, coaching, escalations, quality pulse.
                   </p>
                 </Card>
