@@ -454,7 +454,7 @@ function SetupRail() {
     ["Connect context", "/app/personal/settings", "Email, calendar, contacts, reminders", "Setup"],
   ];
   return (
-    <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(124,58,237,0.15)] p-6 sm:p-8">
+    <Card className="border-brand/40 bg-charcoal/40 shadow-[0_0_30px_rgba(124,58,237,0.15)] p-6 sm:p-8">
       <div className="text-[11px] font-bold uppercase tracking-[.14em] text-brand-bright">
         Setup path
       </div>
@@ -758,7 +758,7 @@ function NumberView() {
           ))}
         </div>
       </Card>
-      <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(124,58,237,0.15)] p-6 sm:p-8">
+      <Card className="border-brand/40 bg-charcoal/40 shadow-[0_0_30px_rgba(124,58,237,0.15)] p-6 sm:p-8">
         <PhoneCall className="text-brand-bright" />
         <h2 className="mt-4 font-display text-2xl text-white">Handoff rule</h2>
         <p className="mt-3 text-sm leading-6 text-slate-300">

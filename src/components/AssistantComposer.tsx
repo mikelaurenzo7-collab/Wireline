@@ -129,7 +129,7 @@ export function AssistantComposer({
   };
 
   const shell = dark
-    ? "border-white/10 bg-[#030303]/60 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner"
+    ? "border-white/10 bg-charcoal/60 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner"
     : "border-border bg-background focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50";
   const iconBtn = dark
     ? "text-white/55 hover:text-white hover:bg-white/10"
@@ -138,7 +138,7 @@ export function AssistantComposer({
     ? "border-white/10 bg-white/5 text-white/80"
     : "border-border bg-card-deep text-foreground";
   const menuBg = dark
-    ? "border-white/10 bg-[#0B0D12] text-white shadow-[0_18px_40px_rgba(0,0,0,.5)]"
+    ? "border-white/10 bg-charcoal text-white shadow-[0_18px_40px_rgba(0,0,0,.5)]"
     : "border-border bg-card text-foreground shadow-lg";
   const pickerBtn = dark
     ? "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
@@ -205,7 +205,7 @@ export function AssistantComposer({
           <div
             className={cx(
               "pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[18px] text-xs font-semibold",
-              dark ? "bg-[#0B0D12]/85 text-white" : "bg-background/85 text-brand",
+              dark ? "bg-charcoal/85 text-white" : "bg-background/85 text-brand",
             )}
           >
             Drop files to attach

@@ -360,7 +360,7 @@ function AssistantPage() {
               m.role === "assistant" ? (
                 <div
                   key={m.id}
-                  className="max-w-[88%] rounded-[20px] border border-white/5 bg-[#030303]/90 p-4 text-sm leading-7 text-slate-300 shadow-inner"
+                  className="max-w-[88%] rounded-[20px] border border-white/5 bg-charcoal/90 p-4 text-sm leading-7 text-slate-300 shadow-inner"
                   aria-live={m.pending ? "polite" : undefined}
                 >
                   {m.pending ? (
@@ -408,14 +408,14 @@ function AssistantPage() {
         </Card>
       </div>
       <div className="space-y-5">
-        <Card className="border-brand/30 bg-[#0B0D12]/30 shadow-[0_0_20px_rgba(124,58,237,0.1)]">
+        <Card className="border-brand/30 bg-charcoal/30 shadow-[0_0_20px_rgba(124,58,237,0.1)]">
           <Pill tone="warn">Needs approval</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">Refund call</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
             Sarah needs a human approval rule before promising refund timing.
           </p>
         </Card>
-        <Card className="border-brand/25 bg-[#0B0D12]/30 shadow-[0_0_20px_rgba(124,58,237,0.12)]">
+        <Card className="border-brand/25 bg-charcoal/30 shadow-[0_0_20px_rgba(124,58,237,0.12)]">
           <Pill tone="brand">Training win</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">12 improved calls</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -455,7 +455,7 @@ function LiveOpsPage() {
       <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <Card>
           <h2 className="font-display text-2xl text-white">Calls in progress</h2>
-          <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/5 overflow-hidden bg-[#030303]/40">
+          <div className="mt-5 divide-y divide-white/10 rounded-[22px] border border-white/5 overflow-hidden bg-charcoal/40">
             <div className="hidden lg:grid grid-cols-[1fr_140px_1fr_96px_100px] gap-3 bg-white/[0.02] p-4 text-[10px] font-bold uppercase tracking-[.15em] text-white/55 font-mono">
               <div>Topic</div>
               <div>Agent</div>
@@ -526,7 +526,7 @@ function FleetPage() {
               <MiniMetric value={agent.calls} label="Calls" />
               <MiniMetric value={agent.score} label="Score" />
             </div>
-            <div className="mt-4 rounded-[16px] border border-white/5 bg-[#030303]/40 p-3 text-sm text-slate-300 shadow-inner">
+            <div className="mt-4 rounded-[16px] border border-white/5 bg-charcoal/40 p-3 text-sm text-slate-300 shadow-inner">
               <span className="text-white/55 font-mono text-xs">Next training:</span> {agent.next}
             </div>
             <div className="mt-5 flex gap-2">
@@ -588,7 +588,7 @@ function TrainingPage() {
             {["Upload policies", "Run 5 simulations", "Approve escalation rules"].map((x, i) => (
               <button
                 key={x}
-                className="flex flex-col text-left rounded-[18px] border border-white/5 bg-[#030303]/40 p-4 text-sm text-white/60 transition-all duration-200 hover:bg-white/5 hover:border-brand/30 active:scale-95"
+                className="flex flex-col text-left rounded-[18px] border border-white/5 bg-charcoal/40 p-4 text-sm text-white/60 transition-all duration-200 hover:bg-white/5 hover:border-brand/30 active:scale-95"
               >
                 <Check
                   className={cx(
@@ -603,7 +603,7 @@ function TrainingPage() {
             ))}
           </div>
         </Card>
-        <Card className="border-brand/30 bg-[#0B0D12]/30">
+        <Card className="border-brand/30 bg-charcoal/30">
           <Pill tone="warn">Next before launch</Pill>
           <h3 className="mt-4 font-display text-2xl text-white">Billing scenario pack</h3>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -646,7 +646,7 @@ function AnalyticsPage() {
           {["Billing objections", "Refund approvals", "Webhook timeouts"].map((x) => (
             <div
               key={x}
-              className="rounded-[18px] border border-white/5 bg-[#030303]/40 p-4 text-sm text-slate-300 font-semibold text-center hover:border-brand/30 transition-all duration-300"
+              className="rounded-[18px] border border-white/5 bg-charcoal/40 p-4 text-sm text-slate-300 font-semibold text-center hover:border-brand/30 transition-all duration-300"
             >
               {x}
             </div>

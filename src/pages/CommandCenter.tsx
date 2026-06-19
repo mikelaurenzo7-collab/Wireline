@@ -818,9 +818,9 @@ export default function LiveOps() {
                                 22%
                               </span>
                             </div>
-                            <div className="w-full bg-indigo-500/5 h-1.5 rounded-full overflow-hidden border border-indigo-500/5">
+                            <div className="w-full bg-violet-500/5 h-1.5 rounded-full overflow-hidden border border-violet-500/5">
                               <div
-                                className="bg-indigo-400 h-full rounded-full"
+                                className="bg-violet-400 h-full rounded-full"
                                 style={{ width: "22%" }}
                               />
                             </div>
@@ -882,10 +882,10 @@ export default function LiveOps() {
                           </div>
 
                           {/* Agent #2 */}
-                          <div className="flex items-center justify-between p-2.5 rounded border border-indigo-500/5 bg-indigo-500/[0.01] hover:bg-indigo-500/[0.03] transition-colors">
+                          <div className="flex items-center justify-between p-2.5 rounded border border-violet-500/5 bg-violet-500/[0.01] hover:bg-violet-500/[0.03] transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="relative">
-                                <div className="w-9 h-9 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-400 uppercase">
+                                <div className="w-9 h-9 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-xs font-bold text-violet-400 uppercase">
                                   SC
                                 </div>
                                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center text-[10px] text-white border border-card">

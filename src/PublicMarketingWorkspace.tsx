@@ -390,7 +390,7 @@ function CallTranscript() {
           key={i}
           className={cn(
             "wl-rise max-w-[88%] rounded-2xl px-4 py-2.5 text-sm leading-6",
-            l.who === "assistant" ? "ml-auto bg-brand text-[#fff]" : "bg-white/8 text-[#dfe6e2]",
+            l.who === "assistant" ? "ml-auto bg-brand text-[#fff]" : "bg-white/8 text-[#F3EFFA]",
           )}
           style={{ animationDelay: `${i * 140}ms` }}
         >
@@ -430,7 +430,7 @@ function HeroPanel() {
               <span className="wl-ping absolute h-2 w-2 rounded-full bg-[#A78BFA]" />
               <span className="h-2 w-2 rounded-full bg-[#A78BFA]" />
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#dfe6e2]">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#F3EFFA]">
               Live
             </span>
           </span>
@@ -438,7 +438,7 @@ function HeroPanel() {
 
         <div className="mt-5 flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
           <Waveform />
-          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.18em] text-[#9fb3aa]">
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.18em] text-[#7A7194]">
             Screening · transcribing
           </span>
         </div>
@@ -451,13 +451,13 @@ function HeroPanel() {
           {["Booked Friday 11:30", "SMS confirmation sent", "Added to calendar"].map((t) => (
             <span
               key={t}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-[#dfe6e2]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-[#F3EFFA]"
             >
               <Check size={12} className="text-brand" /> {t}
             </span>
           ))}
         </div>
-        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-[#5f7068]">
+        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-[#6E6584]">
           Illustration of a Wireline call
         </p>
       </div>
@@ -611,7 +611,7 @@ function TwoWorlds() {
               </h3>
             </div>
           </div>
-          <p className="relative mt-5 text-[15px] leading-7 text-[#b8c7bf]">
+          <p className="relative mt-5 text-[15px] leading-7 text-[#B8B0CA]">
             A front desk that never misses a call. Assistants that book jobs, qualify leads, answer
             FAQs, and route the urgent stuff to a real person.
           </p>
@@ -709,7 +709,7 @@ function Manifesto() {
           <Button to="/get-started" variant="invert">
             Get started free <ArrowRight size={16} />
           </Button>
-          <Button to="/compare" variant="ghost" className="text-[#dfe6e2] hover:text-[#fff]">
+          <Button to="/compare" variant="ghost" className="text-[#F3EFFA] hover:text-[#fff]">
             See how we compare <ArrowUpRight size={16} />
           </Button>
         </div>
@@ -752,7 +752,7 @@ function Pricing() {
             <p
               className={cn(
                 "mt-1 text-xs",
-                tier.featured ? "text-[#b8c7bf]" : "text-muted-foreground",
+                tier.featured ? "text-[#B8B0CA]" : "text-muted-foreground",
               )}
             >
               {tier.note}
@@ -764,7 +764,7 @@ function Pricing() {
               <span
                 className={cn(
                   "text-sm",
-                  tier.featured ? "text-[#b8c7bf]" : "text-muted-foreground",
+                  tier.featured ? "text-[#B8B0CA]" : "text-muted-foreground",
                 )}
               >
                 /mo
@@ -773,7 +773,7 @@ function Pricing() {
             <p
               className={cn(
                 "mt-4 min-h-[72px] text-sm leading-6",
-                tier.featured ? "text-[#b8c7bf]" : "text-muted-foreground",
+                tier.featured ? "text-[#B8B0CA]" : "text-muted-foreground",
               )}
             >
               {tier.text}

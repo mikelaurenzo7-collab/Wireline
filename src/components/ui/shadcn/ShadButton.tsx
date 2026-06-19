@@ -29,7 +29,7 @@ const buttonVariants = cva(
         // Editorial — the highest-fidelity button. Rich depth via inner light +
         // deep shadow, tinted to the Midnight iris accent.
         editorial:
-          "bg-brand text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_2px_0_#3a4ba8,0_8px_18px_rgba(85,112,230,0.35)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#3a4ba8] border border-brand-deep/60",
+          "bg-brand text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_2px_0_#5B21B6,0_8px_18px_rgba(124,58,237,0.35)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#5B21B6] border border-brand-deep/60",
       },
       size: {
         // Premium density: compact visual heights with invisible hit-area expansion.

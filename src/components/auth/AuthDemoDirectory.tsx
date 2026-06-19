@@ -29,7 +29,7 @@ function AgentContactCard({
           <Phone
             className={cn(
               landing ? "w-4 h-4" : "w-3 h-3",
-              isDemo ? "text-[#6B635A]" : "wl-accent-text",
+              isDemo ? "text-[#6E6584]" : "wl-accent-text",
             )}
             strokeWidth={2.4}
           />
