@@ -20,7 +20,7 @@
     "lint:eslint": "eslint --max-warnings 0 src/",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
-    "verify": "npm run lint && npm run authz:check && npm run docs:check && npm run test:run && npm run build && npm run smoke:server",
+    "verify": "npm run lint && npm run authz:check && npm run csp:check && npm run docs:check && npm run test:run && npm run build && npm run smoke:server",
     "test": "vitest --pool vmThreads --exclude tests/e2e/**",
     "test:run": "vitest run --pool vmThreads --exclude tests/e2e/**",
     "test:coverage": "vitest run --pool vmThreads --exclude tests/e2e/** --coverage",

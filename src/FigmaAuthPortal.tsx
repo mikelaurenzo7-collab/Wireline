@@ -286,6 +286,24 @@ export default function FigmaAuthPortal() {
         )}
       </section>
 
+      <p className="mt-5 text-center text-sm text-muted-foreground">
+        {isSignup ? (
+          <>
+            Already have an account?{" "}
+            <Link to="/signin" className="font-semibold text-brand hover:underline">
+              Sign in
+            </Link>
+          </>
+        ) : (
+          <>
+            New to Wireline?{" "}
+            <Link to="/signup" className="font-semibold text-brand hover:underline">
+              Create account
+            </Link>
+          </>
+        )}
+      </p>
+
       <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">
         Mailbox connections (Gmail, Outlook, Yahoo) are configured later on the{" "}
         <Link to="/app/business/integrations" className="text-brand hover:underline">

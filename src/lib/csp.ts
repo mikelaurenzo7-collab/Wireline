@@ -39,6 +39,21 @@ export const MARKETING_SCRIPT_SRCS = [
   "https://*.google-analytics.com",
 ] as const;
 
+/** Clerk script + iframe origins (dev instances + production custom domains). */
+export const CLERK_SCRIPT_FRAME_ORIGINS = [
+  "https://*.clerk.accounts.dev",
+  "https://*.clerk.com",
+  "https://clerk.com",
+  "https://challenges.cloudflare.com",
+] as const;
+
+/** Clerk API + OAuth handshake origins for connect-src. */
+export const CLERK_CONNECT_ORIGINS = [
+  ...CLERK_SCRIPT_FRAME_ORIGINS,
+  "https://api.clerk.com",
+  "https://appleid.apple.com",
+] as const;
+
 /**
  * Build the CSP connect-src origins for the runtime.
  * fetch() is allowed to reach Anthropic, Vapi, Google, Microsoft Graph, and Stripe.
@@ -73,10 +88,7 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://*.analytics.google.com",
     "https://stats.g.doubleclick.net",
     // Clerk authentication (social, Apple, phone OTP, passkeys, MFA)
-    "https://*.clerk.accounts.dev",
-    "https://clerk.com",
-    "https://api.clerk.com",
-    "https://challenges.cloudflare.com",
+    ...CLERK_CONNECT_ORIGINS,
   ];
   if (isDev) {
     // Vite HMR opens a WebSocket on a port it picks at startup. Allow the
@@ -110,8 +122,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   // marketing pages all execute the same index.html inline scripts cleanly.
   const inlineHashes = INLINE_SCRIPT_HASHES.join(" ");
   const marketingSrcs = MARKETING_SCRIPT_SRCS.join(" ");
-  const clerkScriptSrcs =
-    "https://*.clerk.accounts.dev https://clerk.com https://challenges.cloudflare.com";
+  const clerkScriptSrcs = CLERK_SCRIPT_FRAME_ORIGINS.join(" ");
   const scriptSrc = isDev
     ? `'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io ${clerkScriptSrcs}`
     : nonce
@@ -136,7 +147,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     `worker-src 'self' blob:`,
     // Director Stitch live HTML previews load artifact HTML via blob: iframes.
     // Clerk CAPTCHA / challenge iframes during sign-in.
-    `frame-src 'self' blob: https://challenges.cloudflare.com https://*.clerk.accounts.dev`,
+    `frame-src 'self' blob: ${CLERK_SCRIPT_FRAME_ORIGINS.join(" ")}`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
