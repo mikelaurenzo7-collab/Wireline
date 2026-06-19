@@ -16,7 +16,6 @@ import {
   Phone,
   PhoneCall,
   ShieldCheck,
-  Sliders,
   Smartphone,
   Sparkles,
   Wand2,
@@ -27,7 +26,6 @@ import { AssistantComposer, simulateAssistantReply } from "./components/Assistan
 const nav = [
   ["Home", "/app/personal"],
   ["Assistant", "/app/personal/assistant"],
-  ["Assistant Studio", "/app/personal/studio"],
   ["Automations", "/app/personal/automations"],
   ["Devices", "/app/personal/devices"],
   ["Number", "/app/personal/number"],
@@ -502,6 +500,7 @@ const PERSONAL_SEED: ChatMessage[] = [
 ];
 
 function AssistantView() {
+  const [tab, setTab] = useState<"chat" | "customize">("chat");
   const [messages, setMessages] = useState<ChatMessage[]>(PERSONAL_SEED);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -541,68 +540,107 @@ function AssistantView() {
         <Sparkles size={13} /> Assistant
       </div>
       <h1 className="mt-4 font-display text-4xl sm:text-5xl">
-        Tell Assistant what phone work to handle.
+        {tab === "chat"
+          ? "Tell Assistant what phone work to handle."
+          : "Customize how Assistant works."}
       </h1>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-        No named persona. Assistant is where you ask, review, approve, and hand off.
+        {tab === "chat"
+          ? "Ask, review, approve, and hand off — all in one place."
+          : "Give it a name and voice, choose its model, and pick what it is allowed to handle."}
       </p>
-      <Card className="mt-6 flex flex-1 flex-col">
-        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto pr-1">
-          {messages.map((m) =>
-            m.role === "assistant" ? (
-              <div
-                key={m.id}
-                className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm"
-                aria-live={m.pending ? "polite" : undefined}
+
+      <div
+        role="tablist"
+        aria-label="Assistant view"
+        className="mt-6 inline-flex w-fit rounded-full border border-border bg-card-deep p-1"
+      >
+        {(
+          [
+            ["chat", "Chat"],
+            ["customize", "Customize"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={cx(
+              "rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[.12em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+              tab === id
+                ? "bg-brand text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "customize" ? (
+        <div className="mt-6">
+          <CustomizePanel />
+        </div>
+      ) : (
+        <Card className="mt-6 flex flex-1 flex-col">
+          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto pr-1">
+            {messages.map((m) =>
+              m.role === "assistant" ? (
+                <div
+                  key={m.id}
+                  className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm"
+                  aria-live={m.pending ? "polite" : undefined}
+                >
+                  {m.pending ? (
+                    <span
+                      className="flex items-center gap-1.5 py-0.5"
+                      aria-label="Assistant is typing"
+                    >
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:300ms]" />
+                    </span>
+                  ) : (
+                    m.text
+                  )}
+                </div>
+              ) : (
+                <div
+                  key={m.id}
+                  className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(13,159,110,0.35)]"
+                >
+                  {m.text}
+                </div>
+              ),
+            )}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {[
+              "What needs attention?",
+              "Wait on hold",
+              "Call back missed call",
+              "Summarize last call",
+            ].map((item) => (
+              <button
+                key={item}
+                onClick={() => send(item)}
+                className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:text-brand hover:border-brand/30 hover:bg-brand/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                {m.pending ? (
-                  <span
-                    className="flex items-center gap-1.5 py-0.5"
-                    aria-label="Assistant is typing"
-                  >
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:0ms]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:150ms]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:300ms]" />
-                  </span>
-                ) : (
-                  m.text
-                )}
-              </div>
-            ) : (
-              <div
-                key={m.id}
-                className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(13,159,110,0.35)]"
-              >
-                {m.text}
-              </div>
-            ),
-          )}
-        </div>
-        <div className="mt-5 flex flex-wrap gap-2">
-          {[
-            "What needs attention?",
-            "Wait on hold",
-            "Call back missed call",
-            "Summarize last call",
-          ].map((item) => (
-            <button
-              key={item}
-              onClick={() => send(item)}
-              className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:text-brand hover:border-brand/30 hover:bg-brand/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="mt-5">
-          <AssistantComposer
-            tone="light"
-            placeholder="Ask Assistant to call, screen, summarize, wait on hold…"
-            sendLabel="Send"
-            onSend={({ text, attachments }) => send(text, attachments.length)}
-          />
-        </div>
-      </Card>
+                {item}
+              </button>
+            ))}
+          </div>
+          <div className="mt-5">
+            <AssistantComposer
+              tone="light"
+              placeholder="Ask Assistant to call, screen, summarize, wait on hold…"
+              sendLabel="Send"
+              onSend={({ text, attachments }) => send(text, attachments.length)}
+            />
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -819,7 +857,7 @@ function SettingsView() {
   );
 }
 
-function StudioView() {
+function CustomizePanel() {
   const [name, setName] = useState("Aria");
   const [role, setRole] = useState("Personal call assistant");
   const [model, setModel] = useState(models[0][0]);
@@ -832,186 +870,163 @@ function StudioView() {
   };
   const activeCount = skills.filter(Boolean).length;
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="grid gap-6 xl:grid-cols-[1fr_.85fr]">
+      <Card>
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
-          <Sliders size={13} /> Assistant Studio
+          <Sparkles size={13} /> Identity
         </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl">
-          Build and customize your assistant.
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Create your assistant, give it a name and voice, choose its model, and pick what it is
-          allowed to handle. Training and scenarios live on their own page.
-        </p>
-      </div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+              Name
+            </span>
+            <input
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setSaved(false);
+              }}
+              className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+              What it handles
+            </span>
+            <input
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value);
+                setSaved(false);
+              }}
+              className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+              Model
+            </span>
+            <select
+              value={model}
+              onChange={(e) => {
+                setModel(e.target.value);
+                setSaved(false);
+              }}
+              className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+            >
+              {models.map(([m]) => (
+                <option key={m}>{m}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+              Voice
+            </span>
+            <select
+              value={voice}
+              onChange={(e) => {
+                setVoice(e.target.value);
+                setSaved(false);
+              }}
+              className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+            >
+              {voices.map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_.85fr]">
+        <div className="mt-6">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+              What it can do
+            </span>
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              {activeCount} of {studioSkills.length} on
+            </span>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {studioSkills.map(([title, note], i) => (
+              <button
+                key={title as string}
+                onClick={() => toggle(i)}
+                aria-pressed={skills[i]}
+                className={cx(
+                  "rounded-[18px] border p-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                  skills[i]
+                    ? "border-brand/40 bg-brand/5"
+                    : "border-border bg-background hover:bg-card-deep",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground">{title}</span>
+                  <span
+                    className={cx(
+                      "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
+                      skills[i]
+                        ? "border-brand bg-brand text-paper"
+                        : "border-border text-transparent",
+                    )}
+                  >
+                    <Check size={12} />
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{note}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setSaved(true)}
+            className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold text-paper transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Save assistant
+          </button>
+          {saved && (
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+              <Check size={15} /> Saved
+            </span>
+          )}
+        </div>
+      </Card>
+
+      <div className="space-y-6">
         <Card>
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
-            <Sparkles size={13} /> Identity
+            <PhoneCall size={13} /> Preview
           </div>
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
-                Name
-              </span>
-              <input
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setSaved(false);
-                }}
-                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
-                What it handles
-              </span>
-              <input
-                value={role}
-                onChange={(e) => {
-                  setRole(e.target.value);
-                  setSaved(false);
-                }}
-                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
-                Model
-              </span>
-              <select
-                value={model}
-                onChange={(e) => {
-                  setModel(e.target.value);
-                  setSaved(false);
-                }}
-                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
-              >
-                {models.map(([m]) => (
-                  <option key={m}>{m}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
-                Voice
-              </span>
-              <select
-                value={voice}
-                onChange={(e) => {
-                  setVoice(e.target.value);
-                  setSaved(false);
-                }}
-                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
-              >
-                {voices.map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-6">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
-                What it can do
-              </span>
-              <span className="text-[11px] font-semibold text-muted-foreground">
-                {activeCount} of {studioSkills.length} on
-              </span>
+          <h2 className="mt-4 font-display text-2xl">{name || "Your assistant"}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{role || "Personal call assistant"}</p>
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+              <span className="text-muted-foreground">Model</span>
+              <span className="font-semibold">{model}</span>
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {studioSkills.map(([title, note], i) => (
-                <button
-                  key={title as string}
-                  onClick={() => toggle(i)}
-                  aria-pressed={skills[i]}
-                  className={cx(
-                    "rounded-[18px] border p-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                    skills[i]
-                      ? "border-brand/40 bg-brand/5"
-                      : "border-border bg-background hover:bg-card-deep",
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-foreground">{title}</span>
-                    <span
-                      className={cx(
-                        "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
-                        skills[i]
-                          ? "border-brand bg-brand text-paper"
-                          : "border-border text-transparent",
-                      )}
-                    >
-                      <Check size={12} />
-                    </span>
-                  </div>
-                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{note}</p>
-                </button>
-              ))}
+            <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+              <span className="text-muted-foreground">Voice</span>
+              <span className="font-semibold">{voice}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+              <span className="text-muted-foreground">Number</span>
+              <span className="font-semibold">(312) 555-0198</span>
+            </div>
+            <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+              <span className="text-muted-foreground">Active skills</span>
+              <span className="font-semibold">{activeCount}</span>
             </div>
           </div>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setSaved(true)}
-              className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold text-paper transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              Save assistant
-            </button>
-            <Link
-              to="/app/personal/assistant"
-              className="rounded-[14px] border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              Open Assistant
+          <p className="mt-4 rounded-[16px] bg-card-deep p-3 text-sm leading-6 text-muted-foreground">
+            This is your one personal assistant. Need more assistants for a team or business?{" "}
+            <Link to="/app/business/studio" className="font-semibold text-brand hover:underline">
+              Open the business studio
             </Link>
-            {saved && (
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
-                <Check size={15} /> Saved
-              </span>
-            )}
-          </div>
+            .
+          </p>
         </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
-              <PhoneCall size={13} /> Preview
-            </div>
-            <h2 className="mt-4 font-display text-2xl">{name || "Your assistant"}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {role || "Personal call assistant"}
-            </p>
-            <div className="mt-5 space-y-3">
-              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
-                <span className="text-muted-foreground">Model</span>
-                <span className="font-semibold">{model}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
-                <span className="text-muted-foreground">Voice</span>
-                <span className="font-semibold">{voice}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
-                <span className="text-muted-foreground">Number</span>
-                <span className="font-semibold">(312) 555-0198</span>
-              </div>
-              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
-                <span className="text-muted-foreground">Active skills</span>
-                <span className="font-semibold">{activeCount}</span>
-              </div>
-            </div>
-            <p className="mt-4 rounded-[16px] bg-card-deep p-3 text-sm leading-6 text-muted-foreground">
-              This is your one personal assistant. Need more assistants for a team or business?{" "}
-              <Link to="/app/business/studio" className="font-semibold text-brand hover:underline">
-                Open the business studio
-              </Link>
-              .
-            </p>
-          </Card>
-        </div>
       </div>
     </div>
   );
@@ -1024,7 +1039,10 @@ function PersonalRoutes() {
         <Routes>
           <Route path="/app/personal" element={<HomeView />} />
           <Route path="/app/personal/assistant" element={<AssistantView />} />
-          <Route path="/app/personal/studio" element={<StudioView />} />
+          <Route
+            path="/app/personal/studio"
+            element={<Navigate to="/app/personal/assistant" replace />}
+          />
           <Route path="/app/personal/automations" element={<AutomationsView />} />
           <Route
             path="/app/personal/intents"
