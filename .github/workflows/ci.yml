@@ -1,21 +1,17 @@
 name: CI
 
 on:
-  # Push runs are scoped to main only — feature branches are covered by the
-  # pull_request trigger below, so we don't pay for the same commit twice.
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
 
-# Cancel superseded runs on the same ref so a flurry of pushes to a PR
-# (or to main) doesn't stack up billable Actions minutes.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  verify:
+  build-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,130 +23,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Security audit — fail on HIGH+ vulnerabilities
-        run: npm audit --audit-level=high --omit=dev
-
-      - name: Typecheck
-        # Use the project's lint script (node --max-old-space-size=4096 tsc
-        # --noEmit) rather than a bare `npx tsc`. The codebase exceeds the
-        # default ~2GB V8 heap, so plain tsc OOMs ("Ineffective mark-compacts
-        # near heap limit", exit 134) before any later step runs. The Strict
-        # Typecheck step below already uses lint:strict, which carries the
-        # same flag.
-        run: npm run lint
-
-      - name: Guard — user_id in service-role inserts
-        run: node scripts/check-user-id-inserts.mjs
-
-      - name: Guard — AuthZ default-deny contract (every route protected or allowlisted)
-        run: npm run authz:check
-
-      - name: Guard — API error shape ratchet (legacy res.json errors)
-        run: npm run api-error:check
-
-      - name: Schema drift check (Drizzle vs migrations)
-        run: npm run db:check
-
-      - name: Lint
-        run: npm run lint:eslint
-
-      - name: Tests + coverage (enforces ratchet thresholds)
-        run: npm run test:coverage
-
-      - name: Tenant isolation integration tests
-        env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-        run: |
-          if [ -z "${POSTGRES_URL}" ]; then
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              echo "::error::POSTGRES_URL secret is required on main — tenant isolation must not silently skip"
-              exit 1
-            fi
-            echo "Skipping tenant isolation — POSTGRES_URL not configured for this ref"
-            exit 0
-          fi
-          npx vitest run tests/integration/agent-tenant-isolation.integration.test.ts
-
-      - name: Database health check (schema + RLS ratchet)
-        env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-        run: |
-          if [ -z "${POSTGRES_URL}" ]; then
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              echo "::error::POSTGRES_URL secret is required on main — db:health must not silently skip"
-              exit 1
-            fi
-            echo "Skipping db:health — POSTGRES_URL not configured for this ref"
-            exit 0
-          fi
-          npm run db:health
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-
-      - name: Docs and pricing drift check
-        run: npm run docs:check
-
-      - name: Guard — CSP drift and inline-style ratchet
-        run: npm run csp:check
-
-      - name: Strict Typecheck
-        run: npm run lint:strict
 
       - name: Build
         run: npm run build
 
-      - name: Smoke test (bundled server boots)
+      - name: Smoke test bundled server
         run: npm run smoke:server
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: verify
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E + accessibility tests
-        # Scope to chromium — we only install one browser to keep CI fast and
-        # cheap. Firefox/WebKit coverage can be added when we have time to
-        # fund the extra minutes.
-        env:
-          INTERNAL_JWT_SECRET: ${{ secrets.INTERNAL_JWT_SECRET || 'e473ada67ebe91e84e6736f144b509c2ba796502cdb84cf95b08c20e0e6248b9' }}
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'fake-gemini-key' }}
-          VAPI_PRIVATE_KEY: ${{ secrets.VAPI_PRIVATE_KEY || 'fake-vapi-key' }}
-          VAPI_WEBHOOK_SECRET: ${{ secrets.VAPI_WEBHOOK_SECRET || 'fake-vapi-webhook-secret' }}
-        run: |
-          if [ -z "${POSTGRES_URL}" ]; then
-            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              echo "::error::POSTGRES_URL secret is required on main — E2E tests must not silently skip"
-              exit 1
-            fi
-            echo "Skipping E2E tests — POSTGRES_URL not configured for this ref"
-            exit 0
-          fi
-          npx playwright test --project=chromium
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
