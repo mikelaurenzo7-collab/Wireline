@@ -6,7 +6,6 @@ import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { drizzle, log } from "./server-context";
 import { isOwnerEmail } from "./auth-service";
-import { resolveAccountType } from "./account-type";
 import { ensureDefaultAccount } from "./account-service";
 
 export type WirelineAuthUser = {
@@ -46,7 +45,7 @@ export async function findOrCreateUserFromClerkIdentity(input: {
       await drizzle.update(schema.users).set(updates).where(eq(schema.users.id, existing.id));
     }
 
-    const [sub] = await drizzle
+    await drizzle
       .select({ plan: schema.subscriptions.plan })
       .from(schema.subscriptions)
       .where(eq(schema.subscriptions.userId, existing.id))

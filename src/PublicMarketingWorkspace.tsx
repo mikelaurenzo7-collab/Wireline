@@ -38,24 +38,24 @@ const nav = ["features", "pricing", "showcase", "developers", "compare", "traini
 
 const tiers: Tier[] = [
   {
-    name: "Personal",
-    price: "$9",
+    name: "Everyday",
+    price: "$7",
     plan: "personal",
     note: "For one person",
-    text: "A private assistant for your own phone — screening, summaries, reminders, and the routine calls that should never interrupt your day.",
-    items: ["Call screening", "Spam guard", "Call summaries", "Siri & widget triggers"],
+    text: "One agent for the calls you avoid — pharmacy, doctor, school, restaurant, landlord. Screens, calls, summarizes.",
+    items: ["1 configurable agent", "60 voice minutes", "Siri & widget triggers", "Call summaries"],
   },
   {
     name: "Plus",
-    price: "$19",
+    price: "$15",
     plan: "personal-plus",
     note: "For heavier personal use",
-    text: "More handled calls, deeper calendar and email context, and appointment workflows for real personal productivity.",
+    text: "Two agents, more minutes, calendar and email context for appointments and follow-ups.",
     items: [
-      "Higher monthly usage",
+      "2 agents · 180 minutes",
       "Calendar & email context",
-      "Appointment workflows",
       "Priority personal memory",
+      "Appointment workflows",
     ],
   },
   {
@@ -88,7 +88,7 @@ const tiers: Tier[] = [
     plan: "scale",
     note: "For high-volume teams",
     text: "Advanced approvals, webhooks, audit logs, custom routing, and hands-on launch support.",
-    items: ["10 assistants", "3,000 voice minutes", "Audit logs", "Launch support"],
+    items: ["25+ agents", "5,000+ minutes", "Audit logs & SSO", "Launch support"],
   },
 ];
 
@@ -718,8 +718,8 @@ function Pricing() {
     <section className="mx-auto w-full max-w-[1280px] px-5 py-20 sm:px-8 lg:py-28">
       <SectionHeader
         eyebrow="Pricing"
-        title="Start at $9. Custom when you're ready."
-        text="Personal plans for individuals, business plans for teams. No call-center contract, no setup fees."
+        title="Start at $7. Scale when you want to."
+        text="Everyday plans for one person, Studio + Operator for households and businesses. No contract, no setup fees."
         align="center"
       />
       <div className="mt-14 grid gap-5 lg:grid-cols-3 xl:grid-cols-5">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
@@ -59,7 +59,10 @@ export function ConsoleShell({
           <span className="font-display text-[1.125rem] font-semibold text-white">Wireline</span>
         </Link>
         <WorkspaceSwitcher mode={mode} />
-        <nav className="mt-5 flex flex-1 flex-col gap-0.5" aria-label={`${workspaceLabel} navigation`}>
+        <nav
+          className="mt-5 flex flex-1 flex-col gap-0.5"
+          aria-label={`${workspaceLabel} navigation`}
+        >
           {nav.map(({ id, label, path }) => (
             <Link
               key={id}

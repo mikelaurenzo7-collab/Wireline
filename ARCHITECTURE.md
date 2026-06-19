@@ -19,7 +19,7 @@ Claude tiers for different jobs, picked by where the user is waiting:
 | **Voice Runtime** | Anthropic | **Claude Sonnet 4.6** | Live inbound + outbound calls | Smartest model in the latency class voice can tolerate. TTFT ~300–500 ms against an 18 KB system prompt; perceived dead air after STT + TTS lands at ~700–900 ms — under the "did they hang up?" threshold. |
 | **Voice Fallback** | Google | Gemini 3.5 Flash | Availability backup when Anthropic is degraded | Sub-250 ms latency; speed-only, not depth. |
 | **Last-Resort Fallback** | OpenRouter | DeepSeek Chat | Tertiary backup when both Anthropic and Gemini fail or are unconfigured (`claude-client.ts` proxy) | Keeps reasoning paths alive during multi-provider outages; quality floor, not a steady-state tier. |
-| **Reasoning Layer** | Anthropic | **Claude Opus 4.8** | Pre-call briefs, post-call coaching + analysis, daily brief, structured intent extraction, integration orchestration | Deepest adaptive reasoning available. These paths run *before* or *after* the call — the user never waits on Opus, so its 800–1500 ms TTFT is invisible and its depth pays off on every artefact. |
+| **Reasoning Layer** | Anthropic | **Claude Opus 4.7** | Pre-call briefs, post-call coaching + analysis, daily brief, structured intent extraction, integration orchestration | Deepest adaptive reasoning Wireline ships against today. These paths run *before* or *after* the call — the user never waits on Opus, so its 800–1500 ms TTFT is invisible and its depth pays off on every artefact. |
 | **Simple Tasks** | Anthropic | Claude Haiku 4.5 | Sentiment, classification, extraction stubs, label fan-out | Cheap + fast; selected via `selectModelForTask("simple")`. |
 | **Grounded Search** | Google | Gemini 2.5 Flash | `gemini_ground` tool (web lookup with citations) | Native `googleSearchRetrieval` tool with source grounding. |
 
@@ -30,7 +30,7 @@ Voice calls live or die on the gap between *caller stops talking* and
 
 - **TTFT (time to first LLM token):** dominates the gap. With an 18 KB
   Wireline system prompt, Sonnet 4.6 ships first tokens in ~300–500 ms;
-  Prior Opus 4.7 routinely took 1.5–2.5 s on the same prompt.
+  Opus 4.7 on the reasoning path routinely takes 1.5–2.5 s on the same prompt — fine off the live wire, fatal on it.
 - **TTS first-audio-out:** ElevenLabs Flash v2.5 with
   `optimizeStreamingLatency: 4` adds ~200 ms after the first chunk of LLM
   tokens.
@@ -44,13 +44,13 @@ conversational across long sessions, and renders dense content (pricing,
 phone numbers, confirmations) with even cadence — the failure mode that
 plagues Flash-only stacks.
 
-### 1.2 Why Opus 4.8 for Reasoning
+### 1.2 Why Opus 4.7 for Reasoning
 
 The reasoning layer runs *off* the live wire. Operators kick a brief
 generation and Slack themselves; the daily brief job emails them at
 8 AM; post-call analysis enriches the call log after the caller has hung
 up. None of these have a "did they hang up?" threshold — they have a
-"is this insight worth reading?" threshold, and that's where Opus 4.8's
+"is this insight worth reading?" threshold, and that's where Opus 4.7's
 adaptive reasoning depth, tool orchestration, and self-correction earn
 their cost.
 
@@ -96,7 +96,7 @@ on the live wire.
 | `src/lib/vapi-assistant-factory.ts` | Per-agent `llmProvider`/`llmModel`/`llmTemperature` override tenant `voice_llm_*`; resolved via `resolveVapiVoiceModelSelection()` + `clampVoiceTemperature()` |
 | `src/lib/claude-models.ts` | `VOICE_MODEL_CATALOG` — curated, env-gated per-agent model picker (anthropic / google / openai / xai / openrouter) |
 | `src/lib/vapi-client.ts` | Same resolution path, for outbound calls |
-| `src/lib/claude-recipes.ts` | `brief`, `coach`, `postCallAnalysis`, `dailyBrief` all use `CLAUDE_REASONING_MODEL_DEFAULT` (Opus 4.8) |
+| `src/lib/claude-recipes.ts` | `brief`, `coach`, `postCallAnalysis`, `dailyBrief` all use `CLAUDE_REASONING_MODEL_DEFAULT` (Opus 4.7) |
 | `src/db/schema.ts` | `wireline_settings.voiceLlmProvider` / `voiceLlmModel` defaults — set to anthropic / claude-sonnet-4-6 so every new tenant lands on the right voice runtime out of the box |
 | `src/routes/health-routes.ts` | `/api/health/internal` reports configured tiering; `/api/health/models` live-probes each tier |
 
@@ -114,7 +114,7 @@ Caller dials number
   → Personality vibe + adaptive-core + voice-consistency rule layered in
   → Agent uses tools (CRM, calendar, email, gemini_ground, etc.)
   → Caller hangs up → Vapi fires end-of-call-report webhook
-  → Post-call analysis (Opus 4.8) enriches call log with structured
+  → Post-call analysis (Opus 4.7) enriches call log with structured
     intent / outcome / commitments / sentiment
   → Optional: CSAT SMS, CRM sync, daily brief
 ```
@@ -126,7 +126,7 @@ Operator triggers dial (or cadence job)
   → vapi-client.ts builds assistant config with Sonnet 4.6
   → Vapi places call (Twilio voicemail ML detection skips dud calls)
   → Same runtime as inbound, with outbound archetype rules
-  → Post-call analysis (Opus 4.8, or Gemini Flash fallback)
+  → Post-call analysis (Opus 4.7, or Gemini Flash fallback)
 ```
 
 ### 2.3 Non-Voice Reasoning Flow
@@ -134,7 +134,7 @@ Operator triggers dial (or cadence job)
 ```
 API route (/api/claude/*, /api/jobs/*, /api/daily-brief/*)
   → claudeBrain.brief() / coach() / postCallAnalysis() / dailyBrief()
-  → runStructured() or runCompletion() with Opus 4.8
+  → runStructured() or runCompletion() with Opus 4.7
   → Structured JSON output (Zod-validated)
   → Response to client or side-effect (email, CRM, job enqueue)
 ```
@@ -197,7 +197,7 @@ See `.env.example` for the canonical list (66 documented keys). Key
 production requirements:
 
 - `POSTGRES_URL` — Supabase pooler (transaction mode)
-- `ANTHROPIC_API_KEY` — Sonnet 4.6 + Opus 4.8
+- `ANTHROPIC_API_KEY` — Sonnet 4.6 + Opus 4.7
 - `GEMINI_API_KEY` — Gemini Flash (voice fallback) + grounded search
 - `OPENROUTER_API_KEY` — optional last-resort LLM fallback (DeepSeek Chat)
 - `VAPI_PRIVATE_KEY` + `VAPI_WEBHOOK_SECRET` — voice runtime

@@ -29,12 +29,12 @@ export default function Features() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: "Wireline Voice & Messaging Platform",
+    name: "Wireline AI Call Concierge",
     description:
-      "Multi-channel AI agent network with unified communication timelines and deep iOS/Siri integrations.",
+      "Delegate routine phone work to an AI agent on Siri, iPhone, CarPlay, and the web. Configure the same agent for a side project or whole business when you want to.",
     offers: {
       "@type": "Offer",
-      price: "9.00",
+      price: "7.00",
       priceCurrency: "USD",
     },
   };
@@ -45,8 +45,8 @@ export default function Features() {
       sectionLinks={[...FEATURES_SECTION_LINKS]}
     >
       <PageMeta
-        title="Platform Features & Tour"
-        description="Explore the Wireline multi-channel orchestration engine. See how our shared interaction timeline and Siri hands-free driving integration transform business communication."
+        title="What Wireline Does"
+        description="Wireline is an AI call concierge for everyday phone work — pharmacy, doctor, school, restaurant, landlord, airline, support lines — with one console that also runs a business when you want it to."
         path="/features"
         structuredData={structuredData}
       />
@@ -54,7 +54,7 @@ export default function Features() {
       {/* Hero Section */}
       <section
         id="features-hero"
-        className="relative z-10 px-6 lg:px-12 pt-4 pb-16 max-w-5xl mx-auto text-center"
+        className="relative z-10 px-6 lg:px-12 pt-4 pb-16 max-w-5xl mx-auto text-left"
       >
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -64,7 +64,7 @@ export default function Features() {
         >
           <Sparkles className="w-3.5 h-3.5 text-brand" />
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold">
-            The Platform Tour
+            What Wireline does
           </span>
         </motion.div>
 
@@ -74,33 +74,34 @@ export default function Features() {
           transition={{ delay: 0.05, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="font-display italic text-[clamp(2.5rem,6vw,4.5rem)] leading-[1.05] tracking-tight mb-6 text-foreground"
         >
-          <span className="wl-brand-display">The Multi-Channel Engine.</span>
+          <span className="wl-brand-display">Routine calls, handled.</span>
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.6 }}
-          className="text-foreground/75 text-lg leading-relaxed max-w-2xl mx-auto mb-10"
+          className="text-foreground/75 text-lg leading-relaxed max-w-2xl mb-10"
         >
-          A sovereign stack for Phone, SMS, and Email. Experience true technical independence with a
-          vertically integrated communication layer.
+          Pharmacy refills, appointment confirmations, school offices, airlines, restaurants,
+          landlords, support lines. Ask Wireline once; get a clear result back. Same console runs a
+          sales agent or front desk when you want it to.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.5 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="flex flex-col sm:flex-row items-start gap-4"
         >
           <ShadButton variant="editorial" size="lg" asChild>
             <Link to="/signup" className="inline-flex items-center gap-2">
-              Explore the Stack <ArrowRight className="w-4 h-4" />
+              Start at $7 <ArrowRight className="w-4 h-4" />
             </Link>
           </ShadButton>
           <ShadButton variant="outline" size="lg" asChild>
             <Link to="/showcase" className="inline-flex items-center gap-2 text-foreground">
-              View Technical Specs
+              Call a live demo
             </Link>
           </ShadButton>
         </motion.div>
@@ -111,13 +112,17 @@ export default function Features() {
         id="features-multichannel"
         className="relative z-10 px-6 lg:px-12 py-20 scroll-mt-28 border-t border-ink/[0.08] max-w-6xl mx-auto"
       >
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="max-w-2xl mb-16">
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold block mb-2">
-            Unified Data Flow
+            One thread, every channel
           </span>
           <h2 className="font-display italic text-3xl sm:text-4xl text-foreground">
-            How we route across the sovereign stack
+            Voice, SMS, and email on the same line.
           </h2>
+          <p className="mt-3 text-sm text-foreground/65 leading-relaxed">
+            Whether it's a personal call or a customer thread, Wireline keeps the context together —
+            no separate inboxes, no "remind me what you said".
+          </p>
         </div>
 
         {/* 3 Steps Grid */}
@@ -518,16 +523,16 @@ export default function Features() {
         id="features-capabilities"
         className="relative z-10 px-6 lg:px-12 py-20 scroll-mt-28 max-w-6xl mx-auto border-t border-ink/[0.08] pb-24"
       >
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="max-w-2xl mb-12">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand font-semibold mb-2">
-            The Complete Infrastructure
+            Everything else under the hood
           </p>
           <h2 className="font-display italic text-3xl sm:text-4xl text-foreground">
-            A Core Voice Carrier & Software Layer
+            The platform behind the call.
           </h2>
           <p className="text-foreground/65 text-sm sm:text-base mt-3 leading-relaxed">
-            Wireline is built on top of our own direct voice network. We cut out Twilio middleware
-            to deliver premium call-center infrastructure directly to small shops and large fleets.
+            Direct-to-carrier voice, an iOS widget, a triage inbox, CRM sync, a compliance ledger.
+            Personal use stays simple; the same plumbing handles a business when you grow.
           </p>
         </div>
 
@@ -559,8 +564,8 @@ export default function Features() {
               icon: Shield,
             },
             {
-              title: "Personal Assistants",
-              body: "A lower-cost personal assistant lane that routes calls, schedules calendars, and answers simple queries.",
+              title: "Personal Concierge Lane",
+              body: "Hand off the everyday call list — pharmacy, doctor, school, restaurant — without paying for a business plan.",
               icon: Phone,
             },
           ].map((item) => {
@@ -590,13 +595,13 @@ export default function Features() {
         </div>
 
         {/* Footer Call to Action */}
-        <div className="mt-16 text-center">
+        <div className="mt-16 flex justify-start">
           <ShadButton variant="editorial" size="lg" asChild>
             <Link
               to="/signup"
               className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] font-semibold"
             >
-              Deploy Your First Agent <ArrowUpRight className="w-4 h-4" />
+              Start at $7 <ArrowUpRight className="w-4 h-4" />
             </Link>
           </ShadButton>
         </div>

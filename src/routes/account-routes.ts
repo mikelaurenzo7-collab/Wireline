@@ -14,6 +14,8 @@ import {
 } from "../lib/account-service";
 import { log } from "../lib/server-context";
 
+type AuthedRequest = Request & { userId: string };
+
 const router = Router();
 
 const createAccountSchema = z.object({
@@ -26,7 +28,7 @@ const createAccountSchema = z.object({
  * Returns all accounts for the authenticated user.
  */
 router.get("/api/accounts", authenticateUser, async (req: Request, res: Response) => {
-  const userId = (req as any).userId as string;
+  const userId = (req as AuthedRequest).userId;
   const accounts = await getAccountsForUser(userId);
   res.json({ accounts });
 });
@@ -36,7 +38,7 @@ router.get("/api/accounts", authenticateUser, async (req: Request, res: Response
  * Returns the user's primary account (first created).
  */
 router.get("/api/accounts/primary", authenticateUser, async (req: Request, res: Response) => {
-  const userId = (req as any).userId as string;
+  const userId = (req as AuthedRequest).userId;
   const primary = await getPrimaryAccount(userId);
   if (!primary) {
     return res.status(404).json({ error: "No accounts found" });
@@ -49,7 +51,7 @@ router.get("/api/accounts/primary", authenticateUser, async (req: Request, res: 
  * Returns a specific account (must belong to the authenticated user).
  */
 router.get("/api/accounts/:id", authenticateUser, async (req: Request, res: Response) => {
-  const userId = (req as any).userId as string;
+  const userId = (req as AuthedRequest).userId;
   const account = await getAccountById(req.params.id, userId);
   if (!account) {
     return res.status(404).json({ error: "Account not found" });
@@ -67,7 +69,7 @@ router.post(
   authenticateUser,
   validateBody(createAccountSchema),
   async (req: Request, res: Response) => {
-    const userId = (req as any).userId as string;
+    const userId = (req as AuthedRequest).userId;
     const { type, label } = req.body;
 
     try {
