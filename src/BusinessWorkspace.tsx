@@ -129,11 +129,12 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 }
 
 function Pill({ children, tone = "default" }: { children: ReactNode; tone?: Tone }) {
+  // Pure emerald intensity scale: filled+glow (positive) > outline+dot (needs action) > gray (inactive).
   const styles =
     tone === "brand"
       ? "border-brand/35 bg-brand/15 text-brand-bright shadow-[0_0_15px_rgba(13,159,110,0.15)]"
       : tone === "warn"
-        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+        ? "border-brand/20 bg-brand/[.06] text-brand-bright/90"
         : tone === "muted"
           ? "border-white/5 bg-white/[.02] text-white/55"
           : "border-white/10 bg-white/[.04] text-white/70";
@@ -144,6 +145,9 @@ function Pill({ children, tone = "default" }: { children: ReactNode; tone?: Tone
         styles,
       )}
     >
+      {tone === "warn" && (
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" aria-hidden="true" />
+      )}
       {children}
     </span>
   );
@@ -360,7 +364,10 @@ function AssistantPage() {
                   aria-live={m.pending ? "polite" : undefined}
                 >
                   {m.pending ? (
-                    <span className="flex items-center gap-1.5 py-1" aria-label="Assistant is typing">
+                    <span
+                      className="flex items-center gap-1.5 py-1"
+                      aria-label="Assistant is typing"
+                    >
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-bright [animation-delay:0ms]" />
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-bright [animation-delay:150ms]" />
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-bright [animation-delay:300ms]" />
@@ -408,7 +415,7 @@ function AssistantPage() {
             Sarah needs a human approval rule before promising refund timing.
           </p>
         </Card>
-        <Card className="border-cyan-500/25 bg-[#08121a]/30 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+        <Card className="border-brand/25 bg-[#0B0D12]/30 shadow-[0_0_20px_rgba(13,159,110,0.12)]">
           <Pill tone="brand">Training win</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">12 improved calls</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -464,7 +471,7 @@ function LiveOpsPage() {
                 <div className="font-semibold text-white">{topic}</div>
                 <div className="text-white/60">{agent}</div>
                 <div className="text-white/50">{detail}</div>
-                <div className="font-mono text-cyan-400">{time}</div>
+                <div className="font-mono text-brand-bright">{time}</div>
                 <Pill tone={statusTone(action)}>{action}</Pill>
               </div>
             ))}
@@ -481,7 +488,7 @@ function LiveOpsPage() {
               <div key={name}>
                 <div className="flex justify-between text-sm text-slate-300">
                   <span>{name}</span>
-                  <span className="text-cyan-400 font-semibold font-mono">{value}</span>
+                  <span className="text-brand-bright font-semibold font-mono">{value}</span>
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
@@ -587,7 +594,7 @@ function TrainingPage() {
                   className={cx(
                     "mb-3 h-4 w-4",
                     i < 2
-                      ? "text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.5)]"
+                      ? "text-brand-bright drop-shadow-[0_0_4px_rgba(13,159,110,0.5)]"
                       : "text-white/20",
                   )}
                 />
@@ -629,7 +636,7 @@ function AnalyticsPage() {
             <p className="mt-2 font-display text-4xl text-white font-semibold tracking-tight">
               {v}
             </p>
-            <p className="mt-2 text-xs text-cyan-400 font-semibold font-mono">{c}</p>
+            <p className="mt-2 text-xs text-brand-bright font-semibold font-mono">{c}</p>
           </Card>
         ))}
       </div>
