@@ -2,7 +2,7 @@
 
 **Last updated:** June 2026
 
-Approved marketing, social, sales, and partner copy for Wireline's consumer-first call concierge positioning.
+Approved marketing, social, sales, and partner copy for Wireline's consumer-first call concierge launch.
 
 ---
 
@@ -12,20 +12,31 @@ Approved marketing, social, sales, and partner copy for Wireline's consumer-firs
 | --- | --- |
 | **Name** | Wireline |
 | **Tagline** | Your personal AI call concierge. |
-| **Positioning** | A consumer-first agent that handles everyday phone calls and can be configured for business workflows. |
-| **Brand voice** | Direct, calm, useful, warm. Never corporate-speak. |
-| **Primary color** | `#7C3AED` (violet) |
-| **Canvas** | `#F3EFFA` (lavender) |
-| **Text/depth** | `#1E1B2E` (charcoal) |
+| **Positioning** | A consumer-first AI agent that handles everyday phone calls, then scales into side-project and business workflows. |
+| **Brand voice** | Direct, calm, useful, warm. No enterprise fog, no fake magic. |
+| **Primary color** | `#5D5CFF` (Stitch violet) |
+| **Canvas** | `#0A0A0C` (near-black) |
+| **Panel** | `#131315` / `#1B1B1D` |
+| **Accent text** | `#C1C1FF` (lavender) |
 | **Typeface** | Plus Jakarta Sans (UI), Fraunces (display), JetBrains Mono (labels) |
+
+## Core Consumer Promise
+
+> Ask Wireline to call the pharmacy, doctor, school, airline, landlord,
+> restaurant, or support line. It calls, waits, asks, summarizes, and tells you
+> what happened.
+
+This is the launch spine. Every ad, landing page, reel, App Store screenshot,
+and demo line should make this promise obvious in under five seconds.
 
 ## Key Differentiators
 
-1. **Everyday call delegation** — pharmacy, doctor, school, airline, landlord, restaurant, or support line.
-2. **One configurable console** — use the same Agent Studio for personal errands, side projects, and business workflows.
-3. **Never fabricates actions** — if the agent lacks a tool, it takes a message, asks for confirmation, or escalates.
-4. **Fast handoff-ready voice** — short, steady responses that do not feel like an IVR.
-5. **Capacity scales cleanly** — start at $7, upgrade only for more agents, minutes, review tools, or custom business needs.
+1. **Everyday call delegation** — pharmacy, doctor, school, airline, landlord, restaurant, support line.
+2. **Works from the phone** — Siri, widgets, native call surfaces, and mobile app controls.
+3. **One configurable console** — same Agent Studio for personal errands, side projects, and business workflows.
+4. **Never fabricates actions** — if the agent lacks a tool, it takes a message, asks for confirmation, or escalates.
+5. **Fast handoff-ready voice** — short, steady responses that do not feel like an IVR.
+6. **Starts inexpensive** — begin with one agent, upgrade for more agents, minutes, review tools, or business controls.
 
 ## Live Demo Lines
 
@@ -48,6 +59,16 @@ Approved marketing, social, sales, and partner copy for Wireline's consumer-firs
 | Operator | $59/mo | 8 | 1,200 | $0.14/min |
 | Custom | Talk to sales | 25+ | 5,000+ | Custom |
 
+## Launch Hooks
+
+| Audience | Hook |
+| --- | --- |
+| Busy parents | "Stop waiting on hold. Ask Wireline to call and report back." |
+| Professionals | "Delegate routine phone work without hiring an assistant." |
+| Seniors / caregivers | "Let Wireline call the pharmacy, doctor, or insurance line." |
+| Students | "Call offices, support lines, landlords, and schools without losing your day." |
+| Small business | "A phone agent for calls, recaps, routing, and handoff." |
+
 ## Social Copy Templates
 
 ### LinkedIn / founder-led
@@ -68,13 +89,14 @@ Approved marketing, social, sales, and partner copy for Wireline's consumer-firs
 >
 > Starts at $7/month.
 
-### Reel script
+### TikTok / Reel script
 
 ```text
-[0–3s] "Say: Hey Siri, have Wireline call the pharmacy."
-[3–8s] Show Wireline placing the call and waiting.
-[8–12s] Show a short result: "Prescription ready after 3pm."
-[12–15s] "Routine calls, handled. trywireline.com"
+[0–2s] Show the problem: "I've been on hold for 38 minutes."
+[2–5s] Say: "Hey Siri, have Wireline call the pharmacy."
+[5–9s] Show Wireline placing the call and waiting.
+[9–13s] Show recap: "Prescription ready after 3pm. Bring ID."
+[13–15s] "Routine calls, handled. trywireline.com"
 ```
 
 ## Objection Handling
@@ -85,7 +107,7 @@ Approved marketing, social, sales, and partner copy for Wireline's consumer-firs
 | "Will it sound robotic?" | Call a demo line. The agent speaks briefly, steadily, and hands off when needed. |
 | "What if it makes something up?" | It cannot claim an action without a tool. It asks, summarizes, or escalates. |
 | "Can I use it for my business?" | Yes. Studio and Operator add more agents, minutes, routing, review, and integrations. |
-| "Can I try before I commit?" | Start with one agent; upgrade only when your call volume proves it. |
+| "Can I try before I commit?" | Call a demo agent now. Start paid only when you want your own agent. |
 
 ## Screenshot Generation
 
@@ -103,6 +125,7 @@ E2E_BASE_URL="https://trywireline.com" \
 ```text
 marketing-kit/
 ├── README.md
+├── launch-consumer-playbook.md
 ├── brand/
 ├── copy/
 └── screenshots/
