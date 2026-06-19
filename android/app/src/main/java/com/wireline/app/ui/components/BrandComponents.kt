@@ -31,11 +31,30 @@ fun Medallion(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(Brand.Violet, Brand.VioletDeep))),
+            .background(Brush.linearGradient(listOf(Brand.VioletSoft, Brand.Violet, Brand.VioletDeep))),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.42f))
     }
+}
+
+@Composable
+fun StitchMeshSurface(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .background(Brand.Canvas)
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(Brand.Violet.copy(alpha = 0.28f), Color.Transparent),
+                    radius = 820f,
+                )
+            )
+            .background(
+                Brush.linearGradient(
+                    listOf(Color.White.copy(alpha = 0.035f), Color.Transparent, Color.Black.copy(alpha = 0.32f))
+                )
+            )
+    )
 }
 
 @Composable
@@ -46,12 +65,14 @@ fun LavenderCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Brand.Panel),
-        shape = RoundedCornerShape(Brand.RadiusMd),
-        border = BorderStroke(1.dp, Brand.BorderViolet),
+        shape = RoundedCornerShape(Brand.RadiusLg),
+        border = BorderStroke(1.dp, Brand.Border),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .background(Brush.verticalGradient(listOf(Brand.Panel2.copy(alpha = 0.78f), Brand.Panel)))
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             content = content,
         )
@@ -63,35 +84,47 @@ fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Brand.Violet),
-        shape = RoundedCornerShape(Brand.RadiusMd),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        shape = RoundedCornerShape(Brand.RadiusLg),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        Box(
+            modifier = Modifier
+                .background(Brush.linearGradient(listOf(Brand.Violet, Brand.VioletDeep)))
+                .background(
+                    Brush.radialGradient(
+                        listOf(Brand.VioletSoft.copy(alpha = 0.28f), Color.Transparent),
+                        radius = 620f,
+                    )
+                )
         ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center,
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Icon(Icons.Default.Mic, contentDescription = null, tint = Color.White)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Ask Wireline",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                )
-                Text(
-                    "Place calls, get recaps, and more",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.75f),
-                )
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Mic, contentDescription = null, tint = Color.White)
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "Ask Wireline",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
+                    Text(
+                        "Have your AI call, wait, summarize, and follow up.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.76f),
+                    )
+                }
             }
         }
     }
@@ -104,15 +137,16 @@ fun FleetStatCard(
     highlighted: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val bg = if (highlighted) Brand.Violet else Brand.Panel
+    val bg = if (highlighted) Brand.Violet else Brand.Panel2
     val valueColor = if (highlighted) Color.White else Brand.Text
-    val labelColor = if (highlighted) Color.White.copy(alpha = 0.75f) else Brand.Text2
+    val labelColor = if (highlighted) Color.White.copy(alpha = 0.75f) else Brand.Text3
 
     Column(
         modifier = modifier
             .height(96.dp)
             .clip(RoundedCornerShape(Brand.RadiusMd))
             .background(bg)
+            .background(if (highlighted) Brush.linearGradient(listOf(Brand.Violet, Brand.VioletDeep)) else Brush.verticalGradient(listOf(Brand.Panel2, Brand.Panel)))
             .padding(12.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
