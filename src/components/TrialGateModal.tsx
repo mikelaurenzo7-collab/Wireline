@@ -19,40 +19,28 @@ import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+
+const TIER_PITCH: Record<string, string> = {
+  personal: "Light personal coverage · 1 agent · dedicated number",
+  "personal-plus": "More minutes · calendar + email context · 2 agents",
+  "business-starter": "Small business · 2 agents · CRM + Live Ops",
+  starter: "Growing team · 5 agents · outbound + analytics",
+  scale: "Multi-team · 10 agents · audit log + priority support",
+};
 
 /**
  * Self-serve tiers we surface in the picker. Enterprise is intentionally
- * not in the picker — it's contact-sales only (price_usd_monthly = 0)
- * and goes through the checkout endpoint with a 400.
+ * not in the picker — it's contact-sales only and goes through checkout with a 400.
  */
-const SELF_SERVE_TIERS = [
-  {
-    id: "personal",
-    label: "Personal",
-    price: 49,
-    pitch: "Solo operator · 1 agent · dedicated number",
-  },
-  {
-    id: "starter",
-    label: "Starter",
-    price: 149,
-    pitch: "Small team · 3 agents · CRM sync · best for most",
-    recommended: true,
-  },
-  {
-    id: "pro",
-    label: "Pro",
-    price: 499,
-    pitch: "Growing org · 10 agents · supervisor cockpit",
-  },
-  {
-    id: "business",
-    label: "Business",
-    price: 1499,
-    pitch: "Multi-team · 25 agents · priority support",
-  },
-];
+const SELF_SERVE_TIERS = STRIPE_PLANS.map((plan) => ({
+  id: plan.id,
+  label: plan.name,
+  price: plan.price_usd_monthly,
+  pitch: TIER_PITCH[plan.id] ?? plan.features[0] ?? "",
+  recommended: plan.id === "business-starter",
+}));
 
 function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: string } {
   switch (detail.code) {
@@ -142,12 +130,9 @@ export default function TrialGateModal() {
       // Dispatch analytics checkout initiation events
       if (typeof window !== "undefined") {
         try {
-          const prices: Record<string, number> = {
-            personal: 49,
-            starter: 149,
-            pro: 499,
-            business: 1499,
-          };
+          const prices: Record<string, number> = Object.fromEntries(
+            STRIPE_PLANS.map((p) => [p.id, p.price_usd_monthly]),
+          );
           const w = window as unknown as {
             fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
             dataLayer?: { push: (data: Record<string, unknown>) => void };

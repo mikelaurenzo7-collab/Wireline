@@ -13,9 +13,9 @@
  *
  * Exit code 0 = in sync. Exit code 1 = drift, with a diff printed.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, join } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,7 +38,8 @@ const planBlocks = [...catalogSource.matchAll(/\{\s*id:\s*"(\w+)"[\s\S]*?\}/g)]
 
 const plans = planBlocks
   .map((block) => {
-    const id = /id:\s*"(\w+)"/.exec(block)?.[1];
+    const id = /id:\s*"([^"]+)"/.exec(block)?.[1];
+    const name = /name:\s*"([^"]+)"/.exec(block)?.[1];
     const price = /price_usd_monthly:\s*([\d_]+)/.exec(block)?.[1];
     const agents = /max_agents:\s*(\d+)/.exec(block)?.[1];
     const minutes = /voice_minutes_monthly:\s*([\d_]+)/.exec(block)?.[1];
@@ -47,6 +48,7 @@ const plans = planBlocks
     if (!id) return null;
     return {
       id,
+      label: name ?? id,
       price: price ? Number(price.replace(/_/g, "")) : 0,
       agents: agents ? Number(agents) : 0,
       minutes: minutes ? Number(minutes.replace(/_/g, "")) : 0,
@@ -59,15 +61,14 @@ const plans = planBlocks
 const issues = [];
 
 for (const plan of plans) {
-  const label = plan.id.charAt(0).toUpperCase() + plan.id.slice(1);
+  const label = plan.label;
   // Match the README's en-US comma formatting for prices >= 1000.
   const priceStr = `$${plan.price.toLocaleString("en-US")}`;
   const overageStr = `$${plan.overage.toFixed(2)}`;
 
-  // README pricing table row looks like:
-  // | **Personal** | $49 | 1 | 400 | $0.20 | 1 |
+  // README column order: Plan | Price | Minutes | Overage | Agents | Extra agent
   const row = new RegExp(
-    `\\|\\s*\\*\\*${label}\\*\\*\\s*\\|\\s*${escapeRe(priceStr)}\\s*\\|\\s*${plan.agents}\\s*\\|\\s*${plan.minutes.toLocaleString("en-US")}\\s*\\|\\s*${escapeRe(overageStr)}\\s*\\|\\s*${plan.phones}\\s*\\|`,
+    `\\|\\s*\\*\\*${escapeRe(label)}\\*\\*\\s*\\|\\s*${escapeRe(priceStr)}\\s*\\|\\s*${plan.minutes.toLocaleString("en-US")}\\s*\\|\\s*${escapeRe(overageStr)}\\s*\\|\\s*${plan.agents}\\s*\\|`,
   );
   if (!row.test(readme)) {
     issues.push(
@@ -76,32 +77,30 @@ for (const plan of plans) {
     );
   }
 
-  const pricingExpectations = [
-    { label: "price", value: priceStr },
-    { label: "agents", value: `${plan.agents} AI voice agent${plan.agents === 1 ? "" : "s"}` },
-    { label: "minutes", value: `${plan.minutes.toLocaleString("en-US")} voice minutes` },
-    { label: "overage", value: `Overage at ${overageStr} / min` },
-    {
-      label: "numbers",
-      value: `${plan.phones} dedicated voice number${plan.phones === 1 ? "" : "s"} INCLUDED`,
-    },
-  ];
-  for (const expectation of pricingExpectations) {
-    if (!pricingSource.includes(expectation.value)) {
-      issues.push(`❌  Pricing.tsx missing ${label} ${expectation.label}: ${expectation.value}`);
-    }
-  }
-
   const jsonLdOffer = new RegExp(
-    `"name":\\s*"${label}"[\\s\\S]*?"price":\\s*"${plan.price}"[\\s\\S]*?"url":\\s*"https://trywireline.com/signup\\?plan=${plan.id}"`,
+    `"name":\\s*"${escapeRe(label)}"[\\s\\S]*?"price":\\s*"${plan.price}"[\\s\\S]*?"url":\\s*"https://trywireline.com/get-started\\?plan=${plan.id}`,
   );
   if (!jsonLdOffer.test(indexHtml)) {
     issues.push(`❌  index.html JSON-LD offer missing/out of sync for ${label}.`);
   }
 }
 
+if (!/import\s*\{[^}]*STRIPE_PLANS/.test(pricingSource)) {
+  issues.push("❌  Pricing.tsx must import STRIPE_PLANS from plan-catalog.ts");
+}
+if (!/STRIPE_PLANS\.map/.test(pricingSource)) {
+  issues.push("❌  Pricing.tsx must render tiers from STRIPE_PLANS.map()");
+}
+for (const plan of plans) {
+  const priceToken = `$${plan.price.toLocaleString("en-US")}`;
+  if (!pricingSource.includes(priceToken) && !pricingSource.includes(`$${plan.price}`)) {
+    issues.push(`❌  Pricing.tsx missing visible price for ${plan.label}: ${priceToken}`);
+  }
+}
+
 
 checkClaudeModelDocs();
+checkStaleMarketingPricing();
 
 // Cross-check: README must declare $0.X / min overage values for personal
 // and starter that match the catalog. Catches the older drift where
@@ -209,4 +208,49 @@ function displayNameForClaudeModel(modelId) {
 
 function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Scan in-app marketing copy for legacy launch_v2 price points. */
+function checkStaleMarketingPricing() {
+  const srcRoot = resolve(repoRoot, "src");
+  const banned = [
+    { re: /\$49\/mo/gi, hint: "Personal starts at $9/mo (see plan-catalog.ts)" },
+    { re: /\$49\/month/gi, hint: "Personal starts at $9/mo (see plan-catalog.ts)" },
+    { re: /personal:\s*49\b/gi, hint: "Use STRIPE_PLANS / plan-catalog for checkout analytics" },
+    {
+      re: /\*\*Business Starter\*\*\s*\|\s*\$79\b/gi,
+      hint: "Business Starter is $99/mo in plan-catalog.ts",
+    },
+    { re: /Business Starter[^\n$]{0,40}\$79\/mo/gi, hint: "Business Starter is $99/mo" },
+  ];
+
+  const files = collectSourceFiles(srcRoot);
+  for (const file of files) {
+    if (file.endsWith("plan-catalog.ts")) continue;
+    const text = readFileSync(file, "utf8");
+    for (const rule of banned) {
+      rule.re.lastIndex = 0;
+      if (rule.re.test(text)) {
+        issues.push(`❌  Stale pricing in ${relative(repoRoot, file)}: ${rule.hint}`);
+      }
+    }
+  }
+}
+
+function collectSourceFiles(dir, out = []) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const st = statSync(full);
+    if (st.isDirectory()) {
+      if (entry === "node_modules") continue;
+      collectSourceFiles(full, out);
+      continue;
+    }
+    if (/\.(ts|tsx)$/.test(entry)) out.push(full);
+  }
+  return out;
+}
+
+function relative(from, to) {
+  return to.replace(from, "").replace(/^[/\\]/, "");
 }

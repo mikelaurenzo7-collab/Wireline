@@ -54,11 +54,12 @@ paid ads, sales decks, and partner materials.
 
 | Tier | Price | Agents | Minutes | Overage |
 |------|-------|--------|---------|---------|
-| Personal | $49/mo | 1 | 400 | $0.20/min |
-| Starter | $149/mo | 3 | 1,200 | $0.18/min |
-| Pro | $499/mo | 10 | 5,000 | $0.15/min |
-| Business | $1,499/mo | 25 | 12,000 | $0.14/min |
-| Enterprise | Custom | 100+ | 50,000+ | $0.11/min |
+| Personal | $9/mo | 1 | 30 | $0.25/min |
+| Personal+ | $19/mo | 2 | 100 | $0.22/min |
+| Business Starter | $99/mo | 2 | 300 | $0.20/min |
+| Business Growth | $249/mo | 5 | 1,000 | $0.18/min |
+| Scale | $699/mo | 10 | 3,000 | $0.16/min |
+| Enterprise | Custom | 25+ | 15,000+ | $0.14/min |
 
 ## Social Copy Templates
 

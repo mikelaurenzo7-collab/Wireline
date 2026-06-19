@@ -99,7 +99,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How much does it cost vs. an answering service?",
-        a: "Most after-hours answering services charge $1-2 per minute or $200-400/month per business. Wireline starts at $49/month with the number + 400 minutes included — and the agent actually books jobs instead of just taking messages.",
+        a: "Most after-hours answering services charge $1-2 per minute or $200-400/month per business. Wireline starts at $9/month with the number + 30 minutes included on Personal — and the agent actually books jobs instead of just taking messages.",
       },
     ],
   },
@@ -268,7 +268,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does it work for a single agent or full brokerage?",
-        a: "Both. Solo agents get one Wireline number + one persona on the Personal tier ($49/mo). Brokerages on Pro/Business assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+        a: "Both. Solo agents get one Wireline number + one persona on the Personal tier ($9/mo). Brokerages on Business Growth or Scale assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
       },
       {
         q: "How does it qualify the buyer?",
@@ -285,7 +285,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "Wireline for Everyone — Your AI Handles the Calls You Hate",
     metaDescription:
-      "Personal AI voice assistant for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $49/mo.",
+      "Personal AI voice assistant for calls you avoid: appointments, customer service, billing disputes, returns, and follow-ups. Starts at $9/mo.",
     eyebrow: "For everyone who hates the phone",
     headline: "Never make an awkward call again.",
     subhead:
@@ -336,7 +336,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from just having a friend or family member call for me?",
-        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Costs $49/mo total — same call from a real human assistant can cost $25-50 per call. Privacy: nobody in your life needs to know you avoid these calls.",
+        a: "Available 24/7. Doesn't owe you a favor afterwards. Never gets tired or annoyed. Records and summarizes calls where lawful and configured, so you can review exactly what happened. Costs $9/mo on Personal — same call from a real human assistant can cost $25-50 per call. Privacy: nobody in your life needs to know you avoid these calls.",
       },
       {
         q: "What can't it do?",
@@ -399,7 +399,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How does it compare to a 24/7 answering service?",
-        a: "Most answering services charge $400-1,200/month + per-call fees and just take messages. Wireline starts at $49/month, qualifies the lead, books the renewal review, and emails you a producer-ready intake — not a 'caller said something about insurance' sticky note.",
+        a: "Most answering services charge $400-1,200/month + per-call fees and just take messages. Wireline starts at $9/month on Personal, qualifies the lead, books the renewal review, and emails you a producer-ready intake — not a 'caller said something about insurance' sticky note.",
       },
     ],
   },

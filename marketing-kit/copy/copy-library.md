@@ -64,7 +64,7 @@ Subject: 2 days left on your trial
 > and saved you roughly [X] hours of phone time.
 >
 > Upgrade to keep your number and agent running:
-> → Personal ($49/mo) — 1 agent, 400 minutes
+> → Personal ($9/mo) — 1 agent, 30 minutes
 > → Starter ($149/mo) — 3 agents, 1,200 minutes
 >
 > No upgrade? Your agent pauses (doesn't delete). Come back anytime.

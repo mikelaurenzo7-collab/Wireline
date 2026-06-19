@@ -242,7 +242,7 @@ const AGENT_TEMPLATES = [
       "Hi, welcome to our store! I can help you place an order right over the phone. What are you looking for today?",
   },
   // === PERSONAL & LIFESTYLE ===
-  // For individuals on the Personal tier ($49/mo, 1 agent) — agents
+  // For individuals on the Personal tier ($9/mo, 1 agent) — agents
   // represent a single human rather than a business. Versatile concierge
   // by default plus three specialty sub-types for high-value individual
   // use cases (call screening, errand-running, bill negotiation).

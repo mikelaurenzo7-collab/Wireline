@@ -17,8 +17,8 @@
  *     become recoverable revenue (some callers truly didn't need help).
  *   - $22/hr median US admin-assistant wage (BLS 2025 mean).
  *   - 52 weeks/year.
- *   - Wireline Pro tier ($499/mo) used as the baseline for payback math.
- *     Personal tier ($49) would shrink payback further; Business ($1499)
+ *   - Wireline Business Growth tier ($249/mo) used as the baseline for payback math.
+ *     Personal tier ($9) would shrink payback further; Scale ($699)
  *     scales with more agents/minutes.
  *
  * Honest output:
@@ -308,7 +308,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         <p className="mt-3 text-[8.5px] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
           Assumes Wireline recovers 82% of missed calls (the rest were wrong-numbers or
           window-shoppers). Labor saved uses $22/hr (US BLS 2025 admin-assistant median). Wireline
-          Pro tier billed at $499/mo. Switch tiers anytime.
+          Business Growth tier billed at $249/mo. Switch tiers anytime.
         </p>
       </div>
     </motion.section>

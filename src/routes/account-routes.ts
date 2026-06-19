@@ -5,7 +5,7 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
-import { validateBody } from "../middleware/validation";
+import { validateBody } from "../lib/api-validation";
 import {
   getAccountsForUser,
   createAccount,

@@ -7,13 +7,13 @@ const mockSearch = vi.fn();
 const mockFetch = vi.fn();
 
 vi.mock("imapflow", () => ({
-  ImapFlow: vi.fn().mockImplementation(() => ({
-    connect: mockConnect,
-    logout: mockLogout,
-    getMailboxLock: mockGetMailboxLock,
-    search: mockSearch,
-    fetch: mockFetch,
-  })),
+  ImapFlow: class MockImapFlow {
+    connect = mockConnect;
+    logout = mockLogout;
+    getMailboxLock = mockGetMailboxLock;
+    search = mockSearch;
+    fetch = mockFetch;
+  },
 }));
 
 const mockVerify = vi.fn();

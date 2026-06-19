@@ -546,7 +546,7 @@ export function GeminiPreviewCard() {
   }, []);
 
   const results = [
-    { src: "acmecorp.com", text: "Starter from $49/mo · Pro from $199/mo…" },
+    { src: "acmecorp.com", text: "Starter from $99/mo · Growth from $249/mo…" },
     { src: "g2.com", text: "Acme Corp rated 4.7/5 — 312 reviews…" },
   ];
 
