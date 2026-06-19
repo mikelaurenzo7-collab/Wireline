@@ -469,6 +469,12 @@ export const emailInboxSyncSchema = z.object({
   sinceIso: z.string().datetime().optional(),
 });
 
+/** iCloud Mail — app-specific password connect (no Apple OAuth). */
+export const icloudMailConnectSchema = z.object({
+  email_address: z.string().email().max(320),
+  app_password: z.string().min(4).max(128),
+});
+
 /** Director composer model pin — must survive validateBody (unknown keys are stripped). */
 export const directorChatModelSelectionSchema = z.discriminatedUnion("provider", [
   z.object({

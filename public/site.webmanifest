@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "theme_color": "#8B3FD6",
-  "background_color": "#EFE9DC",
+  "theme_color": "#7C3AED",
+  "background_color": "#F3EFFA",
   "lang": "en-US",
   "categories": ["business", "productivity", "communications"],
   "icons": [

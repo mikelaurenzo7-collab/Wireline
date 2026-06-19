@@ -6,6 +6,7 @@ import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
+import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
 
 /**
  * Unified interface for Calendar and Mail integrations.
@@ -138,7 +139,7 @@ export class IntegrationService {
       subject: string;
       snippet: string;
       receivedAt: Date;
-      provider: "google" | "microsoft" | "yahoo";
+      provider: "google" | "microsoft" | "yahoo" | "icloud";
     }[]
   > {
     const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
@@ -185,7 +186,7 @@ export class IntegrationService {
       subject: string;
       snippet: string;
       receivedAt: Date;
-      provider: "google" | "microsoft" | "yahoo";
+      provider: "google" | "microsoft" | "yahoo" | "icloud";
     }[]
   > {
     if (account.provider === "google") {
@@ -202,7 +203,16 @@ export class IntegrationService {
       });
       return [];
     }
+    if (account.provider === "icloud") {
+      return this.fetchIcloudInbox(account, opts);
+    }
     return [];
+  }
+
+  private async fetchIcloudInbox(account: any, opts: { limit: number; sinceIso?: string }) {
+    const email = account.emailAddress as string;
+    const appPassword = decryptSecret(account.accessToken);
+    return fetchIcloudInbox(email, appPassword, opts);
   }
 
   private async fetchGoogleInbox(account: any, opts: { limit: number; sinceIso?: string }) {
@@ -296,6 +306,11 @@ export class IntegrationService {
         }
         if (account.provider === "microsoft") {
           return await this.sendMicrosoftEmail(account, params);
+        }
+        if (account.provider === "icloud") {
+          const email = account.emailAddress as string;
+          const appPassword = decryptSecret(account.accessToken);
+          return sendIcloudMail(email, appPassword, params);
         }
       }
 

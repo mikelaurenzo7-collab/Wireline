@@ -18,6 +18,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Label } from "./ui/shadcn/Label";
 import { EmptyState } from "./ui/EmptyState";
 import CertifiedIntegrationsStrip from "./CertifiedIntegrationsStrip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/shadcn/Dialog";
+import { Input } from "./ui/shadcn/Input";
 
 type ConfirmState = { open: boolean; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, onConfirm: () => {} };
@@ -27,6 +35,7 @@ const PROVIDER_META: Record<string, { label: string; color: string; logoName: st
   google: { label: "Google Workspace", color: "text-brand", logoName: "Google" },
   microsoft: { label: "Microsoft / Outlook", color: "text-brand", logoName: "Microsoft" },
   yahoo: { label: "Yahoo Mail", color: "text-brand-deep", logoName: "Yahoo" },
+  icloud: { label: "iCloud Mail", color: "text-brand", logoName: "iCloud" },
 };
 
 export default function Integrations() {
@@ -37,6 +46,10 @@ export default function Integrations() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [icloudOpen, setIcloudOpen] = useState(false);
+  const [icloudEmail, setIcloudEmail] = useState("");
+  const [icloudPassword, setIcloudPassword] = useState("");
+  const [icloudConnecting, setIcloudConnecting] = useState(false);
 
   const fetchAccounts = async () => {
     try {
@@ -140,6 +153,39 @@ export default function Integrations() {
       openOAuthPopup(url);
     } catch (e: any) {
       toastError("Yahoo Mail connection failed", e?.message || "Could not start Yahoo OAuth.");
+    }
+  };
+
+  const handleConnectIcloud = async () => {
+    const email = icloudEmail.trim().toLowerCase();
+    const appPassword = icloudPassword.replace(/\s+/g, "");
+    if (!email || !appPassword) {
+      toastWarning("Missing details", "Enter your iCloud email and app-specific password.");
+      return;
+    }
+
+    setIcloudConnecting(true);
+    try {
+      const res = await authFetch("/api/integrations/icloud/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email_address: email, app_password: appPassword }),
+      });
+      const out = await readApiJson<{ ok?: boolean; email?: string; error?: string }>(res);
+      if (out.ok === false) throw new Error(out.error);
+      setIcloudOpen(false);
+      setIcloudEmail("");
+      setIcloudPassword("");
+      await fetchAccounts();
+      toastSuccess("iCloud Mail connected", `${out.data.email ?? email} is ready for inbox sync.`);
+    } catch (e: unknown) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Could not connect iCloud Mail. Check your app-specific password.";
+      toastError("iCloud connection failed", msg);
+    } finally {
+      setIcloudConnecting(false);
     }
   };
 
@@ -262,7 +308,7 @@ export default function Integrations() {
               <CertifiedIntegrationsStrip />
               <Panel
                 title="Email carriers"
-                hint="GMAIL · OUTLOOK"
+                hint="GMAIL · OUTLOOK · ICLOUD"
                 icon={Mail}
                 autoHeight
                 flush
@@ -293,6 +339,14 @@ export default function Integrations() {
                         <Plus className="w-3 h-3" />
                         Yahoo
                       </ShadButton>
+                      <ShadButton
+                        onClick={() => setIcloudOpen(true)}
+                        variant="outline"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full app-primary-action text-[11px] uppercase tracking-[0.22em] touch-press"
+                      >
+                        <Plus className="w-3 h-3" />
+                        iCloud
+                      </ShadButton>
                     </div>
                   ) : undefined
                 }
@@ -319,6 +373,10 @@ export default function Integrations() {
                       {
                         label: "Connect Yahoo",
                         onClick: handleConnectYahoo,
+                      },
+                      {
+                        label: "Connect iCloud",
+                        onClick: () => setIcloudOpen(true),
                       },
                     ]}
                   >
@@ -455,6 +513,59 @@ export default function Integrations() {
           </PageShell>
         )}
       </AdminHubViewport>
+
+      <Dialog open={icloudOpen} onOpenChange={setIcloudOpen}>
+        <DialogContent className="wl-modal-surface border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect iCloud Mail</DialogTitle>
+            <DialogDescription>
+              Apple does not offer mailbox OAuth for third-party apps. Generate an app-specific
+              password at{" "}
+              <a
+                href="https://appleid.apple.com/account/manage"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand underline underline-offset-2"
+              >
+                appleid.apple.com
+              </a>{" "}
+              (Sign-In and Security → App-Specific Passwords), then paste it here.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="icloud-email">iCloud email</Label>
+              <Input
+                id="icloud-email"
+                type="email"
+                autoComplete="username"
+                placeholder="you@icloud.com"
+                value={icloudEmail}
+                onChange={(e) => setIcloudEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="icloud-app-password">App-specific password</Label>
+              <Input
+                id="icloud-app-password"
+                type="password"
+                autoComplete="off"
+                placeholder="xxxx-xxxx-xxxx-xxxx"
+                value={icloudPassword}
+                onChange={(e) => setIcloudPassword(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <ShadButton variant="outline" onClick={() => setIcloudOpen(false)}>
+                Cancel
+              </ShadButton>
+              <ShadButton onClick={handleConnectIcloud} disabled={icloudConnecting}>
+                {icloudConnecting ? "Connecting…" : "Connect iCloud"}
+              </ShadButton>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmModal
         open={confirmState.open}
