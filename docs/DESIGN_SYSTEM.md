@@ -1,3 +1,11 @@
+# Wireline Design System (legacy — see DESIGN.md)
+
+> **Deprecated for web.** This document described an older "Grok certified" robofuturistic spec (cyan/magenta).  
+> **Current web source of truth:** [`DESIGN.md`](../DESIGN.md) and `src/index.css` (Lavender Noir + `.wl-console-surface`).  
+> Mobile native apps may keep platform-specific token files; align new work with Lavender Noir where possible.
+
+---
+
 # Wireline Design System (Grok Certified v1)
 
 **Single source of truth** for the robofuturistic aesthetic across Web, iOS, and Android.

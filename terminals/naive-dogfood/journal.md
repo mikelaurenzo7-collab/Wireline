@@ -1,40 +1,14 @@
-# Naive dogfood — live journal
+# Naive dogfood journal
 
-## Session
+## 2026-06-19 — Pass 4 (surgical VQA + console cohesion)
 
-| Field | Value |
-|-------|-------|
-| Started | 2026-06-08 |
-| Account | wireline.demo@trywireline.com |
-| Demo tenant framing read | yes |
-| Chat / Design cleared | pending |
+| Time | Route | Result | Notes |
+|------|-------|--------|-------|
+| — | `/app/business` | PASS | Title `Assistant — Business · Wireline`; unified sidebar shell |
+| — | `/app/business/fleet` | PASS | Tight `PageHeader`; agent cards readable on charcoal |
+| — | `/app/personal` | PASS | Same shell; title `Home — Personal · Wireline` |
+| — | Workspace switcher | ROUGH→FIX | `<details>` overlapped nav; replaced with button menu |
+| — | Body canvas bleed | ROUGH→FIX | `html.wl-console-active` class on mount |
+| — | Assistant probe | CONFUSE | Stub `simulateAssistantReply` — not live Claude |
 
-## Product hypothesis
-
-_(update after Phase 1)_
-
----
-
-## Progress
-
-- [ ] 0 Prep & login
-- [ ] 1 First impressions
-- [ ] 2 Shell sweep
-- [ ] 3 Director
-- [ ] 4 Painter
-- [ ] 5 Ops · Training · Insights · Agents
-- [ ] 6 Channels
-- [ ] 7 Admin & compliance
-- [ ] 8 Edge + mobile
-- [ ] 9 Report written
-
----
-
-## Route log
-
-| Time | Route / tab | Hypothesis (1 line) | Matrix § | pass/fail |
-|------|-------------|---------------------|----------|-----------|
-
----
-
-## Quick entries
+Shipped: `ConsoleShell`, `PageHeader`, `WorkspaceSwitcher`, copy tightening, PageMeta per route.

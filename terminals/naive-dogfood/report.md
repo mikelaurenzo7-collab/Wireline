@@ -1,61 +1,131 @@
-# Naive dogfood report
+# Naive dogfood + Visual QA report
 
-## Run metadata
+## Pass 4 — Console cohesion (2026-06-19, deployed `dpl_C5Qt9NmPmF9VeKsQQDczWQqZuPMa`)
+
+**Shipped:** unified `ConsoleShell` (business + personal), `PageHeader` (one title + optional lede), `WorkspaceSwitcher`, per-route `PageMeta`, left-aligned `max-w-[1280px]` content, lavender body bleed fix via `html.wl-console-active`.
+
+| Check | Result |
+|-------|--------|
+| Tab title on `/app/business` | `Assistant — Business · Wireline` |
+| Tab title on `/app/personal` | `Home — Personal · Wireline` |
+| Body canvas on console | `rgb(30, 27, 46)` (charcoal) |
+| Sidebar + workspace switch | PASS |
+| Typography (no 5xl + eyebrow spam) | PASS |
+| Fake search / bell chrome | Removed |
+
+**Still ROUGH (not blocking console ship):** Business Assistant uses `simulateAssistantReply` stub; marketing mobile lacks hamburger; some personal sub-pages still wordy.
+
+Screenshot: `vqa3-pass4-business-assistant.png`
+
+---
+
 
 | Field | Value |
 |-------|-------|
-| Date | 2026-06-08 |
-| Base URL | https://trywireline.com |
-| Method | Live browser MCP (`cursor-ide-browser`), amnesia session |
-| Mode | Full (time-boxed; Phases 5–6 partial) |
-| Personas played | Founder, Floor supervisor, Compliance / risk (+ Pipeline rev ops) |
-| Viewports | ~760×626 desktop only (no 390px resize tool in MCP) |
-| Amnesia breaks | Phase 7 reconciliation read `wireline-beast/coverage.md` only |
+| Date | 2026-06-19 |
+| Base URL | `https://trywireline.com` |
+| Account | `wireline.demo@trywireline.com` (legacy demo — **not provisioned in Clerk**) |
+| Method | Live browser MCP + production deploy verification |
+| Duration | ~90 min (auth fix + screenshot sweep + partial dogfood) |
+| Viewports | ~390px mobile (default browser) + 1440px desktop (partial) |
+| Deploys | `d0fa1588` CSP sync, `54a97fdd` OAuth button CSS fix |
 
-**Session note:** User pre-authenticated on `/ops`. Screenshot tool unavailable in MCP (`browser_screenshot` not exposed). Some routes recovered via `browser_navigate` after stale UI / overlay traps.
+---
+
+## Executive summary
+
+**Clerk auth was broken in production for two independent reasons:**
+
+1. **CSP drift (FIXED, deployed)** — `vercel.json` blocked all Clerk script/connect/frame origins on static SPA routes (`/signup`, `/signin`). Clerk widgets rendered empty shells with no OAuth or form controls.
+2. **CSS collapse (FIXED, deployed)** — Tailwind/global resets collapsed Clerk icon OAuth buttons to **0×0 px**. Google/Apple/GitHub/Microsoft buttons existed in the DOM but were invisible. Post-fix measurement: **48×48 px**.
+
+**Remaining ops issues (not code):**
+
+- Production bundle uses **`pk_test_…`** (Clerk **Development mode** banner visible). Replace `VITE_CLERK_PUBLISHABLE_KEY` in Vercel **Production** with `pk_live_…` and matching `CLERK_SECRET_KEY`.
+- Demo credentials (`wireline.demo@trywireline.com`) return **"Couldn't find your account"** — user exists in legacy Wireline DB but was never migrated to the Clerk instance. Dogfood of authenticated surfaces (Agent Studio, Director chat, Live Ops, etc.) **blocked** pending Clerk user provisioning or email verification.
+
+---
+
+## Auth fixes shipped today
+
+| Commit | Change |
+|--------|--------|
+| `d0fa1588` | Sync `vercel.json` CSP from `csp.ts`; add `*.clerk.com` + Apple OAuth origins; explicit Sign in / Create account links on auth portal; add `csp:check` to `verify` |
+| `54a97fdd` | Fix invisible OAuth icon buttons (`clerk-appearance.ts` + `index.css`); show **Sign in** on mobile marketing header |
+
+---
+
+## Screenshot inventory
+
+Saved under `terminals/naive-dogfood/screenshots/` (Cursor temp mirror: `%LOCALAPPDATA%\Temp\cursor\screenshots\terminals\naive-dogfood\screenshots\`).
+
+### Public marketing
+
+| File | Route | Notes |
+|------|-------|-------|
+| `public-00-home.png` | `/` | Mobile; no Sign in in header (pre-mobile fix on cached build) |
+| `public-01-pricing.png` | `/pricing` | **$9/mo Personal** confirmed |
+| `public-02-features.png` | `/features` | Clean feature grid |
+| `public-03-showcase.png` | `/showcase` | Role cards (Personal, Front Desk, etc.) |
+| `public-04-developers-desktop.png` | `/developers` | Wider viewport; Sign in visible |
+| `public-05-about.png` | `/about` | Mission cards |
+| `public-06-compare.png` | `/compare` | Competitive positioning |
+
+### Auth portal
+
+| File | Route | Notes |
+|------|-------|-------|
+| `auth-01-signup-BLOCK.png` | `/signup` | **Before OAuth CSS fix** — empty Clerk card |
+| `auth-02-signin.png` | `/signin` | Email/password visible; OAuth row missing (0×0) |
+| `auth-03-signup-full.png` | `/signup` | Workspace selector + empty Clerk area |
+| `auth-04-signin-redirect-studio.png` | `/signin?redirect=/app/business/studio` | Good redirect messaging; split layout on lg |
+| `auth-05-signup-post-fix.png` | `/signup` | Post-deploy |
+| `auth-06-signup-oauth-visible.png` | `/signup/verify-email-address` | Signup reached email verification step |
+
+### Authenticated app
+
+**Captured 2026-06-19 (native auth session on production — login API succeeds; auto-redirect fix pending deploy):**
+
+| Route | Status | Notes |
+|-------|--------|-------|
+| `/app/business` | PASS | Director / Assistant command center loads |
+| `/app/business/live` | PASS | Live Ops cockpit, metrics visible |
+| `/app/business/studio` | PASS | Agent Studio route resolves |
+| `/app/business/training` | — | Not re-screenshotted this pass |
+| `/app/business/analytics` | — | Not re-screenshotted this pass |
+| `/app/business/integrations` | — | Not re-screenshotted this pass |
+| `/app/personal/*` | — | Not re-screenshotted this pass |
+
+**Native auth restoration (local branch, not yet on prod):**
+
+- Clerk removed from client + server mount; `AuthPortal` is the only auth UI.
+- Figma split layout (ink left rail + cream form) with Gmail / Outlook / Yahoo OAuth.
+- **Root cause of “Working…” stuck state:** sign-in API returned 200 and set cookie, but client never called `navigate()` after `signIn()`. Fixed in `AuthPortal.tsx`.
+- Duplicate header “Sign in” on auth pages removed (`PublicSiteHeader` hides CTAs when `active` is `signin`/`signup`).
+- Signup terms checkbox + disabled CTA styling improved.
 
 ---
 
 ## Product readback
 
-Wireline is an **operator console for a fleet of AI agents** that answer phones, send texts and email, and chase leads. You land on a **live operations floor** (even when nothing is live), approve AI-drafted follow-ups, listen to past calls, drag deals on a pipeline board, and tune agent voices/scripts in Training. A **Director chat** at the center is meant to be the "hire a wingman" layer — strategy, audits, outbound drafts — but it errored on first use in this session. Compliance tools (DNC, audit log) exist but hide behind the command palette, not the sidebar.
+Wireline is an AI phone layer: a personal assistant for screening/summaries and a business workspace for voice/SMS/email agent fleets, training, live ops, and integrations. Marketing clearly communicates personal vs business split and $9 entry pricing. The auth portal explains workspace choice well, but Clerk still feels like a bolt-on (duplicate headings, Development mode badge, icon-only OAuth without labels).
 
 ---
 
-## First five minutes
+## Coverage tally
 
-**Worked:** Live Ops copy ("listen in, coach, or escalate") telegraphs the category quickly. Opening the hamburger reveals a sensible IA: Workspace / Channels / Sales / Admin. Command bar (once discovered) is an excellent map.
+| Area | Attempted | Passed | Failed | Skipped |
+|------|-----------|--------|--------|---------|
+| Public marketing pages | 7/10 | 7 | 0 | blog, training, get-started |
+| Auth portal | 4/4 | 2 | 2 (pre-fix) | — |
+| Signup E2E | 1 | partial | email OTP gate | — |
+| Signin demo login | 1 | 0 | account not in Clerk | — |
+| Business app (Studio, Chat, Live Ops, etc.) | 0 | — | — | **all** (auth blocked) |
+| Personal app tabs | 0 | — | — | **all** |
+| Director stress / approvals | 0 | — | — | **all** |
+| Mobile 390 hamburger | partial | — | no marketing mobile nav | — |
 
-**Baffled:** Zero live callers + 19 available agents + 2 stale SMS drafts with "Invalid Date" feels like a broken demo, not an empty state. Command bar placeholder suggests actions, but it only accepts route keywords. Director banner about unloaded data on first Chat visit undermines "start here."
-
-**Abandon risk:** A founder who asks a plain question in the command bar or Chat and gets no answer in 60s may assume the product is a static dashboard.
-
----
-
-## Route map (discovered)
-
-| Nav label | Purpose (my words) | Quality | Notes |
-|-----------|-------------------|---------|-------|
-| Live Ops | Supervisor cockpit | rough | Actions queue confusing; tab/URL mismatch |
-| Chat | Director AI assistant | broken/partial | Data load error; thread lost on refresh |
-| Training | Agent tuning & test calls | great | Simulator + 19 agents clear |
-| Insights | Performance analytics | ok | Many sub-tabs; brief visit |
-| Pipeline | Lead kanban | great | Best day-one clarity |
-| Phone | Call history & QA | ok | Timestamp formatting glitch |
-| DNC | TCPA block list | ok | Hidden — command bar only |
-| Audit | Activity log | great | Searchable, severity filters |
-| Design, Email, SMS, Agents, Settings, Help, Founder, Integrations | (not deeply visited) | — | Seen in nav / command bar |
-
----
-
-## Persona outcomes
-
-| Persona | Goal | Result | Blockers |
-|---------|------|--------|----------|
-| Founder | Explain value; ask business question | **partial** | Director load error; command bar not conversational |
-| Floor supervisor | See live activity; handle urgent queue | **partial** | No live callers; pending SMS show Twilio disabled + Invalid Date |
-| Compliance | Find DNC + audit trail | **done** | DNC not in sidebar — required command bar discovery |
-| Rev ops | See funnel; nudge leads | **done** | Pipeline kanban immediately usable |
+**Overall Must coverage:** ~15% — authenticated dogfood requires Clerk demo user or completed signup.
 
 ---
 
@@ -63,87 +133,123 @@ Wireline is an **operator console for a fleet of AI agents** that answer phones,
 
 ### BLOCK
 
-| ID | What I was trying | Repro (clicks) | Expected (naive) | Actual | Screenshot |
-|----|-------------------|----------------|------------------|--------|------------|
-| B1 | Get a plain-English product explanation from Director | Chat → type question → Send | Streaming answer explaining Wireline | "Some Director data could not be loaded…" + stuck on Connecting/Loading fleet context; thread cleared on later refresh | MCP screenshot unavailable |
+| ID | Area | Repro | Expected | Actual | Screenshot |
+|----|------|-------|----------|--------|------------|
+| B1 | Auth CSP | Visit `/signup` before `d0fa1588` deploy | Clerk OAuth + email form | Empty card, no controls | `auth-01-signup-BLOCK.png` |
+| B2 | OAuth CSS | Visit `/signup` before `54a97fdd` | Visible Google/Apple/etc. | Buttons 0×0 in DOM | `auth-02-signin.png` |
+| B3 | Demo login | Sign in with `wireline.demo@trywireline.com` | Access business workspace | "Couldn't find your account" | `auth-02-signin.png` |
+| B4 | Dogfood | Full app tour | Agent Studio, Director, etc. | Cannot authenticate | — |
+
+### TRUST
+
+| ID | Area | Issue | Screenshot |
+|----|------|-------|------------|
+| T1 | Auth | **"Development mode"** Clerk badge on production domain | `auth-02-signin.png` |
+| T2 | Auth | `pk_test_` publishable key baked into production client | — |
 
 ### CONFUSE
 
-| ID | Screen | What confused me | Suggestion |
-|----|--------|------------------|------------|
-| C1 | Live Ops → Actions | Pending items show **Invalid Date** and raw Twilio disabled message in the title | Human date; surface integration status once in a banner, not per row |
-| C2 | Command bar | Placeholder implies NL actions; typing a question returns "No matching commands" | Label as "Go to…" or add NL routing to Director |
-| C3 | Sidebar vs command bar | DNC, Audit, Triage not in sidebar — legal/ops users won't find them | Add Admin entries or Settings cross-links |
-| C4 | Live Ops tabs | "Actions" tab maps to URL `?tab=intel` | Align tab label, URL param, and selected state |
-| C5 | Chat | Persistent warning about incomplete Director data on empty state | Fix load path or hide thread until hydrated |
+| ID | Screen | What confused a day-one user | Suggestion |
+|----|--------|------------------------------|------------|
+| C1 | Marketing mobile | Only **Get started** in header — no Sign in | **Fixed** — Sign in always visible |
+| C2 | Auth | Copy says "Google, Apple, phone" but OAuth is icon-only (no labels) | Use `socialButtonsBlockButton` layout in Clerk dashboard or add `aria-label` styling |
+| C3 | Auth | Duplicate **"Sign in to Wireline"** (page + Clerk card) | Hide Clerk `headerTitle` via appearance when page already has H1 |
+| C4 | Demo docs | `demo-tenant.md` says `/auth` email form — now Clerk at `/signin` | Update dogfood docs + seed Clerk user |
+| C5 | Auth redirect | Left marketing panel hidden on mobile — loses Google/Apple/Phone story | Show compact OAuth trust row on mobile |
 
 ### ROUGH
 
-| ID | Screen | Issue |
-|----|--------|-------|
-| R1 | Global nav | URL changes before main content swaps; prior page visible 1–3s |
-| R2 | Command bar | Modal overlay blocks rest of UI; no obvious dismiss besides re-toggle |
-| R3 | Phone → Call History | Timestamps run together: `5/20/202610:51 PM` |
-| R4 | Live Ops landing | 0 live / 19 available / 2 pending drafts — no guided "start here" for empty floor |
+| ID | Screen | Issue | Screenshot |
+|----|--------|-------|------------|
+| R1 | Sign in | **Continue** button layout broken (tall narrow block, icon misaligned) | `auth-02-signin.png` |
+| R2 | Marketing | Nav links hidden below `lg` — no hamburger menu | `public-00-home.png` |
+| R3 | Marketing | Header crowded on mobile: logo + Get started only | `public-00-home.png` |
+| R4 | Auth | Clerk footer **"Secured by"** clipped at bottom of viewport | `auth-02-signin.png` |
+| R5 | Auth | `style-src-elem 'self'` may block Clerk-injected styles long-term | Monitor after `pk_live` switch |
 
 ### NICE
 
-| ID | Screen | What delighted |
-|----|--------|----------------|
-| N1 | Pipeline | Kanban columns + card copy = instant funnel mental model |
-| N2 | Training → Simulator | "Test calls before customers dial in" + Start voice test — builder confidence |
-| N3 | Command bar palette | Rich descriptions per destination (keyboard hints too) |
-| N4 | Audit Log | Serious compliance surface — filterable, searchable, voluminous events |
+| ID | Screen | What worked well |
+|----|--------|------------------|
+| N1 | Pricing | $9 Personal / clear tier ladder — matches `plan-catalog.ts` |
+| N2 | Auth desktop | Split layout (ink left rail + cream form) feels premium |
+| N3 | Auth | Workspace Personal/Business selector before signup — clear wedge |
+| N4 | Auth redirect | "After sign-in, return to /app/business/studio" — excellent |
+| N5 | Typography | Fraunces + Plus Jakarta pairing reads world-class on marketing |
 
 ---
 
-## Console / visible errors
+## Visual QA — path to world-class UI/UX
 
-- Benign: none observed in UI chrome
-- User-visible / investigate: Director "Some Director data could not be loaded"; Twilio messaging disabled on SMS drafts; Invalid Date on action queue
+### Marketing (public)
+
+1. **Mobile nav** — Add hamburger or horizontal scroll nav; hiding 7 links until `lg` hurts discoverability.
+2. **Header balance** — Sign in (text) + Get started (primary) on all breakpoints; consider ghost Sign in on cream background.
+3. **Hero density** — Strong copy; add one social-proof row (logos, call volume, rating) above fold on mobile.
+4. **Consistent CTAs** — "Get started" vs "Get started free" — pick one primary string.
+5. **Desktop polish** — Re-verify at 1440px; several screenshots still rendered narrow (browser chrome issue) — QA at true desktop.
+
+### Auth portal
+
+1. **OAuth row** — Post-fix icons visible; add text labels ("Continue with Google") for accessibility and trust.
+2. **Remove Development mode** — swap to `pk_live_` keys in Vercel Production.
+3. **Clerk appearance** — Set `headerTitle: "hidden"` and `headerSubtitle: "hidden"` when Wireline page title exists; fix `formButtonPrimary` width (now `w-full` in code).
+4. **Hide Clerk branding** on paid product (`footer: "hidden"` if plan allows) or restyle to match Wireline footer.
+5. **Provision demo user** in Clerk + run `clerk/bridge` so dogfood and sales demos work without signup OTP.
+
+### Authenticated app (inferred + prior knowledge; not screenshot-verified this run)
+
+1. **Director** — Toolbar chip density; ensure 44px touch targets on Coach/Design/Deep at 390px.
+2. **Agent Studio** — Canvas empty states should mirror marketing illustration quality.
+3. **Live Ops** — Real-time pulse should dominate landing tab (business default is assistant — consider `live` as default for ops persona).
+4. **Information scent** — Sidebar labels vs URLs (`/app/business/studio` = Agents) — align naming.
+5. **Demo labeling** — Seed data badges on fleet/pipeline rows (TRUST).
 
 ---
 
-## Top 5 fixes for a day-one user
+## Stream / wait failures
 
-1. **Make Director's first reply reliable** — founder path dies on load errors.
-2. **Fix or filter Live Ops action queue** — Invalid Date + disabled Twilio in every row erodes trust.
-3. **Surface DNC / Audit in sidebar or Settings** — compliance users shouldn't need the command palette.
-4. **Fix route transition stale content** — URL and visible page must change together.
-5. **Clarify command bar vs Chat** — either route questions to Director or rename placeholder to "Go to page…"
+None — authenticated streams not reached.
+
+---
+
+## Top 10 fixes (ranked)
+
+1. **Vercel Production: `pk_live_` + `sk_live_` Clerk keys** — removes Development mode, enables production OAuth.
+2. **Provision `wireline.demo@trywireline.com` in Clerk** (or migration script) — unblocks dogfood + sales demos.
+3. ~~Sync CSP / allow Clerk origins in `vercel.json`~~ **DONE**
+4. ~~Fix 0×0 OAuth icon buttons~~ **DONE**
+5. **Clerk Dashboard: enable Google + Apple OAuth** for production instance; verify redirect URLs include `/signup`, `/signin`, `/auth/clerk-complete`.
+6. **Clerk appearance: hide duplicate headers** + label OAuth buttons.
+7. **Marketing mobile nav** (hamburger).
+8. **Update `demo-tenant.md`** — `/signin` + Clerk flow.
+9. **Continue button** — verify post-`w-full` deploy; screenshot retest.
+10. **`CLERK_WEBHOOK_SIGNING_SECRET`** in Vercel if not set — bridge sync on signup.
 
 ---
 
 ## Would I come back tomorrow?
 
-Maybe. The **pipeline and training surfaces** feel like a real product with opinionated workflows. The **supervisor story** is credible when I squint at Phone history and Live Ops copy. But day one I hit **empty live floor + scary queue rows + a chat assistant that wouldn't load** — that's the difference between "interesting demo" and "I'd run my business on this." One good Director answer and a clean ops landing would flip the impression.
-
----
-
-## Reconciliation (post-session)
-
-Surfaces from beast coverage **not** visited during naive pass:
-
-- [ ] Design / Painter (`/design`) — §D
-- [ ] Live Ops: Triage tab, Analytics tab — §E
-- [ ] Training: Voices, Pronunciation, Flow tabs — §F
-- [ ] Insights: Quality, Revenue, Goals, Heatmap, Leaderboard — §G
-- [ ] Agents (`/agents`) — §H
-- [ ] Email, SMS, Outbound, Appointments channel depth — §I
-- [ ] Settings admin tabs (Billing, Team, Branding, Carrier, Growth, Integrations, Activity) — §J
-- [ ] Help, Founder dashboards — §K
-- [ ] Triage route (`/triage`) — command bar only
-- [ ] Mobile 390px hamburger pass — §B
-- [ ] Approve/deny action cards in Live Ops — §C5 partial
-- [ ] Director streaming probes (fleet audit, etc.) — §C2–C3
-- [ ] Keyboard shortcuts `g r`, `g d` — §B
-- [ ] Sign out → Back leakage test — §A optional
+The marketing and auth *shell* are close to premium — typography, color, and workspace framing are strong. Today auth was genuinely broken (CSP + invisible buttons), which would have caused immediate bounce. With fixes deployed, email/password works and signup reaches verification. I would not trust the product for a business demo until production keys are live, OAuth is labeled and tested end-to-end, and the demo account works without OTP. Once auth is solid, the authenticated experience (Director, Studio, Live Ops) is the next bar for world-class — that pass is queued.
 
 ---
 
 ## Sign-off
 
-- [x] Journal complete with per-stop entries
-- [ ] Every BLOCK/CONFUSE has screenshot (MCP gap)
-- [x] Amnesia held until Phase 7
-- [x] Saved under `terminals/naive-dogfood/`
+- [x] Auth root causes identified and fixed in code (CSP + OAuth CSS)
+- [x] Production deploy verified (CSP includes Clerk; OAuth buttons 48×48)
+- [x] Public + auth screenshots captured (15 files)
+- [ ] Authenticated app screenshots — **blocked on Clerk demo user**
+- [ ] Full stress-matrix dogfood — **blocked on Clerk demo user**
+- [x] Findings documented in this file
+
+### Next session (when demo user exists)
+
+1. Sign in → `/auth/clerk-complete` → business workspace
+2. Clear Director + Design threads
+3. Run full `stress-matrix.md` §A–K with screenshots per route:
+   - `/app/business` (Assistant/Director)
+   - `/app/business/studio` (Agent Studio)
+   - `/app/business/live`, `/fleet`, `/training`, `/analytics`, `/integrations`, `/settings`
+   - `/app/personal/*` tabs
+4. 390px approval-card tap test on Director

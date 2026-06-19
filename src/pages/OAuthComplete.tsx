@@ -8,6 +8,10 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
+import {
+  readStoredWorkspaceMode,
+  resolvePostAuthDestination,
+} from "../lib/auth-redirect";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
 
@@ -58,8 +62,9 @@ export default function OAuthComplete() {
         }
         await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         signIn({ user });
-        // Studio is home — land OAuth sign-ins on the Agent Studio, not Live Ops.
-        navigate("/agents", { replace: true });
+        navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), location.search), {
+          replace: true,
+        });
       } catch {
         setError("Sign-in failed. Please try again.");
       }

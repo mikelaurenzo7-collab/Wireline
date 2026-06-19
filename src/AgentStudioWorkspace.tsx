@@ -134,8 +134,8 @@ function StudioShell() {
   const agent = agents[agentIndex];
 
   return (
-    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-ink text-paper">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card p-4 lg:flex">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden wl-console-surface text-paper">
+      <aside className="wl-glass-panel hidden w-60 shrink-0 flex-col border-r p-4 lg:flex">
         <Link to="/" className="mb-8 inline-flex items-center gap-2 px-2 pt-2">
           <span className="grid h-7 w-7 place-items-center rounded-[10px] bg-brand">W</span>
           <span className="font-display text-[19px] font-semibold">Wireline</span>
@@ -168,7 +168,7 @@ function StudioShell() {
         </div>
       </aside>
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 border-b border-border bg-card/85 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-paper/10 bg-ink/90 backdrop-blur-xl">
           <div className="flex h-14 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-3">
               <Link to="/app/business/live" className="lg:hidden">

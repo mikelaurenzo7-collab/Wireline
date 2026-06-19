@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, type ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Building2,
   Check,
   Eye,
   EyeOff,
   Loader2,
   Lock,
   Mail,
+  User,
 } from "lucide-react";
 
 import PublicSiteHeader from "./marketing/PublicSiteHeader";
@@ -22,6 +24,15 @@ import {
   syncSignupIntent,
   type SignupIntent,
 } from "../lib/signup-intent";
+import {
+  persistAuthRedirect,
+  persistWorkspaceMode,
+  readRedirectFromSearch,
+  readStoredWorkspaceMode,
+  resolvePostAuthDestination,
+  workspaceFromIntent,
+  type WorkspaceMode,
+} from "../lib/auth-redirect";
 import { getPasswordPolicyError } from "../lib/password-policy";
 import { markFreshSignupSession } from "../lib/post-signup-onboarding";
 import {
@@ -147,12 +158,12 @@ function OAuthSignInButtons({
   const providers: Array<{ id: OAuthProvider; label: string; mark: React.ReactNode }> = [
     {
       id: "google",
-      label: "Google",
+      label: "Gmail",
       mark: <span className="text-[18px] font-semibold text-[#4285F4]">G</span>,
     },
     {
       id: "microsoft",
-      label: "Microsoft",
+      label: "Outlook",
       mark: (
         <span className="grid grid-cols-2 gap-0.5" aria-hidden="true">
           <span className="block h-2 w-2 bg-[#F25022]" />
@@ -195,9 +206,160 @@ function OAuthSignInButtons({
   );
 }
 
+const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
+
+function AuthLogo({ light = false }: { light?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-2 font-display text-xl tracking-tight",
+        light ? "text-paper" : "text-foreground",
+      )}
+    >
+      <span className="flex h-7 w-7 items-center justify-center bg-brand text-[12px] text-paper">W</span>
+      Wireline
+    </span>
+  );
+}
+
+function AuthChip({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit items-center gap-1.5 border border-brand bg-brand/8 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-brand",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function AuthShell({
+  children,
+  mode,
+  headerActive,
+}: {
+  children: ReactNode;
+  mode: WorkspaceMode;
+  headerActive: "signin" | "signup";
+}) {
+  return (
+    <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-paper lg:flex">
+        <div className="absolute right-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-brand/30 blur-3xl" />
+        <div className="relative z-10">
+          <Link to="/">
+            <AuthLogo light />
+          </Link>
+        </div>
+        <div className="relative z-10 max-w-xl">
+          <AuthChip className="border-paper/20 bg-card/5 text-paper/70">
+            {mode === "personal" ? "Personal workspace" : "Business workspace"}
+          </AuthChip>
+          <h2 className="mt-5 font-display text-5xl leading-tight tracking-tight">
+            {mode === "personal"
+              ? "Your Personal Wireline Assistant."
+              : "Your Business Wireline Assistants, in one place."}
+          </h2>
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
+            {mode === "personal"
+              ? "Screen calls, block spam, and keep your day moving — your assistant handles the phone so you don't have to."
+              : "Set up AI voice, SMS, and email assistants with the tools, training, and approvals your team already uses."}
+          </p>
+        </div>
+        <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-card/10 text-center">
+          {[
+            ["Gmail", "OAuth"],
+            ["Outlook", "OAuth"],
+            ["Yahoo", "OAuth"],
+          ].map(([a, b]) => (
+            <div key={a} className="bg-card/[.03] p-4">
+              <div className="font-display text-xl">{a}</div>
+              <div className="mt-1 text-[10px] uppercase tracking-[.18em] text-paper/45">{b}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex min-h-screen flex-col">
+        <div className="lg:hidden">
+          <PublicSiteHeader active={headerActive} />
+        </div>
+        <main
+          id="main-content"
+          className="relative z-10 flex flex-1 items-center justify-center px-5 py-16 sm:px-6 lg:py-10"
+        >
+          <div className="w-full max-w-[460px]">{children}</div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceSelector({
+  mode,
+  setMode,
+}: {
+  mode: WorkspaceMode;
+  setMode: (mode: WorkspaceMode) => void;
+}) {
+  const options: Array<{ id: WorkspaceMode; title: string; text: string; icon: ReactNode }> = [
+    {
+      id: "personal",
+      title: "Personal",
+      text: "One private assistant for calls, reminders, Siri, CarPlay, and widgets.",
+      icon: <User className="h-4 w-4" />,
+    },
+    {
+      id: "business",
+      title: "Business",
+      text: "A workspace for agent fleets, training, integrations, analytics, and teams.",
+      icon: <Building2 className="h-4 w-4" />,
+    },
+  ];
+  return (
+    <div className="mb-6 grid gap-2">
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          onClick={() => setMode(option.id)}
+          className={cn(
+            "flex items-start gap-3 border p-4 text-left transition",
+            mode === option.id
+              ? "border-brand bg-brand/10"
+              : "border-border bg-background hover:border-brand/40",
+          )}
+        >
+          <span
+            className={cn(
+              "mt-0.5 flex h-8 w-8 items-center justify-center rounded-full",
+              mode === option.id ? "bg-brand text-paper" : "bg-secondary text-foreground",
+            )}
+          >
+            {option.icon}
+          </span>
+          <span className="flex-1">
+            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              {option.title}
+              {mode === option.id && <Check className="h-4 w-4 text-brand" />}
+            </span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.text}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function AuthPortal() {
-  const { signIn } = useAuth();
-  const pathname = typeof window === "undefined" ? "/signin" : window.location.pathname;
+  const { signIn, user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(() =>
+    workspaceFromIntent(captureSignupIntentFromLocation()) || readStoredWorkspaceMode(),
+  );
   const initialMode: AuthMode = pathname === "/signup" ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -219,7 +381,19 @@ export default function AuthPortal() {
   useEffect(() => {
     setSignupIntent(captureSignupIntentFromLocation());
     captureDemoSourceFromLocation();
-  }, []);
+    persistAuthRedirect(readRedirectFromSearch(location.search));
+    const intent = captureSignupIntentFromLocation();
+    if (intent) setWorkspaceMode(workspaceFromIntent(intent));
+  }, [location.search]);
+
+  useEffect(() => {
+    persistWorkspaceMode(workspaceMode);
+  }, [workspaceMode]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
+  }, [authLoading, user, navigate, workspaceMode, location.search]);
 
   useEffect(() => {
     if (pathname === "/signup") setMode("signup");
@@ -266,6 +440,7 @@ export default function AuthPortal() {
         const res = await fetch("/api/auth/forgot-password", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ email: trimmedEmail }),
         });
         let data: any = {};
@@ -291,6 +466,7 @@ export default function AuthPortal() {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             email: trimmedEmail,
             password,
@@ -327,6 +503,7 @@ export default function AuthPortal() {
         }
         if (isSignUp) markFreshSignupSession();
         signIn({ user: data.user });
+        navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
       }
     } catch (err: unknown) {
       setError(cleanThrownMessage(err) || "Authentication failed. Please try again.");
@@ -342,6 +519,8 @@ export default function AuthPortal() {
       ? "Create your Wireline account and launch your first AI voice agent."
       : "Sign in to your Wireline workspace.";
 
+  const headerActive = isSignUp ? "signup" : "signin";
+
   return (
     <>
       <PageMeta
@@ -350,30 +529,35 @@ export default function AuthPortal() {
         path={isSignUp ? "/signup" : "/signin"}
         noIndex
       />
-      <div className="auth-launch min-h-screen bg-card text-foreground flex flex-col relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[24rem] bg-[radial-gradient(circle_at_50%_0%,rgba(124,58,237,0.14),transparent_60%)]" />
-        <PublicSiteHeader active={isSignUp ? "signup" : "signin"} />
+      <AuthShell mode={workspaceMode} headerActive={headerActive}>
+        <div className="mb-8 text-center lg:text-left">
+          <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-brand">
+            Wireline account
+          </p>
+          <h1 className="font-display text-4xl italic tracking-tight text-foreground sm:text-5xl">
+            {pageTitle}
+          </h1>
+          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-foreground/65 lg:mx-0">
+            {pageDescription}
+          </p>
+          {isSignUp && intentLabel && (
+            <p className="mt-4 inline-flex rounded-sm border border-brand/20 bg-brand/8 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-brand">
+              {intentLabel}
+            </p>
+          )}
+        </div>
 
-        <main className="relative z-10 flex flex-1 items-center justify-center px-5 py-24 sm:px-6">
-          <section className="w-full max-w-[460px]">
-            <div className="mb-8 text-center">
-              <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-brand">
-                Wireline account
-              </p>
-              <h1 className="font-display text-4xl italic tracking-tight text-foreground sm:text-5xl">
-                {pageTitle}
-              </h1>
-              <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-foreground/65">
-                {pageDescription}
-              </p>
-              {isSignUp && intentLabel && (
-                <p className="mt-4 inline-flex rounded-sm border border-brand/20 bg-brand/8 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-brand">
-                  {intentLabel}
-                </p>
-              )}
-            </div>
+        {isSignUp && !isReset && (
+          <WorkspaceSelector
+            mode={workspaceMode}
+            setMode={(next) => {
+              setWorkspaceMode(next);
+              persistWorkspaceMode(next);
+            }}
+          />
+        )}
 
-            <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(30,27,46,0.55)]">
+        <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(30,27,46,0.55)]">
               {!isReset && (
                 <div className="grid grid-cols-2 border-b border-ink/10 p-1">
                   <button
@@ -516,13 +700,12 @@ export default function AuthPortal() {
                   )}
 
                   {isSignUp && (
-                    <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-foreground/65">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-md border border-ink/8 bg-card-warm/30 p-3 text-sm leading-relaxed text-foreground/75">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
                         onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        required
-                        className="mt-1 h-4 w-4 accent-brand"
+                        className="mt-1 h-4 w-4 shrink-0 accent-brand"
                       />
                       <span>
                         I agree to the{" "}
@@ -541,7 +724,8 @@ export default function AuthPortal() {
                   <button
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-md bg-brand px-5 text-base font-semibold text-white shadow-[0_18px_50px_-28px_rgba(124,58,237,0.9)] transition hover:bg-brand-deep focus:outline-none focus:ring-4 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-55"
+                    aria-disabled={loading || (isSignUp && !agreedToTerms)}
+                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-md bg-brand px-5 text-base font-semibold text-white shadow-[0_18px_50px_-28px_rgba(124,58,237,0.9)] transition hover:bg-brand-deep focus:outline-none focus:ring-4 focus:ring-brand/25 disabled:cursor-not-allowed disabled:bg-brand/35 disabled:text-white/80"
                   >
                     {loading ? (
                       <>
@@ -569,20 +753,18 @@ export default function AuthPortal() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-foreground/55">
-              <Link to="/" className="hover:text-brand hover:underline">
-                Back to home
-              </Link>
-              <Link to="/showcase" className="hover:text-brand hover:underline">
-                View live demos
-              </Link>
-              <Link to="/pricing" className="hover:text-brand hover:underline">
-                Compare plans
-              </Link>
-            </div>
-          </section>
-        </main>
-      </div>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-foreground/55 lg:justify-start">
+          <Link to="/" className="hover:text-brand hover:underline">
+            Back to home
+          </Link>
+          <Link to="/showcase" className="hover:text-brand hover:underline">
+            View live demos
+          </Link>
+          <Link to="/pricing" className="hover:text-brand hover:underline">
+            Compare plans
+          </Link>
+        </div>
+      </AuthShell>
     </>
   );
 }

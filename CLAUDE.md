@@ -21,7 +21,7 @@ ElevenLabs**; reasoning runs on **Claude**.
 |---|---|
 | System design, LLM tiering, data flows | `ARCHITECTURE.md` |
 | New-engineer onboarding, patterns, "what NOT to do" | `CONTRIBUTING.md` |
-| Design system (Rich Cream + Purple, shadcn ratchet) | `DESIGN.md` |
+| Design system (Lavender Noir + console, shadcn ratchet) | `DESIGN.md` |
 | Database setup & migrations | `DATABASE_SETUP.md` |
 | Deployment (Vercel) | `DEPLOY.md` |
 | Doc index, SOC 2, SLA, incident response, authz matrix | `docs/` |

@@ -26,7 +26,7 @@ full run.
 
 | | |
 |---|---|
-| **URL** | `https://trywireline.com/auth` |
+| **URL** | `https://trywireline.com/signin` (or `/auth`) |
 | **Email** | `wireline.demo@trywireline.com` |
 | **Password** | `WirelineDemo!2026` |
 

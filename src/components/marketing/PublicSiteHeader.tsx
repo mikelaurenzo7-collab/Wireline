@@ -127,28 +127,24 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               >
                 Open the Studio
               </Link>
-            ) : (
+            ) : active === "home" ? (
               <>
-                {active !== "signup" && (
-                  <Link
-                    to="/signin"
-                    data-testid="header-signin"
-                    className="hidden sm:inline-flex text-[13px] font-medium text-foreground/65 hover:text-foreground transition-colors"
-                  >
-                    Sign in
-                  </Link>
-                )}
-                {active !== "signin" && active !== "signup" && (
-                  <Link
-                    to="/pricing"
-                    data-testid="header-cta"
-                    className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
-                  >
-                    Start at $9
-                  </Link>
-                )}
+                <Link
+                  to="/signin"
+                  data-testid="header-signin"
+                  className="hidden sm:inline-flex text-[13px] font-medium text-foreground/65 hover:text-foreground transition-colors"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/pricing"
+                  data-testid="header-cta"
+                  className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
+                >
+                  Start at $9
+                </Link>
               </>
-            )}
+            ) : null}
 
             <ShadButton
               type="button"
@@ -234,7 +230,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                   Open the Studio
                   <ArrowRight aria-hidden="true" className="w-4 h-4" />
                 </Link>
-              ) : (
+              ) : active === "home" ? (
                 <>
                   <Link
                     to="/signin"
@@ -252,7 +248,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     <ArrowRight aria-hidden="true" className="w-4 h-4" />
                   </Link>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

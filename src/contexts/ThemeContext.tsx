@@ -1,10 +1,9 @@
 /**
- * ThemeContext — Wireline is light-only.
+ * ThemeContext — marketing pages stay light (`:root` Lavender Noir).
  *
- * The redesign ships a single, premium light system. This provider keeps its
- * original API (theme, resolvedTheme, setTheme, toggleTheme) so existing
- * consumers and the (now no-op) ThemeToggle keep compiling, but every value
- * resolves to "light" and the `.dark` class is never applied to <html>.
+ * Authenticated workspaces use `.wl-console-surface` for scoped charcoal
+ * tokens. This provider keeps <html> on light so public routes are not
+ * forced dark; do not add `.dark` to <html> for console fixes.
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 

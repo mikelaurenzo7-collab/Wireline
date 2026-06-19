@@ -6,12 +6,10 @@ import {
   Route,
   Routes,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 import {
   Check,
   ChevronRight,
-  LogOut,
   Mail,
   Phone,
   PhoneCall,
@@ -22,16 +20,31 @@ import {
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext";
 import { AssistantComposer, simulateAssistantReply } from "./components/AssistantComposer";
+import { ConsoleShell } from "./components/workspace/ConsoleShell";
+import { PageHeader } from "./components/workspace/PageHeader";
 
-const nav = [
-  ["Home", "/app/personal"],
-  ["Assistant", "/app/personal/assistant"],
-  ["Automations", "/app/personal/automations"],
-  ["Devices", "/app/personal/devices"],
-  ["Number", "/app/personal/number"],
-  ["Activity", "/app/personal/activity"],
-  ["Settings", "/app/personal/settings"],
+const nav: Array<[string, string, string]> = [
+  ["home", "Home", "/app/personal"],
+  ["assistant", "Assistant", "/app/personal/assistant"],
+  ["automations", "Automations", "/app/personal/automations"],
+  ["devices", "Devices", "/app/personal/devices"],
+  ["number", "Number", "/app/personal/number"],
+  ["activity", "Activity", "/app/personal/activity"],
+  ["settings", "Settings", "/app/personal/settings"],
 ];
+
+const consoleNav = nav.map(([id, label, path]) => ({ id, label, path }));
+
+function personalPageId(pathname: string): string {
+  if (pathname.startsWith("/app/personal/assistant")) return "assistant";
+  if (pathname.startsWith("/app/personal/automations") || pathname.includes("/intents") || pathname.includes("/siri"))
+    return "automations";
+  if (pathname.startsWith("/app/personal/devices")) return "devices";
+  if (pathname.startsWith("/app/personal/number")) return "number";
+  if (pathname.startsWith("/app/personal/activity")) return "activity";
+  if (pathname.startsWith("/app/personal/settings")) return "settings";
+  return "home";
+}
 const models = [
   ["Grok 4.3", "Default", "Fast, capable, low-cost default for everyday phone work."],
   ["Gemini Flash", "Fast", "Best for quick errands, simple summaries, and lightweight routing."],
@@ -277,7 +290,7 @@ function RequirePersonal({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (loading)
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
+      <div className="grid min-h-screen place-items-center wl-console-surface text-foreground">
         <Sparkles className="h-5 w-5 animate-pulse text-brand" />
       </div>
     );
@@ -288,64 +301,20 @@ function RequirePersonal({ children }: { children: ReactNode }) {
 
 function Shell({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const activeId = personalPageId(location.pathname);
+  const activeNav = nav.find(([id]) => id === activeId);
+  const activeLabel = activeNav?.[1] ?? "Personal";
+  const metaPath = activeNav?.[2] ?? "/app/personal";
   return (
-    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-grain app-surface">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-2xl">
-        <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2.5 transition-opacity hover:opacity-80"
-          >
-            <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-paper">
-              W
-            </span>
-            <span className="font-display text-[20px] font-semibold tracking-[-0.03em] text-foreground">
-              Wireline
-            </span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="hidden rounded-full border border-brand/20 bg-brand/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand sm:inline-flex">
-              Personal workspace
-            </span>
-            <button className="grid h-9 w-9 place-items-center rounded-full bg-brand font-display text-paper transition-all hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-              {user?.email?.[0]?.toUpperCase() ?? "W"}
-            </button>
-            <button
-              onClick={() => {
-                void signOut();
-                navigate("/");
-              }}
-              className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md p-1"
-            >
-              <LogOut size={17} />
-            </button>
-          </div>
-        </div>
-        <nav className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto px-3 pb-3 sm:px-6 lg:px-8">
-          {nav.map(([label, path]) => (
-            <Link
-              key={path}
-              to={path}
-              className={cx(
-                "flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
-                location.pathname === path ||
-                  (path.includes("automations") &&
-                    (location.pathname.includes("intents") || location.pathname.includes("siri")))
-                  ? "bg-brand text-white shadow-[0_0_15px_rgba(124,58,237,0.45)] hover:brightness-110"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white",
-              )}
-            >
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </header>
-      <main className="mx-auto w-full max-w-[1500px] px-4 py-8 sm:px-6 lg:px-10 xl:px-12 lg:py-12 xl:py-16">
-        {children}
-      </main>
-    </div>
+    <ConsoleShell
+      mode="personal"
+      nav={consoleNav}
+      activeId={activeId}
+      activeLabel={activeLabel}
+      metaPath={metaPath}
+    >
+      {children}
+    </ConsoleShell>
   );
 }
 
@@ -386,19 +355,12 @@ function HomeView() {
   return (
     <div className="grid gap-6 xl:grid-cols-[1.25fr_.75fr]">
       <div className="space-y-6">
+        <PageHeader
+          title="Home"
+          lede="Screen calls, place calls, wait on hold, and get concise recaps."
+        />
         <Card className="p-6 sm:p-8">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
-            <Sparkles size={13} /> Personal call concierge
-          </div>
-          <h1 className="mt-5 max-w-4xl font-display text-4xl leading-[1.04] tracking-[-0.05em] sm:text-5xl">
-            Assistant handles routine phone work for you.
-          </h1>
-          <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground">
-            One Assistant screens calls, places calls, waits on hold, summarizes outcomes, and tells
-            you what needs attention. Siri, widgets, and CarPlay are launch surfaces for the same
-            Assistant.
-          </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             {[
               ["3", "unknown callers blocked"],
               ["1", "appointment confirmed"],
@@ -458,9 +420,7 @@ function SetupRail() {
       <div className="text-[11px] font-bold uppercase tracking-[.14em] text-brand-bright">
         Setup path
       </div>
-      <h2 className="mt-4 font-display text-2xl text-white">
-        Make Assistant useful in five steps.
-      </h2>
+      <h2 className="mt-4 font-display text-xl font-semibold text-white">Setup</h2>
       <div className="mt-5 space-y-3">
         {steps.map(([title, path, note, status], index) => (
           <Link

@@ -43,10 +43,7 @@ import {
 
 import FigmaAuthPortal from "./FigmaAuthPortal";
 import AdminSettings from "./components/AdminSettings";
-import ClerkAuthComplete from "./components/ClerkAuthComplete";
 import OAuthComplete from "./pages/OAuthComplete";
-import { isClerkAuthEnabled } from "./lib/auth-provider";
-import WirelineClerkProvider from "./components/WirelineClerkProvider";
 import OnboardingSelection from "./components/onboarding/OnboardingSelection";
 import { useAuth } from "./contexts/AuthContext";
 import { AccountProvider } from "./contexts/AccountContext";
@@ -1845,8 +1842,7 @@ function PersonalRoute({ tab }: { tab: PersonalTab }) {
 export default function FigmaOverhaul() {
   return (
     <BrowserRouter>
-      <WirelineClerkProvider>
-        <AccountProvider>
+      <AccountProvider>
         <Routes>
         <Route path="/" element={<Landing />} />
         <Route
@@ -1926,23 +1922,10 @@ export default function FigmaOverhaul() {
         <Route path="/login" element={<Navigate to="/signin" replace />} />
         <Route path="/auth" element={<FigmaAuthPortal />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
-        <Route
-          path="/auth/clerk-complete"
-          element={isClerkAuthEnabled() ? <ClerkAuthComplete /> : <Navigate to="/signin" replace />}
-        />
+        <Route path="/auth/clerk-complete" element={<Navigate to="/signin" replace />} />
         <Route path="/onboarding" element={<RequireAuth><OnboardingSelection /></RequireAuth>} />
-        <Route
-          path="/auth/oauth-complete"
-          element={
-            isClerkAuthEnabled() ? <Navigate to="/auth/clerk-complete" replace /> : <OAuthComplete />
-          }
-        />
-        <Route
-          path="/oauth-complete"
-          element={
-            isClerkAuthEnabled() ? <Navigate to="/auth/clerk-complete" replace /> : <OAuthComplete />
-          }
-        />
+        <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
+        <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route path="/app/personal" element={<PersonalRoute tab="overview" />} />
         <Route path="/app/personal/assistant" element={<PersonalRoute tab="assistant" />} />
         <Route path="/app/personal/intents" element={<PersonalRoute tab="intents" />} />
@@ -1975,8 +1958,7 @@ export default function FigmaOverhaul() {
         <Route path="/admin" element={<Navigate to="/app/business/settings" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-        </AccountProvider>
-      </WirelineClerkProvider>
+      </AccountProvider>
     </BrowserRouter>
   );
 }

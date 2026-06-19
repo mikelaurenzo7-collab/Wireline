@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
-import { runClerkSignOut } from "../lib/clerk-sign-out-bridge";
 
 export interface User {
   id: string;
@@ -123,11 +122,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
     } catch {
       /* still clear local state */
-    }
-    try {
-      await runClerkSignOut();
-    } catch {
-      /* Clerk may be unavailable when keys are unset */
     }
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     setSession(null);

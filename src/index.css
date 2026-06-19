@@ -1,4 +1,4 @@
-/* Wireline — "Lavender Noir" design system. Light-sovereign, three-color. */
+/* Wireline — Lavender Noir (marketing) + wl-console-surface (authenticated app). */
 @import "@fontsource-variable/plus-jakarta-sans/wght.css";
 @import "@fontsource-variable/fraunces/wght.css";
 @import "@fontsource-variable/fraunces/wght-italic.css";
@@ -266,6 +266,18 @@
     font-optical-sizing: auto;
   }
 
+  html:has(.wl-console-surface),
+  html.wl-console-active {
+    background: #1e1b2e;
+  }
+
+  html:has(.wl-console-surface) body,
+  html.wl-console-active body {
+    background: #1e1b2e !important;
+    background-image: none !important;
+    background-attachment: scroll !important;
+  }
+
   body {
     min-height: 100vh;
     overflow-x: hidden;
@@ -340,13 +352,85 @@
 }
 
 @layer utilities {
-  /* Surface utilities — Lavender Noir: light, airy, violet-kissed. */
+  /* ── Marketing / auth (light Lavender Noir) ───────────────────────────── */
   .wl-overhaul-surface,
   .wl-cream-surface,
   .wl-grain {
     background:
       radial-gradient(60% 40% at 65% 0%, var(--violet-wash), transparent 60%),
       var(--canvas);
+  }
+
+  /* ── Authenticated console (charcoal ink — scoped dark tokens) ───────────
+     Workspaces mount this on the root shell. ThemeContext keeps <html> light
+     for marketing; consoles opt into readable dark tokens locally. */
+  .wl-console-surface {
+    color-scheme: dark;
+    --canvas: #1e1b2e;
+    --canvas-deep: #16131f;
+    --panel: #2a2540;
+    --panel-2: #342e4c;
+    --raised: #3d3654;
+    --text: #f3effa;
+    --text-2: #b8b0ca;
+    --text-3: #7a7194;
+    --paper: #f3effa;
+    --paper-soft: #b8b0ca;
+    --ink: #1e1b2e;
+    --ink-soft: #3d3654;
+    --background: #1e1b2e;
+    --foreground: #f3effa;
+    --card: #2a2540;
+    --card-foreground: #f3effa;
+    --popover: #2a2540;
+    --popover-foreground: #f3effa;
+    --secondary: #342e4c;
+    --secondary-foreground: #f3effa;
+    --muted: #342e4c;
+    --muted-foreground: #b8b0ca;
+    --accent: #3d3654;
+    --accent-foreground: #f3effa;
+    --border: rgba(243, 239, 250, 0.1);
+    --border-strong: rgba(243, 239, 250, 0.18);
+    --input: rgba(243, 239, 250, 0.12);
+    --input-background: #342e4c;
+    background: var(--canvas);
+    color: var(--foreground);
+  }
+
+  .wl-console-surface.wl-grain,
+  .wl-console-surface.wl-overhaul-surface {
+    background: var(--canvas);
+  }
+
+  .wl-glass-panel {
+    background: linear-gradient(180deg, #2a2540 0%, #1e1b2e 100%);
+    border-color: rgba(243, 239, 250, 0.1);
+  }
+
+  .wl-glass-card {
+    border: 1px solid rgba(243, 239, 250, 0.1);
+    background: color-mix(in oklab, #2a2540 92%, transparent);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 24px 60px -40px rgba(0, 0, 0, 0.45);
+  }
+
+  .wl-console-surface .wl-glass-card {
+    border-color: var(--border);
+    background: color-mix(in oklab, var(--panel) 94%, transparent);
+  }
+
+  .hover-glow {
+    transition:
+      box-shadow 0.25s ease,
+      border-color 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .hover-glow:hover {
+    border-color: rgba(124, 58, 237, 0.35);
+    box-shadow:
+      0 0 0 1px rgba(124, 58, 237, 0.12),
+      0 20px 50px -28px rgba(124, 58, 237, 0.35);
   }
 
   .wl-premium-card {
