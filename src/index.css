@@ -480,3 +480,16 @@
   font-optical-sizing: auto;
   font-variation-settings: "SOFT" 0, "WONK" 0;
 }
+
+/* Clerk prebuilt auth — Tailwind preflight can collapse icon-only OAuth buttons to 0×0. */
+.cl-socialButtonsIconButton {
+  min-width: 3rem;
+  min-height: 3rem;
+  width: 3rem;
+  height: 3rem;
+}
+
+.cl-formButtonPrimary {
+  width: 100%;
+  min-height: 3rem;
+}

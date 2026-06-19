@@ -18,9 +18,12 @@ export const wirelineClerkAppearance = {
     headerTitle: "font-display tracking-tight",
     headerSubtitle: "text-muted-foreground",
     formButtonPrimary:
-      "bg-brand hover:bg-brand-deep text-paper font-semibold min-h-[48px] shadow-none",
+      "bg-brand hover:bg-brand-deep text-paper font-semibold min-h-[48px] w-full shadow-none",
     socialButtonsBlockButton:
-      "border border-border bg-card hover:border-brand/30 min-h-[48px] font-medium",
+      "border border-border bg-card hover:border-brand/30 min-h-[48px] font-medium w-full",
+    socialButtonsIconButton:
+      "border border-border bg-card hover:border-brand/30 !min-h-[48px] !min-w-[48px] !h-12 !w-12 shrink-0",
+    socialButtons: "flex flex-wrap items-center justify-center gap-2",
     footerActionLink: "text-brand font-medium hover:text-brand-deep",
     identityPreviewEditButton: "text-brand",
   },
