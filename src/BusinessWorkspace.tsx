@@ -194,7 +194,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
   const active = pageFromPath(location.pathname);
   const activeLabel = nav.find(([id]) => id === active)?.[1] ?? "Business";
   return (
-    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-overhaul-surface wl-grain">
+    <div className="flex min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-overhaul-surface wl-grain app-surface">
       <aside className="wl-glass-panel hidden w-64 shrink-0 flex-col p-4 2xl:flex">
         <Link
           to="/"

@@ -20,3 +20,8 @@
 - **Avoid raw URL.pathname parsing**: Never use `path.resolve(new URL('..', import.meta.url).pathname)` in Node.js utility or automation scripts. On Windows, `.pathname` on a file URL retains a leading slash (e.g. `/C:/Users/...`), which `path.resolve` incorrectly resolves as relative or prepends with the active drive letter (e.g., `C:\C:\Users\...`).
 - **Always use fileURLToPath**: To securely determine relative paths from an ES Module context, always import `fileURLToPath` from `node:url` and resolve paths via `fileURLToPath(new URL('relative-path', import.meta.url))`. This guarantees stable, zero-ENOENT cross-platform execution on both Unix and Windows systems.
 
+## 6. Premium Workspace Layouts & Reset Bypass
+- **The `.app-surface` Context Requirement**: The codebase contains a global CSS reset (`* { border-radius: 0 !important; }` in `app-shell.css`) intended to enforce flat borders on public marketing structures. This reset is bypassed inside elements with the `.app-surface` class.
+- **Enforcing Rounded Borders & Curves**: To ensure workspaces (such as personal/business dashboard shells) render with modern, premium rounded curves (e.g., 6px radius) and fluid gutters, the root layout shell container (usually the outermost `div` in workspace components) **must** include the `.app-surface` class. Always verify that new dashboard layouts or workspaces are wrapped in an `.app-surface` container.
+
+

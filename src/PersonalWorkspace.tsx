@@ -291,7 +291,7 @@ function Shell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   return (
-    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-grain">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-background text-foreground wl-grain app-surface">
       <header className="sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-2xl">
         <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
