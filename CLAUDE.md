@@ -48,7 +48,7 @@ npm run format         # prettier --write src
 npm run test           # vitest watch
 npm run test:run       # vitest single-shot (CI mode)
 npm run test:coverage  # with coverage; CI ratchets thresholds
-npm run test:design    # design-contract tests (run when DESIGN.md / director contract changes)
+npm run lint           # typecheck; required when DESIGN.md / director contract changes
 npm run test:e2e       # Playwright chromium (needs dev server)
 
 # Database (Drizzle)

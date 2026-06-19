@@ -1,113 +1,71 @@
-# Wireline Design System — Lavender Noir + Console
+# Wireline Design System — One Voice
 
-**Status:** Active (2026)  
-**Goal:** Readable, premium UI — light marketing/auth, dark authenticated consoles.
+**Status:** active. This file is the design contract.
 
-> **Source of truth for tokens:** `src/index.css` (`:root` + `.wl-console-surface`).  
-> **Director mission-control copy/classes:** `src/lib/wireline-director-design.ts` (run `npm run test:design` when that contract changes).
+Wireline should feel simple, useful, and expensive without looking decorated. The product is a consumer-first AI call concierge with one console that can also support business workflows.
 
----
+## Non-negotiables
 
-## 1. Two surfaces (not one theme toggle)
+1. **Left-align product pages and app screens.** Center only small badges, empty states, and modal confirmations.
+2. **Titles are uppercase.** Use tight, confident labels; no mixed headline styles page-to-page.
+3. **No large paragraphs.** Body copy should be one or two short lines. If it needs more, split it into bullets or remove it.
+4. **No redundant marketing graphics.** One primary product proof per page is enough.
+5. **No decorative components without a job.** If a card, subtitle, animation, or illustration does not help the user decide or act, delete it.
+6. **Mobile must breathe.** Nothing should feel oversized on a phone; use clamp-based type and compact controls.
+7. **Desktop gets premium spacing.** Wider screens should feel composed, not merely scaled-up mobile.
 
-Wireline intentionally uses **two visual modes** on the same site:
+## Layout contract
 
-| Surface | Where | Class / scope | Canvas | Text |
-|---------|--------|---------------|--------|------|
-| **Marketing & auth** | `/`, `/pricing`, `/signin`, `/signup`, … | `:root` tokens + `.wl-overhaul-surface` | Lavender `#F3EFFA` | Charcoal `#1E1B2E` |
-| **Authenticated console** | `/app/business/*`, `/app/personal/*`, Studio | `.wl-console-surface` on workspace root | Charcoal ink `#1E1B2E` | Paper `#F3EFFA` |
+- Max content width: `72rem` for marketing, app shells own their workspace width.
+- Page gutters: `clamp(1rem, 3vw, 2.5rem)`.
+- Section rhythm: `clamp(3rem, 7vw, 6rem)`.
+- Text alignment: **left by default** across marketing, auth, the single app console, iOS, and Android.
+- CTAs: left-aligned with content; center only in empty states.
 
-`ThemeContext` keeps `<html>` on the **light** marketing tokens so public pages stay cream/lavender.  
-Authenticated shells **must** mount `.wl-console-surface` on their root element — do not rely on `.dark` on `<html>`.
+## Type contract
 
-### Console utilities (`src/index.css`)
+- Display: Fraunces for major titles only.
+- UI/body: Plus Jakarta Sans / native system sans.
+- Labels: mono, uppercase, tracked.
+- Title size: `clamp(2.25rem, 7vw, 5.75rem)` on web; native large title should be strong but not huge.
+- Body size: `clamp(0.98rem, 1.6vw, 1.2rem)`.
+- Body measure: 52 characters max.
 
-| Class | Purpose |
-|-------|---------|
-| `.wl-console-surface` | Scoped dark tokens (background, card, muted, borders) |
-| `.wl-glass-panel` | Sidebar / rail (charcoal gradient) |
-| `.wl-glass-card` | Elevated panels inside console |
-| `.hover-glow` | Hover depth on cards |
-| `.wl-panel` / `.wl-panel-elevated` | Standard / raised panels (inherit active surface) |
+## Color contract
 
----
+Three-color discipline:
 
-## 2. Core tokens (marketing — `:root`)
+- Lavender canvas: `#F3EFFA`
+- Violet action/accent: `#7C3AED`
+- Charcoal text/depth: `#1E1B2E`
 
-| Role | Token | Value |
-|------|-------|-------|
-| Canvas | `--lavender` / `--background` | `#F3EFFA` |
-| Accent | `--violet` / `--brand` | `#7C3AED` |
-| Depth (text) | `--charcoal` / `--foreground` | `#1E1B2E` |
-| Elevated card | `--lavender-bright` / `--card` | `#FAF8FF` |
-| Secondary text | `--charcoal-muted` | `#6E6584` |
+Authenticated consoles may invert into charcoal via `.wl-console-surface`; do not invent another palette.
 
-Three-color discipline: lavender, violet, charcoal (+ destructive red only).
+## Component contract
 
----
+- Prefer primitives and semantic tokens over one-off classes.
+- Cards need a purpose: decision, status, input, or proof.
+- Eyebrows are optional; subtitles are suspect. Do not stack eyebrow + title + subtitle + paragraph unless the page truly needs all four.
+- Keep radii moderate and consistent.
+- Motion should be subtle and never required to understand the UI.
 
-## 3. Core tokens (console — `.wl-console-surface`)
+## Root cause found
 
-| Role | Token | Value |
-|------|-------|-------|
-| Canvas | `--canvas` / `--background` | `#1E1B2E` |
-| Panel (cards, sidebar) | `--panel` / `--card` | `#2A2540` |
-| Raised | `--panel-2` | `#342E4C` |
-| Text primary | `--foreground` / `--paper` | `#F3EFFA` |
-| Text secondary | `--muted-foreground` | `#B8B0CA` |
-| Border | `--border` | `rgba(243,239,250,.10)` |
-| Accent | `--brand` | `#7C3AED` (inherits violet) |
+Design drift came from too many overlapping contracts, not too little taste:
 
-Match the auth portal **ink left rail** and `FigmaOverhaul` business console.
+- `DESIGN.md`, `docs/DESIGN_SYSTEM.md`, audit reports, marketing-kit notes, and legacy Grok guidance described different products.
+- Old visual tests and ratchets encouraged preserving layers instead of deleting dead ones.
+- The app accumulated compatibility aliases and page-local hero patterns, so every new change added another exception.
+- Native apps had their own “premium” treatments instead of a shared alignment, type, and density rule.
 
----
+The fix is this single short contract plus `src/index.css` tokens, consumer-first pricing, and one configurable console instead of separate personal/business product stories. Legacy docs may explain history, but they are not allowed to create new rules.
 
-## 4. Principles
+## Verification
 
-1. **Readable contrast first** — never put `text-white/*` nav on a lavender canvas; never ship undefined utility classes.
-2. **Desktop/laptop-first** — sidebars visible from `lg:` (1024px), not only `2xl:`.
-3. **Token-driven** — use `bg-card`, `text-foreground`, `border-border` inside the correct surface scope; avoid one-off hex in components.
-4. **Calm** — one faint violet wash on marketing; console stays flat charcoal with subtle glass cards.
+For UI work, check:
 
----
-
-## 5. Typography
-
-- **Display:** Fraunces (`font-display`) — marketing heroes, console page titles
-- **UI:** Plus Jakarta Sans (`font-sans`)
-- **Mono labels:** JetBrains Mono (`font-mono`, `.wl-label`, `.wl-subtitle`)
-
----
-
-## 6. Component tiers
-
-- **Tier 1 — shadcn** (`src/components/ui/shadcn/`): buttons, inputs, dialogs — consume semantic tokens.
-- **Tier 2 — compositions** (`src/components/ui/`): SectionHeader, EmptyState, …
-- **Tier 3 — workspace shells** (`BusinessWorkspace`, `PersonalWorkspace`, `AgentStudioWorkspace`): always root with `.wl-console-surface`.
-
----
-
-## 7. Root cause — brightness / illegibility (2026-06)
-
-Symptoms: authenticated app looked **blown-out bright**; sidebar labels were faint; cards invisible.
-
-| # | Cause | Fix |
-|---|--------|-----|
-| 1 | `index.css` `:root` is **light-sovereign** Lavender Noir | Keep for marketing; scope dark via `.wl-console-surface` |
-| 2 | `BusinessWorkspace` used `bg-background` + `wl-overhaul-surface` (lavender) | Root → `wl-console-surface` only |
-| 3 | Nav/components used **dark-console** colors (`text-white/60`) | Correct on console; wrong on lavender |
-| 4 | `wl-glass-panel`, `wl-glass-card`, `hover-glow` **referenced but undefined** | Defined in `index.css` |
-| 5 | `DESIGN.md` described "Midnight" while CSS shipped Lavender | Docs aligned to dual-surface model |
-| 6 | Sidebar hidden until `2xl` on business app | Show from `lg` |
-| 7 | `AgentStudioWorkspace` mixed `bg-ink` with `bg-card` (light card token) | Wrap in `wl-console-surface` |
-
----
-
-## 8. Information architecture
-
-**Assistant** + **Studio** share one workspace mental model: command surface + canvas.  
-Business sidebar: Assistant · Live Ops · Fleet · Training · Analytics · Team · Integrations · Settings.
-
----
-
-*Reference mockups: `design-mockups/`. Legacy platform notes: `docs/DESIGN_SYSTEM.md` (deprecated).*
+- Does the screen use one alignment model?
+- Are titles uppercase?
+- Is body copy short?
+- Did we remove at least as much as we added?
+- Does mobile feel smaller and desktop feel more deliberate?

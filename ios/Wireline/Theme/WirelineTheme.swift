@@ -39,10 +39,10 @@ enum Brand {
     static let paperWarm = panel
     static let ink = text
 
-    // ── Radius (matches `--radius-*` in index.css) ────────────────────────
-    static let radiusSm: CGFloat = 8
-    static let radiusMd: CGFloat = 14
-    static let radiusLg: CGFloat = 20
+    // ── Radius (moderate, consistent, shared with web/mobile contract) ─────
+    static let radiusSm: CGFloat = 6
+    static let radiusMd: CGFloat = 10
+    static let radiusLg: CGFloat = 14
 }
 
 extension Color {

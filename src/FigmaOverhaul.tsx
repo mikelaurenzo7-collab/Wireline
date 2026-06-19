@@ -135,7 +135,7 @@ const tiers: Tier[] = [
     features: ["AI phone screening", "Spam guard", "Call summaries", "Siri and widget intents"],
   },
   {
-    name: "Personal+",
+    name: "Plus",
     price: "$19",
     cadence: "/mo",
     audience: "For heavier personal use",
@@ -149,12 +149,11 @@ const tiers: Tier[] = [
     ],
   },
   {
-    name: "Business Growth",
-    price: "$249",
+    name: "Operator",
+    price: "$59",
     cadence: "/mo",
-    audience: "For SMB front desks",
-    summary:
-      "A real AI front desk with Studio, Training, Live Ops, analytics, and business-only integrations.",
+    audience: "For heavier call volume",
+    summary: "More agents, more minutes, live review, analytics, and handoff workflows.",
     features: [
       "Agent Studio and Training",
       "Live call view",
@@ -164,10 +163,10 @@ const tiers: Tier[] = [
     featured: true,
   },
   {
-    name: "Scale",
-    price: "$699",
+    name: "Custom",
+    price: "Custom",
     cadence: "/mo+",
-    audience: "For higher call volume",
+    audience: "For custom packages",
     summary:
       "Higher volume, more workflows, advanced approvals, audit logs, and custom integration support.",
     features: ["Advanced workspace controls", "Webhook API", "Custom routing", "Launch support"],
@@ -1844,120 +1843,127 @@ export default function FigmaOverhaul() {
     <BrowserRouter>
       <AccountProvider>
         <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/features"
-          element={
-            <MarketingPage
-              eyebrow="Features"
-              title="Every front-line conversation in one system."
-              text="Voice, SMS, email, mobile intents, Studio, Training, analytics, integrations, and model choice."
-            />
-          }
-        />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route
-          path="/showcase"
-          element={
-            <MarketingPage
-              eyebrow="Showcase"
-              title="Preview the agents before launch."
-              text="Reception, sales, support, scheduling, personal errands, handoffs, and post-call summaries."
-            />
-          }
-        />
-        <Route
-          path="/developers"
-          element={
-            <MarketingPage
-              eyebrow="Developers"
-              title="API-first where it matters."
-              text="OAuth, webhooks, CRM sync, audit logs, and provider controls for production teams."
-            />
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <MarketingPage
-              eyebrow="About"
-              title="Wireline makes phones useful again."
-              text="A premium AI-native operating layer for personal life and business front-line operations."
-            />
-          }
-        />
-        <Route
-          path="/compare"
-          element={
-            <MarketingPage
-              eyebrow="Compare"
-              title="Not phone-tree software."
-              text="A live AI operating layer with Studio, Training, integrations, and analytics instead of legacy call-center sprawl."
-            />
-          }
-        />
-        <Route
-          path="/blog"
-          element={
-            <MarketingPage
-              eyebrow="Blog"
-              title="Wireline build notes."
-              text="Launch notes, AI phone strategy, model routing, and operator playbooks."
-            />
-          }
-        />
-        <Route
-          path="/training"
-          element={
-            <MarketingPage
-              eyebrow="Training"
-              title="Train agents before they touch real customers."
-              text="Upload policies, create scenarios, simulate calls, approve actions, and keep Studio simple."
-            />
-          }
-        />
-        <Route path="/get-started" element={<FigmaAuthPortal />} />
-        <Route path="/signup/*" element={<FigmaAuthPortal />} />
-        <Route path="/signin/*" element={<FigmaAuthPortal />} />
-        <Route path="/login" element={<Navigate to="/signin" replace />} />
-        <Route path="/auth" element={<FigmaAuthPortal />} />
-        <Route path="/reset" element={<Navigate to="/signin" replace />} />
-        <Route path="/auth/clerk-complete" element={<Navigate to="/signin" replace />} />
-        <Route path="/onboarding" element={<RequireAuth><OnboardingSelection /></RequireAuth>} />
-        <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
-        <Route path="/oauth-complete" element={<OAuthComplete />} />
-        <Route path="/app/personal" element={<PersonalRoute tab="overview" />} />
-        <Route path="/app/personal/assistant" element={<PersonalRoute tab="assistant" />} />
-        <Route path="/app/personal/intents" element={<PersonalRoute tab="intents" />} />
-        <Route path="/app/personal/siri" element={<PersonalRoute tab="siri" />} />
-        <Route path="/app/personal/devices" element={<PersonalRoute tab="devices" />} />
-        <Route path="/app/personal/number" element={<PersonalRoute tab="number" />} />
-        <Route path="/app/personal/activity" element={<PersonalRoute tab="activity" />} />
-        <Route path="/app/personal/settings" element={<PersonalRoute tab="settings" />} />
-        <Route path="/personal-home" element={<Navigate to="/app/personal" replace />} />
-        <Route path="/app/business" element={<BusinessRoute tab="assistant" />} />
-        <Route path="/app/business/live" element={<BusinessRoute tab="liveops" />} />
-        <Route path="/app/business/fleet" element={<BusinessRoute tab="fleet" />} />
-        <Route path="/app/business/studio" element={<BusinessRoute tab="studio" />} />
-        <Route path="/app/business/training" element={<BusinessRoute tab="training" />} />
-        <Route path="/app/business/analytics" element={<BusinessRoute tab="analytics" />} />
-        <Route path="/app/business/team" element={<BusinessRoute tab="team" />} />
-        <Route path="/app/business/integrations" element={<BusinessRoute tab="integrations" />} />
-        <Route path="/app/business/settings" element={<BusinessRoute tab="settings" />} />
-        <Route path="/business" element={<Navigate to="/app/business/live" replace />} />
-        <Route path="/ops" element={<Navigate to="/app/business/live" replace />} />
-        <Route path="/agents" element={<Navigate to="/app/business/studio" replace />} />
-        <Route
-          path="/integrations"
-          element={<Navigate to="/app/business/integrations" replace />}
-        />
-        <Route path="/analytics" element={<Navigate to="/app/business/analytics" replace />} />
-        <Route path="/phone" element={<Navigate to="/app/business/live" replace />} />
-        <Route path="/email" element={<Navigate to="/app/business/integrations" replace />} />
-        <Route path="/sms" element={<Navigate to="/app/business/integrations" replace />} />
-        <Route path="/admin" element={<Navigate to="/app/business/settings" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/features"
+            element={
+              <MarketingPage
+                eyebrow="Features"
+                title="Every front-line conversation in one system."
+                text="Voice, SMS, email, mobile intents, Studio, Training, analytics, integrations, and model choice."
+              />
+            }
+          />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route
+            path="/showcase"
+            element={
+              <MarketingPage
+                eyebrow="Showcase"
+                title="Preview the agents before launch."
+                text="Reception, sales, support, scheduling, personal errands, handoffs, and post-call summaries."
+              />
+            }
+          />
+          <Route
+            path="/developers"
+            element={
+              <MarketingPage
+                eyebrow="Developers"
+                title="API-first where it matters."
+                text="OAuth, webhooks, CRM sync, audit logs, and provider controls for production teams."
+              />
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <MarketingPage
+                eyebrow="About"
+                title="Wireline makes phones useful again."
+                text="A premium AI-native operating layer for personal life and business front-line operations."
+              />
+            }
+          />
+          <Route
+            path="/compare"
+            element={
+              <MarketingPage
+                eyebrow="Compare"
+                title="Not phone-tree software."
+                text="A live AI operating layer with Studio, Training, integrations, and analytics instead of legacy call-center sprawl."
+              />
+            }
+          />
+          <Route
+            path="/blog"
+            element={
+              <MarketingPage
+                eyebrow="Blog"
+                title="Wireline build notes."
+                text="Launch notes, AI phone strategy, model routing, and operator playbooks."
+              />
+            }
+          />
+          <Route
+            path="/training"
+            element={
+              <MarketingPage
+                eyebrow="Training"
+                title="Train agents before they touch real customers."
+                text="Upload policies, create scenarios, simulate calls, approve actions, and keep Studio simple."
+              />
+            }
+          />
+          <Route path="/get-started" element={<FigmaAuthPortal />} />
+          <Route path="/signup/*" element={<FigmaAuthPortal />} />
+          <Route path="/signin/*" element={<FigmaAuthPortal />} />
+          <Route path="/login" element={<Navigate to="/signin" replace />} />
+          <Route path="/auth" element={<FigmaAuthPortal />} />
+          <Route path="/reset" element={<Navigate to="/signin" replace />} />
+          <Route path="/auth/clerk-complete" element={<Navigate to="/signin" replace />} />
+          <Route
+            path="/onboarding"
+            element={
+              <RequireAuth>
+                <OnboardingSelection />
+              </RequireAuth>
+            }
+          />
+          <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
+          <Route path="/oauth-complete" element={<OAuthComplete />} />
+          <Route path="/app/personal" element={<PersonalRoute tab="overview" />} />
+          <Route path="/app/personal/assistant" element={<PersonalRoute tab="assistant" />} />
+          <Route path="/app/personal/intents" element={<PersonalRoute tab="intents" />} />
+          <Route path="/app/personal/siri" element={<PersonalRoute tab="siri" />} />
+          <Route path="/app/personal/devices" element={<PersonalRoute tab="devices" />} />
+          <Route path="/app/personal/number" element={<PersonalRoute tab="number" />} />
+          <Route path="/app/personal/activity" element={<PersonalRoute tab="activity" />} />
+          <Route path="/app/personal/settings" element={<PersonalRoute tab="settings" />} />
+          <Route path="/personal-home" element={<Navigate to="/app/personal" replace />} />
+          <Route path="/app/business" element={<BusinessRoute tab="assistant" />} />
+          <Route path="/app/business/live" element={<BusinessRoute tab="liveops" />} />
+          <Route path="/app/business/fleet" element={<BusinessRoute tab="fleet" />} />
+          <Route path="/app/business/studio" element={<BusinessRoute tab="studio" />} />
+          <Route path="/app/business/training" element={<BusinessRoute tab="training" />} />
+          <Route path="/app/business/analytics" element={<BusinessRoute tab="analytics" />} />
+          <Route path="/app/business/team" element={<BusinessRoute tab="team" />} />
+          <Route path="/app/business/integrations" element={<BusinessRoute tab="integrations" />} />
+          <Route path="/app/business/settings" element={<BusinessRoute tab="settings" />} />
+          <Route path="/business" element={<Navigate to="/app/business/live" replace />} />
+          <Route path="/ops" element={<Navigate to="/app/business/live" replace />} />
+          <Route path="/agents" element={<Navigate to="/app/business/studio" replace />} />
+          <Route
+            path="/integrations"
+            element={<Navigate to="/app/business/integrations" replace />}
+          />
+          <Route path="/analytics" element={<Navigate to="/app/business/analytics" replace />} />
+          <Route path="/phone" element={<Navigate to="/app/business/live" replace />} />
+          <Route path="/email" element={<Navigate to="/app/business/integrations" replace />} />
+          <Route path="/sms" element={<Navigate to="/app/business/integrations" replace />} />
+          <Route path="/admin" element={<Navigate to="/app/business/settings" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </AccountProvider>
     </BrowserRouter>
   );
