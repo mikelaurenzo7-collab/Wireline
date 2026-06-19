@@ -248,21 +248,27 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 }
 
 function Status({ value }: { value: string }) {
-  const tone =
-    value === "Ready" || value === "Done"
-      ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/15"
-      : value === "Setup" || value === "Configure" || value === "Needs pickup" || value === "Open"
-        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-        : value === "Manual"
-          ? "bg-white/5 text-white/70 border border-white/10"
-          : "bg-white/5 text-white/50 border border-white/10";
+  // Pure emerald intensity scale: filled (positive) > outline+dot (needs action) > gray (inactive).
+  const isPositive = value === "Ready" || value === "Done";
+  const needsAction =
+    value === "Setup" || value === "Configure" || value === "Needs pickup" || value === "Open";
+  const tone = isPositive
+    ? "bg-brand/15 text-brand-bright border border-brand/30"
+    : needsAction
+      ? "bg-brand/[.06] text-brand-bright/90 border border-brand/20"
+      : value === "Manual"
+        ? "bg-white/5 text-white/70 border border-white/10"
+        : "bg-white/5 text-white/50 border border-white/10";
   return (
     <span
       className={cx(
-        "rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[.12em]",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[.12em]",
         tone,
       )}
     >
+      {needsAction && (
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" aria-hidden="true" />
+      )}
       {value}
     </span>
   );
@@ -471,7 +477,7 @@ function SetupRail() {
               <span className="block font-semibold text-white">{title}</span>
               <span className="block text-xs leading-5 text-muted-foreground">{note}</span>
             </span>
-            <span className="hidden text-[10px] uppercase tracking-[.12em] text-cyan-400 font-mono sm:block">
+            <span className="hidden text-[10px] uppercase tracking-[.12em] text-brand-bright font-mono sm:block">
               {status}
             </span>
             <ChevronRight
@@ -509,8 +515,7 @@ function AssistantView() {
   const send = (text: string, attachmentCount = 0) => {
     const clean = text.trim();
     if (!clean && attachmentCount === 0) return;
-    const userText =
-      clean || `Sent ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}`;
+    const userText = clean || `Sent ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}`;
     const pendingId = `a-${Date.now()}`;
     setMessages((prev) => [
       ...prev,
@@ -551,7 +556,10 @@ function AssistantView() {
                 aria-live={m.pending ? "polite" : undefined}
               >
                 {m.pending ? (
-                  <span className="flex items-center gap-1.5 py-0.5" aria-label="Assistant is typing">
+                  <span
+                    className="flex items-center gap-1.5 py-0.5"
+                    aria-label="Assistant is typing"
+                  >
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:0ms]" />
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:150ms]" />
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:300ms]" />
@@ -829,7 +837,9 @@ function StudioView() {
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
           <Sliders size={13} /> Assistant Studio
         </div>
-        <h1 className="mt-4 font-display text-4xl sm:text-5xl">Build and customize your assistant.</h1>
+        <h1 className="mt-4 font-display text-4xl sm:text-5xl">
+          Build and customize your assistant.
+        </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
           Create your assistant, give it a name and voice, choose its model, and pick what it is
           allowed to handle. Training and scenarios live on their own page.
@@ -972,7 +982,9 @@ function StudioView() {
               <PhoneCall size={13} /> Preview
             </div>
             <h2 className="mt-4 font-display text-2xl">{name || "Your assistant"}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{role || "Personal call assistant"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {role || "Personal call assistant"}
+            </p>
             <div className="mt-5 space-y-3">
               <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
                 <span className="text-muted-foreground">Model</span>
