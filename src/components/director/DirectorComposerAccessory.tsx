@@ -38,10 +38,8 @@ import {
   WL_DIRECTOR_CLASSES,
   DIRECTOR_COMPOSER_ACCESSORY_HINTS,
   DIRECTOR_CAPABILITY_CATALOG,
-  WIRELINE_STITCH_UI,
   type ComposerAccessoryKind,
 } from "../../lib/wireline-director-design";
-import { DirectorDesignSystemSetup } from "./DirectorDesignSystemSetup";
 
 export type { ComposerAccessoryKind };
 
@@ -67,7 +65,6 @@ const PANEL_META: Record<ComposerAccessoryKind, { label: string; icon: React.Ele
   coach: { label: "Coach", icon: Bot },
   tools: { label: "Abilities", icon: Wrench },
   attach: { label: "Attach", icon: Paperclip },
-  designSetup: { label: WIRELINE_STITCH_UI.designSystemSetupTitle, icon: LayoutTemplate },
 };
 
 export interface DirectorComposerAccessoryProps {
@@ -84,7 +81,6 @@ export interface DirectorComposerAccessoryProps {
   onPickDocument: () => void;
   onPickContextRule: () => void;
   onPickPlaybookInstruction: () => void;
-  onDesignProfileConfiguredChange?: (configured: boolean) => void;
 }
 
 export function DirectorComposerAccessory({
@@ -101,7 +97,6 @@ export function DirectorComposerAccessory({
   onPickDocument,
   onPickContextRule,
   onPickPlaybookInstruction,
-  onDesignProfileConfiguredChange,
 }: DirectorComposerAccessoryProps) {
   const meta = active ? PANEL_META[active] : null;
   const HeaderIcon = meta?.icon ?? Plug;
@@ -284,10 +279,6 @@ export function DirectorComposerAccessory({
                   </div>
                 )}
               </div>
-            )}
-
-            {active === "designSetup" && (
-              <DirectorDesignSystemSetup onConfiguredChange={onDesignProfileConfiguredChange} />
             )}
 
             {active === "attach" && (

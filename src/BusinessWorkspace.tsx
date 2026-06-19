@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   BrowserRouter,
   Link,
@@ -30,6 +30,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext";
+import { AssistantComposer, simulateAssistantReply } from "./components/AssistantComposer";
 
 type BusinessPage =
   | "assistant"
@@ -130,7 +131,7 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 function Pill({ children, tone = "default" }: { children: ReactNode; tone?: Tone }) {
   const styles =
     tone === "brand"
-      ? "border-brand/35 bg-brand/15 text-brand-bright shadow-[0_0_15px_rgba(139,92,246,0.15)]"
+      ? "border-brand/35 bg-brand/15 text-brand-bright shadow-[0_0_15px_rgba(13,159,110,0.15)]"
       : tone === "warn"
         ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
         : tone === "muted"
@@ -195,7 +196,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           to="/"
           className="mb-8 inline-flex items-center gap-2 px-2 pt-2 transition-opacity hover:opacity-80"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-white font-bold shadow-[0_0_15px_rgba(139,92,246,0.4)]">
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-white font-bold shadow-[0_0_15px_rgba(13,159,110,0.4)]">
             W
           </span>
           <span className="font-display text-[20px] font-semibold text-white">Wireline</span>
@@ -211,7 +212,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
               className={cx(
                 "rounded-[14px] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 active === id
-                  ? "bg-brand text-white shadow-[0_0_20px_rgba(139,92,246,0.45)] hover:brightness-110"
+                  ? "bg-brand text-white shadow-[0_0_20px_rgba(13,159,110,0.45)] hover:brightness-110"
                   : "text-white/60 hover:bg-white/5 hover:text-white",
               )}
             >
@@ -266,7 +267,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                 className={cx(
                   "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   active === id
-                    ? "bg-brand text-white shadow-[0_0_15px_rgba(139,92,246,0.45)]"
+                    ? "bg-brand text-white shadow-[0_0_15px_rgba(13,159,110,0.45)]"
                     : "text-white/50 hover:text-white hover:bg-white/5",
                 )}
               >
@@ -297,7 +298,50 @@ function Title({ eyebrow, title, text }: { eyebrow: string; title: string; text:
   );
 }
 
+type BizMessage = { id: string; role: "user" | "assistant"; text: string; pending?: boolean };
+
+const BUSINESS_SEED: BizMessage[] = [
+  {
+    id: "seed-1",
+    role: "assistant",
+    text: "I reviewed the last 24 hours. Sarah is strong on scheduling. Liam needs billing escalation language. Tyler needs webhook timeout simulations. Recommended next step: update refund policy, then run five billing scenarios in Training.",
+  },
+];
+
 function AssistantPage() {
+  const [messages, setMessages] = useState<BizMessage[]>(BUSINESS_SEED);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const send = (text: string, attachmentCount = 0) => {
+    const clean = text.trim();
+    if (!clean && attachmentCount === 0) return;
+    const userText = clean || `Sent ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}`;
+    const pendingId = `a-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "user", text: userText },
+      { id: pendingId, role: "assistant", text: "", pending: true },
+    ]);
+    timers.current.push(
+      setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === pendingId
+              ? { ...m, text: simulateAssistantReply(clean, attachmentCount), pending: false }
+              : m,
+          ),
+        );
+      }, 850),
+    );
+  };
+
   return (
     <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
       <div className="space-y-6">
@@ -307,34 +351,57 @@ function AssistantPage() {
           text="This is the owner/operator command center. It explains what changed, what needs approval, and which agents need training."
         />
         <Card className="min-h-[420px] flex flex-col justify-between">
-          <div className="rounded-[20px] border border-white/5 bg-[#030303]/90 p-5 text-sm leading-7 text-slate-300 shadow-inner">
-            I reviewed the last 24 hours. Sarah is strong on scheduling. Liam needs billing
-            escalation language. Tyler needs webhook timeout simulations. Recommended next step:
-            update refund policy, then run five billing scenarios in Training.
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto pr-1">
+            {messages.map((m) =>
+              m.role === "assistant" ? (
+                <div
+                  key={m.id}
+                  className="max-w-[88%] rounded-[20px] border border-white/5 bg-[#030303]/90 p-4 text-sm leading-7 text-slate-300 shadow-inner"
+                  aria-live={m.pending ? "polite" : undefined}
+                >
+                  {m.pending ? (
+                    <span className="flex items-center gap-1.5 py-1" aria-label="Assistant is typing">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-bright [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-bright [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand-bright [animation-delay:300ms]" />
+                    </span>
+                  ) : (
+                    m.text
+                  )}
+                </div>
+              ) : (
+                <div
+                  key={m.id}
+                  className="ml-auto max-w-[88%] rounded-[20px] bg-brand p-4 text-sm leading-7 text-white shadow-[0_0_20px_rgba(13,159,110,0.4)]"
+                >
+                  {m.text}
+                </div>
+              ),
+            )}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             {["Audit my fleet", "Fix billing calls", "Train Sarah", "Show escalations"].map((x) => (
               <button
                 key={x}
+                onClick={() => send(x)}
                 className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/60 transition-all duration-200 hover:border-white/25 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95"
               >
                 {x}
               </button>
             ))}
           </div>
-          <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-white/10 bg-[#030303]/60 px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50 shadow-inner">
-            <input
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/55"
+          <div className="mt-5">
+            <AssistantComposer
+              tone="dark"
               placeholder="Ask Wireline…"
+              sendLabel="Ask"
+              onSend={({ text, attachments }) => send(text, attachments.length)}
             />
-            <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm">
-              Ask
-            </button>
           </div>
         </Card>
       </div>
       <div className="space-y-5">
-        <Card className="border-brand/30 bg-[#0d091c]/30 shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+        <Card className="border-brand/30 bg-[#0B0D12]/30 shadow-[0_0_20px_rgba(13,159,110,0.1)]">
           <Pill tone="warn">Needs approval</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">Refund call</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -418,7 +485,7 @@ function LiveOpsPage() {
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-2 rounded-full bg-brand shadow-[0_0_8px_rgba(139,92,246,0.8)]"
+                    className="h-2 rounded-full bg-brand shadow-[0_0_8px_rgba(13,159,110,0.8)]"
                     style={{ width: value }}
                   />
                 </div>
@@ -529,7 +596,7 @@ function TrainingPage() {
             ))}
           </div>
         </Card>
-        <Card className="border-brand/30 bg-[#0d091c]/30">
+        <Card className="border-brand/30 bg-[#0B0D12]/30">
           <Pill tone="warn">Next before launch</Pill>
           <h3 className="mt-4 font-display text-2xl text-white">Billing scenario pack</h3>
           <p className="mt-2 text-sm leading-6 text-slate-300">

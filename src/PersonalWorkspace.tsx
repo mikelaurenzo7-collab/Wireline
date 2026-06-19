@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   BrowserRouter,
   Link,
@@ -16,15 +16,18 @@ import {
   Phone,
   PhoneCall,
   ShieldCheck,
+  Sliders,
   Smartphone,
   Sparkles,
   Wand2,
 } from "lucide-react";
 import { useAuth } from "./contexts/AuthContext";
+import { AssistantComposer, simulateAssistantReply } from "./components/AssistantComposer";
 
 const nav = [
   ["Home", "/app/personal"],
   ["Assistant", "/app/personal/assistant"],
+  ["Assistant Studio", "/app/personal/studio"],
   ["Automations", "/app/personal/automations"],
   ["Devices", "/app/personal/devices"],
   ["Number", "/app/personal/number"],
@@ -41,6 +44,23 @@ const models = [
     "Best for complex planning, multi-step decisions, and high-trust workflows.",
   ],
   ["Auto route", "Smart", "Wireline chooses the best model by task, urgency, and cost."],
+];
+
+const voices = [
+  "Warm female",
+  "Confident male",
+  "Calm neutral",
+  "Bright support",
+  "Professional receptionist",
+];
+
+const studioSkills = [
+  ["Screen unknown callers", "Filter spam and route real callers to you.", true],
+  ["Place calls for me", "Call businesses and people with a short brief.", true],
+  ["Wait on hold", "Hold the line and bring you back when a human answers.", true],
+  ["Book & reschedule", "Handle appointments with confirmation before committing.", false],
+  ["Summarize & recap", "Send a short recap after each handled call.", true],
+  ["Take messages", "Capture details when you can't pick up.", false],
 ];
 
 const automationGroups = [
@@ -309,7 +329,7 @@ function Shell({ children }: { children: ReactNode }) {
                 location.pathname === path ||
                   (path.includes("automations") &&
                     (location.pathname.includes("intents") || location.pathname.includes("siri")))
-                  ? "bg-brand text-white shadow-[0_0_15px_rgba(139,92,246,0.45)] hover:brightness-110"
+                  ? "bg-brand text-white shadow-[0_0_15px_rgba(13,159,110,0.45)] hover:brightness-110"
                   : "text-muted-foreground hover:bg-white/5 hover:text-white",
               )}
             >
@@ -430,7 +450,7 @@ function SetupRail() {
     ["Connect context", "/app/personal/settings", "Email, calendar, contacts, reminders", "Setup"],
   ];
   return (
-    <Card className="border-brand/40 bg-[#0d091c]/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] p-6 sm:p-8">
+    <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(13,159,110,0.15)] p-6 sm:p-8">
       <div className="text-[11px] font-bold uppercase tracking-[.14em] text-brand-bright">
         Setup path
       </div>
@@ -442,7 +462,7 @@ function SetupRail() {
           <Link
             key={title}
             to={path}
-            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(13,159,110,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white font-semibold shadow-sm">
               {index + 1}
@@ -465,7 +485,51 @@ function SetupRail() {
   );
 }
 
+type ChatMessage = { id: string; role: "user" | "assistant"; text: string; pending?: boolean };
+
+const PERSONAL_SEED: ChatMessage[] = [
+  {
+    id: "seed-1",
+    role: "assistant",
+    text: "I reviewed your calls. One appointment is confirmed and three unknown callers were blocked.",
+  },
+];
+
 function AssistantView() {
+  const [messages, setMessages] = useState<ChatMessage[]>(PERSONAL_SEED);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const send = (text: string, attachmentCount = 0) => {
+    const clean = text.trim();
+    if (!clean && attachmentCount === 0) return;
+    const userText =
+      clean || `Sent ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}`;
+    const pendingId = `a-${Date.now()}`;
+    setMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, role: "user", text: userText },
+      { id: pendingId, role: "assistant", text: "", pending: true },
+    ]);
+    timers.current.push(
+      setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === pendingId
+              ? { ...m, text: simulateAssistantReply(clean, attachmentCount), pending: false }
+              : m,
+          ),
+        );
+      }, 850),
+    );
+  };
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-5xl flex-col">
       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
@@ -478,17 +542,33 @@ function AssistantView() {
         No named persona. Assistant is where you ask, review, approve, and hand off.
       </p>
       <Card className="mt-6 flex flex-1 flex-col">
-        <div className="space-y-4">
-          <div className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm">
-            I reviewed your calls. One appointment is confirmed and three unknown callers were
-            blocked.
-          </div>
-          <div className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(139,92,246,0.35)]">
-            Call the office and say I am running 10 minutes late.
-          </div>
-          <div className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm">
-            Ready. I will keep it brief, ask for confirmation, and report back.
-          </div>
+        <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto pr-1">
+          {messages.map((m) =>
+            m.role === "assistant" ? (
+              <div
+                key={m.id}
+                className="max-w-[86%] rounded-[18px] border border-border bg-background p-4 text-sm leading-6 shadow-sm"
+                aria-live={m.pending ? "polite" : undefined}
+              >
+                {m.pending ? (
+                  <span className="flex items-center gap-1.5 py-0.5" aria-label="Assistant is typing">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:0ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:150ms]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-brand [animation-delay:300ms]" />
+                  </span>
+                ) : (
+                  m.text
+                )}
+              </div>
+            ) : (
+              <div
+                key={m.id}
+                className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(13,159,110,0.35)]"
+              >
+                {m.text}
+              </div>
+            ),
+          )}
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
           {[
@@ -499,20 +579,20 @@ function AssistantView() {
           ].map((item) => (
             <button
               key={item}
+              onClick={() => send(item)}
               className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-all duration-200 hover:text-brand hover:border-brand/30 hover:bg-brand/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {item}
             </button>
           ))}
         </div>
-        <div className="mt-5 flex items-center gap-3 rounded-[18px] border border-border bg-background px-3 py-2 transition-colors focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/50">
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+        <div className="mt-5">
+          <AssistantComposer
+            tone="light"
             placeholder="Ask Assistant to call, screen, summarize, wait on hold…"
+            sendLabel="Send"
+            onSend={({ text, attachments }) => send(text, attachments.length)}
           />
-          <button className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-paper transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-card shadow-sm">
-            Send
-          </button>
         </div>
       </Card>
     </div>
@@ -632,7 +712,7 @@ function NumberView() {
           ))}
         </div>
       </Card>
-      <Card className="border-brand/40 bg-[#0d091c]/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] p-6 sm:p-8">
+      <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(13,159,110,0.15)] p-6 sm:p-8">
         <PhoneCall className="text-brand-bright" />
         <h2 className="mt-4 font-display text-2xl text-white">Handoff rule</h2>
         <p className="mt-3 text-sm leading-6 text-slate-300">
@@ -731,6 +811,200 @@ function SettingsView() {
   );
 }
 
+function StudioView() {
+  const [name, setName] = useState("Aria");
+  const [role, setRole] = useState("Personal call assistant");
+  const [model, setModel] = useState(models[0][0]);
+  const [voice, setVoice] = useState(voices[0]);
+  const [skills, setSkills] = useState(() => studioSkills.map((s) => s[2] as boolean));
+  const [saved, setSaved] = useState(false);
+  const toggle = (i: number) => {
+    setSkills((prev) => prev.map((on, idx) => (idx === i ? !on : on)));
+    setSaved(false);
+  };
+  const activeCount = skills.filter(Boolean).length;
+  return (
+    <div className="space-y-8">
+      <div>
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
+          <Sliders size={13} /> Assistant Studio
+        </div>
+        <h1 className="mt-4 font-display text-4xl sm:text-5xl">Build and customize your assistant.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Create your assistant, give it a name and voice, choose its model, and pick what it is
+          allowed to handle. Training and scenarios live on their own page.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_.85fr]">
+        <Card>
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
+            <Sparkles size={13} /> Identity
+          </div>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                Name
+              </span>
+              <input
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                What it handles
+              </span>
+              <input
+                value={role}
+                onChange={(e) => {
+                  setRole(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                Model
+              </span>
+              <select
+                value={model}
+                onChange={(e) => {
+                  setModel(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                {models.map(([m]) => (
+                  <option key={m}>{m}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                Voice
+              </span>
+              <select
+                value={voice}
+                onChange={(e) => {
+                  setVoice(e.target.value);
+                  setSaved(false);
+                }}
+                className="mt-2 h-12 w-full rounded-[16px] border border-border bg-background px-3 text-sm font-semibold outline-none transition-colors hover:border-ink/20 focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                {voices.map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[.16em] text-muted-foreground">
+                What it can do
+              </span>
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                {activeCount} of {studioSkills.length} on
+              </span>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {studioSkills.map(([title, note], i) => (
+                <button
+                  key={title as string}
+                  onClick={() => toggle(i)}
+                  aria-pressed={skills[i]}
+                  className={cx(
+                    "rounded-[18px] border p-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                    skills[i]
+                      ? "border-brand/40 bg-brand/5"
+                      : "border-border bg-background hover:bg-card-deep",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-foreground">{title}</span>
+                    <span
+                      className={cx(
+                        "grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
+                        skills[i]
+                          ? "border-brand bg-brand text-paper"
+                          : "border-border text-transparent",
+                      )}
+                    >
+                      <Check size={12} />
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{note}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setSaved(true)}
+              className="rounded-[14px] bg-brand px-5 py-3 text-sm font-semibold text-paper transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Save assistant
+            </button>
+            <Link
+              to="/app/personal/assistant"
+              className="rounded-[14px] border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-ink/5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              Open Assistant
+            </Link>
+            {saved && (
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
+                <Check size={15} /> Saved
+              </span>
+            )}
+          </div>
+        </Card>
+
+        <div className="space-y-6">
+          <Card>
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.14em] text-brand">
+              <PhoneCall size={13} /> Preview
+            </div>
+            <h2 className="mt-4 font-display text-2xl">{name || "Your assistant"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{role || "Personal call assistant"}</p>
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Model</span>
+                <span className="font-semibold">{model}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Voice</span>
+                <span className="font-semibold">{voice}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Number</span>
+                <span className="font-semibold">(312) 555-0198</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[16px] border border-border bg-background p-3 text-sm">
+                <span className="text-muted-foreground">Active skills</span>
+                <span className="font-semibold">{activeCount}</span>
+              </div>
+            </div>
+            <p className="mt-4 rounded-[16px] bg-card-deep p-3 text-sm leading-6 text-muted-foreground">
+              This is your one personal assistant. Need more assistants for a team or business?{" "}
+              <Link to="/app/business/studio" className="font-semibold text-brand hover:underline">
+                Open the business studio
+              </Link>
+              .
+            </p>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PersonalRoutes() {
   return (
     <RequirePersonal>
@@ -738,6 +1012,7 @@ function PersonalRoutes() {
         <Routes>
           <Route path="/app/personal" element={<HomeView />} />
           <Route path="/app/personal/assistant" element={<AssistantView />} />
+          <Route path="/app/personal/studio" element={<StudioView />} />
           <Route path="/app/personal/automations" element={<AutomationsView />} />
           <Route
             path="/app/personal/intents"

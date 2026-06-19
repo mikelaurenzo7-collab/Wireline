@@ -17,7 +17,6 @@ import {
   Paperclip,
   Plug,
   Sparkles,
-  SwatchBook,
   Wrench,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -154,7 +153,6 @@ export function DirectorComposerToolbar({
   useStitchAccountBranding = true,
   onToggleStitchAccountBranding,
   stitchBrandingAvailable = false,
-  designProfileConfigured = false,
 }: DirectorComposerToolbarProps) {
   const isPainterSurface = surface === "painter";
   const designStudioOn = designStudioEnabled ?? stitchMediaEnabled ?? false;
@@ -228,19 +226,6 @@ export function DirectorComposerToolbar({
             ) : null}
           </>
         ) : null}
-        {(isPainterSurface || designMode) && designStudioOn && (
-          <ComposerToolChip
-            id="designSetup"
-            label={WIRELINE_STITCH_UI.designSystemSetupLabel}
-            shortLabel={WIRELINE_STITCH_UI.designSystemSetupShortLabel}
-            icon={<SwatchBook className="w-3.5 h-3.5 shrink-0" />}
-            active={activeAccessory === "designSetup"}
-            engaged={designProfileConfigured}
-            disabled={isSending}
-            onClick={() => onToggle("designSetup")}
-            aria-label={WIRELINE_STITCH_UI.designSystemSetupTitle}
-          />
-        )}
         {showStitchBrandingToggle && (
           <ShadButton
             type="button"

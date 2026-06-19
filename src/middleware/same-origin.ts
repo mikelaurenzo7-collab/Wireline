@@ -40,6 +40,33 @@ function originFromReferer(referer: string): string | null {
   }
 }
 
+/**
+ * Resolve the request's own origin from forwarded proto + host headers.
+ * A genuinely same-origin request (Origin/Referer host === the host the
+ * browser actually hit) must always be trusted — this is the entire point
+ * of a same-origin CSRF check. Relying solely on a static APP_URL/CORS_ORIGINS
+ * allowlist breaks every Vercel preview deployment, whose domain is unknown
+ * ahead of time even though the frontend and API share that same domain.
+ */
+function selfOrigin(req: Request): string | null {
+  const host = (
+    (typeof req.headers["x-forwarded-host"] === "string" && req.headers["x-forwarded-host"]) ||
+    (typeof req.headers.host === "string" && req.headers.host) ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+  if (!host) return null;
+  const proto = (
+    (typeof req.headers["x-forwarded-proto"] === "string" && req.headers["x-forwarded-proto"]) ||
+    req.protocol ||
+    "https"
+  )
+    .split(",")[0]
+    .trim();
+  return `${proto}://${host}`.replace(/\/+$/, "");
+}
+
 function hasBearerAuthorization(req: Request): boolean {
   const header = req.headers.authorization;
   return typeof header === "string" && /^Bearer\s+\S+/i.test(header);
@@ -75,9 +102,10 @@ export function assertSameOrigin(req: Request, res: Response, next: NextFunction
   }
 
   const allowed = collectAllowedOrigins();
-  const origin = typeof req.headers.origin === "string" ? req.headers.origin : "";
+  const self = selfOrigin(req);
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin.replace(/\/+$/, "") : "";
   if (origin) {
-    if (allowed.has(origin)) {
+    if (allowed.has(origin) || (self && origin === self)) {
       next();
       return;
     }
@@ -88,7 +116,7 @@ export function assertSameOrigin(req: Request, res: Response, next: NextFunction
   const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
   if (referer) {
     const refererOrigin = originFromReferer(referer);
-    if (refererOrigin && allowed.has(refererOrigin)) {
+    if (refererOrigin && (allowed.has(refererOrigin) || (self && refererOrigin === self))) {
       next();
       return;
     }

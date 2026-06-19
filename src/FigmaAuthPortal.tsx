@@ -261,13 +261,13 @@ function Shell({ children, mode }: { children: ReactNode; mode: WorkspaceMode })
           </Chip>
           <h1 className="mt-5 font-display text-5xl leading-tight tracking-tight">
             {mode === "personal"
-              ? "Your private phone chief of staff."
-              : "Run the front line from one cockpit."}
+              ? "Your Personal Wireline Assistant."
+              : "Your Business Wireline Assistants, in one place."}
           </h1>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
             {mode === "personal"
-              ? "Screen calls, kill spam, set mobile automations, and keep your day moving without opening a business console."
-              : "Deploy AI voice, SMS, and email agents with real OAuth, training, integrations, and operator controls."}
+              ? "Screen calls, block spam, and keep your day moving — your assistant handles the phone so you don't have to."
+              : "Set up AI voice, SMS, and email assistants with the tools, training, and approvals your team already uses."}
           </p>
         </div>
         <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-card/10 text-center">

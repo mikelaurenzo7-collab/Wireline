@@ -126,7 +126,7 @@ const tiers: Tier[] = [
     cadence: "/mo",
     audience: "For one person",
     summary:
-      "Screen calls, block spam, summarize errands, and trigger mobile intents without running a business console.",
+      "Screen calls, block spam, summarize errands, and run quick phone actions — all from your personal assistant.",
     features: ["AI phone screening", "Spam guard", "Call summaries", "Siri and widget intents"],
   },
   {
@@ -152,7 +152,7 @@ const tiers: Tier[] = [
       "A real AI front desk with Studio, Training, Live Ops, analytics, and business-only integrations.",
     features: [
       "Agent Studio and Training",
-      "Live call cockpit",
+      "Live call view",
       "CRM and calendar routing",
       "Model choice per agent",
     ],
@@ -1090,9 +1090,7 @@ function AssistantConsole({
         <h1
           className={cx("mt-3 font-display text-4xl", business ? "text-paper" : "text-foreground")}
         >
-          {business
-            ? "Your operator for agents, workflows, and launch."
-            : "Your personal phone chief of staff."}
+          {business ? "Your Business Wireline Assistants." : "Your Personal Wireline Assistant."}
         </h1>
         <p className={cx("mt-2 text-sm", business ? "text-paper/55" : "text-muted-foreground")}>
           Ask what to improve, what to train, which calls need review, or what actions are safe to
@@ -1169,8 +1167,8 @@ function LiveOps({ onCoach }: { onCoach: () => void }) {
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between">
         <PageTitle
-          eyebrow="Live Operations"
-          title="The cockpit"
+          eyebrow="Live Ops"
+          title="Live calls"
           text="Real-time calls, status, coaching opportunities, and escalation visibility."
         />
         <button className="rounded-[14px] bg-brand px-4 py-2 text-sm font-semibold text-paper">
