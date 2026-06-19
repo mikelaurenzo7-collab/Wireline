@@ -1,5 +1,4 @@
-/* Zero-latency app shell skeleton — loaded before React for first paint (CSP style-src-elem 'self').
-   Colors must match Lavender Noir: canvas #F3EFFA, charcoal #1E1B2E, violet #7C3AED. */
+/* Zero-latency public shell skeleton — loaded before React for first paint. */
 body {
   margin: 0;
   background-color: #F3EFFA;
@@ -40,9 +39,7 @@ body {
   margin-bottom: 12px;
 }
 
-.shell-nav-item--dim {
-  opacity: 0.8;
-}
+.shell-nav-item--dim { opacity: 0.8; }
 
 .shell-main {
   flex: 1;
@@ -81,15 +78,8 @@ body {
 }
 
 @keyframes shell-pulse {
-  0% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 0.3;
-  }
-  100% {
-    opacity: 0.6;
-  }
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.3; }
 }
 
 .shell-logo,
@@ -100,13 +90,7 @@ body {
 }
 
 @media (max-width: 768px) {
-  .shell-sidebar {
-    display: none;
-  }
-  .shell-header {
-    padding: 0 16px;
-  }
-  .shell-content {
-    padding: 16px;
-  }
+  .shell-sidebar { display: none; }
+  .shell-header { padding: 0 16px; }
+  .shell-content { padding: 16px; }
 }

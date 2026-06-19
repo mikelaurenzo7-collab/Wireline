@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Lavender Noir widget colors — shared palette for extension targets.
+// Stitch Noir widget colors — shared palette for extension targets.
 enum WidgetColors {
     static let violet = Color(hex: WirelinePalette.violet)
     static let violetDeep = Color(hex: WirelinePalette.violetDeep)

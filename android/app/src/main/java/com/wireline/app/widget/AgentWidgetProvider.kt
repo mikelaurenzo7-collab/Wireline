@@ -1,7 +1,6 @@
 package com.wireline.app.widget
 
 import android.content.Context
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -24,15 +23,6 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.wireline.app.MainActivity
-
-/** Lavender Noir — mirrors `Brand` / `src/index.css`. */
-private object WidgetPalette {
-    val Violet = Color(0xFF7C3AED)
-    val VioletSoft = Color(0xFFA78BFA)
-    val Panel = Color(0xFF2A2540)
-    val Text = Color(0xFFF3EFFA)
-    val Text2 = Color(0xFFB8B0CA)
-}
 
 class AgentWidgetProvider : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = AgentStatusWidget()
@@ -61,7 +51,7 @@ class AgentStatusWidget : GlanceAppWidget() {
             Text(
                 text = "Wireline Fleet",
                 style = TextStyle(
-                    color = ColorProvider(WidgetPalette.Violet),
+                    color = ColorProvider(WidgetPalette.VioletSoft),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                 ),
@@ -75,7 +65,7 @@ class AgentStatusWidget : GlanceAppWidget() {
                 Text(
                     text = "Active",
                     style = TextStyle(
-                        color = ColorProvider(WidgetPalette.VioletSoft),
+                        color = ColorProvider(WidgetPalette.Success),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                     ),

@@ -11,33 +11,22 @@
     <meta name="format-detection" content="address=no" />
 
     <title>Wireline — Your AI Call Concierge</title>
-    <meta
-      name="description"
-      content="Wireline is a personal AI call concierge for everyday phone tasks, with the same Agent Studio and console available for side projects and business workflows."
-    />
-    <meta
-      name="keywords"
-      content="AI call concierge, Siri call assistant, personal AI assistant, AI phone agent, call screening, pharmacy call assistant, appointment calling, support line assistant, business phone AI"
-    />
+    <meta name="description" content="Wireline is a personal AI call concierge for everyday phone tasks, with the same Agent Studio and console available for side projects and business workflows." />
+    <meta name="keywords" content="AI call concierge, Siri call assistant, personal AI assistant, AI phone agent, call screening, pharmacy call assistant, appointment calling, support line assistant, business phone AI" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large" />
     <meta name="author" content="Wireline" />
     <meta name="publisher" content="Wireline" />
-    <meta
-      name="domain-verification"
-      content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61"
-    />
+    <meta name="domain-verification" content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61" />
     <meta name="theme-color" content="#F3EFFA" />
     <meta name="msapplication-TileColor" content="#F3EFFA" />
     <meta name="apple-mobile-web-app-title" content="Wireline" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
     <meta name="color-scheme" content="light" />
 
-    <!-- Wireline is light-only: clear any stale dark preference before first
-         paint so there is never a dark flash for returning visitors. -->
+    <!-- Public marketing remains light; authenticated Studio owns its dark shell locally. -->
     <script>
       (function () {
         try {
@@ -50,17 +39,11 @@
 
     <link rel="canonical" href="https://trywireline.com/" />
 
-    <script
-      defer
-      data-domain="trywireline.com"
-      src="https://plausible.io/js/script.tagged-events.js"
-    ></script>
+    <script defer data-domain="trywireline.com" src="https://plausible.io/js/script.tagged-events.js"></script>
     <script>
-      window.plausible =
-        window.plausible ||
-        function () {
-          (window.plausible.q = window.plausible.q || []).push(arguments);
-        };
+      window.plausible = window.plausible || function () {
+        (window.plausible.q = window.plausible.q || []).push(arguments);
+      };
     </script>
 
     <script>
@@ -83,14 +66,8 @@
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-K2M2L84B');
         } else {
-          window.fbq = function(action, event, data) {
-            console.log("[wireline:dev-pixel] fbq('" + action + "', '" + event + "')", data || "");
-          };
-          window.dataLayer = {
-            push: function(data) {
-              console.log("[wireline:dev-gtm] dataLayer.push()", data);
-            }
-          };
+          window.fbq = function() {};
+          window.dataLayer = { push: function() {} };
         }
       })();
     </script>
@@ -99,132 +76,28 @@
     <meta property="og:url" content="https://trywireline.com/" />
     <meta property="og:site_name" content="Wireline" />
     <meta property="og:title" content="Wireline — Your AI Call Concierge" />
-    <meta
-      property="og:description"
-      content="Ask Wireline to call the pharmacy, doctor, school, airline, landlord, restaurant, or support line and report back."
-    />
+    <meta property="og:description" content="Ask Wireline to call the pharmacy, doctor, school, airline, landlord, restaurant, or support line and report back." />
     <meta property="og:image" content="https://trywireline.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Wireline — your personal AI call concierge"
-    />
+    <meta property="og:image:alt" content="Wireline — your personal AI call concierge" />
     <meta property="og:locale" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@wirelineapp" />
     <meta name="twitter:creator" content="@wirelineapp" />
     <meta name="twitter:title" content="Wireline — Your AI Call Concierge" />
-    <meta
-      name="twitter:description"
-      content="Routine calls handled by an AI concierge, with Agent Studio when you need deeper customization."
-    />
+    <meta name="twitter:description" content="Routine calls handled by an AI concierge, with Agent Studio when you need deeper customization." />
     <meta name="twitter:image" content="https://trywireline.com/og-image.png" />
     <meta name="twitter:image:alt" content="Wireline AI call concierge" />
 
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://trywireline.com/#organization",
-            "name": "Wireline",
-            "legalName": "Wireline",
-            "url": "https://trywireline.com/",
-            "logo": "https://trywireline.com/wireline-icon-1024.png",
-            "image": "https://trywireline.com/og-image.png",
-            "description": "A personal AI call concierge for routine phone work.",
-            "slogan": "Routine calls, handled.",
-            "foundingDate": "2024",
-            "email": "support@trywireline.com",
-            "founder": {
-              "@type": "Person",
-              "name": "Michael Laurenzo",
-              "jobTitle": "Founder",
-              "url": "https://trywireline.com/about"
-            },
-            "sameAs": ["https://twitter.com/wirelineapp"],
-            "contactPoint": [
-              {
-                "@type": "ContactPoint",
-                "telephone": "+1-630-642-5661",
-                "contactType": "customer support",
-                "areaServed": "US",
-                "availableLanguage": ["en"]
-              },
-              {
-                "@type": "ContactPoint",
-                "telephone": "+1-630-581-1834",
-                "contactType": "sales",
-                "areaServed": "US",
-                "availableLanguage": ["en"]
-              }
-            ]
-          },
-          {
-            "@type": "SoftwareApplication",
-            "@id": "https://trywireline.com/#software",
-            "name": "Wireline",
-            "applicationCategory": "LifestyleApplication",
-            "operatingSystem": "Web, iOS, Android",
-            "url": "https://trywireline.com/",
-            "description": "Wireline is a personal AI call concierge for everyday phone tasks, with the same Agent Studio and console available for side projects and business workflows.",
-            "offers": [
-              {
-                "@type": "Offer",
-                "name": "Everyday",
-                "price": "7",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=personal"
-              },
-              {
-                "@type": "Offer",
-                "name": "Plus",
-                "price": "15",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=personal-plus"
-              },
-              {
-                "@type": "Offer",
-                "name": "Studio",
-                "price": "29",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=business-starter"
-              },
-              {
-                "@type": "Offer",
-                "name": "Operator",
-                "price": "59",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/get-started?plan=starter"
-              },
-              {
-                "@type": "Offer",
-                "name": "Custom",
-                "price": "0",
-                "priceCurrency": "USD",
-                "billingDuration": "P1M",
-                "url": "https://trywireline.com/contact?intent=sales"
-              }
-            ],
-            "publisher": { "@id": "https://trywireline.com/#organization" }
-          },
-          {
-            "@type": "WebSite",
-            "@id": "https://trywireline.com/#website",
-            "url": "https://trywireline.com/",
-            "name": "Wireline",
-            "publisher": { "@id": "https://trywireline.com/#organization" }
-          }
-        ]
-      }
+      {"@context":"https://schema.org","@graph":[
+        {"@type":"Organization","@id":"https://trywireline.com/#organization","name":"Wireline","legalName":"Wireline","url":"https://trywireline.com/","logo":"https://trywireline.com/wireline-icon-1024.png","image":"https://trywireline.com/og-image.png","description":"A personal AI call concierge for routine phone work.","slogan":"Routine calls, handled.","foundingDate":"2024","email":"support@trywireline.com","founder":{"@type":"Person","name":"Michael Laurenzo","jobTitle":"Founder","url":"https://trywireline.com/about"},"sameAs":["https://twitter.com/wirelineapp"],"contactPoint":[{"@type":"ContactPoint","telephone":"+1-630-642-5661","contactType":"customer support","areaServed":"US","availableLanguage":["en"]},{"@type":"ContactPoint","telephone":"+1-630-581-1834","contactType":"sales","areaServed":"US","availableLanguage":["en"]}]},
+        {"@type":"SoftwareApplication","@id":"https://trywireline.com/#software","name":"Wireline","applicationCategory":"LifestyleApplication","operatingSystem":"Web, iOS, Android","url":"https://trywireline.com/","description":"Wireline is a personal AI call concierge for everyday phone tasks, with the same Agent Studio and console available for side projects and business workflows.","offers":[{"@type":"Offer","name":"Everyday","price":"7","priceCurrency":"USD","billingDuration":"P1M","url":"https://trywireline.com/get-started?plan=personal"},{"@type":"Offer","name":"Plus","price":"15","priceCurrency":"USD","billingDuration":"P1M","url":"https://trywireline.com/get-started?plan=personal-plus"},{"@type":"Offer","name":"Studio","price":"29","priceCurrency":"USD","billingDuration":"P1M","url":"https://trywireline.com/get-started?plan=business-starter"},{"@type":"Offer","name":"Operator","price":"59","priceCurrency":"USD","billingDuration":"P1M","url":"https://trywireline.com/get-started?plan=starter"},{"@type":"Offer","name":"Custom","price":"0","priceCurrency":"USD","billingDuration":"P1M","url":"https://trywireline.com/contact?intent=sales"}],"publisher":{"@id":"https://trywireline.com/#organization"}},
+        {"@type":"WebSite","@id":"https://trywireline.com/#website","url":"https://trywireline.com/","name":"Wireline","publisher":{"@id":"https://trywireline.com/#organization"}}
+      ]}
     </script>
 
     <link rel="preconnect" href="https://plausible.io" crossorigin />

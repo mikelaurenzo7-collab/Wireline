@@ -12,21 +12,19 @@ public enum WirelineWidgetShared {
     public static let appGroupId = "group.com.wireline.assistant"
 }
 
-/// Lavender Noir palette — mirrors `src/index.css` (widget target cannot import app `Brand`).
+/// Stitch Noir palette shared by the app and widget targets. The extension cannot
+/// import app `Brand`, so this small immutable mirror is the only color source for widgets.
 public enum WirelinePalette {
-    public static let violet = "7C3AED"
-    public static let violetDeep = "5B21B6"
-    public static let violetSoft = "A78BFA"
-    public static let canvas = "1E1B2E"
-    public static let panel = "2A2540"
-    public static let panel2 = "342E4C"
-    public static let text = "F3EFFA"
-    public static let text2 = "B8B0CA"
-    public static let text3 = "7A7194"
-    public static let destructive = "DC2626"
-
-    /// @deprecated Use `violet` — kept for older widget code paths.
-    public static let accentHex = violet
+    public static let violet = "5D5CFF"
+    public static let violetDeep = "4643E9"
+    public static let violetSoft = "C1C1FF"
+    public static let canvas = "0A0A0C"
+    public static let panel = "131315"
+    public static let panel2 = "1B1B1D"
+    public static let text = "F4F2F7"
+    public static let text2 = "C7C4D8"
+    public static let text3 = "908FA1"
+    public static let destructive = "EF4444"
 }
 
 /// One glanceable recent call. Pre-formatted by the app so the widget stays a
