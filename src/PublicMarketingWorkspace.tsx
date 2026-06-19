@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BrowserRouter, Link, NavLink, Route, Routes } from "react-router-dom";
+import { Link, NavLink, Route, Routes } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -1234,9 +1234,7 @@ function PublicRoutes() {
 }
 
 export default function PublicMarketingWorkspace() {
-  return (
-    <BrowserRouter>
-      <PublicRoutes />
-    </BrowserRouter>
-  );
+  // The single root BrowserRouter lives in App.tsx — this surface only renders
+  // its own Routes tree so deep links share the same history with the auth shell.
+  return <PublicRoutes />;
 }

@@ -62,12 +62,14 @@ const PLAN_ACCENTS: Record<string, string> = {
   scale: BRAND.purple,
 };
 
+// Conversion-tracking values (USD/mo). Mirror current consumer-pivot prices
+// from `plan-catalog.ts`; keep in sync if pricing moves again.
 const CHECKOUT_VALUES: Record<string, number> = {
-  personal: 9,
-  "personal-plus": 19,
-  "business-starter": 99,
-  starter: 249,
-  scale: 699,
+  personal: 7,
+  "personal-plus": 15,
+  "business-starter": 29,
+  starter: 59,
+  scale: 0,
 };
 
 export default function StripeBillingCard() {
