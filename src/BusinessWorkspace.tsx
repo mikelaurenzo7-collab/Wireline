@@ -131,7 +131,7 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 function Pill({ children, tone = "default" }: { children: ReactNode; tone?: Tone }) {
   const styles =
     tone === "brand"
-      ? "border-brand/35 bg-brand/15 text-brand-bright shadow-[0_0_15px_rgba(43,91,240,0.15)]"
+      ? "border-brand/35 bg-brand/15 text-brand-bright shadow-[0_0_15px_rgba(13,159,110,0.15)]"
       : tone === "warn"
         ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
         : tone === "muted"
@@ -196,7 +196,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
           to="/"
           className="mb-8 inline-flex items-center gap-2 px-2 pt-2 transition-opacity hover:opacity-80"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-white font-bold shadow-[0_0_15px_rgba(43,91,240,0.4)]">
+          <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-brand text-white font-bold shadow-[0_0_15px_rgba(13,159,110,0.4)]">
             W
           </span>
           <span className="font-display text-[20px] font-semibold text-white">Wireline</span>
@@ -212,7 +212,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
               className={cx(
                 "rounded-[14px] px-3 py-2.5 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                 active === id
-                  ? "bg-brand text-white shadow-[0_0_20px_rgba(43,91,240,0.45)] hover:brightness-110"
+                  ? "bg-brand text-white shadow-[0_0_20px_rgba(13,159,110,0.45)] hover:brightness-110"
                   : "text-white/60 hover:bg-white/5 hover:text-white",
               )}
             >
@@ -267,7 +267,7 @@ function BusinessShell({ children }: { children: ReactNode }) {
                 className={cx(
                   "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
                   active === id
-                    ? "bg-brand text-white shadow-[0_0_15px_rgba(43,91,240,0.45)]"
+                    ? "bg-brand text-white shadow-[0_0_15px_rgba(13,159,110,0.45)]"
                     : "text-white/50 hover:text-white hover:bg-white/5",
                 )}
               >
@@ -372,7 +372,7 @@ function AssistantPage() {
               ) : (
                 <div
                   key={m.id}
-                  className="ml-auto max-w-[88%] rounded-[20px] bg-brand p-4 text-sm leading-7 text-white shadow-[0_0_20px_rgba(43,91,240,0.4)]"
+                  className="ml-auto max-w-[88%] rounded-[20px] bg-brand p-4 text-sm leading-7 text-white shadow-[0_0_20px_rgba(13,159,110,0.4)]"
                 >
                   {m.text}
                 </div>
@@ -401,7 +401,7 @@ function AssistantPage() {
         </Card>
       </div>
       <div className="space-y-5">
-        <Card className="border-brand/30 bg-[#0B0D12]/30 shadow-[0_0_20px_rgba(43,91,240,0.1)]">
+        <Card className="border-brand/30 bg-[#0B0D12]/30 shadow-[0_0_20px_rgba(13,159,110,0.1)]">
           <Pill tone="warn">Needs approval</Pill>
           <h2 className="mt-4 font-display text-2xl text-white">Refund call</h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -485,7 +485,7 @@ function LiveOpsPage() {
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-2 rounded-full bg-brand shadow-[0_0_8px_rgba(43,91,240,0.8)]"
+                    className="h-2 rounded-full bg-brand shadow-[0_0_8px_rgba(13,159,110,0.8)]"
                     style={{ width: value }}
                   />
                 </div>

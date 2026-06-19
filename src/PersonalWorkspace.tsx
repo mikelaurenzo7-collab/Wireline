@@ -329,7 +329,7 @@ function Shell({ children }: { children: ReactNode }) {
                 location.pathname === path ||
                   (path.includes("automations") &&
                     (location.pathname.includes("intents") || location.pathname.includes("siri")))
-                  ? "bg-brand text-white shadow-[0_0_15px_rgba(43,91,240,0.45)] hover:brightness-110"
+                  ? "bg-brand text-white shadow-[0_0_15px_rgba(13,159,110,0.45)] hover:brightness-110"
                   : "text-muted-foreground hover:bg-white/5 hover:text-white",
               )}
             >
@@ -450,7 +450,7 @@ function SetupRail() {
     ["Connect context", "/app/personal/settings", "Email, calendar, contacts, reminders", "Setup"],
   ];
   return (
-    <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(43,91,240,0.15)] p-6 sm:p-8">
+    <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(13,159,110,0.15)] p-6 sm:p-8">
       <div className="text-[11px] font-bold uppercase tracking-[.14em] text-brand-bright">
         Setup path
       </div>
@@ -462,7 +462,7 @@ function SetupRail() {
           <Link
             key={title}
             to={path}
-            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(43,91,240,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="flex items-center gap-3 rounded-[18px] border border-white/5 bg-white/[0.02] p-3 text-sm transition-all duration-300 hover:bg-white/[0.05] hover:border-brand/30 hover:shadow-[0_0_15px_rgba(13,159,110,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white font-semibold shadow-sm">
               {index + 1}
@@ -563,7 +563,7 @@ function AssistantView() {
             ) : (
               <div
                 key={m.id}
-                className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(43,91,240,0.35)]"
+                className="ml-auto max-w-[86%] rounded-[18px] bg-brand p-4 text-sm leading-6 text-white shadow-[0_0_20px_rgba(13,159,110,0.35)]"
               >
                 {m.text}
               </div>
@@ -712,7 +712,7 @@ function NumberView() {
           ))}
         </div>
       </Card>
-      <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(43,91,240,0.15)] p-6 sm:p-8">
+      <Card className="border-brand/40 bg-[#0B0D12]/40 shadow-[0_0_30px_rgba(13,159,110,0.15)] p-6 sm:p-8">
         <PhoneCall className="text-brand-bright" />
         <h2 className="mt-4 font-display text-2xl text-white">Handoff rule</h2>
         <p className="mt-3 text-sm leading-6 text-slate-300">
