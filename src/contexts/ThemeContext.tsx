@@ -1,9 +1,8 @@
 /**
- * ThemeContext — marketing pages stay light (`:root` Lavender Noir).
+ * Marketing pages remain light. Authenticated workspaces provide their own
+ * scoped Stitch Noir tokens through `.wl-console-surface`.
  *
- * Authenticated workspaces use `.wl-console-surface` for scoped charcoal
- * tokens. This provider keeps <html> on light so public routes are not
- * forced dark; do not add `.dark` to <html> for console fixes.
+ * Keep <html> light so a console route never changes public first paint.
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 
