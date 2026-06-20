@@ -1,15 +1,7 @@
-import { WIRELINE_STITCH_UI } from "./wireline-director-design";
-
-/** Shared Director reply heuristics (safe for client + server). */
-
-const STITCH_MODEL_LABELS = new Set([WIRELINE_STITCH_UI.modelLabel, "Google Stitch"]);
-
-export function isStitchModelLabel(label?: string): boolean {
-  return Boolean(label && STITCH_MODEL_LABELS.has(label));
-}
+/** Shared assistant reply heuristics, safe for client and server. */
 
 export const DIRECTOR_STUB_REPLY =
-  "I'm here — tell me what you want to move forward and I'll orchestrate it.";
+  "I'm here — tell me what you want to move forward and I'll help you shape it.";
 
 const SUBSTANTIVE_REPLY_MIN_CHARS = 160;
 
@@ -30,41 +22,30 @@ export function directorPayloadHasProposals(data: Record<string, unknown>): bool
   const actions = data.actions;
   const integrationJobs = data.integrationJobs;
   const clarifyingQuestions = data.clarifyingQuestions;
-  const previews = data.previews;
   return (
     (Array.isArray(changes) && changes.length > 0) ||
     (Array.isArray(toolToggles) && toolToggles.length > 0) ||
     (Array.isArray(actions) && actions.length > 0) ||
     (Array.isArray(integrationJobs) && integrationJobs.length > 0) ||
-    (Array.isArray(clarifyingQuestions) && clarifyingQuestions.length > 0) ||
-    (Array.isArray(previews) && previews.length > 0)
+    (Array.isArray(clarifyingQuestions) && clarifyingQuestions.length > 0)
   );
 }
 
-/** Stream / poll recovery — coach Apply cards and short replies count even when under 160 chars. */
+export function isTerminalDirectorStreamPayload(data: Record<string, unknown> | undefined): boolean {
+  if (!data) return false;
+  if (directorPayloadHasProposals(data)) return true;
+  if (data.deliverableArtifact && typeof data.deliverableArtifact === "object") return true;
+  if (Array.isArray(data.approvals) && data.approvals.length > 0) return true;
+  return false;
+}
+
 export function isRecoverableDirectorPayload(data: Record<string, unknown> | undefined): boolean {
   if (!data) return false;
   if (isTerminalDirectorStreamPayload(data)) return true;
   const reply = data.reply;
   if (typeof reply !== "string") return false;
   const trimmed = reply.trim();
-  if (!trimmed || isDirectorStubReply(trimmed)) return false;
-  return true;
-}
-
-/**
- * Terminal SSE payload — includes proposals, creative approvals, or Stitch previews.
- * Text-only `reply` chunks from mid-stream previews are NOT terminal (wait for `done`).
- */
-export function isTerminalDirectorStreamPayload(
-  data: Record<string, unknown> | undefined,
-): boolean {
-  if (!data) return false;
-  if (directorPayloadHasProposals(data)) return true;
-  if (data.deliverableArtifact && typeof data.deliverableArtifact === "object") return true;
-  if (Array.isArray(data.approvals) && data.approvals.length > 0) return true;
-  if (Array.isArray(data.previews) && data.previews.length > 0) return true;
-  return false;
+  return Boolean(trimmed && !isDirectorStubReply(trimmed));
 }
 
 export function isSubstantiveDirectorPayload(data: Record<string, unknown> | undefined): boolean {
@@ -74,11 +55,9 @@ export function isSubstantiveDirectorPayload(data: Record<string, unknown> | und
   return typeof reply === "string" && isSubstantiveDirectorReply(reply);
 }
 
-type DirectorThreadMessage = {
+type AssistantThreadMessage = {
   role: string;
   content: string;
-  modelLabel?: string;
-  previews?: unknown[];
   clarifyingQuestions?: string[];
   proposals?: {
     changes?: unknown[];
@@ -88,58 +67,35 @@ type DirectorThreadMessage = {
   };
 };
 
-function messageHasRecoverableDirectorContent(m: DirectorThreadMessage): boolean {
-  if (m.role !== "director") return false;
-  if (isSubstantiveDirectorReply(m.content)) return true;
-  const trimmed = m.content.trim();
+function messageHasRecoverableContent(message: AssistantThreadMessage): boolean {
+  if (message.role !== "director") return false;
+  if (isSubstantiveDirectorReply(message.content)) return true;
+  const trimmed = message.content.trim();
   if (trimmed && !isDirectorStubReply(trimmed)) return true;
-  const p = m.proposals;
+  const proposals = message.proposals;
   if (
-    p &&
-    ((p.changes?.length ?? 0) > 0 ||
-      (p.toolToggles?.length ?? 0) > 0 ||
-      (p.actions?.length ?? 0) > 0 ||
-      (p.integrationJobs?.length ?? 0) > 0)
+    proposals &&
+    ((proposals.changes?.length ?? 0) > 0 ||
+      (proposals.toolToggles?.length ?? 0) > 0 ||
+      (proposals.actions?.length ?? 0) > 0 ||
+      (proposals.integrationJobs?.length ?? 0) > 0)
   ) {
     return true;
   }
-  if (Array.isArray(m.clarifyingQuestions) && m.clarifyingQuestions.length > 0) return true;
-  if (Array.isArray(m.previews) && m.previews.length > 0) return true;
-  return false;
+  return Array.isArray(message.clarifyingQuestions) && message.clarifyingQuestions.length > 0;
 }
 
-/** Drop stub director rows that follow a substantive reply for the same operator turn. */
 export function operatorTurnHasDirectorReply(
-  messages: DirectorThreadMessage[],
+  messages: AssistantThreadMessage[],
   operatorContent: string,
-  options?: { requireStitch?: boolean },
 ): boolean {
   const needle = operatorContent.trim();
-  const idx = messages.findIndex((m) => m.role === "operator" && m.content.trim() === needle);
-  if (idx < 0) return false;
+  const index = messages.findIndex((message) => message.role === "operator" && message.content.trim() === needle);
+  if (index < 0) return false;
 
-  for (const m of messages.slice(idx + 1)) {
-    if (m.role === "operator") break;
-    if (m.role !== "director") continue;
-
-    if (options?.requireStitch) {
-      const previews = Array.isArray(m.previews) ? m.previews : [];
-      const isStitch =
-        isStitchModelLabel(m.modelLabel) ||
-        previews.some(
-          (p) => !!p && typeof p === "object" && (p as { kind?: string }).kind === "stitch",
-        );
-      const clarifying = Array.isArray(m.clarifyingQuestions) && m.clarifyingQuestions.length > 0;
-      const packagingPending =
-        typeof (m as { stitchAssetsPending?: boolean }).stitchAssetsPending === "boolean" &&
-        (m as { stitchAssetsPending?: boolean }).stitchAssetsPending === true;
-      if (isStitch && (isSubstantiveDirectorReply(m.content) || clarifying || packagingPending)) {
-        return true;
-      }
-      continue;
-    }
-
-    if (messageHasRecoverableDirectorContent(m)) return true;
+  for (const message of messages.slice(index + 1)) {
+    if (message.role === "operator") break;
+    if (messageHasRecoverableContent(message)) return true;
   }
   return false;
 }
@@ -147,19 +103,17 @@ export function operatorTurnHasDirectorReply(
 export function collapseDirectorThreadDuplicates<T extends { role: string; content: string }>(
   messagesAsc: T[],
 ): T[] {
-  let lastOperatorIdx = -1;
-  return messagesAsc.filter((msg, i) => {
-    if (msg.role === "operator") {
-      lastOperatorIdx = i;
+  let lastOperatorIndex = -1;
+  return messagesAsc.filter((message, index) => {
+    if (message.role === "operator") {
+      lastOperatorIndex = index;
       return true;
     }
-    if (msg.role !== "director" || !isDirectorStubReply(msg.content)) return true;
-    if (lastOperatorIdx < 0) return true;
-    for (let j = i - 1; j > lastOperatorIdx; j--) {
-      const prior = messagesAsc[j];
-      if (prior.role === "director" && isSubstantiveDirectorReply(prior.content)) {
-        return false;
-      }
+    if (message.role !== "director" || !isDirectorStubReply(message.content)) return true;
+    if (lastOperatorIndex < 0) return true;
+    for (let cursor = index - 1; cursor > lastOperatorIndex; cursor--) {
+      const prior = messagesAsc[cursor];
+      if (prior.role === "director" && isSubstantiveDirectorReply(prior.content)) return false;
     }
     return true;
   });
