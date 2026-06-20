@@ -5,13 +5,13 @@ import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const PublicMarketingWorkspace = lazy(() => import("./PublicMarketingWorkspace"));
 const AppShell = lazy(() => import("./components/layout/AppShell"));
 const FigmaAuthPortal = lazy(() => import("./FigmaAuthPortal"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 
 const MARKETING_PATHS = [
-  "/",
   "/features",
   "/pricing",
   "/showcase",
@@ -27,6 +27,7 @@ function AppRouter() {
   return (
     <Suspense fallback={null}>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         {MARKETING_PATHS.map((path) => (
           <Route key={path} path={path} element={<PublicMarketingWorkspace />} />
         ))}
