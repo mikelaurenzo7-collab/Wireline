@@ -68,6 +68,8 @@ export const VAPI_SHOWCASE_PROVIDER = "openai" as const;
 export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_SHOWCASE_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
+/** Compatibility export used by existing Vapi routes and sync scripts. */
+export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
 export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
 /** The precise native fallback sent with a managed OpenAI call. */
