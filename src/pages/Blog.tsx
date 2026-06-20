@@ -1,134 +1,68 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
-import { motion } from "motion/react";
+import { Check, MessageSquare, PhoneCall, ShieldCheck } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import { BLOG_POSTS } from "../data/blog-posts";
 import { PageMeta } from "../lib/page-meta";
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
+const NOTES = [
+  {
+    icon: PhoneCall,
+    title: "Start with one repeatable call.",
+    copy: "The best first job is clear and common: check a refill, confirm an appointment, ask about an order, or get through a support queue.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Write down the boundaries.",
+    copy: "Tell your assistant what it can say, what it should not do, and when it should stop and ask you to take over.",
+  },
+  {
+    icon: Check,
+    title: "Ask for the useful result.",
+    copy: "A good handoff ends with a plain answer and the next step, not a long transcript you have to decode.",
+  },
+] as const;
 
 export default function Blog() {
-  const featuredPost = BLOG_POSTS[0];
-  const recentPosts = BLOG_POSTS.slice(1);
-
   return (
-    <>
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Wireline Blog"
-        description="Operator-first essays from Mike Lorenzo on voice AI performance, SMB automation, customer stories, and production lessons from building Wireline."
+        title="Wireline Notes"
+        description="Practical notes for handing routine phone work to an AI call assistant."
         path="/blog"
       />
 
-      <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
-        <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 sm:pt-8 pb-12 sm:pb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
-            <p className="text-eyebrow text-brand mb-4">Wireline blog</p>
-            <h1 className="marketing-hero-title mb-6 text-balance">
-              Operator notes on voice AI, SMB growth, and what actually works in production.
-            </h1>
-            <p className="marketing-hero-lead max-w-2xl">
-              Essays from Mike Lorenzo on building fast, reliable voice agents, replacing brittle
-              intake workflows, and helping small teams answer every customer like they have a full
-              front desk behind them.
-            </p>
-          </motion.div>
-        </section>
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:px-10">
+        <div className="max-w-3xl">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Wireline Notes</p>
+          <h1 className="mt-4 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">
+            Practical notes for<br />
+            <em className="font-normal">getting time back.</em>
+          </h1>
+          <p className="mt-7 max-w-2xl text-pretty text-[clamp(1.18rem,2.5vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">
+            Wireline is keeping this library small until each guide earns its place. Start with the basics that make an assistant useful from day one.
+          </p>
+        </div>
+      </section>
 
-        <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-10">
-          <motion.article
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55 }}
-            className="wl-panel border border-brand/20 p-6 sm:p-8 lg:p-10"
-          >
-            <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-3">
-              Featured post
-            </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground/60 mb-4">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="w-3.5 h-3.5" />
-                {dateFormatter.format(new Date(featuredPost.date))}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock3 className="w-3.5 h-3.5" />
-                {featuredPost.readingTimeMinutes} min read
-              </span>
-              <span>{featuredPost.author}</span>
-            </div>
-            <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-4 text-balance">
-              {featuredPost.title}
-            </h2>
-            <p className="text-base text-foreground/75 leading-relaxed max-w-3xl mb-6">
-              {featuredPost.excerpt}
-            </p>
-            <Link
-              to={`/blog/${featuredPost.id}`}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand to-brand-deep text-on-brand text-[11px] uppercase tracking-[0.3em] font-medium hover:opacity-90 transition-all"
-            >
-              Read the post
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </motion.article>
-        </section>
+      <section className="border-y border-[#1d1d1f]/10 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-px bg-[#1d1d1f]/10 md:grid-cols-3">
+          {NOTES.map(({ icon: Icon, title, copy }) => (
+            <article className="bg-white px-5 py-9 sm:px-7 sm:py-11" key={title}>
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f2f2ef] text-[#1d1d1f]"><Icon className="h-5 w-5" /></span>
+              <h2 className="mt-7 text-[1.4rem] font-semibold leading-tight tracking-[-0.035em] text-[#1d1d1f]">{title}</h2>
+              <p className="mt-3 max-w-sm text-sm leading-6 text-[#5e5e64]">{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        <section className="relative z-10 wl-measure px-4 sm:px-6 lg:px-10 xl:px-14 pb-24">
-          <div className="flex items-end justify-between gap-4 mb-8">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-brand/80 mb-2">
-                Recent essays
-              </p>
-              <h2 className="font-display italic text-3xl sm:text-4xl text-foreground">
-                Latest posts
-              </h2>
-            </div>
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24 lg:px-10">
+        <div className="rounded-[28px] bg-[#f2f2ef] p-7 sm:p-10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-[#4f4f55]"><ShieldCheck className="h-4 w-4 text-[#1d1d1f]" />A private draft is a good place to begin.</div>
+            <h2 className="mt-4 text-balance text-[clamp(2.1rem,4vw,3.5rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#1d1d1f]">Teach an assistant the call you keep putting off.</h2>
+            <p className="mt-4 max-w-xl text-base leading-7 text-[#5e5e64]">You can name it, describe the task in plain language, and refine the rules as you go.</p>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
-            {recentPosts.map((post, index) => (
-              <motion.article
-                key={post.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: index * 0.06 }}
-                className="wl-panel border border-white/10 p-5 sm:p-6 flex flex-col"
-              >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-foreground/60 mb-4">
-                  <span className="inline-flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5" />
-                    {dateFormatter.format(new Date(post.date))}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <Clock3 className="w-3.5 h-3.5" />
-                    {post.readingTimeMinutes} min read
-                  </span>
-                </div>
-                <h3 className="font-display italic text-2xl text-foreground mb-3 leading-tight text-balance">
-                  {post.title}
-                </h3>
-                <p className="text-sm text-foreground/72 leading-relaxed flex-1">{post.excerpt}</p>
-                <Link
-                  to={`/blog/${post.id}`}
-                  className="inline-flex items-center gap-2 mt-6 text-[11px] uppercase tracking-[0.3em] text-brand hover:text-brand/80 transition-colors"
-                >
-                  Read more
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-      </MarketingPageFrame>
-    </>
+        </div>
+      </section>
+    </MarketingPageFrame>
   );
 }

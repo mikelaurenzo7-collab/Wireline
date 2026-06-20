@@ -32,6 +32,7 @@ function AppRouter() {
         <Route path="/compare" element={<Compare />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/*" element={<Navigate to="/blog" replace />} />
         <Route path="/security" element={<Security />} />
         <Route path="/status" element={<Status />} />
         <Route path="/support" element={<SupportPage />} />
