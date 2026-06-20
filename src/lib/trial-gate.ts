@@ -1,35 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
- * Trial gate — the soft 14-day onboarding window + the hard 402 wall
- * at day 15. Mounted on every route that COSTS real money to serve
- * (outbound dial, bulk outbound, new agent creation).
+ * Subscription gate for routes that spend money or create deployable agents.
  *
- * Design:
+ * New accounts are created in `pending_activation`: they can safely inspect
+ * Wireline, but they cannot create agents or place outbound calls until a plan
+ * is selected. This matches the public paid-entry promise and prevents hidden
+ * free usage.
  *
- *   subscriptionStatus = "trialing"
- *     → tenant is inside their 14-day soft window
- *     → outbound dial allowed up to TRIAL_MAX_OUTBOUND calls
- *     → new agent creation allowed up to TRIAL_MAX_AGENTS
- *     → inbound calls (Vapi webhook) unrestricted — never break
- *       the bundled phone number
- *
- *   subscriptionStatus = "trial_expired"
- *     → trial window closed. 402 on every money-spending route.
- *     → inbound still works (so the agent answers a paying-curious
- *       caller who might convert the tenant).
- *
- *   subscriptionStatus = "active"
- *     → tenant has a real Stripe sub. Caps come from the tier in
- *       plan-catalog.ts (max_agents, etc.), not from trial limits.
- *
- *   subscriptionStatus = "past_due" / "canceled"
- *     → same as trial_expired — 402 on spend routes, inbound works.
- *
- * Returns 402 with a machine-readable code so the frontend can show
- * the upgrade modal:
- *   TRIAL_EXPIRED          — past day 14
- *   TRIAL_LIMIT_HIT        — at the agent or outbound cap mid-trial
- *   SUBSCRIPTION_REQUIRED  — past_due / canceled
+ * Legacy `trialing` tenants remain supported until their existing window ends.
+ * We deliberately keep the exported function names and legacy status handling
+ * for compatibility with existing users and migrations.
  */
 
 import type { Request, Response, NextFunction } from "express";
@@ -38,6 +18,7 @@ import * as schema from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { isOwnerEmail } from "./auth-service";
 
+/** Legacy trial constants. New signups do not enter this path. */
 export const TRIAL_DAYS = 14;
 export const TRIAL_MAX_AGENTS = 1;
 export const TRIAL_MAX_OUTBOUND = 25;
@@ -50,26 +31,31 @@ export type SignupAttribution = {
   utmCampaign?: string | null;
 };
 
+type SubscriptionGateCode =
+  | "ACTIVATION_REQUIRED"
+  | "TRIAL_EXPIRED"
+  | "TRIAL_LIMIT_HIT"
+  | "SUBSCRIPTION_REQUIRED"
+  | "EMAIL_UNVERIFIED";
+
 /**
- * Insert a settings row for a brand-new tenant with the trial state
- * primed. Called from authService.signUp() right after the user row
- * is inserted. Idempotent — does nothing if a settings row already
- * exists for the userId (Stripe-checkout-first signups land here too).
+ * Historical name retained because password and OAuth signup paths already
+ * import it. New users no longer receive a trial: their settings row is
+ * explicitly marked pending_activation until Stripe confirms a paid plan.
  */
 export async function startTrialForUser(
   userId: string,
   attribution: SignupAttribution = {},
   tx: any = drizzle,
 ): Promise<void> {
-  const trialEnds = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
   try {
     await tx
       .insert(schema.settings)
       .values({
         id: userId,
         userId,
-        subscriptionStatus: "trialing",
-        trialEndsAt: trialEnds,
+        subscriptionStatus: "pending_activation",
+        trialEndsAt: null,
         trialOutboundCount: 0,
         signupPlanInterest: attribution.preferredPlanId || null,
         signupWedge: attribution.signupWedge || null,
@@ -79,9 +65,7 @@ export async function startTrialForUser(
       })
       .onConflictDoNothing();
   } catch (err: any) {
-    // Non-fatal — caller can still complete signup. The daily sweep
-    // creates a settings row for any user who somehow slipped through.
-    log.warn("startTrialForUser failed (continuing)", {
+    log.warn("startTrialForUser activation setup failed (continuing)", {
       userId,
       error: err?.message ?? String(err),
     });
@@ -125,8 +109,8 @@ export async function saveSignupAttribution(
       .values({
         id: userId,
         userId,
-        subscriptionStatus: "trialing",
-        trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+        subscriptionStatus: "pending_activation",
+        trialEndsAt: null,
         trialOutboundCount: 0,
         ...attributionValues,
       })
@@ -144,17 +128,23 @@ export async function saveSignupAttribution(
 
 interface TrialCheck {
   ok: boolean;
-  status: "trialing" | "trial_expired" | "active" | "past_due" | "canceled" | "unknown";
+  status:
+    | "pending_activation"
+    | "trialing"
+    | "trial_expired"
+    | "active"
+    | "past_due"
+    | "canceled"
+    | "unknown";
   trialEndsAt: Date | null;
   trialOutboundCount: number;
   daysLeft: number | null;
 }
 
 /**
- * Look up the tenant's current trial state. Materializes nothing —
- * returns "active" for legacy accounts that predate the trial gate
- * so they stay grandfathered in (we don't suddenly paywall existing
- * tenants). Never throws — fails open with a warning logged.
+ * Legacy accounts without a settings row remain active so an activation-policy
+ * launch cannot accidentally lock out existing customers. New accounts always
+ * get the pending_activation row during signup.
  */
 async function getTrialState(userId: string): Promise<TrialCheck> {
   try {
@@ -187,9 +177,6 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
           : null;
     const daysLeft = endsAt ? Math.max(0, Math.ceil((endsAt.getTime() - now) / 86_400_000)) : null;
 
-    // Lazy expiry — if the daily sweep hasn't run yet, recognize the
-    // expiration on the next read so callers see the correct status
-    // without waiting for the cron tick.
     let effectiveStatus = row.status as TrialCheck["status"];
     if (effectiveStatus === "trialing" && endsAt && endsAt.getTime() < now) {
       effectiveStatus = "trial_expired";
@@ -203,7 +190,7 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
       daysLeft,
     };
   } catch (err: any) {
-    log.warn("getTrialState failed — allowing request through", {
+    log.warn("subscription gate state lookup failed — allowing request through", {
       userId,
       error: err?.message ?? String(err),
     });
@@ -219,7 +206,7 @@ async function getTrialState(userId: string): Promise<TrialCheck> {
 
 function trialBlock(
   res: Response,
-  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED" | "EMAIL_UNVERIFIED",
+  code: SubscriptionGateCode,
   reason: string,
   detail: Record<string, unknown>,
 ) {
@@ -227,15 +214,9 @@ function trialBlock(
 }
 
 /**
- * Look up whether the caller has confirmed their email. Returns true
- * when verified, false when not. NULL emailVerifiedAt means "not yet
- * verified"; any non-null timestamp counts as verified (we don't
- * re-validate by re-sending the link).
- *
- * Existing tenants from before the verification gate shipped are
- * backfilled to their createdAt in the migration so they stay green.
- * Never throws — fails open on DB hiccup so a transient Supabase
- * outage doesn't lock out paying tenants.
+ * Look up whether the caller has confirmed their email. Existing users are
+ * backfilled by migration; transient DB failures fail open so they do not
+ * block a paying customer.
  */
 async function isEmailVerified(userId: string): Promise<boolean> {
   try {
@@ -250,24 +231,19 @@ async function isEmailVerified(userId: string): Promise<boolean> {
       userId,
       error: err?.message ?? String(err),
     });
-    return true; // fail open
+    return true;
   }
 }
 
 /**
- * Express middleware — block NEW agent creation when the trial is
- * over or the tenant has already hit the 1-agent trial cap. Mount
- * on POST /api/agents before the insert handler runs.
+ * Block deployable agent creation until the account is verified and activated.
+ * Legacy trial caps remain in place only for tenants already trialing.
  */
 export async function enforceTrialAgentCap(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any)?.user?.id as string | undefined;
   if (!userId) return next();
   if (isOwnerEmail((req as any)?.user?.email)) return next();
 
-  // Email-verification gate runs FIRST. An unverified caller can poke
-  // the product but can't add agents — same 402 pattern as trial
-  // limits so the existing upgrade modal handles the EMAIL_UNVERIFIED
-  // code branch.
   if (!(await isEmailVerified(userId))) {
     return trialBlock(
       res,
@@ -279,6 +255,14 @@ export async function enforceTrialAgentCap(req: Request, res: Response, next: Ne
 
   const t = await getTrialState(userId);
 
+  if (t.status === "pending_activation") {
+    return trialBlock(
+      res,
+      "ACTIVATION_REQUIRED",
+      "Choose a plan before creating or deploying an agent.",
+      {},
+    );
+  }
   if (t.status === "trial_expired" || t.status === "canceled") {
     return trialBlock(res, "TRIAL_EXPIRED", "Your trial has ended — pick a plan to continue.", {
       trial_ended_at: t.trialEndsAt?.toISOString() ?? null,
@@ -324,24 +308,14 @@ export async function enforceTrialAgentCap(req: Request, res: Response, next: Ne
 }
 
 /**
- * Express middleware — block outbound dialing when the trial is
- * over or the tenant is already at the 25-call outbound cap. Mount
- * on POST /api/outbound/dial and POST /api/outbound/bulk BEFORE the
- * spend guards so the upgrade-required path is surfaced before the
- * generic spend-cap path.
- *
- * On successful pass during trial, atomically increments
- * trialOutboundCount so concurrent dials can't both squeak through.
- * Active subscriptions don't touch the counter.
+ * Block paid outbound dialing until the account is verified and activated.
+ * Legacy trial counters are only incremented for existing trial tenants.
  */
 export async function enforceTrialOutboundCap(req: Request, res: Response, next: NextFunction) {
   const userId = (req as any)?.user?.id as string | undefined;
   if (!userId) return next();
+  if (isOwnerEmail((req as any)?.user?.email)) return next();
 
-  // Email-verification gate first. An unverified caller can't burn
-  // Vapi minutes — both the trial gate and the spend gate would fire
-  // 402 downstream anyway, but EMAIL_UNVERIFIED is the more
-  // actionable error message for the upgrade modal.
   if (!(await isEmailVerified(userId))) {
     return trialBlock(
       res,
@@ -353,6 +327,14 @@ export async function enforceTrialOutboundCap(req: Request, res: Response, next:
 
   const t = await getTrialState(userId);
 
+  if (t.status === "pending_activation") {
+    return trialBlock(
+      res,
+      "ACTIVATION_REQUIRED",
+      "Choose a plan before placing a call.",
+      {},
+    );
+  }
   if (t.status === "trial_expired" || t.status === "canceled") {
     return trialBlock(res, "TRIAL_EXPIRED", "Your trial has ended — pick a plan to keep dialing.", {
       trial_ended_at: t.trialEndsAt?.toISOString() ?? null,
@@ -397,11 +379,8 @@ export async function enforceTrialOutboundCap(req: Request, res: Response, next:
 }
 
 /**
- * Daily sweep — flip subscriptionStatus from "trialing" to
- * "trial_expired" for any tenant whose trialEndsAt has passed.
- * Idempotent: only touches rows where the flip is actually needed.
- *
- * Returns the count of rows updated so the cron can log it.
+ * Legacy maintenance sweep for accounts that were already trialing before
+ * paid activation became the default. New accounts never enter this flow.
  */
 export async function sweepExpiredTrials(): Promise<number> {
   try {
