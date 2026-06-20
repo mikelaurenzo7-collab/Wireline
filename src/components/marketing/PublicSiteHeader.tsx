@@ -85,7 +85,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             </span>
           </Link>
 
-          <nav className={cn("hidden items-center gap-1 lg:flex", isAuth && "lg:hidden")} aria-label="Site">
+          <nav className={cn("hidden items-center gap-1 xl:flex", isAuth && "xl:hidden")} aria-label="Site">
             {NAV_LINKS.map((link) => {
               const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
               return (
@@ -135,7 +135,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
 
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-full border border-[#1d1d1f]/12 bg-white text-[#1d1d1f] transition hover:bg-[#f2f2ef] lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full border border-[#1d1d1f]/12 bg-white text-[#1d1d1f] transition hover:bg-[#f2f2ef] xl:hidden"
               aria-expanded={menuOpen}
               aria-controls="public-mobile-nav"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -149,7 +149,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
       </header>
 
       {menuOpen && (
-        <div id="public-mobile-nav" className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Site navigation">
+        <div id="public-mobile-nav" className="fixed inset-0 z-[60] xl:hidden" role="dialog" aria-modal="true" aria-label="Site navigation">
           <button className="absolute inset-0 h-full w-full bg-[#1d1d1f]/20" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
           <div className="absolute inset-x-4 top-[84px] overflow-hidden rounded-[22px] border border-[#1d1d1f]/12 bg-white shadow-[0_24px_70px_rgba(29,29,31,0.2)]">
             <div className="flex items-center justify-between border-b border-[#1d1d1f]/10 px-5 py-4">
