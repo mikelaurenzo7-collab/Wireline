@@ -1,11 +1,12 @@
 /**
  * Runtime model catalog.
  *
- * Managed Wireline traffic runs on OpenAI first, Gemini second. OpenRouter is
- * available only as an explicit per-agent operator selection.
+ * Managed Wireline voice traffic is OpenAI-first with a native Gemini fallback.
+ * OpenRouter remains an explicit per-agent override: a valid provider/model ID
+ * is passed through unchanged and is never silently substituted.
  *
- * The historical filename remains temporarily so existing imports continue to
- * compile while the provider-neutral modules are consolidated.
+ * The historical filename remains only as a source-compatibility bridge while
+ * provider-neutral modules are consolidated.
  */
 
 export const OPENAI_MODELS = {
@@ -27,8 +28,8 @@ export const GEMINI_STRUCTURED_FALLBACK_MODEL =
   process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_5;
 
 /**
- * Deprecated aliases retained only for source compatibility with legacy import
- * paths. They point to the OpenAI primary model and never select Anthropic.
+ * Deprecated aliases retained solely for existing internal imports. They point
+ * to OpenAI and never select or initialize Anthropic.
  */
 export const CLAUDE_MODELS = {
   HAIKU: OPENAI_STRUCTURED_PRIMARY_MODEL,
@@ -44,7 +45,9 @@ export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
 export interface VapiVoiceModelSelection {
   provider: VapiVoiceProvider;
   model: string;
+  /** Vapi-native model IDs attempted only for Wireline-managed providers. */
   fallbackModels?: string[];
+  /** True means the operator deliberately selected an OpenRouter model. */
   userSelected?: boolean;
 }
 
@@ -59,16 +62,16 @@ export interface VoiceModelOption {
   acceptsCustomModelId?: boolean;
 }
 
-/** Vapi-compatible managed voice defaults. GPT-4o is the compatibility-first voice model. */
+/** Vapi-compatible managed voice defaults. */
 export const VAPI_TENANT_DEFAULT_PROVIDER = "openai" as const;
 export const VAPI_SHOWCASE_PROVIDER = "openai" as const;
-export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [];
-export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
-export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
-export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_SHOWCASE_MODEL = OPENAI_MODELS.GPT_4O;
+export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
+export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
+export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
+/** The precise native fallback sent with a managed OpenAI call. */
+export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_VOICE_FALLBACK_MODEL];
 
 export function isOpenRouterModelId(value: unknown): value is string {
   if (typeof value !== "string") return false;
@@ -77,9 +80,19 @@ export function isOpenRouterModelId(value: unknown): value is string {
   return /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id);
 }
 
+export function isOpenAIModelId(value: unknown): value is string {
+  return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
+}
+
+export function isGeminiModelId(value: unknown): value is string {
+  return typeof value === "string" && value.trim().toLowerCase().includes("gemini");
+}
+
 /**
- * Only a valid explicit OpenRouter model overrides Wireline-managed routing.
- * Invalid or stale choices normalize to the OpenAI primary model.
+ * Resolves only supported Vapi-native managed models. A valid OpenRouter model
+ * is operator-owned and receives no managed fallback so the caller never sees
+ * an unrequested model substitution. Managed OpenAI receives Gemini fallback;
+ * an explicit native Gemini selection receives OpenAI fallback.
  */
 export function resolveVapiVoiceModelSelection(input?: {
   provider?: string | null;
@@ -91,15 +104,29 @@ export function resolveVapiVoiceModelSelection(input?: {
   if (provider === "openrouter" && isOpenRouterModelId(model)) {
     return { provider: "openrouter", model, userSelected: true };
   }
-  if (provider === "openai" && /^gpt-/i.test(model)) {
-    return { provider: "openai", model, userSelected: false };
+
+  if (provider === "google" && isGeminiModelId(model)) {
+    return {
+      provider: "google",
+      model,
+      fallbackModels: [VAPI_TENANT_DEFAULT_MODEL],
+      userSelected: true,
+    };
   }
-  if (provider === "google" && model.toLowerCase().includes("gemini")) {
-    return { provider: "google", model, userSelected: false };
+
+  if (provider === "openai" && isOpenAIModelId(model)) {
+    return {
+      provider: "openai",
+      model,
+      fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS],
+      userSelected: false,
+    };
   }
+
   return {
     provider: VAPI_TENANT_DEFAULT_PROVIDER,
     model: VAPI_TENANT_DEFAULT_MODEL,
+    fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS],
     userSelected: false,
   };
 }
@@ -114,6 +141,14 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     note: "Wireline default. Managed calls retry through Gemini if OpenAI is unavailable.",
   },
   {
+    provider: "google",
+    model: GEMINI_MODELS.FLASH_3_5,
+    label: "Gemini Flash",
+    speed: "fastest",
+    envKey: "GEMINI_API_KEY",
+    note: "Native alternative. If selected directly, calls retry through OpenAI if Gemini is unavailable.",
+  },
+  {
     provider: "openrouter",
     model: "openai/gpt-4o",
     label: "OpenRouter — choose a model",
@@ -121,7 +156,7 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
     envKey: "OPENROUTER_API_KEY",
     latencyWarning: true,
     acceptsCustomModelId: true,
-    note: "Advanced override. Choose a namespaced OpenRouter model ID for this agent.",
+    note: "Advanced override. Enter any valid OpenRouter provider/model ID; Wireline sends that exact selection.",
   },
 ] as const;
 
@@ -134,7 +169,7 @@ export function clampVoiceTemperature(value: unknown, fallback: number): number 
 
 export type TaskComplexity = "simple" | "medium" | "complex";
 
-/** USD per million tokens. GPT-5.5 rates match the public standard API price. */
+/** OpenAI owns managed structured work; Gemini is the failover path. */
 export const MODEL_PRICING = {
   [OPENAI_MODELS.GPT_5_5]: { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 5 },
   [OPENAI_MODELS.GPT_4O]: { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
@@ -147,7 +182,7 @@ export function selectModelForTask(_complexity: TaskComplexity): string {
   return OPENAI_STRUCTURED_PRIMARY_MODEL;
 }
 
-/** Legacy constant names, now OpenAI-native. */
+/** Legacy names retained only for source compatibility. */
 export const CLAUDE_REASONING_MODEL_DEFAULT: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
 export const CLAUDE_DIRECTOR_MODEL: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
 export const CLAUDE_PAINTER_MODEL: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
