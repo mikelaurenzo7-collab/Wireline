@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowUp, Check, CirclePlus, Loader2, Paperclip, Plus, Sparkles } from "lucide-react";
 import { authFetch, safeJson } from "../lib/api";
@@ -27,7 +27,7 @@ const integrationOptions: Array<{ key: IntegrationKey; label: string; detail: st
   { key: "microsoft", label: "Microsoft", detail: "Outlook and calendar", endpoint: "/api/oauth/microsoft/url" },
 ];
 
-function displayRole(value?: string) {
+function displayRole(value?: string | null) {
   return roles.find((role) => role.value === value)?.label ?? value?.replace(/_/g, " ") ?? "Assistant";
 }
 
@@ -74,6 +74,18 @@ export default function AgentStudioHome() {
     [agents, activeId],
   );
 
+  const refreshIntegrations = useCallback(async () => {
+    try {
+      const response = await authFetch("/api/oauth/crm/status");
+      const payload = await safeJson(response);
+      if (response.ok && payload && typeof payload === "object") {
+        setIntegrations(payload as IntegrationStatus);
+      }
+    } catch {
+      // Connection state is supplementary; the Studio remains usable offline.
+    }
+  }, []);
+
   useEffect(() => {
     if (loading || handledFirstLoad.current) return;
     handledFirstLoad.current = true;
@@ -91,17 +103,11 @@ export default function AgentStudioHome() {
   }, [messages, sending]);
 
   useEffect(() => {
-    let cancelled = false;
-    authFetch("/api/oauth/crm/status")
-      .then((response) => (response.ok ? response.json() : {}))
-      .then((data) => {
-        if (!cancelled && data && typeof data === "object") setIntegrations(data as IntegrationStatus);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void refreshIntegrations();
+    const onWindowFocus = () => void refreshIntegrations();
+    window.addEventListener("focus", onWindowFocus);
+    return () => window.removeEventListener("focus", onWindowFocus);
+  }, [refreshIntegrations]);
 
   function addAssistantMessage(content: string) {
     setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", content }]);
@@ -207,9 +213,17 @@ export default function AgentStudioHome() {
           ? payload.url
           : "";
       if (!response.ok || !url) throw new Error(errorText(payload, `Could not start ${option.label} connection.`));
+
       const popup = window.open(url, "wireline_oauth", "width=600,height=760,left=120,top=80");
       if (!popup) throw new Error("Allow popups for this site to connect your account.");
-      addAssistantMessage(`Finish connecting ${option.label} in the secure window. I will use it when it is available.`);
+
+      addAssistantMessage(`Finish connecting ${option.label} in the secure window. Wireline will refresh its connection status when you return.`);
+      const closeCheck = window.setInterval(() => {
+        if (!popup.closed) return;
+        window.clearInterval(closeCheck);
+        void refreshIntegrations();
+      }, 600);
+      window.setTimeout(() => window.clearInterval(closeCheck), 5 * 60_000);
     } catch (error) {
       addAssistantMessage(error instanceof Error ? error.message : `Could not connect ${option.label}.`);
     } finally {
@@ -353,7 +367,7 @@ export default function AgentStudioHome() {
                 </div>
                 <span className="studio-count">{connectedCount}</span>
               </div>
-              <p className="studio-muted-copy">Connect only what this agent needs. You can add more later.</p>
+              <p className="studio-muted-copy">Connect only what this agent needs. Wireline checks again when you return.</p>
               <div className="studio-integration-list">
                 {integrationOptions.map((option) => {
                   const connected = integrations[option.key]?.connected === true;
