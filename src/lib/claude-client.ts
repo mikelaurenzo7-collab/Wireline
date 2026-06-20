@@ -1,4 +1,4 @@
-/**
+/*
  * Provider-neutral structured runtime adapter.
  *
  * Historical callers still import this path while the repository is being
@@ -27,7 +27,8 @@ export type RuntimeToolUseBlock = {
 };
 
 export type RuntimeContentBlock = RuntimeTextBlock | RuntimeToolUseBlock;
-export type RuntimeStopReason = "end_turn" | "tool_use";
+/** `pause_turn` is retained only for legacy recipe compatibility. */
+export type RuntimeStopReason = "end_turn" | "tool_use" | "pause_turn";
 
 /**
  * Loose on purpose: legacy recipes still pass provider-shaped tool descriptors.
