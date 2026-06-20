@@ -1,69 +1,37 @@
 {
-  "name": "Wireline",
+  "name": "Wireline — AI Call Assistant",
   "short_name": "Wireline",
-  "description": "AI voice and email agents for your business — powered by Claude.",
+  "description": "Wireline calls everyday phone lines, waits on hold, and texts you the answer.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "theme_color": "#7C3AED",
-  "background_color": "#F3EFFA",
+  "theme_color": "#1D1D1F",
+  "background_color": "#F7F7F5",
   "lang": "en-US",
-  "categories": ["business", "productivity", "communications"],
+  "categories": ["productivity", "utilities", "lifestyle"],
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/wireline-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wireline-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wireline-icon-1024.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wireline-icon-rounded.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/wireline-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/wireline-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/wireline-icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "/wireline-icon-rounded.png", "sizes": "1024x1024", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
-      "name": "Triage",
-      "short_name": "Triage",
-      "description": "Open hot leads and compliance inbox",
-      "url": "/triage",
-      "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
-    },
-    {
-      "name": "Call Logs",
-      "short_name": "Calls",
-      "description": "View recorded calls and agent responses",
-      "url": "/logs",
-      "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
-    },
-    {
-      "name": "Agents",
-      "short_name": "Agents",
-      "description": "Manage your AI agents",
+      "name": "Agent Studio",
+      "short_name": "Studio",
+      "description": "Create and teach your call assistant",
       "url": "/agents",
+      "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Get started",
+      "short_name": "Start",
+      "description": "See plans and start with Wireline",
+      "url": "/pricing",
       "icons": [{ "src": "/wireline-icon-512.png", "sizes": "512x512" }]
     }
   ],
