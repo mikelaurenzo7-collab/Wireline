@@ -1,21 +1,4 @@
-/**
- * AgentsContext — a single, shared fetch of the operator's agents.
- *
- * Two consumers need the same list: (1) the nav, which hides the "Chat"
- * surface entirely when the operator has zero agents (so an empty page
- * never takes up space), and (2) the per-agent chat page rail. Fetching
- * once here keeps them in sync and avoids duplicate /api/agents calls.
- */
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { useLocation } from "react-router-dom";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { authFetch } from "../lib/api";
 
@@ -42,28 +25,21 @@ const AgentsContext = createContext<AgentsContextValue>({
   refresh: () => {},
 });
 
-/**
- * Fired by any flow that creates/deletes an agent (e.g. FleetSettings).
- * The provider listens and refetches so a newly added agent pops into the
- * chat rail — and the rest of the app — without a full reload.
- */
+/** Fired after an agent is created or removed so the Studio roster refreshes. */
 export const AGENTS_CHANGED_EVENT = "wireline:agents-changed";
 
-/** Hydrate roster from Director fleet when /api/agents is temporarily empty. */
-export const AGENTS_HYDRATE_EVENT = "wireline:agents-hydrate";
-
-function isAgentLike(a: unknown): a is {
+function isAgentLike(value: unknown): value is {
   id: string;
   name?: string | null;
   role?: string | null;
   channel?: string | null;
 } {
   return (
-    typeof a === "object" &&
-    a !== null &&
-    "id" in a &&
-    typeof (a as Record<string, unknown>).id === "string" &&
-    (a as Record<string, unknown>).id !== ""
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof (value as Record<string, unknown>).id === "string" &&
+    (value as Record<string, unknown>).id !== ""
   );
 }
 
@@ -72,30 +48,16 @@ function normalizeChannel(raw: string | null | undefined): WorkspaceAgentSummary
   return undefined;
 }
 
-function toAgentSummary(a: {
-  id: string;
-  name?: string | null;
-  role?: string | null;
-  channel?: string | null;
-}): WorkspaceAgentSummary {
-  return {
-    id: a.id,
-    name: a.name || "Untitled agent",
-    role: a.role ?? null,
-    channel: normalizeChannel(a.channel),
-  };
-}
-
 function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
   const list = Array.isArray((data as Record<string, unknown>)?.agents)
     ? ((data as Record<string, unknown>).agents as unknown[])
     : [];
-  return list.filter(isAgentLike).map(toAgentSummary);
-}
-
-function parseFleetPayload(fleet: unknown): WorkspaceAgentSummary[] {
-  if (!Array.isArray(fleet)) return [];
-  return fleet.filter(isAgentLike).map(toAgentSummary);
+  return list.filter(isAgentLike).map((agent) => ({
+    id: agent.id,
+    name: agent.name || "Untitled agent",
+    role: agent.role ?? null,
+    channel: normalizeChannel(agent.channel),
+  }));
 }
 
 async function fetchAgentsWithRetry(attempts = 2): Promise<{
@@ -103,66 +65,35 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<{
   degraded: boolean;
 }> {
   let lastError: unknown;
-  for (let i = 0; i < attempts; i++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     try {
-      const r = await authFetch("/api/agents");
-      const body = r.ok ? await r.json().catch(() => null) : await r.json().catch(() => null);
-      if (r.ok && body) {
-        return {
-          agents: parseAgentsPayload(body),
-          degraded: body.degraded === true,
-        };
+      const response = await authFetch("/api/agents");
+      const body = await response.json().catch(() => null);
+      if (response.ok && body) {
+        return { agents: parseAgentsPayload(body), degraded: body.degraded === true };
       }
-      if (body && (r.status === 503 || body.degraded === true)) {
-        return {
-          agents: parseAgentsPayload(body),
-          degraded: true,
-        };
+      if (body && (response.status === 503 || body.degraded === true)) {
+        return { agents: parseAgentsPayload(body), degraded: true };
       }
-      lastError = new Error(`HTTP ${r.status}`);
-    } catch (e) {
-      lastError = e;
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
     }
-    if (i < attempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)));
-    }
+    if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
   }
   throw lastError;
 }
 
-/** Push fleet rows into AgentsContext when the agents API is empty. */
-export function hydrateAgentsFromFleet(fleet: WorkspaceAgentSummary[]): void {
-  if (typeof window === "undefined" || fleet.length === 0) return;
-  window.dispatchEvent(new CustomEvent(AGENTS_HYDRATE_EVENT, { detail: fleet }));
-}
-
 export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const location = useLocation();
   const [agents, setAgents] = useState<WorkspaceAgentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [degraded, setDegraded] = useState(false);
   const [nonce, setNonce] = useState(0);
   const hasLoadedOnceRef = useRef(false);
-  const bootstrapRanRef = useRef(false);
-  const bootstrapAttemptsRef = useRef(0);
   const focusDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refresh = useCallback(() => setNonce((n) => n + 1), []);
-
-  const runBootstrap = useCallback(() => {
-    void authFetch("/api/auth/bootstrap")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.founderSeeded) refresh();
-      })
-      .catch(() => {
-        if (bootstrapAttemptsRef.current < 2) {
-          bootstrapAttemptsRef.current += 1;
-          window.setTimeout(runBootstrap, 2000);
-        }
-      });
-  }, [refresh]);
+  const refresh = useCallback(() => setNonce((value) => value + 1), []);
 
   useEffect(() => {
     if (!user) {
@@ -170,30 +101,22 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       setDegraded(false);
       setLoading(false);
       hasLoadedOnceRef.current = false;
-      bootstrapRanRef.current = false;
-      bootstrapAttemptsRef.current = 0;
       return;
     }
 
-    if (!bootstrapRanRef.current) {
-      bootstrapRanRef.current = true;
-      runBootstrap();
-    }
-
     let cancelled = false;
-    const isBackgroundRefresh = hasLoadedOnceRef.current;
-    if (!isBackgroundRefresh) setLoading(true);
+    if (!hasLoadedOnceRef.current) setLoading(true);
 
     fetchAgentsWithRetry()
-      .then(({ agents: list, degraded: fetchDegraded }) => {
+      .then(({ agents: list, degraded: nextDegraded }) => {
         if (cancelled) return;
         setAgents(list);
-        setDegraded(fetchDegraded);
+        setDegraded(nextDegraded);
         hasLoadedOnceRef.current = true;
       })
       .catch(() => {
         if (cancelled) return;
-        setAgents((prev) => (prev.length > 0 ? prev : []));
+        setAgents((current) => (current.length > 0 ? current : []));
         setDegraded(true);
         hasLoadedOnceRef.current = true;
       })
@@ -204,7 +127,7 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user, nonce, refresh, runBootstrap]);
+  }, [user, nonce]);
 
   useEffect(() => {
     if (!user) return;
@@ -213,26 +136,14 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       if (focusDebounceRef.current) clearTimeout(focusDebounceRef.current);
       focusDebounceRef.current = setTimeout(() => refresh(), 1500);
     };
-    const onHydrate = (event: Event) => {
-      const fleet = parseFleetPayload((event as CustomEvent<unknown>).detail);
-      if (fleet.length === 0) return;
-      setAgents((prev) => (prev.length > 0 ? prev : fleet));
-      setDegraded(false);
-    };
     window.addEventListener(AGENTS_CHANGED_EVENT, onChanged);
     window.addEventListener("focus", onFocus);
-    window.addEventListener(AGENTS_HYDRATE_EVENT, onHydrate);
     return () => {
       window.removeEventListener(AGENTS_CHANGED_EVENT, onChanged);
       window.removeEventListener("focus", onFocus);
-      window.removeEventListener(AGENTS_HYDRATE_EVENT, onHydrate);
       if (focusDebounceRef.current) clearTimeout(focusDebounceRef.current);
     };
   }, [user, refresh]);
-
-  useEffect(() => {
-    if (user && location.pathname.startsWith("/chat")) refresh();
-  }, [location.pathname, user, refresh]);
 
   const value = useMemo<AgentsContextValue>(
     () => ({ agents, loading, degraded, hasAgents: agents.length > 0, refresh }),
