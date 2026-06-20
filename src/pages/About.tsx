@@ -5,92 +5,19 @@ import WirelineMark from "../components/WirelineMark";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const PRINCIPLES = [
-  {
-    title: "Respect for your time.",
-    copy: "Routine calls should not take over your workday, your lunch break, or the hour after you get home.",
-  },
-  {
-    title: "Clear boundaries.",
-    copy: "You decide what an assistant can handle, what it should never do, and when it needs to hand a conversation back to you.",
-  },
-  {
-    title: "Plain language over product theater.",
-    copy: "Wireline is built to make a call, wait through the friction, and return a useful answer. That is the point.",
-  },
+  { title: "Respect for your time.", copy: "Routine calls should not take over your workday, your lunch break, or the hour after you get home." },
+  { title: "Clear boundaries.", copy: "You decide what an assistant can handle, what it should never do, and when it needs to hand a conversation back to you." },
+  { title: "Plain language over product theater.", copy: "Wireline is built to make a call, wait through the friction, and return a useful answer. That is the point." },
 ] as const;
 
 export default function About() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
-      <PageMeta
-        title="About Wireline"
-        description="Wireline is a personal AI call assistant built to give people time back from routine phone work."
-        path="/about"
-      />
-
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:px-10">
-        <div className="max-w-3xl">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">About Wireline</p>
-          <h1 className="mt-4 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">
-            A better way to deal with<br />
-            <em className="font-normal">routine calls.</em>
-          </h1>
-          <p className="mt-7 max-w-2xl text-pretty text-[clamp(1.18rem,2.5vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">
-            Phone lines still run too much of everyday life. Wireline was built to help with the calls that interrupt your day: the pharmacy, doctor, school, airline, landlord, restaurant, or support line.
-          </p>
-        </div>
-      </section>
-
-      <section className="border-y border-[#1d1d1f]/10 bg-white">
-        <div className="mx-auto grid max-w-6xl gap-px bg-[#1d1d1f]/10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="bg-white px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
-            <div className="grid h-16 w-16 place-items-center rounded-[20px] bg-[#1d1d1f] text-white"><WirelineMark className="h-8 w-8" strokeWidth={120} /></div>
-            <p className="mt-7 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Built with accountability</p>
-            <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#1d1d1f]">Built by Michael Laurenzo.</h2>
-          </div>
-          <div className="bg-white px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
-            <p className="max-w-xl text-base leading-7 text-[#4f4f55]">
-              Wireline is independently built and supported by its founder. Product feedback does not disappear into a generic queue; it reaches the person responsible for deciding what changes next.
-            </p>
-            <p className="mt-5 max-w-xl text-base leading-7 text-[#4f4f55]">
-              The goal is simple: give people a calm, private way to hand off the phone work that keeps piling up.
-            </p>
-            <a href="mailto:support@trywireline.com" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#1d1d1f] transition hover:text-[#4f4f55]">
-              <Mail className="h-4 w-4" />support@trywireline.com
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24 lg:px-10">
-        <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
-          <div>
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">What guides the product</p>
-            <h2 className="mt-4 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#1d1d1f]">An assistant should feel useful, not overwhelming.</h2>
-          </div>
-          <p className="max-w-xl text-lg font-medium leading-8 text-[#5e5e64]">Wireline is intentionally designed around a small number of real moments: make the call, follow the rules you set, and bring back the useful part.</p>
-        </div>
-
-        <div className="mt-12 grid gap-3 md:grid-cols-3">
-          {PRINCIPLES.map((principle) => (
-            <article className="rounded-2xl border border-[#1d1d1f]/12 bg-white p-6" key={principle.title}>
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#f2f2ef] text-[#1d1d1f]"><Check className="h-4 w-4" /></span>
-              <h3 className="mt-7 text-xl font-semibold tracking-[-0.035em] text-[#1d1d1f]">{principle.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-[#5e5e64]">{principle.copy}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-t border-[#1d1d1f]/10 bg-[#1d1d1f] px-5 py-16 text-white sm:px-8 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-white/72"><ShieldCheck className="h-4 w-4" />Your assistant begins as a private draft.</div>
-            <h2 className="mt-4 max-w-2xl text-balance text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em]">Start with the call you keep putting off.</h2>
-          </div>
-          <Link to="/pricing" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:bg-[#f2f2ef] active:scale-[0.985]">Start at $7 <ArrowRight className="h-4 w-4" /></Link>
-        </div>
-      </section>
+      <PageMeta title="About Wireline" description="Wireline is a personal AI call assistant built to give people time back from routine phone work." path="/about" />
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:px-10"><div className="max-w-3xl"><p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">About Wireline</p><h1 className="mt-4 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">A better way to deal with<br /><em className="font-normal">routine calls.</em></h1><p className="mt-7 max-w-2xl text-pretty text-[clamp(1.18rem,2.5vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">Phone lines still run too much of everyday life. Wireline was built to help with the calls that interrupt your day: the pharmacy, doctor, school, airline, landlord, restaurant, or support line.</p></div></section>
+      <section className="border-y border-[#1d1d1f]/10 bg-white"><div className="mx-auto grid max-w-6xl gap-px bg-[#1d1d1f]/10 lg:grid-cols-[0.9fr_1.1fr]"><div className="bg-white px-5 py-10 sm:px-8 sm:py-14 lg:px-10"><div className="grid h-16 w-16 place-items-center rounded-[20px] bg-[#1d1d1f] text-white"><WirelineMark className="h-8 w-8" strokeWidth={120} /></div><p className="mt-7 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Built with accountability</p><h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#1d1d1f]">Built by Michael Laurenzo.</h2></div><div className="bg-white px-5 py-10 sm:px-8 sm:py-14 lg:px-10"><p className="max-w-xl text-base leading-7 text-[#4f4f55]">Wireline is independently built and supported by its founder. Product feedback does not disappear into a generic queue; it reaches the person responsible for deciding what changes next.</p><p className="mt-5 max-w-xl text-base leading-7 text-[#4f4f55]">The goal is simple: give people a calm, private way to hand off the phone work that keeps piling up.</p><a href="mailto:support@trywireline.com" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-[#1d1d1f] transition hover:text-[#4f4f55]"><Mail className="h-4 w-4" />support@trywireline.com</a></div></div></section>
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24 lg:px-10"><div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-end"><div><p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">What guides the product</p><h2 className="mt-4 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#1d1d1f]">An assistant should feel useful, not overwhelming.</h2></div><p className="max-w-xl text-lg font-medium leading-8 text-[#5e5e64]">Wireline is intentionally designed around a small number of real moments: make the call, follow the rules you set, and bring back the useful part.</p></div><div className="mt-12 grid gap-3 md:grid-cols-3">{PRINCIPLES.map((principle) => <article className="rounded-2xl border border-[#1d1d1f]/12 bg-white p-6" key={principle.title}><span className="grid h-9 w-9 place-items-center rounded-full bg-[#f2f2ef] text-[#1d1d1f]"><Check className="h-4 w-4" /></span><h3 className="mt-7 text-xl font-semibold tracking-[-0.035em] text-[#1d1d1f]">{principle.title}</h3><p className="mt-3 text-sm leading-6 text-[#5e5e64]">{principle.copy}</p></article>)}</div></section>
+      <section className="border-t border-[#1d1d1f]/10 bg-[#1d1d1f] px-5 py-16 text-white sm:px-8 sm:py-20"><div className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[1fr_auto] lg:items-center"><div><div className="inline-flex items-center gap-2 text-sm font-medium text-white/72"><ShieldCheck className="h-4 w-4" />Your assistant begins as a private draft.</div><h2 className="mt-4 max-w-2xl text-balance text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em]">Start with the call you keep putting off.</h2></div><Link to="/pricing" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:bg-[#f2f2ef] active:scale-[0.985]">Start at $9 <ArrowRight className="h-4 w-4" /></Link></div></section>
     </MarketingPageFrame>
   );
 }
