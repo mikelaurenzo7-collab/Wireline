@@ -12,7 +12,7 @@ type Props = {
 
 export default function MarketingStickyCta({
   href = "/pricing",
-  label = "Start at $7",
+  label = "Start at $9",
   secondaryHref = "/showcase",
   secondaryLabel = "Hear a demo",
   className,
