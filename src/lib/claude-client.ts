@@ -29,24 +29,31 @@ export type RuntimeToolUseBlock = {
 export type RuntimeContentBlock = RuntimeTextBlock | RuntimeToolUseBlock;
 export type RuntimeStopReason = "end_turn" | "tool_use";
 
+/**
+ * Loose on purpose: legacy recipes still pass provider-shaped tool descriptors.
+ * Only tools with a Wireline `input_schema` are selected as structured output.
+ */
 export type RuntimeTool = {
-  name: string;
+  name?: string;
   description?: string;
-  input_schema: Record<string, unknown>;
+  input_schema?: Record<string, unknown>;
+  type?: string;
+  [key: string]: unknown;
 };
 
 export type RuntimeMessageParam = {
-  role: "user" | "assistant";
-  content: string | Array<{ type?: string; text?: string }>;
+  role: string;
+  content: unknown;
 };
 
 export type RuntimeRequest = {
   model?: string;
   max_tokens?: number;
-  system?: string | Array<{ type?: string; text?: string }>;
+  system?: unknown;
   messages: RuntimeMessageParam[];
   tools?: RuntimeTool[];
-  tool_choice?: { type?: string; name?: string };
+  tool_choice?: unknown;
+  [key: string]: unknown;
 };
 
 export type RuntimeMessage = {
@@ -83,20 +90,47 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function extractSystemText(system: RuntimeRequest["system"]): string {
-  if (typeof system === "string") return system;
-  if (Array.isArray(system)) return system.map((block) => block.text || "").join("\n");
+function extractText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(extractText).filter(Boolean).join("\n");
+  if (!value || typeof value !== "object") return "";
+
+  const block = value as Record<string, unknown>;
+  if (typeof block.text === "string") return block.text;
+  if (typeof block.content === "string") return block.content;
+  if (Array.isArray(block.content)) return extractText(block.content);
+
+  // Preserve the presence of a legacy document attachment in the prompt. The
+  // OpenAI-native file ingestion migration is tracked separately; we never
+  // pretend its bytes were read when they were not passed as an input_file.
+  if (block.type === "document") {
+    const title = typeof block.title === "string" ? block.title : "attached document";
+    return `[${title} attached; use only explicitly supplied extracted text.]`;
+  }
   return "";
 }
 
-function extractMessageText(content: RuntimeMessageParam["content"]): string {
-  if (typeof content === "string") return content;
-  return content.map((block) => block.text || "").join("\n");
+function extractSystemText(system: unknown): string {
+  return extractText(system);
 }
 
-function firstTool(body: RuntimeRequest): RuntimeTool | null {
-  const tool = body.tools?.[0];
-  return tool && typeof tool.name === "string" ? tool : null;
+function extractMessageText(content: unknown): string {
+  return extractText(content);
+}
+
+function structuredOutputTool(body: RuntimeRequest): Required<Pick<RuntimeTool, "name" | "input_schema">> | null {
+  for (const tool of body.tools || []) {
+    if (
+      tool &&
+      typeof tool.name === "string" &&
+      tool.name.trim() &&
+      tool.input_schema &&
+      typeof tool.input_schema === "object"
+    ) {
+      return { name: tool.name, input_schema: tool.input_schema };
+    }
+  }
+  return null;
 }
 
 function parseStructuredJson(text: string): unknown {
@@ -158,7 +192,7 @@ async function callOpenAI(body: RuntimeRequest, options?: RuntimeRequestOptions)
   const requestedModel = String(body.model || "").trim();
   const model = requestedModel.startsWith("gpt-") ? requestedModel : OPENAI_STRUCTURED_PRIMARY_MODEL;
   const systemPrompt = extractSystemText(body.system);
-  const targetTool = firstTool(body);
+  const targetTool = structuredOutputTool(body);
   const startedAt = Date.now();
 
   const response = await fetch("https://api.openai.com/v1/responses", {
@@ -172,7 +206,7 @@ async function callOpenAI(body: RuntimeRequest, options?: RuntimeRequestOptions)
       model,
       instructions: systemPrompt || undefined,
       input: body.messages.map((message) => ({
-        role: message.role,
+        role: message.role === "assistant" ? "assistant" : "user",
         content: extractMessageText(message.content),
       })),
       max_output_tokens: body.max_tokens ?? 4096,
@@ -244,7 +278,7 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
   const systemPrompt = extractSystemText(body.system);
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: systemPrompt || undefined });
-  const targetTool = firstTool(body);
+  const targetTool = structuredOutputTool(body);
   const contents = body.messages.map((message) => ({
     role: message.role === "assistant" ? ("model" as const) : ("user" as const),
     parts: [{ text: extractMessageText(message.content) }],
