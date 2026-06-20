@@ -1,5 +1,6 @@
 /** Stripe-backed plan catalog. Backend billing source of truth. */
 
+/** Blended variable voice cost reserve used for pricing guardrails. */
 export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
 
 export type StripePlanId = "personal" | "personal-plus" | "business-starter" | "starter" | "scale";
@@ -19,125 +20,135 @@ export type StripePlan = {
   price_usd_annual: number;
   annualPriceIdEnv: string;
   overagePriceIdEnv?: string;
+  /** Retained for existing subscribers but not offered as a public acquisition plan. */
+  public?: boolean;
 };
 
+/**
+ * Launch catalog principles:
+ * - Personal is intentionally light-use, not an unlimited calling bundle.
+ * - Business has a clear operational entry plan and grows through add-on agents.
+ * - Usage allowances reserve room for voice, model, carrier, support, and payment costs.
+ */
 export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
-    name: "Everyday",
-    price_usd_monthly: 7,
+    name: "Personal",
+    price_usd_monthly: 9,
     max_agents: 1,
-    voice_minutes_monthly: 60,
-    overage_per_min_usd: 0.2,
+    voice_minutes_monthly: 30,
+    overage_per_min_usd: 0.25,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
-    extra_agent_price_usd: 7,
+    extra_agent_price_usd: 9,
     extraAgentPriceIdEnv: "STRIPE_PERSONAL_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 67,
+    price_usd_annual: 86,
     annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PERSONAL_OVERAGE_PRICE_ID",
     features: [
-      "1 configurable agent for everyday calls",
+      "1 personal call assistant",
       "1 dedicated Wireline number",
-      "60 voice minutes / month",
-      "Siri, widgets, mobile app, and web console",
-      "Call summaries, reminders, and follow-up queue",
-      "Overage at $0.20 / min",
+      "30 voice minutes each month",
+      "Call summaries and follow-up queue",
+      "Web, mobile, Siri, and widget access",
+      "Add agents for $9 / month",
+      "Overage at $0.25 / minute",
     ],
   },
   {
     id: "personal-plus",
-    name: "Plus",
-    price_usd_monthly: 15,
+    name: "Personal Plus",
+    price_usd_monthly: 19,
     max_agents: 2,
-    voice_minutes_monthly: 180,
-    overage_per_min_usd: 0.18,
+    voice_minutes_monthly: 90,
+    overage_per_min_usd: 0.22,
     included_phone_numbers: 1,
     priceIdEnv: "STRIPE_PERSONAL_PLUS_PRICE_ID",
-    extra_agent_price_usd: 7,
+    extra_agent_price_usd: 9,
     extraAgentPriceIdEnv: "STRIPE_PERSONAL_PLUS_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 144,
+    price_usd_annual: 182,
     annualPriceIdEnv: "STRIPE_PERSONAL_PLUS_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PERSONAL_PLUS_OVERAGE_PRICE_ID",
+    public: false,
     features: [
-      "2 agents for home, family, or side projects",
-      "180 voice minutes / month",
+      "2 personal assistants",
+      "90 voice minutes each month",
       "Calendar and email context",
       "Priority memory and follow-up queue",
-      "Agent Studio customization basics",
-      "Overage at $0.18 / min",
+      "Add agents for $9 / month",
+      "Overage at $0.22 / minute",
     ],
   },
   {
     id: "business-starter",
-    name: "Studio",
-    price_usd_monthly: 29,
-    max_agents: 4,
-    voice_minutes_monthly: 500,
-    overage_per_min_usd: 0.16,
+    name: "Business Studio",
+    price_usd_monthly: 99,
+    max_agents: 2,
+    voice_minutes_monthly: 300,
+    overage_per_min_usd: 0.2,
     included_phone_numbers: 2,
     priceIdEnv: "STRIPE_BUSINESS_STARTER_PRICE_ID",
-    extra_agent_price_usd: 9,
+    extra_agent_price_usd: 19,
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_STARTER_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 278,
+    price_usd_annual: 950,
     annualPriceIdEnv: "STRIPE_BUSINESS_STARTER_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_STARTER_OVERAGE_PRICE_ID",
     features: [
-      "4 agents for personal or business workflows",
-      "2 dedicated numbers",
-      "500 voice minutes / month",
-      "Full Agent Studio and Training",
-      "Custom instructions, hours, routing, and handoff rules",
-      "Calendar, SMS, email, and lightweight CRM workflows",
-      "Overage at $0.16 / min",
+      "2 agents and 2 business numbers",
+      "300 voice minutes each month",
+      "Inbound routing, business hours, and handoff rules",
+      "Calendar, SMS, email, and contact workflows",
+      "Call review, summaries, and coaching signals",
+      "Add agents for $19 / month",
+      "Overage at $0.20 / minute",
     ],
   },
   {
     id: "starter",
-    name: "Operator",
-    price_usd_monthly: 59,
-    max_agents: 8,
-    voice_minutes_monthly: 1_200,
-    overage_per_min_usd: 0.14,
+    name: "Business Operator",
+    price_usd_monthly: 249,
+    max_agents: 5,
+    voice_minutes_monthly: 1_000,
+    overage_per_min_usd: 0.18,
     included_phone_numbers: 4,
     priceIdEnv: "STRIPE_PRO_PRICE_ID",
-    extra_agent_price_usd: 12,
+    extra_agent_price_usd: 29,
     extraAgentPriceIdEnv: "STRIPE_PRO_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 566,
+    price_usd_annual: 2_390,
     annualPriceIdEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_PRO_OVERAGE_PRICE_ID",
     features: [
-      "8 agents for heavier call coverage",
-      "4 dedicated numbers",
-      "1,200 voice minutes / month",
-      "Agent Studio, Training, Live Calls, and Analytics",
-      "Outbound calling + email/SMS follow-up workflows",
-      "Team sharing for household or business collaborators",
-      "Webhook + Action Engine",
-      "Overage at $0.14 / min",
+      "5 agents and 4 business numbers",
+      "1,000 voice minutes each month",
+      "Live operations, review workflows, and analytics",
+      "Outbound calling with email and SMS follow-up",
+      "Team collaboration and escalation controls",
+      "Add agents for $29 / month",
+      "Overage at $0.18 / minute",
     ],
   },
   {
     id: "scale",
-    name: "Custom",
-    price_usd_monthly: 0,
-    max_agents: 25,
-    voice_minutes_monthly: 5_000,
-    overage_per_min_usd: 0.12,
+    name: "Business Scale",
+    price_usd_monthly: 699,
+    max_agents: 10,
+    voice_minutes_monthly: 3_000,
+    overage_per_min_usd: 0.16,
     included_phone_numbers: 10,
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
-    extra_agent_price_usd: 0,
+    extra_agent_price_usd: 39,
     extraAgentPriceIdEnv: "STRIPE_BUSINESS_EXTRA_AGENT_PRICE_ID",
-    price_usd_annual: 0,
+    price_usd_annual: 6_710,
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
-      "For high-volume or specialized business packages",
-      "25+ agents and custom minute pools",
-      "Multiple locations, departments, or brands",
-      "Dedicated onboarding and success support",
-      "Security review, SSO, and audit exports",
-      "Custom integrations and pricing",
+      "10 agents and 10 business numbers",
+      "3,000 voice minutes each month",
+      "Multi-location routing and department coverage",
+      "Quality review, coaching, and audit exports",
+      "Priority support and implementation guidance",
+      "Add agents for $39 / month",
+      "Overage at $0.16 / minute",
     ],
   },
 ];
@@ -157,11 +168,9 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
 
 export function planById(id: string | null | undefined): StripePlan | null {
   if (!id) return null;
-  if (id === "lite" || id === "business-lite")
-    return STRIPE_PLANS.find((p) => p.id === "business-starter") || null;
-  if (id === "pro") return STRIPE_PLANS.find((p) => p.id === "starter") || null;
-  if (id === "business" || id === "enterprise")
-    return STRIPE_PLANS.find((p) => p.id === "scale") || null;
+  if (id === "lite" || id === "business-lite") return STRIPE_PLANS.find((p) => p.id === "business-starter") || null;
+  if (id === "pro" || id === "business-growth") return STRIPE_PLANS.find((p) => p.id === "starter") || null;
+  if (id === "business" || id === "enterprise") return STRIPE_PLANS.find((p) => p.id === "scale") || null;
   return STRIPE_PLANS.find((p) => p.id === id) || null;
 }
 
@@ -180,5 +189,6 @@ export function plansForClient() {
     configured: !!process.env[p.priceIdEnv],
     annual_configured: !!process.env[p.annualPriceIdEnv],
     contact_sales: p.price_usd_monthly === 0,
+    public: p.public !== false,
   }));
 }
