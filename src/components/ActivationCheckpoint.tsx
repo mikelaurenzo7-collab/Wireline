@@ -31,7 +31,17 @@ export default function ActivationCheckpoint() {
 
     const params = new URLSearchParams(location.search);
     const billing = params.get("billing");
-    if (billing === "success" || billing === "canceled") return;
+    if (billing === "success" || billing === "canceled") {
+      // Stripe has handed the customer back to Wireline. Do not compete with
+      // that return state by immediately reopening plan selection while the
+      // webhook is still reconciling the subscription.
+      try {
+        sessionStorage.setItem(CHECKPOINT_SHOWN_KEY, "1");
+      } catch {
+        // ignore
+      }
+      return;
+    }
 
     try {
       if (sessionStorage.getItem(CHECKPOINT_SHOWN_KEY) === "1") return;
