@@ -51,14 +51,14 @@ export default function LandingPage() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 to="/pricing"
-                className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[#1d1d1f] px-7 text-base font-semibold text-white shadow-[0_14px_30px_rgba(29,29,31,0.16)] transition hover:bg-black active:scale-[0.985] sm:w-auto"
+                className="marketing-btn-primary min-h-14 w-full px-7 text-base font-semibold sm:w-auto"
               >
-                Start at $7
+                Start at $9
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/showcase"
-                className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full border border-[#1d1d1f]/18 bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:border-[#1d1d1f]/45 hover:bg-[#f2f2ef] active:scale-[0.985] sm:w-auto"
+                className="marketing-btn-secondary min-h-14 w-full px-7 text-base font-semibold sm:w-auto"
               >
                 <PhoneCall className="h-5 w-5" />
                 Hear an assistant
