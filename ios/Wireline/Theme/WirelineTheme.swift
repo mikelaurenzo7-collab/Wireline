@@ -1,46 +1,48 @@
 import SwiftUI
 
-/// Wireline brand layer — Stitch Noir native.
-/// Tokens mirror the web Stitch Studio migration: near-black canvas, charcoal
-/// glass panels, violet primary action, lavender accents, and compact system UI.
+/// Wireline's native foundation: quiet warm surfaces, direct typography, and one
+/// high-contrast action color. It intentionally matches the active web product.
 enum Brand {
     // ── Surfaces ─────────────────────────────────────────────────────────────
-    static let canvas = Color(hex: 0x0A0A0C)
-    static let panel = Color(hex: 0x131315)
-    static let panel2 = Color(hex: 0x1B1B1D)
-    static let raised = Color(hex: 0x242428)
+    static let canvas = Color(hex: 0xF7F7F5)
+    static let panel = Color.white
+    static let panel2 = Color(hex: 0xF2F2EF)
+    static let raised = Color(hex: 0xEAEAE6)
 
     // ── Text ────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0xF4F2F7)
-    static let text2 = Color(hex: 0xC7C4D8)
-    static let text3 = Color(hex: 0x908FA1)
+    static let text = Color(hex: 0x1D1D1F)
+    static let text2 = Color(hex: 0x54545B)
+    static let text3 = Color(hex: 0x6E6E73)
 
-    // ── Violet accent ───────────────────────────────────────────────────────
-    static let violet = Color(hex: 0x5D5CFF)
-    static let violetSoft = Color(hex: 0xC1C1FF)
-    static let violetDeep = Color(hex: 0x4643E9)
-    static let accentTint = Color(hex: 0x5D5CFF, opacity: 0.14)
+    // ── Accent ──────────────────────────────────────────────────────────────
+    static let accent = Color(hex: 0x1D1D1F)
+    static let accentSoft = Color(hex: 0xEAEAE6)
+    static let accentDeep = Color.black
+    static let accentTint = Color(hex: 0x1D1D1F, opacity: 0.08)
 
     // ── Semantic ────────────────────────────────────────────────────────────
-    static let destructive = Color(hex: 0xEF4444)
-    static let signal = violetSoft
-    static let success = Color(hex: 0x3DDCBA)
+    static let destructive = Color(hex: 0xB42318)
+    static let signal = text3
+    static let success = Color(hex: 0x267A52)
 
-    // ── Legacy aliases ──────────────────────────────────────────────────────
-    static let purple = violet
-    static let purpleDeep = violetDeep
+    // ── Compatibility aliases ───────────────────────────────────────────────
+    static let violet = accent
+    static let violetSoft = accentSoft
+    static let violetDeep = accentDeep
+    static let purple = accent
+    static let purpleDeep = accentDeep
     static let paper = canvas
-    static let paperWarm = panel
+    static let paperWarm = panel2
     static let ink = text
 
     // ── Radius ──────────────────────────────────────────────────────────────
-    static let radiusSm: CGFloat = 8
-    static let radiusMd: CGFloat = 14
+    static let radiusSm: CGFloat = 10
+    static let radiusMd: CGFloat = 16
     static let radiusLg: CGFloat = 24
 }
 
 extension Color {
-    /// Opaque RGB from a 24-bit hex literal, e.g. `Color(hex: 0x5D5CFF)`.
+    /// Opaque RGB from a 24-bit hex literal, e.g. `Color(hex: 0x1D1D1F)`.
     init(hex: UInt32, opacity: Double = 1.0) {
         let r = Double((hex >> 16) & 0xFF) / 255.0
         let g = Double((hex >> 8) & 0xFF) / 255.0
@@ -51,7 +53,7 @@ extension Color {
 
 extension Font {
     static func display(_ style: Font.TextStyle, weight: Font.Weight = .bold) -> Font {
-        Font.system(style, design: .serif).weight(weight)
+        Font.system(style, design: .rounded).weight(weight)
     }
 
     static func mono(_ style: Font.TextStyle, weight: Font.Weight = .medium) -> Font {
@@ -66,68 +68,43 @@ extension Font {
 struct TouchPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.spring(response: 0.24, dampingFraction: 0.62, blendDuration: 0), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.78 : 1)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
     }
 }
 
 struct BrandMeshBackground: View {
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Brand.canvas
-                Circle()
-                    .fill(Brand.violet.opacity(0.26))
-                    .frame(width: proxy.size.width * 0.82)
-                    .blur(radius: 86)
-                    .offset(x: -proxy.size.width * 0.28, y: -proxy.size.height * 0.36)
-                Circle()
-                    .fill(Brand.violetSoft.opacity(0.12))
-                    .frame(width: proxy.size.width * 0.68)
-                    .blur(radius: 92)
-                    .offset(x: proxy.size.width * 0.32, y: -proxy.size.height * 0.22)
-                Circle()
-                    .fill(Brand.success.opacity(0.07))
-                    .frame(width: proxy.size.width * 0.7)
-                    .blur(radius: 100)
-                    .offset(x: -proxy.size.width * 0.1, y: proxy.size.height * 0.38)
-                LinearGradient(
-                    colors: [Color.white.opacity(0.04), Color.clear, Color.black.opacity(0.34)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
-            .ignoresSafeArea()
-        }
+        LinearGradient(
+            colors: [Brand.canvas, Brand.panel2.opacity(0.74), Brand.canvas],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
     }
 }
 
 extension View {
-    /// Stitch Noir shell: violet tint, near-black canvas, dark color scheme.
+    /// Standard Wireline shell. Views remain deliberately light and legible.
     func wirelineBrand() -> some View {
-        self.tint(Brand.violet)
+        self.tint(Brand.accent)
             .scrollContentBackground(.hidden)
             .background(BrandMeshBackground())
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(.light)
     }
 
     func touchPress() -> some View {
         buttonStyle(TouchPressStyle())
     }
 
-    /// Glassy panel card matching web `.stitch-panel`.
-    func brandGlowCard(radius: CGFloat = Brand.radiusLg, borderOpacity: Double = 0.16) -> some View {
-        background(
-            LinearGradient(
-                colors: [Brand.panel2.opacity(0.92), Brand.panel.opacity(0.86)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+    /// Quiet elevated card for grouped information and actions.
+    func brandGlowCard(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 0.9) -> some View {
+        background(Brand.panel)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Brand.raised.opacity(borderOpacity), lineWidth: 1)
             )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .stroke(Color.white.opacity(borderOpacity), lineWidth: 1)
-        )
     }
 }
