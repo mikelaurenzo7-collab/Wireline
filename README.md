@@ -1,95 +1,52 @@
 # Wireline
 
-**Your personal AI call concierge.**
+Wireline is an AI communications workspace for personal and business agents.
 
-Wireline lets regular people delegate phone work: call the pharmacy, doctor, school, airline, landlord, restaurant, or support line and get a clear result back. If you run a business, use the same Agent Studio and console to configure business hours, routing, scripts, handoffs, and follow-up workflows.
+The product workflow is simple:
 
-Built by [Michael Laurenzo](https://trywireline.com/about). Each agent can use the runtime that best fits its call, latency, and cost profile.
+1. Build an agent.
+2. Train it with instructions, knowledge, workflows, and integrations.
+3. Run it across voice, SMS, and email.
+4. Review outcomes and improve the next interaction.
 
----
-
-## Plans & pricing
-
-| Plan         | Price/mo | Included minutes/mo | Overage rate | Included voice agents | Extra agent |
-| ------------ | -------- | ------------------- | ------------ | --------------------- | ----------- |
-| **Everyday** | $7       | 60                  | $0.20        | 1                     | +$7/mo      |
-| **Plus**     | $15      | 180                 | $0.18        | 2                     | +$7/mo      |
-| **Studio**   | $29      | 500                 | $0.16        | 4                     | +$9/mo      |
-| **Operator** | $59      | 1,200               | $0.14        | 8                     | +$12/mo     |
-| **Custom**   | Custom   | 5,000               | $0.12        | 25                    | Custom      |
-
-Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this table in sync with the catalog; `npm run docs:check` fails when pricing or runtime copy drifts.
-
-## Launch posture
-
-Wireline is built around a simple consumer promise: delegate the call, preserve context, and get a clear outcome. The product makes every high-cost external dependency explicit rather than silently pretending a call, integration, or action completed.
-
-- **Clear public product surface:** The landing page leads with a single job-to-be-done, direct pricing, an audible demo, and a restrained monochrome presentation.
-- **Configurable agents:** Agent Studio supports individual personal agents and business workflows without requiring separate products or disconnected setup flows.
-- **Intentional runtime routing:** Wireline-managed calls start on Gemini Flash. If the managed primary is unavailable, the call retries through OpenAI. An operator can deliberately set a namespaced OpenRouter model for a specific agent; that override is never silently substituted.
-- **Tenant safety:** Server-side authorization, database RLS, encryption for stored tenant secrets, CSP controls, and per-route cost guards protect the multi-tenant product boundary.
-- **Operational transparency:** Missing integrations return actionable failure states. Agents are instructed not to claim an action they do not have the tools to complete.
-
----
-
-## Why we exist
-
-Phone work is still fragmented: hold queues, repeated calls, and answers that never make it back to the right person. Wireline makes that work delegable while retaining context, control, and a clear record of what happened.
-
-Agents can be tuned for warm, playful, or authoritative conversations, but the product rule is constant: an agent never claims an action it does not have a tool for.
-
-## Live demo — call any of these numbers right now
-
-| Agent     | Vibe    | Number         | Plays                    |
-| --------- | ------- | -------------- | ------------------------ |
-| **Sarah** | warm    | (630) 642-5661 | General Wireline support |
-| **Liam**  | playful | (630) 581-1834 | Sales & plan comparison  |
-| **Tyler** | warm    | (564) 238-9455 | Technical support        |
-| **Maya**  | playful | (630) 642-5927 | Onboarding & demos       |
-
-The managed voice runtime starts on **Gemini Flash**. When Gemini is unavailable or rejected by the voice carrier, Wireline retries through **OpenAI**. Advanced operators can explicitly choose an **OpenRouter** provider/model ID per agent. Deepgram Nova-3 handles inbound audio; ElevenLabs Flash v2.5 handles synthesis.
-
----
-
-## Quick start
+## Local development
 
 ```bash
-# Clone
-git clone https://github.com/mikelaurenzo7-collab/wireline.git
-cd wireline
-
-# Install (Node 22+)
 npm install
-
-# Env — copy .env.example, fill in the secrets you have
 cp .env.example .env
-
-# Boot the dev server (Vite frontend + Express API)
-npm run dev          # → http://localhost:3000
-
-# Type-check + tests + production build
-npm run verify
-
-# Production preview
-npm run build && npm run start
+npm run dev
 ```
 
-## Tech stack
+Wireline requires Node 22 or newer.
 
-| Layer             | Choice                                 | Why                                                                            |
-| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
-| **Frontend**      | React 19 + Vite + TypeScript           | Fast HMR, tree-shaken bundles, every route lazy-loaded                         |
-| **Styling**       | Tailwind CSS 4 + Shadcn UI             | Atomic utility classes combined with accessible component primitives           |
-| **API**           | Express on Vercel serverless functions | One handler tree, deployed as one function                                     |
-| **Database**      | Postgres on Supabase, Drizzle ORM      | Type-safe queries, idempotent migrations, indexed hot paths                    |
-| **Voice runtime** | Vapi + ElevenLabs Flash v2.5           | Live voice orchestration with a consistent synthesis path                      |
-| **LLM**           | Gemini → OpenAI, explicit OpenRouter   | Managed cost/latency default plus a deliberate per-agent override              |
+## Verification
 
-## Contributing
+```bash
+npm run lint
+npm run runtime:policy:check
+npm run build
+npm run smoke:server
+```
 
-This repo is the property of Wireline. External contributions aren't open yet, but if you're interested in working on it, [reach out](https://trywireline.com/about).
+`npm run verify` runs the production build plus a bundled-server import smoke test.
 
-Engineering docs: [docs/README.md](./docs/README.md) (architecture, design system, deploy, SOC 2). New engineers start with [CONTRIBUTING.md](./CONTRIBUTING.md).
+## Architecture
+
+- **Frontend:** React, Vite, TypeScript, Tailwind utilities, and accessible shared primitives.
+- **API:** Express server routes deployed through Vercel.
+- **Data:** Postgres with Drizzle migrations.
+- **Identity:** server-side session authentication and user-scoped authorization.
+- **Runtime:** OpenAI is the managed primary and Gemini is the automatic fallback. OpenRouter is an explicit agent-level option.
+- **Communications:** Twilio/Vapi voice execution plus connected email, SMS, calendar, contacts, and CRM workflows.
+- **Billing:** Stripe-backed server-side entitlements.
+
+Pricing, model selection, and billing behavior are defined in code-owned catalogs and runtime modules.
+
+## Product rules
+
+- Keep the product focused on Build → Train → Run → Review.
+- Preserve authorization, billing, webhook validation, rate limits, CSP, and tenant-scoped data access.
+- Keep the interface readable: warm light surfaces, graphite actions, neutral borders, visible focus states, and clear hierarchy.
 
 ## License
 
