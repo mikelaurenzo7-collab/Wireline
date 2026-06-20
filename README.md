@@ -2,9 +2,9 @@
 
 **Your personal AI call concierge.**
 
-Wireline lets regular people delegate phone work: call the pharmacy, doctor, school, airline, landlord, restaurant, or support line and get a clear result back. If you run a business, use the same agent studio and console to configure business hours, routing, scripts, handoffs, and follow-up workflows.
+Wireline lets regular people delegate phone work: call the pharmacy, doctor, school, airline, landlord, restaurant, or support line and get a clear result back. If you run a business, use the same Agent Studio and console to configure business hours, routing, scripts, handoffs, and follow-up workflows.
 
-Built by [Michael Laurenzo](https://trywireline.com/about). Model-flexible by design: each agent can use the runtime that best fits its call, latency, and cost profile.
+Built by [Michael Laurenzo](https://trywireline.com/about). Each agent can use the runtime that best fits its call, latency, and cost profile.
 
 ---
 
@@ -18,15 +18,15 @@ Built by [Michael Laurenzo](https://trywireline.com/about). Model-flexible by de
 | **Operator** | $59      | 1,200               | $0.14        | 8                     | +$12/mo     |
 | **Custom**   | Custom   | 5,000               | $0.12        | 25                    | Custom      |
 
-Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this README table in sync with the catalog; `npm run docs:check` fails when pricing or runtime-model copy drifts.
+Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this table in sync with the catalog; `npm run docs:check` fails when pricing or runtime copy drifts.
 
 ## Launch posture
 
-Wireline is built around a simple consumer promise: delegate the call, preserve context, and get a clear outcome. The product is structured to make each high-cost external dependency explicit rather than silently pretending a call, integration, or action completed.
+Wireline is built around a simple consumer promise: delegate the call, preserve context, and get a clear outcome. The product makes every high-cost external dependency explicit rather than silently pretending a call, integration, or action completed.
 
 - **Clear public product surface:** The landing page leads with a single job-to-be-done, direct pricing, an audible demo, and a restrained monochrome presentation.
-- **Configurable agents:** The Agent Studio supports individual personal agents and business workflows without requiring separate products or disconnected setup flows.
-- **Cost-aware model routing:** Claude Sonnet 4.6 handles the realtime voice default; Claude Opus 4.7 handles deeper, non-realtime reasoning. Operators can choose from the supported runtime catalog when a different latency, quality, or cost trade-off is appropriate.
+- **Configurable agents:** Agent Studio supports individual personal agents and business workflows without requiring separate products or disconnected setup flows.
+- **Intentional runtime routing:** Wireline-managed calls start on Gemini Flash. If the managed primary is unavailable, the call retries through OpenAI. An operator can deliberately set a namespaced OpenRouter model for a specific agent; that override is never silently substituted.
 - **Tenant safety:** Server-side authorization, database RLS, encryption for stored tenant secrets, CSP controls, and per-route cost guards protect the multi-tenant product boundary.
 - **Operational transparency:** Missing integrations return actionable failure states. Agents are instructed not to claim an action they do not have the tools to complete.
 
@@ -47,7 +47,7 @@ Agents can be tuned for warm, playful, or authoritative conversations, but the p
 | **Tyler** | warm    | (564) 238-9455 | Technical support        |
 | **Maya**  | playful | (630) 642-5927 | Onboarding & demos       |
 
-Every agent runs **Claude Sonnet 4.6** on the live voice path — the smartest model in the latency class voice can tolerate. **Claude Opus 4.7** runs the _reasoning_ layer behind every call: pre-call briefs, post-call analysis, daily brief generation, and agent coaching. Deepgram Nova-3 STT handles inbound audio; ElevenLabs Flash v2.5 handles synthesis.
+The managed voice runtime starts on **Gemini Flash**. When Gemini is unavailable or rejected by the voice carrier, Wireline retries through **OpenAI**. Advanced operators can explicitly choose an **OpenRouter** provider/model ID per agent. Deepgram Nova-3 handles inbound audio; ElevenLabs Flash v2.5 handles synthesis.
 
 ---
 
@@ -79,11 +79,11 @@ npm run build && npm run start
 | Layer             | Choice                                 | Why                                                                            |
 | ----------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
 | **Frontend**      | React 19 + Vite + TypeScript           | Fast HMR, tree-shaken bundles, every route lazy-loaded                         |
-| **Styling**       | Tailwind CSS 4 + Shadcn UI             | Atomic utility classes combined with accessible, unstyled component primitives |
+| **Styling**       | Tailwind CSS 4 + Shadcn UI             | Atomic utility classes combined with accessible component primitives           |
 | **API**           | Express on Vercel serverless functions | One handler tree, deployed as one function                                     |
-| **Database**      | Postgres on Supabase, Drizzle ORM      | Type-safe queries, idempotent migrations, B-tree indexed hot paths             |
-| **Voice runtime** | Vapi + ElevenLabs Flash v2.5           | Live latency under 250 ms                                                      |
-| **LLM**           | Per-agent runtime catalog              | Choose a voice-quality, latency, and cost trade-off intentionally              |
+| **Database**      | Postgres on Supabase, Drizzle ORM      | Type-safe queries, idempotent migrations, indexed hot paths                    |
+| **Voice runtime** | Vapi + ElevenLabs Flash v2.5           | Live voice orchestration with a consistent synthesis path                      |
+| **LLM**           | Gemini → OpenAI, explicit OpenRouter   | Managed cost/latency default plus a deliberate per-agent override              |
 
 ## Contributing
 
