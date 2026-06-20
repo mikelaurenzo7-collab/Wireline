@@ -24,6 +24,8 @@
     "src/components/director/**",
     "src/components/layout/DirectorLayout.tsx",
     "src/lib/director-*.ts",
-    "src/routes/director-routes.ts"
+    "src/routes/director-routes.ts",
+    "src/components/FastStartWizard.tsx",
+    "src/components/FleetSetupNudge.tsx"
   ]
 }
