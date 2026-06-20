@@ -803,10 +803,7 @@ export default function LiveOps() {
                               </span>
                             </div>
                             <div className="w-full bg-brand/5 h-1.5 rounded-full overflow-hidden border border-brand/5">
-                              <div
-                                className="bg-brand h-full rounded-full"
-                                style={{ width: "64%" }}
-                              />
+                              <div className="bg-brand h-full rounded-full w-[64%]" />
                             </div>
                           </div>
                           <div>
@@ -819,10 +816,7 @@ export default function LiveOps() {
                               </span>
                             </div>
                             <div className="w-full bg-violet-500/5 h-1.5 rounded-full overflow-hidden border border-violet-500/5">
-                              <div
-                                className="bg-violet-400 h-full rounded-full"
-                                style={{ width: "22%" }}
-                              />
+                              <div className="bg-violet-400 h-full rounded-full w-[22%]" />
                             </div>
                           </div>
                           <div>
@@ -835,10 +829,7 @@ export default function LiveOps() {
                               </span>
                             </div>
                             <div className="w-full bg-violet-500/5 h-1.5 rounded-full overflow-hidden border border-violet-500/5">
-                              <div
-                                className="bg-violet-400 h-full rounded-full"
-                                style={{ width: "14%" }}
-                              />
+                              <div className="bg-violet-400 h-full rounded-full w-[14%]" />
                             </div>
                           </div>
                         </div>

@@ -8,9 +8,6 @@
     },
     "appwrite-plugin": {
       "enabled": true
-    },
-    "clerk": {
-      "enabled": true
     }
   }
 }
