@@ -1,256 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- third-party API responses are vendor-defined JSON envelopes that don't ship with types. */
-/**
- * Claude Structured Output & Completion Helpers
- * ---------------------------------------------------------------------------
- * Core primitives for getting structured JSON and plain text from Claude.
- * Uses tool-use for structured extraction and plain messages for free-form
- * generation. Includes a resilient completion wrapper with OpenAI fallback.
- */
-
-import Anthropic from "@anthropic-ai/sdk";
-import {
-  selectModelForTask,
-  DEFAULT_MODEL,
-  OPENAI_MODELS,
-  resolveAdaptiveEffort,
-  type TaskComplexity,
-} from "./claude-models";
+import { DEFAULT_MODEL, OPENAI_MODELS, selectModelForTask, type TaskComplexity } from "./claude-models";
 import { recordUsage } from "./claude-audit";
 import { getClient } from "./claude-client";
 
-/* ────────────────────────────────────────────────────────────────────────
- *  Tool-call helpers — getting structured JSON out of Claude.
- *  We use tool-use rather than `output_config.format` because tool descriptions
- *  steer Claude better for these structured-extraction workloads.
- * ──────────────────────────────────────────────────────────────────── */
+export type ToolSchema = {
+  name: string;
+  description?: string;
+  input_schema: Record<string, unknown>;
+};
 
-export type ToolSchema = Anthropic.Tool;
-
-interface StructuredOptions {
+type StructuredOptions = {
   system: string;
   user: string;
   tool: ToolSchema;
-  /** Adds adaptive thinking + xhigh effort for tough analyses. */
   deepThink?: boolean;
-  /** Marks `system` as the cacheable prefix (wraps it in a single
-   *  cache_control: ephemeral block). Recommended when `system` is large and
-   *  reused byte-for-byte across calls (e.g. an agent's persona + knowledge).
-   *
-   *  Caveats — Anthropic caching is a prefix match, so the marker only pays off
-   *  when BOTH hold:
-   *   - the system block clears the model's minimum cacheable prefix
-   *     (~4096 tokens on Opus-tier, ~2048 on Sonnet). Below that the marker is
-   *     a silent no-op — no error, just cache_creation_input_tokens=0.
-   *   - the prefix is byte-stable across calls. Keep per-request volatile data
-   *     (transcripts, customer details, timestamps) in `user`, never in
-   *     `system`; otherwise every call writes a fresh entry and none are read.
-   *  Verify real hits via response.usage.cache_read_input_tokens (recorded in
-   *  the audit log by recordUsage). */
   cacheSystem?: boolean;
   model?: string;
-  /** Task complexity for automatic model tiering. Overrides model if specified.
-   *  simple = Haiku (fast, cheap), medium = Sonnet (balanced), complex = Opus (deep) */
   complexity?: TaskComplexity;
-  /** Hard ceiling on output tokens for this call (default 4096). */
   maxTokens?: number;
-  /** Abort when the HTTP client disconnects (Director SSE). */
   signal?: AbortSignal;
-}
+};
 
-/** Result from runStructuredWithThinking that includes optional reasoning from thinking blocks. */
-export interface StructuredResult<T> {
-  result: T;
-  /** Concatenated text from Claude's adaptive thinking blocks (if any). */
-  thinking?: string;
-  /** Approximate duration of the thinking phase in milliseconds. */
-  thinkingDurationMs?: number;
-}
-
-/**
- * Run a single tool-call and return the parsed input. The tool is `tool_choice`
- * forced so Claude must produce a structured payload.
- *
- * Cost optimization: Use complexity='simple' for classification/extraction
- * to save 60-80% on token costs vs Opus. Use 'complex' only for deep reasoning.
- */
-export async function runStructured<T = any>(opts: StructuredOptions): Promise<T> {
-  const { result } = await runStructuredWithThinking<T>(opts);
-  return result;
-}
-
-/**
- * Like `runStructured`, but also extracts and returns Claude's adaptive thinking
- * blocks alongside the structured payload. Use this when you need to surface
- * reasoning to the UI.
- */
-function isTransientStructuredError(err: unknown): boolean {
-  const e = err as { status?: number; message?: string };
-  if (e?.status === 529 || e?.status === 503 || e?.status === 502) return true;
-  const msg = (e?.message ?? "").toLowerCase();
-  return /overloaded|temporarily|fetch failed|econnreset|etimedout/.test(msg);
-}
-
-function buildStructuredMessageBody(
-  opts: StructuredOptions,
-  model: string,
-  useAdaptiveThinking: boolean,
-): Anthropic.MessageCreateParams {
-  const body: Anthropic.MessageCreateParams = {
-    model,
-    max_tokens: opts.maxTokens ?? 4096,
-    system: opts.cacheSystem
-      ? [
-          {
-            type: "text",
-            text: opts.system,
-            cache_control: { type: "ephemeral" },
-          },
-        ]
-      : opts.system,
-    tools: [opts.tool],
-    tool_choice: useAdaptiveThinking ? { type: "auto" } : { type: "tool", name: opts.tool.name },
-    messages: [{ role: "user", content: opts.user }],
-  };
-
-  if (useAdaptiveThinking) {
-    body.thinking = { type: "adaptive" };
-    // Reasoning-speed dial: ANTHROPIC_DEEP_EFFORT=low|medium|high (default high).
-    body.output_config = { effort: resolveAdaptiveEffort() };
-  }
-
-  return body;
-}
-
-function parseStructuredResponse<T>(
-  response: Anthropic.Message,
-  toolName: string,
-): { toolResult: T; thinking?: string } {
-  const thinkingParts: string[] = [];
-  let toolResult: T | undefined;
-
-  for (const block of response.content) {
-    if (block.type === "thinking" && "thinking" in block) {
-      thinkingParts.push((block as any).thinking);
-    }
-    if (block.type === "tool_use" && block.name === toolName) {
-      toolResult = block.input as T;
-    }
-  }
-
-  if (toolResult === undefined) {
-    throw new Error(
-      `Claude returned no ${toolName} tool_use block (stop_reason=${response.stop_reason})`,
-    );
-  }
-
-  const thinking = thinkingParts.length > 0 ? thinkingParts.join("\n\n") : undefined;
-  return { toolResult, thinking };
-}
-
-export async function runStructuredWithThinking<T = any>(
-  opts: StructuredOptions,
-): Promise<StructuredResult<T>> {
-  const client = getClient();
-  const model =
-    opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
-  const useAdaptiveThinking = opts.deepThink === true;
-
-  let lastErr: unknown = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const t0 = Date.now();
-      let response = (await client.messages.create(
-        buildStructuredMessageBody(opts, model, useAdaptiveThinking),
-      )) as Anthropic.Message;
-      let totalMs = Date.now() - t0;
-      recordUsage(model, response, totalMs);
-
-      let parsed: { toolResult: T; thinking?: string };
-      try {
-        parsed = parseStructuredResponse<T>(response, opts.tool.name);
-      } catch (parseErr) {
-        if (!useAdaptiveThinking) throw parseErr;
-        const retryT0 = Date.now();
-        response = (await client.messages.create(
-          buildStructuredMessageBody({ ...opts, deepThink: false }, model, false),
-        )) as Anthropic.Message;
-        totalMs = Date.now() - retryT0;
-        recordUsage(model, response, totalMs);
-        parsed = parseStructuredResponse<T>(response, opts.tool.name);
-      }
-
-      return {
-        result: parsed.toolResult,
-        thinking: parsed.thinking,
-        thinkingDurationMs: parsed.thinking ? totalMs : undefined,
-      };
-    } catch (err) {
-      lastErr = err;
-      if (!isTransientStructuredError(err) || attempt === 1) break;
-      const jitter = 250 + Math.random() * 250;
-      await new Promise((r) => setTimeout(r, jitter));
-    }
-  }
-
-  // Attempt fallbacks if Claude failed
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const geminiModel = genAI.getGenerativeModel({
-        model: "gemini-3.5-flash",
-        systemInstruction: opts.system,
-      });
-      const prompt = `${opts.user}\n\nPlease generate a JSON object matching this schema:\n${JSON.stringify(opts.tool.input_schema)}`;
-      const result = await geminiModel.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-        },
-      });
-      const text = result.response.text();
-      const parsed = JSON.parse(text) as T;
-      return {
-        result: parsed,
-        thinking: "Structured response served via Gemini 3.5 Flash fallback.",
-      };
-    } catch (geminiErr) {
-      try {
-        const { log } = await import("./server-context");
-        log.warn("Gemini structured fallback failed, trying next fallback", {
-          error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
-        });
-      } catch {}
-    }
-  }
-
-  if (process.env.OPENROUTER_API_KEY) {
-    try {
-      const { runOpenRouterStructured } = await import("./openrouter-structured");
-      return await runOpenRouterStructured<T>({
-        model: "deepseek/deepseek-chat",
-        system: opts.system,
-        user: opts.user,
-        tool: opts.tool,
-        maxTokens: opts.maxTokens,
-        signal: opts.signal,
-      });
-    } catch (openRouterErr) {
-      try {
-        const { log } = await import("./server-context");
-        log.warn("OpenRouter structured fallback failed", {
-          error: openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr),
-        });
-      } catch {}
-    }
-  }
-
-  throw lastErr;
-}
-
-/* ────────────────────────────────────────────────────────────────────────
- *  Streaming structured output — for real-time thinking/response display.
- * ──────────────────────────────────────────────────────────────────── */
+export type StructuredResult<T> = { result: T; thinking?: string; thinkingDurationMs?: number };
 
 export interface StreamCallbacks {
   onThinkingStart?: () => void;
@@ -260,389 +30,104 @@ export interface StreamCallbacks {
   onError?: (error: Error) => void;
 }
 
-/**
- * Stream a structured tool-call with real-time thinking callbacks.
- * Uses the Anthropic streaming API to emit thinking chunks as they arrive,
- * then returns the final structured result.
- */
-export async function runStructuredStream<T = any>(
-  opts: StructuredOptions,
-  callbacks: StreamCallbacks,
-): Promise<StructuredResult<T>> {
-  const client = getClient();
-  const model =
-    opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
-
-  const useAdaptiveThinking = opts.deepThink === true;
-
-  const body: Anthropic.MessageCreateParams = {
-    model,
-    max_tokens: opts.maxTokens ?? 4096,
-    system: opts.cacheSystem
-      ? [
-          {
-            type: "text",
-            text: opts.system,
-            cache_control: { type: "ephemeral" },
-          },
-        ]
-      : opts.system,
-    tools: [opts.tool],
-    tool_choice: useAdaptiveThinking ? { type: "auto" } : { type: "tool", name: opts.tool.name },
-    messages: [{ role: "user", content: opts.user }],
-  };
-
-  if (useAdaptiveThinking) {
-    body.thinking = { type: "adaptive" };
-    // Reasoning-speed dial: ANTHROPIC_DEEP_EFFORT=low|medium|high (default high).
-    body.output_config = { effort: resolveAdaptiveEffort() };
-  }
-
-  const t0 = Date.now();
-  let thinkingStarted = false;
-  const thinkingParts: string[] = [];
-  let _toolJson = "";
-  let inToolInput = false;
-
-  try {
-    const stream = client.messages.stream(body, { signal: opts.signal });
-
-    for await (const event of stream) {
-      if (opts.signal?.aborted) {
-        throw new DOMException("Director stream aborted", "AbortError");
-      }
-      if (event.type === "content_block_start") {
-        const block = (event as any).content_block;
-        if (block?.type === "thinking") {
-          thinkingStarted = true;
-          callbacks.onThinkingStart?.();
-        } else if (block?.type === "tool_use") {
-          inToolInput = true;
-        }
-      } else if (event.type === "content_block_delta") {
-        const delta = (event as any).delta;
-        if (delta?.type === "thinking_delta" && delta.thinking) {
-          thinkingParts.push(delta.thinking);
-          callbacks.onThinkingChunk?.(delta.thinking);
-        } else if (delta?.type === "input_json_delta" && delta.partial_json) {
-          _toolJson += delta.partial_json;
-        }
-      } else if (event.type === "content_block_stop") {
-        if (thinkingStarted && !inToolInput) {
-          const fullThinking = thinkingParts.join("");
-          callbacks.onThinkingEnd?.(fullThinking, Date.now() - t0);
-          thinkingStarted = false;
-        }
-        if (inToolInput) {
-          inToolInput = false;
-        }
-      }
-    }
-
-    const finalMessage = await stream.finalMessage();
-    const totalMs = Date.now() - t0;
-    recordUsage(model, finalMessage, totalMs);
-
-    // Extract result from final message
-    let toolResult: T | undefined;
-    for (const block of finalMessage.content) {
-      if (block.type === "tool_use" && block.name === opts.tool.name) {
-        toolResult = block.input as T;
-      }
-    }
-
-    if (toolResult === undefined) {
-      throw new Error(
-        `Claude returned no ${opts.tool.name} tool_use block (stop_reason=${finalMessage.stop_reason})`,
-      );
-    }
-
-    const thinking = thinkingParts.length > 0 ? thinkingParts.join("") : undefined;
-    callbacks.onResult?.(toolResult);
-
-    return {
-      result: toolResult,
-      thinking,
-      thinkingDurationMs: thinking ? totalMs : undefined,
-    };
-  } catch (err) {
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        const { GoogleGenerativeAI } = await import("@google/generative-ai");
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const geminiModel = genAI.getGenerativeModel({
-          model: "gemini-3.5-flash",
-          systemInstruction: opts.system,
-        });
-
-        callbacks.onThinkingStart?.();
-        callbacks.onThinkingChunk?.("Thinking via Gemini 3.5 Flash fallback...");
-        callbacks.onThinkingEnd?.("Thinking via Gemini 3.5 Flash fallback...", 100);
-
-        const prompt = `${opts.user}\n\nPlease generate a JSON object matching this schema:\n${JSON.stringify(opts.tool.input_schema)}`;
-        const result = await geminiModel.generateContent({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-          },
-        });
-        const text = result.response.text();
-        const parsed = JSON.parse(text) as T;
-        callbacks.onResult?.(parsed);
-        return {
-          result: parsed,
-          thinking: "Serving streaming fallback via Gemini 3.5 Flash.",
-        };
-      } catch (geminiErr) {
-        try {
-          const { log } = await import("./server-context");
-          log.warn("Gemini structured stream fallback failed, trying OpenRouter", {
-            error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
-          });
-        } catch {}
-      }
-    }
-
-    if (process.env.OPENROUTER_API_KEY) {
-      try {
-        const { runOpenRouterStructuredStream } = await import("./openrouter-structured");
-        return await runOpenRouterStructuredStream<T>(
-          {
-            model: "deepseek/deepseek-chat",
-            system: opts.system,
-            user: opts.user,
-            tool: opts.tool,
-            maxTokens: opts.maxTokens,
-            signal: opts.signal,
-          },
-          callbacks,
-        );
-      } catch (openRouterErr) {
-        try {
-          const { log } = await import("./server-context");
-          log.warn("OpenRouter structured stream fallback failed", {
-            error: openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr),
-          });
-        } catch {}
-      }
-    }
-
-    callbacks.onError?.(err as Error);
-    throw err;
-  }
-}
-
-interface CompletionOptions {
+type CompletionOptions = {
   system: string;
   user: string;
   cacheSystem?: boolean;
   model?: string;
-  /** Task complexity for automatic model tiering. Overrides model if specified.
-   *  simple = Haiku (fast, cheap), medium = Sonnet (balanced), complex = Opus (deep) */
   complexity?: TaskComplexity;
   maxTokens?: number;
-  /** When true, asks Claude for a structured response by example, but returns plain text. */
   prefill?: undefined;
+};
+
+function modelFor(opts: { model?: string; complexity?: TaskComplexity }) {
+  return opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
 }
 
-/**
- * Plain text completion — for free-form generation (drafts, emails).
- *
- * Cost optimization: Use complexity='simple' for short summaries or replies
- * to save 60-80% on token costs. Use 'complex' only for creative writing.
- */
-export async function runCompletion(opts: CompletionOptions): Promise<{
-  text: string;
-  cacheRead: number;
-  cacheCreate: number;
-}> {
-  const client = getClient();
-  // Select model based on complexity tier or explicit model override
-  const model =
-    opts.model ?? (opts.complexity ? selectModelForTask(opts.complexity) : DEFAULT_MODEL);
-  const t0 = Date.now();
-  const response = await client.messages.create({
+function bodyFor(opts: StructuredOptions, model: string) {
+  return {
     model,
     max_tokens: opts.maxTokens ?? 4096,
     system: opts.cacheSystem
-      ? [
-          {
-            type: "text",
-            text: opts.system,
-            cache_control: { type: "ephemeral" },
-          },
-        ]
+      ? [{ type: "text", text: opts.system, cache_control: { type: "ephemeral" } }]
       : opts.system,
+    tools: [opts.tool],
+    tool_choice: { type: "tool", name: opts.tool.name },
     messages: [{ role: "user", content: opts.user }],
-  });
-  recordUsage(model, response, Date.now() - t0);
-  let text = "";
-  for (const block of response.content) {
-    if (block.type === "text") text += block.text;
-  }
-  return {
-    text,
-    cacheRead: response.usage.cache_read_input_tokens ?? 0,
-    cacheCreate: response.usage.cache_creation_input_tokens ?? 0,
   };
 }
 
-/**
- * Resilient text-completion wrapper.
- *
- *   1. Try Claude (runCompletion above).
- *   2. On transient failure — 529 overloaded, 503 service unavailable,
- *      or a network/fetch error — retry once after a short jittered
- *      backoff. Most "Claude is down" reports are these 1-3 minute blips.
- *   3. On persistent failure AND if OpenAI is configured (OPENAI_API_KEY
- *      present), fall back to OpenAI GPT-4o. The text portion of the
- *      response is preserved; cache counters are zeroed because OpenAI
- *      doesn't expose Anthropic-style prompt caching.
- *   4. If OpenAI is also unavailable, re-throw the original Claude error
- *      so callers see the real failure (not a silent empty response).
- *
- * Tool-use (`runStructured`) is NOT covered — OpenAI's schema differs
- * enough that a clean swap risks bad payloads. Callers that need
- * structured output should treat structured failures as user-visible
- * errors and prompt a retry.
- *
- * Wire this into any caller where:
- *   - Plain text is enough (digests, summaries, briefs, descriptions)
- *   - The blast radius of a Claude outage is a real user-facing failure
- *
- * Leave callers on raw `runCompletion` when the output must be Claude-
- * specific (high-stakes negotiation, complex tool-chain reasoning).
- */
+function resultFor<T>(response: any, toolName: string): T {
+  const block = response.content?.find((item: any) => item.type === "tool_use" && item.name === toolName);
+  if (!block) throw new Error(`AI runtime returned no ${toolName} structured result.`);
+  return block.input as T;
+}
+
+export async function runStructured<T = any>(opts: StructuredOptions): Promise<T> {
+  return (await runStructuredWithThinking<T>(opts)).result;
+}
+
+export async function runStructuredWithThinking<T = any>(opts: StructuredOptions): Promise<StructuredResult<T>> {
+  const model = modelFor(opts);
+  const startedAt = Date.now();
+  const response = await getClient().messages.create(bodyFor(opts, model) as any);
+  recordUsage(model, response, Date.now() - startedAt);
+  return { result: resultFor<T>(response, opts.tool.name) };
+}
+
+export async function runStructuredStream<T = any>(opts: StructuredOptions, callbacks: StreamCallbacks): Promise<StructuredResult<T>> {
+  const model = modelFor(opts);
+  const startedAt = Date.now();
+  try {
+    callbacks.onThinkingStart?.();
+    callbacks.onThinkingChunk?.("Preparing structured response…");
+    const stream = getClient().messages.stream(bodyFor(opts, model) as any, { signal: opts.signal });
+    for await (const _event of stream) {
+      if (opts.signal?.aborted) throw new DOMException("Structured stream aborted", "AbortError");
+    }
+    const response = await stream.finalMessage();
+    const elapsed = Date.now() - startedAt;
+    recordUsage(model, response, elapsed);
+    const result = resultFor<T>(response, opts.tool.name);
+    callbacks.onThinkingEnd?.("Structured response ready.", elapsed);
+    callbacks.onResult?.(result);
+    return { result };
+  } catch (error) {
+    callbacks.onError?.(error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+}
+
+export async function runCompletion(opts: CompletionOptions): Promise<{ text: string; cacheRead: number; cacheCreate: number }> {
+  const model = modelFor(opts);
+  const startedAt = Date.now();
+  const response = await getClient().messages.create({
+    model,
+    max_tokens: opts.maxTokens ?? 4096,
+    system: opts.cacheSystem
+      ? [{ type: "text", text: opts.system, cache_control: { type: "ephemeral" } }]
+      : opts.system,
+    messages: [{ role: "user", content: opts.user }],
+  } as any);
+  recordUsage(model, response, Date.now() - startedAt);
+  const text = (response.content || [])
+    .filter((block: any) => block.type === "text")
+    .map((block: any) => block.text)
+    .join("")
+    .trim();
+  return {
+    text,
+    cacheRead: response.usage?.cache_read_input_tokens ?? 0,
+    cacheCreate: response.usage?.cache_creation_input_tokens ?? 0,
+  };
+}
+
 export async function runCompletionResilient(opts: CompletionOptions): Promise<{
   text: string;
   cacheRead: number;
   cacheCreate: number;
-  provider: "claude" | "openai" | "gemini" | "openrouter";
+  provider: "gemini" | "openai";
 }> {
-  const isTransient = (err: unknown): boolean => {
-    const e = err as { status?: number; message?: string };
-    if (e?.status === 529 || e?.status === 503 || e?.status === 502) return true;
-    const msg = (e?.message ?? "").toLowerCase();
-    return /overloaded|temporarily|fetch failed|econnreset|etimedout/.test(msg);
-  };
-
-  // Attempt 1 + 1 retry on transient errors.
-  let claudeErr: unknown = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const result = await runCompletion(opts);
-      return { ...result, provider: "claude" };
-    } catch (err) {
-      claudeErr = err;
-      if (!isTransient(err)) break;
-      if (attempt === 0) {
-        const jitter = 250 + Math.random() * 250;
-        await new Promise((r) => setTimeout(r, jitter));
-        continue;
-      }
-    }
-  }
-
-  // Gemini fallback path
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const geminiModel = genAI.getGenerativeModel({
-        model: "gemini-3.5-flash",
-        systemInstruction: opts.system,
-      });
-      const result = await geminiModel.generateContent({
-        contents: [{ role: "user", parts: [{ text: opts.user }] }],
-      });
-      const text = result.response.text();
-      try {
-        const { log } = await import("./server-context");
-        log.warn("Claude unavailable, served via Gemini fallback", {
-          claude_error: (claudeErr as { message?: string })?.message,
-        });
-      } catch {
-        /* ignore */
-      }
-      return { text, cacheRead: 0, cacheCreate: 0, provider: "gemini" };
-    } catch (geminiErr) {
-      try {
-        const { log } = await import("./server-context");
-        log.warn("Gemini completion fallback failed", {
-          error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
-        });
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
-  // OpenRouter fallback path (prefers DeepSeek chat / V4)
-  if (process.env.OPENROUTER_API_KEY) {
-    try {
-      const { runOpenRouterCompletion } = await import("./openrouter-structured");
-      const text = await runOpenRouterCompletion({
-        model: "deepseek/deepseek-chat",
-        system: opts.system,
-        user: opts.user,
-        maxTokens: opts.maxTokens,
-      });
-      try {
-        const { log } = await import("./server-context");
-        log.warn("Claude unavailable, served via OpenRouter fallback", {
-          claude_error: (claudeErr as { message?: string })?.message,
-        });
-      } catch {
-        /* ignore */
-      }
-      return { text, cacheRead: 0, cacheCreate: 0, provider: "openrouter" };
-    } catch (openRouterErr) {
-      try {
-        const { log } = await import("./server-context");
-        log.warn("OpenRouter completion fallback failed", {
-          error: openRouterErr instanceof Error ? openRouterErr.message : String(openRouterErr),
-        });
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
-  // OpenAI fallback path — only run if explicitly available.
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const prompt = `${opts.system}\n\n${opts.user}`;
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: process.env.OPENAI_FALLBACK_MODEL || OPENAI_MODELS.GPT_4O,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      if (!response.ok) throw new Error(`OpenAI fallback failed (${response.status})`);
-      const data = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-      const text = data.choices?.[0]?.message?.content || "";
-      try {
-        const { log } = await import("./server-context");
-        log.warn("Claude unavailable, served via OpenAI fallback", {
-          claude_error: (claudeErr as { message?: string })?.message,
-        });
-      } catch {
-        /* ignore */
-      }
-      return { text, cacheRead: 0, cacheCreate: 0, provider: "openai" };
-    } catch {
-      // OpenAI also failed — throw the original Claude error so the
-      // caller's error handling sees the actual root cause, not the
-      // secondary symptom.
-    }
-  }
-
-  throw claudeErr;
+  const result = await runCompletion(opts);
+  return { ...result, provider: modelFor(opts) === OPENAI_MODELS.GPT_4O ? "openai" : "gemini" };
 }
