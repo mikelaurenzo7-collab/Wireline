@@ -4,7 +4,7 @@
 
 Wireline lets regular people delegate phone work: call the pharmacy, doctor, school, airline, landlord, restaurant, or support line and get a clear result back. If you run a business, use the same agent studio and console to configure business hours, routing, scripts, handoffs, and follow-up workflows.
 
-Built by [Michael Laurenzo](https://trywireline.com/about). Powered by Claude.
+Built by [Michael Laurenzo](https://trywireline.com/about). Model-flexible by design: each agent can use the runtime that best fits its call, latency, and cost profile.
 
 ---
 
@@ -18,26 +18,25 @@ Built by [Michael Laurenzo](https://trywireline.com/about). Powered by Claude.
 | **Operator** | $59      | 1,200               | $0.14        | 8                     | +$12/mo     |
 | **Custom**   | Custom   | 5,000               | $0.12        | 25                    | Custom      |
 
-Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this README table in sync with the catalog; `npm run docs:check` fails when pricing or Claude model copy drifts.
+Plan metadata is defined in `src/lib/plan-catalog.ts`. Keep this README table in sync with the catalog; `npm run docs:check` fails when pricing or runtime-model copy drifts.
 
-## 🚀 Production-Ready & Feature Complete
+## Launch posture
 
-Wireline has been rigorously audited and hardened for production deployment. From serverless infrastructure to aesthetic UI consistency, the platform is ready for prime-time.
+Wireline is built around a simple consumer promise: delegate the call, preserve context, and get a clear outcome. The product is structured to make each high-cost external dependency explicit rather than silently pretending a call, integration, or action completed.
 
-- **Shadcn UI & Design System:** A complete visual pivot to Shadcn UI ensures a premium, cohesive aesthetic across all client-facing and authenticated pages. The signature "Cream & Purple" aesthetic is standardized with full Dark Mode support.
-- **Agent Extensibility & Integrations:** The autonomous Action Engine seamlessly orchestrates CRM, calendar, and email syncs with strict data isolation. Extensibility is baked in for any custom agent logic.
-- **Optimized Performance:** Skeleton app shells, PWA caching (`sw.js`), and Vite's per-route code-splitting + tree-shaking keep load times fast and the main bundle lean.
-- **Ironclad Security:** AES-256-GCM envelope encryption protects all tenant secrets at rest. Complete with CSP hardening and Postgres Row Level Security (RLS) — tenant isolation enforced at the database via a per-request `app.current_user_id` GUC, audited against the Supabase security advisor.
-- **Scalability:** Composite B-tree indexes on the hot `(user_id, created_at)` query paths, backed by Supabase transaction-pooled connections for serverless edge scaling.
-- **Marketing & SEO:** Fully populated semantic meta tags and OpenGraph integration ready the site for search indexers and social sharing.
+- **Clear public product surface:** The landing page leads with a single job-to-be-done, direct pricing, an audible demo, and a restrained monochrome presentation.
+- **Configurable agents:** The Agent Studio supports individual personal agents and business workflows without requiring separate products or disconnected setup flows.
+- **Cost-aware model routing:** Claude Sonnet 4.6 handles the realtime voice default; Claude Opus 4.7 handles deeper, non-realtime reasoning. Operators can choose from the supported runtime catalog when a different latency, quality, or cost trade-off is appropriate.
+- **Tenant safety:** Server-side authorization, database RLS, encryption for stored tenant secrets, CSP controls, and per-route cost guards protect the multi-tenant product boundary.
+- **Operational transparency:** Missing integrations return actionable failure states. Agents are instructed not to claim an action they do not have the tools to complete.
 
 ---
 
 ## Why we exist
 
-Voice AI in 2026 still ships flat, corporate, anodyne agent personas. They're forgettable. They're afraid to be wrong, so they're afraid to be sharp. And when their tools don't reach far enough, they fabricate the action and hang up.
+Phone work is still fragmented: hold queues, repeated calls, and answers that never make it back to the right person. Wireline makes that work delegable while retaining context, control, and a clear record of what happened.
 
-Wireline makes phone work feel delegable. Three personality vibes (warm · playful · authoritative), one voice per agent, an always-on **adaptive + quick** core directive that makes every agent read the caller's tone in real time, and a hard rule that the agent **never claims an action it doesn't have a tool for.**
+Agents can be tuned for warm, playful, or authoritative conversations, but the product rule is constant: an agent never claims an action it does not have a tool for.
 
 ## Live demo — call any of these numbers right now
 
@@ -84,7 +83,7 @@ npm run build && npm run start
 | **API**           | Express on Vercel serverless functions | One handler tree, deployed as one function                                     |
 | **Database**      | Postgres on Supabase, Drizzle ORM      | Type-safe queries, idempotent migrations, B-tree indexed hot paths             |
 | **Voice runtime** | Vapi + ElevenLabs Flash v2.5           | Live latency under 250 ms                                                      |
-| **LLM**           | Claude Sonnet 4.6 & Opus 4.7           | Quality-first tiering                                                          |
+| **LLM**           | Per-agent runtime catalog              | Choose a voice-quality, latency, and cost trade-off intentionally              |
 
 ## Contributing
 
