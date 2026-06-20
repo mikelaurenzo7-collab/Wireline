@@ -1,18 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    // Item 8 — module-by-module TypeScript strictness hardening.
-    //
-    // Background: the base tsconfig.json sets `strict: false` (and
-    // `allowJs: true`, `skipLibCheck: true`) because flipping strict
-    // globally on a 500K-LOC server would surface thousands of errors
-    // that have to be triaged. Instead we pilot strict mode on a
-    // narrow allowlist of already-clean modules and grow the list as
-    // each module is hardened.
-    //
-    // To run: `npm run lint:strict`. CI fails if any included file
-    // breaks under strict mode, which means you cannot regress a
-    // hardened module without explicitly relaxing it here.
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -26,9 +14,6 @@
     "noUncheckedIndexedAccess": false
   },
   "include": [
-    // ─── Hardened modules — DO NOT remove without justification. ───
-    // Each entry was inspected and confirmed to compile under strict.
-    // Add a new entry only after verifying `npm run lint:strict` is clean.
     "src/types/pg-shim.d.ts",
     "src/types/audit.ts",
     "src/lib/secret-vault.ts",
@@ -37,43 +22,22 @@
     "src/lib/soc2-controls.ts",
     "src/lib/customer-intel.ts",
     "src/lib/rate-limit.ts",
-    // ─── Added 2026-Q1 audit (Sonnet/Opus tiering pass) ─────────────
-    // The agent moat — pure helpers, no DB or I/O. Every branch is
-    // covered by src/lib/agent-runtime.test.ts.
     "src/lib/agent-runtime.ts",
     "src/lib/personality-vibes.ts",
-    // LLM tiering — constants and the function that decides which
-    // model gets to handle a live call. Covered by claude-models.test.ts.
     "src/lib/claude-models.ts",
-    // Pricing source of truth. Covered by plan-catalog.test.ts and
-    // double-locked by scripts/check-readme-pricing.mjs.
     "src/lib/plan-catalog.ts",
-    // Password + form validation — already had tests, now strict-clean.
     "src/lib/password-policy.ts",
     "src/lib/form-validators.ts",
     "src/lib/signup-intent.ts",
-    // CSP builder — pure helper with snapshot test coverage.
     "src/lib/csp.ts",
-    // ─── Added 2026-Q2 audit (production-readiness pass) ───────────
-    // Account deletion helper — pure constant + small functions.
     "src/lib/account-deletion.ts",
-    // TCPA consent helpers — pure validation logic.
     "src/lib/tcpa-consent.ts",
-    // Postgres error code normalisation — pure helper.
     "src/lib/pg-errors.ts",
-    // ─── Added 2026 audit follow-up (pure-helper test peers) ───────
-    // Safe formatters — coerce unparsable API values to stable
-    // fallbacks so a render never throws. Covered by safe-*.test.ts.
     "src/lib/safe-date.ts",
     "src/lib/safe-number.ts",
-    // Agent scorecard math — pure outcome metrics extracted from
-    // server.ts. Covered by agent-scorecard.test.ts.
     "src/lib/agent-scorecard.ts",
-    // Wireline agent rule engines — escalation + objection handling.
-    // Pure decision logic, covered by their *.test.ts peers.
     "src/lib/wireline-agent-escalation.ts",
     "src/lib/wireline-agent-objections.ts",
-    // Test suites corresponding to the strict-clean modules
     "src/lib/agent-runtime.test.ts",
     "src/lib/personality-vibes.test.ts",
     "src/lib/claude-models.test.ts",
@@ -93,13 +57,11 @@
     "src/lib/secret-vault.test.ts",
     "src/lib/tenant-quotas.test.ts",
     "src/lib/soc2-controls.test.ts",
-    // ─── Added 2026 Mobile & Pure-Helper hardening ───
     "src/lib/agent-entitlements.ts",
     "src/lib/dialer-compliance.ts",
     "src/lib/dnc-import-limits.ts",
     "src/lib/safe-external-url.ts",
     "src/lib/admin-access.ts",
-    "src/lib/director-thread-keys.ts",
     "src/lib/marketing-mobile.ts",
     "src/lib/nav-counts-invalidate.ts",
     "src/lib/wireline-app-chrome.ts",
@@ -111,14 +73,12 @@
     "src/lib/dnc-import-limits.test.ts",
     "src/lib/safe-external-url.test.ts",
     "src/lib/admin-access.test.ts",
-    "src/lib/director-thread-keys.test.ts",
     "src/lib/marketing-mobile.test.ts",
     "src/lib/nav-counts-invalidate.test.ts",
     "src/lib/wireline-app-chrome.test.ts",
     "src/lib/wireline-signal-design.test.ts",
     "src/lib/credit-wallet.test.ts",
     "src/lib/apns-push.test.ts",
-    // ─── Added 2026-Q2 audit (Pure-Helper candidates check) ───────
     "src/lib/app-url.ts",
     "src/lib/brand-token.ts",
     "src/lib/utils.ts",
@@ -135,7 +95,6 @@
     "src/lib/wireline-painter-design.test.ts",
     "src/lib/vapi-tool-call-utils.test.ts",
     "src/lib/contact-profile.test.ts",
-    "src/lib/director-feature-flags.ts",
     "src/lib/internal-jwt-secret.ts",
     "src/lib/action-types.ts",
     "src/lib/api-row.ts",
@@ -145,20 +104,11 @@
     "src/lib/claude-supervisor-tools.ts",
     "src/lib/demo-funnel-shared.ts",
     "src/lib/design-preview-route.ts",
-    "src/lib/director-feature-flags.test.ts",
     "src/lib/internal-jwt-secret.test.ts",
     "src/lib/action-types.test.ts",
     "src/lib/api-row.test.ts",
     "src/lib/audit-summary.test.ts",
     "src/lib/design-preview.ts",
-    "src/lib/design-preview.test.ts",
-    "src/lib/director-artifact-dedupe.ts",
-    "src/lib/director-artifact-dedupe.test.ts",
-    "src/lib/director-creative-turn.ts",
-    "src/lib/director-creative-turn.test.ts",
-    "src/lib/director-design-ensemble.ts",
-    "src/lib/director-design-ensemble.test.ts",
-    "src/lib/director-design-path.ts",
-    "src/lib/director-design-path.test.ts"
+    "src/lib/design-preview.test.ts"
   ]
 }
