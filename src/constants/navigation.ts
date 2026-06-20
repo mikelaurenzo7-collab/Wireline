@@ -1,9 +1,10 @@
+import type { CSSProperties, ComponentType } from "react";
 import { Plug, Settings2, Sparkles } from "lucide-react";
 
 export type NavItem = {
   label: string;
   path: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number; style?: React.CSSProperties }>;
+  icon: ComponentType<{ className?: string; strokeWidth?: number; style?: CSSProperties }>;
   matches?: string[];
   section?: string;
 };
@@ -27,14 +28,5 @@ export const PAGE_TITLES: Record<string, string> = {
   "/settings": "Settings",
 };
 
-export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
-  A: "/agents",
-  I: "/integrations",
-  S: "/settings",
-};
-
-export const NAV_SHORTCUT_HINTS: Record<string, string> = {
-  "/agents": "g a",
-  "/integrations": "g i",
-  "/settings": "g s",
-};
+export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = { A: "/agents", I: "/integrations", S: "/settings" };
+export const NAV_SHORTCUT_HINTS: Record<string, string> = { "/agents": "g a", "/integrations": "g i", "/settings": "g s" };
