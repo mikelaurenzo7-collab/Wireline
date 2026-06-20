@@ -109,7 +109,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
               <Link
                 to="/agents"
                 data-testid="header-dashboard"
-                className="hidden min-h-10 items-center gap-2 rounded-full bg-[#1d1d1f] px-4 text-[13px] font-semibold text-white transition hover:bg-black md:inline-flex"
+                className="marketing-btn-primary hidden min-h-10 px-4 text-[13px] font-semibold md:inline-flex"
               >
                 Open Studio
               </Link>
@@ -125,9 +125,9 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 <Link
                   to="/pricing"
                   data-testid="header-cta"
-                  className="hidden min-h-10 items-center gap-2 rounded-full bg-[#1d1d1f] px-4 text-[13px] font-semibold text-white transition hover:bg-black md:inline-flex"
+                  className="marketing-btn-primary hidden min-h-10 px-4 text-[13px] font-semibold md:inline-flex"
                 >
-                  Start at $7
+                  Start at $9
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </>
@@ -182,13 +182,13 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             </nav>
             <div className="border-t border-[#1d1d1f]/10 p-4">
               {signedIn && !isAuth ? (
-                <Link to="/agents" className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[14px] font-semibold text-white" onClick={() => setMenuOpen(false)}>
+                <Link to="/agents" className="marketing-btn-primary flex min-h-12 text-[14px] font-semibold" onClick={() => setMenuOpen(false)}>
                   Open Studio <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : active === "home" ? (
                 <div className="grid grid-cols-2 gap-2">
                   <Link to="/signin" className="flex min-h-12 items-center justify-center rounded-full border border-[#1d1d1f]/16 text-[14px] font-semibold text-[#1d1d1f]" onClick={() => setMenuOpen(false)}>Sign in</Link>
-                  <Link to="/pricing" className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[14px] font-semibold text-white" onClick={() => setMenuOpen(false)}>Start at $7 <ArrowRight className="h-4 w-4" /></Link>
+                  <Link to="/pricing" className="marketing-btn-primary flex min-h-12 text-[14px] font-semibold" onClick={() => setMenuOpen(false)}>Start at $9 <ArrowRight className="h-4 w-4" /></Link>
                 </div>
               ) : null}
             </div>
