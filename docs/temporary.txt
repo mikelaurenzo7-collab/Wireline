@@ -1,1 +1,1 @@
-noop
+This temporary file is retired.
