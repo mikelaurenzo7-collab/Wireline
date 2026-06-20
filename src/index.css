@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --wl-font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  --wl-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --background: #f7f7f5;
   --foreground: #1d1d1f;
   --card: #ffffff;
@@ -26,8 +26,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--wl-font-sans);
+  --font-mono: var(--wl-font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -51,7 +51,7 @@
 
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--background); }
-body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
+body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wl-font-sans); }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid rgba(29, 29, 31, .22); outline-offset: 2px; }
