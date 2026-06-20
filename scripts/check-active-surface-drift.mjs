@@ -1,0 +1,62 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const root = process.cwd();
+const activeFiles = [
+  "src/App.tsx",
+  "src/pages/LandingPage.tsx",
+  "src/pages/Features.tsx",
+  "src/pages/Pricing.tsx",
+  "src/pages/Showcase.tsx",
+  "src/pages/Compare.tsx",
+  "src/pages/About.tsx",
+  "src/pages/AgentStudioHome.tsx",
+  "src/components/PhoneAgentBlueprint.tsx",
+  "src/components/layout/AppShell.tsx",
+  "src/components/marketing/PublicSiteHeader.tsx",
+  "src/index.css",
+  "src/styles/foundation.css",
+  "src/styles/monochrome-guard.css",
+  "src/lib/claude-client.ts",
+  "src/lib/voice-model-defaults.ts",
+];
+
+const failures = [];
+const read = (file) => readFileSync(resolve(root, file), "utf8");
+const report = (file, message) => failures.push(`${file}: ${message}`);
+
+for (const file of activeFiles) {
+  if (!existsSync(resolve(root, file))) {
+    report(file, "required active-surface file is missing");
+    continue;
+  }
+
+  const source = read(file);
+  if (/api\.anthropic\.com|ANTHROPIC_API_KEY|@anthropic-ai\/sdk/.test(source)) {
+    report(file, "must not reference Anthropic in the active product surface");
+  }
+
+  if (/from-(violet|purple|indigo|fuchsia|pink)-|to-(violet|purple|indigo|fuchsia|pink)-|bg-(violet|purple|indigo|fuchsia|pink)-|text-(violet|purple|indigo|fuchsia|pink)-/.test(source)) {
+    report(file, "contains a retired colored design token");
+  }
+}
+
+const runtime = read("src/lib/claude-client.ts");
+if (!runtime.includes("https://api.openai.com/v1/responses")) {
+  report("src/lib/claude-client.ts", "must use OpenAI Responses as the managed runtime");
+}
+if (!runtime.includes("OpenAI request failed; trying Gemini fallback")) {
+  report("src/lib/claude-client.ts", "must preserve the OpenAI-to-Gemini fallback order");
+}
+
+const voiceDefaults = read("src/lib/voice-model-defaults.ts");
+if (!voiceDefaults.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"')) {
+  report("src/lib/voice-model-defaults.ts", "must default managed voice agents to OpenAI");
+}
+
+if (failures.length) {
+  console.error("Active-surface drift check failed:\n- " + failures.join("\n- "));
+  process.exitCode = 1;
+} else {
+  console.log("Active-surface drift check passed");
+}
