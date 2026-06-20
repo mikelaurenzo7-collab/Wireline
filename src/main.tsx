@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import "./index.css";
 import "./styles/foundation.css";
 import "./styles/monochrome-guard.css";
+import "./styles/readability-guard.css";
 
 if (typeof window !== "undefined") {
   const safeReload = () => {
