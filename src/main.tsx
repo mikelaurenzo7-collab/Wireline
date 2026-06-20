@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import "./styles/foundation.css";
+import "./styles/monochrome-guard.css";
 
 if (typeof window !== "undefined") {
   const safeReload = () => {
