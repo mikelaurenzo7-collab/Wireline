@@ -1,20 +1,17 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Vapi from "@vapi-ai/web";
 import { PhoneOff, Mic, Loader2, AlertCircle, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { BRAND } from "../../constants/brand-colors";
 
-// Retrieve Vapi public key safely from Vite environment
 const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
 
-interface BrowserCallWidgetProps {
+type BrowserCallWidgetProps = {
   agentName: string;
-  /** Optional tint override. Reserved for future per-agent theming; reads
-   *  from the agent's `tint` field when wired through callers. */
+  /** Retained for call-site compatibility. The public demo is intentionally monochrome. */
   tintColor?: string;
   buttonLabel?: string;
-}
+};
 
 type AnalyticsWindow = Window & {
   fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
@@ -23,7 +20,7 @@ type AnalyticsWindow = Window & {
 
 export default function BrowserCallWidget({
   agentName,
-  tintColor: _tintColor = "#7C3AED",
+  tintColor: _tintColor,
   buttonLabel = "Talk in browser",
 }: BrowserCallWidgetProps) {
   const [vapi, setVapi] = useState<Vapi | null>(null);
@@ -32,52 +29,43 @@ export default function BrowserCallWidget({
   const [volume, setVolume] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
+  const activeColor = "#1d1d1f";
 
-  const activeColor = agentName === "Jake" ? BRAND.purpleDeep : BRAND.purple;
-
-  // Initialize Vapi SDK on mount
   useEffect(() => {
     if (!VAPI_PUBLIC_KEY) {
-      setError("Vapi public key is unset. Configure VITE_VAPI_PUBLIC_KEY in your env.");
+      setError("Voice demo is unavailable right now.");
       return;
     }
-    const inst = new Vapi(VAPI_PUBLIC_KEY);
-    setVapi(inst);
 
-    // Event bindings
-    inst.on("call-start", () => {
+    const instance = new Vapi(VAPI_PUBLIC_KEY);
+    setVapi(instance);
+
+    instance.on("call-start", () => {
       setConnecting(false);
       setCallActive(true);
       setError(null);
-
-      // Dispatch browser call start conversion event
       if (typeof window !== "undefined") {
-        const w = window as AnalyticsWindow;
-        if (typeof w.fbq === "function") {
-          w.fbq("trackCustom", "BrowserCallStart", { agent: agentName });
-        }
-        if (typeof w.plausible === "function") {
-          w.plausible("BrowserCallStart", { props: { agent: agentName } });
-        }
+        const analytics = window as AnalyticsWindow;
+        analytics.fbq?.("trackCustom", "BrowserCallStart", { agent: agentName });
+        analytics.plausible?.("BrowserCallStart", { props: { agent: agentName } });
       }
     });
 
-    inst.on("call-end", () => {
+    instance.on("call-end", () => {
       setCallActive(false);
       setConnecting(false);
       setVolume(0);
       setSpeakerActive(false);
     });
 
-    inst.on("volume-level", (vol: number) => {
-      setVolume(vol);
-      setSpeakerActive(vol > 0.02);
+    instance.on("volume-level", (nextVolume: number) => {
+      setVolume(nextVolume);
+      setSpeakerActive(nextVolume > 0.02);
     });
 
-    inst.on("error", (err: unknown) => {
-      console.error("[wireline:webrtc] Vapi error:", err);
-      const message = err instanceof Error ? err.message : "Voice connection failed.";
-      setError(message);
+    instance.on("error", (reason: unknown) => {
+      console.error("[wireline:webrtc] Vapi error:", reason);
+      setError(reason instanceof Error ? reason.message : "Voice connection failed.");
       setConnecting(false);
       setCallActive(false);
       setVolume(0);
@@ -86,9 +74,9 @@ export default function BrowserCallWidget({
 
     return () => {
       try {
-        inst.stop();
+        instance.stop();
       } catch {
-        /* skip */
+        // Nothing to clean up when a session never started.
       }
     };
   }, [agentName]);
@@ -105,25 +93,17 @@ export default function BrowserCallWidget({
     try {
       setConnecting(true);
       setError(null);
-
-      // Fetch the dynamically-constructed showcase assistant payload from our backend public endpoint
       const response = await fetch(`/api/public/assistant/${agentName}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load assistant profile: ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error("Could not load the demo assistant.");
       const assistantPayload = await response.json();
 
-      // Request microphone permissions proactively
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if (navigator.mediaDevices?.getUserMedia) {
         await navigator.mediaDevices.getUserMedia({ audio: true });
       }
-
-      // Start the voice session passing the full production-grade payload
       vapi.start(assistantPayload);
-    } catch (err: unknown) {
-      console.error("[wireline:webrtc] Call start failed:", err);
-      const message = err instanceof Error ? err.message : "Could not access microphone or server.";
-      setError(message);
+    } catch (reason: unknown) {
+      console.error("[wireline:webrtc] Call start failed:", reason);
+      setError(reason instanceof Error ? reason.message : "Could not access your microphone or start the demo.");
       setConnecting(false);
     }
   };
@@ -138,70 +118,52 @@ export default function BrowserCallWidget({
         disabled={connecting || !vapi}
         aria-label={callActive ? "End conversation" : "Talk to agent"}
         className={cn(
-          "relative h-12 px-6 rounded-full font-mono text-[11px] uppercase tracking-[0.2em] font-semibold z-10 select-none shadow-md",
+          "relative z-10 h-12 select-none rounded-full border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.2em]",
           callActive
-            ? "shadow-rose-500/20"
-            : "bg-[#1E1B2E] text-[#F3EFFA] hover:text-white border-[#F3EFFA]/10 hover:border-[#F3EFFA]/30 hover:shadow-lg",
+            ? "border-rose-600 bg-rose-600 text-white shadow-[0_10px_22px_rgba(190,24,93,0.18)]"
+            : "border-[#1d1d1f] bg-[#1d1d1f] text-white shadow-[0_10px_22px_rgba(29,29,31,0.16)] hover:border-black hover:bg-black hover:text-white",
         )}
       >
         {connecting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Connecting...</span>
-          </>
+          <><Loader2 className="h-4 w-4 animate-spin" /><span>Connecting…</span></>
         ) : callActive ? (
-          <>
-            <PhoneOff className="w-4 h-4" />
-            <span>End Call</span>
-          </>
+          <><PhoneOff className="h-4 w-4" /><span>End call</span></>
         ) : (
-          <>
-            <Mic className="w-4 h-4 wl-call-color" data-call-color={activeColor} />
-            <span>{buttonLabel}</span>
-          </>
+          <><Mic className="h-4 w-4" /><span>{buttonLabel}</span></>
         )}
-
-        {/* Glow Ring behind button when active */}
         {callActive && (
           <span
-            className="absolute inset-0 rounded-full animate-ping -z-10 opacity-20 pointer-events-none wl-call-bg"
-            data-call-color={activeColor}
+            className="pointer-events-none absolute inset-0 -z-10 animate-ping rounded-full bg-[#1d1d1f] opacity-15"
+            aria-hidden="true"
           />
         )}
       </ShadButton>
 
-      {/* Real-time speaking/volume animation bars */}
       {callActive && (
-        <div className="flex items-center gap-1.5 h-6 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 animate-fade-in">
-          <Volume2
-            className={cn("w-3 h-3 text-muted", speakerActive && "text-brand animate-pulse")}
-          />
-          <div className="flex items-end gap-0.5 h-3">
+        <div className="flex h-7 items-center gap-2 rounded-full border border-[#1d1d1f]/10 bg-[#f2f2ef] px-4 py-1.5">
+          <Volume2 className={cn("h-3.5 w-3.5 text-[#6e6e73]", speakerActive && "animate-pulse text-[#1d1d1f]")} />
+          <div className="flex h-3 items-end gap-0.5">
             {[1, 2, 3, 4, 5].map((bar) => {
-              // volume scales height dynamically
-              const volScale = volume * (1 + bar * 0.3);
-              const height = volScale > 0.01 ? Math.min(100, Math.max(15, volScale * 100)) : 15;
+              const scaled = volume * (1 + bar * 0.3);
+              const height = scaled > 0.01 ? Math.min(100, Math.max(15, scaled * 100)) : 15;
               return (
                 <div
                   key={bar}
-                  className="w-0.5 rounded-full transition-all duration-75 wl-call-volume-bar"
-                  data-pct={`${height}%`}
-                  data-call-color={activeColor}
-                  data-volume-active={speakerActive ? "true" : "false"}
+                  className="w-0.5 rounded-full bg-[#1d1d1f] transition-all duration-75"
+                  style={{ height: `${height}%`, opacity: speakerActive ? 1 : 0.35 }}
                 />
               );
             })}
           </div>
-          <span className="text-[10px] font-mono tracking-wider text-muted uppercase">
-            {speakerActive ? "Agent speaking" : "Listening"}
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[#5e5e64]">
+            {speakerActive ? "Assistant speaking" : "Listening"}
           </span>
         </div>
       )}
 
-      {/* Soft Error Message Banner */}
       {error && (
-        <div className="flex items-center gap-2 text-rose-500 font-mono text-[10px] uppercase tracking-wider bg-rose-500/5 px-3 py-1 rounded-md border border-rose-500/10">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        <div className="flex items-center gap-2 rounded-md border border-rose-500/15 bg-rose-500/5 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-rose-700">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>
       )}
