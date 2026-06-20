@@ -1,472 +1,106 @@
-/**
- * /compare — feature matrix vs the obvious competitors.
- *
- * Honest scoring: a 9-0 sweep signals immaturity. Wireline wins on
- * breadth + horizontal platform; competitors win on niches (Air =
- * cheap for pure outbound). Saying that out
- * loud reads as confident, not defensive.
- *
- * Strategic context: investors + buyers researching the space land
- * here from organic search or DM links. They want a single page
- * that explains "why Wireline vs the rest" without sales fluff.
- */
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-import { Check, X, Minus, ArrowRight, Phone } from "lucide-react";
+import { ArrowRight, Check, Clock3, MessageSquare, PhoneCall, ShieldCheck } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
-type Cell = true | false | "partial";
+const DIFFERENCES = [
+  {
+    icon: PhoneCall,
+    title: "It makes the call.",
+    copy: "Not another reminder. Not a directory of numbers. Wireline handles the phone conversation you would otherwise need to make yourself.",
+  },
+  {
+    icon: MessageSquare,
+    title: "You explain it normally.",
+    copy: "Tell your agent what you need in plain language. Add the rules that matter. Skip the complicated workflow builder.",
+  },
+  {
+    icon: Clock3,
+    title: "You get the answer back.",
+    copy: "Wireline waits through the hold music and brings back the useful result, so you can stay focused on your day.",
+  },
+] as const;
 
-interface Row {
-  feature: string;
-  detail: string;
-  wireline: Cell;
-  air: Cell;
-  synthflow: Cell;
-  bland: Cell;
-  retell: Cell;
-}
-
-const ROWS: Row[] = [
-  {
-    feature: "Voice + SMS + Email in one console",
-    detail:
-      "One inbox for every channel the customer reaches you on, with cross-channel context shared between agents.",
-    wireline: true,
-    air: false,
-    synthflow: false,
-    bland: false,
-    retell: false,
-  },
-  {
-    feature: "Supervisor cockpit (live coach + take-over)",
-    detail:
-      "Listen to live calls, see real-time transcripts, pause the agent and inject corrections without ending the call.",
-    wireline: true,
-    air: false,
-    synthflow: "partial",
-    bland: false,
-    retell: "partial",
-  },
-  {
-    feature: "Draft-vs-auto autonomy intent",
-    detail:
-      "Per-agent autonomy level (Draft / Supervised / Full Auto). Tools either run immediately or queue for human approval.",
-    wireline: true,
-    air: false,
-    synthflow: false,
-    bland: false,
-    retell: false,
-  },
-  {
-    feature: "Tiered Claude stack for live calls + deep reasoning",
-    detail:
-      "Sonnet-class models handle live calls for speed and cadence; Opus-class reasoning powers briefs, coaching, review, and harder post-call analysis. The stack is tuned by task instead of flattened to the cheapest model.",
-    wireline: true,
-    air: false,
-    synthflow: false,
-    bland: false,
-    retell: "partial",
-  },
-  {
-    feature: "Per-agent model choice in a no-code Studio",
-    detail:
-      "Swap any individual agent onto Claude, Gemini, GPT, or Grok from the Studio — speed badges flag heavier picks before they slow a live call, with a per-agent temperature dial. No API keys to juggle, no code.",
-    wireline: true,
-    air: false,
-    synthflow: false,
-    bland: "partial",
-    retell: "partial",
-  },
-  {
-    feature: "White-label phone numbers included",
-    detail:
-      "Every plan includes a dedicated voice number with no separate carrier bill. Customer never sees infra.",
-    wireline: true,
-    air: "partial",
-    synthflow: "partial",
-    bland: "partial",
-    retell: false,
-  },
-  {
-    feature: "TCPA compliance ledger",
-    detail:
-      "Every disclosure + opt-out logged with rule version + state. Auditable on demand. Not a black-box service.",
-    wireline: true,
-    air: "partial",
-    synthflow: false,
-    bland: false,
-    retell: false,
-  },
-  {
-    feature: "15+ CRM / messaging / ads integrations",
-    detail:
-      "HubSpot, Salesforce, Slack, Zoom, Apollo, Meta Lead Ads, Google Workspace, Microsoft 365, Yahoo Mail, DocuSign, Shopify, Square, ElevenLabs, Sentry, Resend.",
-    wireline: true,
-    air: "partial",
-    synthflow: "partial",
-    bland: false,
-    retell: "partial",
-  },
-  {
-    feature: "Per-tenant agent tailoring",
-    detail:
-      "Per-agent personality, directives, knowledge, voice config, flow composer, and integration scope. No generic personas.",
-    wireline: true,
-    air: "partial",
-    synthflow: "partial",
-    bland: "partial",
-    retell: "partial",
-  },
-  {
-    feature: "AI-generated agent forge",
-    detail:
-      "One sentence in, full agent out — name, archetype, first message, personality, directives, knowledge seeds.",
-    wireline: true,
-    air: false,
-    synthflow: false,
-    bland: false,
-    retell: false,
-  },
-  {
-    feature: "Operator console (not just an API)",
-    detail:
-      "Triage, fleet, integrations, compliance ledger, and supervisor cockpit ship as one product. No separate admin UI to build.",
-    wireline: true,
-    air: "partial",
-    synthflow: "partial",
-    bland: "partial",
-    retell: "partial",
-  },
-  {
-    feature: "Live-call latency controls",
-    detail:
-      "Capped parallel tool execution, trimmed assistant context, and tuned response delay so agents feel snappy on real PSTN lines — not just lab demos.",
-    wireline: true,
-    air: "partial",
-    synthflow: false,
-    bland: "partial",
-    retell: "partial",
-  },
-  {
-    feature: "Post-call enrichment (intent, commitments, QA)",
-    detail:
-      "Structured extraction after every call feeds triage, coaching, and the knowledge-gap queue — not a generic one-line summary.",
-    wireline: true,
-    air: false,
-    synthflow: "partial",
-    bland: "partial",
-    retell: "partial",
-  },
-];
-
-function CellGlyph({ value }: { value: Cell }) {
-  if (value === true) return <Check className="w-4 h-4 text-brand" strokeWidth={2.6} />;
-  if (value === "partial") return <Minus className="w-4 h-4 text-brand/50" strokeWidth={2.6} />;
-  return <X className="w-4 h-4 text-rose-400/70" strokeWidth={2.4} />;
-}
-
-const COMPETITORS: { key: keyof Omit<Row, "feature" | "detail">; label: string; note?: string }[] =
-  [
-    { key: "wireline", label: "Wireline" },
-    { key: "air", label: "Air", note: "Cheaper for pure outbound" },
-    { key: "synthflow", label: "Synthflow" },
-    { key: "bland", label: "Bland", note: "Voice API + light UI" },
-    { key: "retell", label: "Retell", note: "Strong voice dev UX" },
-  ];
-
-const COMPARE_SECTION_LINKS = [
-  { id: "compare-matrix", label: "Matrix" },
-  { id: "compare-pricing", label: "Pricing" },
-  { id: "compare-fit", label: "Best fit" },
+const TABLE_ROWS = [
+  ["You have to call during business hours", "Wireline can handle the routine call for you"],
+  ["You wait on hold", "Wireline waits and reports back"],
+  ["You repeat the same details", "Your agent keeps the instructions you give it"],
+  ["You receive another task", "You get a clear next step"],
 ] as const;
 
 export default function Compare() {
-  const score = (key: keyof Omit<Row, "feature" | "detail">) =>
-    ROWS.reduce((n, r) => n + (r[key] === true ? 1 : r[key] === "partial" ? 0.5 : 0), 0);
-
   return (
-    <>
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Wireline vs Air / Synthflow / Bland / Retell — Feature Comparison"
-        description="Side-by-side comparison of Wireline against the leading AI voice agent platforms. Wireline is the only horizontal platform with voice + email + SMS, supervisor cockpit, frontier reasoning, and bundled phone numbers."
+        title="Why Wireline"
+        description="Wireline is a personal AI call assistant that makes routine phone calls, waits on hold, and brings back a clear answer."
         path="/compare"
       />
 
-      <MarketingPageFrame
-        mainClassName="!px-0 pt-20 sm:pt-24"
-        sectionLinks={[...COMPARE_SECTION_LINKS]}
-      >
-        {/* Hero */}
-        <section className="relative z-10 max-w-6xl mx-auto pt-4 pb-12 sm:pt-8 sm:pb-16 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-foreground/65 mb-4">
-              <span className="wl-eyebrow-dot" aria-hidden="true" />
-              How Wireline compares
-            </p>
-            <h1 className="marketing-hero-title mb-5">
-              Honest scoring vs every voice-AI platform.
-            </h1>
-            <p className="marketing-hero-lead mx-auto">
-              Wireline is the horizontal platform that runs voice + SMS + email in one console with
-              supervisor cockpit, frontier reasoning, white-label numbers, and a real TCPA ledger.
-              Bland and Retell are excellent if you mainly want a voice API with a thin dashboard;
-              Air still wins on pure outbound price. Here's the full picture.
-            </p>
-          </motion.div>
-        </section>
-
-        {/* Matrix */}
-        <section
-          id="compare-matrix"
-          className="relative z-10 wl-measure-wide scroll-mt-28 px-4 sm:px-6 lg:px-10 xl:px-14 pb-20"
-        >
-          {/* Mobile scroll affordance — the table is wider than 360-390px
-            viewports by design (6 competitor columns need readable
-            widths). Without this hint, mobile visitors think the table
-            is broken instead of pannable. */}
-          <p className="md:hidden font-mono text-[11px] sm:text-[10px] uppercase tracking-[0.3em] text-foreground/55 mb-2 flex items-center gap-1.5">
-            <span aria-hidden="true">←</span>
-            Pan to compare
-            <span aria-hidden="true">→</span>
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:px-10">
+        <div className="max-w-3xl">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Why Wireline</p>
+          <h1 className="mt-4 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">
+            Less phone tag.<br />
+            <em className="font-normal">More of your day.</em>
+          </h1>
+          <p className="mt-7 max-w-2xl text-pretty text-[clamp(1.18rem,2.5vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">
+            Wireline is built for everyday calls that should not take over your afternoon.
           </p>
-          <div className="overflow-x-auto wl-panel border border-ink/[0.1] snap-x snap-mandatory scroll-smooth scrollbar-hide">
-            <table className="w-full min-w-[720px]" aria-describedby="compare-legend">
-              <caption className="sr-only">
-                Feature comparison of Wireline versus Air, Synthflow, Bland, and Retell
-              </caption>
-              <thead>
-                <tr className="border-b border-ink/[0.12]">
-                  <th className="wl-compare-sticky-col text-left p-4 pl-6 font-mono text-[10px] uppercase tracking-[0.3em] text-foreground/55 font-medium w-64">
-                    Capability
-                  </th>
-                  {COMPETITORS.map((c) => (
-                    <th
-                      key={c.key}
-                      className={`p-3 text-center snap-start ${
-                        c.key === "wireline" ? "bg-brand/8" : ""
-                      }`}
-                    >
-                      <div
-                        className={`font-mono text-[11px] uppercase tracking-[0.25em] font-semibold ${
-                          c.key === "wireline" ? "text-brand" : "text-foreground/65"
-                        }`}
-                      >
-                        {c.label}
-                      </div>
-                      {c.note && (
-                        <div className="text-[10px] text-foreground/50 mt-1 leading-tight">
-                          {c.note}
-                        </div>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {ROWS.map((row, i) => (
-                  <tr
-                    key={row.feature}
-                    className={`border-b border-ink/[0.08] transition-colors duration-200 hover:bg-brand-deep/[0.04] ${
-                      i % 2 === 0 ? "bg-ink/[0.02]" : ""
-                    }`}
-                  >
-                    <td className="wl-compare-sticky-col p-4 pl-6 align-top">
-                      <p className="text-[13px] text-foreground font-medium leading-snug">
-                        {row.feature}
-                      </p>
-                      <p className="text-[11px] text-foreground/60 mt-1 leading-relaxed">
-                        {row.detail}
-                      </p>
-                      {row.feature.includes("integrations") && (
-                        <div className="flex flex-wrap gap-1.5 mt-2.5">
-                          {["HubSpot", "Salesforce", "Slack", "Zoom", "Apollo", "Meta"].map((b) => (
-                            <span
-                              key={b}
-                              className="px-1.5 py-0.5 bg-brand/[0.06] border border-brand/15 text-brand font-mono text-[10px] uppercase tracking-[0.2em]"
-                            >
-                              {b}
-                            </span>
-                          ))}
-                          <span className="px-1.5 py-0.5 bg-ink/[0.03] border border-ink/10 text-foreground/55 font-mono text-[10px] uppercase tracking-[0.2em]">
-                            + 4 more
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    {COMPETITORS.map((c) => (
-                      <td
-                        key={c.key}
-                        aria-label={`${c.label}: ${row[c.key] === true ? "yes" : row[c.key] === "partial" ? "partial" : "no"}`}
-                        className={`p-3 text-center align-middle ${
-                          c.key === "wireline" ? "bg-brand/8" : ""
-                        }`}
-                      >
-                        <div className="inline-flex" aria-hidden="true">
-                          <CellGlyph value={row[c.key]} />
-                        </div>
-                        <span className="sr-only">
-                          {row[c.key] === true
-                            ? "Yes"
-                            : row[c.key] === "partial"
-                              ? "Partial"
-                              : "No"}
-                        </span>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                <tr className="border-t-2 border-brand/30">
-                  <td className="wl-compare-sticky-col p-4 pl-6 text-[10px] uppercase tracking-[0.3em] text-muted/70 font-medium">
-                    Score (out of {ROWS.length})
-                  </td>
-                  {COMPETITORS.map((c) => (
-                    <td
-                      key={c.key}
-                      className={`p-3 text-center font-display italic text-xl ${
-                        c.key === "wireline" ? "bg-brand/12 text-brand" : "text-muted"
-                      }`}
-                    >
-                      {score(c.key)}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p id="compare-legend" className="text-[10px] text-foreground/55 mt-3 leading-relaxed">
-            <Check className="w-3 h-3 text-brand inline-block mr-1" aria-hidden="true" /> fully
-            shipped &nbsp;·&nbsp;
-            <Minus className="w-3 h-3 text-brand/50 inline-block mr-1" aria-hidden="true" /> partial
-            / limited &nbsp;·&nbsp;
-            <X className="w-3 h-3 text-rose-400/70 inline-block mr-1" aria-hidden="true" /> not
-            available. Scoring reflects publicly-available product as of May 2026. Competitors'
-            product surfaces change frequently — corrections welcome at support@trywireline.com.
-          </p>
-        </section>
-
-        {/* Pricing Transparency */}
-        <section
-          id="compare-pricing"
-          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16 text-center"
-        >
-          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-3">
-            Transparent, flat-rate pricing.
-          </h2>
-          <p className="text-sm sm:text-base text-foreground/65 max-w-2xl mx-auto mb-8 leading-relaxed">
-            No hidden telephony markups. No complex token math. You pay a flat rate for access to
-            the platform and standard pass-through for frontier LLM usage.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/[0.08] border border-ink/[0.08] text-left stagger-children">
-            <div className="bg-card p-6 stat-shimmer">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] wl-text-success mb-1.5">
-                Included
-              </p>
-              <p className="text-xl font-display italic text-foreground mb-2">Dedicated Numbers</p>
-              <p className="text-xs text-foreground/65 leading-relaxed">
-                Every plan includes dedicated voice numbers. No Twilio bill required.
-              </p>
-            </div>
-            <div className="bg-card p-6">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand mb-1.5">
-                Pass-through
-              </p>
-              <p className="text-xl font-display italic text-foreground mb-2">Frontier LLMs</p>
-              <p className="text-xs text-foreground/65 leading-relaxed">
-                We never mark up OpenAI or Anthropic tokens. You pay exactly what they charge.
-              </p>
-            </div>
-            <div className="bg-card p-6">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-foreground/55 mb-1.5">
-                Flexible growth
-              </p>
-              <p className="text-xl font-display italic text-foreground mb-2">Agents by tier</p>
-              <p className="text-xs text-foreground/65 leading-relaxed">
-                Every plan includes a clear agent cap, with à-la-carte add-ons when you need more
-                specialists.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* When the competitor wins */}
-        <section
-          id="compare-fit"
-          className="relative z-10 max-w-5xl scroll-mt-28 mx-auto px-4 sm:px-6 lg:px-10 xl:px-14 pb-16"
-        >
-          <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-6 text-balance">
-            When a competitor is the better pick.
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
-            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
-                Pick Air if
-              </p>
-              <p className="text-sm text-foreground/80 leading-relaxed">
-                You only need <em>outbound</em> voice and want the cheapest per-minute rate. Air is
-                a specialized outbound dialer; if you don't care about inbound, SMS, email, or
-                supervisor coaching, Air's pricing wins.
-              </p>
-            </div>
-            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
-                Pick Bland if
-              </p>
-              <p className="text-sm text-foreground/80 leading-relaxed">
-                Your team wants a straightforward voice API with quick path-to-demo and you will
-                wire CRM + compliance yourself. Bland is strong on call placement and developer
-                docs; it is not a full operator console with TCPA ledger, email agents, or
-                supervisor take-over.
-              </p>
-            </div>
-            <div className="wl-panel card-shimmer border border-ink/[0.08] p-5 transition-all duration-300 hover:border-brand/30">
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-brand/70 mb-2">
-                Pick Retell if
-              </p>
-              <p className="text-sm text-foreground/80 leading-relaxed">
-                You are shipping a voice-first product and want polished SDKs, latency tuning, and
-                agent builder UX without building a marketing console. Retell does not bundle
-                multi-channel inbox, white-label numbers, or horizontal compliance the way Wireline
-                does.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Bottom CTA */}
-        <section className="relative z-10 max-w-3xl mx-auto px-6 lg:px-10 pb-24 text-center">
-          <h2 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 text-balance">
-            See Wireline running on a real call.
-          </h2>
-          <p className="text-sm sm:text-base text-foreground/65 max-w-xl mx-auto mb-6 leading-relaxed">
-            Call our demo line (630) 581-1834 to hear Liam answer in real time. Or start your 14-day
-            free trial — phone number included, no credit card.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2.5 bg-brand text-white font-medium text-sm px-7 py-3.5 hover:bg-brand-deep transition-colors duration-300"
-            >
-              Start free trial
-              <ArrowRight className="w-4 h-4" />
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <Link to="/pricing" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#1d1d1f] px-7 text-base font-semibold text-white transition hover:bg-black active:scale-[0.985]">
+              Start at $7 <ArrowRight className="h-4 w-4" />
             </Link>
-            <a
-              href="tel:+16305811834"
-              className="inline-flex items-center gap-2 border border-ink/15 text-foreground font-medium text-sm px-7 py-3.5 hover:border-brand/30 hover:text-brand transition-colors duration-300"
-            >
-              <Phone className="w-4 h-4" />
-              Call demo line
-            </a>
+            <Link to="/showcase" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-[#1d1d1f]/16 bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:bg-[#f2f2ef] active:scale-[0.985]">
+              Hear an assistant
+            </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Footer */}
-      </MarketingPageFrame>
-    </>
+      <section className="border-y border-[#1d1d1f]/10 bg-white">
+        <div className="mx-auto grid max-w-6xl gap-px bg-[#1d1d1f]/10 md:grid-cols-3">
+          {DIFFERENCES.map(({ icon: Icon, title, copy }) => (
+            <article className="bg-white px-5 py-9 sm:px-7 sm:py-11" key={title}>
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f2f2ef] text-[#1d1d1f]"><Icon className="h-5 w-5" /></span>
+              <h2 className="mt-7 text-[1.4rem] font-semibold leading-tight tracking-[-0.035em] text-[#1d1d1f]">{title}</h2>
+              <p className="mt-3 max-w-sm text-sm leading-6 text-[#5e5e64]">{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24 lg:px-10">
+        <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">A simpler default</p>
+            <h2 className="mt-4 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#1d1d1f]">
+              The routine call should not become a project.
+            </h2>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-[#1d1d1f]/12 bg-white">
+            {TABLE_ROWS.map(([before, after], index) => (
+              <div className={`grid gap-5 p-5 sm:grid-cols-2 sm:p-6 ${index ? "border-t border-[#1d1d1f]/10" : ""}`} key={before}>
+                <p className="text-sm leading-6 text-[#6e6e73]">{before}</p>
+                <p className="flex gap-2 text-sm font-medium leading-6 text-[#1d1d1f]"><Check className="mt-1 h-4 w-4 flex-none" />{after}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-[#1d1d1f]/10 bg-[#1d1d1f] px-5 py-16 text-white sm:px-8 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-white/72"><ShieldCheck className="h-4 w-4" />You set the boundaries.</div>
+            <h2 className="mt-4 max-w-2xl text-balance text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em]">You are still in control of every assistant.</h2>
+            <p className="mt-5 max-w-xl text-base leading-7 text-white/70">Teach your agent what it can do, what it cannot do, and when it should hand the conversation back to you.</p>
+          </div>
+          <Link to="/agents" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:bg-[#f2f2ef] active:scale-[0.985]">
+            Open Agent Studio <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+    </MarketingPageFrame>
   );
 }
