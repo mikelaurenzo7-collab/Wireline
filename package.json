@@ -9,7 +9,7 @@
     "dev": "tsx server.ts",
     "build": "npm run assets && vite build && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:server": "esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
-    "vercel-build": "npm run build",
+    "vercel-build": "npm run db:migrate && npm run build",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
