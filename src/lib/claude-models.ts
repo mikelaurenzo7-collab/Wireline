@@ -1,12 +1,15 @@
 /**
  * Runtime model catalog.
  *
- * This file keeps its historical import path while the runtime itself is now
- * provider-neutral: Gemini is managed primary, OpenAI is automatic fallback,
- * and OpenRouter is an explicit per-agent override.
+ * Managed Wireline traffic runs on OpenAI first, Gemini second. OpenRouter is
+ * available only as an explicit per-agent operator selection.
+ *
+ * The historical filename remains temporarily so existing imports continue to
+ * compile while the provider-neutral modules are consolidated.
  */
 
 export const OPENAI_MODELS = {
+  GPT_5_5: "gpt-5.5",
   GPT_4O: "gpt-4o",
 } as const;
 
@@ -17,17 +20,22 @@ export const GEMINI_MODELS = {
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
 
+/** Managed structured-work order: OpenAI first, Gemini automatic fallback. */
+export const OPENAI_STRUCTURED_PRIMARY_MODEL =
+  process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_5;
+export const GEMINI_STRUCTURED_FALLBACK_MODEL =
+  process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_5;
+
 /**
- * Compatibility aliases for historical imports. They no longer point to an
- * Anthropic provider and exist only so old structured-task call sites stay
- * source-compatible while the adapter routes through Gemini then OpenAI.
+ * Deprecated aliases retained only for source compatibility with legacy import
+ * paths. They point to the OpenAI primary model and never select Anthropic.
  */
 export const CLAUDE_MODELS = {
-  HAIKU: GEMINI_MODELS.FLASH_3_5,
-  SONNET: GEMINI_MODELS.FLASH_3_5,
-  OPUS: GEMINI_MODELS.FLASH_3_5,
-  OPUS_4_8: GEMINI_MODELS.FLASH_3_5,
-  OPUS_4_6: GEMINI_MODELS.FLASH_3_5,
+  HAIKU: OPENAI_STRUCTURED_PRIMARY_MODEL,
+  SONNET: OPENAI_STRUCTURED_PRIMARY_MODEL,
+  OPUS: OPENAI_STRUCTURED_PRIMARY_MODEL,
+  OPUS_4_8: OPENAI_STRUCTURED_PRIMARY_MODEL,
+  OPUS_4_6: OPENAI_STRUCTURED_PRIMARY_MODEL,
 } as const;
 
 export type VapiVoiceProvider = "google" | "openai" | "openrouter";
@@ -51,15 +59,16 @@ export interface VoiceModelOption {
   acceptsCustomModelId?: boolean;
 }
 
-export const VAPI_TENANT_DEFAULT_PROVIDER = "google" as const;
-export const VAPI_SHOWCASE_PROVIDER = "google" as const;
+/** Vapi-compatible managed voice defaults. GPT-4o is the compatibility-first voice model. */
+export const VAPI_TENANT_DEFAULT_PROVIDER = "openai" as const;
+export const VAPI_SHOWCASE_PROVIDER = "openai" as const;
 export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
 export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [];
-export const VAPI_VOICE_FALLBACK_PROVIDER = "openai" as const;
-export const VAPI_VOICE_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_5;
-export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_5;
-export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
+export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_PREMIUM_MODEL = OPENAI_MODELS.GPT_4O;
+export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
+export const VAPI_SHOWCASE_MODEL = OPENAI_MODELS.GPT_4O;
 
 export function isOpenRouterModelId(value: unknown): value is string {
   if (typeof value !== "string") return false;
@@ -70,8 +79,7 @@ export function isOpenRouterModelId(value: unknown): value is string {
 
 /**
  * Only a valid explicit OpenRouter model overrides Wireline-managed routing.
- * Stale provider values normalize to Gemini rather than reviving a retired
- * runtime path.
+ * Invalid or stale choices normalize to the OpenAI primary model.
  */
 export function resolveVapiVoiceModelSelection(input?: {
   provider?: string | null;
@@ -82,6 +90,9 @@ export function resolveVapiVoiceModelSelection(input?: {
 
   if (provider === "openrouter" && isOpenRouterModelId(model)) {
     return { provider: "openrouter", model, userSelected: true };
+  }
+  if (provider === "openai" && /^gpt-/i.test(model)) {
+    return { provider: "openai", model, userSelected: false };
   }
   if (provider === "google" && model.toLowerCase().includes("gemini")) {
     return { provider: "google", model, userSelected: false };
@@ -95,16 +106,16 @@ export function resolveVapiVoiceModelSelection(input?: {
 
 export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   {
-    provider: "google",
-    model: GEMINI_MODELS.FLASH_3_5,
-    label: "Gemini Flash",
-    speed: "fastest",
-    envKey: "GEMINI_API_KEY",
-    note: "Wireline default. Managed calls retry through OpenAI if Gemini is unavailable.",
+    provider: "openai",
+    model: OPENAI_MODELS.GPT_4O,
+    label: "OpenAI GPT-4o",
+    speed: "fast",
+    envKey: "OPENAI_API_KEY",
+    note: "Wireline default. Managed calls retry through Gemini if OpenAI is unavailable.",
   },
   {
     provider: "openrouter",
-    model: "google/gemini-3.5-flash",
+    model: "openai/gpt-4o",
     label: "OpenRouter — choose a model",
     speed: "balanced",
     envKey: "OPENROUTER_API_KEY",
@@ -124,25 +135,28 @@ export function clampVoiceTemperature(value: unknown, fallback: number): number 
 export type TaskComplexity = "simple" | "medium" | "complex";
 
 export const MODEL_PRICING = {
+  [OPENAI_MODELS.GPT_5_5]: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  [OPENAI_MODELS.GPT_4O]: { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
   [GEMINI_MODELS.FLASH_3_5]: { input: 0.15, output: 1.25, cacheRead: 0, cacheWrite: 0 },
   [GEMINI_MODELS.FLASH_2_5]: { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
   [GEMINI_MODELS.PRO_3_1]: { input: 1.25, output: 5, cacheRead: 0, cacheWrite: 0 },
-  [OPENAI_MODELS.GPT_4O]: { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
 } as const;
 
 export function selectModelForTask(_complexity: TaskComplexity): string {
-  return GEMINI_MODELS.FLASH_3_5;
+  return OPENAI_STRUCTURED_PRIMARY_MODEL;
 }
 
-export const CLAUDE_REASONING_MODEL_DEFAULT: string = GEMINI_MODELS.FLASH_3_5;
-export const CLAUDE_DIRECTOR_MODEL: string = GEMINI_MODELS.FLASH_3_5;
-export const CLAUDE_PAINTER_MODEL: string = GEMINI_MODELS.FLASH_3_5;
-export const CLAUDE_MODEL_DEFAULT: string = CLAUDE_REASONING_MODEL_DEFAULT;
-export const DEFAULT_MODEL: string = CLAUDE_REASONING_MODEL_DEFAULT;
+/** Legacy constant names, now OpenAI-native. */
+export const CLAUDE_REASONING_MODEL_DEFAULT: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const CLAUDE_DIRECTOR_MODEL: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const CLAUDE_PAINTER_MODEL: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const CLAUDE_MODEL_DEFAULT: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const DEFAULT_MODEL: string = OPENAI_STRUCTURED_PRIMARY_MODEL;
 
 export function claudeModelLabel(model: string): string {
-  if (model === GEMINI_MODELS.FLASH_3_5) return "Gemini Flash";
+  if (model === OPENAI_MODELS.GPT_5_5) return "GPT-5.5";
   if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";
+  if (model.toLowerCase().includes("gemini")) return "Gemini";
   return model;
 }
 
