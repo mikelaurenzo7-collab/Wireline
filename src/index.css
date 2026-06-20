@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "./styles/cta-readability.css";
 @import "./styles/phone-agent-blueprint.css";
-@import "./styles/phone-agent-blueprint-honesty.css";
 
 :root {
   --wl-font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
