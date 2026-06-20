@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppRoutes from "../../routes/AppRoutes";
+import TrialGateModal from "../TrialGateModal";
 
 export default function AppShell() {
   const { user, loading } = useAuth();
@@ -13,5 +14,10 @@ export default function AppShell() {
     return <Navigate to={`/signin?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 
-  return <AppRoutes />;
+  return (
+    <>
+      <AppRoutes />
+      <TrialGateModal />
+    </>
+  );
 }
