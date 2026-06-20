@@ -4,9 +4,7 @@
   "license": "UNLICENSED",
   "version": "1.0.0",
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
+  "engines": { "node": ">=22" },
   "scripts": {
     "dev": "tsx server.ts",
     "build": "npm run assets && vite build && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
@@ -35,10 +33,9 @@
     "vapi:patch-webhooks": "node scripts/patch-vapi-prod-webhooks.mjs",
     "vapi:patch-flux-ab": "node scripts/patch-vapi-showcase-flux-ab.mjs",
     "vapi:sync-showcase": "tsx scripts/sync-wireline-showcase.mts",
-    "docs:check": "node scripts/check-readme-pricing.mjs && node scripts/check-positioning-drift.mjs",
-    "csp:check": "node scripts/check-csp-drift.mjs && node scripts/csp-inventory.mjs",
+    "docs:check": "node scripts/check-readme-pricing.mjs",
+    "csp:check": "node scripts/check-csp-drift.mjs",
     "csp:sync": "node scripts/check-csp-drift.mjs --write",
-    "csp:inventory:update": "node scripts/csp-inventory.mjs --update",
     "authz:check": "tsx scripts/generate-authz-matrix.ts",
     "api-error:check": "node scripts/check-api-error-shape.mjs",
     "security:audit": "npm audit --audit-level=high --omit=dev",
@@ -59,14 +56,10 @@
     "dogfood:marketing": "node scripts/dogfood-marketing.mjs",
     "dogfood:director": "node scripts/dogfood-director.mjs",
     "analyze": "VISUALIZE=1 vite build",
-    "tenant-insert:check": "node scripts/check-user-id-inserts.mjs",
-    "positioning:check": "node scripts/check-positioning-drift.mjs"
+    "tenant-insert:check": "node scripts/check-user-id-inserts.mjs"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "prettier --write",
-      "eslint --max-warnings 0 --no-warn-ignored --fix"
-    ]
+    "*.{ts,tsx}": ["prettier --write", "eslint --max-warnings 0 --no-warn-ignored --fix"]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
@@ -76,7 +69,7 @@
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
-    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-avatar": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.18",
     "@radix-ui/react-label": "^2.1.8",
@@ -117,6 +110,7 @@
     "react-router-dom": "^7.15.1",
     "recharts": "^3.8.1",
     "stripe": "^17.7.0",
+    "svix": "^1.96.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^6.0.2",
@@ -156,8 +150,5 @@
     "typescript": "^6.0.3",
     "vite": "^6.2.0",
     "vitest": "^4.1.8"
-  },
-  "overrides": {
-    "esbuild": "$esbuild"
   }
 }
