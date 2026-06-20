@@ -1,6 +1,5 @@
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./claude-models";
 
-/** Historical tier identifiers are retained for persisted selections. */
 export type WirelineDirectorTier = "auto" | "sonnet" | "opus";
 export type DirectorChatModelSelection =
   | { provider: "wireline"; tier: WirelineDirectorTier }
@@ -35,7 +34,7 @@ export function parseDirectorChatModelSelection(raw: unknown): DirectorChatModel
 export type ResolvedDirectorLlm = {
   provider: "wireline" | "openrouter";
   model: string;
-  modelKind: "standard" | "deep" | "custom";
+  modelKind: "sonnet" | "opus" | "custom";
   modelLabel: string;
   openRouterModelId?: string;
   deepThink: boolean;
@@ -68,7 +67,7 @@ export function resolveDirectorLlm(input: {
   return {
     provider: "wireline",
     model: deep ? input.claudeOpus ?? OPENAI_STRUCTURED_PRIMARY_MODEL : input.claudeSonnet ?? OPENAI_STRUCTURED_PRIMARY_MODEL,
-    modelKind: deep ? "deep" : "standard",
+    modelKind: deep ? "opus" : "sonnet",
     modelLabel: "GPT-5.5",
     deepThink: deep,
     maxTokens: input.longDeliverable ? 5000 : 2500,
