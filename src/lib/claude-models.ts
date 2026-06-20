@@ -134,8 +134,9 @@ export function clampVoiceTemperature(value: unknown, fallback: number): number 
 
 export type TaskComplexity = "simple" | "medium" | "complex";
 
+/** USD per million tokens. GPT-5.5 rates match the public standard API price. */
 export const MODEL_PRICING = {
-  [OPENAI_MODELS.GPT_5_5]: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  [OPENAI_MODELS.GPT_5_5]: { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 5 },
   [OPENAI_MODELS.GPT_4O]: { input: 5, output: 15, cacheRead: 0, cacheWrite: 0 },
   [GEMINI_MODELS.FLASH_3_5]: { input: 0.15, output: 1.25, cacheRead: 0, cacheWrite: 0 },
   [GEMINI_MODELS.FLASH_2_5]: { input: 0.3, output: 2.5, cacheRead: 0, cacheWrite: 0 },
