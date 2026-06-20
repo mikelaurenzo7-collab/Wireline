@@ -11,7 +11,7 @@ struct SignInView: View {
             Medallion(systemImage: "phone.connection.fill", size: 72)
             VStack(spacing: 6) {
                 Text("Wireline").font(.largeTitle.weight(.bold))
-                Text("Your AI agents, on every line.")
+                Text("Your call assistant, built around your rules.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
 
