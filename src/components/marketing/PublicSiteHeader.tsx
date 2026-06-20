@@ -11,7 +11,7 @@ const NAV_LINKS = [
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
   { to: "/showcase", label: "Demos" },
-  { to: "/compare", label: "Compare" },
+  { to: "/compare", label: "Why Wireline" },
   { to: "/about", label: "About" },
 ] as const;
 
