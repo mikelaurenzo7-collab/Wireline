@@ -1,196 +1,220 @@
 /**
- * Legacy compatibility adapter for structured Wireline tasks.
+ * Provider-neutral structured runtime adapter.
  *
- * Existing callers still use Anthropic-shaped message types, but no request is
- * sent to Anthropic. Managed execution is Gemini first and OpenAI second.
- * Explicit user model choice belongs to the OpenRouter per-agent path, not to
- * this shared background fallback.
+ * Historical callers still import this path while the repository is being
+ * consolidated. No Anthropic SDK or Anthropic API path remains here:
+ * OpenAI Responses is primary and Gemini is the automatic fallback.
  */
 
-import type Anthropic from "@anthropic-ai/sdk";
 import { log } from "./server-logger";
-import { VAPI_VOICE_FALLBACK_MODEL } from "./voice-model-defaults";
+import {
+  GEMINI_STRUCTURED_FALLBACK_MODEL,
+  OPENAI_STRUCTURED_PRIMARY_MODEL,
+} from "./claude-models";
 
-let _client: Anthropic | null = null;
+export type RuntimeTextBlock = {
+  type: "text";
+  text: string;
+  citations?: null;
+};
 
-type RequestOptions = Parameters<Anthropic["messages"]["create"]>[1];
+export type RuntimeToolUseBlock = {
+  type: "tool_use";
+  id: string;
+  caller?: { type: "direct" };
+  name: string;
+  input: unknown;
+};
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+export type RuntimeContentBlock = RuntimeTextBlock | RuntimeToolUseBlock;
+export type RuntimeStopReason = "end_turn" | "tool_use";
+
+export type RuntimeTool = {
+  name: string;
+  description?: string;
+  input_schema: Record<string, unknown>;
+};
+
+export type RuntimeMessageParam = {
+  role: "user" | "assistant";
+  content: string | Array<{ type?: string; text?: string }>;
+};
+
+export type RuntimeRequest = {
+  model?: string;
+  max_tokens?: number;
+  system?: string | Array<{ type?: string; text?: string }>;
+  messages: RuntimeMessageParam[];
+  tools?: RuntimeTool[];
+  tool_choice?: { type?: string; name?: string };
+};
+
+export type RuntimeMessage = {
+  id: string;
+  type: "message";
+  role: "assistant";
+  model: string;
+  content: RuntimeContentBlock[];
+  stop_reason: RuntimeStopReason;
+  stop_sequence: null;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    cache_creation_input_tokens: number;
+    cache_read_input_tokens: number;
+  };
+};
+
+export type RuntimeRequestOptions = { signal?: AbortSignal };
+
+export type RuntimeClient = {
+  messages: {
+    create: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
+    stream: (body: RuntimeRequest, options?: RuntimeRequestOptions) => {
+      [Symbol.asyncIterator](): AsyncGenerator<unknown>;
+      finalMessage(): Promise<RuntimeMessage>;
+    };
+  };
+};
+
+let client: RuntimeClient | null = null;
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
-function extractSystemText(system: Anthropic.MessageCreateParams["system"]): string {
+function extractSystemText(system: RuntimeRequest["system"]): string {
   if (typeof system === "string") return system;
-  if (Array.isArray(system)) {
-    return system.map((block) => (block.type === "text" ? block.text : "")).join("\n");
-  }
+  if (Array.isArray(system)) return system.map((block) => block.text || "").join("\n");
   return "";
 }
 
-function extractMessageText(content: Anthropic.MessageParam["content"]): string {
+function extractMessageText(content: RuntimeMessageParam["content"]): string {
   if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content.map((block) => (block.type === "text" ? block.text : "")).join("\n");
-  }
-  return "";
+  return content.map((block) => block.text || "").join("\n");
 }
 
-function firstFunctionTool(body: Anthropic.MessageCreateParams): Anthropic.Tool | null {
+function firstTool(body: RuntimeRequest): RuntimeTool | null {
   const tool = body.tools?.[0];
-  return tool && "input_schema" in tool ? (tool as Anthropic.Tool) : null;
+  return tool && typeof tool.name === "string" ? tool : null;
 }
 
 function parseStructuredJson(text: string): unknown {
+  const cleaned = text.replace(/```json|```/g, "").trim();
   try {
-    return JSON.parse(text.replace(/```json|```/g, "").trim());
+    return JSON.parse(cleaned);
   } catch {
     const match = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    return JSON.parse(match?.[1] ? match[1].trim() : text.trim());
+    return JSON.parse(match?.[1] ? match[1].trim() : cleaned);
   }
 }
 
-function buildFallbackMessage(args: {
+function runtimeMessage(args: {
   model: string;
-  content: Anthropic.ContentBlock[];
-  stopReason: Anthropic.StopReason;
+  content: RuntimeContentBlock[];
+  stopReason: RuntimeStopReason;
   inputTokens: number;
   outputTokens: number;
-}): Anthropic.Message {
+}): RuntimeMessage {
   return {
-    id: "msg_" + Math.random().toString(36).substring(2),
+    id: `msg_${Math.random().toString(36).slice(2)}`,
     type: "message",
     role: "assistant",
     model: args.model,
     content: args.content,
     stop_reason: args.stopReason,
     stop_sequence: null,
-    stop_details: null,
-    container: null,
     usage: {
       input_tokens: args.inputTokens,
       output_tokens: args.outputTokens,
-      cache_creation: null,
-      cache_creation_input_tokens: null,
-      cache_read_input_tokens: null,
-      inference_geo: null,
-      server_tool_use: null,
-      service_tier: null,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
     },
   };
 }
 
-async function callGemini(body: Anthropic.MessageCreateParams): Promise<Anthropic.Message> {
-  const { GoogleGenerativeAI } = await import("@google/generative-ai");
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const geminiModelId = "gemini-3.5-flash";
-  const systemInstruction = extractSystemText(body.system);
-  const model = genAI.getGenerativeModel({
-    model: geminiModelId,
-    systemInstruction: systemInstruction || undefined,
-  });
-
-  const contents = body.messages.map((msg) => ({
-    role: msg.role === "assistant" ? ("model" as const) : ("user" as const),
-    parts: [{ text: extractMessageText(msg.content) }],
-  }));
-
-  const targetTool = firstFunctionTool(body);
-  const generationConfig: { responseMimeType?: string } = {};
-  if (targetTool) {
-    generationConfig.responseMimeType = "application/json";
-    const schemaPrompt = `\nReturn one JSON object matching this schema:\n${JSON.stringify(targetTool.input_schema, null, 2)}`;
-    if (contents.length > 0) contents[contents.length - 1].parts[0].text += schemaPrompt;
+function extractResponsesText(payload: Record<string, unknown>): string {
+  if (typeof payload.output_text === "string" && payload.output_text.trim()) return payload.output_text;
+  const output = Array.isArray(payload.output) ? payload.output : [];
+  const chunks: string[] = [];
+  for (const item of output) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    if (typeof record.text === "string") chunks.push(record.text);
+    const content = Array.isArray(record.content) ? record.content : [];
+    for (const part of content) {
+      if (!part || typeof part !== "object") continue;
+      const value = part as Record<string, unknown>;
+      if (typeof value.text === "string") chunks.push(value.text);
+    }
   }
-
-  const result = await model.generateContent({ contents, generationConfig });
-  const text = result.response.text();
-  const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
-  const outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
-
-  if (targetTool) {
-    return buildFallbackMessage({
-      model: geminiModelId,
-      content: [
-        {
-          type: "tool_use",
-          id: "call_" + Math.random().toString(36).substring(2),
-          caller: { type: "direct" },
-          name: targetTool.name,
-          input: parseStructuredJson(text),
-        },
-      ],
-      stopReason: "tool_use",
-      inputTokens,
-      outputTokens,
-    });
-  }
-
-  return buildFallbackMessage({
-    model: geminiModelId,
-    content: [{ type: "text", text, citations: null }],
-    stopReason: "end_turn",
-    inputTokens,
-    outputTokens,
-  });
+  return chunks.join("\n").trim();
 }
 
-async function callOpenAI(body: Anthropic.MessageCreateParams): Promise<Anthropic.Message> {
+async function callOpenAI(body: RuntimeRequest, options?: RuntimeRequestOptions): Promise<RuntimeMessage> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
-  const model = VAPI_VOICE_FALLBACK_MODEL;
+  const requestedModel = String(body.model || "").trim();
+  const model = requestedModel.startsWith("gpt-") ? requestedModel : OPENAI_STRUCTURED_PRIMARY_MODEL;
   const systemPrompt = extractSystemText(body.system);
-  const targetTool = firstFunctionTool(body);
-  const messages = [
-    ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
-    ...body.messages.map((message) => ({
-      role: message.role,
-      content: extractMessageText(message.content),
-    })),
-  ];
+  const targetTool = firstTool(body);
+  const startedAt = Date.now();
 
-  if (targetTool && messages.length > 0) {
-    messages[messages.length - 1].content += `\nReturn one JSON object matching this schema:\n${JSON.stringify(targetTool.input_schema, null, 2)}`;
-  }
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
+    signal: options?.signal,
     body: JSON.stringify({
       model,
-      temperature: 0.2,
-      max_tokens: body.max_tokens ?? 4096,
-      ...(targetTool ? { response_format: { type: "json_object" } } : {}),
-      messages,
+      instructions: systemPrompt || undefined,
+      input: body.messages.map((message) => ({
+        role: message.role,
+        content: extractMessageText(message.content),
+      })),
+      max_output_tokens: body.max_tokens ?? 4096,
+      ...(targetTool
+        ? {
+            text: {
+              format: {
+                type: "json_schema",
+                name: targetTool.name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64),
+                schema: targetTool.input_schema,
+                strict: false,
+              },
+            },
+          }
+        : {}),
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI request failed (${response.status}): ${(await response.text()).slice(0, 500)}`);
+    throw new Error(`OpenAI Responses request failed (${response.status}): ${(await response.text()).slice(0, 500)}`);
   }
 
-  const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
-  };
-  const text = payload.choices?.[0]?.message?.content || "";
-  if (!text.trim()) throw new Error("OpenAI returned an empty completion");
-  const inputTokens = payload.usage?.prompt_tokens || 0;
-  const outputTokens = payload.usage?.completion_tokens || 0;
+  const payload = (await response.json()) as Record<string, unknown>;
+  const text = extractResponsesText(payload);
+  if (!text) throw new Error("OpenAI returned an empty response");
+  const usage = (payload.usage || {}) as Record<string, unknown>;
+  const inputTokens = Number(usage.input_tokens || 0);
+  const outputTokens = Number(usage.output_tokens || 0);
+
+  log.info("[runtime] OpenAI structured response complete", {
+    model,
+    latencyMs: Date.now() - startedAt,
+    structured: !!targetTool,
+  });
 
   if (targetTool) {
-    return buildFallbackMessage({
+    return runtimeMessage({
       model,
       content: [
         {
           type: "tool_use",
-          id: "call_" + Math.random().toString(36).substring(2),
+          id: `call_${Math.random().toString(36).slice(2)}`,
           caller: { type: "direct" },
           name: targetTool.name,
           input: parseStructuredJson(text),
@@ -202,7 +226,7 @@ async function callOpenAI(body: Anthropic.MessageCreateParams): Promise<Anthropi
     });
   }
 
-  return buildFallbackMessage({
+  return runtimeMessage({
     model,
     content: [{ type: "text", text, citations: null }],
     stopReason: "end_turn",
@@ -211,21 +235,73 @@ async function callOpenAI(body: Anthropic.MessageCreateParams): Promise<Anthropi
   });
 }
 
-async function createWithFallbacks(
-  body: Anthropic.MessageCreateParams,
-  _options?: RequestOptions,
-): Promise<Anthropic.Message> {
-  try {
-    return await callGemini(body);
-  } catch (geminiErr) {
-    log.warn("[runtime] Gemini request failed; trying OpenAI fallback", {
-      error: errorMessage(geminiErr),
+async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
+
+  const modelId = GEMINI_STRUCTURED_FALLBACK_MODEL;
+  const systemPrompt = extractSystemText(body.system);
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: modelId, systemInstruction: systemPrompt || undefined });
+  const targetTool = firstTool(body);
+  const contents = body.messages.map((message) => ({
+    role: message.role === "assistant" ? ("model" as const) : ("user" as const),
+    parts: [{ text: extractMessageText(message.content) }],
+  }));
+  const generationConfig: { responseMimeType?: string } = {};
+
+  if (targetTool) {
+    generationConfig.responseMimeType = "application/json";
+    if (contents.length > 0) {
+      contents[contents.length - 1].parts[0].text += `\nReturn one JSON object matching this schema:\n${JSON.stringify(targetTool.input_schema, null, 2)}`;
+    }
+  }
+
+  const result = await model.generateContent({ contents, generationConfig });
+  const text = result.response.text();
+  const inputTokens = result.response.usageMetadata?.promptTokenCount || 0;
+  const outputTokens = result.response.usageMetadata?.candidatesTokenCount || 0;
+
+  if (targetTool) {
+    return runtimeMessage({
+      model: modelId,
+      content: [
+        {
+          type: "tool_use",
+          id: `call_${Math.random().toString(36).slice(2)}`,
+          caller: { type: "direct" },
+          name: targetTool.name,
+          input: parseStructuredJson(text),
+        },
+      ],
+      stopReason: "tool_use",
+      inputTokens,
+      outputTokens,
     });
-    return callOpenAI(body);
+  }
+
+  return runtimeMessage({
+    model: modelId,
+    content: [{ type: "text", text, citations: null }],
+    stopReason: "end_turn",
+    inputTokens,
+    outputTokens,
+  });
+}
+
+async function createWithFallbacks(body: RuntimeRequest, options?: RuntimeRequestOptions): Promise<RuntimeMessage> {
+  try {
+    return await callOpenAI(body, options);
+  } catch (openAiError) {
+    log.warn("[runtime] OpenAI request failed; trying Gemini fallback", {
+      error: errorMessage(openAiError),
+    });
+    return callGemini(body);
   }
 }
 
-function buildFallbackStream(promise: Promise<Anthropic.Message>) {
+function buildFallbackStream(promise: Promise<RuntimeMessage>) {
   return {
     async *[Symbol.asyncIterator]() {
       const message = await promise;
@@ -234,7 +310,7 @@ function buildFallbackStream(promise: Promise<Anthropic.Message>) {
       const delta =
         block.type === "text"
           ? { type: "text_delta", text: block.text }
-          : { type: "input_json_delta", partial_json: JSON.stringify(block.type === "tool_use" ? block.input : {}) };
+          : { type: "input_json_delta", partial_json: JSON.stringify(block.input) };
       yield { type: "content_block_delta", index: 0, delta };
       yield { type: "content_block_stop", index: 0 };
     },
@@ -244,41 +320,30 @@ function buildFallbackStream(promise: Promise<Anthropic.Message>) {
   };
 }
 
-/**
- * Compatibility facade for existing structured-task callers. It never creates
- * an Anthropic SDK client; all calls route through Gemini then OpenAI.
- */
-export function getClient(): Anthropic {
-  if (!_client) {
-    const handler: ProxyHandler<Record<string | symbol, unknown>> = {
-      get(_target, prop) {
-        if (prop === "messages") {
-          return {
-            create: (body: Anthropic.MessageCreateParams, options?: RequestOptions) =>
-              createWithFallbacks(body, options),
-            stream: (body: Anthropic.MessageCreateParams, options?: RequestOptions) =>
-              buildFallbackStream(createWithFallbacks(body, options)),
-          };
-        }
-        return undefined;
+/** Runtime client used by existing structured-task callers. */
+export function getClient(): RuntimeClient {
+  if (!client) {
+    client = {
+      messages: {
+        create: createWithFallbacks,
+        stream: (body, options) => buildFallbackStream(createWithFallbacks(body, options)),
       },
     };
-    _client = new Proxy({}, handler) as unknown as Anthropic;
   }
-  return _client;
+  return client;
 }
 
-/** @deprecated Retained for callers that have not yet adopted runtime wording. */
+/** @deprecated Historical name retained while callers migrate to runtime wording. */
 export class ClaudeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable — configure Gemini or OpenAI.");
-    this.name = "ClaudeUnavailableError";
+    super("AI runtime is unavailable — configure OpenAI or Gemini.");
+    this.name = "RuntimeUnavailableError";
   }
 }
 
 export function isRuntimeAvailable(): boolean {
-  return !!(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY);
+  return !!(process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY);
 }
 
 /** @deprecated Use isRuntimeAvailable. */
