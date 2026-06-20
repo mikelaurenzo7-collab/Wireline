@@ -14,7 +14,7 @@ function estimateReadingTime(body: string) {
     .split(/\s+/)
     .filter(Boolean).length;
 
-  return Math.max(4, Math.round(words / 220));
+  return Math.max(3, Math.round(words / 220));
 }
 
 function createPost(post: Omit<BlogPostRecord, "readingTimeMinutes">): BlogPostRecord {
@@ -26,415 +26,121 @@ function createPost(post: Omit<BlogPostRecord, "readingTimeMinutes">): BlogPostR
 
 export const BLOG_POSTS: BlogPostRecord[] = [
   createPost({
-    id: "voice-ai-benchmarks-sub-400ms-response-times",
-    title: "Voice AI Benchmarks: How We Hit Sub-400ms Response Times",
-    date: "2026-05-12T09:00:00.000Z",
-    author: "Mike Lorenzo",
+    id: "what-to-hand-off-to-a-call-assistant",
+    title: "What is worth handing off to a call assistant?",
+    date: "2026-06-20T09:00:00.000Z",
+    author: "Wireline",
     excerpt:
-      "Fast voice agents are the result of ruthless latency budgeting across speech detection, model inference, and speech synthesis. Here is the stack and the tuning discipline that let Wireline answer live calls with a response loop that feels close to human.",
-    body: `# Fast enough to feel interruptible
+      "A practical way to decide which calls are worth delegating: repetitive calls with a clear objective, a short list of facts to collect, and a result you can review.",
+    body: `# What is worth handing off to a call assistant?
 
-Most voice AI demos focus on whether the model sounds smart. In production, callers judge something earlier: how long they sit in silence. If a caller asks a question and waits a full second before hearing anything back, they do not experience intelligence. They experience doubt. That is why our internal benchmark became simple and unforgiving: on common receptionist flows, the system needed to start responding in under 400 milliseconds after endpointing. Below that line, callers interrupt naturally and stay engaged. Above it, the assistant starts to feel staged.
+A call assistant is most helpful when the call itself is routine but still takes time. Think of the calls that put a small task on hold: checking whether a prescription is ready, asking an airline about a policy, confirming an appointment, or waiting on a customer-support line for a simple answer.
 
-Wireline reached that range with a stack built on Vapi for telephony orchestration, ElevenLabs for speech synthesis, Claude for reasoning, and a tuning layer that removes waste between each step. The breakthrough was not one model swap. It was treating latency as a product feature.
+The best starting point is not the most complicated call on your list. It is the one you already know how to describe in one or two sentences.
 
-## Start with a latency budget
+## Start with a clear outcome
 
-Before we tuned anything, we split the turn loop into measurable buckets: endpoint detection, transcript finalization, model first token, and first audio playback. That sounds obvious, but many teams skip it and jump straight into prompt debates. In practice, the model is often not the largest delay.
+Before you delegate anything, write down what a successful call should return. A useful outcome might be an answer, a status update, an appointment option, or a request for a callback.
 
-Our working budget looked like this:
+When the outcome is clear, the assistant has a job to do instead of an open-ended conversation to manage.
 
-- 80 to 120 milliseconds for endpointing
-- 60 to 90 milliseconds for transcript handoff
-- 120 to 160 milliseconds for first-token model output on common intents
-- 80 to 120 milliseconds to begin speech playback
+## Give it the facts you would say yourself
 
-Once we had those boundaries, tradeoffs became easier. If a prompt change added 40 milliseconds, it had to materially improve correctness. If a retrieval step made the system slower without changing the answer on common calls, it was cut.
+Most routine calls need a few details: a name, a reference number, a preferred time, a reason for calling, or a short explanation of the issue.
 
-## Vapi helped because we could focus on conversation design
+Keeping those details together makes it easier to set the assistant up well and easier to review the result afterwards.
 
-Vapi gave us the call transport, live streaming, and interruption behavior we needed without forcing us to rebuild telephony from scratch. That mattered because hand-rolled telephony layers usually add buffering, state bugs, and operational drag long before they add product value.
+## Keep important decisions with you
 
-The biggest gain was control over the live conversation loop. We shortened silence windows where confidence was high, treated quick backchannels differently from real questions, and let the assistant prepare a response before the caller’s final word was polished into perfect transcript text. The key insight was that callers care more about conversational momentum than transcript perfection.
+Some calls should stay in your hands. Avoid delegating decisions that require legal consent, financial approval, a medical judgement, or any step where you need to make a personal choice in the moment.
 
-## ElevenLabs only feels premium if you keep it fast
+A good assistant is not a substitute for your judgement. It is a way to remove the waiting, repeating, and note-taking around a decision you still control.
 
-ElevenLabs gave us the voice quality we wanted, but premium voice quality can become a latency trap if every turn is treated like a cinematic monologue. Reception workflows do not need cinematic. They need immediate.
+## A simple test
 
-Three adjustments mattered most:
+Ask yourself three questions:
 
-- We standardized a small set of production voices and kept them warm.
-- We wrote prompts for speakability, using shorter, cleaner clauses.
-- We trained the agent to open with a useful sentence and elaborate only if the caller kept engaging.
+- Can I explain the goal of this call in one sentence?
+- Can I list the facts the caller will need before the call starts?
+- Would a short recap be enough for me to decide what happens next?
 
-That last point improved more than speed. Human receptionists rarely begin with a paragraph. They answer, orient, then expand. Once the assistant copied that rhythm, both latency and call quality improved.
-
-## Claude got faster when we asked it to do less
-
-Claude handled the reasoning layer well, but prompt discipline mattered more than raw model capability. Early versions of the system were bloated: broad policy blocks, too much business context, and instructions repeated every turn. That made the model slower and more verbose.
-
-We moved to a slimmer pattern:
-
-- a compact system frame for role and tone
-- a small business snapshot relevant to the current workflow
-- short-lived turn memory instead of replaying the whole conversation
-- tool access gated by the current intent
-
-The result was better first-token latency and tighter responses. The simplest way to make a real-time model faster is often to stop making it solve every possible problem at once.
-
-## Time-to-first-audio matters more than total completion
-
-Benchmarks often focus on when the full answer is done. Callers care about when speech starts. We optimized for time-to-first-audio and changed prompts so the first clause could stand on its own. “I can help with that. What address should I use?” works better than a long setup sentence, even if the total answer is eventually the same.
-
-Streaming partial output through the stack was critical here. We stopped waiting for a perfect paragraph and started synthesizing once the response crossed a confidence threshold. That made the assistant feel more present even when the rest of the sentence was still in flight.
-
-## The biggest wins were boring
-
-The most valuable performance work was not glamorous.
-
-- Keep hot paths warm
-- Cache tenant configuration close to the voice runtime
-- Skip heavy retrieval on routine intents like hours, pricing, and service area questions
-- Trim post-processing on simple turns
-- Instrument every stage so regressions show up quickly
-
-That is the unsexy truth of production voice systems: the gap between an impressive demo and a dependable product is mostly operational hygiene.
-
-## Fast systems still need graceful fallback
-
-Latency wins disappear the moment a dependency slows down unless fallback behavior is built in. If speech synthesis drifted up, we shortened answer targets. If a tool dependency lagged, the assistant acknowledged progress and asked one clarifying question instead of freezing. If the model crossed a response threshold, it biased toward a direct answer and a faster next step.
-
-We also benchmarked under messy conditions, not just lab conditions. Real callers interrupt, change course, speak over noise, and force the stack to recover mid-turn. A latency number only matters if the system still feels natural when the call gets messy.
-
-## What I would recommend to any team building voice AI
-
-If you are chasing lower latency, do the basics first:
-
-- measure endpointing, model, and TTS separately
-- optimize time-to-first-audio instead of only total turn time
-- shorten prompts before chasing exotic architecture changes
-- pre-warm the voices and workflows you use most
-- design fallback behavior before production traffic forces it on you
-
-Sub-400-millisecond voice AI is achievable with today’s infrastructure. The vendors matter. The tuning discipline matters more.`,
+When the answer is yes, the call is a strong candidate to hand off.`,
   }),
   createPost({
-    id: "hvac-shop-answering-service-replacement",
-    title: "How a 3-Person HVAC Shop Replaced Their Answering Service with Wireline",
-    date: "2026-04-28T09:00:00.000Z",
-    author: "Mike Lorenzo",
+    id: "how-to-set-boundaries-for-a-call-assistant",
+    title: "How to set useful boundaries for a call assistant",
+    date: "2026-06-19T09:00:00.000Z",
+    author: "Wireline",
     excerpt:
-      "A small HVAC business did not need an enterprise call center; it needed a system that could catch after-hours calls, qualify urgency, and stop leaking revenue to voicemail. This customer story breaks down how a three-person team replaced a legacy answering service with Wireline and what changed in the first six weeks.",
-    body: `# The problem was not call volume. It was call timing.
+      "The most useful rule set is usually the shortest one: what the assistant can do, what it must collect, and when it should stop and return the conversation to you.",
+    body: `# How to set useful boundaries for a call assistant
 
-This customer was a three-person HVAC shop: one owner, one field tech, and one office coordinator who also handled billing, scheduling, and dispatch. They were not fielding hundreds of calls a day. They were missing a smaller number of very valuable calls at exactly the wrong moments: after hours, during lunch, while the coordinator was already on another line, or when the owner was driving between jobs.
+Delegating a call should not mean giving away control. The practical way to use a call assistant is to set a small number of rules before it starts.
 
-They already had an answering service, but the experience was inconsistent. Messages arrived late, details were vague, and urgent service requests were mixed together with routine questions. On paper, they had coverage. In practice, they still had leakage.
+You do not need a long policy document. You need a clear definition of what the assistant is allowed to do and what it should bring back to you.
 
-## What the shop actually needed
+## Name the job
 
-The owner did not ask for a futuristic “AI transformation.” He wanted four concrete outcomes:
+Give the assistant one job at a time. “Find the next available appointment” is clearer than “handle my doctor situation.” “Ask whether my order is ready for pickup” is clearer than “deal with customer support.”
 
-- answer every inbound call, especially nights and weekends
-- separate true emergency requests from routine inquiries
-- capture usable details the first time
-- hand the team a clean next action instead of a loose voicemail
+A narrow job keeps the call focused and makes the outcome easier to verify.
 
-That framing mattered. Small businesses do not buy categories. They buy relief from a specific bottleneck.
+## Decide what it can collect
 
-## Why the old answering service underperformed
+List the details that matter to you. That might include available times, a reference number, a quoted price, a cancellation rule, or the name of the person who helped.
 
-The invoice from the answering service looked manageable: monthly retainer, per-message fees, after-hours charges. The hidden cost was much larger.
+This turns the call into a useful handoff instead of a vague summary.
 
-- Some callers never left voicemail at all.
-- Some urgent calls were relayed too slowly to save the job.
-- Many messages arrived missing addresses, equipment details, or the real reason for the call.
-- The coordinator still had to spend time translating notes into something dispatchable.
+## Decide where it stops
 
-The owner eventually realized he was paying for a message-taking system, not a resolution system.
+Make the stop conditions obvious. For example: do not accept a charge, do not provide sensitive information beyond what is necessary, do not agree to a new contract, and ask for a callback when a decision needs your approval.
 
-## Deployment was intentionally simple
+A stop condition is not a failure. It is a clean way to keep decisions in the right hands.
 
-We did not start with a giant workflow map. We launched one dedicated number, one HVAC-specific reception flow, and a clear set of collection fields. The agent could answer common questions about service areas, hours, financing, and maintenance plans. More importantly, it could capture:
+## Review the recap, not every word
 
-- caller name
-- service address
-- best callback number
-- issue summary
-- urgency indicators like “no heat,” “system won’t start,” or “water leak”
+For most routine work, you should not have to read a full transcript. The valuable part is the recap: what happened, what was learned, and what needs your attention next.
 
-We also matched the escalation logic to the way the shop actually operated. A no-cooling call on a mild day is not the same as no heat during a winter cold snap. An active leak matters more than a tune-up request. The agent worked because it mirrored the business’s priorities instead of forcing a generic script.
-
-## The trust hurdle was emotional, not technical
-
-The office coordinator’s main concern was that customers would hate talking to AI. That fear comes up constantly in SMB deployments. People picture a stiff robot trapping callers in menus.
-
-So the first version of the workflow was deliberately modest. The greeting was short. Questions were sequential. The system did not try to sound clever. It tried to sound competent. Just as important, it had a clear escape hatch. If a caller sounded frustrated, explicitly asked for a person, or described something unusual, the workflow shifted from “fully solve this” to “capture the essentials and route it correctly.”
-
-That restraint made the system feel more trustworthy. The fastest way to lose user confidence is to make the agent pretend it can do more than it should.
-
-## What changed in the first six weeks
-
-The first visible win was note quality. Instead of receiving “customer needs service, call back,” the team got structured summaries with urgency, address, callback number, and a plain-language issue description. That alone saved time before the first return call happened.
-
-The second win was after-hours visibility. Calls that previously disappeared into voicemail were now logged with context, and emergency requests could be escalated quickly. Not every answered call became a booked job, but the team finally understood how much demand used to vanish.
-
-The third win was calmer daytime operations. The coordinator no longer had to drop everything every time the phone rang. The shop could handle inbound demand without acting like the phone was an alarm bell.
-
-## Why AI beat the answering service here
-
-The advantage was not that AI was somehow more human than the answering service. The advantage was consistency.
-
-The system asked the same critical questions every time. It followed the same urgency rules every time. It delivered notes in a usable structure every time. For a tiny operator, that kind of consistency is leverage. One missed question can mean an extra callback, a delayed dispatch, or a lost emergency job. Over a month, those small misses add up.
-
-## What we did not automate
-
-To keep the case study honest, we did not automate everything. The system did not fully schedule every appointment end to end. It did not attempt deep equipment diagnosis over the phone. It did not run giant upsell trees. Its job was to answer fast, triage cleanly, and hand the team a better next action.
-
-That scope discipline is a big reason the rollout worked. Small businesses do not need theater. They need practical relief.
-
-## The biggest ROI was part financial, part psychological
-
-By week six, the owner estimated that recovered service revenue from better after-hours coverage had already covered the monthly cost of the system. But the operational benefit was only part of the story. He also described feeling like the business was finally “answering even when I’m not.”
-
-That emotional shift matters more than people admit. Owners carry a constant low-grade stress that the next missed call is lost money or a disappointed customer. Reliable front-desk coverage removes some of that burden.
-
-## Lessons for other home-service operators
-
-If you run HVAC, plumbing, electrical, roofing, or restoration, I would focus on a few basics before automating anything:
-
-- map the top call types you already get
-- define urgency based on your actual dispatch economics
-- capture the fields that shorten callback time
-- keep the greeting short and the escalation path obvious
-- measure recovered jobs, not just answer rate
-
-For this shop, replacing the answering service was not mainly about cost cutting. It was about replacing a vague handoff with a dependable first response. For a three-person operation, that change is enormous.`,
+That is the standard to hold the experience to. The assistant should reduce the work around a call, not create a new pile of notes to manage.`,
   }),
   createPost({
-    id: "building-reliable-voice-agents-100000-calls",
-    title: "Building Reliable Voice Agents: Lessons from 100,000 Calls",
-    date: "2026-03-31T09:00:00.000Z",
-    author: "Mike Lorenzo",
+    id: "why-a-good-call-recap-matters",
+    title: "Why a useful recap matters more than a perfect transcript",
+    date: "2026-06-18T09:00:00.000Z",
+    author: "Wireline",
     excerpt:
-      "At small scale, voice agents fail in obvious ways. At six figures of call volume, they fail in subtler patterns: noisy handoffs, brittle retries, and tone drift that slowly erodes trust. These are the reliability lessons that only show up after enough real conversations go through the system.",
-    body: `# Reliability starts where the demo ends
+      "The goal of a delegated call is not a word-for-word record. It is a concise answer to what changed, what was decided, and what needs your attention next.",
+    body: `# Why a useful recap matters more than a perfect transcript
 
-A voice agent can survive ten clean demo calls and still fail badly in production. Real traffic includes background noise, clipped utterances, interruptions, odd phrasing, angry callers, and dependencies that slow down at the worst possible moment. Once you cross enough volume, the question stops being “Can the AI answer?” and becomes “Can it recover gracefully when the call gets messy?”
+Most people do not want to replay a routine call. They want to know what happened without having to listen for the one useful sentence inside five minutes of hold music and back-and-forth.
 
-After roughly 100,000 calls across reception, qualification, scheduling, and follow-up workflows, a few reliability lessons became impossible to ignore. Production stability in voice AI is not about one perfect model choice. It is about how the full system behaves under pressure.
+That makes the recap the most important part of a delegated call.
 
-## Most failures are partial failures
+## A recap should answer three things
 
-Traditional monitoring thinks in binary terms: the service worked or it failed. Customer-facing voice systems break on a spectrum. The transcript may be mostly correct but late. The tool call may succeed after a retry, yet the silence makes the caller think the assistant froze. The answer may be factually fine but so long that the voice sounds unnatural.
+A useful call recap tells you what the assistant learned, what it did, and what remains unresolved.
 
-That matters because the best fixes usually target “almost failures” before they become visible churn.
+For a pharmacy call, that could be: the prescription is ready, the counter closes at six, and no action is needed. For a scheduling call, it could be: Tuesday at 2:30 is available, the office needs your insurance card, and you need to choose whether to book it.
 
-The most common patterns we saw were:
+## It should separate facts from next steps
 
-- latency spikes that made the assistant sound uncertain
-- clarification loops after names, addresses, or dates were misheard
-- retries that technically recovered but created dead air
-- long responses that degraded voice quality
-- routing decisions made on shaky transcript fragments
+Facts are things the other party confirmed. Next steps are things you still need to decide or do.
 
-## Confirmation beats confidence on messy input
+Keeping those separate makes a recap easier to trust and easier to act on quickly.
 
-One of the easiest mistakes in voice AI is trusting the transcript too much. Models often sound more confident than the input deserves. We saw this with street names, apartment numbers, medication terms, and anything that depends on exact spelling.
+## It should preserve uncertainty
 
-We adopted a simple rule: confirm high-cost fields.
+Sometimes the answer is incomplete. A good recap should say that plainly instead of making a guess sound final.
 
-- confirm addresses, phone numbers, and appointment times explicitly
-- repeat back unusual names or spelled identifiers
-- use constrained capture prompts instead of free-form extraction when structure matters
-- ask one confirmation question early instead of repairing a bad assumption later
+Clear uncertainty is more useful than false confidence. It tells you exactly where you may need to step back in.
 
-That adds a little friction to some calls, but it prevents much larger workflow failure downstream.
+## The point is less friction
 
-## Retry logic has to protect the conversation
+A well-run assistant does not make a phone call disappear from history. It makes the useful part of the call easier to find.
 
-Many teams implement retries as a backend concern. In voice products, the caller lives inside the retry window. They hear the delay. They interpret the silence. Reliability work has to account for that surface experience.
-
-We shifted to bounded, workflow-aware retries. If a lookup was slow, the assistant got one fast retry. If the dependency still lagged, it moved the conversation forward: “I’m checking that now. Let me confirm one detail while I pull it up.” That small change turned waiting into progress.
-
-A caller will tolerate a brief clarification. They will not tolerate a blank pause that feels like the system died.
-
-## Interruption handling is a trust feature
-
-People interrupt when they think they are in a real conversation. They cut in to correct a detail, shorten the path, or stop hearing what they already know. If the agent cannot handle interruption cleanly, the whole interaction starts to feel fake.
-
-We learned to treat interruption handling as a reliability problem, not just a UX polish item. The agent had to:
-
-- stop speaking quickly when the caller jumped in
-- preserve the useful context from the interrupted turn
-- avoid repeating the exact same sentence after the interruption
-- re-anchor with a short acknowledgement instead of resetting the whole flow
-
-With those behaviors in place, callers corrected the agent naturally instead of fighting it.
-
-## Voice quality is operational, not cosmetic
-
-Callers do not separate “voice quality” from “system reliability.” If the cadence is odd, the sentence is too dense, or the tone swings between turns, users experience the system as less dependable.
-
-We improved voice quality mostly by changing the text before it hit synthesis. Shorter clauses, fewer stacked ideas, and less corporate filler made the output easier to render and easier to trust. We also constrained style by workflow. An urgent service call should not sound reflective. A simple appointment confirmation should not sound overly formal.
-
-The best production voices were the ones customers stopped noticing.
-
-## Classify failures or you will chase the wrong ones
-
-“Failure rate” is too blunt once call volume grows. We got better results by splitting reliability issues into clear classes:
-
-- speech input problems: noise, echo, clipped utterances, speakerphone artifacts
-- reasoning problems: wrong intent, overlong answer, tool misuse
-- voice output problems: delayed playback, unnatural pacing, interruption lag
-- integration problems: CRM timeout, calendar conflict, stale knowledge snapshot
-- workflow problems: missed escalation, skipped confirmation, wrong disposition
-
-That taxonomy made prioritization far more honest. A small issue in address capture can matter more than a bigger issue in a low-stakes FAQ branch.
-
-## Observability must follow the full turn
-
-Aggregate call outcomes hide too much. We instrumented the conversation turn by turn: endpoint timing, transcript finalization, first model token, first audio byte, tool latency, retry count, and final disposition. That let us spot patterns that customers felt before support tickets appeared.
-
-For example, a modest tool slowdown did not trip a major API alarm, but it produced a noticeable dip in booking-flow responsiveness. Another voice preset sounded great in testing but degraded on longer responses. Turn-level traces made both problems visible early.
-
-## The best fallback narrows the next step
-
-When the system gets uncertain, the wrong instinct is often to over-explain. The better move is to narrow the next action.
-
-- confirm one critical detail
-- take a clean message for human follow-up
-- offer the next available action without overcommitting
-- route with a useful summary already captured
-
-Competent humans do this naturally. They do not bluff. They reduce uncertainty and keep the interaction moving.
-
-## The practical checklist we use now
-
-If I had to reduce 100,000 calls to one checklist, it would be this:
-
-- confirm high-cost fields instead of trusting raw transcript confidence
-- design retries around caller experience, not just backend resilience
-- optimize interruption handling so callers can correct the system naturally
-- constrain voice style for clarity and consistency
-- instrument each stage of the turn so “almost failures” are visible
-- build narrow, honest fallbacks that preserve momentum
-
-Reliable voice agents are not the ones that never encounter trouble. They are the ones that recover without making the caller carry the burden. That is the standard that matters in production.`,
+That is what gives you time back: fewer holds, fewer repeated explanations, and less digging through notes after the fact.`,
   }),
-  createPost({
-    id: "real-cost-of-missed-calls-ai-receptionists",
-    title: "The Real Cost of Missed Calls: Why SMBs Are Moving to AI Receptionists",
-    date: "2026-02-19T09:00:00.000Z",
-    author: "Mike Lorenzo",
-    excerpt:
-      "For many SMBs, the missed-call problem is not a branding issue; it is a compounding revenue leak that touches lead conversion, labor efficiency, and customer retention. This analysis looks at missed-call economics through an operator lens and explains why AI receptionists are becoming a practical upgrade instead of a futuristic experiment.",
-    body: `# Missed calls are not a nuisance. They are a revenue system problem.
-
-Ask a small-business owner how many calls they miss in a week and you often get a shrug. Ask how many jobs, consultations, or repeat customers those missed calls represent and the conversation gets more uncomfortable. Most SMBs do not have a clean model for the economics of unanswered demand. They know the phone rings at bad times. They know voicemail is unreliable. They know staffing a full-time receptionist is expensive. What they often lack is a simple way to see how those small misses compound.
-
-That is a major reason AI receptionists are getting real traction now. Not because owners suddenly want novelty, but because the cost of weak call coverage is becoming harder to ignore.
-
-## The first accounting mistake is only comparing labor line items
-
-Many businesses evaluate front-desk options by comparing salary, answering-service fees, or software subscriptions. That framing misses the biggest variable: response coverage.
-
-A phone system creates value in three ways:
-
-- it captures new demand that would otherwise bounce to a competitor
-- it protects existing relationships by reducing wait and friction
-- it shields owners and core staff from constant interruption
-
-A missed call weakens all three at once. The cost is not just that nobody answered. It is lost conversion, weaker retention, and scattered labor.
-
-## Inbound calls are usually high-intent moments
-
-A website visitor can be casually browsing. A caller is often further down the decision path. They already have a need, a short list of options, and a reason to act now. That makes missed calls more expensive than many operators realize.
-
-If even a handful of high-intent calls each month fail to connect with a real workflow, the lost revenue can exceed the cost of better coverage. This shows up in home services, legal intake, med spas, restoration, property management, and any business where immediacy influences conversion.
-
-The customer rarely retries forever. They call the next number, send a text somewhere else, or postpone the decision entirely.
-
-## Voicemail is not neutral
-
-Voicemail feels like a reasonable fallback because it is better than nothing. In practice, it is a conversion discount.
-
-Some callers never leave one. Some leave incomplete details. Some leave a useful message, but by the time the callback happens they have already moved on. There is also a subtle user-experience cost: voicemail transfers work to the customer. They have to decide what information matters, explain it clearly, and trust that someone will respond quickly.
-
-Live answering, even when partially automated, changes that dynamic by turning uncertainty into forward motion.
-
-## Why staffing alone does not solve the problem
-
-Hiring a great receptionist can absolutely improve operations. The issue is that many SMBs do not have smooth, predictable call volume. Their pain shows up during lunch, evenings, weekends, in-field interruptions, or those exact moments when the one person who usually answers is unavailable.
-
-That creates a structural mismatch. Customer expectation is constant. Small-business staffing is not. AI receptionists fit that mismatch well because they provide always-on coverage without forcing every business to staff like a mini call center.
-
-## What owners actually want from AI reception
-
-Most owners are not looking for a robot that does everything. They want a dependable first response that handles a few jobs exceptionally well:
-
-- answer immediately
-- sound professional and on-brand
-- capture the right information the first time
-- separate urgent from non-urgent inquiries
-- route or summarize the next step cleanly
-
-That is why the strongest ROI cases rarely come from novelty. They come from consistency and throughput.
-
-## The ROI usually shows up in four buckets
-
-When businesses model AI reception honestly, the return tends to appear in four places:
-
-- recovered leads: fewer opportunities die in voicemail or missed-call windows
-- better staff utilization: office staff spend less time triaging repetitive calls
-- faster response time: customers get acknowledged immediately
-- cleaner operations: notes and follow-ups become structured instead of living in memory
-
-These gains reinforce one another. Cleaner intake improves speed. Faster speed improves conversion. Better conversion makes the staffing equation easier.
-
-## The pattern repeats across industries
-
-Different verticals feel the pain differently, but the economics rhyme.
-
-- Home services lose urgent jobs to whoever answers first.
-- Legal teams lose consults when intake is slow or vague.
-- Clinics and med spas lose bookings when the desk is overloaded.
-- Property managers lose leads when leasing questions sit unanswered.
-- Agencies and B2B firms lose momentum when one busy operator bottlenecks inbound qualification.
-
-The common denominator is simple: response coverage affects revenue more directly than most SMBs measure.
-
-## Why adoption is accelerating now
-
-Three things changed. First, voice quality improved enough that AI receptionists stopped sounding like obvious IVR trees. Second, the orchestration layer matured, which means these systems can connect to calendars, CRMs, messaging, and business knowledge in practical ways. Third, owners have become more open to augmentation because labor remains tight and after-hours responsiveness matters more than ever.
-
-The category moved from “interesting experiment” to “credible operating tool.”
-
-## What buyers should test before they commit
-
-Not every AI receptionist product is worth deploying. Owners should ask a few practical questions:
-
-- How fast does it answer, and does it sound natural live?
-- Can it handle interruption and clarification cleanly?
-- Does it capture structured notes instead of only raw transcripts?
-- Can it escalate urgent issues based on the business’s real logic?
-- What happens when the system is uncertain or an integration is slow?
-
-A good product reduces operational risk. A weak one just turns voicemail into a prettier interface.
-
-## The strategic shift behind the market
-
-For years, reception was treated as overhead. That framing encouraged businesses to minimize it until it broke. AI is changing that by making front-desk coverage look more like a revenue system. Owners are realizing that answering quickly and consistently is not administrative polish. It is demand capture.
-
-That is why the best AI receptionist deployments are not positioned as “replace your staff.” They are positioned as “stop leaking the calls you already paid to earn.” That message resonates because it is economically true.
-
-## The bottom line
-
-If your business depends on inbound calls, every missed call has a real expected cost even if it never appears on your P&L as a neat line item. SMBs are moving to AI receptionists because the alternative is not simply “handle it manually.” The alternative is tolerating preventable revenue leakage.
-
-That is the real story behind the category: better coverage, better follow-through, and a front desk that is finally available when the business needs it most.`,
-  }),
-].sort((a, b) => b.date.localeCompare(a.date));
+];
 
 export function getBlogPostBySlug(slug: string) {
   return BLOG_POSTS.find((post) => post.id === slug);
