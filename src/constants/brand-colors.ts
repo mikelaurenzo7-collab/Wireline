@@ -1,37 +1,29 @@
-/**
- * Wireline "Lavender Noir" brand palette — three colors: soft lavender,
- * vivid violet, charcoal. Every historical key name is preserved so
- * consumers keep working; values now resolve to the Lavender Noir family.
- */
 export const BRAND = {
-  signal: "#7C3AED",
-  signalBright: "#A78BFA",
-  signalDeep: "#5B21B6",
-  teal: "#A78BFA",
-  tealBright: "#7C3AED",
-  amber: "#7C3AED",
-
-  purple: "#7C3AED",
-  purpleDeep: "#5B21B6",
-  purpleMid: "#6D28D9",
-  purpleRim: "#4C1D95",
-  purpleLight: "#A78BFA",
-  purpleMuted: "#6E6584",
-  purpleInk: "#1E1B2E",
-  cream: "#F3EFFA",
-  paper: "#FAF8FF",
-  creamWarm: "#EDE7F6",
-  creamDeep: "#E8E0F5",
-  ink: "#1E1B2E",
-  velvet: "#1E1B2E",
-  chromeGlow: "#A78BFA",
-  rose: "#DC2626",
+  signal: "#1D1D1F",
+  signalBright: "#4F4F55",
+  signalDeep: "#000000",
+  teal: "#4F4F55",
+  tealBright: "#1D1D1F",
+  amber: "#6E6E73",
+  purple: "#1D1D1F",
+  purpleDeep: "#000000",
+  purpleMid: "#2D2D30",
+  purpleRim: "#111113",
+  purpleLight: "#5E5E64",
+  purpleMuted: "#6E6E73",
+  purpleInk: "#1D1D1F",
+  cream: "#F7F7F5",
+  paper: "#FFFFFF",
+  creamWarm: "#F2F2EF",
+  creamDeep: "#E7E7E3",
+  ink: "#1D1D1F",
+  velvet: "#1D1D1F",
+  chromeGlow: "#D8D8D2",
+  rose: "#B42318",
 } as const;
 
 export type BrandAccentPair = readonly [string, string];
-
 export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.purple, BRAND.purpleDeep];
-
 export const ROUTE_ACCENT_VARIANTS = {
   primary: [BRAND.purple, BRAND.purpleDeep] as BrandAccentPair,
   soft: [BRAND.purple, BRAND.purpleMuted] as BrandAccentPair,
@@ -40,7 +32,6 @@ export const ROUTE_ACCENT_VARIANTS = {
   cream: [BRAND.purple, BRAND.creamDeep] as BrandAccentPair,
   critical: [BRAND.purple, BRAND.rose] as BrandAccentPair,
 } as const;
-
 export const NAV_GROUP_ACCENTS: Record<string, string> = {
   Command: BRAND.purple,
   Channels: BRAND.purpleLight,
@@ -48,7 +39,6 @@ export const NAV_GROUP_ACCENTS: Record<string, string> = {
   Design: BRAND.purpleMid,
   Admin: BRAND.purpleMuted,
 };
-
 export const ROUTE_ACCENTS: Record<string, BrandAccentPair> = {
   "/ops": ROUTE_ACCENT_VARIANTS.primary,
   "/triage": ROUTE_ACCENT_VARIANTS.warm,
