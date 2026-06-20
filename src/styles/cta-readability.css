@@ -1,0 +1,66 @@
+/* Explicit, self-contained CTA contrast rules for public and legacy surfaces. */
+
+:root {
+  --wl-cta-bg: #1d1d1f;
+  --wl-cta-fg: #ffffff;
+  --wl-cta-subtle-bg: #ffffff;
+  --wl-cta-subtle-fg: #1d1d1f;
+}
+
+.marketing-btn-primary,
+.marketing-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  font-weight: 650;
+  line-height: 1.1;
+  text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.marketing-btn-primary {
+  border: 1px solid var(--wl-cta-bg);
+  background: var(--wl-cta-bg);
+  color: var(--wl-cta-fg) !important;
+  box-shadow: 0 10px 24px rgba(29, 29, 31, 0.14);
+}
+
+.marketing-btn-primary:hover {
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff !important;
+}
+
+.marketing-btn-secondary {
+  border: 1px solid rgba(29, 29, 31, 0.22);
+  background: var(--wl-cta-subtle-bg);
+  color: var(--wl-cta-subtle-fg) !important;
+  box-shadow: 0 1px 2px rgba(29, 29, 31, 0.04);
+}
+
+.marketing-btn-secondary:hover {
+  border-color: rgba(29, 29, 31, 0.44);
+  background: #f2f2ef;
+  color: #000000 !important;
+}
+
+/* Legacy brand CTA pair: always graphite on white or white on graphite. */
+[class~="bg-brand"][class~="text-on-brand"],
+[class~="bg-brand"][class~="text-white"] {
+  background-color: var(--wl-cta-bg) !important;
+  border-color: var(--wl-cta-bg) !important;
+  color: var(--wl-cta-fg) !important;
+}
+
+[class~="bg-primary"] {
+  color: #ffffff !important;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(29, 29, 31, 0.22) !important;
+  outline-offset: 2px;
+}
