@@ -4,25 +4,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../../lib/utils";
 
 const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold tracking-wider touch-press transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold tracking-normal touch-press transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md",
+        default: "bg-primary text-primary-foreground shadow-sm hover:bg-black hover:shadow-md",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-primary/30",
+          "border border-input bg-background text-foreground shadow-sm hover:border-foreground/45 hover:bg-accent hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        // Retained for compatibility with existing action surfaces. The visual is
-        // intentionally graphite rather than a second branded treatment.
+        ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary font-semibold underline-offset-4 hover:underline",
+        // Retained for compatibility with legacy action surfaces. The visual is
+        // intentionally neutral and high-contrast rather than decorative.
         glass:
-          "wl-panel border border-white/10 text-foreground/70 hover:text-foreground hover:border-white/20 transition-all",
+          "wl-panel border border-border bg-background text-foreground hover:border-foreground/35 hover:bg-accent transition-colors",
         chrome:
-          "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white/90 transition-colors",
+          "border border-black bg-[#1d1d1f] text-white shadow-sm hover:bg-black hover:text-white transition-colors",
         editorial:
           "bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_2px_0_#000,0_8px_18px_rgba(29,29,31,0.18)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#000] border border-primary/80",
       },
