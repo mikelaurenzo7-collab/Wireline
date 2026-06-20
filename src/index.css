@@ -23,6 +23,16 @@
   --input: #deded9;
   --ring: #1d1d1f;
   --radius: 12px;
+
+  /* Legacy marketing components still read these names. Keep them neutral. */
+  --wl-purple: #1d1d1f;
+  --wl-purple-light: #5e5e64;
+  --wl-purple-deep: #000000;
+  --wl-emerald: #1d1d1f;
+  --wl-emerald-soft: #5e5e64;
+  --wl-cream: #f7f7f5;
+  --wl-paper: #ffffff;
+  --wl-ink: #1d1d1f;
 }
 
 @theme inline {
@@ -47,7 +57,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  /* Minimal compatibility aliases for public/auth components during migration. */
   --color-brand: var(--primary);
   --color-ink: var(--foreground);
   --color-paper: var(--card);
