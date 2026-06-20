@@ -1,14 +1,11 @@
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
-// Trust badges must match the honest stance on /security: we ship controls,
-// we don't claim certified until certified. "HIPAA controls" reads true
-// against the published Security posture; "HIPAA-ready" reads aspirational.
 const TRUST = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
 
 const LINKS = [
   { to: "/pricing", label: "Pricing" },
-  { to: "/compare", label: "Compare" },
+  { to: "/compare", label: "Why Wireline" },
   { to: "/showcase", label: "Demos" },
   { to: "/about", label: "About" },
   { to: "/status", label: "Status" },
@@ -18,7 +15,6 @@ const LINKS = [
 
 type Props = {
   compact?: boolean;
-  /** Reserve space above the fixed mobile sticky CTA bar */
   aboveStickyCta?: boolean;
   className?: string;
 };
@@ -31,7 +27,7 @@ export default function MarketingFooter({
   return (
     <footer
       className={cn(
-        "relative z-10 shrink-0 border-t border-white/6 bg-card/80 backdrop-blur-sm",
+        "relative z-10 shrink-0 border-t border-[#1d1d1f]/10 bg-[#f7f7f5]",
         compact ? "px-4 py-3" : "px-5 py-4 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
@@ -42,7 +38,7 @@ export default function MarketingFooter({
           {TRUST.map((label) => (
             <span
               key={label}
-              className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-white/8 bg-white/50 text-foreground/85"
+              className="rounded-full border border-[#1d1d1f]/10 bg-white px-2.5 py-1 text-[11px] font-medium text-[#4f4f55]"
             >
               {label}
             </span>
@@ -52,24 +48,24 @@ export default function MarketingFooter({
           className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-caption font-medium"
           aria-label="Footer"
         >
-          {LINKS.map((l) => (
+          {LINKS.map((link) => (
             <Link
-              key={l.to}
-              to={l.to}
-              className="min-h-[44px] inline-flex items-center hover:text-brand"
+              key={link.to}
+              to={link.to}
+              className="inline-flex min-h-[44px] items-center text-[#5e5e64] transition hover:text-[#1d1d1f]"
             >
-              {l.label}
+              {link.label}
             </Link>
           ))}
-          <Link to="/privacy" className="min-h-[44px] inline-flex items-center hover:text-brand">
+          <Link to="/privacy" className="inline-flex min-h-[44px] items-center text-[#5e5e64] transition hover:text-[#1d1d1f]">
             Privacy
           </Link>
-          <Link to="/terms" className="min-h-[44px] inline-flex items-center hover:text-brand">
+          <Link to="/terms" className="inline-flex min-h-[44px] items-center text-[#5e5e64] transition hover:text-[#1d1d1f]">
             Terms
           </Link>
         </nav>
-        <p className="text-[11px] text-foreground/55 leading-relaxed">
-          14-day free trial · No credit card to start · Cancel anytime, no contracts.
+        <p className="text-[11px] leading-relaxed text-[#6e6e73]">
+          Start with the plan that fits your call volume. Change or cancel anytime.
         </p>
       </div>
     </footer>
