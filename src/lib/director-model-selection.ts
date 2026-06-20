@@ -1,43 +1,33 @@
 import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 
 export type WirelineDirectorTier = "auto" | "sonnet" | "opus";
-
 export type DirectorChatModelSelection =
   | { provider: "wireline"; tier: WirelineDirectorTier }
   | { provider: "openrouter"; modelId: string };
 
 export const DEFAULT_DIRECTOR_OPENROUTER_MODEL =
-  process.env.WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL?.trim() || "x-ai/grok-4.3";
+  process.env.WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL?.trim() || "google/gemini-3.5-flash";
 
-export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = process.env
-  .OPENROUTER_API_KEY?.trim()
-  ? {
-      provider: "openrouter",
-      modelId: DEFAULT_DIRECTOR_OPENROUTER_MODEL,
-    }
-  : {
-      provider: "wireline",
-      tier: "sonnet",
-    };
+export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = {
+  provider: "wireline",
+  tier: "sonnet",
+};
 
-const WIRELINE_TIERS = new Set<WirelineDirectorTier>(["auto", "sonnet", "opus"]);
+const TIERS = new Set<WirelineDirectorTier>(["auto", "sonnet", "opus"]);
 
 export function parseDirectorChatModelSelection(raw: unknown): DirectorChatModelSelection | null {
   if (!raw || typeof raw !== "object") return null;
-  const data = raw as Record<string, unknown>;
-
-  if (data.provider === "wireline") {
-    const tier = typeof data.tier === "string" ? data.tier : "auto";
-    if (!WIRELINE_TIERS.has(tier as WirelineDirectorTier)) return null;
-    return { provider: "wireline", tier: tier as WirelineDirectorTier };
+  const value = raw as Record<string, unknown>;
+  if (value.provider === "wireline") {
+    const tier = typeof value.tier === "string" ? value.tier : "auto";
+    return TIERS.has(tier as WirelineDirectorTier)
+      ? { provider: "wireline", tier: tier as WirelineDirectorTier }
+      : null;
   }
-
-  if (data.provider === "openrouter") {
-    const modelId = typeof data.modelId === "string" ? data.modelId.trim() : "";
-    if (!isOpenRouterModelId(modelId)) return null;
-    return { provider: "openrouter", modelId };
+  if (value.provider === "openrouter") {
+    const modelId = typeof value.modelId === "string" ? value.modelId.trim() : "";
+    return isOpenRouterModelId(modelId) ? { provider: "openrouter", modelId } : null;
   }
-
   return null;
 }
 
@@ -61,9 +51,6 @@ export function resolveDirectorLlm(input: {
   modelLabelForOpenRouter?: (modelId: string) => string;
 }): ResolvedDirectorLlm {
   const selection = input.selection ?? DEFAULT_DIRECTOR_MODEL_SELECTION;
-  const claudeSonnet = input.claudeSonnet ?? CLAUDE_MODELS.SONNET;
-  const claudeOpus = input.claudeOpus ?? CLAUDE_DIRECTOR_MODEL;
-
   if (selection.provider === "openrouter") {
     return {
       provider: "openrouter",
@@ -75,28 +62,18 @@ export function resolveDirectorLlm(input: {
       maxTokens: input.longDeliverable ? 5000 : 2500,
     };
   }
-
-  const useOpus =
-    selection.tier === "opus" || (selection.tier === "auto" && input.autoOpus === true);
-  const modelKind = useOpus ? "opus" : "sonnet";
-
+  const deep = selection.tier === "opus" || (selection.tier === "auto" && input.autoOpus === true);
   return {
     provider: "wireline",
-    model: useOpus ? claudeOpus : claudeSonnet,
-    modelKind,
-    modelLabel: useOpus ? "Opus" : "Sonnet",
-    deepThink: useOpus && input.deepThink === true,
-    maxTokens: input.longDeliverable ? (useOpus ? 6000 : 4000) : useOpus ? 3200 : 2200,
+    model: deep ? input.claudeOpus ?? CLAUDE_DIRECTOR_MODEL : input.claudeSonnet ?? CLAUDE_MODELS.SONNET,
+    modelKind: deep ? "opus" : "sonnet",
+    modelLabel: "Gemini Flash",
+    deepThink: false,
+    maxTokens: input.longDeliverable ? 4000 : 2200,
   };
 }
 
 export function isOpenRouterModelId(id: string): boolean {
-  if (typeof id !== "string" || !id) return false;
-  if (id.length > 160) return false;
-  if (id.includes("..") || /\s/.test(id)) return false;
-  const lower = id.toLowerCase();
-  if (lower.startsWith("wireline/") || lower.startsWith("grok/")) {
-    return false;
-  }
+  if (!id || id.length > 160 || id.includes("..") || /\s/.test(id)) return false;
   return /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id);
 }
