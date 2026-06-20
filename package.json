@@ -56,7 +56,6 @@
     "dogfood:reset": "node scripts/dogfood-reset.mjs",
     "dogfood:prod": "node scripts/prod-dogfood.mjs",
     "dogfood:marketing": "node scripts/dogfood-marketing.mjs",
-    "dogfood:director": "node scripts/dogfood-director.mjs",
     "analyze": "VISUALIZE=1 vite build",
     "tenant-insert:check": "node scripts/check-user-id-inserts.mjs"
   },
@@ -112,7 +111,6 @@
     "react-router-dom": "^7.15.1",
     "recharts": "^3.8.1",
     "stripe": "^17.7.0",
-    "svix": "^1.96.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^6.0.2",
