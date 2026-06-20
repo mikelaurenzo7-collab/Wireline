@@ -28,6 +28,10 @@
   box-shadow: 0 10px 24px rgba(29, 29, 31, 0.14);
 }
 
+.marketing-btn-primary :where(svg, span) {
+  color: currentColor !important;
+}
+
 .marketing-btn-primary:hover {
   border-color: #000000;
   background: #000000;
@@ -45,6 +49,21 @@
   border-color: rgba(29, 29, 31, 0.44);
   background: #f2f2ef;
   color: #000000 !important;
+}
+
+/* Header CTAs use utility strings rather than reusable classes. Keep their foreground
+   independent of Tailwind utility order and legacy compatibility selectors. */
+[data-testid="header-cta"],
+[data-testid="header-dashboard"],
+#public-mobile-nav a[href="/pricing"] {
+  background-color: var(--wl-cta-bg) !important;
+  color: #ffffff !important;
+}
+
+[data-testid="header-cta"] :where(svg, span),
+[data-testid="header-dashboard"] :where(svg, span),
+#public-mobile-nav a[href="/pricing"] :where(svg, span) {
+  color: currentColor !important;
 }
 
 /* Legacy brand CTA pair: always graphite on white or white on graphite. */
