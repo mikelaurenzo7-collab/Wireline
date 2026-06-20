@@ -1,18 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- agent row is an untyped snake_case API shape, shared client types not wired yet. */
 /**
- * AgentModelSelector — per-agent reasoning model + temperature picker for the
- * Agent Studio. Reads the curated, env-gated VOICE_MODEL_CATALOG from
- * `/api/agents/voice-models` (only providers whose key is configured appear),
- * and writes the per-agent override columns:
+ * AgentModelSelector — per-agent live-call model and temperature picker.
  *
- *   llm_provider     (null → inherit tenant default)
- *   llm_model        (null → inherit tenant default)
- *   llm_temperature  (null → archetype default; clamped to [0,1] server-side)
- *
- * Heavy / proxy models (Opus, OpenRouter) carry a latency note so operators
- * see the trade-off before they slow their own live calls. Commit semantics
- * match VoiceFineTuningPanel: optimistic local patch on change, server commit
- * on the same patch (the picker is low-frequency, so we commit on select).
+ * Managed calls inherit Gemini Flash and use OpenAI only as the platform retry.
+ * Choosing OpenRouter unlocks a validated, explicit per-agent model ID; no
+ * provider is silently substituted for an operator's chosen model.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Cpu, AlertTriangle, RefreshCw } from "lucide-react";
@@ -24,6 +16,7 @@ import { Slider } from "./ui/shadcn/Slider";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const INHERIT = "__inherit__";
+const OPENROUTER_CUSTOM = "__openrouter_custom__";
 
 const SPEED_LABEL: Record<VoiceModelSpeed, string> = {
   fastest: "Fastest",
@@ -39,7 +32,6 @@ const SPEED_TONE: Record<VoiceModelSpeed, string> = {
   heavy: "text-amber-600 bg-amber-500/10",
 };
 
-/** Stable key for a catalog option (provider + model). */
 function optKey(provider: string, model: string): string {
   return `${provider}::${model}`;
 }
@@ -50,9 +42,14 @@ function toNumOrNull(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function isOpenRouterModelId(value: string): boolean {
+  const id = value.trim();
+  if (!id || id.length > 160 || id.includes("..") || /\s/.test(id)) return false;
+  return /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id);
+}
+
 interface AgentModelSelectorProps {
   agent: any;
-  /** Commit to the server (PUT /api/agents/:id). */
   onCommit: (patch: Record<string, unknown>) => void;
 }
 
@@ -65,6 +62,8 @@ interface CatalogResponse {
 export default function AgentModelSelector({ agent, onCommit }: AgentModelSelectorProps) {
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [openRouterModelId, setOpenRouterModelId] = useState("");
+  const [openRouterError, setOpenRouterError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,88 +83,154 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
     };
   }, []);
 
-  const options = catalog?.options ?? [];
+  useEffect(() => {
+    if (agent?.llm_provider === "openrouter" && typeof agent?.llm_model === "string") {
+      setOpenRouterModelId(agent.llm_model);
+    }
+  }, [agent?.llm_provider, agent?.llm_model]);
 
-  // Current selection: match the saved override against the catalog. An
-  // override the catalog no longer offers (key pulled) still shows its raw id.
+  const options = catalog?.options ?? [];
+  const isOpenRouterSelection = agent?.llm_provider === "openrouter";
   const currentValue = useMemo(() => {
     if (!agent?.llm_provider || !agent?.llm_model) return INHERIT;
+    if (agent.llm_provider === "openrouter") return OPENROUTER_CUSTOM;
     return optKey(agent.llm_provider, agent.llm_model);
   }, [agent?.llm_provider, agent?.llm_model]);
 
-  const selectedOption = options.find((o) => optKey(o.provider, o.model) === currentValue);
-
+  const selectedOption = isOpenRouterSelection
+    ? options.find((option) => option.provider === "openrouter")
+    : options.find((option) => optKey(option.provider, option.model) === currentValue);
   const temp = toNumOrNull(agent?.llm_temperature);
   const usingDefaultTemp = temp == null;
 
+  const commitOpenRouterModel = () => {
+    const model = openRouterModelId.trim();
+    if (!isOpenRouterModelId(model)) {
+      setOpenRouterError("Use a namespaced model ID, for example google/gemini-3.5-flash.");
+      return;
+    }
+    setOpenRouterError(null);
+    onCommit({ llm_provider: "openrouter", llm_model: model });
+  };
+
   const handleSelect = (value: string) => {
     if (value === INHERIT) {
+      setOpenRouterError(null);
       onCommit({ llm_provider: null, llm_model: null });
       return;
     }
-    const opt = options.find((o) => optKey(o.provider, o.model) === value);
-    if (!opt) return;
-    onCommit({ llm_provider: opt.provider, llm_model: opt.model });
+    if (value === OPENROUTER_CUSTOM) {
+      const openRouterOption = options.find((option) => option.provider === "openrouter");
+      const initialModel =
+        agent?.llm_provider === "openrouter" && typeof agent?.llm_model === "string"
+          ? agent.llm_model
+          : openRouterOption?.model || "google/gemini-3.5-flash";
+      setOpenRouterModelId(initialModel);
+      setOpenRouterError(null);
+      onCommit({ llm_provider: "openrouter", llm_model: initialModel });
+      return;
+    }
+    const option = options.find((candidate) => optKey(candidate.provider, candidate.model) === value);
+    if (!option) return;
+    setOpenRouterError(null);
+    onCommit({ llm_provider: option.provider, llm_model: option.model });
   };
 
   if (loadFailed) return null;
 
   const tenantDefaultLabel = catalog
-    ? `Tenant default (${catalog.tenantDefaultModel})`
-    : "Tenant default";
+    ? `Managed default (${catalog.tenantDefaultModel})`
+    : "Managed default";
 
   return (
-    <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-3 space-y-3">
-      <div className="flex items-center gap-1.5 wl-label text-foreground/55">
-        <Cpu className="w-2.5 h-2.5 text-brand" />
-        Reasoning model
+    <div className="space-y-3 rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-3">
+      <div className="flex items-center gap-1.5 text-foreground/55 wl-label">
+        <Cpu className="h-2.5 w-2.5 text-brand" />
+        Call model
       </div>
-      <p className="wl-micro-meta leading-relaxed">
-        The brain behind this agent's live calls. Leave on the tenant default unless you want a
-        specific model — heavier picks are flagged for call latency.
+      <p className="leading-relaxed wl-micro-meta">
+        Managed calls use Gemini Flash and retry through OpenAI only if Gemini is unavailable. Choose
+        OpenRouter when this agent needs a specific model.
       </p>
 
       <Select value={currentValue} onValueChange={handleSelect}>
-        <SelectTrigger aria-label="Reasoning model" className="w-full text-sm">
+        <SelectTrigger aria-label="Call model" className="w-full text-sm">
           <SelectValue placeholder={tenantDefaultLabel} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={INHERIT}>{tenantDefaultLabel}</SelectItem>
-          {options.map((o) => (
-            <SelectItem key={optKey(o.provider, o.model)} value={optKey(o.provider, o.model)}>
-              <span className="flex items-center gap-2">
-                <span>{o.label}</span>
-                <span
-                  className={cn(
-                    "wl-micro-badge px-1.5 py-0.5 rounded-full font-medium",
-                    SPEED_TONE[o.speed],
-                  )}
-                >
-                  {SPEED_LABEL[o.speed]}
+          {options.map((option) => {
+            const value = option.acceptsCustomModelId
+              ? OPENROUTER_CUSTOM
+              : optKey(option.provider, option.model);
+            return (
+              <SelectItem key={option.provider} value={value}>
+                <span className="flex items-center gap-2">
+                  <span>{option.label}</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 font-medium wl-micro-badge",
+                      SPEED_TONE[option.speed],
+                    )}
+                  >
+                    {SPEED_LABEL[option.speed]}
+                  </span>
                 </span>
-              </span>
-            </SelectItem>
-          ))}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 
+      {isOpenRouterSelection && (
+        <div className="space-y-1.5 rounded-md border border-ink/[0.08] bg-background/55 p-3">
+          <label className="text-foreground/65 wl-label" htmlFor="openrouter-model-id">
+            OpenRouter model ID
+          </label>
+          <input
+            id="openrouter-model-id"
+            value={openRouterModelId}
+            onChange={(event) => {
+              setOpenRouterModelId(event.target.value);
+              setOpenRouterError(null);
+            }}
+            onBlur={commitOpenRouterModel}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                commitOpenRouterModel();
+              }
+            }}
+            placeholder="google/gemini-3.5-flash"
+            className="h-10 w-full rounded-md border border-ink/12 bg-card px-3 font-mono text-xs text-foreground outline-none transition placeholder:text-foreground/45 focus:border-brand focus:ring-4 focus:ring-brand/12"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          <p className="leading-relaxed text-foreground/55 wl-micro-meta">
+            Use the provider/model format published by OpenRouter. This override is intentional and
+            is not replaced by Wireline's managed fallback chain.
+          </p>
+          {openRouterError && <p className="text-xs text-rose-600">{openRouterError}</p>}
+        </div>
+      )}
+
       {selectedOption?.note && (
-        <p className="wl-micro-meta leading-relaxed text-foreground/60">{selectedOption.note}</p>
+        <p className="leading-relaxed text-foreground/60 wl-micro-meta">{selectedOption.note}</p>
       )}
       {selectedOption?.latencyWarning && (
-        <p className="wl-micro-meta leading-relaxed text-amber-600 flex items-start gap-1.5">
-          <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
-          Can add noticeable delay before the agent speaks — best off the live wire.
+        <p className="flex items-start gap-1.5 leading-relaxed text-amber-600 wl-micro-meta">
+          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+          Can add noticeable delay before the agent speaks. Use only when the model trade-off is worth it.
         </p>
       )}
 
-      {/* Temperature — null inherits the archetype's tuned default. */}
-      <div className="space-y-1.5 pt-1 border-t border-ink/[0.08]">
+      <div className="space-y-1.5 border-t border-ink/[0.08] pt-1">
         <div className="flex items-center justify-between">
-          <label className="wl-label text-foreground/55">Temperature</label>
+          <label className="text-foreground/55 wl-label">Temperature</label>
           <span
             className={cn(
-              "wl-micro-badge font-medium",
+              "font-medium wl-micro-badge",
               usingDefaultTemp ? "text-foreground/55" : "text-foreground",
             )}
           >
@@ -177,12 +242,12 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
           max={1}
           step={0.05}
           value={usingDefaultTemp ? 0.5 : (temp as number)}
-          onChange={(e) => onCommit({ llm_temperature: Number(e.target.value).toFixed(2) })}
-          className="w-full accent-brand cursor-pointer"
+          onChange={(event) => onCommit({ llm_temperature: Number(event.target.value).toFixed(2) })}
+          className="w-full cursor-pointer accent-brand"
           aria-label="Temperature"
         />
         <div className="flex items-center justify-between">
-          <span className="wl-micro-meta leading-relaxed">
+          <span className="leading-relaxed wl-micro-meta">
             Lower = focused and consistent. Higher = more varied and expressive.
           </span>
           <ShadButton
@@ -192,9 +257,9 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
             disableAnimations
             onClick={() => onCommit({ llm_temperature: null })}
             disabled={usingDefaultTemp}
-            className="h-auto px-0 wl-label-muted opacity-80 hover:text-brand disabled:text-foreground/55"
+            className="h-auto px-0 opacity-80 hover:text-brand disabled:text-foreground/55 wl-label-muted"
           >
-            <RefreshCw className="w-2.5 h-2.5" />
+            <RefreshCw className="h-2.5 w-2.5" />
             Use default
           </ShadButton>
         </div>
