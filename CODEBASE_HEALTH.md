@@ -1,47 +1,30 @@
 # Codebase Health
 
-## 2026-06-19 cleanup passes
+## Active product boundary
 
-Wireline is in an active Stitch Studio migration. The health goal is to keep the product surface small, buildable, and free of stale agent scratch work, duplicated design rules, dead framework paths, and unsafe local automation defaults.
+Wireline's authenticated product starts at `/agents`.
 
-### Purged
+- Agent Studio creates a draft agent, saves instructions against the selected agent, and starts approved integration connections.
+- Historic dashboard, operations, command-center, chat, and manager URLs redirect into Agent Studio.
+- Active product source: `src/pages/AgentStudioHome.tsx`, `src/routes/AppRoutes.tsx`, `src/components/layout/AppShell.tsx`, `src/index.css`, and `src/styles/foundation.css`.
+- The authenticated app does not mount account-switching or branding providers. Those old providers were producing unnecessary account/settings fetches from every active session.
 
-- Removed tracked `.agents/` scratch work, including stale project rules and multi-agent handoff material.
-- Removed `.cursor/skills/` dogfood and QA playbooks that duplicated work, embedded temporary test context, and enforced retired design directions.
-- Removed `terminals/` QA reports and unreferenced visual sweep scripts that were writing local artifacts and carried stale demo context.
-- Removed the retired Grok Flair design stub, stale UI audit, unused iOS token wrapper, obsolete Next-style director route, and dead CSS compatibility sheets.
-- Removed duplicate local QA utilities and the unreferenced demo-provisioning utility instead of carrying test-account defaults in source control.
-- Added `.agents/`, `.cursor/`, `scratch/`, `terminals/`, and `.tmp/` to `.gitignore` so temporary artifacts cannot return through normal commits.
+## Guardrails
 
-### Normalized
+- Do not add visual contracts, screenshot baselines, token aliases, hotfix sheets, AI-session artifacts, or tracked QA output.
+- Do not reintroduce automatic phone-number provisioning at agent creation. A Studio agent begins as a draft.
+- Keep tenant reads/writes scoped to the authenticated user. Keep auth, authorization, billing, webhooks, rate limits, and CSP policy checks intact.
 
-- iOS widgets and Android widgets derive from one current Stitch Noir palette per platform instead of duplicated Lavender Noir constants.
-- Authenticated web workspaces receive a scoped Stitch Noir token bridge and mesh treatment through `src/styles/stitch-console.css`; public marketing remains light-first by design.
-- The active Studio remains the visual source of truth: `src/components/AgentStudioCanvas.tsx` and `src/styles/stitch-studio.css`.
-- Dogfood utilities require explicit environment-provided credentials and write results into ignored local output rather than tracked directories.
+## Database posture
 
-### Guardrail
+- Wireline uses the server Postgres connection and does not use `supabase-js` from the browser.
+- Migration `0045_lockdown_public_supabase_grants.sql` revokes public `anon` and `authenticated` role grants from public tables, sequences, and functions, and changes default privileges so future objects remain server-only.
+- RLS-without-policy notices on server-only tables are fail-closed after grants are revoked; do not create permissive policies merely to silence a linter.
+- Supabase still reports leaked-password protection disabled. Enable it in Supabase Auth settings before public launch.
 
-Do not add planning-output folders, AI-agent transcripts, local QA reports, temporary database probes, hardcoded test credentials, or one-off visual scripts to source control. Product code, durable docs, and repeatable scripts stay; temporary artifacts stay local.
+## Verification
 
-## Verification posture
-
-- Current migration gate: `npm run verify` (`build` + bundled-server smoke)
-- Full legacy gate when intentionally hardening: `npm run verify:full`
-- Strictness inventory: `npm run lint:strict`
-- Production health probe: `GET /api/health`
-
-## TypeScript strictness progress
-
-The project keeps global TypeScript compatibility in `tsconfig.json` while hardening a strict allowlist in `tsconfig.strict.json`. Suggested low-risk pure-helper modules from the prior strictness snapshot:
-
-1. `src/lib/director-feature-flags.ts`
-2. `src/lib/internal-jwt-secret.ts`
-3. `src/lib/action-types.ts`
-4. `src/lib/api-row.ts`
-5. `src/lib/apply-dom-layout.ts`
-6. `src/lib/audit-summary.ts`
-7. `src/lib/claude-brain.ts`
-8. `src/lib/claude-supervisor-tools.ts`
-9. `src/lib/demo-funnel-shared.ts`
-10. `src/lib/design-preview-route.ts`
+- `npm run verify` — production build and bundled-server import smoke.
+- `npm run verify:full` — type check, authorization coverage, CSP policy, docs/pricing, tests, build, and smoke.
+- `GET /api/health` — production health probe.
+- Review Vercel runtime errors after each deployment; a broken legacy account route was found from this pass and corrected.
