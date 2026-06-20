@@ -20,7 +20,7 @@ export type DirectorModelValidationResult =
 /** Allowed OpenRouter model ids (curated + cached catalog merge). */
 export async function getAllowedOpenRouterModelIds(): Promise<Set<string>> {
   const { catalog } = await listOpenRouterModelsForDirector();
-  return new Set(catalog.map((m) => m.id));
+  return new Set(catalog.map((model) => model.id));
 }
 
 /** @deprecated Allowlist follows OpenRouter catalog cache; kept for tests. */
@@ -34,10 +34,10 @@ export async function validateDirectorChatModelSelection(
 ): Promise<DirectorModelValidationResult> {
   const planId = effectivePlanIdForEntitlements(options?.planId, options?.email);
   if (selection.provider === "wireline") {
-    if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+    if (!process.env.OPENAI_API_KEY?.trim()) {
       return {
         ok: false,
-        error: "Anthropic is not configured on this workspace",
+        error: "OpenAI is not configured on this workspace",
         status: 503,
       };
     }
@@ -107,21 +107,21 @@ export async function resolveDirectorModelSelection(
   { ok: true; selection: DirectorChatModelSelection } | { ok: false; error: string; status: number }
 > {
   const planId = await getEffectiveSubscriptionPlanId(userId, email);
-  const planOpts = { planId, email };
+  const planOptions = { planId, email };
 
   const fromBody = parseDirectorChatModelSelection(body.modelSelection);
   if (fromBody) {
-    return validateDirectorChatModelSelection(fromBody, planOpts);
+    return validateDirectorChatModelSelection(fromBody, planOptions);
   }
 
   const stored = await loadPreference(userId);
-  const sanitized = await sanitizeDirectorChatModelPreference(stored, planOpts);
-  return validateDirectorChatModelSelection(sanitized, planOpts);
+  const sanitized = await sanitizeDirectorChatModelPreference(stored, planOptions);
+  return validateDirectorChatModelSelection(sanitized, planOptions);
 }
 
 export function directorLlmConfigured(selection: DirectorChatModelSelection): boolean {
   if (selection.provider === "openrouter") return isOpenRouterConfigured();
-  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
 }
 
 /** SSE / UI model tier — distinct from legacy sonnet|opus metadata field. */
