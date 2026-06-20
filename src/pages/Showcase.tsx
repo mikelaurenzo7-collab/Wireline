@@ -95,7 +95,7 @@ export default function Showcase() {
             <div className="inline-flex items-center gap-2 text-sm font-medium text-[#4f4f55]"><Check className="h-4 w-4 text-[#1d1d1f]" />Your assistant starts as a private draft.</div>
             <h2 className="mt-4 text-balance text-[clamp(2.1rem,4vw,3.5rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#1d1d1f]">Ready to make the routine call disappear?</h2>
           </div>
-          <Link to="/pricing" className="mt-7 inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#1d1d1f] px-7 text-base font-semibold text-white transition hover:bg-black active:scale-[0.985] lg:mt-0 lg:flex-none">Start at $7 <ArrowRight className="h-4 w-4" /></Link>
+          <Link to="/pricing" className="mt-7 inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#1d1d1f] px-7 text-base font-semibold text-white transition hover:bg-black active:scale-[0.985] lg:mt-0 lg:flex-none">Start at $9 <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
     </MarketingPageFrame>
