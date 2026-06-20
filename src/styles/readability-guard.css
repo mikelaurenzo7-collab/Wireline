@@ -99,9 +99,30 @@ select:hover,
   [class~="text-slate-400"],
   [class~="text-zinc-400"],
   [class~="text-neutral-400"],
-  [class~="text-stone-400"]
+  [class~="text-stone-400"],
+  [class~="text-foreground/55"],
+  [class~="text-foreground/60"]
 ) {
   color: var(--wl-muted) !important;
+}
+
+/* Dark auth/legacy panels retain supporting copy at a practical contrast floor. */
+:where(
+  [class~="text-paper/45"],
+  [class~="text-paper/50"],
+  [class~="text-paper/55"],
+  [class~="text-paper/60"],
+  [class~="text-paper/65"],
+  [class~="text-white/60"],
+  [class~="text-white/70"],
+  [class~="text-white/75"]
+) {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Error text stays legible against light red status surfaces. */
+[class~="text-rose-600"] {
+  color: #8d1d34 !important;
 }
 
 /* Standard links need a visible affordance unless they are intentional UI controls. */
@@ -130,11 +151,6 @@ tbody tr:hover,
 
 [class~="text-primary"] {
   color: #18181b !important;
-}
-
-/* Do not let legacy translucent white action text dip below a readable contrast floor. */
-:where([class~="text-white/60"], [class~="text-white/70"], [class~="text-white/75"]) {
-  color: rgba(255, 255, 255, 0.92) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
