@@ -1,23 +1,23 @@
-import { GEMINI_MODELS } from "./claude-models";
+import { GEMINI_MODELS, OPENAI_MODELS } from "./claude-models";
 
-type DefaultVoiceProvider = "openrouter" | "google";
+type DefaultVoiceProvider = "openrouter" | "google" | "openai";
 
 const configuredOpenRouterDefault = process.env.WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL?.trim();
 
+/** OpenRouter is only used when an operator explicitly selects it. */
 export const WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL =
-  configuredOpenRouterDefault || "x-ai/grok-4.3";
+  configuredOpenRouterDefault || "google/gemini-3.5-flash";
 
-export const WIRELINE_DEFAULT_LOW_COST_PROVIDER: DefaultVoiceProvider = configuredOpenRouterDefault
-  ? "openrouter"
-  : "google";
+/** Wireline-managed voice calls always start with Gemini. */
+export const WIRELINE_DEFAULT_LOW_COST_PROVIDER: DefaultVoiceProvider = "google";
+export const WIRELINE_DEFAULT_LOW_COST_MODEL = GEMINI_MODELS.FLASH_3_5;
 
-export const WIRELINE_DEFAULT_LOW_COST_MODEL =
-  configuredOpenRouterDefault || GEMINI_MODELS.FLASH_3_5;
+export const VAPI_TENANT_DEFAULT_PROVIDER: DefaultVoiceProvider = "google";
+export const VAPI_SHOWCASE_PROVIDER: DefaultVoiceProvider = "google";
+export const VAPI_TENANT_DEFAULT_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_SHOWCASE_MODEL = GEMINI_MODELS.FLASH_3_5;
+export const VAPI_PREMIUM_MODEL = GEMINI_MODELS.FLASH_3_5;
 
-export const VAPI_TENANT_DEFAULT_PROVIDER = WIRELINE_DEFAULT_LOW_COST_PROVIDER;
-export const VAPI_SHOWCASE_PROVIDER = WIRELINE_DEFAULT_LOW_COST_PROVIDER;
-export const VAPI_TENANT_DEFAULT_MODEL = WIRELINE_DEFAULT_LOW_COST_MODEL;
-export const VAPI_SHOWCASE_MODEL = WIRELINE_DEFAULT_LOW_COST_MODEL;
-export const VAPI_PREMIUM_MODEL = WIRELINE_DEFAULT_LOW_COST_MODEL;
-export const VAPI_VOICE_FALLBACK_PROVIDER = "google" as const;
-export const VAPI_VOICE_FALLBACK_MODEL = GEMINI_MODELS.FLASH_3_5;
+/** Automatic managed-runtime fallback: Gemini first, then OpenAI. */
+export const VAPI_VOICE_FALLBACK_PROVIDER: DefaultVoiceProvider = "openai";
+export const VAPI_VOICE_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
