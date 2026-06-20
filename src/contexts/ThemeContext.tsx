@@ -2,21 +2,21 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo } fro
 
 /**
  * Wireline currently ships one intentional appearance: the warm light Studio.
- * This compatibility context keeps older shared components harmless while the
- * retired workspace chrome is removed in small, verified passes.
+ * The wider type is retained temporarily because dormant compatibility
+ * components still compile in the TypeScript program while being removed.
  */
-export type Theme = "light";
+export type Theme = "light" | "dark" | "system";
 
 interface ThemeContextValue {
   theme: Theme;
-  resolvedTheme: "light";
+  resolvedTheme: "light" | "dark";
   setTheme: (next: Theme) => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function applyTheme(): void {
+function applyLight(): void {
   if (typeof document === "undefined") return;
   document.documentElement.classList.remove("dark");
   document.documentElement.style.colorScheme = "light";
@@ -24,11 +24,11 @@ function applyTheme(): void {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    applyTheme();
+    applyLight();
   }, []);
 
   const enforceLight = useCallback(() => {
-    applyTheme();
+    applyLight();
   }, []);
 
   const value = useMemo<ThemeContextValue>(
