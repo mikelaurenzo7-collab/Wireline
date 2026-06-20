@@ -47,6 +47,17 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Minimal compatibility aliases for public/auth components during migration. */
+  --color-brand: var(--primary);
+  --color-ink: var(--foreground);
+  --color-paper: var(--card);
+  --color-cream: var(--background);
+  --color-canvas: var(--background);
+  --color-panel: var(--card);
+  --color-panel-2: var(--secondary);
+  --color-text: var(--foreground);
+  --color-text-2: var(--muted-foreground);
+  --color-text-3: var(--muted-foreground);
 }
 
 * { box-sizing: border-box; }
