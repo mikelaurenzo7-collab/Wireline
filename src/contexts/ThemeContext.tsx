@@ -1,56 +1,50 @@
-/**
- * Marketing pages remain light. Authenticated workspaces provide their own
- * scoped Stitch Noir tokens through `.wl-console-surface`.
- *
- * Keep <html> light so a console route never changes public first paint.
- */
 import React, { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 
-export type Theme = "light" | "dark" | "system";
+/**
+ * Wireline currently ships one intentional appearance: the warm light Studio.
+ * This compatibility context keeps older shared components harmless while the
+ * retired workspace chrome is removed in small, verified passes.
+ */
+export type Theme = "light";
 
 interface ThemeContextValue {
   theme: Theme;
-  resolvedTheme: "light" | "dark";
+  resolvedTheme: "light";
   setTheme: (next: Theme) => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function applyLight(): void {
-  if (typeof document !== "undefined") {
-    const root = document.documentElement;
-    root.classList.remove("dark");
-    root.style.colorScheme = "light";
-  }
+function applyTheme(): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.remove("dark");
+  document.documentElement.style.colorScheme = "light";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    applyLight();
+    applyTheme();
   }, []);
 
-  const noop = useCallback(() => {
-    applyLight();
+  const enforceLight = useCallback(() => {
+    applyTheme();
   }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme: "light", resolvedTheme: "light", setTheme: noop, toggleTheme: noop }),
-    [noop],
+    () => ({ theme: "light", resolvedTheme: "light", setTheme: enforceLight, toggleTheme: enforceLight }),
+    [enforceLight],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    return {
-      theme: "light",
-      resolvedTheme: "light",
-      setTheme: () => {},
-      toggleTheme: () => {},
-    };
-  }
-  return ctx;
+  const context = useContext(ThemeContext);
+  return context ?? {
+    theme: "light",
+    resolvedTheme: "light",
+    setTheme: () => {},
+    toggleTheme: () => {},
+  };
 }
