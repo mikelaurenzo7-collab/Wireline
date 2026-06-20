@@ -82,7 +82,6 @@ function AppRouter() {
         <Route path="/auth" element={<FigmaAuthPortal />} />
         <Route path="/login" element={<Navigate to="/signin" replace />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
-        <Route path="/auth/clerk-complete" element={<Navigate to="/signin" replace />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route

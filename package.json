@@ -70,8 +70,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
-    "@clerk/backend": "^3.8.1",
-    "@clerk/react": "^6.10.3",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
@@ -119,7 +117,6 @@
     "react-router-dom": "^7.15.1",
     "recharts": "^3.8.1",
     "stripe": "^17.7.0",
-    "svix": "^1.96.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^6.0.2",

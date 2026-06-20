@@ -132,9 +132,9 @@ in production), issued as an internal JWT. The client calls APIs with
 and legacy flows; tokens are **not** stored in `localStorage`. The sign-in UI is
 `FigmaAuthPortal` (routes `/signin`, `/signup`, `/get-started`).
 
-> **Note:** Clerk was evaluated and removed — the app is back on the native auth
-> portal. `clerk-*` files and the `@clerk/*` deps are legacy/unmounted; do not
-> wire new auth through Clerk. Use `src/middleware/auth.ts` (`authenticateUser`).
+> **Note:** Clerk was evaluated and fully removed — the app uses the native auth
+> portal exclusively. There is no Clerk code, dependency, or env var left in the
+> tree; do not reintroduce it. Use `src/middleware/auth.ts` (`authenticateUser`).
 
 ```typescript
 import { authenticateUser } from "../middleware/auth";
