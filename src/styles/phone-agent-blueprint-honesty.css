@@ -1,0 +1,10 @@
+/* A saved flow is replaced by the guided blueprint. Keep that consequence explicit. */
+.studio-blueprint-card:has(.studio-count) .studio-blueprint-trigger span { font-size: 0; }
+.studio-blueprint-card:has(.studio-count) .studio-blueprint-trigger span::after { content: "Replace call plan"; font-size: 13px; }
+.studio-blueprint-card:has(.studio-count) ~ .studio-blueprint-backdrop .studio-blueprint-heading p:not(.studio-kicker)::after {
+  content: " This will replace the current staged plan with the new four-stage blueprint.";
+  color: var(--destructive);
+  font-weight: 600;
+}
+.studio-blueprint-card:has(.studio-count) ~ .studio-blueprint-backdrop .studio-modal-actions .studio-primary-button { font-size: 0; }
+.studio-blueprint-card:has(.studio-count) ~ .studio-blueprint-backdrop .studio-modal-actions .studio-primary-button::after { content: "Replace call plan"; font-size: 13px; }
