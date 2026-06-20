@@ -1,15 +1,10 @@
 /**
- * TrialGateModal — the conversion-closing UX for the trial gate.
+ * SubscriptionGateModal — the direct paid-activation path.
  *
- * Listens for the global `wireline:trial-gate-block` window event
- * (emitted by authFetch in src/lib/api.ts on 402 responses with a
- * TRIAL_* / SUBSCRIPTION_REQUIRED code) and renders an inline tier
- * picker with one-click Stripe checkout. Without this component the
- * trial gate fires 402s but the user just sees a generic API error
- * — no path to paying.
- *
- * Mounted once in AppShell (src/components/layout/AppShell.tsx) so
- * it works regardless of which page surfaced the 402.
+ * Listens for the global `wireline:trial-gate-block` event emitted by authFetch
+ * when a paid action receives a 402. Legacy trial tenants retain their existing
+ * upgrade path; new accounts receive an explicit activation path instead of a
+ * hidden free trial.
  */
 
 import { useEffect, useState } from "react";
@@ -23,52 +18,53 @@ import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 const TIER_PITCH: Record<string, string> = {
-  personal: "Light personal coverage · 1 agent · dedicated number",
-  "personal-plus": "More minutes · calendar + email context · 2 agents",
-  "business-starter": "Small business · 2 agents · CRM + Live Ops",
-  starter: "Growing team · 5 agents · outbound + analytics",
-  scale: "Multi-team · 10 agents · audit log + priority support",
+  personal: "Everyday calls · 1 agent · dedicated number",
+  "personal-plus": "Home and side projects · 2 agents · calendar + email context",
+  "business-starter": "Four agents · 500 minutes · hours, routing, and follow-up",
+  starter: "Eight agents · 1,200 minutes · live operations and outbound workflows",
 };
 
-/**
- * Self-serve tiers we surface in the picker. Enterprise is intentionally
- * not in the picker — it's contact-sales only and goes through checkout with a 400.
- */
-const SELF_SERVE_TIERS = STRIPE_PLANS.map((plan) => ({
+/** Custom is contact-sales only and must never appear as a $0 self-serve card. */
+const SELF_SERVE_TIERS = STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0).map((plan) => ({
   id: plan.id,
   label: plan.name,
   price: plan.price_usd_monthly,
   pitch: TIER_PITCH[plan.id] ?? plan.features[0] ?? "",
-  recommended: plan.id === "business-starter",
 }));
 
 function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: string } {
   switch (detail.code) {
+    case "ACTIVATION_REQUIRED":
+      return {
+        title: "Choose a plan to activate Wireline",
+        body:
+          "Your account is ready. Pick the call capacity you want, then create and deploy your first assistant. There is no hidden trial or surprise usage window.",
+      };
     case "EMAIL_UNVERIFIED":
       return {
         title: "Verify your email first",
-        body: "We sent you a link from Wireline — click it to unlock outbound dialing and create more agents. Check your inbox and spam folder; you can resend from the banner at the top.",
+        body: "We sent you a link from Wireline — click it to unlock paid activation and agent deployment. Check your inbox and spam folder; you can resend from the banner at the top.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
         title: "Trial limit reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
-            ? `You've used ${detail.current} of ${detail.limit} during your free trial. Pick a plan to keep going — your data and agent stay exactly as they are.`
-            : "You've hit your trial limit. Pick a plan to keep going.",
+            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Pick a plan to keep going — your data and agent stay exactly as they are.`
+            : "You've hit your legacy trial limit. Pick a plan to keep going.",
       };
     case "TRIAL_EXPIRED":
       return {
-        title: "Your 14-day trial just ended",
+        title: "Your legacy trial ended",
         body: "Pick a plan to keep your agent live. Your number, settings, and call history stay exactly as you left them.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
         title: "Subscription paused",
-        body: "Your subscription is past due — pick a plan or update your card to keep your agent live.",
+        body: "Your subscription is past due — update your card or choose a plan to keep your agent live.",
       };
     default:
-      return { title: "Upgrade required", body: detail.error };
+      return { title: "Plan required", body: detail.error };
   }
 }
 
@@ -77,12 +73,8 @@ export default function TrialGateModal() {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Pin the page underneath while the upgrade modal is open.
   useBodyScrollLock(detail !== null);
 
-  // Subscribe to the global trial-gate event. Single listener mounted
-  // for the lifetime of the AppShell. Reentry-safe: the most recent
-  // 402 replaces the previous one rather than queueing modals.
   useEffect(() => {
     const onBlock = (e: Event) => {
       const ce = e as CustomEvent<TrialGateBlockDetail>;
@@ -94,7 +86,6 @@ export default function TrialGateModal() {
     return () => window.removeEventListener(TRIAL_GATE_EVENT, onBlock);
   }, []);
 
-  // Esc closes the modal without changing plans.
   useEffect(() => {
     if (!detail) return;
     const onKey = (e: KeyboardEvent) => {
@@ -108,6 +99,8 @@ export default function TrialGateModal() {
 
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
+  const eyebrow =
+    detail.code === "ACTIVATION_REQUIRED" ? "Choose a plan to activate" : "Upgrade to keep going";
 
   async function checkout(planId: string) {
     setPending(planId);
@@ -115,6 +108,7 @@ export default function TrialGateModal() {
     try {
       const r = await authFetch("/api/billing/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
       });
       const data = (await safeJson<{ url?: string; error?: string }>(r)) as {
@@ -127,7 +121,7 @@ export default function TrialGateModal() {
         setPending(null);
         return;
       }
-      // Dispatch analytics checkout initiation events
+
       if (typeof window !== "undefined") {
         try {
           const prices: Record<string, number> = Object.fromEntries(
@@ -149,15 +143,13 @@ export default function TrialGateModal() {
             window.plausible("CheckoutInitiated", { props: { plan: planId } });
           }
           if (w.dataLayer && typeof w.dataLayer.push === "function") {
-            w.dataLayer.push({ event: "checkout_initiated", planId: planId });
+            w.dataLayer.push({ event: "checkout_initiated", planId });
           }
         } catch (err) {
           console.error("[wireline:analytics] Failed to log checkout initiation:", err);
         }
       }
 
-      // Stripe-hosted checkout redirect. Full navigation, not a popup,
-      // so the success/cancel URLs return the user to the right place.
       window.location.href = checkoutUrl;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Network error opening checkout.");
@@ -173,21 +165,17 @@ export default function TrialGateModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-0 sm:px-4 sm:py-6 bg-black/55 backdrop-blur-sm pt-[env(safe-area-inset-top,0)] pb-[env(safe-area-inset-bottom,0)]"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/55 px-0 pt-[env(safe-area-inset-top,0)] pb-[env(safe-area-inset-bottom,0)] backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="trial-gate-title"
         >
           <motion.div
-            // Bottom-sheet on mobile (slides up from bottom edge,
-            // rounded only on top), centered card on desktop. Same
-            // pattern ConfirmModal uses for consistency across the
-            // app's modal surface.
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-3xl rounded-t-md sm:rounded-md bg-card border border-border shadow-2xl overflow-y-auto overscroll-contain max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)]"
+            className="relative max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-0.75rem)] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-t-md border border-border bg-card shadow-2xl sm:rounded-md"
           >
             <ShadButton
               type="button"
@@ -196,29 +184,27 @@ export default function TrialGateModal() {
               size="icon"
               onClick={() => setDetail(null)}
               aria-label="Close"
-              className="absolute top-4 right-4 w-11 h-11 sm:w-9 sm:h-9 rounded-full text-muted hover:text-foreground hover:bg-muted/10 z-10 after:hidden"
+              className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full text-muted hover:bg-muted/10 hover:text-foreground after:hidden sm:h-9 sm:w-9"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </ShadButton>
 
-            <div className="px-6 sm:px-8 pt-8 pb-6">
-              <div className="flex items-center gap-2 wl-label text-brand mb-3 font-medium">
-                <Sparkles className="w-3 h-3" />
-                Upgrade to keep going
+            <div className="px-6 pt-8 pb-6 sm:px-8">
+              <div className="mb-3 flex items-center gap-2 font-medium text-brand wl-label">
+                <Sparkles className="h-3 w-3" />
+                {eyebrow}
               </div>
               <h2
                 id="trial-gate-title"
-                className="font-display italic text-2xl sm:text-3xl text-foreground mb-2 text-balance"
+                className="mb-2 text-balance font-display text-2xl italic text-foreground sm:text-3xl"
               >
                 {title}
               </h2>
-              <p className="text-sm sm:text-base text-foreground/75 max-w-xl leading-relaxed">
-                {body}
-              </p>
+              <p className="max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">{body}</p>
             </div>
 
-            <div className="px-6 sm:px-8 pb-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="px-6 pb-6 sm:px-8">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {SELF_SERVE_TIERS.map((tier) => {
                   const isPending = pending === tier.id;
                   const isRecommended = tier.id === recommendedPlanId;
@@ -231,38 +217,32 @@ export default function TrialGateModal() {
                       onClick={() => checkout(tier.id)}
                       disabled={!!pending}
                       className={cn(
-                        "relative h-auto w-full justify-start text-left rounded-md p-4 touch-manipulation",
+                        "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
                         isRecommended
                           ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
                           : "hover:border-brand/30 hover:bg-black/3",
                       )}
                     >
                       {isRecommended && (
-                        <div className="absolute -top-2 left-4 px-2 py-0.5 rounded-full bg-brand text-on-brand wl-label font-medium">
+                        <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
                           Recommended
                         </div>
                       )}
-                      <div className="font-display italic text-lg text-foreground mb-1">
-                        {tier.label}
-                      </div>
-                      <div className="flex items-baseline gap-1 mb-2">
-                        <span className="font-display italic text-2xl text-foreground">
-                          ${tier.price}
-                        </span>
+                      <div className="mb-1 font-display text-lg italic text-foreground">{tier.label}</div>
+                      <div className="mb-2 flex items-baseline gap-1">
+                        <span className="font-display text-2xl italic text-foreground">${tier.price}</span>
                         <span className="wl-label-muted/70">/mo</span>
                       </div>
-                      <p className="text-[11px] text-foreground/65 leading-relaxed mb-3">
-                        {tier.pitch}
-                      </p>
-                      <div className="inline-flex items-center gap-1.5 wl-label text-brand">
+                      <p className="mb-3 text-[11px] leading-relaxed text-foreground/65">{tier.pitch}</p>
+                      <div className="inline-flex items-center gap-1.5 text-brand wl-label">
                         {isPending ? (
                           <>
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin" />
                             Opening
                           </>
                         ) : (
                           <>
-                            <CreditCard className="w-3 h-3" />
+                            <CreditCard className="h-3 w-3" />
                             Pick {tier.label}
                           </>
                         )}
@@ -273,25 +253,22 @@ export default function TrialGateModal() {
               </div>
 
               {error && (
-                <div
-                  role="alert"
-                  className="mt-4 flex items-start gap-2 text-xs text-rose-600 leading-relaxed"
-                >
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div role="alert" className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-rose-600">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 wl-label text-muted/70">
-                <span>Phone number stays included</span>
+              <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
+                <span>Phone number included</span>
                 <span>·</span>
                 <span>Cancel anytime</span>
                 <span>·</span>
                 <a
                   href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
-                  className="text-brand hover:text-brand/80 transition-colors"
+                  className="text-brand transition-colors hover:text-brand/80"
                 >
-                  Need Enterprise? →
+                  Need Custom? →
                 </a>
               </div>
             </div>
