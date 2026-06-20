@@ -158,12 +158,12 @@ function combineSignals(...signals: AbortSignal[]): AbortSignal {
 }
 
 /**
- * Codes the trial gate (src/lib/trial-gate.ts) returns inside a 402
- * response body. authFetch detects these and emits a window event so
- * any mounted upgrade modal can pop without each caller having to
- * handle the 402 manually.
+ * Codes the subscription gate returns inside a 402 response body. authFetch
+ * detects these and emits a window event so any mounted checkout modal can
+ * give the user a direct, truthful activation path.
  */
 const TRIAL_GATE_CODES = new Set([
+  "ACTIVATION_REQUIRED",
   "TRIAL_EXPIRED",
   "TRIAL_LIMIT_HIT",
   "SUBSCRIPTION_REQUIRED",
@@ -177,7 +177,12 @@ const TRIAL_GATE_CODES = new Set([
 export const TRIAL_GATE_EVENT = "wireline:trial-gate-block";
 
 export interface TrialGateBlockDetail {
-  code: "TRIAL_EXPIRED" | "TRIAL_LIMIT_HIT" | "SUBSCRIPTION_REQUIRED" | "EMAIL_UNVERIFIED";
+  code:
+    | "ACTIVATION_REQUIRED"
+    | "TRIAL_EXPIRED"
+    | "TRIAL_LIMIT_HIT"
+    | "SUBSCRIPTION_REQUIRED"
+    | "EMAIL_UNVERIFIED";
   error: string;
   /** Present on TRIAL_LIMIT_HIT */
   limit?: number;
@@ -203,7 +208,7 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
     if (!TRIAL_GATE_CODES.has(code)) return;
     const detail: TrialGateBlockDetail = {
       code: code as TrialGateBlockDetail["code"],
-      error: String(body?.error || "Trial gate hit"),
+      error: String(body?.error || "Subscription required"),
       limit: typeof body?.limit === "number" ? body.limit : undefined,
       current: typeof body?.current === "number" ? body.current : undefined,
       days_left:
@@ -218,7 +223,7 @@ async function maybeDispatchTrialGateEvent(response: Response): Promise<void> {
     window.dispatchEvent(new CustomEvent<TrialGateBlockDetail>(TRIAL_GATE_EVENT, { detail }));
   } catch {
     // Body wasn't JSON, or parsing failed — caller probably didn't get
-    // a trial-gate 402 anyway. Skip.
+    // a subscription-gate 402 anyway. Skip.
   }
 }
 
@@ -297,8 +302,9 @@ export async function refreshSessionIfNeeded(): Promise<boolean> {
       });
       if (!res.ok) {
         void maybeDispatchAuthSessionExpired(res, "/api/auth/refresh");
+        return false;
       }
-      return res.ok;
+      return true;
     } catch {
       return false;
     } finally {
@@ -309,50 +315,31 @@ export async function refreshSessionIfNeeded(): Promise<boolean> {
 }
 
 /**
- * @deprecated JWTs are httpOnly cookies. Use `credentials: "include"` or
- * `refreshSessionIfNeeded()` before EventSource/WebSocket connections.
+ * Authenticated fetch wrapper. Injects JWT when present, adds cookies,
+ * applies a bounded timeout, and emits session-expiry / subscription-gate
+ * events before returning the original response to the caller.
  */
-export function getAccessToken(): string | null {
-  return null;
-}
-
-/** @deprecated Use `refreshSessionIfNeeded()` — returns null for compatibility. */
-export async function getFreshAccessToken(): Promise<string | null> {
-  await refreshSessionIfNeeded();
-  return null;
-}
-
-export async function authFetch(url: string, options: AuthFetchOptions = {}) {
-  if (!url.includes("/api/auth/refresh")) {
-    await refreshSessionIfNeeded();
-  }
-
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options;
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((fetchOptions.headers as Record<string, string>) || {}),
-  };
-
-  const timeoutCtrl = new AbortController();
-  const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs);
-  const signal = fetchOptions.signal
-    ? combineSignals(fetchOptions.signal, timeoutCtrl.signal)
-    : timeoutCtrl.signal;
+export async function authFetch(input: RequestInfo | URL, init: AuthFetchOptions = {}): Promise<Response> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, signal, headers, ...rest } = init;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  const mergedSignal = signal ? combineSignals(signal, controller.signal) : controller.signal;
   try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers,
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem("wireline_token") : null;
+    const mergedHeaders = new Headers(headers || {});
+    if (stored && !mergedHeaders.has("Authorization")) {
+      mergedHeaders.set("Authorization", `Bearer ${stored}`);
+    }
+    const response = await fetch(input, {
+      ...rest,
+      headers: mergedHeaders,
       credentials: "include",
-      signal,
+      signal: mergedSignal,
     });
-    // Fire-and-forget global trial-gate detection. Never await — the
-    // caller's contract is "I get a Response back immediately." The
-    // modal listener handles whatever the event carries.
     void maybeDispatchTrialGateEvent(response);
-    void maybeDispatchAuthSessionExpired(response, url);
+    void maybeDispatchAuthSessionExpired(response, typeof input === "string" ? input : input.toString());
     return response;
   } finally {
-    clearTimeout(timer);
+    window.clearTimeout(timeout);
   }
 }
