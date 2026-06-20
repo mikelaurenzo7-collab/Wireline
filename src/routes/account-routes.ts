@@ -41,7 +41,7 @@ router.get("/api/accounts/primary", authenticateUser, async (req: Request, res: 
   const userId = (req as AuthedRequest).userId;
   const primary = await getPrimaryAccount(userId);
   if (!primary) {
-    return res.status(404).json({ error: "No accounts found" });
+    return res.status(404).json({ code: "NOT_FOUND", error: "No accounts found" });
   }
   res.json({ account: primary });
 });
@@ -54,7 +54,7 @@ router.get("/api/accounts/:id", authenticateUser, async (req: Request, res: Resp
   const userId = (req as AuthedRequest).userId;
   const account = await getAccountById(req.params.id, userId);
   if (!account) {
-    return res.status(404).json({ error: "Account not found" });
+    return res.status(404).json({ code: "NOT_FOUND", error: "Account not found" });
   }
   res.json({ account });
 });
@@ -81,7 +81,7 @@ router.post(
         type,
         error: err instanceof Error ? err.message : String(err),
       });
-      res.status(500).json({ error: "Failed to create account" });
+      res.status(500).json({ code: "INTERNAL_ERROR", error: "Failed to create account" });
     }
   },
 );

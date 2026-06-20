@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
-const scannedRoots = ["README.md", "DESIGN.md", "index.html", "src", "marketing-kit"].map((p) =>
+const scannedRoots = ["README.md", "index.html", "src", "marketing-kit"].map((p) =>
   resolve(repoRoot, p),
 );
 

@@ -128,7 +128,12 @@ type ClerkWebhookEvent = {
 router.post("/api/auth/clerk/webhook", async (req: Request, res: Response) => {
   const signingSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET?.trim();
   if (!signingSecret) {
-    return res.status(503).json({ error: "CLERK_WEBHOOK_SIGNING_SECRET is not configured" });
+    return res
+      .status(503)
+      .json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "CLERK_WEBHOOK_SIGNING_SECRET is not configured",
+      });
   }
 
   const payload = Buffer.isBuffer(req.body)
@@ -150,7 +155,7 @@ router.post("/api/auth/clerk/webhook", async (req: Request, res: Response) => {
     log.warn("clerk webhook signature verification failed", {
       error: error instanceof Error ? error.message : String(error),
     });
-    return res.status(400).json({ error: "Invalid webhook signature" });
+    return res.status(400).json({ code: "BAD_REQUEST", error: "Invalid webhook signature" });
   }
 
   if (event.type !== "user.updated" && event.type !== "user.created") {
@@ -188,7 +193,7 @@ router.post("/api/auth/clerk/webhook", async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : String(error),
       clerkUserId: data.id,
     });
-    return res.status(500).json({ error: "User sync failed" });
+    return res.status(500).json({ code: "INTERNAL_ERROR", error: "User sync failed" });
   }
 
   return res.json({ ok: true });
