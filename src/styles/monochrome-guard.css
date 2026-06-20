@@ -90,6 +90,7 @@
 /* Legacy iris shadows become the same subtle graphite depth used by new cards. */
 :where(
   [class*="rgba(124,58,237"],
+  [class*="rgba(107,43,153"],
   [class*="rgba(91,33,182"],
   [class*="rgba(30,27,46"]
 ) {
