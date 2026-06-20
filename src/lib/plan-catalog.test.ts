@@ -2,26 +2,25 @@ import { describe, expect, it } from "vitest";
 import { STRIPE_PLANS, planById, VOICE_VARIABLE_COST_PER_MIN_USD } from "./plan-catalog";
 
 describe("plan-catalog", () => {
-  it("keeps entry plans consumer-priced with more useful minutes", () => {
-    expect(planById("personal")?.name).toBe("Everyday");
-    expect(planById("personal")?.price_usd_monthly).toBe(7);
-    expect(planById("personal")?.voice_minutes_monthly).toBe(60);
-
-    expect(planById("personal-plus")?.name).toBe("Plus");
-    expect(planById("personal-plus")?.price_usd_monthly).toBe(15);
-    expect(planById("personal-plus")?.voice_minutes_monthly).toBe(180);
+  it("keeps Personal light-use and affordable", () => {
+    const personal = planById("personal");
+    expect(personal?.name).toBe("Personal");
+    expect(personal?.price_usd_monthly).toBe(9);
+    expect(personal?.voice_minutes_monthly).toBe(30);
+    expect(personal?.extra_agent_price_usd).toBe(9);
   });
 
-  it("uses Studio as the full self-serve agent builder tier", () => {
+  it("makes Business Studio the clear operational entry tier", () => {
     const studio = planById("business-starter");
-    expect(studio?.name).toBe("Studio");
-    expect(studio?.price_usd_monthly).toBe(29);
-    expect(studio?.max_agents).toBe(4);
-    expect(studio?.voice_minutes_monthly).toBe(500);
-    expect(studio?.overage_per_min_usd).toBe(0.16);
+    expect(studio?.name).toBe("Business Studio");
+    expect(studio?.price_usd_monthly).toBe(99);
+    expect(studio?.max_agents).toBe(2);
+    expect(studio?.voice_minutes_monthly).toBe(300);
+    expect(studio?.included_phone_numbers).toBe(2);
+    expect(studio?.extra_agent_price_usd).toBe(19);
   });
 
-  it("keeps the canonical five Stripe plan ids while changing packaging", () => {
+  it("keeps the canonical Stripe plan identifiers for subscriptions and migrations", () => {
     expect(STRIPE_PLANS).toHaveLength(5);
     expect(STRIPE_PLANS.map((p) => p.id)).toEqual([
       "personal",
@@ -32,15 +31,18 @@ describe("plan-catalog", () => {
     ]);
   });
 
-  it("makes the highest tier contact-sales instead of another odd fixed bundle", () => {
-    const custom = planById("scale");
-    expect(custom?.name).toBe("Custom");
-    expect(custom?.price_usd_monthly).toBe(0);
-    expect(custom?.max_agents).toBeGreaterThanOrEqual(25);
+  it("keeps Scale as a real self-serve business plan", () => {
+    const scale = planById("scale");
+    expect(scale?.name).toBe("Business Scale");
+    expect(scale?.price_usd_monthly).toBe(699);
+    expect(scale?.voice_minutes_monthly).toBe(3_000);
+    expect(scale?.max_agents).toBe(10);
   });
 
-  it("maintains positive margin floor headroom on self-serve overage", () => {
+  it("reserves positive margin on included voice and overage", () => {
     for (const plan of STRIPE_PLANS.filter((p) => p.price_usd_monthly > 0)) {
+      const includedVoiceReserve = plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD;
+      expect(plan.price_usd_monthly).toBeGreaterThan(includedVoiceReserve);
       expect(plan.overage_per_min_usd).toBeGreaterThan(VOICE_VARIABLE_COST_PER_MIN_USD);
     }
   });
