@@ -4,7 +4,6 @@ import { ArrowRight, Menu, X } from "lucide-react";
 import WirelineMark from "../WirelineMark";
 import { useAuth } from "../../contexts/AuthContext";
 import { cn } from "../../lib/utils";
-import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export type PublicNavActive = "signin" | "signup" | "home";
 
@@ -34,29 +33,28 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const isAuth = active === "signin" || active === "signup";
-  const signedIn = !!user && !authLoading;
+  const signedIn = Boolean(user) && !authLoading;
   const homeTo = signedIn ? "/agents" : "/";
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [active, location.pathname]);
+  useEffect(() => setMenuOpen(false), [active, location.pathname]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const previous = document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMenuOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = previous;
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [menuOpen]);
@@ -65,51 +63,39 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
     <>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-3 focus:py-2 focus:bg-ink focus:text-paper focus:text-[13px] focus:font-medium focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-brand"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:bg-[#1d1d1f] focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-white"
       >
         Skip to content
       </a>
       <header
         data-testid="site-header"
         className={cn(
-          "fixed top-0 inset-x-0 z-50 transition-all duration-500",
-          scrolled
-            ? "bg-card/75 backdrop-blur-md border-b border-ink/[0.06] shadow-sm shadow-brand/10"
-            : "bg-transparent",
+          "fixed inset-x-0 top-0 z-50 border-b border-[#1d1d1f]/10 bg-[#f7f7f5]/96 backdrop-blur-md transition-shadow duration-200",
+          scrolled && "shadow-[0_4px_18px_rgba(29,29,31,0.05)]",
           className,
         )}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 lg:px-12 h-16">
-          <Link
-            to={homeTo}
-            className="flex items-center gap-2.5 group shrink-0"
-            data-testid="header-logo"
-          >
-            <div className="w-8 h-8 flex items-center justify-center shrink-0 bg-brand">
-              <WirelineMark className="w-4 h-4 text-white" strokeWidth={130} />
-            </div>
-            <span className="font-display italic text-xl text-foreground leading-none hidden sm:block chromatic-hover">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-3 px-5 sm:px-8 lg:px-12">
+          <Link to={homeTo} className="flex min-w-0 items-center gap-2.5" data-testid="header-logo">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-[14px] bg-[#1d1d1f]">
+              <WirelineMark className="h-5 w-5 text-white" strokeWidth={130} />
+            </span>
+            <span className="truncate text-[1.55rem] font-semibold leading-none tracking-[-0.055em] text-[#1d1d1f]">
               Wireline
             </span>
           </Link>
 
-          <nav
-            className={cn("hidden md:flex items-center gap-1 shrink-0", isAuth && "md:hidden")}
-            aria-label="Site"
-          >
+          <nav className={cn("hidden items-center gap-1 lg:flex", isAuth && "lg:hidden")} aria-label="Site">
             {NAV_LINKS.map((link) => {
-              const isActive =
-                location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+              const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
               return (
                 <Link
                   key={link.to}
                   to={link.to}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "relative px-3 py-2 text-[13px] font-medium transition-colors after:absolute after:inset-x-3 after:-bottom-px after:h-px after:origin-left after:bg-brand after:transition-transform after:duration-300",
-                    isActive
-                      ? "text-foreground after:scale-x-100"
-                      : "text-foreground/65 hover:text-foreground after:scale-x-0 hover:after:scale-x-100 after:bg-ink/20",
+                    "rounded-full px-3 py-2 text-[13px] font-medium transition-colors",
+                    isActive ? "bg-[#1d1d1f]/7 text-[#1d1d1f]" : "text-[#5e5e64] hover:bg-[#1d1d1f]/5 hover:text-[#1d1d1f]",
                   )}
                 >
                   {link.label}
@@ -118,99 +104,74 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             })}
           </nav>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-none items-center gap-2">
             {signedIn && !isAuth ? (
               <Link
                 to="/agents"
                 data-testid="header-dashboard"
-                className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
+                className="hidden min-h-10 items-center gap-2 rounded-full bg-[#1d1d1f] px-4 text-[13px] font-semibold text-white transition hover:bg-black md:inline-flex"
               >
-                Open the Studio
+                Open Studio
               </Link>
             ) : active === "home" ? (
               <>
                 <Link
                   to="/signin"
                   data-testid="header-signin"
-                  className="hidden sm:inline-flex text-[13px] font-medium text-foreground/65 hover:text-foreground transition-colors"
+                  className="hidden min-h-10 items-center px-2 text-[13px] font-semibold text-[#4f4f55] transition hover:text-[#1d1d1f] md:inline-flex"
                 >
                   Sign in
                 </Link>
                 <Link
                   to="/pricing"
                   data-testid="header-cta"
-                  className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-[var(--color-gemini-gradient-start)] via-[var(--color-gemini-gradient-mid)] to-[var(--color-gemini-gradient-end)] text-white text-[13px] font-medium px-5 py-2 rounded-full active:scale-95 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(155,92,224,0.4)]"
+                  className="hidden min-h-10 items-center gap-2 rounded-full bg-[#1d1d1f] px-4 text-[13px] font-semibold text-white transition hover:bg-black md:inline-flex"
                 >
                   Start at $7
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </>
             ) : null}
 
-            <ShadButton
+            <button
               type="button"
-              disableAnimations
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-foreground after:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full border border-[#1d1d1f]/12 bg-white text-[#1d1d1f] transition hover:bg-[#f2f2ef] lg:hidden"
               aria-expanded={menuOpen}
               aria-controls="public-mobile-nav"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
               onClick={() => setMenuOpen((value) => !value)}
               data-testid="mobile-menu-toggle"
             >
-              <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </ShadButton>
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
       </header>
 
       {menuOpen && (
-        <div
-          id="public-mobile-nav"
-          className="md:hidden fixed inset-0 z-50 flex flex-col"
-          role="dialog"
-          aria-modal="true"
-        >
-          <ShadButton
-            type="button"
-            variant="ghost"
-            disableAnimations
-            className="absolute inset-0 h-auto w-full rounded-none bg-ink/20 backdrop-blur-sm hover:bg-ink/20"
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-          />
-          <div className="relative mt-[4.5rem] mx-4 flex flex-col bg-card border border-ink/10 shadow-[0_24px_60px_-20px_rgba(30,27,46,0.3)] overflow-hidden max-h-[calc(100dvh-5.5rem-env(safe-area-inset-bottom,0px))]">
-            <div className="flex items-center justify-between gap-3 border-b border-ink/[0.08] px-5 py-4">
+        <div id="public-mobile-nav" className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Site navigation">
+          <button className="absolute inset-0 h-full w-full bg-[#1d1d1f]/20" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
+          <div className="absolute inset-x-4 top-[84px] overflow-hidden rounded-[22px] border border-[#1d1d1f]/12 bg-white shadow-[0_24px_70px_rgba(29,29,31,0.2)]">
+            <div className="flex items-center justify-between border-b border-[#1d1d1f]/10 px-5 py-4">
               <div>
-                <p className="wl-label text-brand">Explore Wireline</p>
-                <h2 className="text-sm font-medium text-foreground">Site navigation</h2>
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Explore Wireline</p>
+                <p className="mt-1 text-sm font-semibold text-[#1d1d1f]">What can we handle?</p>
               </div>
-              <ShadButton
-                type="button"
-                disableAnimations
-                variant="ghost"
-                size="icon"
-                onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
-                className="h-10 w-10 text-foreground after:hidden"
-              >
-                <X aria-hidden="true" className="w-4 h-4" />
-              </ShadButton>
+              <button type="button" className="grid h-9 w-9 place-items-center rounded-full bg-[#f2f2ef] text-[#1d1d1f]" aria-label="Close menu" onClick={() => setMenuOpen(false)}>
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <nav className="flex-1 overflow-y-auto py-2" aria-label="Mobile">
+            <nav className="p-2" aria-label="Mobile">
               {MOBILE_LINKS.map((link) => {
-                const isActive =
-                  location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+                const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
                 return (
                   <Link
                     key={link.to}
                     to={link.to}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center min-h-[48px] px-5 text-[15px] font-medium border-l-2 transition-colors touch-press",
-                      isActive
-                        ? "text-foreground border-brand bg-brand/[0.06]"
-                        : "text-foreground/80 border-transparent hover:bg-ink/[0.03]",
+                      "flex min-h-12 items-center rounded-xl px-4 text-[15px] font-semibold transition-colors",
+                      isActive ? "bg-[#1d1d1f] text-white" : "text-[#36363a] hover:bg-[#f2f2ef]",
                     )}
                     onClick={() => setMenuOpen(false)}
                   >
@@ -219,35 +180,16 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                 );
               })}
             </nav>
-            <div className="shrink-0 border-t border-ink/[0.08] p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] flex flex-col gap-2.5">
+            <div className="border-t border-[#1d1d1f]/10 p-4">
               {signedIn && !isAuth ? (
-                <Link
-                  to="/agents"
-                  data-testid="header-dashboard-mobile"
-                  className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Open the Studio
-                  <ArrowRight aria-hidden="true" className="w-4 h-4" />
+                <Link to="/agents" className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[14px] font-semibold text-white" onClick={() => setMenuOpen(false)}>
+                  Open Studio <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : active === "home" ? (
-                <>
-                  <Link
-                    to="/signin"
-                    className="flex items-center justify-center min-h-[48px] text-[14px] font-medium text-foreground border border-ink/15 hover:border-ink/30 transition-colors"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/pricing"
-                    className="flex items-center justify-center gap-2 min-h-[48px] text-[14px] font-medium bg-brand text-white hover:bg-brand-deep transition-colors"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Start at $7
-                    <ArrowRight aria-hidden="true" className="w-4 h-4" />
-                  </Link>
-                </>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to="/signin" className="flex min-h-12 items-center justify-center rounded-full border border-[#1d1d1f]/16 text-[14px] font-semibold text-[#1d1d1f]" onClick={() => setMenuOpen(false)}>Sign in</Link>
+                  <Link to="/pricing" className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#1d1d1f] text-[14px] font-semibold text-white" onClick={() => setMenuOpen(false)}>Start at $7 <ArrowRight className="h-4 w-4" /></Link>
+                </div>
               ) : null}
             </div>
           </div>
