@@ -1,205 +1,101 @@
-/* Updated version with stronger live demo prominence */
-/**
- * /showcase — agent templates for prospects.
- *
- * Each card is a pre-tuned persona a prospect can audition by calling
- * its live line, then deploy with one click. The marquee entry is the
- * "Singing Receptionist" (Mira): call her and she answers with a sung
- * jingle, then "catches herself" with a normal professional greeting.
- *
- * Why this exists: it gives prospects a low-pressure menu of "call this
- * number to hear exactly what an agent for your business sounds like" —
- * the most convincing path from "I'm curious" to "let me sign up."
- */
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Check, MessageSquare, Phone, Volume2 } from "lucide-react";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
-import { motion } from "motion/react";
-import { ArrowRight, Phone, Sparkles, Volume2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import { WIRELINE_DEMO_AGENTS, type ContactAgent } from "../data/contact-agents";
-import { SHOWCASE_AGENTS, type ShowcaseAgent } from "../data/showcase-agents";
+import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
+import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
-/**
- * Single showcase card. The marquee persona (Mira, the singing
- * receptionist) is a call-to-hear-live experience — she sings the
- * moment you connect, then catches herself with a normal greeting.
- * We surface her first-message script so prospects know what to
- * expect, then hand off to a tap-to-dial CTA.
- */
-function ShowcaseCard({ agent }: { agent: ShowcaseAgent }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="wl-panel card-shimmer border border-ink/[0.1] p-6 sm:p-8 transition-all duration-300 hover:border-brand/30 hover:shadow-[0_12px_48px_rgba(124,58,237,0.08)]"
-    >
-      <div className="flex items-start gap-4 mb-5">
-        <div
-          className="w-12 h-12 flex items-center justify-center shrink-0 wl-showcase-avatar"
-          data-showcase-tint={agent.tint}
-          aria-hidden="true"
-        >
-          <Sparkles className="w-5 h-5 text-white" strokeWidth={2.2} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-brand mb-1.5">
-            {agent.role}
-          </p>
-          <h3 className="font-display italic text-2xl sm:text-3xl text-foreground leading-tight">
-            {agent.name}
-          </h3>
-          <p className="text-[12px] text-foreground/55 mt-1">Voice: {agent.voiceLabel}</p>
-        </div>
-      </div>
-
-      <p className="text-sm sm:text-base text-foreground/75 leading-relaxed mb-4">
-        {agent.tagline}
-      </p>
-
-      <div className="bg-ink/[0.04] border border-ink/[0.08] p-4 mb-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-foreground/55 mb-2">
-          After the jingle, she says
-        </p>
-        <p className="text-sm text-foreground/90 italic leading-relaxed">"{agent.firstMessage}"</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <a href={`tel:${agent.tel}`} className="marketing-btn-primary min-h-[48px] text-sm">
-          <Phone className="w-3.5 h-3.5" />
-          Call {agent.name} to hear her sing
-        </a>
-        <span className="font-mono text-[13px] text-foreground/55">{agent.display}</span>
-      </div>
-    </motion.div>
-  );
-}
-
-function PhoneLineCard({ agent, label }: { agent: ContactAgent; label: string }) {
-  return (
-    <a
-      href={`tel:${agent.tel}`}
-      className="group marketing-panel p-5 min-h-[72px] transition-all hover:border-brand/40 hover:shadow-[0_10px_30px_-12px_rgba(79,30,123,0.25)] flex flex-col justify-center"
-    >
-      <div className="flex items-center gap-4">
-        <div
-          className="w-12 h-12 flex items-center justify-center shrink-0 rounded-md wl-showcase-badge"
-          data-showcase-tint={agent.tint}
-        >
-          <Phone className="w-5 h-5" strokeWidth={2.4} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/60 mb-0.5">
-            {label}
-          </p>
-          <p className="font-display text-xl leading-none text-foreground mb-1">{agent.name}</p>
-          <p className="font-mono text-[15px] font-medium text-brand tracking-tight">
-            {agent.display}
-          </p>
-          <p className="text-sm text-foreground/70 mt-1 line-clamp-1">{agent.role}</p>
-        </div>
-        <div className="shrink-0 text-right">
-          <ArrowRight className="w-5 h-5 text-foreground/55 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
-        </div>
-      </div>
-    </a>
-  );
-}
+const STEPS = [
+  ["Try it", "Start a private browser conversation."],
+  ["Ask normally", "Say what you need help with."],
+  ["Hear the result", "Get a feel for how Wireline listens and responds."],
+] as const;
 
 export default function Showcase() {
+  const primaryDemo = LANDING_PUBLIC_DEMO_AGENTS[0];
+
   useEffect(() => {
     captureDemoSourceFromLocation();
   }, []);
 
   return (
-    <MarketingPageFrame mainClassName="!px-0 pt-20 sm:pt-24 pb-0">
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="Showcase — Live AI Agent Demos · Wireline"
-        description="Call Wireline's voice agents live before signing up. The marquee fun demo: a singing receptionist who sings the moment you connect, then catches herself with a normal greeting."
+        title="Try Wireline"
+        description="Hear Wireline in your browser before you create your AI call assistant."
         path="/showcase"
       />
 
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-10 sm:pt-8 sm:pb-14 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-foreground/65 mb-4">
-            <span className="wl-eyebrow-dot" aria-hidden="true" />
-            The playable showcase
-          </p>
-          <h1 className="marketing-hero-title text-4xl sm:text-5xl mb-6">
-            Audition the agents before you deploy one.
+      <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
+        <div className="max-w-3xl">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">Try Wireline</p>
+          <h1 className="mt-4 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">
+            Hear a call assistant<br />
+            <em className="font-normal">before you need one.</em>
           </h1>
-          <p className="marketing-hero-lead max-w-2xl mx-auto">
-            Every template below is a real Wireline persona — same voice engine, same brain, same
-            hand-off rules. Call any line to hear it live. Like what you hear? Spin up your own.
-          </p>
-        </motion.div>
-      </section>
-
-      {/* Showcase cards */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
-        <div className="flex items-center gap-2 mb-6">
-          <Volume2 className="w-4 h-4 text-brand" strokeWidth={2.2} aria-hidden="true" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand">
-            Give her a ring
+          <p className="mt-7 max-w-2xl text-pretty text-[clamp(1.18rem,2.5vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">
+            Try a short conversation in your browser. No account required.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-5">
-          {SHOWCASE_AGENTS.map((agent) => (
-            <ShowcaseCard key={agent.tel} agent={agent} />
-          ))}
+
+        <div className="mt-11 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+          <section className="rounded-[24px] border border-[#1d1d1f]/12 bg-white p-2 shadow-[0_18px_48px_rgba(29,29,31,0.08)]">
+            <div className="flex min-h-[300px] flex-col justify-between rounded-[18px] border border-[#1d1d1f]/8 bg-[#fbfbf9] p-6 sm:p-8">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#1d1d1f]"><Volume2 className="h-4 w-4" />Live browser preview</div>
+                <h2 className="mt-5 text-[clamp(1.9rem,4vw,2.8rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#1d1d1f]">Talk to an assistant.</h2>
+                <p className="mt-3 max-w-md text-sm leading-6 text-[#5e5e64]">Ask a simple question, describe a task, or just say hello. Your microphone only turns on after you choose to start.</p>
+              </div>
+              <div className="mt-10"><BrowserCallWidget agentName={primaryDemo.name} /></div>
+            </div>
+          </section>
+
+          <aside className="rounded-[24px] border border-[#1d1d1f]/12 bg-[#1d1d1f] p-6 text-white sm:p-8">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">What to expect</p>
+            <ol className="mt-6 space-y-5">
+              {STEPS.map(([title, copy], index) => (
+                <li className="flex gap-4" key={title}>
+                  <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-white/12 text-xs font-semibold">{index + 1}</span>
+                  <span><strong className="block text-sm font-semibold">{title}</strong><span className="mt-1 block text-sm leading-6 text-white/68">{copy}</span></span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-9 border-t border-white/12 pt-5 text-sm leading-6 text-white/64">A demo is just a preview. In Agent Studio, you decide the job, rules, and handoff limits.</p>
+          </aside>
         </div>
       </section>
 
-      {/* Vertical demo agents — one role-play line per industry Wireline
-          sells into. The Wireline *team* lines deliberately do NOT appear
-          here: this is a public page, and routing genuine support to a
-          real specialist should require being a customer (landing hero) or
-          signed in (/help console). Demos are the right thing to put in
-          front of every curious visitor. Laid out 3-up so the 6 cards form
-          a clean, even 3-on-3 block — pairs with Mira as the marquee card
-          above. */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 pb-16">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-brand">
-            Demo lines by industry
-          </span>
-          <span className="h-px flex-1 bg-ink/[0.12]" />
+      <section className="border-y border-[#1d1d1f]/10 bg-white">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:px-10">
+          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">More examples</p>
+              <h2 className="mt-4 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#1d1d1f]">Call a demo line.</h2>
+              <p className="mt-4 max-w-md text-base leading-7 text-[#5e5e64]">These are role-play examples. They never route you to a real business or person.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
+                <a key={agent.tel} href={`tel:${agent.tel}`} className="group rounded-2xl border border-[#1d1d1f]/12 bg-[#f7f7f5] p-5 transition hover:border-[#1d1d1f]/30 hover:bg-white">
+                  <div className="flex items-start justify-between gap-4"><span className="grid h-10 w-10 place-items-center rounded-full bg-[#1d1d1f] text-white"><Phone className="h-4 w-4" /></span><ArrowRight className="h-5 w-5 text-[#6e6e73] transition group-hover:translate-x-0.5 group-hover:text-[#1d1d1f]" /></div>
+                  <h3 className="mt-7 text-lg font-semibold tracking-[-0.03em] text-[#1d1d1f]">{agent.name}</h3>
+                  <p className="mt-1 text-sm text-[#5e5e64]">{agent.role}</p>
+                  <p className="mt-4 font-mono text-sm font-semibold text-[#1d1d1f]">{agent.display}</p>
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {WIRELINE_DEMO_AGENTS.map((agent) => (
-            <PhoneLineCard key={agent.tel} agent={agent} label="Demo" />
-          ))}
-        </div>
-        <p className="mt-6 text-[13px] text-foreground/60 text-center max-w-md mx-auto">
-          Each line role-plays one industry so you can hear exactly what your callers would
-          experience. They never reach a real person — they're demos.
-        </p>
       </section>
 
-      {/* CTA */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 pb-8 text-center">
-        <h2 className="font-display italic text-3xl sm:text-4xl text-foreground mb-4 text-balance">
-          Deploy your own in under a minute.
-        </h2>
-        <p className="marketing-hero-lead mx-auto mb-6">
-          Pick a voice. Drop a knowledge base. Wireline writes the system prompt + first-message for
-          you. Live in production with a real number, 14-day free trial, no credit card.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link to="/signup" className="marketing-btn-primary">
-            Start free trial
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link to="/compare" className="marketing-btn-secondary">
-            Compare vs competitors
-          </Link>
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="rounded-[28px] bg-[#f2f2ef] p-7 sm:p-10 lg:flex lg:items-center lg:justify-between lg:gap-10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-[#4f4f55]"><Check className="h-4 w-4 text-[#1d1d1f]" />Your assistant starts as a private draft.</div>
+            <h2 className="mt-4 text-balance text-[clamp(2.1rem,4vw,3.5rem)] font-semibold leading-[0.98] tracking-[-0.05em] text-[#1d1d1f]">Ready to make the routine call disappear?</h2>
+          </div>
+          <Link to="/pricing" className="mt-7 inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#1d1d1f] px-7 text-base font-semibold text-white transition hover:bg-black active:scale-[0.985] lg:mt-0 lg:flex-none">Start at $7 <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
     </MarketingPageFrame>
