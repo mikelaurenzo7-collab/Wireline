@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppRoutes from "../../routes/AppRoutes";
+import ActivationCheckpoint from "../ActivationCheckpoint";
 import TrialGateModal from "../TrialGateModal";
 
 export default function AppShell() {
@@ -17,6 +18,7 @@ export default function AppShell() {
   return (
     <>
       <AppRoutes />
+      <ActivationCheckpoint />
       <TrialGateModal />
     </>
   );
