@@ -41,7 +41,7 @@ export const MARKETING_SCRIPT_SRCS = [
 
 /**
  * Build the CSP connect-src origins for the runtime.
- * fetch() is allowed to reach Anthropic, Vapi, Google, Microsoft Graph, and Stripe.
+ * fetch() is allowed to reach OpenAI, Vapi, Google, Microsoft Graph, and Stripe.
  *
  * In dev mode we also allow Vite's HMR transport (ws + http to any localhost
  * port) — Vite picks a random HMR port at boot, so the CSP can't pin a single
@@ -50,7 +50,7 @@ export const MARKETING_SCRIPT_SRCS = [
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
-    "https://api.anthropic.com",
+    "https://api.openai.com",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",
     "https://accounts.google.com",
@@ -127,7 +127,6 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     `connect-src ${connectSrcs}`,
     `media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io`,
     `worker-src 'self' blob:`,
-    // Director Stitch live HTML previews load artifact HTML via blob: iframes.
     `frame-src 'self' blob:`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
