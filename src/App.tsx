@@ -15,6 +15,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const Security = lazy(() => import("./components/Security"));
 const Status = lazy(() => import("./components/Status"));
 const SupportPage = lazy(() => import("./components/SupportPage").then((module) => ({ default: module.SupportPage })));
+const ContactPage = lazy(() => import("./components/ContactPage").then((module) => ({ default: module.ContactPage })));
 const PrivacyPolicy = lazy(() => import("./components/LegalPage").then((module) => ({ default: module.PrivacyPolicy })));
 const TermsOfService = lazy(() => import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })));
 const AppShell = lazy(() => import("./components/layout/AppShell"));
@@ -36,6 +37,7 @@ function AppRouter() {
         <Route path="/security" element={<Security />} />
         <Route path="/status" element={<Status />} />
         <Route path="/support" element={<SupportPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/developers" element={<Navigate to="/features" replace />} />
