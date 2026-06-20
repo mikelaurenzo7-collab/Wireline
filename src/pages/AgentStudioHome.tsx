@@ -70,6 +70,11 @@ export default function AgentStudioHome() {
 
   function pickAgent(id: string) { setActiveId(id); setComposer(""); setShowCreate(false); setSearchParams({ agent: id }, { replace: true }); }
   async function trainAgent(agentId: string, content: string) { const response = await authFetch("/api/train/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentId, message: content }) }); const payload = await safeJson(response); if (!response.ok) throw new Error(errorText(payload, "The assistant is temporarily unavailable.")); return responseText(payload) || "I saved that. What else should this agent know before it takes a call?"; }
+  async function persistCustomBrief(agentId: string, brief: string) {
+    const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "knowledge", content: `Initial operating brief: ${brief}` }) });
+    const payload = await safeJson(response);
+    if (!response.ok) throw new Error(errorText(payload, "We could not save your custom brief. Please try again."));
+  }
 
   async function createAgent(event: FormEvent) {
     event.preventDefault(); const trimmedName = name.trim(); const brief = customBrief.trim();
@@ -82,8 +87,16 @@ export default function AgentStudioHome() {
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT)); await refresh();
       if (createdId) {
         const initialMessages: Message[] = [welcomeMessage(trimmedName)];
-        if (brief) { initialMessages.push({ id: `brief-${createdId}`, role: "user", content: brief }); try { const reply = await trainAgent(createdId, brief); initialMessages.push({ id: `brief-saved-${createdId}`, role: "assistant", content: reply }); } catch { initialMessages.push({ id: `brief-pending-${createdId}`, role: "assistant", content: "Your custom brief is saved in this draft. Add the operating rules, facts, and handoff behavior you want next." }); } }
-        else initialMessages.push({ id: `created-${createdId}`, role: "assistant", content: `${trimmedName} is a draft. Give it a plain-English operating brief: the job, what it can promise, what it must never do, and when it should hand off to you.` });
+        if (brief) {
+          initialMessages.push({ id: `brief-${createdId}`, role: "user", content: brief });
+          try {
+            const reply = await trainAgent(createdId, brief);
+            initialMessages.push({ id: `brief-saved-${createdId}`, role: "assistant", content: reply });
+          } catch {
+            await persistCustomBrief(createdId, brief);
+            initialMessages.push({ id: `brief-saved-fallback-${createdId}`, role: "assistant", content: "Your custom brief is safely saved as agent context. Add any hard rules, business facts, and handoff behavior next." });
+          }
+        } else initialMessages.push({ id: `created-${createdId}`, role: "assistant", content: `${trimmedName} is a draft. Give it a plain-English operating brief: the job, what it can promise, what it must never do, and when it should hand off to you.` });
         setAgentThreads((current) => ({ ...current, [createdId]: initialMessages })); setActiveId(createdId); setSearchParams({ agent: createdId }, { replace: true }); await loadAgentConfig(createdId);
       }
       setName(""); setCustomBrief(""); setRole("scheduler"); setShowCreate(false);
