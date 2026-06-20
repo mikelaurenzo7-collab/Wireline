@@ -37,6 +37,10 @@ export default function LandingPage() {
             <div className="mt-9 flex flex-col gap-3 text-[15px] font-medium text-[#5e5e64] sm:flex-row sm:flex-wrap sm:gap-x-7 sm:gap-y-3">
               {PROOF_POINTS.map((point) => <span key={point} className="inline-flex items-center gap-2.5"><CheckCircle2 className="h-5 w-5 flex-none text-[#1d1d1f]" />{point}</span>)}
             </div>
+            <div className="mt-9 max-w-[38rem] border-t border-[#1d1d1f]/10 pt-5">
+              <p className="text-sm leading-6 text-[#5e5e64]">Need every customer call handled? Wireline gives your business an AI front office for routing, booking, follow-up, and review.</p>
+              <Link to="/pricing" className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#1d1d1f] underline underline-offset-4">Explore business coverage <ArrowRight className="h-4 w-4" /></Link>
+            </div>
           </section>
           <section className="max-w-[820px] pt-7 sm:pt-10"><div className="rounded-[24px] border border-[#1d1d1f]/12 bg-white p-2 shadow-[0_18px_48px_rgba(29,29,31,0.08)]"><div className="rounded-[18px] border border-[#1d1d1f]/8 bg-[#fbfbf9] px-5 py-6 sm:px-7 sm:py-8"><div className="flex items-start justify-between gap-4 pb-5"><div><div className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6e6e73]">Try it</div><div className="mt-2 text-[clamp(1.6rem,6vw,2.2rem)] font-semibold leading-none tracking-[-0.045em] text-[#1d1d1f]">Hear a real call.</div></div><div className="hidden pt-1 text-right text-xs font-medium text-[#6e6e73] sm:block">No account required</div></div><BrowserCallWidget agentName={csDemo.name} /></div></div></section>
           <section className="pt-14 sm:pt-16"><LandingIntegrationStrip /></section>
