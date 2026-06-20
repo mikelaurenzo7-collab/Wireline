@@ -1,21 +1,12 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import {
-  ArrowUp,
-  Check,
-  CirclePlus,
-  Ellipsis,
-  Loader2,
-  Paperclip,
-  Plus,
-  Settings2,
-  Sparkles,
-} from "lucide-react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowUp, Check, CirclePlus, Loader2, Paperclip, Plus, Sparkles } from "lucide-react";
 import { authFetch, safeJson } from "../lib/api";
 import { AGENTS_CHANGED_EVENT, useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 
 type Message = { id: string; role: "assistant" | "user"; content: string };
 type IntegrationStatus = Record<string, { connected?: boolean }>;
+type IntegrationKey = "google" | "microsoft";
 
 const starterPrompts = [
   "Handle my pharmacy calls and tell me the result",
@@ -25,9 +16,15 @@ const starterPrompts = [
 
 const roles = [
   { value: "scheduler", label: "Personal assistant" },
+  { value: "appointment_scheduler", label: "Appointment assistant" },
   { value: "customer_service", label: "Customer support" },
   { value: "receptionist", label: "Receptionist" },
   { value: "sales", label: "Sales assistant" },
+];
+
+const integrationOptions: Array<{ key: IntegrationKey; label: string; detail: string; endpoint: string }> = [
+  { key: "google", label: "Google", detail: "Calendar, Gmail, contacts", endpoint: "/api/oauth/google/url" },
+  { key: "microsoft", label: "Microsoft", detail: "Outlook and calendar", endpoint: "/api/oauth/microsoft/url" },
 ];
 
 function displayRole(value?: string) {
@@ -42,15 +39,23 @@ function responseText(payload: unknown): string | undefined {
   return undefined;
 }
 
+function errorText(payload: unknown, fallback: string) {
+  if (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") {
+    return payload.error;
+  }
+  return fallback;
+}
+
 export default function AgentStudioHome() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { agents, loading, refresh } = useAgents();
-  const emptyStateHandled = useRef(false);
+  const handledFirstLoad = useRef(false);
+  const threadEndRef = useRef<HTMLDivElement | null>(null);
   const [activeId, setActiveId] = useState(searchParams.get("agent") || "");
   const [composer, setComposer] = useState("");
   const [sending, setSending] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [connecting, setConnecting] = useState<IntegrationKey | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("scheduler");
@@ -60,7 +65,7 @@ export default function AgentStudioHome() {
       id: "welcome",
       role: "assistant",
       content:
-        "Start with the job. I will help you shape the agent, capture its rules, and point out the integrations it needs.",
+        "Start with the job. I will help you shape the agent, capture its rules, and point out the connection it needs.",
     },
   ]);
 
@@ -70,8 +75,8 @@ export default function AgentStudioHome() {
   );
 
   useEffect(() => {
-    if (loading || emptyStateHandled.current) return;
-    emptyStateHandled.current = true;
+    if (loading || handledFirstLoad.current) return;
+    handledFirstLoad.current = true;
     if (agents.length === 0) setShowCreate(true);
   }, [agents.length, loading]);
 
@@ -80,6 +85,10 @@ export default function AgentStudioHome() {
     setActiveId(activeAgent.id);
     setSearchParams({ agent: activeAgent.id }, { replace: true });
   }, [activeAgent?.id, activeId, setSearchParams]);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [messages, sending]);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,17 +103,14 @@ export default function AgentStudioHome() {
     };
   }, []);
 
+  function addAssistantMessage(content: string) {
+    setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", content }]);
+  }
+
   function pickAgent(id: string) {
     setActiveId(id);
     setShowCreate(false);
     setSearchParams({ agent: id }, { replace: true });
-  }
-
-  function addAssistantMessage(content: string) {
-    setMessages((current) => [
-      ...current,
-      { id: `assistant-${Date.now()}`, role: "assistant", content },
-    ]);
   }
 
   async function createAgent(event: FormEvent) {
@@ -117,16 +123,16 @@ export default function AgentStudioHome() {
       const response = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmedName, role }),
+        body: JSON.stringify({
+          name: trimmedName,
+          role,
+          // The Studio creates a draft. Provisioning a number remains a deliberate
+          // launch decision, not a side effect of naming an assistant.
+          deferPhoneProvision: true,
+        }),
       });
       const payload = await safeJson(response);
-      if (!response.ok) {
-        const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
-            ? payload.error
-            : "We could not create that agent yet.";
-        throw new Error(message);
-      }
+      if (!response.ok) throw new Error(errorText(payload, "We could not create that agent yet."));
 
       const createdId =
         payload && typeof payload === "object" && "id" in payload && typeof payload.id === "string"
@@ -141,7 +147,7 @@ export default function AgentStudioHome() {
       setName("");
       setShowCreate(false);
       addAssistantMessage(
-        `${trimmedName} is ready. Tell me what calls it should handle, what it should avoid, and when it should hand off to you.`,
+        `${trimmedName} is ready to teach. Tell me what calls it should handle, what it should avoid, and when it should hand off to you.`,
       );
     } catch (error) {
       addAssistantMessage(error instanceof Error ? error.message : "We could not create that agent yet.");
@@ -157,7 +163,6 @@ export default function AgentStudioHome() {
 
     setComposer("");
     setMessages((current) => [...current, { id: `user-${Date.now()}`, role: "user", content }]);
-
     if (!activeAgent) {
       setShowCreate(true);
       addAssistantMessage("Give this agent a name first. Then I will save the instructions you share here.");
@@ -173,14 +178,10 @@ export default function AgentStudioHome() {
       });
       const payload = await safeJson(response);
       if (!response.ok) {
-        const message =
-          payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
-            ? payload.error
-            : "The assistant is temporarily unavailable. Try again in a moment.";
-        throw new Error(message);
+        throw new Error(errorText(payload, "The assistant is temporarily unavailable. Try again in a moment."));
       }
       addAssistantMessage(
-        responseText(payload) || "I have that. What else should this agent know before it takes a call?",
+        responseText(payload) || "I saved that. What else should this agent know before it takes a call?",
       );
     } catch (error) {
       addAssistantMessage(error instanceof Error ? error.message : "The assistant is temporarily unavailable.");
@@ -189,11 +190,33 @@ export default function AgentStudioHome() {
     }
   }
 
-  const connections = [
-    { key: "google", label: "Google", detail: "Calendar, Gmail, contacts" },
-    { key: "microsoft", label: "Microsoft", detail: "Outlook and calendar" },
-    { key: "hubspot", label: "HubSpot", detail: "Contacts and pipeline" },
-  ];
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    event.preventDefault();
+    void sendMessage();
+  }
+
+  async function connectIntegration(option: (typeof integrationOptions)[number]) {
+    if (connecting) return;
+    setConnecting(option.key);
+    try {
+      const response = await authFetch(option.endpoint);
+      const payload = await safeJson(response);
+      const url =
+        payload && typeof payload === "object" && "url" in payload && typeof payload.url === "string"
+          ? payload.url
+          : "";
+      if (!response.ok || !url) throw new Error(errorText(payload, `Could not start ${option.label} connection.`));
+      const popup = window.open(url, "wireline_oauth", "width=600,height=760,left=120,top=80");
+      if (!popup) throw new Error("Allow popups for this site to connect your account.");
+      addAssistantMessage(`Finish connecting ${option.label} in the secure window. I will use it when it is available.`);
+    } catch (error) {
+      addAssistantMessage(error instanceof Error ? error.message : `Could not connect ${option.label}.`);
+    } finally {
+      setConnecting(null);
+    }
+  }
+
   const connectedCount = Object.values(integrations).filter((integration) => integration?.connected).length;
 
   return (
@@ -235,14 +258,6 @@ export default function AgentStudioHome() {
             </div>
           )}
         </div>
-
-        <div className="studio-sidebar-footer">
-          <Link to="/settings" className="studio-nav-link">
-            <Settings2 size={16} />
-            Settings
-          </Link>
-          <Link to="/help" className="studio-nav-link">Help</Link>
-        </div>
       </aside>
 
       <main className="studio-main">
@@ -251,20 +266,13 @@ export default function AgentStudioHome() {
             <p className="studio-kicker">Agent Studio</p>
             <div className="studio-title-row">
               <h1>{activeAgent?.name || "New agent"}</h1>
-              <button className="studio-icon-button" type="button" aria-label="Agent menu">
-                <Ellipsis size={18} />
-              </button>
+              <span className="studio-draft-label">Draft</span>
             </div>
           </div>
-          <div className="studio-header-actions">
-            <button className="studio-secondary-button" type="button" onClick={() => navigate("/integrations")}>
-              Integrations
-            </button>
-            <button className="studio-primary-button" type="button" onClick={() => setShowCreate(true)}>
-              <CirclePlus size={16} />
-              New agent
-            </button>
-          </div>
+          <button className="studio-primary-button" type="button" onClick={() => setShowCreate(true)}>
+            <CirclePlus size={16} />
+            New agent
+          </button>
         </header>
 
         <div className="studio-workspace">
@@ -273,9 +281,9 @@ export default function AgentStudioHome() {
               <div>
                 <p className="studio-kicker">Assistant</p>
                 <h2>Build it by talking.</h2>
-                <p>Start with the job. The details can come next.</p>
+                <p>Every clear instruction becomes part of this agent’s working profile.</p>
               </div>
-              <span className="studio-availability"><span />Ready</span>
+              <span className="studio-availability"><span />Private draft</span>
             </div>
 
             <div className="studio-thread" aria-live="polite">
@@ -291,9 +299,10 @@ export default function AgentStudioHome() {
                   <p>Saving that…</p>
                 </article>
               )}
+              <div ref={threadEndRef} />
             </div>
 
-            <div className="studio-starters">
+            <div className="studio-starters" aria-label="Starter prompts">
               {starterPrompts.map((prompt) => (
                 <button type="button" key={prompt} onClick={() => void sendMessage(undefined, prompt)}>
                   {prompt}
@@ -305,15 +314,16 @@ export default function AgentStudioHome() {
               <textarea
                 value={composer}
                 onChange={(event) => setComposer(event.target.value)}
+                onKeyDown={handleComposerKeyDown}
                 placeholder={activeAgent ? `Tell me what ${activeAgent.name} should do…` : "Tell me what you need help with…"}
                 rows={3}
               />
               <div className="studio-composer-footer">
-                <button className="studio-attach-button" type="button" aria-label="Attach context">
+                <button className="studio-attach-button" type="button" aria-label="Attach context" disabled>
                   <Paperclip size={17} />
                 </button>
-                <span>Shift + Enter for a new line</span>
-                <button className="studio-send-button" type="submit" disabled={!composer.trim() || sending} aria-label="Send message">
+                <span>Enter to save · Shift + Enter for a new line</span>
+                <button className="studio-send-button" type="submit" disabled={!composer.trim() || sending} aria-label="Save instruction">
                   <ArrowUp size={18} />
                 </button>
               </div>
@@ -322,12 +332,8 @@ export default function AgentStudioHome() {
 
           <aside className="studio-details" aria-label="Agent details">
             <section className="studio-card">
-              <div className="studio-card-heading">
-                <div>
-                  <p className="studio-kicker">Agent</p>
-                  <h2>Essentials</h2>
-                </div>
-              </div>
+              <p className="studio-kicker">Agent</p>
+              <h2>Essentials</h2>
               {activeAgent ? (
                 <dl className="studio-facts">
                   <div><dt>Name</dt><dd>{activeAgent.name}</dd></div>
@@ -335,12 +341,7 @@ export default function AgentStudioHome() {
                   <div><dt>Channel</dt><dd>{activeAgent.channel || "Voice"}</dd></div>
                 </dl>
               ) : (
-                <p className="studio-muted-copy">Create an agent, then refine its voice, rules, and handoff behavior here.</p>
-              )}
-              {activeAgent && (
-                <Link className="studio-text-link" to={`/training?agent=${encodeURIComponent(activeAgent.id)}`}>
-                  Edit agent details
-                </Link>
+                <p className="studio-muted-copy">Create an agent, then teach it its voice, limits, and handoff behavior here.</p>
               )}
             </section>
 
@@ -352,22 +353,29 @@ export default function AgentStudioHome() {
                 </div>
                 <span className="studio-count">{connectedCount}</span>
               </div>
+              <p className="studio-muted-copy">Connect only what this agent needs. You can add more later.</p>
               <div className="studio-integration-list">
-                {connections.map((connection) => {
-                  const connected = integrations[connection.key]?.connected === true;
+                {integrationOptions.map((option) => {
+                  const connected = integrations[option.key]?.connected === true;
+                  const isConnecting = connecting === option.key;
                   return (
-                    <Link className="studio-integration-row" key={connection.key} to="/integrations">
-                      <span className="studio-integration-icon">{connection.label.slice(0, 1)}</span>
+                    <button
+                      className="studio-integration-row"
+                      key={option.key}
+                      type="button"
+                      onClick={() => void connectIntegration(option)}
+                      disabled={connected || Boolean(connecting)}
+                    >
+                      <span className="studio-integration-icon">{option.label.slice(0, 1)}</span>
                       <span>
-                        <strong>{connection.label}</strong>
-                        <small>{connected ? "Connected" : connection.detail}</small>
+                        <strong>{option.label}</strong>
+                        <small>{connected ? "Connected" : option.detail}</small>
                       </span>
-                      {connected ? <Check size={16} /> : <Plus size={16} />}
-                    </Link>
+                      {isConnecting ? <Loader2 className="animate-spin" size={16} /> : connected ? <Check size={16} /> : <Plus size={16} />}
+                    </button>
                   );
                 })}
               </div>
-              <Link className="studio-text-link" to="/integrations">Manage integrations</Link>
             </section>
           </aside>
         </div>

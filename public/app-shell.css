@@ -1,96 +1,13 @@
-/* Zero-latency public shell skeleton — loaded before React for first paint. */
+/* Tiny first-paint layer. React owns all product layout after hydration. */
+:root {
+  background: #f7f7f5;
+  color-scheme: light;
+}
+
 body {
+  min-height: 100dvh;
   margin: 0;
-  background-color: #F3EFFA;
-  font-family: system-ui, sans-serif;
-  overflow: hidden;
-}
-
-.app-shell-skeleton {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background: #F3EFFA;
-}
-
-.shell-sidebar {
-  width: 260px;
-  background: #1E1B2E;
-  border-right: 1px solid rgba(124, 58, 237, 0.12);
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-  box-sizing: border-box;
-}
-
-.shell-logo {
-  width: 120px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  margin-bottom: 40px;
-}
-
-.shell-nav-item {
-  width: 100%;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  margin-bottom: 12px;
-}
-
-.shell-nav-item--dim { opacity: 0.8; }
-
-.shell-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.shell-header {
-  height: 64px;
-  border-bottom: 1px solid rgba(30, 27, 46, 0.08);
-  padding: 0 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.shell-title {
-  width: 150px;
-  height: 24px;
-  background: rgba(30, 27, 46, 0.05);
-  border-radius: 4px;
-}
-
-.shell-content {
-  flex: 1;
-  padding: 32px;
-}
-
-.shell-card {
-  width: 100%;
-  height: 200px;
-  background: rgba(232, 224, 245, 0.6);
-  border: 1px solid rgba(30, 27, 46, 0.06);
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-@keyframes shell-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.3; }
-}
-
-.shell-logo,
-.shell-nav-item,
-.shell-title,
-.shell-card {
-  animation: shell-pulse 2s infinite ease-in-out;
-}
-
-@media (max-width: 768px) {
-  .shell-sidebar { display: none; }
-  .shell-header { padding: 0 16px; }
-  .shell-content { padding: 16px; }
+  background: #f7f7f5;
+  color: #1d1d1f;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }
