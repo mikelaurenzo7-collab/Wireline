@@ -1,12 +1,13 @@
-import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
+import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./claude-models";
 
+/** Historical tier identifiers are retained for persisted selections. */
 export type WirelineDirectorTier = "auto" | "sonnet" | "opus";
 export type DirectorChatModelSelection =
   | { provider: "wireline"; tier: WirelineDirectorTier }
   | { provider: "openrouter"; modelId: string };
 
 export const DEFAULT_DIRECTOR_OPENROUTER_MODEL =
-  process.env.WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL?.trim() || "google/gemini-3.5-flash";
+  process.env.WIRELINE_ASSISTANT_DEFAULT_OPENROUTER_MODEL?.trim() || "openai/gpt-4o";
 
 export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = {
   provider: "wireline",
@@ -34,7 +35,7 @@ export function parseDirectorChatModelSelection(raw: unknown): DirectorChatModel
 export type ResolvedDirectorLlm = {
   provider: "wireline" | "openrouter";
   model: string;
-  modelKind: "sonnet" | "opus" | "custom";
+  modelKind: "standard" | "deep" | "custom";
   modelLabel: string;
   openRouterModelId?: string;
   deepThink: boolean;
@@ -62,14 +63,15 @@ export function resolveDirectorLlm(input: {
       maxTokens: input.longDeliverable ? 5000 : 2500,
     };
   }
+
   const deep = selection.tier === "opus" || (selection.tier === "auto" && input.autoOpus === true);
   return {
     provider: "wireline",
-    model: deep ? input.claudeOpus ?? CLAUDE_DIRECTOR_MODEL : input.claudeSonnet ?? CLAUDE_MODELS.SONNET,
-    modelKind: deep ? "opus" : "sonnet",
-    modelLabel: "Gemini Flash",
-    deepThink: false,
-    maxTokens: input.longDeliverable ? 4000 : 2200,
+    model: deep ? input.claudeOpus ?? OPENAI_STRUCTURED_PRIMARY_MODEL : input.claudeSonnet ?? OPENAI_STRUCTURED_PRIMARY_MODEL,
+    modelKind: deep ? "deep" : "standard",
+    modelLabel: "GPT-5.5",
+    deepThink: deep,
+    maxTokens: input.longDeliverable ? 5000 : 2500,
   };
 }
 
