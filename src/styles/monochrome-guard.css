@@ -1,0 +1,103 @@
+/*
+ * Final presentation guard for retained compatibility views.
+ *
+ * Wireline ships one visual language: calm light surfaces, graphite hierarchy,
+ * and no decorative hue or atmospheric glow. These selectors intentionally
+ * neutralize retired utility colors on lazy-loaded and legacy routes until the
+ * underlying modules are fully deleted.
+ */
+
+:root {
+  color-scheme: light;
+}
+
+/* Decorative light leaks are removed, not recolored. */
+:where([class*="absolute"][class*="blur-3xl"], [class*="fixed"][class*="blur-3xl"]) {
+  display: none !important;
+}
+
+/* Retired brand hues collapse to the neutral surface system. */
+:where(
+  [class*="bg-violet-"],
+  [class*="bg-purple-"],
+  [class*="bg-indigo-"],
+  [class*="bg-fuchsia-"],
+  [class*="bg-pink-"],
+  [class*="bg-cyan-"],
+  [class*="bg-sky-"]
+) {
+  background-color: var(--wl-surface-subtle) !important;
+  background-image: none !important;
+}
+
+:where(
+  [class*="text-violet-"],
+  [class*="text-purple-"],
+  [class*="text-indigo-"],
+  [class*="text-fuchsia-"],
+  [class*="text-pink-"],
+  [class*="text-cyan-"],
+  [class*="text-sky-"]
+) {
+  color: var(--wl-ink) !important;
+}
+
+:where(
+  [class*="border-violet-"],
+  [class*="border-purple-"],
+  [class*="border-indigo-"],
+  [class*="border-fuchsia-"],
+  [class*="border-pink-"],
+  [class*="border-cyan-"],
+  [class*="border-sky-"]
+) {
+  border-color: var(--wl-line-strong) !important;
+}
+
+:where(
+  [class*="ring-violet-"],
+  [class*="ring-purple-"],
+  [class*="ring-indigo-"],
+  [class*="ring-fuchsia-"],
+  [class*="ring-pink-"],
+  [class*="ring-cyan-"],
+  [class*="ring-sky-"]
+) {
+  --tw-ring-color: var(--wl-focus) !important;
+}
+
+/* Gradients were part of the retired visual system. Product surfaces stay flat. */
+:where(
+  [class*="from-violet-"],
+  [class*="from-purple-"],
+  [class*="from-indigo-"],
+  [class*="from-fuchsia-"],
+  [class*="from-pink-"],
+  [class*="from-cyan-"],
+  [class*="to-violet-"],
+  [class*="to-purple-"],
+  [class*="to-indigo-"],
+  [class*="to-fuchsia-"],
+  [class*="to-pink-"],
+  [class*="to-cyan-"],
+  [class*="via-violet-"],
+  [class*="via-purple-"],
+  [class*="via-indigo-"]
+) {
+  background-image: none !important;
+}
+
+/* Interaction remains obvious without color theatrics. */
+button:not(:disabled),
+a[href] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--wl-focus) !important;
+  outline-offset: 2px;
+}
