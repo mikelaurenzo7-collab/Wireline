@@ -265,8 +265,7 @@ app.use("/api/claude", enforceSpendCap);
 app.use("/api/emails", timeoutMiddleware(15_000));
 app.use("/api/phone-numbers", timeoutMiddleware(10_000));
 app.use("/api/campaigns", timeoutMiddleware(10_000));
-// Director turns run web research + structured Claude (or Stitch UI generation).
-// Stitch MCP generate (~150s) + asset polling can exceed the old 180s cap.
+// Retired Director endpoints retain an explicit 410 only under /api/director.
 app.use("/api/director", timeoutMiddleware(DIRECTOR_REQUEST_TIMEOUT_MS));
 app.use("/api", defaultApiTimeoutMiddleware);
 
@@ -315,7 +314,7 @@ app.use(settingsRouter);
 app.use(activationRouter);
 app.use(vapiRouter);
 app.use(agentRouter);
-app.use(directorRouter);
+app.use("/api/director", directorRouter);
 app.use(agentWorkspaceRouter);
 app.use(supportRouter);
 app.use(voicesRouter);
@@ -457,7 +456,7 @@ async function startServer() {
   };
 
   process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGINT", () => shutdown("SIGTERM"));
 }
 
 // Safety nets
