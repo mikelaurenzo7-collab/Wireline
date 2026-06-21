@@ -57,6 +57,15 @@ final class WirelineCallLiveActivityManager {
         await activity.end(nil, dismissalPolicy: .immediate)
     }
 
+    func endAll() async {
+        guard #available(iOS 16.1, *) else { return }
+        let current = activities
+        activities.removeAll()
+        for activity in current.values {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+    }
+
     private func clean(_ value: String?, fallback: String) -> String {
         guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return fallback }
         return text.replacingOccurrences(of: "_", with: " ").capitalized
