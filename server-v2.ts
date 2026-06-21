@@ -1,0 +1,83 @@
+import "dotenv/config";
+import "express-async-errors";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { IS_PROD, log } from "./src/lib/server-context";
+import { AppError, formatErrorResponse } from "./src/lib/api-error";
+import { normalizeApiErrorResponse } from "./src/middleware/normalize-api-error-response";
+import { assertSameOrigin } from "./src/middleware/same-origin";
+import { installWebhookBodyParsers } from "./src/lib/body-parsers";
+import { buildCSP, buildConnectSrcs, generateCspNonce } from "./src/lib/csp";
+import { getErrorMessage } from "./src/lib/server-utils";
+import { validateStartupEnv } from "./src/lib/startup";
+import { startMemoryCleanup } from "./src/lib/rate-limit";
+import authRouter from "./src/routes/auth-routes";
+import authOAuthRouter from "./src/routes/auth-oauth-routes";
+import oauthRouter from "./src/routes/oauth";
+import agentRouter from "./src/routes/agent-routes";
+import qaRouter from "./src/routes/qa-routes";
+import vapiRouter from "./src/routes/vapi-v2";
+import healthRouter from "./src/routes/health-routes";
+import openaiRealtimeRouter from "./src/routes/openai-realtime-routes";
+import voicesRouter from "./src/routes/voices-routes";
+import pronunciationRouter from "./src/routes/pronunciation-routes";
+import elevenlabsWebhookRouter from "./src/routes/webhooks-elevenlabs-routes";
+import billingRouter from "./src/routes/billing-routes";
+import emailRouter from "./src/routes/email-routes";
+import calendarRouter from "./src/routes/calendar-routes";
+import driveRouter from "./src/routes/drive-routes";
+import icloudMailRouter from "./src/routes/icloud-mail-routes";
+import emailUnsubscribeRouter from "./src/routes/email-unsubscribe-routes";
+import publicStatsRouter from "./src/routes/public-stats-routes";
+import metaWebhookRouter from "./src/routes/meta-webhook-routes";
+
+if (typeof (BigInt.prototype as unknown as { toJSON?: () => string }).toJSON !== "function") Object.defineProperty(BigInt.prototype, "toJSON", { value: function toJSON(this: bigint) { return this.toString(); }, configurable: true });
+validateStartupEnv();
+export const app = express();
+if (IS_PROD) app.set("trust proxy", 1);
+const origins = (process.env.CORS_ORIGINS || "").split(",").map((item) => item.trim()).filter(Boolean);
+if (IS_PROD && !origins.length && process.env.APP_URL) origins.push(process.env.APP_URL);
+app.use(cors({ origin: (origin, callback) => !origin || !origins.length || origins.includes(origin) ? callback(null, true) : callback(null, false), credentials: true }));
+installWebhookBodyParsers(app);
+app.use(express.json({ limit: "1mb" }));
+app.use(assertSameOrigin);
+app.use((req, res, next) => { const incoming = String(req.headers["x-request-id"] || "").slice(0, 64); const requestId = /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID(); res.locals.requestId = requestId; res.setHeader("X-Request-Id", requestId); next(); });
+app.use(normalizeApiErrorResponse);
+const connectSrc = buildConnectSrcs(!IS_PROD);
+app.use((_req, res, next) => { const nonce = IS_PROD ? generateCspNonce() : undefined; res.locals.cspNonce = nonce; res.setHeader("X-Content-Type-Options", "nosniff"); res.setHeader("X-Frame-Options", "DENY"); res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin"); res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(self)"); res.setHeader("Content-Security-Policy", buildCSP(!IS_PROD, nonce, connectSrc)); if (IS_PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload"); next(); });
+startMemoryCleanup();
+
+app.use("/api/health", healthRouter);
+app.use(openaiRealtimeRouter);
+app.use(authOAuthRouter);
+app.use(authRouter);
+app.use(oauthRouter);
+app.use(agentRouter);
+app.use("/api/qa", qaRouter);
+app.use(vapiRouter);
+app.use(voicesRouter);
+app.use(pronunciationRouter);
+app.use(elevenlabsWebhookRouter);
+app.use(billingRouter);
+app.use(emailRouter);
+app.use(calendarRouter);
+app.use(driveRouter);
+app.use(icloudMailRouter);
+app.use(emailUnsubscribeRouter);
+app.use(metaWebhookRouter);
+app.use(publicStatsRouter);
+
+app.use("/api", (req, res) => { const { status, body } = formatErrorResponse(AppError.notFound(`No API route matches ${req.method} ${req.path}`), res.locals.requestId as string | undefined); res.status(status).json(body); });
+app.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => { log.error("API error", { requestId: res.locals.requestId, method: req.method, path: req.path, error: getErrorMessage(error) }); const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined); res.status(status).json(body); });
+
+async function startServer() {
+  if (process.env.NODE_ENV !== "production") { const { createServer } = await import("vite"); const vite = await createServer({ server: { middlewareMode: true }, appType: "spa" }); app.use(vite.middlewares); return; }
+  const dist = path.join(process.cwd(), "dist");
+  app.use(express.static(dist));
+  const html = readFileSync(path.join(dist, "index.html"));
+  app.get("*", (_req, res) => res.type("html").send(html));
+}
+if (process.env.VERCEL !== "1") void startServer();
