@@ -12,6 +12,8 @@ struct RootTabView: View {
             CallsView().tabItem { Label("Recaps", systemImage: "phone.arrow.down.left") }
         }
         .tint(Brand.accent)
+        .toolbarBackground(Brand.panel, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .sheet(isPresented: $router.showAsk) { AskWirelineView() }
         .fullScreenCover(isPresented: $router.showLiveCall) {
             LiveCallView(callId: router.liveCallId).environmentObject(router)
