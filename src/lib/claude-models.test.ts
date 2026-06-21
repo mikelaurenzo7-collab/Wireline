@@ -5,7 +5,7 @@ import {
   VAPI_VOICE_FALLBACK_MODEL,
   isOpenRouterModelId,
   resolveVapiVoiceModelSelection,
-} from "./claude-models";
+} from "./ai-models";
 
 describe("managed voice model policy", () => {
   it("keeps OpenAI as the managed primary and Gemini as its native fallback", () => {

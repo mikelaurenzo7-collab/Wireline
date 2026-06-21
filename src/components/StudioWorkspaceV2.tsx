@@ -32,7 +32,6 @@ import { AGENT_TOOL_CATALOG, type AgentToolName } from "../lib/agent-capabilitie
 import OpenRouterModelPicker from "./OpenRouterModelPicker";
 import WorkspaceShell from "./WorkspaceShell";
 import { VoiceFieldSelect, type VoiceOption } from "./fleet-settings/VoiceSelector";
-import { AgentGrid } from "./fleet/helpers";
 import { PREMIUM_VOICES } from "./fleet/helpers";
 
 type ChatMessage = { id: string; role: "assistant" | "user"; content: string };
