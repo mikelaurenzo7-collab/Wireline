@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Work+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "./styles/design-system.css";
 @import "./styles/stitch-patterns.css";
@@ -9,14 +9,16 @@
 @import "./styles/precision-auth.css";
 
 :root {
-  --wl-font-display: "Source Serif 4", ui-serif, Georgia, serif;
-  --wl-font-sans: "Work Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-display: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @theme inline {
   --font-sans: var(--wl-font-sans);
-  --font-serif: var(--wl-font-display);
+  /* Retain the utility name while making legacy `font-serif` calls visually
+     conform to Professional Heritage rather than reintroducing display serif. */
+  --font-serif: var(--wl-font-sans);
   --font-mono: var(--wl-font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -52,6 +54,7 @@
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--background); }
 body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wl-font-sans); font-synthesis: none; font-kerning: normal; }
+h1, h2, h3, h4 { font-feature-settings: "cv05", "cv08", "ss01"; }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--wl-accent); outline-offset: 2px; }
