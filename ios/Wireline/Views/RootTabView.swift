@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Signed-in native shell. The Stitch mobile export informs the compact tab
-/// rhythm and visual hierarchy, while the destinations remain real consumer
-/// flows: ask, assistants, call recaps, wallet, and settings.
 struct RootTabView: View {
     @EnvironmentObject private var router: WirelineRouter
 
@@ -10,6 +7,9 @@ struct RootTabView: View {
         TabView {
             WorkspaceView()
                 .tabItem { Label("Studio", systemImage: "slider.horizontal.3") }
+
+            AssistantLibraryView()
+                .tabItem { Label("Assistants", systemImage: "person.2") }
 
             CallsView()
                 .tabItem { Label("Recaps", systemImage: "phone.arrow.down.left") }
