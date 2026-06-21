@@ -22,6 +22,7 @@ const AppShell = lazy(() => import("./components/layout/AppShell"));
 const FigmaAuthPortal = lazy(() => import("./FigmaAuthPortal"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
+const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
 
 function AppRouter() {
   return (
@@ -33,6 +34,15 @@ function AppRouter() {
         <Route path="/showcase" element={<Showcase />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/solutions/:wedge" element={<SolutionsPage />} />
+        <Route path="/for/personal" element={<VerticalLanding slug="personal" />} />
+        <Route path="/for/home-services" element={<VerticalLanding slug="home-services" />} />
+        <Route path="/for/medical" element={<VerticalLanding slug="medical" />} />
+        <Route path="/for/legal" element={<VerticalLanding slug="legal" />} />
+        <Route path="/for/real-estate" element={<VerticalLanding slug="real-estate" />} />
+        <Route path="/for/insurance" element={<VerticalLanding slug="insurance" />} />
+        <Route path="/for/restaurants" element={<VerticalLanding slug="restaurants" />} />
+        <Route path="/for/sales" element={<VerticalLanding slug="sales" />} />
+        <Route path="/for/*" element={<Navigate to="/for/personal" replace />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />

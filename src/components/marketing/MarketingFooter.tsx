@@ -4,6 +4,8 @@ import { cn } from "../../lib/utils";
 const TRUST = ["TLS 1.3", "SOC 2 in progress", "HIPAA controls", "Stripe billing"] as const;
 
 const LINKS = [
+  { to: "/for/personal", label: "For you" },
+  { to: "/solutions/support", label: "For business" },
   { to: "/pricing", label: "Pricing" },
   { to: "/compare", label: "Why Wireline" },
   { to: "/showcase", label: "Demos" },
@@ -36,37 +38,21 @@ export default function MarketingFooter({
       <div className="wl-measure space-y-3 text-center">
         <div className="flex flex-wrap justify-center gap-1.5">
           {TRUST.map((label) => (
-            <span
-              key={label}
-              className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
-            >
+            <span key={label} className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
               {label}
             </span>
           ))}
         </div>
-        <nav
-          className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-caption font-medium"
-          aria-label="Footer"
-        >
+        <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-caption font-medium" aria-label="Footer">
           {LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground"
-            >
+            <Link key={link.to} to={link.to} className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">
               {link.label}
             </Link>
           ))}
-          <Link to="/privacy" className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">
-            Privacy
-          </Link>
-          <Link to="/terms" className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">
-            Terms
-          </Link>
+          <Link to="/privacy" className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">Privacy</Link>
+          <Link to="/terms" className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">Terms</Link>
         </nav>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Start with the plan that fits your call volume. Change or cancel anytime.
-        </p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">Start with the plan that fits your call volume. Change or cancel anytime.</p>
       </div>
     </footer>
   );

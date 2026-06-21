@@ -4,9 +4,9 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 
 const STEPS = [
-  { number: "01", icon: MessageSquare, title: "Tell Wireline what you need.", copy: "“Call my pharmacy and ask whether my refill is ready.” Start with a plain-English request." },
-  { number: "02", icon: PhoneCall, title: "It handles the conversation.", copy: "Wireline calls the line, waits on hold, follows the rules you set, and knows when to hand something back to you." },
-  { number: "03", icon: Check, title: "You get the useful part.", copy: "A clear result, not a recording you need to listen through or a queue you need to rejoin." },
+  { number: "01", icon: MessageSquare, title: "Say what you need.", copy: "“Call my pharmacy and ask whether my refill is ready.” Start with a plain-English request." },
+  { number: "02", icon: PhoneCall, title: "Wireline handles the call.", copy: "It calls the line, waits on hold, follows the rules you set, and knows when to send something back to you." },
+  { number: "03", icon: Check, title: "You get the useful part.", copy: "A clear result and next step—not a recording you need to listen through or a queue you need to rejoin." },
 ] as const;
 
 const USE_CASES = [
@@ -19,11 +19,71 @@ const USE_CASES = [
 ] as const;
 
 export default function Features() {
-  return <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
-    <PageMeta title="What Wireline Does" description="Wireline calls everyday phone lines, waits on hold, and brings back a clear answer." path="/features" />
-    <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:px-10"><div className="max-w-3xl"><div className="inline-flex items-center gap-2 rounded-full border border-[#1d1d1f]/14 bg-white px-3.5 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1d1d1f]"><Sparkles className="h-3.5 w-3.5" />Everyday call help</div><h1 className="mt-7 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">The call is handled.<br /><em className="font-normal">Your day is not.</em></h1><p className="mt-7 max-w-2xl text-pretty text-[clamp(1.18rem,2.5vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">Wireline makes the routine call, waits on hold, and texts you the answer. No dashboard to learn. No elaborate workflow to build.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><Link to="/pricing" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[#1d1d1f] px-7 text-base font-semibold text-white transition hover:bg-black active:scale-[0.985]">Start at $9 <ArrowRight className="h-4 w-4" /></Link><Link to="/showcase" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-[#1d1d1f]/16 bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:bg-[#f2f2ef] active:scale-[0.985]">Hear an assistant</Link></div></div></section>
-    <section className="border-y border-[#1d1d1f]/10 bg-white"><div className="mx-auto grid max-w-6xl gap-px bg-[#1d1d1f]/10 sm:grid-cols-3">{STEPS.map(({ number, icon: Icon, title, copy }) => <article key={number} className="bg-white px-5 py-8 sm:px-7 sm:py-10"><div className="flex items-center justify-between"><span className="grid h-10 w-10 place-items-center rounded-full bg-[#f2f2ef] text-[#1d1d1f]"><Icon className="h-5 w-5" /></span><span className="font-mono text-xs font-semibold text-[#8a8a90]">{number}</span></div><h2 className="mt-7 text-[1.35rem] font-semibold leading-tight tracking-[-0.035em] text-[#1d1d1f]">{title}</h2><p className="mt-3 max-w-sm text-sm leading-6 text-[#5e5e64]">{copy}</p></article>)}</div></section>
-    <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24 lg:px-10"><div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:items-end"><div><p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">The calls worth skipping</p><h2 className="mt-4 text-balance text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#1d1d1f]">Use it for the calls that interrupt everything else.</h2></div><p className="max-w-xl text-lg font-medium leading-8 text-[#5e5e64]">You stay in control. Teach an agent what it can say, what it should never do, and when it should send the conversation back to you.</p></div><div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{USE_CASES.map(([title, copy]) => <article key={title} className="rounded-2xl border border-[#1d1d1f]/12 bg-white p-5 transition hover:border-[#1d1d1f]/28"><h3 className="text-base font-semibold tracking-[-0.025em] text-[#1d1d1f]">{title}</h3><p className="mt-2 text-sm leading-6 text-[#5e5e64]">{copy}</p></article>)}</div></section>
-    <section className="border-t border-[#1d1d1f]/10 bg-[#1d1d1f] px-5 py-16 text-white sm:px-8 sm:py-20"><div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_auto] lg:items-center"><div><div className="inline-flex items-center gap-2 text-sm font-medium text-white/72"><ShieldCheck className="h-4 w-4" />You decide the boundaries.</div><h2 className="mt-4 max-w-2xl text-balance text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em]">A personal assistant, not a black box.</h2><div className="mt-6 flex flex-col gap-3 text-sm leading-6 text-white/72 sm:flex-row sm:gap-7"><span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-white" />Set clear call rules</span><span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-white" />Review the result</span><span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4 text-white" />Save the time for something else</span></div></div><Link to="/pricing" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-base font-semibold text-[#1d1d1f] transition hover:bg-[#f2f2ef] active:scale-[0.985]">See plans <ArrowRight className="h-4 w-4" /></Link></div></section>
-  </MarketingPageFrame>;
+  return (
+    <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
+      <PageMeta title="How Wireline Works" description="Wireline calls everyday phone lines, waits on hold, and brings back a clear answer." path="/features" />
+
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
+        <div className="max-w-3xl">
+          <p className="wl-stitch-eyebrow">Everyday call help</p>
+          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">The call is handled. Your day is not.</h1>
+          <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
+            Wireline makes the routine call, waits through the hold music, and texts you the answer. No complicated workflow to build before it becomes useful.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link to="/pricing" className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold">Start at $9 <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/showcase" className="marketing-btn-secondary min-h-12 px-6 text-[15px] font-semibold">Hear an assistant</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-border bg-card px-5 py-5 sm:px-8 sm:py-7">
+        <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border border-border bg-border sm:grid-cols-3">
+          {STEPS.map(({ number, icon: Icon, title, copy }) => (
+            <article key={number} className="bg-card px-5 py-7 sm:px-7 sm:py-9">
+              <div className="flex items-center justify-between">
+                <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary"><Icon className="h-4 w-4" /></span>
+                <span className="font-mono text-[11px] text-muted-foreground">{number}</span>
+              </div>
+              <h2 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">{title}</h2>
+              <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,.75fr)_minmax(0,1.25fr)] lg:items-end">
+          <div>
+            <p className="wl-stitch-eyebrow">The calls worth skipping</p>
+            <h2 className="wl-stitch-display mt-3 text-balance">Use it for the calls that interrupt everything else.</h2>
+          </div>
+          <p className="max-w-xl text-base leading-7 text-muted-foreground">You stay in control. Teach an assistant what it can say, what it should never do, and when it should send the conversation back to you.</p>
+        </div>
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {USE_CASES.map(([title, copy]) => (
+            <article key={title} className="wl-stitch-card p-5">
+              <h3 className="text-base font-semibold tracking-[-.02em] text-foreground">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-card px-5 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div>
+            <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" />You decide the boundaries.</p>
+            <h2 className="wl-stitch-display mt-4 max-w-2xl text-balance">A personal assistant, not a black box.</h2>
+            <div className="mt-5 flex flex-col gap-3 text-sm leading-6 text-muted-foreground sm:flex-row sm:gap-7">
+              <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-primary" />Set clear call rules</span>
+              <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-primary" />Review the result</span>
+              <span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4 text-primary" />Save the time for something else</span>
+            </div>
+          </div>
+          <Link to="/for/personal" className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold">See personal use cases <ArrowRight className="h-4 w-4" /></Link>
+        </div>
+      </section>
+    </MarketingPageFrame>
+  );
 }
