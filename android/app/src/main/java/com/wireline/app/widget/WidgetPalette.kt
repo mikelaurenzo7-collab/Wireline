@@ -3,18 +3,24 @@ package com.wireline.app.widget
 import androidx.compose.ui.graphics.Color
 
 /**
- * Stitch Noir colors for Glance widgets.
- * Widgets do not depend on the Compose app theme, so this is the single shared
- * palette for extension-like app-widget surfaces.
+ * Standalone palette for Glance widgets. Widgets cannot depend on the main
+ * Compose theme, so this mirrors the native Precision tokens directly.
  */
 internal object WidgetPalette {
-    val Violet = Color(0xFF5D5CFF)
-    val VioletDeep = Color(0xFF4643E9)
-    val VioletSoft = Color(0xFFC1C1FF)
-    val Canvas = Color(0xFF0A0A0C)
-    val Panel = Color(0xFF131315)
-    val Panel2 = Color(0xFF1B1B1D)
-    val Text = Color(0xFFF4F2F7)
-    val Text2 = Color(0xFFC7C4D8)
-    val Success = Color(0xFF3DDCBA)
+    val Accent = Color(0xFF1A3C34)
+    val AccentDeep = Color(0xFF01261F)
+    val AccentSoft = Color(0xFFE1E9E6)
+    val Canvas = Color(0xFFF9F9F7)
+    val Panel = Color(0xFFFFFFFF)
+    val Panel2 = Color(0xFFF4F4F2)
+    val Text = Color(0xFF1A1C1B)
+    val Text2 = Color(0xFF414846)
+    val Border = Color(0xFFDADAD8)
+    val Success = Color(0xFF2D5A27)
+
+    // Existing widget layouts keep compiling through these aliases. They no
+    // longer allow a legacy purple palette to reach the rendered surface.
+    val Violet = Accent
+    val VioletDeep = AccentDeep
+    val VioletSoft = AccentSoft
 }
