@@ -30,7 +30,11 @@ final class WirelineCallLiveActivityManager {
         )
 
         do {
-            let activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
+            let activity = try Activity<WirelineCallActivityAttributes>.request(
+                attributes: attributes,
+                content: content,
+                pushType: nil
+            )
             activities[callId] = activity
         } catch {
             NSLog("Live Activity start failed: \(error.localizedDescription)")
