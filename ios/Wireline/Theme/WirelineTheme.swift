@@ -1,20 +1,20 @@
 import SwiftUI
 
-/// Native Wireline foundation. This is the mobile translation of the Stitch
-/// Precision system: warm paper surfaces, compact geometry, quiet borders, and
-/// a single forest action color. Keep platform-native controls and behavior.
+/// Native Wireline foundation. This is the mobile translation of the current
+/// Stitch Professional Heritage system: warm paper surfaces, compact geometry,
+/// quiet borders, and a single forest action color. Keep platform-native behavior.
 enum Brand {
     // ── Surfaces ─────────────────────────────────────────────────────────────
     static let canvas = Color(hex: 0xF9F9F7)
     static let panel = Color.white
     static let panel2 = Color(hex: 0xF4F4F2)
-    static let raised = Color(hex: 0xDADAD8)
-    static let border = Color(hex: 0xE5E5E1)
+    static let raised = Color(hex: 0xEEEEEC)
+    static let border = Color(hex: 0xDADAD8)
 
     // ── Text ─────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0x1A1C1B)
-    static let text2 = Color(hex: 0x414846)
-    static let text3 = Color(hex: 0x717976)
+    static let text = Color(hex: 0x1A3C34)
+    static let text2 = Color(hex: 0x4A5F59)
+    static let text3 = Color(hex: 0x4A5F59, opacity: 0.72)
 
     // ── Accent ───────────────────────────────────────────────────────────────
     static let accent = Color(hex: 0x1A3C34)
@@ -29,7 +29,7 @@ enum Brand {
 
     // ── Compatibility aliases ─────────────────────────────────────────────────
     // Legacy views still compile through these aliases, but all resolve to the
-    // forest Precision palette—never violet or black.
+    // forest Professional Heritage palette—never violet or black.
     static let violet = accent
     static let violetSoft = accentSoft
     static let violetDeep = accentDeep
