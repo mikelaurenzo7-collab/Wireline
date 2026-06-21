@@ -20,8 +20,7 @@ struct WirelineApp: App {
             .environmentObject(router)
             .wirelineBrand()
             .onOpenURL { url in
-                // wireline://ask (from a widget / Control Center) → Ask surface.
-                if url.host == "ask" { router.showAsk = true }
+                router.open(url: url)
             }
         }
     }
@@ -32,9 +31,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // VoIP pushes (PushKit) wake us on inbound calls.
         CallManager.shared.registerForVoIPPushes()
-        // Standard alert pushes deliver call recaps + device actions.
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
@@ -54,7 +51,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    // Tapped notification → run the device action (open Maps, add reminder, …).
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -64,7 +60,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         completionHandler()
     }
 
-    // Foreground delivery: still show the banner so the user can tap to act.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
