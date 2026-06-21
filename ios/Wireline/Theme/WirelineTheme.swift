@@ -71,13 +71,13 @@ extension Font {
     }
 }
 
-/// Shared tactile feedback for intentionally tappable controls.
+/// Shared tactile feedback for deliberately interactive native controls.
 struct TouchPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .opacity(configuration.isPressed ? 0.86 : 1)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeInOut(duration: 0.20), value: configuration.isPressed)
+            .animation(.easeOut(duration: 0.20), value: configuration.isPressed)
     }
 }
 
@@ -115,6 +115,7 @@ extension View {
     /// Type behavior; only the semantic palette comes from Stitch.
     func wirelineBrand() -> some View {
         self.tint(Brand.accent)
+            .buttonStyle(TouchPressStyle())
             .scrollContentBackground(.hidden)
             .background(BrandMeshBackground())
             .preferredColorScheme(.light)
