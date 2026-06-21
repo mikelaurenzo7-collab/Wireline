@@ -1,27 +1,28 @@
-/* Precision Operator — canonical Stitch project 15464421841872665077.
-   One visual system for personal and business agent workflows. */
+/* Precision Operator Web — Stitch project 15464421841872665077.
+   Web V1.1 is the canonical source for all Wireline web routes. */
 :root {
-  --wl-bg: #f7f7f5;
+  --wl-bg: #f9f9f7;
   --wl-surface: #ffffff;
   --wl-surface-subtle: #f4f4f2;
-  --wl-surface-warm: #f7f7f5;
-  --wl-surface-hover: #eeeeec;
-  --wl-surface-active: #e8e8e6;
-  --wl-ink: #1d1d1f;
-  --wl-ink-soft: #414846;
-  --wl-muted: #6e6e73;
+  --wl-surface-warm: #f9f9f7;
+  --wl-surface-hover: #e8e8e6;
+  --wl-surface-active: #e1e9e6;
+  --wl-ink: #1a3c34;
+  --wl-ink-soft: #4a5f59;
+  --wl-muted: #4a5f59;
   --wl-muted-2: #717976;
   --wl-faint: #717976;
   --wl-hint: #717976;
-  --wl-line: #e5e5e2;
+  --wl-line: #dadad8;
   --wl-line-strong: #c1c8c4;
-  --wl-line-subtle: rgba(0, 0, 0, 0.06);
-  --wl-line-weak: rgba(0, 0, 0, 0.08);
+  --wl-line-subtle: rgba(26, 60, 52, 0.06);
+  --wl-line-weak: rgba(26, 60, 52, 0.08);
   --wl-accent: #1a3c34;
+  --wl-accent-hover: #142e28;
+  --wl-accent-deep: #142e28;
   --wl-accent-foreground: #ffffff;
-  --wl-accent-deep: #01261f;
   --wl-accent-muted: #aacec3;
-  --wl-accent-container: #c5eadf;
+  --wl-accent-container: #e1e9e6;
   --wl-status-active: #285a43;
   --wl-status-warning: #b45309;
   --wl-status-error: #ba1a1a;
@@ -30,23 +31,23 @@
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  --wl-focus: rgba(26, 60, 52, 0.16);
+  --wl-focus: rgba(26, 60, 52, 0.2);
   --background: var(--wl-bg);
   --foreground: var(--wl-ink);
   --card: var(--wl-surface);
   --card-foreground: var(--wl-ink);
   --popover: var(--wl-surface);
   --popover-foreground: var(--wl-ink);
-  --primary: var(--wl-accent-deep);
+  --primary: var(--wl-accent);
   --primary-foreground: var(--wl-accent-foreground);
   --secondary: var(--wl-surface-subtle);
   --secondary-foreground: var(--wl-ink);
   --muted: var(--wl-surface-subtle);
   --muted-foreground: var(--wl-muted);
-  --accent: var(--wl-surface-subtle);
+  --accent: var(--wl-accent-container);
   --accent-foreground: var(--wl-ink);
   --border: var(--wl-line);
-  --input: var(--wl-line-strong);
+  --input: var(--wl-line);
   --input-background: var(--wl-surface);
   --ring: var(--wl-accent);
   --destructive: #ba1a1a;
@@ -61,8 +62,6 @@ body {
   background: var(--wl-bg);
   color: var(--wl-ink);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: auto;
-  -moz-osx-font-smoothing: auto;
   font-synthesis: none;
   font-kerning: normal;
 }
@@ -70,20 +69,30 @@ button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
 
-/* Retained only for active Studio behavior; all geometry resolves to the source scale. */
-.studio-primary-button, .studio-secondary-button {
-  display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 7px;
-  padding: 0 12px; border-radius: var(--radius); border: 0; background: transparent;
-  font-size: 13px; font-weight: 600; text-decoration: none;
+/* Retained only for active Studio behavior. */
+.studio-primary-button,
+.studio-secondary-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
 }
-.studio-primary-button { background: var(--wl-accent); color: #fff; }
-.studio-primary-button:hover { background: var(--wl-accent-deep); }
+.studio-primary-button { border: 1px solid var(--wl-accent); background: var(--wl-accent); color: #fff; }
+.studio-primary-button:hover { border-color: var(--wl-accent-hover); background: var(--wl-accent-hover); }
 .studio-secondary-button { border: 1px solid var(--border); background: var(--card); color: var(--foreground); }
 .studio-secondary-button:hover { background: var(--secondary); }
-.studio-kicker { display: block; color: var(--wl-muted); font-size: 11px; font-weight: 600; line-height: 16px; letter-spacing: .05em; text-transform: uppercase; }
-.studio-card { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
+.studio-kicker { display: block; color: var(--wl-muted); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: .05em; text-transform: uppercase; }
+.studio-card { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: 0 1px 2px rgba(26, 60, 52, .05); }
 .studio-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.studio-card h2 { margin-top: 4px; font-size: 16px; }
-.studio-count { display: grid; min-width: 24px; height: 24px; place-items: center; border-radius: 999px; background: var(--secondary); color: var(--muted-foreground); font-size: 11px; font-weight: 600; }
-.studio-muted-copy { margin: 18px 0; color: var(--muted-foreground); font-size: 13px; line-height: 18px; }
+.studio-card h2 { margin-top: 4px; font-size: 18px; line-height: 24px; }
+.studio-count { display: grid; min-width: 24px; height: 24px; place-items: center; border-radius: 999px; background: var(--accent); color: var(--muted-foreground); font-size: 11px; font-weight: 700; }
+.studio-muted-copy { margin: 16px 0; color: var(--muted-foreground); font-size: 14px; line-height: 20px; }
 .studio-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
