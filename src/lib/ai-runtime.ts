@@ -1,12 +1,9 @@
 /**
- * Provider-neutral AI runtime entrypoint.
- *
- * Managed work is OpenAI-first with automatic Gemini fallback. This module is
- * the stable import surface while historical Claude-named files are removed.
+ * Wireline managed AI runtime.
+ * OpenAI is primary, Gemini is automatic failure fallback, and OpenRouter is
+ * honored only for an explicit agent-selected model.
  */
-export * from "./claude-models";
-export * from "./claude-audit";
-export * from "./claude-client";
-export * from "./claude-structured";
-export * from "./claude-tools";
-export * from "./claude-recipes";
+export * from "./ai-models";
+export * from "./ai-audit";
+export * from "./ai-client";
+export * from "./ai-structured";
