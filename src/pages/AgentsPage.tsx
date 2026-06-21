@@ -6,11 +6,11 @@ import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext
 function roleLabel(role?: string | null) { return role?.replace(/_/g, " ") || "Assistant"; }
 
 const ROLE_HINT: Record<string, string> = {
-  sales: "Qualify leads, book meetings, and follow up without overpromising.",
-  scheduler: "Handle scheduling, reminders, and calendar coordination.",
-  customer_service: "Answer policy questions and escalate edge cases cleanly.",
-  receptionist: "Route calls, capture intake, and set expectations.",
-  custom: "Train the job, scope access, and define handoff rules.",
+  sales: "Books meetings and follows up with leads.",
+  scheduler: "Handles scheduling and reminders.",
+  customer_service: "Answers questions and routes when needed.",
+  receptionist: "Routes calls and captures information.",
+  custom: "Trained for your specific needs.",
 };
 
 function agentHint(agent: WorkspaceAgentSummary) {
@@ -22,9 +22,9 @@ function EmptyAgents() {
     <div className="grid h-full min-h-0 place-items-center rounded-2xl border border-dashed border-black/[.12] bg-white/70 px-6 text-center">
       <div>
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#f0f0ee]"><Bot size={20} /></span>
-        <h2 className="mt-4 text-lg font-semibold tracking-[-.025em]">Create the first assistant</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#606067]">Start with a role and one clear brief. Studio converts it into operating rules, business knowledge, and a deliberate handoff plan.</p>
-        <Link to="/studio" className="workspace-btn-primary mt-5 px-4 py-2.5"><Plus size={16} />New agent</Link>
+        <h2 className="mt-4 text-lg font-semibold tracking-[-.025em]">Create your first assistant</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#606067]">Tell it what to do in plain English. We'll handle the rest.</p>
+        <Link to="/studio" className="workspace-btn-primary mt-5 px-4 py-2.5"><Plus size={16} />Create assistant</Link>
       </div>
     </div>
   );

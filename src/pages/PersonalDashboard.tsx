@@ -27,8 +27,7 @@ export default function PersonalDashboard() {
             <h1 className="font-display text-3xl font-semibold text-foreground">My Assistant</h1>
           </div>
           <p className="text-foreground/70 text-lg ml-13 leading-relaxed">
-            Hand off the calls you avoid — pharmacy, doctor, school, restaurant, landlord, airline,
-            support lines. Tune the agent, set your line, keep tabs.
+            Hand off the calls you keep putting off. Your assistant makes the call, waits on hold, and texts you what matters.
           </p>
         </header>
 
@@ -100,46 +99,37 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-6">
                 <p className="text-foreground/80 leading-relaxed mb-6">
-                  Wire it into Siri and your phone so "Hey Siri, have Wireline call the pharmacy"
-                  actually happens.
+                  Use your assistant from your phone, your watch, or just by saying "Hey Siri, ask Wireline."
                 </p>
 
                 <div className="space-y-4">
-                  {/* Siri Setup */}
+                  {/* Voice Activation */}
                   <div className="flex items-start gap-4 p-4 rounded-lg border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
                     <div className="mt-1 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center shrink-0">
                       <Mic className="w-4 h-4 text-foreground/60" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-foreground mb-1">Siri Shortcuts</h3>
-                      <p className="text-sm text-foreground/60 mb-3">
-                        Say "Hey Siri, Ask Wireline" to instantly talk to your agent from your lock
-                        screen, AirPods, or CarPlay.
-                      </p>
-                      <code className="block bg-ink/5 px-3 py-2 rounded text-xs font-mono text-foreground/80 break-all select-all">
-                        wireline://ask
-                      </code>
-                      <p className="text-[11px] text-foreground/50 mt-2">
-                        Create a new shortcut in the Apple Shortcuts app using this URL scheme.
+                      <h3 className="font-medium text-foreground mb-1">Voice Activation</h3>
+                      <p className="text-sm text-foreground/60">
+                        Say "Hey Siri, Ask Wireline" to start a call hands-free — from your phone, AirPods, or car.
                       </p>
                     </div>
+                    <Link to="/settings" className="px-4 py-2 bg-ink/5 hover:bg-ink/10 rounded-md text-sm font-semibold transition-colors shrink-0">
+                      Set up
+                    </Link>
                   </div>
 
-                  {/* App Download */}
+                  {/* Notifications */}
                   <div className="flex items-start gap-4 p-4 rounded-lg border border-ink/10 hover:border-brand/30 hover:bg-brand/[0.02] transition-colors">
                     <div className="mt-1 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center shrink-0">
                       <Globe className="w-4 h-4 text-foreground/60" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-foreground mb-1">Native Apps & Widgets</h3>
+                      <h3 className="font-medium text-foreground mb-1">Get Updates by Text</h3>
                       <p className="text-sm text-foreground/60">
-                        Download the iOS or Android app to get interactive lock screen widgets, push
-                        notifications for important calls, and instant access to transcripts.
+                        Your assistant will text you the important details after every call. No app needed.
                       </p>
                     </div>
-                    <button className="px-4 py-2 bg-ink/5 hover:bg-ink/10 rounded-md text-sm font-semibold transition-colors shrink-0">
-                      Send Link
-                    </button>
                   </div>
                 </div>
               </div>
@@ -163,18 +153,18 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-5">
                 <p className="text-sm text-foreground/80 leading-relaxed mb-4">
-                  Forward unanswered calls from your personal cell directly to your AI assistant.
+                  Forward missed calls to your assistant. They'll handle it and text you the summary.
                 </p>
                 <div className="p-4 bg-brand/5 rounded-md border border-brand/10 text-center mb-5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-brand/70 mb-1.5">
-                    Your Wireline Number
+                    Your Assistant's Number
                   </p>
                   <p className="font-mono text-xl font-semibold text-brand tracking-tight">
                     +1 (555) 019-8472
                   </p>
                 </div>
                 <button className="w-full py-2 bg-brand text-white rounded-md text-sm font-semibold shadow-sm hover:bg-brand-deep transition-colors">
-                  Setup Conditional Forwarding
+                  Set Up Call Forwarding
                 </button>
               </div>
             </motion.section>

@@ -37,7 +37,7 @@ export default function TuningRailMap({
   selectedAgent,
   agentConfig,
   integrationStatus,
-  accountType = "business",
+  accountType = "personal",
 }: TuningRailMapProps) {
   const isPersonal = accountType === "personal";
   const { score, total, flags, ready } = computeAgentReadiness(

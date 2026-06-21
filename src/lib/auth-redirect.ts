@@ -10,13 +10,14 @@ export const AUTH_REDIRECT_KEY = "wireline.auth.redirect";
 
 export function workspaceFromIntent(intent: SignupIntent | null | undefined): WorkspaceMode {
   const plan = intent ? recommendedPlanFromIntent(intent) : null;
-  return plan === "personal" || intent?.signupWedge === "personal" ? "personal" : "business";
+  if (plan === "business" || intent?.signupWedge === "business") return "business";
+  return "personal";
 }
 
 export function readStoredWorkspaceMode(): WorkspaceMode {
-  if (typeof window === "undefined") return "business";
+  if (typeof window === "undefined") return "personal";
   const stored = window.localStorage.getItem(WORKSPACE_MODE_KEY);
-  return stored === "personal" || stored === "business" ? stored : "business";
+  return stored === "personal" || stored === "business" ? stored : "personal";
 }
 
 export function persistWorkspaceMode(mode: WorkspaceMode) {

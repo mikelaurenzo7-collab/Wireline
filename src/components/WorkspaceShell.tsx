@@ -6,8 +6,8 @@ const navigation = [
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/studio", label: "Studio", icon: WandSparkles },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
-  { href: "/integrations", label: "Integrations", icon: Workflow },
-  { href: "/ops", label: "Operate", icon: Activity },
+  { href: "/integrations", label: "Actions", icon: Workflow },
+  { href: "/ops", label: "Live", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ] as const;
 
@@ -55,9 +55,9 @@ export default function WorkspaceShell({
             })}
           </nav>
           <div className="mt-auto hidden rounded-xl border border-black/[.06] bg-white/70 p-3 lg:block">
-            <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#73737a]">Live stack</p>
-            <p className="mt-1.5 text-[11px] leading-5 text-[#505057]">Vapi · Flux · ElevenLabs</p>
-            <Link to="/settings" className="mt-2 inline-flex text-[11px] font-semibold text-[#1d1d1f] underline decoration-black/[.16] underline-offset-4">Runtime settings</Link>
+            <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#73737a]">Status</p>
+            <p className="mt-1.5 text-[11px] leading-5 text-[#505057]">All systems operational</p>
+            <Link to="/settings" className="mt-2 inline-flex text-[11px] font-semibold text-[#1d1d1f] underline decoration-black/[.16] underline-offset-4">View settings</Link>
           </div>
         </aside>
         <main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-5 lg:px-8 lg:pb-6 lg:pt-5 xl:px-9">

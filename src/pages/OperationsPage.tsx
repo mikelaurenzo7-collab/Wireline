@@ -4,9 +4,9 @@ import { Activity, ArrowUpRight, Bot, CheckCircle2, CircleDot, ClipboardCheck, M
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const views = [
-  { id: "live", label: "Live", title: "Live signal", detail: "Calls, messages, and events arrive here when an agent needs attention.", icon: Activity },
-  { id: "handoffs", label: "Handoffs", title: "Human handoff", detail: "Exceptions should arrive with owner, reason, context, and one clear next step.", icon: MessageSquareText },
-  { id: "review", label: "Review", title: "Quality review", detail: "Post-call coaching, misses, and knowledge gaps become the next improvement.", icon: ClipboardCheck },
+  { id: "live", label: "Live", title: "Live activity", detail: "Calls and messages appear here when your assistant needs you.", icon: Activity },
+  { id: "handoffs", label: "Handoffs", title: "Needs your input", detail: "Things your assistant couldn't handle alone.", icon: MessageSquareText },
+  { id: "review", label: "Review", title: "Recent calls", detail: "Review past conversations and improve how your assistant responds.", icon: ClipboardCheck },
 ] as const;
 
 export default function OperationsPage() {
@@ -37,15 +37,15 @@ export default function OperationsPage() {
             <div className="grid min-h-0 flex-1 place-items-center py-8 text-center">
               <div>
                 <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[#f5f5f3]"><CircleDot size={17} /></span>
-                <p className="mt-3 text-sm font-semibold">Nothing needs attention right now.</p>
-                <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-[#727279]">When work appears, this view prioritizes the next human decision rather than a dashboard wall.</p>
+                <p className="mt-3 text-sm font-semibold">All clear.</p>
+                <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-[#727279]">When your assistant needs you, it will appear here. No news is good news.</p>
               </div>
             </div>
           </section>
           <aside className="wl-surface mt-2.5 hidden min-h-0 flex-col p-4 lg:mt-0 lg:flex">
-            <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#8a8a91]">Operating model</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#8a8a91]">How it works</p>
             <div className="mt-3 space-y-3">
-              {[[CheckCircle2, "Observe", "Live interactions and outcomes enter the queue."], [Workflow, "Act", "Agents work only within assigned capabilities."], [ShieldAlert, "Escalate", "Unclear, high-risk, or requested handoffs go to a person."]].map(([StepIcon, title, detail]) => {
+              {[[CheckCircle2, "Watch", "See every call and message in real time."], [Workflow, "Act", "Your assistant handles tasks you've allowed."], [ShieldAlert, "Escalate", "Anything unclear or sensitive comes to you."]].map(([StepIcon, title, detail]) => {
                 const Step = StepIcon as typeof CheckCircle2;
                 return (
                   <div key={String(title)} className="flex gap-2.5">
@@ -55,7 +55,7 @@ export default function OperationsPage() {
                 );
               })}
             </div>
-            <Link to="/integrations" className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-semibold">Review action access <ArrowUpRight size={13} /></Link>
+            <Link to="/integrations" className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-semibold">Manage permissions <ArrowUpRight size={13} /></Link>
           </aside>
         </div>
       </div>

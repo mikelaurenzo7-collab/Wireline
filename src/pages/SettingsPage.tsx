@@ -3,9 +3,9 @@ import { ArrowUpRight, FolderCog, PanelLeft, ShieldCheck, Sparkles } from "lucid
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const sections = [
-  { icon: FolderCog, title: "Workspace", detail: "Business profile, hours, escalation destinations, and team access.", href: "/agents" },
-  { icon: PanelLeft, title: "Voice", detail: "Phone, voice profile, turn-taking, and web/mobile mode.", href: "/studio" },
-  { icon: ShieldCheck, title: "Boundaries", detail: "Action permissions, approval behavior, and the record.", href: "/ops?view=review" },
+  { icon: FolderCog, title: "Profile", detail: "Your name, hours, and contact preferences.", href: "/agents" },
+  { icon: PanelLeft, title: "Voice", detail: "How your assistant sounds and responds.", href: "/studio" },
+  { icon: ShieldCheck, title: "Permissions", detail: "What your assistant can and can't do.", href: "/ops?view=review" },
 ] as const;
 
 export default function SettingsPage() {
@@ -28,13 +28,13 @@ export default function SettingsPage() {
         <section className="wl-surface shrink-0 rounded-2xl border-[#1d1d1f] bg-[#1d1d1f] p-4 text-white sm:p-5">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/50">Managed runtime</p>
-              <h2 className="mt-1.5 text-lg font-semibold tracking-[-.04em] sm:text-xl">One calm control plane.</h2>
-              <p className="mt-2 max-w-2xl text-[12px] leading-5 text-white/72 sm:text-[13px] sm:leading-6">OpenAI manages structured work first. Gemini is the automatic failure fallback. Phone calls stay on Vapi with Deepgram Flux and ElevenLabs.</p>
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.06] px-3 py-1.5 text-[10px] font-semibold text-white/85 sm:text-[11px]"><Sparkles size={12} />OpenAI primary · Gemini fallback</div>
+              <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/50">Powered by</p>
+              <h2 className="mt-1.5 text-lg font-semibold tracking-[-.04em] sm:text-xl">Best-in-class AI, handled for you.</h2>
+              <p className="mt-2 max-w-2xl text-[12px] leading-5 text-white/72 sm:text-[13px] sm:leading-6">We use the latest AI models so your assistant sounds natural and handles calls reliably. You don't need to configure anything.</p>
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.06] px-3 py-1.5 text-[10px] font-semibold text-white/85 sm:text-[11px]"><Sparkles size={12} />Automatic updates included</div>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:min-w-[280px]">
-              {[["Think", "OpenAI"], ["Talk", "Vapi + Flux"], ["Sound", "ElevenLabs"]].map(([title, value], index) => (
+              {[["Brain", "Latest AI"], ["Voice", "Natural speech"], ["Calls", "HD quality"]].map(([title, value], index) => (
                 <div key={title} className="rounded-xl border border-white/10 bg-white/[.06] p-2.5">
                   <p className="text-[9px] font-semibold tracking-[.13em] text-white/45">0{index + 1}</p>
                   <p className="mt-2 text-[11px] font-semibold">{title}</p>

@@ -91,7 +91,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     [accounts, activeId],
   );
 
-  const accountType: AccountType = activeAccount?.type ?? "business";
+  const accountType: AccountType = activeAccount?.type ?? "personal";
 
   const switchAccount = useCallback((accountId: string) => {
     setActiveId(accountId);
@@ -150,7 +150,7 @@ export function useAccount(): AccountState {
   const ctx = useContext(AccountContext);
   if (!ctx) {
     return {
-      accountType: "business",
+      accountType: "personal",
       activeAccount: null,
       accounts: [],
       loading: false,

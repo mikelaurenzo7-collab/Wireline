@@ -255,16 +255,16 @@ function AuthShell({
         </div>
         <div className="relative z-10 max-w-xl">
           <AuthChip className="border-paper/20 bg-card/5 text-paper/70">
-            {mode === "personal" ? "Personal workspace" : "Business workspace"}
+            {mode === "personal" ? "Personal assistant" : "Business workspace"}
           </AuthChip>
           <h2 className="mt-5 font-display text-5xl leading-tight tracking-tight">
             {mode === "personal"
-              ? "Your Personal Wireline Assistant."
+              ? "Your assistant for calls you keep putting off."
               : "Your Business Wireline Assistants, in one place."}
           </h2>
           <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
             {mode === "personal"
-              ? "Screen calls, block spam, and keep your day moving — your assistant handles the phone so you don't have to."
+              ? "Wireline makes the call, waits on hold, handles the back-and-forth, and texts you what matters. One private assistant, always ready."
               : "Set up AI voice, SMS, and email assistants with the tools, training, and approvals your team already uses."}
           </p>
         </div>
@@ -307,13 +307,13 @@ function WorkspaceSelector({
     {
       id: "personal",
       title: "Personal",
-      text: "One private assistant for calls, reminders, Siri, CarPlay, and widgets.",
+      text: "One private assistant that makes calls for you, waits on hold, and texts you the answer.",
       icon: <User className="h-4 w-4" />,
     },
     {
       id: "business",
       title: "Business",
-      text: "A workspace for agent fleets, training, integrations, analytics, and teams.",
+      text: "A workspace for multiple agents, team training, integrations, and analytics.",
       icon: <Building2 className="h-4 w-4" />,
     },
   ];
@@ -358,7 +358,7 @@ export default function AuthPortal() {
   const location = useLocation();
   const pathname = location.pathname;
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(() =>
-    workspaceFromIntent(captureSignupIntentFromLocation()) || readStoredWorkspaceMode(),
+    workspaceFromIntent(captureSignupIntentFromLocation()) || readStoredWorkspaceMode() || "personal",
   );
   const initialMode: AuthMode = pathname === "/signup" ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -516,8 +516,8 @@ export default function AuthPortal() {
   const pageDescription = isReset
     ? "Enter your email and Wireline will send a secure password reset link."
     : isSignUp
-      ? "Create your Wireline account and launch your first AI voice agent."
-      : "Sign in to your Wireline workspace.";
+      ? "Create your Wireline account and set up your personal assistant."
+      : "Sign in to your Wireline account.";
 
   const headerActive = isSignUp ? "signup" : "signin";
 
@@ -606,7 +606,7 @@ export default function AuthPortal() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
-                        placeholder="you@company.com"
+                        placeholder="you@email.com"
                       />
                     </div>
                   </div>

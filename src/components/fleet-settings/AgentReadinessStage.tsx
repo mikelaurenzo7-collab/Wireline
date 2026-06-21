@@ -26,7 +26,7 @@ export default function AgentReadinessStage({
   agent,
   agentConfig,
   integrationStatus,
-  accountType = "business",
+  accountType = "personal",
 }: AgentReadinessStageProps) {
   const isPersonal = accountType === "personal";
   const { score, total, checks, nextStep, ready } = computeAgentReadiness(
