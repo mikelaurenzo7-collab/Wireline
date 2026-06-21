@@ -11,7 +11,7 @@ export type NavItem = {
 
 const STUDIO_NAV: NavItem[] = [
   { label: "Agent Studio", path: "/agents", icon: Sparkles, matches: ["/agents", "/training"] },
-  { label: "Integrations", path: "/integrations", icon: Plug, matches: ["/integrations"] },
+  { label: "Actions", path: "/actions", icon: Plug, matches: ["/actions", "/integrations"] },
   { label: "Settings", path: "/settings", icon: Settings2, matches: ["/settings", "/admin"] },
 ];
 
@@ -24,9 +24,10 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 
 export const PAGE_TITLES: Record<string, string> = {
   "/agents": "Agent Studio",
-  "/integrations": "Integrations",
+  "/actions": "Actions",
+  "/integrations": "Actions",
   "/settings": "Settings",
 };
 
-export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = { A: "/agents", I: "/integrations", S: "/settings" };
-export const NAV_SHORTCUT_HINTS: Record<string, string> = { "/agents": "g a", "/integrations": "g i", "/settings": "g s" };
+export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = { A: "/agents", I: "/actions", S: "/settings" };
+export const NAV_SHORTCUT_HINTS: Record<string, string> = { "/agents": "g a", "/actions": "g i", "/settings": "g s" };
