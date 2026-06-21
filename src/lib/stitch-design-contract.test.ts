@@ -15,12 +15,13 @@ function pathExists(rel: string) {
 }
 
 describe("Stitch design contract", () => {
-  it("pins the Wireline OS forest palette", () => {
+  it("pins the Wireline OS forest palette and four-pixel geometry", () => {
     expect(WL_BRAND.accentHex.toLowerCase()).toBe("#1a3c34");
     const foundation = read("src/styles/foundation.css");
     expect(foundation).toMatch(/--wl-accent:\s*#1a3c34/i);
     expect(foundation).toMatch(/--wl-bg:\s*#f7f7f5/i);
     expect(foundation).toMatch(/--wl-status-active:\s*#2d5a27/i);
+    expect(foundation).toMatch(/--radius:\s*0\.25rem/i);
     expect(foundation).toMatch(/--primary:\s*var\(--wl-accent\)/);
   });
 
@@ -82,12 +83,26 @@ describe("Stitch design contract", () => {
       "public/wireline-icon.svg",
       "public/og-image.svg",
       "public/site.webmanifest",
+      "public/sw.js",
       "src/components/marketing/RobotHead.tsx",
     ]) {
       const source = read(asset);
       expect(source).not.toMatch(/#7c3aed|#a78bfa|#5b21b6|#3d1e7c/i);
       expect(source).not.toMatch(/(?:text|bg|from|to)-(?:violet|purple|indigo)-/i);
     }
+  });
+
+  it("uses the current SVG app mark and removes retired raster icon assets", () => {
+    const manifest = read("public/site.webmanifest");
+    const worker = read("public/sw.js");
+    expect(manifest).toContain('"/wireline-icon.svg"');
+    expect(manifest).not.toMatch(/wireline-icon-(512|1024|rounded)\.png/);
+    expect(worker).toContain('"wireline-v3"');
+    expect(worker).toContain('"/wireline-icon.svg"');
+    expect(worker).not.toMatch(/wireline-icon-(512|1024)\.png/);
+    expect(pathExists("public/wireline-icon-512.png")).toBe(false);
+    expect(pathExists("public/wireline-icon-1024.png")).toBe(false);
+    expect(pathExists("public/wireline-icon-rounded.png")).toBe(false);
   });
 
   it("documents the committed Stitch sources in the code bridge", () => {
