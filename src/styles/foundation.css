@@ -23,7 +23,7 @@
   --wl-accent-container: #c5eadf;
   --wl-status-active: #2d5a27;
   --wl-status-warning: #b45309;
-  --radius: 0.5rem;
+  --radius: 0.25rem;
   --wl-focus: rgba(26, 60, 52, 0.35);
   --background: var(--wl-bg);
   --foreground: var(--wl-ink);
@@ -55,7 +55,7 @@ button { cursor: pointer; }
 a { color: inherit; }
 
 /* Legacy studio primitives — PhoneAgentBlueprint + shared kicker/card chrome only.
-   Workspace routes use WorkspaceShell (see Patterns / Workspace Shell in Figma). */
+   Workspace routes use WorkspaceShell (see Patterns / Workspace Shell in Stitch). */
 .studio-primary-button,
 .studio-secondary-button {
   display: inline-flex;
@@ -64,7 +64,7 @@ a { color: inherit; }
   justify-content: center;
   gap: 7px;
   padding: 0 12px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
   border: 0;
@@ -98,7 +98,7 @@ a { color: inherit; }
 .studio-card {
   padding: 18px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--card) 75%, transparent);
 }
 .studio-card-heading {
