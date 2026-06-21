@@ -1,16 +1,20 @@
 # Professional Heritage v2 — Source-to-Product Map
 
-This document records how the latest Google Stitch handoff is translated into the production Wireline monorepo.
+This document records how the newest Google Stitch handoff is translated into the production Wireline monorepo.
+
+## v7 audit result
+
+`stitch_wireline_operator_system (7).zip` is **byte-for-byte identical** to v6 except for one additional file: `wireline_unified_execution_plan.md`. That guide reinforces the personal-assistant pivot, de-prioritizes Live from primary navigation, and elevates Smart Route / CarPlay work. It does not supersede the Professional Heritage token, typography, or fixed-screen source material.
 
 ## Source precedence
 
 The handoff ZIP contains iterative artifacts from multiple generations. When they conflict, use this order:
 
-1. `master_migration_engineering_blueprint_v2.0.md`
-2. `professional_heritage/DESIGN.md`
-3. The `*_fixed` screen families and current system-extension frames
-4. The current production contracts in this repository
-5. Earlier Precision Operator / Calm Operator documents, only when they describe a behavior not superseded above
+1. `master_migration_engineering_blueprint_v2.0.md` for platform architecture, interaction, and hard token rules.
+2. `professional_heritage/DESIGN.md` for final visual language, including **Source Serif 4** display/headline typography, **Work Sans** body/UI, and **JetBrains Mono** metadata.
+3. The `*_fixed` screen families and current system-extension frames for composition, density, and device behavior.
+4. The current production contracts in this repository.
+5. Earlier Precision Operator / Calm Operator documents only when they describe a behavior not superseded above.
 
 The latest handoff contains B2B/operator placeholder copy. Preserve its layout, density, palette, interactions, and device behavior, but map language to Wireline's consumer-first product posture.
 
