@@ -17,14 +17,13 @@ const activeFiles = [
   "src/components/WorkspaceShell.tsx",
   "src/pages/AgentsPage.tsx",
   "src/pages/SettingsPage.tsx",
-  "src/pages/OperationsPage.tsx",
   "src/components/StudioWorkspaceV2.tsx",
   "src/components/AuthPortal.tsx",
   "src/index.css",
   "src/styles/foundation.css",
   "src/styles/stitch-patterns.css",
   "src/styles/design-system.css",
-  "src/lib/claude-client.ts",
+  "src/lib/ai-client.ts",
   "src/lib/voice-model-defaults.ts",
   "src/lib/stitch-design-system.ts",
 ];
@@ -54,16 +53,16 @@ if (!/--wl-accent:\s*#1a3c34/i.test(foundation)) {
   report("src/styles/foundation.css", "must use Stitch forest accent #1a3c34");
 }
 
-const runtime = read("src/lib/claude-client.ts");
+const runtime = read("src/lib/ai-client.ts");
 if (!runtime.includes("https://api.openai.com/v1/responses")) {
-  report("src/lib/claude-client.ts", "must use OpenAI Responses as the managed runtime");
+  report("src/lib/ai-client.ts", "must use OpenAI Responses as the managed runtime");
 }
 if (!runtime.includes("OpenAI request failed; trying Gemini fallback")) {
-  report("src/lib/claude-client.ts", "must preserve the OpenAI-to-Gemini fallback order");
+  report("src/lib/ai-client.ts", "must preserve the OpenAI-to-Gemini fallback order");
 }
 
 const voiceDefaults = read("src/lib/voice-model-defaults.ts");
-if (!voiceDefaults.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"')) {
+if (!/VAPI_TENANT_DEFAULT_PROVIDER[^=]*=\s*"openai"/.test(voiceDefaults)) {
   report("src/lib/voice-model-defaults.ts", "must default managed voice agents to OpenAI");
 }
 

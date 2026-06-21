@@ -10,7 +10,7 @@ import {
 } from "./directorContext";
 
 import { BASE_DIRECTOR_SYSTEM_PROMPT } from "./directorPrompt";
-import type { ToolSchema } from "./claude-structured";
+import type { StructuredToolSchema as ToolSchema } from "./ai-structured";
 import { wantsLongDeliverable } from "./director-deliverables";
 
 // Re-export types for backward compatibility with your existing code

@@ -219,7 +219,7 @@ export function AuditActivityPanel() {
                         boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                         fontSize: "10px",
                       }}
-                      formatter={(val: number) => [`$${val.toFixed(4)}`, "Cost"]}
+                      formatter={(val: unknown) => [`$${Number(val ?? 0).toFixed(4)}`, "Cost"]}
                     />
                     <Area
                       type="monotone"

@@ -308,6 +308,7 @@ export class IntegrationService {
           return await this.sendMicrosoftEmail(account, params);
         }
         if (account.provider === "icloud") {
+          if (!account.accessToken || !account.emailAddress) return false;
           const email = account.emailAddress as string;
           const appPassword = decryptSecret(account.accessToken);
           return sendIcloudMail(email, appPassword, params);

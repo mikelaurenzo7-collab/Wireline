@@ -76,7 +76,7 @@ function LoadingAssistants() {
 
 function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
   const channel = agent.channel || "voice";
-  const isVoice = channel === "voice" || channel === "phone";
+  const isVoice = channel === "voice";
   const ChannelIcon = isVoice ? Phone : MessageSquare;
   return (
     <article className="wl-stitch-agent-card flex min-h-[270px] flex-col p-6">

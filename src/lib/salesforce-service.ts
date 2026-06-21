@@ -35,8 +35,8 @@ interface CrmConnection {
   id: string;
   instanceUrl: string | null;
   accessToken: string;
-  refreshToken: string;
-  expiresAt: number | null;
+  refreshToken: string | null;
+  expiresAt: Date | null;
   active: boolean | null;
 }
 
@@ -105,6 +105,7 @@ export async function exchangeSalesforceCode(
 async function refreshSalesforceToken(
   conn: CrmConnection,
 ): Promise<{ access_token: string; expires_at: number }> {
+  if (!conn.refreshToken) throw new Error("Salesforce refresh token is unavailable");
   const loginUrl = process.env.SALESFORCE_LOGIN_URL || "https://login.salesforce.com";
   const params = new URLSearchParams({
     grant_type: "refresh_token",
@@ -166,7 +167,7 @@ async function getValidToken(
   const conn = await getConnection(userId);
   if (!conn || conn.active === false) return null;
 
-  if (conn.expiresAt && Date.now() < conn.expiresAt - 60_000) {
+  if (conn.expiresAt && Date.now() < conn.expiresAt.getTime() - 60_000) {
     return { token: decryptSecret(conn.accessToken), instanceUrl: conn.instanceUrl || "" };
   }
 
@@ -176,7 +177,7 @@ async function getValidToken(
       .update(schema.crmConnections)
       .set({
         accessToken: encryptSecret(updated.access_token),
-        expiresAt: updated.expires_at,
+        expiresAt: new Date(updated.expires_at),
         active: true,
         updatedAt: new Date(),
       })

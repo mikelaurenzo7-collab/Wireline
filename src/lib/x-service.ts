@@ -41,7 +41,7 @@ export const X_ENGAGEMENT_TOOL_NAMES = [
 interface XConnection {
   id: string;
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   expiresAt: number | null;
   active: boolean | null;
   metadata: Record<string, unknown> | null;
@@ -135,6 +135,7 @@ export async function exchangeXCode(
 async function refreshXToken(
   conn: XConnection,
 ): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
+  if (!conn.refreshToken) throw new Error("X refresh token is unavailable");
   const params = new URLSearchParams({
     grant_type: "refresh_token",
     refresh_token: decryptSecret(conn.refreshToken),

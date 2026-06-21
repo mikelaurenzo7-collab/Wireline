@@ -168,7 +168,7 @@ async function getValidToken(userId: string): Promise<string | null> {
       .set({
         accessToken: encryptSecret(updated.access_token),
         refreshToken: encryptSecret(updated.refresh_token),
-        expiresAt: BigInt(updated.expires_at),
+        expiresAt: new Date(updated.expires_at),
         updatedAt: new Date(),
       })
       .where(eq(schema.crmConnections.id, conn.id));

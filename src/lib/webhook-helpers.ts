@@ -97,7 +97,10 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
     return;
   }
 
-  const hookRaw = deliveryWithHook.webhook;
+  type DeliveryHook = { id: string; url: string; secret: string | null };
+  const hookRaw = (deliveryWithHook as unknown as {
+    webhook?: DeliveryHook | DeliveryHook[];
+  }).webhook;
   // Drizzle `with` relations may infer as array; normalize to single object.
   const hook = Array.isArray(hookRaw) ? hookRaw[0] : hookRaw;
   if (!hook?.url) {
@@ -135,7 +138,6 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
         .set({
           status: WEBHOOK_DELIVERY_FAILED,
           lastError,
-          lastAttemptAt: new Date(),
           nextAttemptAt: null,
         })
         .where(eq(schema.webhookDeliveries.id, deliveryIdBig));
@@ -167,7 +169,6 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       status: nextStatus,
       lastStatusCode: statusCode,
       attempts: newAttempts,
-      lastAttemptAt: new Date(),
       nextAttemptAt: nextAttemptAt,
     })
     .where(eq(schema.webhookDeliveries.id, deliveryIdBig));

@@ -38,8 +38,8 @@ export interface HubSpotCallLog {
 interface CrmConnection {
   id: string;
   accessToken: string;
-  refreshToken: string;
-  expiresAt: number | null;
+  refreshToken: string | null;
+  expiresAt: Date | null;
   active: boolean | null;
 }
 
@@ -112,6 +112,7 @@ export async function exchangeHubSpotCode(
 async function refreshHubSpotToken(
   conn: CrmConnection,
 ): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
+  if (!conn.refreshToken) throw new Error("HubSpot refresh token is unavailable");
   const params = new URLSearchParams({
     grant_type: "refresh_token",
     client_id: process.env.HUBSPOT_CLIENT_ID!,
@@ -167,7 +168,7 @@ async function getValidToken(userId: string): Promise<string | null> {
   const conn = await getConnection(userId);
   if (!conn || conn.active === false) return null;
 
-  if (conn.expiresAt && Date.now() < conn.expiresAt - 60_000) {
+  if (conn.expiresAt && Date.now() < conn.expiresAt.getTime() - 60_000) {
     return decryptSecret(conn.accessToken);
   }
 
@@ -178,7 +179,7 @@ async function getValidToken(userId: string): Promise<string | null> {
       .set({
         accessToken: encryptSecret(updated.access_token),
         refreshToken: encryptSecret(updated.refresh_token),
-        expiresAt: updated.expires_at,
+        expiresAt: new Date(updated.expires_at),
         active: true,
         updatedAt: new Date(),
       })

@@ -15,7 +15,7 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "server.ts", "server-v2.ts", "scripts/**/*"],
+  "include": ["src/main.tsx", "src/vite-env.d.ts", "src/types/**/*.d.ts"],
   "exclude": [
     "node_modules",
     "src/**/*.test.ts",

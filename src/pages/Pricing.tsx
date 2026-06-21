@@ -24,6 +24,7 @@ function amount(plan: StripePlan, interval: Interval) {
 }
 
 function signup(plan: StripePlan) {
+  if (plan.id === "scale") return "/contact?subject=Custom%20Wireline%20plan";
   return `/signup?plan=${encodeURIComponent(plan.id)}`;
 }
 
@@ -51,7 +52,7 @@ function PlanCard({
       </p>
       <div className="mt-4 flex items-end gap-1">
         <span className="text-[36px] font-semibold leading-none tracking-[-.04em] text-foreground">
-          {price === 0 ? "Free" : currency(price)}
+          {price === 0 ? "Custom" : currency(price)}
         </span>
         {price > 0 ? (
           <span className="pb-1 text-[14px] text-muted-foreground">
@@ -74,7 +75,11 @@ function PlanCard({
         to={signup(plan)}
         className={`mt-auto min-h-11 justify-center px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[.05em] ${featured ? "workspace-btn-primary" : "workspace-btn-secondary"}`}
       >
-        {plan.id === "personal" || plan.id === "personal-plus" ? "Get started" : "See plan"}
+        {plan.id === "scale"
+          ? "Contact us"
+          : plan.id === "personal" || plan.id === "personal-plus"
+            ? "Get started"
+            : "See plan"}
       </Link>
     </article>
   );

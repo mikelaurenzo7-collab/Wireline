@@ -18,8 +18,11 @@
  * toggle-tool / run-action) which reuse the existing, already-gated
  * action engine + outbound dial paths.
  */
-import { runStructuredWithThinking, type ToolSchema } from "./claude-structured";
-import { CLAUDE_MODELS } from "./claude-models";
+import {
+  runStructuredWithThinking,
+  type StructuredToolSchema as ToolSchema,
+} from "./ai-structured";
+import { CLAUDE_MODELS } from "./ai-models";
 import {
   AGENT_TOOL_CATALOG,
   AGENT_TOOL_NAME_VALUES,
