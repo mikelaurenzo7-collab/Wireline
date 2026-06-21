@@ -42,8 +42,8 @@ export default function PrecisionPublicHeader() {
           <Link to="/signin" className="text-[11px] font-semibold uppercase tracking-[.05em] text-foreground">
             Log in
           </Link>
-          <Link to="/signup?mode=personal" className="marketing-btn-primary min-h-9 px-4 text-[11px] font-semibold uppercase tracking-[.05em]">
-            Start free
+          <Link to="/pricing" className="marketing-btn-primary min-h-9 px-4 text-[11px] font-semibold uppercase tracking-[.05em]">
+            See plans
           </Link>
         </div>
 
@@ -75,8 +75,8 @@ export default function PrecisionPublicHeader() {
             <Link to="/signin" onClick={() => setOpen(false)} className="mt-2 px-3 py-3 text-[14px] font-medium text-foreground">
               Log in
             </Link>
-            <Link to="/signup?mode=personal" onClick={() => setOpen(false)} className="marketing-btn-primary mt-1 py-3 text-[13px]">
-              Start free
+            <Link to="/pricing" onClick={() => setOpen(false)} className="marketing-btn-primary mt-1 py-3 text-[13px]">
+              See plans
             </Link>
           </nav>
         </div>
