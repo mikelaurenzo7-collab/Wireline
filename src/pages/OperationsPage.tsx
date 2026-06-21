@@ -1,8 +1,9 @@
+import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Activity, ArrowUpRight, Bot, BriefcaseBusiness, MessageSquareText, Workflow } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 
-function OpsCard({ icon, label, title, detail, href }: { icon: React.ReactNode; label: string; title: string; detail: string; href: string }) {
+function OpsCard({ icon, label, title, detail, href }: { icon: ReactNode; label: string; title: string; detail: string; href: string }) {
   return <Link to={href} className="rounded-2xl border border-black/[.08] bg-white p-5 transition hover:border-black/[.18] hover:shadow-[0_10px_32px_rgba(0,0,0,.04)]"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#f0f0ee]">{icon}</span><p className="mt-4 text-[10px] font-semibold uppercase tracking-[.12em] text-[#77777f]">{label}</p><h2 className="mt-1 text-base font-semibold tracking-[-.02em]">{title}</h2><p className="mt-2 text-sm leading-6 text-[#64646b]">{detail}</p><span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold">Open <ArrowUpRight size={13} /></span></Link>;
 }
 
