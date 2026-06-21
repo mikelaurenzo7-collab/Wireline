@@ -34,8 +34,8 @@ object Brand {
     val Border = Color(0xFFDADAD8)
     val BorderStrong = Color(0xFFAEB8B4)
 
-    val Text = Color(0xFF1A3C34)
-    val Text2 = Color(0xFF4A5F59)
+    val Text = Color(0xFF1A1C1B)
+    val Text2 = Color(0xFF414846)
     val Text3 = Color(0xB84A5F59)
 
     val Accent = Color(0xFF1A3C34)
@@ -73,7 +73,7 @@ private val LightColors: ColorScheme = lightColorScheme(
     primary = Brand.Accent,
     onPrimary = Color.White,
     primaryContainer = Brand.AccentSoft,
-    onPrimaryContainer = Brand.Text,
+    onPrimaryContainer = Brand.Accent,
     secondary = Brand.Panel2,
     onSecondary = Brand.Text,
     secondaryContainer = Brand.Raised,
@@ -92,75 +92,23 @@ private val LightColors: ColorScheme = lightColorScheme(
     onError = Color.White,
 )
 
-/**
- * Compose is intentionally platform-native, but its hierarchy mirrors the
- * source's Inter geometry: compact semibold headlines (-0.02em equivalent)
- * and legible utility labels with modest positive tracking.
- */
+/** Native platform typography mirrors the source hierarchy through weight and tracking. */
 private val AppTypography = Typography(
-    displayLarge = Typography().displayLarge.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.64).sp,
-    ),
-    displayMedium = Typography().displayMedium.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.56).sp,
-    ),
-    displaySmall = Typography().displaySmall.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.48).sp,
-    ),
-    headlineLarge = Typography().headlineLarge.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.48).sp,
-    ),
-    headlineMedium = Typography().headlineMedium.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.40).sp,
-    ),
-    headlineSmall = Typography().headlineSmall.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.36).sp,
-    ),
-    titleLarge = Typography().titleLarge.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.32).sp,
-    ),
-    titleMedium = Typography().titleMedium.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.28).sp,
-    ),
-    titleSmall = Typography().titleSmall.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = (-0.20).sp,
-    ),
+    displayLarge = Typography().displayLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.64).sp),
+    displayMedium = Typography().displayMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.56).sp),
+    displaySmall = Typography().displaySmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.48).sp),
+    headlineLarge = Typography().headlineLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.48).sp),
+    headlineMedium = Typography().headlineMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.40).sp),
+    headlineSmall = Typography().headlineSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.36).sp),
+    titleLarge = Typography().titleLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.32).sp),
+    titleMedium = Typography().titleMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.28).sp),
+    titleSmall = Typography().titleSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.20).sp),
     bodyLarge = Typography().bodyLarge.copy(fontFamily = FontFamily.SansSerif),
     bodyMedium = Typography().bodyMedium.copy(fontFamily = FontFamily.SansSerif),
     bodySmall = Typography().bodySmall.copy(fontFamily = FontFamily.SansSerif),
-    labelLarge = Typography().labelLarge.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.55.sp,
-    ),
-    labelMedium = Typography().labelMedium.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.5.sp,
-    ),
-    labelSmall = Typography().labelSmall.copy(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.45.sp,
-    ),
+    labelLarge = Typography().labelLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = 0.55.sp),
+    labelMedium = Typography().labelMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp),
+    labelSmall = Typography().labelSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = 0.45.sp),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
