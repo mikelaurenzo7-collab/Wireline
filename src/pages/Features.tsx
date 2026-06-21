@@ -47,16 +47,16 @@ export default function Features() {
       <main id="main-content" className="pt-16">
         {/* Hero */}
         <section className="border-b border-border bg-[radial-gradient(circle_at_1px_1px,rgba(26,60,52,.08)_1px,transparent_0)] bg-[size:16px_16px] px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-          <div className="mx-auto max-w-[1040px]">
+          <div className="mx-auto max-w-[1040px] text-center">
             <p className="wl-stitch-eyebrow">How it works</p>
-            <h1 className="mt-4 max-w-[760px] text-balance text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.05] tracking-[-.04em] text-foreground">
+            <h1 className="mx-auto mt-4 max-w-[760px] text-balance text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.05] tracking-[-.04em] text-foreground">
               The call is handled. Your day is not.
             </h1>
-            <p className="mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">
               Wireline makes the routine call, waits through the hold music, and brings back a clear
               answer. No complicated workflow to build before it becomes useful.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 to="/signup?mode=personal"
                 className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"

@@ -19,9 +19,17 @@ function CtaLink({
   children: ReactNode;
 }) {
   if (isExternalHref(href)) {
-    return <a href={href} className={className}>{children}</a>;
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
   }
-  return <Link to={href} className={className}>{children}</Link>;
+  return (
+    <Link to={href} className={className}>
+      {children}
+    </Link>
+  );
 }
 
 export function getVerticalSlugs(): VerticalKey[] {
@@ -75,21 +83,35 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
       />
 
       <section className="mx-auto max-w-6xl px-5 pb-14 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10">
-        <div className="max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="wl-stitch-eyebrow">{isPersonal ? "Personal call help" : cfg.eyebrow}</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">{cfg.headline}</h1>
-          <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">{cfg.subhead}</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <CtaLink href={cfg.primaryCta.href} className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold">
+          <p className="mt-6 max-w-2xl mx-auto text-pretty text-lg leading-8 text-muted-foreground">
+            {cfg.subhead}
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <CtaLink
+              href={cfg.primaryCta.href}
+              className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
+            >
               {primaryLabel} <ArrowRight className="h-4 w-4" />
             </CtaLink>
-            <CtaLink href={cfg.secondaryCta.href} className="marketing-btn-secondary min-h-12 px-6 text-[15px] font-semibold">
+            <CtaLink
+              href={cfg.secondaryCta.href}
+              className="marketing-btn-secondary min-h-12 px-6 text-[15px] font-semibold"
+            >
               <Phone className="h-4 w-4" /> {secondaryLabel}
             </CtaLink>
           </div>
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-primary" />You approve the job and boundaries</span>
-            <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-primary" />You get the useful result back</span>
+            <span className="inline-flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              You approve the job and boundaries
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              You get the useful result back
+            </span>
           </div>
         </div>
       </section>
@@ -108,7 +130,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="max-w-2xl">
           <p className="wl-stitch-eyebrow">Useful coverage</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
-            {isPersonal ? "Hand off the calls that keep following you around." : "Give every important call a clear next step."}
+            {isPersonal
+              ? "Hand off the calls that keep following you around."
+              : "Give every important call a clear next step."}
           </h2>
         </div>
         <div className="mt-9 grid gap-3 md:grid-cols-2">
@@ -119,7 +143,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
                   <Icon className="h-4 w-4" />
                 </span>
-                <h3 className="mt-5 text-lg font-semibold tracking-[-.025em] text-foreground">{pain.title}</h3>
+                <h3 className="mt-5 text-lg font-semibold tracking-[-.025em] text-foreground">
+                  {pain.title}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{pain.body}</p>
               </article>
             );
@@ -132,7 +158,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div>
             <p className="wl-stitch-eyebrow">Call behavior</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              {isPersonal ? "You set the words and the limits." : "Your process, handled consistently."}
+              {isPersonal
+                ? "You set the words and the limits."
+                : "Your process, handled consistently."}
             </h2>
             <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
               {isPersonal
@@ -142,7 +170,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           </div>
           <div className="wl-stitch-card border-l-4 border-l-primary p-6 sm:p-8">
             <p className="wl-stitch-label">Example opening</p>
-            <blockquote className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground">{cfg.scriptPreview}</blockquote>
+            <blockquote className="mt-4 text-lg leading-8 tracking-[-.02em] text-foreground">
+              {cfg.scriptPreview}
+            </blockquote>
             <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
               {isPersonal
                 ? "Your assistant uses the instruction you approve before the call. It should never invent identity details, agree to a commitment, or go beyond the boundaries you set."
@@ -156,7 +186,9 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
         <div className="max-w-2xl">
           <p className="wl-stitch-eyebrow">Frequently asked</p>
           <h2 className="wl-stitch-display mt-3 text-balance">
-            {isPersonal ? "The questions people ask before handing off a call." : "The questions operators ask before going live."}
+            {isPersonal
+              ? "The questions people ask before handing off a call."
+              : "The questions operators ask before going live."}
           </h2>
         </div>
         <div className="mt-8 space-y-3">
@@ -164,9 +196,16 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
             <details key={faq.q} className="group wl-stitch-card overflow-hidden">
               <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
                 <span>{faq.q}</span>
-                <span aria-hidden="true" className="text-lg text-muted-foreground transition-transform group-open:rotate-45">+</span>
+                <span
+                  aria-hidden="true"
+                  className="text-lg text-muted-foreground transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
               </summary>
-              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">{faq.a}</p>
+              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
+                {faq.a}
+              </p>
             </details>
           ))}
         </div>
@@ -177,9 +216,14 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
           <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
             <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
               <div>
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75"><ShieldCheck className="h-4 w-4" />You stay in control</span>
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
+                  <ShieldCheck className="h-4 w-4" />
+                  You stay in control
+                </span>
                 <h2 className="mt-4 max-w-2xl text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-                  {isPersonal ? "Start with the call you keep putting off." : "Start with the workflow your team needs covered."}
+                  {isPersonal
+                    ? "Start with the call you keep putting off."
+                    : "Start with the workflow your team needs covered."}
                 </h2>
                 <p className="mt-4 max-w-2xl text-sm leading-6 text-primary-foreground/75">
                   {isPersonal
@@ -187,7 +231,10 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                     : "Set the role, connect the tools, define permissions, and keep a person ready for the moments that need one."}
                 </p>
               </div>
-              <CtaLink href={cfg.primaryCta.href} className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-white px-5 text-sm font-semibold text-primary">
+              <CtaLink
+                href={cfg.primaryCta.href}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-white px-5 text-sm font-semibold text-primary"
+              >
                 {primaryLabel} <ArrowRight className="h-4 w-4" />
               </CtaLink>
             </div>
@@ -200,8 +247,12 @@ export default function VerticalLanding({ slug }: { slug: VerticalKey }) {
                 : "Run Wireline for customer coverage today. Personal call delegation remains available when you need an assistant for your own tasks too."}
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm font-semibold text-primary">
-              <Link to="/for/personal" className="hover:underline">For you →</Link>
-              <Link to="/solutions/support" className="hover:underline">For business →</Link>
+              <Link to="/for/personal" className="hover:underline">
+                For you →
+              </Link>
+              <Link to="/solutions/support" className="hover:underline">
+                For business →
+              </Link>
             </div>
           </div>
         </div>
