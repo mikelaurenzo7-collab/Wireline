@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowUpRight, Database, Loader2, Plus, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -7,7 +7,7 @@ import { useAgents } from "../contexts/AgentsContext";
 
 type AgentConfig = { directives?: Array<{ content?: string }>; knowledge?: Array<{ content?: string }>; personality?: string };
 
-function KnowledgeList({ title, icon, items, empty, loading }: { title: string; icon: React.ReactNode; items: string[]; empty: string; loading: boolean }) {
+function KnowledgeList({ title, icon, items, empty, loading }: { title: string; icon: ReactNode; items: string[]; empty: string; loading: boolean }) {
   return <section className="rounded-2xl border border-black/[.08] bg-white p-5"><div className="flex items-center gap-2"><span className="text-[#5e5e65]">{icon}</span><h2 className="font-semibold tracking-[-.02em]">{title}</h2><span className="ml-auto rounded-full bg-[#f1f1ef] px-2 py-0.5 text-[10px] font-semibold text-[#66666d]">{loading ? "—" : items.length}</span></div>{loading ? <div className="mt-5 space-y-2">{[1,2,3].map((item) => <div key={item} className="h-12 animate-pulse rounded-xl bg-[#f2f2f0]" />)}</div> : items.length ? <ul className="mt-4 space-y-2">{items.map((item, index) => <li key={`${item}-${index}`} className="rounded-xl bg-[#f7f7f5] px-3 py-2.5 text-sm leading-5 text-[#4d4d54]">{item}</li>)}</ul> : <p className="mt-4 text-sm leading-6 text-[#74747b]">{empty}</p>}</section>;
 }
 
