@@ -1,6 +1,6 @@
-import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./claude-models";
+import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 
-export type WirelineDirectorTier = "auto" | "sonnet" | "opus";
+export type WirelineDirectorTier = "auto" | "standard" | "deep";
 export type DirectorChatModelSelection =
   | { provider: "wireline"; tier: WirelineDirectorTier }
   | { provider: "openrouter"; modelId: string };
@@ -10,16 +10,17 @@ export const DEFAULT_DIRECTOR_OPENROUTER_MODEL =
 
 export const DEFAULT_DIRECTOR_MODEL_SELECTION: DirectorChatModelSelection = {
   provider: "wireline",
-  tier: "sonnet",
+  tier: "standard",
 };
 
-const TIERS = new Set<WirelineDirectorTier>(["auto", "sonnet", "opus"]);
+const TIERS = new Set<WirelineDirectorTier>(["auto", "standard", "deep"]);
 
 export function parseDirectorChatModelSelection(raw: unknown): DirectorChatModelSelection | null {
   if (!raw || typeof raw !== "object") return null;
   const value = raw as Record<string, unknown>;
   if (value.provider === "wireline") {
-    const tier = typeof value.tier === "string" ? value.tier : "auto";
+    const legacyTier = typeof value.tier === "string" ? value.tier : "auto";
+    const tier = legacyTier === "sonnet" ? "standard" : legacyTier === "opus" ? "deep" : legacyTier;
     return TIERS.has(tier as WirelineDirectorTier)
       ? { provider: "wireline", tier: tier as WirelineDirectorTier }
       : null;
@@ -34,7 +35,7 @@ export function parseDirectorChatModelSelection(raw: unknown): DirectorChatModel
 export type ResolvedDirectorLlm = {
   provider: "wireline" | "openrouter";
   model: string;
-  modelKind: "sonnet" | "opus" | "custom";
+  modelKind: "standard" | "deep" | "custom";
   modelLabel: string;
   openRouterModelId?: string;
   deepThink: boolean;
@@ -43,11 +44,9 @@ export type ResolvedDirectorLlm = {
 
 export function resolveDirectorLlm(input: {
   selection?: DirectorChatModelSelection | null;
-  autoOpus?: boolean;
+  autoDeep?: boolean;
   deepThink?: boolean;
   longDeliverable?: boolean;
-  claudeSonnet?: string;
-  claudeOpus?: string;
   modelLabelForOpenRouter?: (modelId: string) => string;
 }): ResolvedDirectorLlm {
   const selection = input.selection ?? DEFAULT_DIRECTOR_MODEL_SELECTION;
@@ -63,11 +62,11 @@ export function resolveDirectorLlm(input: {
     };
   }
 
-  const deep = selection.tier === "opus" || (selection.tier === "auto" && input.autoOpus === true);
+  const deep = selection.tier === "deep" || (selection.tier === "auto" && input.autoDeep === true);
   return {
     provider: "wireline",
-    model: deep ? input.claudeOpus ?? OPENAI_STRUCTURED_PRIMARY_MODEL : input.claudeSonnet ?? OPENAI_STRUCTURED_PRIMARY_MODEL,
-    modelKind: deep ? "opus" : "sonnet",
+    model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+    modelKind: deep ? "deep" : "standard",
     modelLabel: "GPT-5.5",
     deepThink: deep,
     maxTokens: input.longDeliverable ? 5000 : 2500,
