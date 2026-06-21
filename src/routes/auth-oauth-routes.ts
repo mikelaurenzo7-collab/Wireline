@@ -19,7 +19,7 @@ import { AppError } from "../lib/api-error";
  *      AuthContext can populate localStorage and route to /.
  *
  * The PUBLIC client IDs for Google/Microsoft are reused from the
- * existing mailbox-connect OAuth — operators only configure them once.
+ * existing mailbox-connect OAuth — account holders only configure them once.
  * The scopes differ (no Gmail/Calendar.send here, just identity), so
  * the access token returned by sign-in is NOT mailbox-usable. If a
  * user later wants to attach their mailbox to an agent, they go

@@ -9,16 +9,16 @@ import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import {
   planDirector,
-  type DirectorFleetAgent,
+  type DirectorAssistantAgent,
   type DirectorSuggestion,
   type DirectorBusinessContext,
 } from "./director-planner";
 import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-Assistants-plan";
 import {
-  buildDirectorFleetSystemPrompt,
+  buildDirectorAssistantSystemPrompt,
   DirectorEmptyPlanError,
   DIRECTOR_FLEET_TOOL,
-  normalizeDirectorFleetPlan,
+  normalizeDirectorAssistantPlan,
 } from "./director-Assistants-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
@@ -41,9 +41,9 @@ import { directorStreamMetaModel } from "./director-model-policy";
 import { labelForOpenRouterModel } from "./openrouter-models";
 import { runDirectorTurnLlm } from "./director-stream-runner";
 import {
-  buildFleetAuditGuidance,
+  buildAssistantAuditGuidance,
   resolveDirectorMaxTokens,
-  wantsFleetAudit,
+  wantsAssistantAudit,
   wantsLongDeliverable,
   wantsOpusModel,
 } from "./director-deep-analysis";
@@ -77,9 +77,9 @@ export interface DirectorTurnResult {
 }
 
 export interface DirectorTurnInput {
-  operatorMessage: string;
+  userMessage: string;
   history: Array<{ role: "Account Holder" | "director"; content: string }>;
-  Assistants: DirectorFleetAgent[];
+  Assistants: DirectorAssistantAgent[];
   stats?: { calls7d?: number; bookings7d?: number; openTasks?: number };
   focusAgentId?: string;
   userId: string;
@@ -227,7 +227,7 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
     if (!ctx) {
       const fleetPlan = await planDirector({
         userId: input.userId,
-        operatorMessage: input.operatorMessage,
+        userMessage: input.userMessage,
         history: input.history,
         Assistants: input.Assistants,
         stats: input.stats,
@@ -251,12 +251,12 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
     }
 
     const research = await fetchDirectorResearchContext({
-      operatorMessage: input.operatorMessage,
+      userMessage: input.userMessage,
       history: input.history,
     });
 
     const plan = await planWorkspace({
-      operatorMessage: input.operatorMessage,
+      userMessage: input.userMessage,
       history: mapDirectorHistoryToWorkspace(input.history),
       agent: ctx.agent,
       recentCalls: ctx.recentCalls,
@@ -281,13 +281,13 @@ export async function planDirectorTurnResilient(
     selection.provider === "wireline" &&
     !input.focusAgentId?.trim() &&
     selection.tier === "auto" &&
-    (input.forceDeep === true || wantsOpusModel(input.operatorMessage));
+    (input.forceDeep === true || wantsOpusModel(input.userMessage));
   const tryOpusFallback =
     selection.provider === "wireline" && selection.tier === "opus" && !input.shallowOnly;
   try {
     return await planDirectorTurn(input);
   } catch (e) {
-    if (e instanceof DirectorEmptyPlanError && wantsLongDeliverable(input.operatorMessage)) {
+    if (e instanceof DirectorEmptyPlanError && wantsLongDeliverable(input.userMessage)) {
       log.warn("director empty deliverable plan — retrying on sonnet", {
         userId: input.userId,
       });
@@ -363,14 +363,13 @@ export function previewDirectorStreamRouting(
   input: DirectorTurnInput & { focusAgentName?: string },
 ): DirectorStreamRoutingPreview {
   const focusId = input.focusAgentId?.trim();
-  const fleetAudit = !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
-  const longDeliverable = wantsLongDeliverable(input.operatorMessage);
+  const fleetAudit = !input.shallowOnly && !focusId && wantsAssistantAudit(input.userMessage);
+  const longDeliverable = wantsLongDeliverable(input.userMessage);
   const autoOpusEligible =
     !input.shallowOnly &&
     !focusId &&
     (input.forceDeep === true ||
-      (!fleetAudit &&
-        (input.designRenderFallback === true || wantsOpusModel(input.operatorMessage))));
+      (!fleetAudit && (input.designRenderFallback === true || wantsOpusModel(input.userMessage))));
   const deepThinkEligible = !input.shallowOnly && !focusId && input.forceDeep === true;
   const skipAdaptiveThinking =
     input.designRenderFallback === true || (longDeliverable && input.forceDeep !== true);
@@ -435,7 +434,7 @@ export async function buildDirectorStreamContext(
   input: DirectorTurnInput,
 ): Promise<DirectorStreamContext> {
   const focusId = input.focusAgentId?.trim();
-  const fleetAudit = !input.shallowOnly && !focusId && wantsFleetAudit(input.operatorMessage);
+  const fleetAudit = !input.shallowOnly && !focusId && wantsAssistantAudit(input.userMessage);
   const businessPromise =
     input.business !== undefined
       ? Promise.resolve(input.business)
@@ -444,10 +443,9 @@ export async function buildDirectorStreamContext(
     !input.shallowOnly &&
     !focusId &&
     (input.forceDeep === true ||
-      (!fleetAudit &&
-        (input.designRenderFallback === true || wantsOpusModel(input.operatorMessage))));
+      (!fleetAudit && (input.designRenderFallback === true || wantsOpusModel(input.userMessage))));
   const deepThinkEligible = !input.shallowOnly && !focusId && input.forceDeep === true;
-  const longDeliverable = wantsLongDeliverable(input.operatorMessage);
+  const longDeliverable = wantsLongDeliverable(input.userMessage);
   const skipAdaptiveThinking =
     input.designRenderFallback === true || (longDeliverable && input.forceDeep !== true);
 
@@ -476,19 +474,19 @@ export async function buildDirectorStreamContext(
   if (focusId) {
     const ctx = await loadCoachContext(input.userId, focusId);
     if (ctx) {
-      const needsResearch = wantsDirectorWebResearch(input.operatorMessage);
+      const needsResearch = wantsDirectorWebResearch(input.userMessage);
       const [connections, research] = await Promise.all([
         loadTenantIntegrationConnections(input.userId),
         needsResearch
           ? fetchDirectorResearchContext({
-              operatorMessage: input.operatorMessage,
+              userMessage: input.userMessage,
               history: input.history,
             })
           : Promise.resolve(null),
       ]);
       const integrationPrompt = formatDirectorIntegrationPrompt(connections);
       const wsInput = {
-        operatorMessage: input.operatorMessage,
+        userMessage: input.userMessage,
         history: mapDirectorHistoryToWorkspace(input.history),
         agent: ctx.agent,
         recentCalls: ctx.recentCalls,
@@ -536,20 +534,20 @@ export async function buildDirectorStreamContext(
     }
   }
 
-  const needsResearch = !fleetAudit && wantsDirectorWebResearch(input.operatorMessage);
+  const needsResearch = !fleetAudit && wantsDirectorWebResearch(input.userMessage);
   const [business, connections, research] = await Promise.all([
     businessPromise,
     loadTenantIntegrationConnections(input.userId),
     needsResearch
       ? fetchDirectorResearchContext({
-          operatorMessage: input.operatorMessage,
+          userMessage: input.userMessage,
           history: input.history,
         })
       : Promise.resolve(null),
   ]);
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
 
-  const system = buildDirectorFleetSystemPrompt({
+  const system = buildDirectorAssistantSystemPrompt({
     Assistants: input.Assistants,
     stats: input.stats,
     business,
@@ -558,8 +556,8 @@ export async function buildDirectorStreamContext(
     deliverableGuidance:
       input.deliverableGuidance ??
       (fleetAudit && !input.forceDeep
-        ? buildFleetAuditGuidance()
-        : buildDirectorDeliverableGuidance(input.operatorMessage)),
+        ? buildAssistantAuditGuidance()
+        : buildDirectorDeliverableGuidance(input.userMessage)),
   });
 
   const transcript = input.history
@@ -567,7 +565,7 @@ export async function buildDirectorStreamContext(
     .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "Director"}: ${m.content}`)
     .join("\n");
   const user = appendResearchToUserPrompt(
-    `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${input.operatorMessage}`,
+    `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${input.userMessage}`,
     research?.block,
   );
 
@@ -587,7 +585,7 @@ export async function buildDirectorStreamContext(
     modelId: llm.openRouterModelId,
     researchSources: research?.sources,
     normalize: (raw) => {
-      const plan = normalizeDirectorFleetPlan(raw, input.Assistants, input.operatorMessage);
+      const plan = normalizeDirectorAssistantPlan(raw, input.Assistants, input.userMessage);
       const modelMeta = llm.modelKind === "custom" ? ("sonnet" as const) : llm.modelKind;
       return {
         mode: "Assistants",

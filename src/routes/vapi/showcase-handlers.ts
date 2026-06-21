@@ -78,7 +78,7 @@ export async function queueShowcaseTask(args: {
 }): Promise<boolean> {
   if (!args.ownerUserId) return false;
 
-  await drizzle.insert(schema.fleetTasks).values({
+  await drizzle.insert(schema.followUpTasks).values({
     userId: args.ownerUserId,
     taskType: args.taskType,
     description: args.description,

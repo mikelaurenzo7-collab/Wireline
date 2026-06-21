@@ -102,7 +102,11 @@ export default function BrowserCallWidget({
       vapi.start(assistantPayload);
     } catch (reason: unknown) {
       console.error("[wireline:webrtc] Call start failed:", reason);
-      setError(reason instanceof Error ? reason.message : "Could not access your microphone or start the demo.");
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not access your microphone or start the demo.",
+      );
       setConnecting(false);
     }
   };
@@ -124,11 +128,20 @@ export default function BrowserCallWidget({
         )}
       >
         {connecting ? (
-          <><Loader2 className="h-4 w-4 animate-spin" /><span>Connecting…</span></>
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Connecting…</span>
+          </>
         ) : callActive ? (
-          <><PhoneOff className="h-4 w-4" /><span>End call</span></>
+          <>
+            <PhoneOff className="h-4 w-4" />
+            <span>End call</span>
+          </>
         ) : (
-          <><Mic className="h-4 w-4" /><span>{buttonLabel}</span></>
+          <>
+            <Mic className="h-4 w-4" />
+            <span>{buttonLabel}</span>
+          </>
         )}
         {callActive && (
           <span
@@ -140,7 +153,12 @@ export default function BrowserCallWidget({
 
       {callActive && (
         <div className="flex h-7 items-center gap-2 rounded-full border border-border bg-[color:var(--wl-surface-subtle)] px-4 py-1.5">
-          <Volume2 className={cn("h-3.5 w-3.5 text-muted-foreground", speakerActive && "animate-pulse text-primary")} />
+          <Volume2
+            className={cn(
+              "h-3.5 w-3.5 text-muted-foreground",
+              speakerActive && "animate-pulse text-primary",
+            )}
+          />
           <div className="flex h-3 items-end gap-0.5">
             {[1, 2, 3, 4, 5].map((bar) => {
               const scaled = volume * (1 + bar * 0.3);

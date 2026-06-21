@@ -2,7 +2,7 @@
 //  Agent performance math.
 //
 //  /api/agents/:id/performance returns the per-agent rollup the
-//  AgentTraining + FleetSettings panels render: total calls, minutes,
+//  AgentTraining + AssistantSettings panels render: total calls, minutes,
 //  average lead score, sentiment breakdown, and a 7-day sparkline.
 //  Previously inline in server.ts (~25 lines of derivation that ran on
 //  every panel mount). Extracted here as a pure tested module so the

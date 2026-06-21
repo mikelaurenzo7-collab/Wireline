@@ -82,7 +82,8 @@ export const AUTH_PORTAL_SHOWCASE = {
     {
       id: "live-ops",
       label: "Recaps floor",
-      detail: "Listen in, whisper-coach, approve CRM writes, and watch Assistants pulse in real time.",
+      detail:
+        "Listen in, whisper-coach, approve CRM writes, and watch Assistants pulse in real time.",
     },
   ],
 } as const;

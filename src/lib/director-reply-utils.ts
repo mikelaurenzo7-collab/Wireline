@@ -31,7 +31,9 @@ export function directorPayloadHasProposals(data: Record<string, unknown>): bool
   );
 }
 
-export function isTerminalDirectorStreamPayload(data: Record<string, unknown> | undefined): boolean {
+export function isTerminalDirectorStreamPayload(
+  data: Record<string, unknown> | undefined,
+): boolean {
   if (!data) return false;
   if (directorPayloadHasProposals(data)) return true;
   if (data.deliverableArtifact && typeof data.deliverableArtifact === "object") return true;
@@ -85,12 +87,14 @@ function messageHasRecoverableContent(message: AssistantThreadMessage): boolean 
   return Array.isArray(message.clarifyingQuestions) && message.clarifyingQuestions.length > 0;
 }
 
-export function operatorTurnHasDirectorReply(
+export function accountHolderTurnHasDirectorReply(
   messages: AssistantThreadMessage[],
-  operatorContent: string,
+  accountHolderContent: string,
 ): boolean {
-  const needle = operatorContent.trim();
-  const index = messages.findIndex((message) => message.role === "Account Holder" && message.content.trim() === needle);
+  const needle = accountHolderContent.trim();
+  const index = messages.findIndex(
+    (message) => message.role === "Account Holder" && message.content.trim() === needle,
+  );
   if (index < 0) return false;
 
   for (const message of messages.slice(index + 1)) {
@@ -103,15 +107,15 @@ export function operatorTurnHasDirectorReply(
 export function collapseDirectorThreadDuplicates<T extends { role: string; content: string }>(
   messagesAsc: T[],
 ): T[] {
-  let lastOperatorIndex = -1;
+  let lastAccountHolderIndex = -1;
   return messagesAsc.filter((message, index) => {
     if (message.role === "Account Holder") {
-      lastOperatorIndex = index;
+      lastAccountHolderIndex = index;
       return true;
     }
     if (message.role !== "director" || !isDirectorStubReply(message.content)) return true;
-    if (lastOperatorIndex < 0) return true;
-    for (let cursor = index - 1; cursor > lastOperatorIndex; cursor--) {
+    if (lastAccountHolderIndex < 0) return true;
+    for (let cursor = index - 1; cursor > lastAccountHolderIndex; cursor--) {
       const prior = messagesAsc[cursor];
       if (prior.role === "director" && isSubstantiveDirectorReply(prior.content)) return false;
     }

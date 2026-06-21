@@ -14,7 +14,7 @@ import LaunchReadinessPanel from "./LaunchReadinessPanel";
  * billing simulators. Rendered on the Founder dashboard only, never in
  * customer Settings.
  */
-export default function FounderOperatorConsole() {
+export default function FounderAccountHolderConsole() {
   const [claudeStatus, setClaudeStatus] = useState<any>(null);
   const [integrations, setIntegrations] = useState<any[] | null>(null);
   const [operationalSlos, setOperationalSlos] = useState<Record<string, unknown> | null>(null);

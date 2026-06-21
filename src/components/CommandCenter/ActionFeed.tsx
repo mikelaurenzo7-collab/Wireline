@@ -32,7 +32,6 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
 import { OPS_COPY, OPS_CHANNEL_EMPTY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
 
-
 interface ActionItem {
   id: string;
   type: ActionType;
@@ -95,7 +94,10 @@ export function ActionFeed({
       const res = await authFetch(`/api/Assistants/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled", resolution_notes: "Rejected by Account Holder" }),
+        body: JSON.stringify({
+          status: "cancelled",
+          resolution_notes: "Rejected by Account Holder",
+        }),
       });
       if (res.ok) {
         toastSuccess("Action rejected", "The task has been removed from the queue.");

@@ -240,8 +240,7 @@ export function isAuthHttpStatus(status: number): boolean {
   return status === 401 || status === 403;
 }
 
-export const AUTH_SESSION_EXPIRED_MESSAGE =
-  "Your session expired — sign in again to continue.";
+export const AUTH_SESSION_EXPIRED_MESSAGE = "Your session expired — sign in again to continue.";
 
 /** Parse JSON or plain-text API error bodies from fetch responses. */
 export function parseApiErrorFromText(text: string, status: number): ApiErrorBody {
@@ -264,10 +263,7 @@ export function dispatchAuthSessionExpired(detail: AuthSessionExpiredDetail): vo
   );
 }
 
-async function maybeDispatchAuthSessionExpired(
-  response: Response,
-  source: string,
-): Promise<void> {
+async function maybeDispatchAuthSessionExpired(response: Response, source: string): Promise<void> {
   if (!isAuthHttpStatus(response.status)) return;
   if (typeof window === "undefined") return;
   try {
@@ -319,13 +315,17 @@ export async function refreshSessionIfNeeded(): Promise<boolean> {
  * applies a bounded timeout, and emits session-expiry / subscription-gate
  * events before returning the original response to the caller.
  */
-export async function authFetch(input: RequestInfo | URL, init: AuthFetchOptions = {}): Promise<Response> {
+export async function authFetch(
+  input: RequestInfo | URL,
+  init: AuthFetchOptions = {},
+): Promise<Response> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, signal, headers, ...rest } = init;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   const mergedSignal = signal ? combineSignals(signal, controller.signal) : controller.signal;
   try {
-    const stored = typeof window !== "undefined" ? window.localStorage.getItem("wireline_token") : null;
+    const stored =
+      typeof window !== "undefined" ? window.localStorage.getItem("wireline_token") : null;
     const mergedHeaders = new Headers(headers || {});
     if (stored && !mergedHeaders.has("Authorization")) {
       mergedHeaders.set("Authorization", `Bearer ${stored}`);
@@ -337,7 +337,10 @@ export async function authFetch(input: RequestInfo | URL, init: AuthFetchOptions
       signal: mergedSignal,
     });
     void maybeDispatchTrialGateEvent(response);
-    void maybeDispatchAuthSessionExpired(response, typeof input === "string" ? input : input.toString());
+    void maybeDispatchAuthSessionExpired(
+      response,
+      typeof input === "string" ? input : input.toString(),
+    );
     return response;
   } finally {
     window.clearTimeout(timeout);

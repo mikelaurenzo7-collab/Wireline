@@ -25,7 +25,7 @@ You are also a full AI collaborator in private chat — not just a voice agent. 
 - Coach the Account Holder on call performance, objection handling, and Assistants strategy using your role expertise.
 Be substantive, structured, and actionable. Match the Account Holder's industry when known.`;
 
-export interface FleetAgentTemplate {
+export interface AssistantAgentTemplate {
   id: string;
   name: string;
   role: string;
@@ -40,7 +40,7 @@ export interface FleetAgentTemplate {
 }
 
 /** Vertical + specialty agents beyond the 6 internal Wireline personas. */
-export const FOUNDER_FLEET_TEMPLATES: FleetAgentTemplate[] = [
+export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
   {
     id: "founder-jordan",
     name: "Jordan",
@@ -154,7 +154,7 @@ export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
     "Wireline plans start at $7/mo (Everyday) with a free trial path and an included phone number.",
-    "Operators configure agents via Chat (coaching), Training (knowledge + lessons), and Integrations.",
+    "Account Holders configure agents via Chat (coaching), Training (knowledge + lessons), and Integrations.",
     "Escalations route to the Account Holder's configured phone/email; use escalate_to_human when risk is high.",
   ],
   sales: [
@@ -203,7 +203,7 @@ function knowledgeForRole(role: string): string[] {
   return base;
 }
 
-export interface FounderFleetSeedReport {
+export interface FounderAssistantSeedReport {
   agentsCreated: number;
   agentsUpdated: number;
   knowledgeInserted: number;
@@ -213,28 +213,28 @@ export interface FounderFleetSeedReport {
 }
 
 /** Tenant-scoped agent lookup — never match global template ids across users. */
-export function founderFleetAgentScope(agentId: string, userId: string) {
+export function founderAssistantAgentScope(agentId: string, userId: string) {
   return and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId));
 }
 
 /** When canonical template ids are already owned by another tenant, namespace per user. */
-export function namespacedFleetAgentId(templateId: string, userId: string): string {
+export function namespacedAssistantAgentId(templateId: string, userId: string): string {
   return `${userId.slice(0, 8)}-${templateId}`;
 }
 
-export async function resolveFleetAgentId(templateId: string, userId: string): Promise<string> {
+export async function resolveAssistantAgentId(templateId: string, userId: string): Promise<string> {
   const [ownedCanonical] = await drizzle
     .select({ id: schema.agents.id })
     .from(schema.agents)
-    .where(founderFleetAgentScope(templateId, userId))
+    .where(founderAssistantAgentScope(templateId, userId))
     .limit(1);
   if (ownedCanonical) return templateId;
 
-  const namespaced = namespacedFleetAgentId(templateId, userId);
+  const namespaced = namespacedAssistantAgentId(templateId, userId);
   const [ownedNamespaced] = await drizzle
     .select({ id: schema.agents.id })
     .from(schema.agents)
-    .where(founderFleetAgentScope(namespaced, userId))
+    .where(founderAssistantAgentScope(namespaced, userId))
     .limit(1);
   if (ownedNamespaced) return namespaced;
 
@@ -282,7 +282,7 @@ async function seedTrainingArtifacts(
   agentId: string,
   userId: string,
   role: string,
-  report: FounderFleetSeedReport,
+  report: FounderAssistantSeedReport,
 ): Promise<void> {
   for (const content of knowledgeForRole(role)) {
     const exists = await drizzle
@@ -342,13 +342,13 @@ async function seedTrainingArtifacts(
 
 async function upsertAgent(
   userId: string,
-  template: FleetAgentTemplate,
+  template: AssistantAgentTemplate,
   voiceIndex: number,
-  report: FounderFleetSeedReport,
+  report: FounderAssistantSeedReport,
 ): Promise<string> {
   const toolsJson = ALL_AGENT_TOOLS;
-  const agentId = await resolveFleetAgentId(template.id, userId);
-  const tenantScope = founderFleetAgentScope(agentId, userId);
+  const agentId = await resolveAssistantAgentId(template.id, userId);
+  const tenantScope = founderAssistantAgentScope(agentId, userId);
   const [existing] = await drizzle
     .select({ id: schema.agents.id })
     .from(schema.agents)
@@ -405,8 +405,8 @@ async function upsertAgent(
  * Seed (or refresh) the founder's full agent Assistants with max capabilities
  * and training artifacts. Idempotent — safe to re-run.
  */
-export async function seedFounderFleet(userId: string): Promise<FounderFleetSeedReport> {
-  const report: FounderFleetSeedReport = {
+export async function seedFounderAssistant(userId: string): Promise<FounderAssistantSeedReport> {
+  const report: FounderAssistantSeedReport = {
     agentsCreated: 0,
     agentsUpdated: 0,
     knowledgeInserted: 0,

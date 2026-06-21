@@ -100,9 +100,9 @@ export function PrivacyPolicy() {
       <Section title="1. Who We Are">
         <p>
           <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
-          AI-powered omnichannel agent Assistants for businesses. Questions about this policy can be sent
-          to <strong>support@trywireline.com</strong>. This policy explains what data we collect,
-          why, and your rights over it.
+          AI-powered omnichannel agent Assistants for businesses. Questions about this policy can be
+          sent to <strong>support@trywireline.com</strong>. This policy explains what data we
+          collect, why, and your rights over it.
         </p>
       </Section>
 
@@ -259,8 +259,8 @@ export function PrivacyPolicy() {
         </p>
         <p>
           We will publicly announce HIPAA certification on this page and in our changelog once
-          complete. Until then, healthcare operators should treat Wireline as a general-purpose AI
-          calling tool and limit conversations to non-PHI topics.
+          complete. Until then, healthcare account holders should treat Wireline as a
+          general-purpose AI calling tool and limit conversations to non-PHI topics.
         </p>
       </Section>
 

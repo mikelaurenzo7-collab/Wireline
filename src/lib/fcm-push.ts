@@ -20,7 +20,9 @@ function loadFcmConfig(): FcmConfig | null {
   const privateKeyRaw = process.env.FCM_PRIVATE_KEY;
   if (!projectId || !clientEmail || !privateKeyRaw) return null;
 
-  const privateKey = privateKeyRaw.includes("\\n") ? privateKeyRaw.replace(/\\n/g, "\n") : privateKeyRaw;
+  const privateKey = privateKeyRaw.includes("\\n")
+    ? privateKeyRaw.replace(/\\n/g, "\n")
+    : privateKeyRaw;
   return { projectId, clientEmail, privateKey };
 }
 
@@ -64,7 +66,7 @@ export async function sendFcmPush(
   try {
     const auth = getAuthClient(cfg);
     const url = `https://fcm.googleapis.com/v1/projects/${cfg.projectId}/messages:send`;
-    
+
     const stringData: Record<string, string> = {};
     if (payload.data) {
       for (const [k, v] of Object.entries(payload.data)) {

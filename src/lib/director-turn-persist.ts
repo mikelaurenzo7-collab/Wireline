@@ -34,11 +34,11 @@ type DirectorRow = {
   createdAt: Date;
 };
 
-function findDirectorReplyForOperator(
+function findDirectorReplyForAccountHolder(
   rows: DirectorRow[],
-  operatorMessage: string,
+  userMessage: string,
 ): DirectorRow | null {
-  const probe = operatorMessage.trim();
+  const probe = userMessage.trim();
   if (!probe) return null;
 
   for (let i = 0; i < rows.length; i++) {
@@ -76,19 +76,19 @@ async function loadRecentDirectorRows(
     .limit(limit);
 }
 
-export async function hasSubstantiveDirectorReplyForOperator(
+export async function hasSubstantiveDirectorReplyForAccountHolder(
   userId: string,
-  operatorMessage: string,
+  userMessage: string,
   threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<boolean> {
   const rows = await loadRecentDirectorRows(userId, 16, threadKey);
-  const match = findDirectorReplyForOperator(rows, operatorMessage);
+  const match = findDirectorReplyForAccountHolder(rows, userMessage);
   return Boolean(match && isSubstantiveDirectorReply(match.content));
 }
 
 export async function loadExistingDirectorTurnResponse(
   userId: string,
-  operatorMessage: string,
+  userMessage: string,
   threadKey: DirectorConversationThreadKey = DIRECTOR_THREAD_KEY,
 ): Promise<{
   content: string;
@@ -96,7 +96,7 @@ export async function loadExistingDirectorTurnResponse(
   metadata: DirectorMessageMetadata;
 } | null> {
   const rows = await loadRecentDirectorRows(userId, 16, threadKey);
-  const match = findDirectorReplyForOperator(rows, operatorMessage);
+  const match = findDirectorReplyForAccountHolder(rows, userMessage);
   if (!match || !isSubstantiveDirectorReply(match.content)) return null;
   return {
     content: match.content,
@@ -109,7 +109,7 @@ export type InsertDirectorReplyResult = "inserted" | "skipped_duplicate" | "skip
 
 export async function insertDirectorReplyIfAbsent(input: {
   userId: string;
-  operatorMessage: string;
+  userMessage: string;
   reply: string;
   threadKey?: DirectorConversationThreadKey;
   reasoning?: string | null;
@@ -119,11 +119,13 @@ export async function insertDirectorReplyIfAbsent(input: {
   if (!reply) return "skipped_stub";
   const threadKey = parseDirectorThreadKey(input.threadKey);
 
-  if (await hasSubstantiveDirectorReplyForOperator(input.userId, input.operatorMessage, threadKey)) {
+  if (
+    await hasSubstantiveDirectorReplyForAccountHolder(input.userId, input.userMessage, threadKey)
+  ) {
     return isDirectorStubReply(reply) ? "skipped_stub" : "skipped_duplicate";
   }
 
-  if (isDirectorStubReply(reply) && wantsLongDeliverable(input.operatorMessage)) {
+  if (isDirectorStubReply(reply) && wantsLongDeliverable(input.userMessage)) {
     return "skipped_stub";
   }
 

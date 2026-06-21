@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2, Play, Pause } from "lucide-react";
 import { cn } from "../lib/utils";
-import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./FleetSettings";
+import { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER } from "./AssistantSettings";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -120,7 +120,7 @@ interface DeployAgentModalProps {
  *
  * Everything else (role personality, template overlay, business variable
  * substitution, capabilities) is handled server-side at /api/agents POST.
- * Operators can further refine in /agents → Personality / Capabilities.
+ * Account Holders can further refine in /agents → Personality / Capabilities.
  */
 export default function DeployAgentModal({
   open,

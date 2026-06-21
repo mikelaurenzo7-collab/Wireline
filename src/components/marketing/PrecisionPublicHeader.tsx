@@ -18,7 +18,11 @@ export default function PrecisionPublicHeader() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-[color:var(--wl-page)]">
       <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-.03em] text-foreground" aria-label="Wireline home">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-.03em] text-foreground"
+            aria-label="Wireline home"
+          >
             <WirelineMark className="h-6 w-6 text-primary" />
             <span>Wireline</span>
           </Link>
@@ -41,10 +45,16 @@ export default function PrecisionPublicHeader() {
         </div>
 
         <div className="hidden items-center gap-5 md:flex">
-          <Link to="/signin" className="text-[11px] font-semibold uppercase tracking-[.05em] text-foreground">
+          <Link
+            to="/signin"
+            className="text-[11px] font-semibold uppercase tracking-[.05em] text-foreground"
+          >
             Log in
           </Link>
-          <Link to="/pricing" className="marketing-btn-primary min-h-9 px-4 text-[11px] font-semibold uppercase tracking-[.05em]">
+          <Link
+            to="/pricing"
+            className="marketing-btn-primary min-h-9 px-4 text-[11px] font-semibold uppercase tracking-[.05em]"
+          >
             See plans
           </Link>
         </div>
@@ -68,16 +78,26 @@ export default function PrecisionPublicHeader() {
                 to={link.to}
                 onClick={() => setOpen(false)}
                 className={`rounded-md px-3 py-3 text-[14px] font-medium ${
-                  isActive(link.match) ? "bg-[color:var(--wl-accent-container)] text-primary" : "text-foreground hover:bg-muted"
+                  isActive(link.match)
+                    ? "bg-[color:var(--wl-accent-container)] text-primary"
+                    : "text-foreground hover:bg-muted"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <Link to="/signin" onClick={() => setOpen(false)} className="mt-2 rounded-md px-3 py-3 text-[14px] font-medium text-foreground">
+            <Link
+              to="/signin"
+              onClick={() => setOpen(false)}
+              className="mt-2 rounded-md px-3 py-3 text-[14px] font-medium text-foreground"
+            >
               Log in
             </Link>
-            <Link to="/pricing" onClick={() => setOpen(false)} className="marketing-btn-primary mt-1 py-3 text-[13px]">
+            <Link
+              to="/pricing"
+              onClick={() => setOpen(false)}
+              className="marketing-btn-primary mt-1 py-3 text-[13px]"
+            >
               See plans
             </Link>
           </nav>

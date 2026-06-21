@@ -6,7 +6,7 @@ import { AppError } from "../lib/api-error";
  *
  * Stages: cold → contacted → qualified → demo → won | lost
  *
- * Operators move cards manually via PATCH (drag-drop in the UI ends up
+ * Account Holders move cards manually via PATCH (drag-drop in the UI ends up
  * here), or agents auto-progress them via the action-engine.
  */
 

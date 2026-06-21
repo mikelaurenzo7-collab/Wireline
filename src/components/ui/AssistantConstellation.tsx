@@ -19,19 +19,19 @@ const ARCS: string[] = [
   "M 142 158 L 100 100",
 ];
 
-export type FleetConstellationSize = "sm" | "md" | "lg" | "xl";
+export type AssistantConstellationSize = "sm" | "md" | "lg" | "xl";
 
 /**
- * FleetConstellation — dormant agent nodes around a focal orb.
+ * AssistantConstellation — dormant agent nodes around a focal orb.
  * Decorative only; shared across Director, empty states, and loading chrome.
  */
-export function FleetConstellation({
+export function AssistantConstellation({
   className,
   size = "lg",
   refined = true,
 }: {
   className?: string;
-  size?: FleetConstellationSize;
+  size?: AssistantConstellationSize;
   refined?: boolean;
 }) {
   return (
@@ -46,7 +46,13 @@ export function FleetConstellation({
       )}
       fill="none"
     >
-      <circle className="wl-Assistants-constellation-ring" cx="100" cy="100" r="72" strokeWidth="0.75" />
+      <circle
+        className="wl-Assistants-constellation-ring"
+        cx="100"
+        cy="100"
+        r="72"
+        strokeWidth="0.75"
+      />
       {ARCS.map((d, i) => (
         <path
           key={i}
@@ -58,8 +64,18 @@ export function FleetConstellation({
       ))}
       {NODES.map((node, i) => (
         <g key={i} className="wl-Assistants-constellation-node" data-delay={`${node.delay}s`}>
-          <circle className="wl-Assistants-constellation-node-halo" cx={node.cx} cy={node.cy} r="5" />
-          <circle className="wl-Assistants-constellation-node-core" cx={node.cx} cy={node.cy} r="2.25" />
+          <circle
+            className="wl-Assistants-constellation-node-halo"
+            cx={node.cx}
+            cy={node.cy}
+            r="5"
+          />
+          <circle
+            className="wl-Assistants-constellation-node-core"
+            cx={node.cx}
+            cy={node.cy}
+            r="2.25"
+          />
         </g>
       ))}
     </svg>

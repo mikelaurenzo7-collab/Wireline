@@ -104,7 +104,7 @@ export interface HotLead {
 export type TaskPriority = "high" | "medium" | "low";
 export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
-export interface FleetTask {
+export interface FollowUpTask {
   id: string;
   user_id?: string;
   agent_id: string | null;
@@ -134,14 +134,14 @@ export interface SignalPresence {
 
 /* ── Assistants presence response ─────────────────────────────────────── */
 
-export interface FleetPresenceResponse {
+export interface AssistantPresenceResponse {
   signals: SignalPresence[];
 }
 
 /* ── Assistants tasks response ────────────────────────────────────────── */
 
-export interface FleetTasksResponse {
-  tasks: FleetTask[];
+export interface FollowUpTasksResponse {
+  tasks: FollowUpTask[];
 }
 
 /* ── Assistants activity ──────────────────────────────────────────────── */
@@ -156,7 +156,7 @@ export interface ActivityItem {
   importance: "critical" | "high" | "medium" | "low";
 }
 
-export interface FleetActivityResponse {
+export interface AssistantActivityResponse {
   activity: ActivityItem[];
 }
 
@@ -180,8 +180,8 @@ export interface TriageEscalation {
 
 export interface TriageData {
   hot_leads: HotLead[];
-  compliance: FleetTask[];
-  pending_tasks: FleetTask[];
+  compliance: FollowUpTask[];
+  pending_tasks: FollowUpTask[];
   knowledge_gaps: TriageKnowledgeGap[];
   escalations: TriageEscalation[];
   counts: Record<string, number>;

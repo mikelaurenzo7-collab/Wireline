@@ -74,7 +74,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
             setActiveId(primary.id);
             try {
               localStorage.setItem(STORAGE_KEY, primary.id);
-            } catch { /* non-fatal */ }
+            } catch {
+              /* non-fatal */
+            }
           }
         }
       } catch {
@@ -83,7 +85,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeAccount = useMemo(
@@ -97,32 +101,40 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     setActiveId(accountId);
     try {
       localStorage.setItem(STORAGE_KEY, accountId);
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
   }, []);
 
-  const addAccount = useCallback(async (type: AccountType, label?: string): Promise<Account | null> => {
-    try {
-      const r = await authFetch("/api/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, label }),
-      });
-      if (!r.ok) return null;
-      const data = await r.json();
-      const created = data.account as Account;
-      setAccounts((prev) => [...prev, created]);
-      switchAccount(created.id);
-      return created;
-    } catch {
-      return null;
-    }
-  }, [switchAccount]);
+  const addAccount = useCallback(
+    async (type: AccountType, label?: string): Promise<Account | null> => {
+      try {
+        const r = await authFetch("/api/accounts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type, label }),
+        });
+        if (!r.ok) return null;
+        const data = await r.json();
+        const created = data.account as Account;
+        setAccounts((prev) => [...prev, created]);
+        switchAccount(created.id);
+        return created;
+      } catch {
+        return null;
+      }
+    },
+    [switchAccount],
+  );
 
-  const setAccountType = useCallback((type: AccountType | null) => {
-    if (!type) return;
-    const target = accounts.find((a) => a.type === type);
-    if (target) switchAccount(target.id);
-  }, [accounts, switchAccount]);
+  const setAccountType = useCallback(
+    (type: AccountType | null) => {
+      if (!type) return;
+      const target = accounts.find((a) => a.type === type);
+      if (target) switchAccount(target.id);
+    },
+    [accounts, switchAccount],
+  );
 
   const value = useMemo(
     () => ({
@@ -139,11 +151,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     [accountType, activeAccount, accounts, loading, switchAccount, addAccount, setAccountType],
   );
 
-  return (
-    <AccountContext.Provider value={value}>
-      {children}
-    </AccountContext.Provider>
-  );
+  return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
 
 export function useAccount(): AccountState {

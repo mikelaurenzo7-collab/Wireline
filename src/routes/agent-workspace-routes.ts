@@ -35,7 +35,7 @@ import { runStructuredStream } from "../lib/claude-structured";
 const router = express.Router();
 
 // Hard cap on stored history per agent — keeps the LLM payload bounded
-// + storage manageable. Most operators won't get near this. When the
+// + storage manageable. Most account holders won't get near this. When the
 // cap is hit, oldest rows are silently pruned on the next write.
 const MAX_THREAD_LENGTH = 200;
 // How many messages we feed back to Claude as conversational context.
@@ -111,7 +111,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const operatorMessage = req.body.content.trim();
+      const userMessage = req.body.content.trim();
 
       // Load agent + current config (the planner proposes changes against
       // the live values) + recent call context.
@@ -170,7 +170,7 @@ router.post(
         userId: req.user.id,
         agentId,
         role: "Account Holder",
-        content: operatorMessage,
+        content: userMessage,
       });
 
       let reply: string;
@@ -186,7 +186,7 @@ router.post(
       } else {
         try {
           const plan = await planWorkspace({
-            operatorMessage,
+            userMessage,
             history,
             agent,
             recentCalls,
@@ -232,7 +232,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const operatorMessage = req.body.content.trim();
+      const userMessage = req.body.content.trim();
       if (!process.env.ANTHROPIC_API_KEY) {
         throw AppError.fromHttpStatus(503, "LLM not configured");
       }
@@ -277,7 +277,7 @@ router.post(
         userId: req.user.id,
         agentId,
         role: "Account Holder",
-        content: operatorMessage,
+        content: userMessage,
       });
 
       const { CLAUDE_MODELS } = await import("../lib/claude-models");
@@ -304,7 +304,7 @@ router.post(
         .slice(-12)
         .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You"}: ${m.content}`)
         .join("\n");
-      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${operatorMessage}`;
+      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${userMessage}`;
 
       try {
         const { result, thinking, thinkingDurationMs } = await runStructuredStream(
@@ -448,7 +448,7 @@ router.post(
 );
 
 // DELETE /api/agents/:id/workspace/messages — clear the thread.
-// Operators sometimes want a fresh start (new product launch, new vertical).
+// Account Holders sometimes want a fresh start (new product launch, new vertical).
 router.delete(
   "/api/agents/:id/workspace/messages",
   authenticateUser,
@@ -695,12 +695,12 @@ router.get(
             ),
           drizzle
             .select({ n: sql<number>`count(*)::int` })
-            .from(schema.fleetTasks)
+            .from(schema.followUpTasks)
             .where(
               and(
-                eq(schema.fleetTasks.agentId, agentId),
-                eq(schema.fleetTasks.userId, req.user.id),
-                eq(schema.fleetTasks.status, "pending"),
+                eq(schema.followUpTasks.agentId, agentId),
+                eq(schema.followUpTasks.userId, req.user.id),
+                eq(schema.followUpTasks.status, "pending"),
               ),
             ),
           drizzle

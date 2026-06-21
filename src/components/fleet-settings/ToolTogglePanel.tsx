@@ -82,7 +82,8 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
         </div>
         <p className="wl-micro-meta leading-relaxed">
           Inherit uses the tenant-wide setting. Full Auto executes actions immediately. Supervised
-          queues for approval on high-risk actions. Draft Only always requires Account Holder sign-off.
+          queues for approval on high-risk actions. Draft Only always requires Account Holder
+          sign-off.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/8 dark:border-white/8">

@@ -10,7 +10,7 @@ import { eq, and, inArray, like } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { invalidateDashboard } from "../lib/dashboard-cache";
-import { seedFounderFleet, resolveFounderUserId } from "../lib/founder-Assistants-seed";
+import { seedFounderAssistant, resolveFounderUserId } from "../lib/founder-Assistants-seed";
 import {
   DEFAULT_DEMO_EMAIL,
   DEMO_SMS_NUMBERS,
@@ -82,7 +82,7 @@ router.post(
             : "OWNER_EMAIL is not set or no matching user exists.",
         });
       }
-      const report = await seedFounderFleet(userId);
+      const report = await seedFounderAssistant(userId);
       invalidateDashboard(userId);
       return res.json({ ok: true, userId, email: targetEmail || process.env.OWNER_EMAIL, report });
     } catch (e: unknown) {

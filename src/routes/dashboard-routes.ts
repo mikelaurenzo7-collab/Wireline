@@ -41,9 +41,12 @@ router.get(
       const [[triageResult], [emailResult], [outboundResult], liveSignals] = await Promise.all([
         drizzle
           .select({ count: sql`count(*)` })
-          .from(schema.fleetTasks)
+          .from(schema.followUpTasks)
           .where(
-            and(eq(schema.fleetTasks.userId, userId), eq(schema.fleetTasks.status, "pending")),
+            and(
+              eq(schema.followUpTasks.userId, userId),
+              eq(schema.followUpTasks.status, "pending"),
+            ),
           ),
         drizzle
           .select({ count: sql`count(*)` })
@@ -684,9 +687,9 @@ router.get(
         columns = ["createdAt", "taskType", "status", "priority", "description"];
         data = await drizzle
           .select()
-          .from(schema.fleetTasks)
-          .where(eq(schema.fleetTasks.userId, req.user.id))
-          .orderBy(desc(schema.fleetTasks.createdAt))
+          .from(schema.followUpTasks)
+          .where(eq(schema.followUpTasks.userId, req.user.id))
+          .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(DATA_EXPORT_MAX_ROWS);
       } else if (type === "appointments") {
         columns = ["date", "time", "customerName", "serviceType", "status", "phoneNumber"];

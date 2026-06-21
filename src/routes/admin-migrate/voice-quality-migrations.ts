@@ -15,7 +15,7 @@ const router = Router();
 //   * voice_style             (numeric, default 0.0)
 //   * voice_speaker_boost     (boolean, default true)
 //
-// Operators with cloned voices need these to dial in their exact
+// Account Holders with cloned voices need these to dial in their exact
 // sound. Idempotent — every column uses `ADD COLUMN IF NOT EXISTS`
 // so re-running after each deploy is safe. We also backfill rows
 // that landed before the defaults kicked in (defensive — partial

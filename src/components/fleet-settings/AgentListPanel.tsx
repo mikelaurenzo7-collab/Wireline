@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * AgentListPanel — Assistants sidebar showing all agents + create form.
- * Extracted from the monolithic FleetSettings.tsx during the 2026 audit.
+ * Extracted from the monolithic AssistantSettings.tsx during the 2026 audit.
  */
 import { Bot, Mail, Loader2, Shield, Trash2, ChevronRight, PanelLeftClose } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -27,7 +27,7 @@ interface Props {
   onSelectAgent: (agent: any) => void;
   onDeleteAgent: (agent: { id: string; name: string }) => void;
   onCreateAgent: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
-  onSeedFleet: () => void;
+  onSeedAssistant: () => void;
   onFetchPerformance: (id: string) => void;
   /** Collapse the desktop list to a slim avatar rail (single-focus Studio). */
   collapsed?: boolean;
@@ -46,7 +46,7 @@ export default function AgentListPanel({
   onSelectAgent,
   onDeleteAgent,
   onCreateAgent,
-  onSeedFleet,
+  onSeedAssistant,
   onFetchPerformance,
   collapsed = false,
   onToggleCollapse,
@@ -241,7 +241,7 @@ export default function AgentListPanel({
           subscription={subscription}
           isPersonal={isPersonal}
           onCreate={onCreateAgent}
-          onSeedFleet={onSeedFleet}
+          onSeedAssistant={onSeedAssistant}
         />
       </div>
     </aside>

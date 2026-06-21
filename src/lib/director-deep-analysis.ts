@@ -11,7 +11,7 @@ export { wantsLongDeliverable } from "./director-deliverables";
  * In-account Assistants review using seeded Assistants + stats — not external market research.
  * Stays on Sonnet unless the Account Holder toggles Deep (Opus + adaptive thinking).
  */
-export function wantsFleetAudit(message: string): boolean {
+export function wantsAssistantAudit(message: string): boolean {
   const t = message.trim();
   if (!t) return false;
   if (wantsOpusModel(t)) return false;
@@ -23,7 +23,7 @@ export function wantsFleetAudit(message: string): boolean {
   );
 }
 
-export function buildFleetAuditGuidance(): string {
+export function buildAssistantAuditGuidance(): string {
   return `## Assistants audit (this turn — speed priority)
 Keep the reply skimmable: one-line verdict, top 3 prioritized fixes, optional one-line callouts on standout agents. Target ~250–400 words. Ground every point in the Assistants list and stats above — no generic filler. Do not run live web research or propose outbound comms unless clearly warranted.`;
 }

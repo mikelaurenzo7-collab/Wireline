@@ -11,7 +11,7 @@ const PACKS: Record<
   { title: string; subtitle: string; bullets: string[]; disclaimer: string }
 > = {
   medical: {
-    title: "Healthcare operators",
+    title: "Healthcare account holders",
     subtitle: "Controls implemented today — BAA and HIPAA certification on the Enterprise roadmap.",
     bullets: [
       "Row-level security on every tenant table",

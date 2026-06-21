@@ -94,7 +94,7 @@ export function IntegrationPlaybookPanel({
           <div className="flex items-center gap-3">
             {!isConnected && (
               <a
-                href="/integrations"
+                href="/actions"
                 className="text-brand underline underline-offset-2 hover:text-brand-deep"
               >
                 Connect →

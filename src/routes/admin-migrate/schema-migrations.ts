@@ -169,8 +169,8 @@ router.post(
 
       // Personality vibe — the agent moat. "warm" (default), "playful",
       // "authoritative". Idempotent — existing rows pick up "warm" via
-      // the column default; new rows the same. Operators bump per-agent
-      // in FleetSettings.
+      // the column default; new rows the same. Account Holders bump per-agent
+      // in AssistantSettings.
       await drizzle.execute(sql`
         ALTER TABLE wireline_agents
         ADD COLUMN IF NOT EXISTS personality_vibe text DEFAULT 'warm';
@@ -390,7 +390,7 @@ router.post(
       // dnc_list — those tables only have phone numbers as a signature,
       // and a real production customer who happens to have one of the
       // SAMPLE_CUSTOMERS phones would get incorrectly flipped to demo.
-      // Operators who need the existing seeded rows in those tables
+      // Account Holders who need the existing seeded rows in those tables
       // marked can call DELETE /api/admin/demo-data + re-seed via
       // POST /api/admin/seed-demo-account; new inserts now stamp
       // demo=true at write time.
@@ -708,8 +708,8 @@ router.post(
 // Per-agent ElevenLabs speed control. Adds a numeric `voice_speed`
 // column to wireline_agents with the ElevenLabs-supported range
 // (0.7 – 1.2) and a default of 1.0 (normal pace). Idempotent — re-run
-// after each deploy is safe. Operators can then dial each agent's
-// speaking rate via the slider in FleetSettings → Voice.
+// after each deploy is safe. Account Holders can then dial each agent's
+// speaking rate via the slider in AssistantSettings → Voice.
 //
 // Docs: https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
 router.post(

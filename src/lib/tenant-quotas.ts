@@ -120,7 +120,7 @@ export interface QuotaOverrideRow {
  * Resolve the effective limit for one dimension.
  * Hard cap = min(plan_default, override) when override is set+enabled
  * and override < plan_default. An override that is *higher* than the
- * plan default is ALSO honored — operators may grant a tenant extra
+ * plan default is ALSO honored — account holders may grant a tenant extra
  * headroom temporarily.
  */
 export function resolveLimit(

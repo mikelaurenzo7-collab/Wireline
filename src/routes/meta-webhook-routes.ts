@@ -295,13 +295,13 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
         // Customer messaged the Page → route to Assistants tasks so the
         // CS agent can draft a response. We don't have a Messenger
         // OAuth flow yet (would need pages_messaging permission) but
-        // logging the inbound is the right call so operators see
+        // logging the inbound is the right call so account holders see
         // something landed and we can wire reply later.
         if (field === "messages") {
           const msg = v.message || {};
           const senderId = v.sender?.id || "unknown";
           const text = msg.text || "(non-text message)";
-          await drizzle.insert(schema.fleetTasks).values({
+          await drizzle.insert(schema.followUpTasks).values({
             userId: tenant.userId,
             taskType: "messenger_inbound",
             description: `Facebook message from ${senderId}: ${text.slice(0, 240)}`,
@@ -325,7 +325,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
           const reviewerId = v.reviewer_id || "unknown";
           const reviewText = v.review_text || "";
           if (rating > 0 && rating <= 3) {
-            await drizzle.insert(schema.fleetTasks).values({
+            await drizzle.insert(schema.followUpTasks).values({
               userId: tenant.userId,
               taskType: "review_escalation",
               description: `${rating}-star Facebook review from ${reviewerId}: ${reviewText.slice(0, 240)}`,

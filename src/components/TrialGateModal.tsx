@@ -39,8 +39,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
     case "ACTIVATION_REQUIRED":
       return {
         title: "Choose a plan to activate Wireline",
-        body:
-          "Your account is ready. Pick the call capacity you want, then create and deploy your first assistant. There is no hidden trial or surprise usage window.",
+        body: "Your account is ready. Pick the call capacity you want, then create and deploy your first assistant. There is no hidden trial or surprise usage window.",
       };
     case "EMAIL_UNVERIFIED":
       return {
@@ -101,7 +100,8 @@ export default function TrialGateModal() {
 
   const { title, body } = headlineForCode(detail);
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
-  const eyebrow = detail.code === "ACTIVATION_REQUIRED" ? "Choose a plan to activate" : "Upgrade to keep going";
+  const eyebrow =
+    detail.code === "ACTIVATION_REQUIRED" ? "Choose a plan to activate" : "Upgrade to keep going";
 
   async function checkout(planId: string) {
     setPending(planId);
@@ -112,7 +112,10 @@ export default function TrialGateModal() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
       });
-      const data = (await safeJson<{ url?: string; error?: string }>(response)) as { url?: string; error?: string } | null;
+      const data = (await safeJson<{ url?: string; error?: string }>(response)) as {
+        url?: string;
+        error?: string;
+      } | null;
       const checkoutUrl = data?.url;
       if (!response.ok || !checkoutUrl) {
         setError(data?.error || "Checkout couldn't be opened. Try again or contact support.");
@@ -122,7 +125,9 @@ export default function TrialGateModal() {
 
       if (typeof window !== "undefined") {
         try {
-          const prices: Record<string, number> = Object.fromEntries(STRIPE_PLANS.map((plan) => [plan.id, plan.price_usd_monthly]));
+          const prices: Record<string, number> = Object.fromEntries(
+            STRIPE_PLANS.map((plan) => [plan.id, plan.price_usd_monthly]),
+          );
           const windowWithAnalytics = window as unknown as {
             fbq?: (event: string, action: string, data?: Record<string, unknown>) => void;
             dataLayer?: { push: (data: Record<string, unknown>) => void };
@@ -138,7 +143,10 @@ export default function TrialGateModal() {
           if (typeof window.plausible === "function") {
             window.plausible("CheckoutInitiated", { props: { plan: planId } });
           }
-          if (windowWithAnalytics.dataLayer && typeof windowWithAnalytics.dataLayer.push === "function") {
+          if (
+            windowWithAnalytics.dataLayer &&
+            typeof windowWithAnalytics.dataLayer.push === "function"
+          ) {
             windowWithAnalytics.dataLayer.push({ event: "checkout_initiated", planId });
           }
         } catch (analyticsError) {
@@ -148,7 +156,9 @@ export default function TrialGateModal() {
 
       window.location.href = checkoutUrl;
     } catch (checkoutError: unknown) {
-      setError(checkoutError instanceof Error ? checkoutError.message : "Network error opening checkout.");
+      setError(
+        checkoutError instanceof Error ? checkoutError.message : "Network error opening checkout.",
+      );
       setPending(null);
     }
   }
@@ -186,9 +196,19 @@ export default function TrialGateModal() {
             </ShadButton>
 
             <div className="px-6 pt-8 pb-6 sm:px-8">
-              <div className="mb-3 flex items-center gap-2 font-medium text-brand wl-label"><Sparkles className="h-3 w-3" />{eyebrow}</div>
-              <h2 id="trial-gate-title" className="mb-2 text-balance font-display text-2xl italic text-foreground sm:text-3xl">{title}</h2>
-              <p className="max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">{body}</p>
+              <div className="mb-3 flex items-center gap-2 font-medium text-brand wl-label">
+                <Sparkles className="h-3 w-3" />
+                {eyebrow}
+              </div>
+              <h2
+                id="trial-gate-title"
+                className="mb-2 text-balance font-display text-2xl italic text-foreground sm:text-3xl"
+              >
+                {title}
+              </h2>
+              <p className="max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base">
+                {body}
+              </p>
             </div>
 
             <div className="px-6 pb-6 sm:px-8">
@@ -206,24 +226,67 @@ export default function TrialGateModal() {
                       disabled={!!pending}
                       className={cn(
                         "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
-                        isRecommended ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10" : "hover:border-brand/30 hover:bg-black/3",
+                        isRecommended
+                          ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
+                          : "hover:border-brand/30 hover:bg-black/3",
                       )}
                     >
-                      {isRecommended && <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">Recommended</div>}
-                      <div className="mb-1 font-display text-lg italic text-foreground">{tier.label}</div>
-                      <div className="mb-2 flex items-baseline gap-1"><span className="font-display text-2xl italic text-foreground">${tier.price}</span><span className="wl-label-muted/70">/mo</span></div>
-                      <p className="mb-3 text-[11px] leading-relaxed text-foreground/65">{tier.pitch}</p>
-                      <div className="inline-flex items-center gap-1.5 text-brand wl-label">{isPending ? <><Loader2 className="h-3 w-3 animate-spin" />Opening</> : <><CreditCard className="h-3 w-3" />Pick {tier.label}</>}</div>
+                      {isRecommended && (
+                        <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
+                          Recommended
+                        </div>
+                      )}
+                      <div className="mb-1 font-display text-lg italic text-foreground">
+                        {tier.label}
+                      </div>
+                      <div className="mb-2 flex items-baseline gap-1">
+                        <span className="font-display text-2xl italic text-foreground">
+                          ${tier.price}
+                        </span>
+                        <span className="wl-label-muted/70">/mo</span>
+                      </div>
+                      <p className="mb-3 text-[11px] leading-relaxed text-foreground/65">
+                        {tier.pitch}
+                      </p>
+                      <div className="inline-flex items-center gap-1.5 text-brand wl-label">
+                        {isPending ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Opening
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="h-3 w-3" />
+                            Pick {tier.label}
+                          </>
+                        )}
+                      </div>
                     </ShadButton>
                   );
                 })}
               </div>
 
-              {error && <div role="alert" className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-rose-600"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span></div>}
+              {error && (
+                <div
+                  role="alert"
+                  className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-rose-600"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
 
               <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                <span>Phone number included</span><span>·</span><span>Cancel anytime</span><span>·</span>
-                <a href="mailto:sales@trywireline.com?subject=Enterprise%20pricing" className="text-brand transition-colors hover:text-brand/80">Need Custom? →</a>
+                <span>Phone number included</span>
+                <span>·</span>
+                <span>Cancel anytime</span>
+                <span>·</span>
+                <a
+                  href="mailto:sales@trywireline.com?subject=Enterprise%20pricing"
+                  className="text-brand transition-colors hover:text-brand/80"
+                >
+                  Need Custom? →
+                </a>
               </div>
             </div>
           </motion.div>

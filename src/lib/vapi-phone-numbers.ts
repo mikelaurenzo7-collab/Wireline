@@ -225,7 +225,7 @@ export async function vapiAccountHeadroom(): Promise<{
 /**
  * Curated list of US area codes for the Account Holder-facing picker. We
  * keep this short so the UI stays fast — Vapi has inventory for most
- * but a dropdown of 300+ NANPA codes is unusable. Operators who need
+ * but a dropdown of 300+ NANPA codes is unusable. Account Holders who need
  * something exotic can pass `areaCode` directly via API.
  */
 export const POPULAR_AREA_CODES: ReadonlyArray<{

@@ -93,10 +93,10 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
   },
   // /agents (the Studio) intentionally has no sub-tabs: it's one open build
   // canvas. Templates are summoned from the canvas, not a competing front-door
-  // tab. (FleetSettings owns that toggle via local view state.)
+  // tab. (AssistantSettings owns that toggle via local view state.)
 ];
 
-const ADMIN_HUB_PATHS = ["/admin", "/integrations", "/dnc", "/audit"] as const;
+const ADMIN_HUB_PATHS = ["/admin", "/actions", "/dnc", "/audit"] as const;
 
 export function isAdminHubPath(pathname: string): boolean {
   return (ADMIN_HUB_PATHS as readonly string[]).includes(pathname);

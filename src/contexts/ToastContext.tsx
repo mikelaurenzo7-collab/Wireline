@@ -149,11 +149,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [toasts, toast, dismiss, success, error, warning, info],
   );
 
-  return (
-    <ToastContext.Provider value={value}>
-      {children}
-    </ToastContext.Provider>
-  );
+  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 }
 
 export function useToast(): ToastContextValue {

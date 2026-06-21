@@ -276,7 +276,7 @@ router.post(
         { key: "consent_log", table: schema.consentLog },
         { key: "email_threads", table: schema.emailThreads },
         { key: "email_messages", table: schema.emailMessages },
-        { key: "fleet_tasks", table: schema.fleetTasks },
+        { key: "fleet_tasks", table: schema.followUpTasks },
         { key: "phone_numbers", table: schema.phoneNumbers },
         { key: "outbound_leads", table: schema.outboundLeads },
         { key: "outbound_campaigns", table: schema.outboundCampaigns },

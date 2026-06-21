@@ -12,7 +12,9 @@ function toNumOrNull(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function runtimeFromAgent(agent: { llm_provider?: string | null; llm_model?: string | null } | null | undefined): "managed" | string {
+function runtimeFromAgent(
+  agent: { llm_provider?: string | null; llm_model?: string | null } | null | undefined,
+): "managed" | string {
   if (!agent?.llm_provider || !agent?.llm_model) return "managed";
   if (agent.llm_provider === "openrouter") return agent.llm_model;
   if (agent.llm_provider === "openai") return `openai/${agent.llm_model}`;
@@ -42,7 +44,8 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
   return (
     <div className="space-y-3 rounded-md border border-ink/[0.08] bg-ink/[0.015] px-3 py-3">
       <p className="leading-relaxed wl-micro-meta">
-        Managed calls use OpenAI first and retry through Gemini only if OpenAI is unavailable. Choose any OpenRouter model when this agent needs a specific runtime.
+        Managed calls use OpenAI first and retry through Gemini only if OpenAI is unavailable.
+        Choose any OpenRouter model when this agent needs a specific runtime.
       </p>
 
       <OpenRouterModelPicker value={runtimeValue} onChange={handleModelChange} />
@@ -50,7 +53,12 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
       <div className="space-y-1.5 border-t border-ink/[0.08] pt-1">
         <div className="flex items-center justify-between">
           <label className="text-foreground/55 wl-label">Temperature</label>
-          <span className={cn("font-medium wl-micro-badge", usingDefaultTemperature ? "text-foreground/55" : "text-foreground")}>
+          <span
+            className={cn(
+              "font-medium wl-micro-badge",
+              usingDefaultTemperature ? "text-foreground/55" : "text-foreground",
+            )}
+          >
             {usingDefaultTemperature ? "Default" : (temperature as number).toFixed(2)}
           </span>
         </div>
@@ -64,7 +72,9 @@ export default function AgentModelSelector({ agent, onCommit }: AgentModelSelect
           aria-label="Temperature"
         />
         <div className="flex items-center justify-between">
-          <span className="leading-relaxed wl-micro-meta">Lower = focused and consistent. Higher = more varied and expressive.</span>
+          <span className="leading-relaxed wl-micro-meta">
+            Lower = focused and consistent. Higher = more varied and expressive.
+          </span>
           <ShadButton
             type="button"
             variant="ghost"

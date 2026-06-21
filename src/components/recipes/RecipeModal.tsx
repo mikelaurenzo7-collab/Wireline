@@ -131,9 +131,7 @@ export function RecipeModal({
                     </span>
                   )}
                 </div>
-                <p className="wl-label-muted mt-1">
-                  {meta.tagline}
-                </p>
+                <p className="wl-label-muted mt-1">{meta.tagline}</p>
               </div>
             </div>
             <ShadButton

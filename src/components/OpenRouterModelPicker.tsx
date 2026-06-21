@@ -3,7 +3,14 @@ import { Check, ChevronsUpDown, Cpu, Loader2 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/shadcn/Popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/shadcn/Command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "./ui/shadcn/Command";
 
 export type OpenRouterModelEntry = {
   id: string;
@@ -76,7 +83,11 @@ export default function OpenRouterModelPicker({
       <PopoverTrigger asChild disabled={disabled || loading}>
         <button type="button" aria-label="Choose model" className={cn(triggerClass, className)}>
           <span className="inline-flex min-w-0 items-center gap-1.5">
-            {loading ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+            ) : (
+              <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            )}
             <span className="truncate">{loading ? "Loading models…" : selectedLabel}</span>
           </span>
           <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -95,10 +106,14 @@ export default function OpenRouterModelPicker({
                   setOpen(false);
                 }}
               >
-                <Check className={cn("h-4 w-4", value === "managed" ? "opacity-100" : "opacity-0")} />
+                <Check
+                  className={cn("h-4 w-4", value === "managed" ? "opacity-100" : "opacity-0")}
+                />
                 <span className="min-w-0">
                   <span className="block font-medium">Managed default</span>
-                  <span className="block text-xs text-muted-foreground">OpenAI first · Gemini fallback</span>
+                  <span className="block text-xs text-muted-foreground">
+                    OpenAI first · Gemini fallback
+                  </span>
                 </span>
               </CommandItem>
             </CommandGroup>
@@ -113,13 +128,19 @@ export default function OpenRouterModelPicker({
                       setOpen(false);
                     }}
                   >
-                    <Check className={cn("h-4 w-4", value === model.id ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn("h-4 w-4", value === model.id ? "opacity-100" : "opacity-0")}
+                    />
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{model.label}</span>
                       {model.description ? (
-                        <span className="block truncate text-xs text-muted-foreground">{model.description}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {model.description}
+                        </span>
                       ) : (
-                        <span className="block truncate font-mono text-[10px] text-muted-foreground">{model.id}</span>
+                        <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                          {model.id}
+                        </span>
                       )}
                     </span>
                   </CommandItem>
@@ -137,10 +158,14 @@ export default function OpenRouterModelPicker({
                       setOpen(false);
                     }}
                   >
-                    <Check className={cn("h-4 w-4", value === model.id ? "opacity-100" : "opacity-0")} />
+                    <Check
+                      className={cn("h-4 w-4", value === model.id ? "opacity-100" : "opacity-0")}
+                    />
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{model.label}</span>
-                      <span className="block truncate font-mono text-[10px] text-muted-foreground">{model.id}</span>
+                      <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                        {model.id}
+                      </span>
                     </span>
                   </CommandItem>
                 ))}

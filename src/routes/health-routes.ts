@@ -9,21 +9,209 @@ import { evaluateLaunchReadiness } from "../lib/launch-readiness";
 import { validateEnv } from "../lib/env-validator";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
-import { OPENAI_STRUCTURED_PRIMARY_MODEL, GEMINI_STRUCTURED_FALLBACK_MODEL, VAPI_PREMIUM_MODEL, VAPI_TENANT_DEFAULT_MODEL, VAPI_VOICE_FALLBACK_MODEL } from "../lib/ai-models";
+import {
+  OPENAI_STRUCTURED_PRIMARY_MODEL,
+  GEMINI_STRUCTURED_FALLBACK_MODEL,
+  VAPI_PREMIUM_MODEL,
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_VOICE_FALLBACK_MODEL,
+} from "../lib/ai-models";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 
 const router = express.Router();
-const healthRateLimiter = createIpRateLimiter({ bucket: "api:health", windowMs: 60_000, max: 30, message: { error: "Too many health-check requests.", code: "RATE_LIMITED" } });
-function monitorTokenOk(req: Request): boolean { const expected = process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET; const supplied = req.get("x-monitor-token") || (req.get("authorization") || "").replace(/^Bearer\s+/i, ""); if (!expected || !supplied) return false; const a = Buffer.from(supplied), b = Buffer.from(expected); return a.length === b.length && timingSafeEqual(a, b); }
-function requireMonitorToken(req: Request, res: Response, next: NextFunction) { return monitorTokenOk(req) ? next() : res.status(401).json({ ok: false, code: "MONITOR_TOKEN_REQUIRED" }); }
-async function probeDatabase(timeoutMs = 1500): Promise<{ ok: boolean; latency_ms: number; error?: string }> { const started = Date.now(); try { await Promise.race([drizzle.select({ id: schema.settings.userId }).from(schema.settings).limit(1), new Promise((_resolve, reject) => setTimeout(() => reject(new Error("db probe timed out")), timeoutMs))]); return { ok: true, latency_ms: Date.now() - started }; } catch (error) { return { ok: false, latency_ms: Date.now() - started, error: getErrorMessage(error) }; } }
-async function probeOpenAI(model: string, timeoutMs = 8000): Promise<{ ok: boolean; latency_ms: number; error?: string; model: string }> { const started = Date.now(); const key = process.env.OPENAI_API_KEY; if (!key) return { ok: false, latency_ms: 0, model, error: "OPENAI_API_KEY not configured" }; try { const response = await Promise.race([fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, input: "ping", max_output_tokens: 1 }) }), new Promise<never>((_resolve, reject) => setTimeout(() => reject(new Error("model probe timed out")), timeoutMs))]); if (!response.ok) throw new Error(`OpenAI probe failed (${response.status})`); return { ok: true, latency_ms: Date.now() - started, model }; } catch (error) { return { ok: false, latency_ms: Date.now() - started, model, error: getErrorMessage(error).slice(0, 240) }; } }
-router.get("/", healthRateLimiter, async (_req, res) => { const db = await probeDatabase(); res.status(db.ok ? 200 : 503).json({ ok: db.ok, timestamp: new Date().toISOString() }); });
-router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, res) => { const report = evaluateLaunchReadiness(); res.status(report.campaign_ready ? 200 : 503).json({ ok: report.campaign_ready, overall_score: report.overall_score, campaign_ready: report.campaign_ready, capabilities: report.capabilities.map((capability) => ({ id: capability.id, level: capability.level })), timestamp: report.generated_at }); });
-router.get("/ready", healthRateLimiter, requireMonitorToken, async (_req, res) => { const env = validateEnv(), db = await probeDatabase(), launch = evaluateLaunchReadiness(), ok = env.valid && db.ok && launch.campaign_ready; res.status(ok ? 200 : 503).json({ ok, env: { ok: env.valid, invalid: env.errors.length, by_group: env.byGroup }, db: { ok: db.ok, latency_ms: db.latency_ms }, launch: { ok: launch.campaign_ready, overall_score: launch.overall_score }, timestamp: new Date().toISOString() }); });
-router.get("/internal", healthRateLimiter, authenticateUser, async (_req: AuthenticatedRequest, res) => { const db = await probeDatabase(); res.json({ status: db.ok ? "ok" : "degraded", uptime_s: Math.round((process as any).uptime?.() || 0), db, capabilities: getHealthCapabilities(), app_model: OPENAI_STRUCTURED_PRIMARY_MODEL, voice_agent_model: VAPI_TENANT_DEFAULT_MODEL, voice_agent_premium_model: VAPI_PREMIUM_MODEL, llm_tiering: { voice_runtime: { provider: "openai", model: VAPI_TENANT_DEFAULT_MODEL, reason: "Managed low-latency Vapi model." }, voice_fallback: { provider: "google", model: VAPI_VOICE_FALLBACK_MODEL, reason: "Automatic failure fallback." }, reasoning_layer: { provider: "openai", model: OPENAI_STRUCTURED_PRIMARY_MODEL, reason: "Managed primary for training, QA, insights, and post-call work." }, reasoning_fallback: { provider: "google", model: GEMINI_STRUCTURED_FALLBACK_MODEL, reason: "Automatic failure fallback." } }, timestamp: new Date().toISOString() }); });
-router.get("/integrations", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) => res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }));
-router.get("/public", healthRateLimiter, async (_req, res) => { const [voice, reasoning] = await Promise.all([probeOpenAI(VAPI_TENANT_DEFAULT_MODEL), probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL)]); const level = (probe: { ok: boolean; error?: string }) => probe.ok ? "operational" : /not configured|missing/i.test(probe.error || "") ? "degraded" : "outage"; const components = { voice_runtime: level(voice), voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded", reasoning: level(reasoning) }; const order: Record<string, number> = { operational: 0, degraded: 1, outage: 2 }; const worst = Object.values(components).reduce((current, value) => order[value] > order[current] ? value : current, "operational"); res.setHeader("Cache-Control", "public, max-age=60"); res.json({ overall: worst, components, last_checked: new Date().toISOString() }); });
-router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => { const started = Date.now(); const [voice, premium, reasoning] = await Promise.all([probeOpenAI(VAPI_TENANT_DEFAULT_MODEL), VAPI_PREMIUM_MODEL === VAPI_TENANT_DEFAULT_MODEL ? Promise.resolve(null) : probeOpenAI(VAPI_PREMIUM_MODEL), probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL)]); const ok = voice.ok && reasoning.ok && (premium?.ok ?? true); res.status(ok ? 200 : 503).json({ ok, total_latency_ms: Date.now() - started, probes: { voice_runtime: voice, ...(premium ? { voice_premium: premium } : {}), reasoning, reasoning_fallback: { ok: !!process.env.GEMINI_API_KEY, latency_ms: 0, model: GEMINI_STRUCTURED_FALLBACK_MODEL, ...(process.env.GEMINI_API_KEY ? {} : { error: "GEMINI_API_KEY not configured" }) } } }); });
+const healthRateLimiter = createIpRateLimiter({
+  bucket: "api:health",
+  windowMs: 60_000,
+  max: 30,
+  message: { error: "Too many health-check requests.", code: "RATE_LIMITED" },
+});
+function monitorTokenOk(req: Request): boolean {
+  const expected = process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET;
+  const supplied =
+    req.get("x-monitor-token") || (req.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!expected || !supplied) return false;
+  const a = Buffer.from(supplied),
+    b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+function requireMonitorToken(req: Request, res: Response, next: NextFunction) {
+  return monitorTokenOk(req)
+    ? next()
+    : res.status(401).json({ ok: false, code: "MONITOR_TOKEN_REQUIRED" });
+}
+async function probeDatabase(
+  timeoutMs = 1500,
+): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
+  const started = Date.now();
+  try {
+    await Promise.race([
+      drizzle.select({ id: schema.settings.userId }).from(schema.settings).limit(1),
+      new Promise((_resolve, reject) =>
+        setTimeout(() => reject(new Error("db probe timed out")), timeoutMs),
+      ),
+    ]);
+    return { ok: true, latency_ms: Date.now() - started };
+  } catch (error) {
+    return { ok: false, latency_ms: Date.now() - started, error: getErrorMessage(error) };
+  }
+}
+async function probeOpenAI(
+  model: string,
+  timeoutMs = 8000,
+): Promise<{ ok: boolean; latency_ms: number; error?: string; model: string }> {
+  const started = Date.now();
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return { ok: false, latency_ms: 0, model, error: "OPENAI_API_KEY not configured" };
+  try {
+    const response = await Promise.race([
+      fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, input: "ping", max_output_tokens: 1 }),
+      }),
+      new Promise<never>((_resolve, reject) =>
+        setTimeout(() => reject(new Error("model probe timed out")), timeoutMs),
+      ),
+    ]);
+    if (!response.ok) throw new Error(`OpenAI probe failed (${response.status})`);
+    return { ok: true, latency_ms: Date.now() - started, model };
+  } catch (error) {
+    return {
+      ok: false,
+      latency_ms: Date.now() - started,
+      model,
+      error: getErrorMessage(error).slice(0, 240),
+    };
+  }
+}
+router.get("/", healthRateLimiter, async (_req, res) => {
+  const db = await probeDatabase();
+  res.status(db.ok ? 200 : 503).json({ ok: db.ok, timestamp: new Date().toISOString() });
+});
+router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, res) => {
+  const report = evaluateLaunchReadiness();
+  res
+    .status(report.campaign_ready ? 200 : 503)
+    .json({
+      ok: report.campaign_ready,
+      overall_score: report.overall_score,
+      campaign_ready: report.campaign_ready,
+      capabilities: report.capabilities.map((capability) => ({
+        id: capability.id,
+        level: capability.level,
+      })),
+      timestamp: report.generated_at,
+    });
+});
+router.get("/ready", healthRateLimiter, requireMonitorToken, async (_req, res) => {
+  const env = validateEnv(),
+    db = await probeDatabase(),
+    launch = evaluateLaunchReadiness(),
+    ok = env.valid && db.ok && launch.campaign_ready;
+  res
+    .status(ok ? 200 : 503)
+    .json({
+      ok,
+      env: { ok: env.valid, invalid: env.errors.length, by_group: env.byGroup },
+      db: { ok: db.ok, latency_ms: db.latency_ms },
+      launch: { ok: launch.campaign_ready, overall_score: launch.overall_score },
+      timestamp: new Date().toISOString(),
+    });
+});
+router.get(
+  "/internal",
+  healthRateLimiter,
+  authenticateUser,
+  async (_req: AuthenticatedRequest, res) => {
+    const db = await probeDatabase();
+    res.json({
+      status: db.ok ? "ok" : "degraded",
+      uptime_s: Math.round((process as any).uptime?.() || 0),
+      db,
+      capabilities: getHealthCapabilities(),
+      app_model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+      voice_agent_model: VAPI_TENANT_DEFAULT_MODEL,
+      voice_agent_premium_model: VAPI_PREMIUM_MODEL,
+      llm_tiering: {
+        voice_runtime: {
+          provider: "openai",
+          model: VAPI_TENANT_DEFAULT_MODEL,
+          reason: "Managed low-latency Vapi model.",
+        },
+        voice_fallback: {
+          provider: "google",
+          model: VAPI_VOICE_FALLBACK_MODEL,
+          reason: "Automatic failure fallback.",
+        },
+        reasoning_layer: {
+          provider: "openai",
+          model: OPENAI_STRUCTURED_PRIMARY_MODEL,
+          reason: "Managed primary for training, QA, insights, and post-call work.",
+        },
+        reasoning_fallback: {
+          provider: "google",
+          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
+          reason: "Automatic failure fallback.",
+        },
+      },
+      timestamp: new Date().toISOString(),
+    });
+  },
+);
+router.get("/actions", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) =>
+  res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
+);
+router.get("/public", healthRateLimiter, async (_req, res) => {
+  const [voice, reasoning] = await Promise.all([
+    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
+    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
+  ]);
+  const level = (probe: { ok: boolean; error?: string }) =>
+    probe.ok
+      ? "operational"
+      : /not configured|missing/i.test(probe.error || "")
+        ? "degraded"
+        : "outage";
+  const components = {
+    voice_runtime: level(voice),
+    voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",
+    reasoning: level(reasoning),
+  };
+  const order: Record<string, number> = { operational: 0, degraded: 1, outage: 2 };
+  const worst = Object.values(components).reduce(
+    (current, value) => (order[value] > order[current] ? value : current),
+    "operational",
+  );
+  res.setHeader("Cache-Control", "public, max-age=60");
+  res.json({ overall: worst, components, last_checked: new Date().toISOString() });
+});
+router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
+  const started = Date.now();
+  const [voice, premium, reasoning] = await Promise.all([
+    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
+    VAPI_PREMIUM_MODEL === VAPI_TENANT_DEFAULT_MODEL
+      ? Promise.resolve(null)
+      : probeOpenAI(VAPI_PREMIUM_MODEL),
+    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
+  ]);
+  const ok = voice.ok && reasoning.ok && (premium?.ok ?? true);
+  res
+    .status(ok ? 200 : 503)
+    .json({
+      ok,
+      total_latency_ms: Date.now() - started,
+      probes: {
+        voice_runtime: voice,
+        ...(premium ? { voice_premium: premium } : {}),
+        reasoning,
+        reasoning_fallback: {
+          ok: !!process.env.GEMINI_API_KEY,
+          latency_ms: 0,
+          model: GEMINI_STRUCTURED_FALLBACK_MODEL,
+          ...(process.env.GEMINI_API_KEY ? {} : { error: "GEMINI_API_KEY not configured" }),
+        },
+      },
+    });
+});
 export default router;

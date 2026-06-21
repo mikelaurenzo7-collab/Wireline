@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import { EXPECTED_FOUNDER_FLEET_AGENT_COUNT, seedFounderFleet } from "./founder-fleet-seed";
+import { EXPECTED_FOUNDER_FLEET_AGENT_COUNT, seedFounderAssistant } from "./founder-fleet-seed";
 import { FOUNDER_EFFECTIVE_PLAN_ID } from "./plan-entitlements";
 import { getErrorMessage } from "./server-utils";
 
@@ -61,7 +61,7 @@ export async function ensureFounderEnterpriseSubscription(userId: string): Promi
  * Serialize founder bootstrap across concurrent serverless instances.
  * Uses a transaction-scoped advisory lock so only one seed runs at a time.
  */
-export async function bootstrapFounderFleetIfEmpty(
+export async function bootstrapFounderAssistantIfEmpty(
   userId: string,
   email: string | null | undefined,
 ): Promise<FounderBootstrapResult> {
@@ -90,7 +90,7 @@ export async function bootstrapFounderFleetIfEmpty(
         return { seeded: false, skipped: true, subscriptionEnsured: true };
       }
 
-      await seedFounderFleet(userId);
+      await seedFounderAssistant(userId);
       log.info("founder Assistants bootstrap completed", { userId, priorAgentCount: count });
       return { seeded: true, skipped: false, subscriptionEnsured: true };
     });
@@ -104,7 +104,7 @@ export async function bootstrapFounderFleetIfEmpty(
 
 /** Fire-and-forget bootstrap after OAuth/password sign-in. */
 export function scheduleFounderBootstrap(userId: string, email: string | null | undefined): void {
-  void bootstrapFounderFleetIfEmpty(userId, email);
+  void bootstrapFounderAssistantIfEmpty(userId, email);
 }
 
 /** Test helper — clear in-flight guard. */

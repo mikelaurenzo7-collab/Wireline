@@ -14,10 +14,18 @@ const About = lazy(() => import("./pages/About"));
 const Blog = lazy(() => import("./pages/Blog"));
 const Security = lazy(() => import("./components/Security"));
 const Status = lazy(() => import("./components/Status"));
-const SupportPage = lazy(() => import("./components/SupportPage").then((module) => ({ default: module.SupportPage })));
-const ContactPage = lazy(() => import("./components/ContactPage").then((module) => ({ default: module.ContactPage })));
-const PrivacyPolicy = lazy(() => import("./components/LegalPage").then((module) => ({ default: module.PrivacyPolicy })));
-const TermsOfService = lazy(() => import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })));
+const SupportPage = lazy(() =>
+  import("./components/SupportPage").then((module) => ({ default: module.SupportPage })),
+);
+const ContactPage = lazy(() =>
+  import("./components/ContactPage").then((module) => ({ default: module.ContactPage })),
+);
+const PrivacyPolicy = lazy(() =>
+  import("./components/LegalPage").then((module) => ({ default: module.PrivacyPolicy })),
+);
+const TermsOfService = lazy(() =>
+  import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })),
+);
 const AppShell = lazy(() => import("./components/layout/AppShell"));
 const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));

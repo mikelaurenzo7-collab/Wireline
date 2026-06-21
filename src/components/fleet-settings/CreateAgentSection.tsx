@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * CreateAgentSection — Form for deploying new agents.
- * Extracted from the monolithic FleetSettings.tsx during the 2026 audit.
+ * Extracted from the monolithic AssistantSettings.tsx during the 2026 audit.
  */
 import { useState } from "react";
 import { Plus, Loader2, Sparkles, Briefcase } from "lucide-react";
@@ -20,7 +20,7 @@ interface Props {
   /** Personal accounts create a single assistant — no Assistants/seed language. */
   isPersonal?: boolean;
   onCreate: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
-  onSeedFleet: () => void;
+  onSeedAssistant: () => void;
 }
 
 export default function CreateAgentSection({
@@ -29,7 +29,7 @@ export default function CreateAgentSection({
   subscription: _subscription,
   isPersonal = false,
   onCreate,
-  onSeedFleet,
+  onSeedAssistant,
 }: Props) {
   const [newAgentName, setNewAgentName] = useState("");
   const [newAgentId, setNewAgentId] = useState("");
@@ -57,7 +57,7 @@ export default function CreateAgentSection({
               variant="outline"
               size="sm"
               disableAnimations
-              onClick={onSeedFleet}
+              onClick={onSeedAssistant}
               className="rounded-full wl-label normal-case tracking-[0.18em] touch-press hover:scale-[1.02]"
             >
               <Sparkles className="w-3 h-3" /> Seed

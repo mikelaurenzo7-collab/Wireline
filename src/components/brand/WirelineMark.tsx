@@ -18,7 +18,10 @@ export default function WirelineMark({ className = "", label }: WirelineMarkProp
       focusable="false"
       className={`inline-block shrink-0 fill-current ${className}`}
     >
-      <path fillRule="evenodd" d="M18 27h14l11.5 32.5L54 38l10.5 21.5L76 27h14L69.5 83 54 56 38.5 83Z" />
+      <path
+        fillRule="evenodd"
+        d="M18 27h14l11.5 32.5L54 38l10.5 21.5L76 27h14L69.5 83 54 56 38.5 83Z"
+      />
       <path fillRule="evenodd" d="m54 47 6 11-6 11-6-11Z" />
     </svg>
   );

@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "./AuthContext";
 import { authFetch } from "../lib/api";
 
@@ -79,7 +87,8 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<{
     } catch (error) {
       lastError = error;
     }
-    if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+    if (attempt < attempts - 1)
+      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
   }
   throw lastError;
 }

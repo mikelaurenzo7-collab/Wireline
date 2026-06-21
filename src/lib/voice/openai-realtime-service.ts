@@ -73,7 +73,9 @@ export function getOpenAIRealtimeStatus() {
   };
 }
 
-export async function createOpenAIRealtimeClientSecret(input: CreateOpenAIRealtimeClientSecretInput) {
+export async function createOpenAIRealtimeClientSecret(
+  input: CreateOpenAIRealtimeClientSecretInput,
+) {
   const apiKey = getOpenAIApiKey();
   const body = buildOpenAIRealtimeSessionConfig(input);
 

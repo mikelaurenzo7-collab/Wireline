@@ -14,7 +14,10 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Precise policy, product, service, pricing, or procedure question." },
+        query: {
+          type: "string",
+          description: "Precise policy, product, service, pricing, or procedure question.",
+        },
       },
       required: ["query"],
       additionalProperties: false,
@@ -37,7 +40,8 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   {
     type: "function",
     name: "create_booking",
-    description: "Create a booking only after availability is checked and the caller confirms the exact time.",
+    description:
+      "Create a booking only after availability is checked and the caller confirms the exact time.",
     parameters: {
       type: "object",
       properties: {
@@ -81,12 +85,17 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   {
     type: "function",
     name: "escalate_to_human",
-    description: "Escalate to a human specialist when requested, required by policy, or the task cannot be completed safely.",
+    description:
+      "Escalate to a human specialist when requested, required by policy, or the task cannot be completed safely.",
     parameters: {
       type: "object",
       properties: {
         reason: { type: "string", description: "Specific reason for escalation." },
-        urgency: { type: "string", enum: ["low", "normal", "high"], description: "Escalation urgency." },
+        urgency: {
+          type: "string",
+          enum: ["low", "normal", "high"],
+          description: "Escalation urgency.",
+        },
       },
       required: ["reason"],
       additionalProperties: false,
@@ -101,7 +110,11 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
       properties: {
         title: { type: "string", description: "Short task title." },
         description: { type: "string", description: "Detailed task description and context." },
-        priority: { type: "string", enum: ["low", "normal", "high"], description: "Task priority." },
+        priority: {
+          type: "string",
+          enum: ["low", "normal", "high"],
+          description: "Task priority.",
+        },
       },
       required: ["title", "description"],
       additionalProperties: false,
@@ -115,7 +128,11 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
       type: "object",
       properties: {
         note: { type: "string", description: "Customer intelligence to remember." },
-        category: { type: "string", description: "Category such as pain_point, budget, timeline, objection, preference, or next_step." },
+        category: {
+          type: "string",
+          description:
+            "Category such as pain_point, budget, timeline, objection, preference, or next_step.",
+        },
       },
       required: ["note", "category"],
       additionalProperties: false,
@@ -130,7 +147,17 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
       properties: {
         outcome: {
           type: "string",
-          enum: ["booked", "qualified", "callback_scheduled", "message_taken", "escalated", "not_interested", "wrong_number", "voicemail", "unresolved"],
+          enum: [
+            "booked",
+            "qualified",
+            "callback_scheduled",
+            "message_taken",
+            "escalated",
+            "not_interested",
+            "wrong_number",
+            "voicemail",
+            "unresolved",
+          ],
           description: "Final call outcome.",
         },
         summary: { type: "string", description: "One-paragraph call recap." },

@@ -495,7 +495,7 @@ function DailyBriefSchedule({ onClose }: { onClose: () => void }) {
             <div className="rounded-md bg-rose-500/8 border border-rose-500/25 px-3 py-2 text-rose-700 text-xs flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5" />
               Connect a Gmail account in{" "}
-              <Link to="/integrations" className="underline">
+              <Link to="/actions" className="underline">
                 Carrier Bridge
               </Link>{" "}
               first — emails are sent through your own Gmail OAuth.

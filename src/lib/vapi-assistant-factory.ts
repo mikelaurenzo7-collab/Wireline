@@ -159,18 +159,18 @@ export async function buildVapiAssistant({
     safeCallerPhone && userId
       ? drizzle
           .select({
-            description: schema.fleetTasks.description,
-            createdAt: schema.fleetTasks.createdAt,
+            description: schema.followUpTasks.description,
+            createdAt: schema.followUpTasks.createdAt,
           })
-          .from(schema.fleetTasks)
+          .from(schema.followUpTasks)
           .where(
             and(
-              eq(schema.fleetTasks.userId, userId),
-              eq(schema.fleetTasks.taskType, "customer_profile_captured"),
-              ilike(schema.fleetTasks.description, `%${safeCallerPhone}%`),
+              eq(schema.followUpTasks.userId, userId),
+              eq(schema.followUpTasks.taskType, "customer_profile_captured"),
+              ilike(schema.followUpTasks.description, `%${safeCallerPhone}%`),
             ),
           )
-          .orderBy(desc(schema.fleetTasks.createdAt))
+          .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(1)
           .then((r) => r[0] || null)
       : Promise.resolve(null),
@@ -348,8 +348,7 @@ export async function buildVapiAssistant({
       agentConfigRow?.llmProvider ||
       userSettings?.voice_llm_provider ||
       VAPI_TENANT_DEFAULT_PROVIDER,
-    model:
-      agentConfigRow?.llmModel || userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
+    model: agentConfigRow?.llmModel || userSettings?.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
   });
   const voiceLlmProvider = voiceSelection.provider;
   const voiceLlmModel = voiceSelection.model;
@@ -395,7 +394,7 @@ export async function buildVapiAssistant({
   // caller's language and ElevenLabs renders it in the same voice.
   //
   // The secondary voice swap (vapi-voice-swap.ts) remains as an OPTIONAL
-  // enhancement for operators who want a different-sounding native accent
+  // enhancement for account holders who want a different-sounding native accent
   // (e.g. "Sarah" English → "Maria" Spanish). Most won't need it.
   const bilingualBlock = `
 ## BILINGUAL PROTOCOL
@@ -499,7 +498,7 @@ Today is ${currentDateTime}.
   // the shared fallback, and the platform default only if nothing is set.
   // Platform default voice — 11labs "Adam · Deep" (warm-male). Broad
   // fit across home services / medical / legal / real estate / SaaS.
-  // Operators can override via FleetSettings → Voice per-agent.
+  // Account Holders can override via AssistantSettings → Voice per-agent.
   // History: prior default was bIHbv24MWmeRgasZH58o (warm-female).
   // Switched after live A/B feedback that warm-male voices read as
   // more trustworthy + authoritative on B2B service calls.
@@ -522,7 +521,7 @@ Today is ${currentDateTime}.
   // Per-archetype silence timeout. Outbound SDRs need short patience (caller
   // dodging); CS agents need slightly longer (caller thinking). Tier-independent
   // — every tenant gets the same snappy turn-taking. Account Holder can override
-  // per-agent via FleetSettings → Advanced.
+  // per-agent via AssistantSettings → Advanced.
   const voiceLatency = getVoiceLatencyProfile({
     archetype,
     role: agentRole,
@@ -532,7 +531,7 @@ Today is ${currentDateTime}.
     (agentConfigRow as any)?.silenceTimeoutSeconds ?? voiceLatency.silenceTimeoutSeconds;
 
   // ElevenLabs speed control — Account Holder-set per-agent multiplier in
-  // FleetSettings → Voice. The DB column is `numeric(3,2)` which Postgres
+  // AssistantSettings → Voice. The DB column is `numeric(3,2)` which Postgres
   // returns as a string via pg; coerce to Number and clamp to the
   // documented ElevenLabs range (0.7 – 1.2) so a corrupted row can't
   // ship a value Vapi/EL would reject. Only attach when the provider
@@ -545,7 +544,7 @@ Today is ${currentDateTime}.
   });
 
   // ElevenLabs voice fine-tuning quality params. Account Holder-set per-agent
-  // in FleetSettings → Voice fine-tuning. Mirrors the four knobs in EL's
+  // in AssistantSettings → Voice fine-tuning. Mirrors the four knobs in EL's
   // `voice_settings`: stability, similarity_boost, style, use_speaker_boost.
   // Stored as numeric(3,2) in PG (pg returns as string) so we coerce +
   // clamp to [0,1] before passing to Vapi. NULL is treated as "use EL
@@ -578,7 +577,7 @@ Today is ${currentDateTime}.
   //     parts and drags on calm ones. 0.10 gives minimal warmth
   //     without ANY perceptible speed swings. The LLM prompt already
   //     handles emotional range; TTS should just render consistently.
-  //     Operators can override via FleetSettings → Voice fine-tuning.
+  //     Account Holders can override via AssistantSettings → Voice fine-tuning.
   const parsedStability = clamp01((agentConfigRow as any)?.voiceStability, 0.65);
   const parsedSimilarityBoost = clamp01((agentConfigRow as any)?.voiceSimilarityBoost, 0.8);
   const parsedStyle = clamp01((agentConfigRow as any)?.voiceStyle, 0.1);
@@ -658,7 +657,7 @@ Today is ${currentDateTime}.
     // pure silence between agent utterances reads as "robocall". Vapi's
     // "office" track is the closest match to a small business front desk
     // and is the same texture leading voice-AI products (Air, Bland)
-    // ship by default. Operators can override via FleetSettings →
+    // ship by default. Account Holders can override via AssistantSettings →
     // Ambient atmosphere (off / office / phone-internal), and HIPAA /
     // legal use cases that need recorded silence can opt out to "off".
     backgroundSound: (agentConfigRow as any)?.ambientNoise || "office",

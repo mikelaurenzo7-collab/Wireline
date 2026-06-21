@@ -10,7 +10,8 @@ export type ClientCommunicationReview = {
 
 const reviewTool: StructuredToolSchema = {
   name: "review_client_communication",
-  description: "Review and, only when necessary, revise a client-facing message. Preserve facts, avoid promises not supported by the supplied context, and keep the message concise.",
+  description:
+    "Review and, only when necessary, revise a client-facing message. Preserve facts, avoid promises not supported by the supplied context, and keep the message concise.",
   input_schema: {
     type: "object",
     properties: {
@@ -36,9 +37,16 @@ export async function superviseClientCommunication(input: {
 }): Promise<ClientCommunicationReview> {
   const originalBody = String(input.body || "").slice(0, 12000);
   const originalSubject = String(input.subject || "").slice(0, 500);
-  if (!originalBody.trim()) return { approved: false, subject: originalSubject, body: originalBody, rationale: "No message body was provided." };
+  if (!originalBody.trim())
+    return {
+      approved: false,
+      subject: originalSubject,
+      body: originalBody,
+      rationale: "No message body was provided.",
+    };
   return runStructured<ClientCommunicationReview>({
-    system: "You are Wireline's outbound communications safety and quality reviewer. Preserve the sender's intent and verified facts. Remove unsupported commitments, sensitive data, pressure, or unsafe claims. Return approved=true when the original is suitable; approved=false only when it needs revision or should not be sent.",
+    system:
+      "You are Wireline's outbound communications safety and quality reviewer. Preserve the sender's intent and verified facts. Remove unsupported commitments, sensitive data, pressure, or unsafe claims. Return approved=true when the original is suitable; approved=false only when it needs revision or should not be sent.",
     user: `Channel: ${input.channel}\nAgent: ${input.agentName || "Wireline agent"}\nSource: ${input.source}\nPurpose: ${input.purpose}\nRecipient: ${input.recipient || "Unknown"}\nContext: ${input.context || "None"}\nSubject: ${originalSubject}\nBody:\n${originalBody}`,
     tool: reviewTool,
     complexity: "simple",

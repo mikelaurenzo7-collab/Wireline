@@ -72,7 +72,7 @@ export async function trackVoiceMinutes(opts: {
   if (!userId || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
 
   // Round up — never under-bill, never charge for sub-minute fractions
-  // in a way that confuses operators. 30s → 1 min, 61s → 2 min.
+  // in a way that confuses account holders. 30s → 1 min, 61s → 2 min.
   const minutes = Math.ceil(durationSeconds / 60);
   const periodKey = monthlyPeriodKey();
 

@@ -54,7 +54,13 @@ export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_VOICE_FALLB
 export function isOpenRouterModelId(value: unknown): value is string {
   if (typeof value !== "string") return false;
   const id = value.trim();
-  return !!id && id.length <= 160 && !id.includes("..") && !/\s/.test(id) && /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id);
+  return (
+    !!id &&
+    id.length <= 160 &&
+    !id.includes("..") &&
+    !/\s/.test(id) &&
+    /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i.test(id)
+  );
 }
 
 export function isOpenAIModelId(value: unknown): value is string {
@@ -65,19 +71,65 @@ export function isGeminiModelId(value: unknown): value is string {
   return typeof value === "string" && value.trim().toLowerCase().includes("gemini");
 }
 
-export function resolveVapiVoiceModelSelection(input?: { provider?: string | null; model?: string | null }): VapiVoiceModelSelection {
-  const provider = String(input?.provider || "").trim().toLowerCase();
+export function resolveVapiVoiceModelSelection(input?: {
+  provider?: string | null;
+  model?: string | null;
+}): VapiVoiceModelSelection {
+  const provider = String(input?.provider || "")
+    .trim()
+    .toLowerCase();
   const model = String(input?.model || "").trim();
-  if (provider === "openrouter" && isOpenRouterModelId(model)) return { provider: "openrouter", model, userSelected: true };
-  if (provider === "google" && isGeminiModelId(model)) return { provider: "google", model, fallbackModels: [VAPI_TENANT_DEFAULT_MODEL], userSelected: true };
-  if (provider === "openai" && isOpenAIModelId(model)) return { provider: "openai", model, fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS], userSelected: false };
-  return { provider: VAPI_TENANT_DEFAULT_PROVIDER, model: VAPI_TENANT_DEFAULT_MODEL, fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS], userSelected: false };
+  if (provider === "openrouter" && isOpenRouterModelId(model))
+    return { provider: "openrouter", model, userSelected: true };
+  if (provider === "google" && isGeminiModelId(model))
+    return {
+      provider: "google",
+      model,
+      fallbackModels: [VAPI_TENANT_DEFAULT_MODEL],
+      userSelected: true,
+    };
+  if (provider === "openai" && isOpenAIModelId(model))
+    return {
+      provider: "openai",
+      model,
+      fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS],
+      userSelected: false,
+    };
+  return {
+    provider: VAPI_TENANT_DEFAULT_PROVIDER,
+    model: VAPI_TENANT_DEFAULT_MODEL,
+    fallbackModels: [...VAPI_DEFAULT_FALLBACK_MODELS],
+    userSelected: false,
+  };
 }
 
 export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
-  { provider: "openai", model: OPENAI_MODELS.GPT_4O, label: "OpenAI GPT-4o", speed: "fast", envKey: "OPENAI_API_KEY", note: "Wireline default. Managed calls retry through Gemini if OpenAI is unavailable." },
-  { provider: "google", model: GEMINI_MODELS.FLASH_3_5, label: "Gemini Flash", speed: "fastest", envKey: "GEMINI_API_KEY", note: "Native alternative. If selected directly, calls retry through OpenAI if Gemini is unavailable." },
-  { provider: "openrouter", model: "openai/gpt-4o", label: "OpenRouter — choose a model", speed: "balanced", envKey: "OPENROUTER_API_KEY", latencyWarning: true, acceptsCustomModelId: true, note: "Advanced override. Wireline sends the exact valid provider/model ID selected." },
+  {
+    provider: "openai",
+    model: OPENAI_MODELS.GPT_4O,
+    label: "OpenAI GPT-4o",
+    speed: "fast",
+    envKey: "OPENAI_API_KEY",
+    note: "Wireline default. Managed calls retry through Gemini if OpenAI is unavailable.",
+  },
+  {
+    provider: "google",
+    model: GEMINI_MODELS.FLASH_3_5,
+    label: "Gemini Flash",
+    speed: "fastest",
+    envKey: "GEMINI_API_KEY",
+    note: "Native alternative. If selected directly, calls retry through OpenAI if Gemini is unavailable.",
+  },
+  {
+    provider: "openrouter",
+    model: "openai/gpt-4o",
+    label: "OpenRouter — choose a model",
+    speed: "balanced",
+    envKey: "OPENROUTER_API_KEY",
+    latencyWarning: true,
+    acceptsCustomModelId: true,
+    note: "Advanced override. Wireline sends the exact valid provider/model ID selected.",
+  },
 ] as const;
 
 export function clampVoiceTemperature(value: unknown, fallback: number): number {
@@ -95,7 +147,9 @@ export const MODEL_PRICING = {
   [GEMINI_MODELS.PRO_3_1]: { input: 1.25, output: 5, cacheRead: 0, cacheWrite: 0 },
 } as const;
 export const DEFAULT_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
-export function selectModelForTask(_complexity: TaskComplexity): string { return OPENAI_STRUCTURED_PRIMARY_MODEL; }
+export function selectModelForTask(_complexity: TaskComplexity): string {
+  return OPENAI_STRUCTURED_PRIMARY_MODEL;
+}
 export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_5) return "GPT-5.5";
   if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";

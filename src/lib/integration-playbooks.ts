@@ -31,7 +31,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "CRM",
     headline: "Every call updates Salesforce or HubSpot — not a sticky note.",
     orbitHint: "Search, log, create deals",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "crm-identify",
@@ -58,7 +58,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Slack",
     headline: "Hot leads and escalations hit your team channel in seconds.",
     orbitHint: "Notify #channel on events",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "slack-hot",
@@ -73,7 +73,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "X",
     headline: "Engage on X — post, reply, like, repost, DM, and read ad performance.",
     orbitHint: "Post, reply, like, DM, ads",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "x-post",
@@ -106,7 +106,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Messaging",
     headline: "SMS and WhatsApp follow-ups while the conversation is still warm.",
     orbitHint: "Text + number intelligence",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "sms-followup",
@@ -127,7 +127,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Zoom",
     headline: "Demo and discovery calls get a join link without back-and-forth email.",
     orbitHint: "Meeting links on bookings",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "zoom-book",
@@ -142,7 +142,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Calendar",
     headline: "Real availability — no double-books, no 'let me check and call back'.",
     orbitHint: "Check slots · book live",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "cal-check",
@@ -163,7 +163,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Shopify",
     headline: "Store support calls that actually change orders — not ticket promises.",
     orbitHint: "Orders · returns · draft checkout",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "shop-status",
@@ -202,7 +202,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Square",
     headline: "Phone orders and invoices for Square sellers — same call, paid faster.",
     orbitHint: "Orders · pay links · invoices",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "sq-lookup",
@@ -229,7 +229,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "DocuSign",
     headline: "Close on the call — contract hits their inbox before they hang up.",
     orbitHint: "E-sign on verbal yes",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "ds-send",
@@ -244,7 +244,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Apollo",
     headline: "Unknown caller becomes a qualified profile before your rep takes over.",
     orbitHint: "Enrich by phone",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "apollo-enrich",
@@ -259,7 +259,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Meta",
     headline: "Paid social leads get server-side credit when they call — not just form fills.",
     orbitHint: "CAPI on qualified calls",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "meta-lead",
@@ -274,7 +274,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Microsoft Teams",
     headline: "Microsoft shops get Teams alerts instead of another inbox.",
     orbitHint: "Post to Teams channel",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "teams-notify",
@@ -289,7 +289,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Excel",
     headline: "Every call becomes a row in your Wireline log workbook — no manual export.",
     orbitHint: "Append call log row",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "excel-log",
@@ -305,7 +305,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     headline:
       "Every call becomes a row in your Google Sheets call log workbook — no manual export.",
     orbitHint: "Append call log row",
-    connectPath: "/integrations",
+    connectPath: "/actions",
     tasks: [
       {
         id: "sheets-log",

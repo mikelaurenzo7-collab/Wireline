@@ -85,7 +85,8 @@ export function OwnerBillingSimulator({
               </ShadButton>
             </div>
             <p className="wl-micro-meta--muted leading-relaxed">
-              Suspending an account locks Assistants routing and disables carrier webhooks immediately.
+              Suspending an account locks Assistants routing and disables carrier webhooks
+              immediately.
             </p>
           </div>
 

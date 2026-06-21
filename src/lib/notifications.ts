@@ -208,7 +208,7 @@ export class NotificationService {
   /**
    * Email path — new in May 2026. Only fires when the agent has an
    * `escalation_email` configured. There's no tenant-wide fallback for
-   * email because operators who want async-via-email opt in explicitly;
+   * email because account holders who want async-via-email opt in explicitly;
    * spam-by-default would be a worse failure mode.
    */
   private async sendViaEmail(

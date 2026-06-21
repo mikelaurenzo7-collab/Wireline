@@ -13,7 +13,7 @@
  * ElevenLabs "starter" voice IDs that every 11labs account has access
  * to by default — no licensing surprises.
  *
- * The Account Holder can override any of these in FleetSettings → Voice; the
+ * The Account Holder can override any of these in AssistantSettings → Voice; the
  * factory already honors `agent.voiceIdInbound` / `voiceIdOutbound` /
  * `voiceId` when set, so this is purely a smarter default.
  */
@@ -21,7 +21,7 @@
 type VoiceRosterEntry = {
   /** ElevenLabs voice id — used in vapi-assistant-factory.ts voice payload. */
   voiceId: string;
-  /** Human label surfaced in FleetSettings + analytics, not the API. */
+  /** Human label surfaced in AssistantSettings + analytics, not the API. */
   label: string;
   /** Rough vibe — used to nudge the role-to-voice assignment below. */
   vibe: "warm-female" | "warm-male" | "energetic-female" | "crisp-male";
@@ -43,14 +43,14 @@ const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
   { voiceId: "pNInz6obpgDQGcFmaJgB", label: "Adam · Deep (Wireline Default)", vibe: "warm-male" },
   // ElevenLabs documented starter voices — verified against the public
   // voice library. Labels match ElevenLabs' canonical display names so
-  // FleetSettings + analytics show the Account Holder the same name the
+  // AssistantSettings + analytics show the Account Holder the same name the
   // ElevenLabs dashboard does.
   { voiceId: "VR6AewLTigWG4xSOukaG", label: "Arnold · Crisp", vibe: "crisp-male" },
   { voiceId: "21m00Tcm4TlvDq8ikWAM", label: "Rachel · Warm", vibe: "warm-female" },
   { voiceId: "EXAVITQu4vr4xnSDxMaL", label: "Sarah · Gentle", vibe: "energetic-female" },
   // Legacy default — kept registered so any agent created before the
   // platform-default swap still resolves to a labeled voice in
-  // FleetSettings instead of an opaque ID.
+  // AssistantSettings instead of an opaque ID.
   { voiceId: "bIHbv24MWmeRgasZH58o", label: "Legacy Default · Warm Female", vibe: "warm-female" },
 ];
 
@@ -58,7 +58,7 @@ const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
  * Pick a default voice id for a new agent given how many agents this
  * tenant already has. The seed/Assistants-deploy paths call this when the
  * Account Holder hasn't specified a voice; the Account Holder can override later
- * in FleetSettings.
+ * in AssistantSettings.
  *
  * Stable & deterministic — useful for tests + so repeating the same
  * sequence of deploys always produces the same voice mix.

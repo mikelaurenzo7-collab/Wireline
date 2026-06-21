@@ -66,7 +66,7 @@ export const WL_COMPOSER_CLASSES = {
   composerDock:
     "wl-composer-dock wl-panel-elevated transition-all duration-200 ease-out focus-within:ring-2 focus-within:ring-ring/30",
   directorBubble: "rounded-xl border border-border bg-card transition-all duration-200",
-  operatorBubble: "rounded-xl border border-border bg-secondary transition-all duration-200",
+  accountHolderBubble: "rounded-xl border border-border bg-secondary transition-all duration-200",
   proposalCard:
     "wl-proposal-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
   proposalRail: "wl-proposal-rail",
@@ -82,7 +82,7 @@ export const WL_COMPOSER_CLASSES = {
   threadColumn: "wl-director-thread",
   messageStack: "wl-director-message-stack",
   messageBubble: "wl-director-message transition-all duration-200",
-  operatorMessageStack: "wl-director-message-stack wl-director-message-stack--Account Holder",
+  userMessageStack: "wl-director-message-stack wl-director-message-stack--user",
   emptyHero: "wl-director-empty-hero",
   composerToolbar: "wl-director-composer-toolbar border-b border-border/40 pb-1.5",
   composerAccessory: "wl-composer-accessory-panel transition-all duration-200 ease-in-out",

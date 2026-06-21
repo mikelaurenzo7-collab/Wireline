@@ -15,7 +15,8 @@ function EmptyKnowledge() {
           Start with an assistant
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-[16px] leading-6 text-muted-foreground">
-          Create an assistant first, then add the facts, preferences, and rules that make it genuinely useful to you.
+          Create an assistant first, then add the facts, preferences, and rules that make it
+          genuinely useful to you.
         </p>
         <Link to="/studio?create=1" className="workspace-btn-primary mt-7 px-5 py-2.5">
           <WandSparkles size={16} />

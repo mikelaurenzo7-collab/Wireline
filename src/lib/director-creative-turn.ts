@@ -12,16 +12,16 @@ import type { DirectorApprovalMeta } from "./director-message-metadata";
 export { isCreativeIntent };
 
 export function buildCreativeDirectorTurn(
-  operatorMessage: string,
+  userMessage: string,
   history: Array<{ role: "Account Holder" | "director"; content: string }>,
 ): {
   reply: string;
   approvals: DirectorApprovalMeta[];
   clarifyingQuestions: string[];
 } {
-  const brief = parseCreativeBriefFromText(operatorMessage, history);
+  const brief = parseCreativeBriefFromText(userMessage, history);
   const missing = missingCreativeFields(brief);
-  const policy = checkCreativePolicy(String(brief.prompt || operatorMessage));
+  const policy = checkCreativePolicy(String(brief.prompt || userMessage));
 
   if (!policy.allowed) {
     return {

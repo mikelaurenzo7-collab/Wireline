@@ -22,7 +22,7 @@ const icloudConnectRateLimiter = createIpRateLimiter({
 /**
  * POST /api/integrations/icloud/connect
  *
- * iCloud Mail has no public OAuth API for third-party apps. Operators connect
+ * iCloud Mail has no public OAuth API for third-party apps. Account Holders connect
  * with an Apple app-specific password (generated at appleid.apple.com). We
  * validate IMAP login, then store the encrypted credential in
  * wireline_email_accounts with provider='icloud'.

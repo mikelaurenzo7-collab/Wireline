@@ -13,12 +13,63 @@ import { AI_TOOLS } from "../lib/ai-tools";
 const router = Router();
 const limiter = createRateLimiter({ bucket: "api:qa", windowMs: 60_000, max: 30 });
 
-router.post("/score/:callId", authenticateUser, limiter, withAudit("qa"), async (req: AuthenticatedRequest, res) => {
-  const [call] = await drizzle.select({ id: schema.callLogs.id, summary: schema.callLogs.summary, transcript: schema.callLogs.transcript, sentiment: schema.callLogs.sentiment, direction: schema.callLogs.direction, durationSeconds: schema.callLogs.durationSeconds, agentRole: schema.agents.role }).from(schema.callLogs).leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id)).where(and(eq(schema.callLogs.id, BigInt(req.params.callId)), eq(schema.callLogs.userId, req.user.id))).limit(1);
-  if (!call) throw AppError.fromHttpStatus(404, "Call not found");
-  const breakdown = await runStructured<{ greeting: number; discovery: number; solution: number; objection: number; closing: number; coaching_note: string }>({ system: "Score a customer call from 0 to 20 each for greeting, discovery, solution, objection handling, and closing. Use only evidence and return concise coaching.", user: `Direction: ${call.direction || "inbound"}\nRole: ${call.agentRole || "assistant"}\nSummary: ${call.summary || ""}\nTranscript: ${(call.transcript || "").slice(0, 22000)}`, tool: AI_TOOLS.qaScore, complexity: "medium", maxTokens: 1200 });
-  const score = Math.max(0, Math.min(100, breakdown.greeting + breakdown.discovery + breakdown.solution + breakdown.objection + breakdown.closing));
-  await drizzle.update(schema.callLogs).set({ qaScore: score, qaBreakdown: breakdown, coachingNote: breakdown.coaching_note }).where(eq(schema.callLogs.id, call.id));
-  res.json({ success: true, score, breakdown });
-});
+router.post(
+  "/score/:callId",
+  authenticateUser,
+  limiter,
+  withAudit("qa"),
+  async (req: AuthenticatedRequest, res) => {
+    const [call] = await drizzle
+      .select({
+        id: schema.callLogs.id,
+        summary: schema.callLogs.summary,
+        transcript: schema.callLogs.transcript,
+        sentiment: schema.callLogs.sentiment,
+        direction: schema.callLogs.direction,
+        durationSeconds: schema.callLogs.durationSeconds,
+        agentRole: schema.agents.role,
+      })
+      .from(schema.callLogs)
+      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
+      .where(
+        and(
+          eq(schema.callLogs.id, BigInt(req.params.callId)),
+          eq(schema.callLogs.userId, req.user.id),
+        ),
+      )
+      .limit(1);
+    if (!call) throw AppError.fromHttpStatus(404, "Call not found");
+    const breakdown = await runStructured<{
+      greeting: number;
+      discovery: number;
+      solution: number;
+      objection: number;
+      closing: number;
+      coaching_note: string;
+    }>({
+      system:
+        "Score a customer call from 0 to 20 each for greeting, discovery, solution, objection handling, and closing. Use only evidence and return concise coaching.",
+      user: `Direction: ${call.direction || "inbound"}\nRole: ${call.agentRole || "assistant"}\nSummary: ${call.summary || ""}\nTranscript: ${(call.transcript || "").slice(0, 22000)}`,
+      tool: AI_TOOLS.qaScore,
+      complexity: "medium",
+      maxTokens: 1200,
+    });
+    const score = Math.max(
+      0,
+      Math.min(
+        100,
+        breakdown.greeting +
+          breakdown.discovery +
+          breakdown.solution +
+          breakdown.objection +
+          breakdown.closing,
+      ),
+    );
+    await drizzle
+      .update(schema.callLogs)
+      .set({ qaScore: score, qaBreakdown: breakdown, coachingNote: breakdown.coaching_note })
+      .where(eq(schema.callLogs.id, call.id));
+    res.json({ success: true, score, breakdown });
+  },
+);
 export default router;

@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
-import {
-  clearFreshSignupSession,
-  isFreshSignupSession,
-} from "../lib/post-signup-onboarding";
+import { clearFreshSignupSession, isFreshSignupSession } from "../lib/post-signup-onboarding";
 
 const CHECKPOINT_SHOWN_KEY = "wireline_activation_checkpoint_shown";
 

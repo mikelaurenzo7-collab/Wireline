@@ -21,7 +21,7 @@ import { drizzle } from "./server-context";
 export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = [
   "wireline_audit_log",
   "wireline_signal_presence",
-  "wireline_fleet_tasks",
+  "wireline_follow_up_tasks",
   "wireline_webhook_deliveries",
   "wireline_webhooks",
   "wireline_intake_keys",

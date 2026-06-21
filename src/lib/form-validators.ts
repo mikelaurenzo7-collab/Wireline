@@ -378,7 +378,7 @@ const FLEET_TASK_PRIORITIES_VALUES = ["low", "medium", "high"] as const;
 const FLEET_TASK_TARGET_CHANNELS = ["email", "manual", "phone", "sms"] as const;
 
 /** POST /api/Assistants/tasks — validated body for creating a Assistants task. */
-export const FleetTaskCreateSchema = z.object({
+export const FollowUpTaskCreateSchema = z.object({
   description: z
     .string()
     .min(1, "description is required")
@@ -392,4 +392,4 @@ export const FleetTaskCreateSchema = z.object({
   agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
   due_date: z.string().max(40).optional().nullable(),
 });
-export type FleetTaskCreate = z.infer<typeof FleetTaskCreateSchema>;
+export type FollowUpTaskCreate = z.infer<typeof FollowUpTaskCreateSchema>;

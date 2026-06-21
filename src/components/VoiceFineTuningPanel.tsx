@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
  * ElevenLabs voice fine-tuning sliders — surfaced inside the carrier
- * signal parameters card in FleetSettings. Four knobs that map 1:1
+ * signal parameters card in AssistantSettings. Four knobs that map 1:1
  * to ElevenLabs's `voice_settings` payload and the matching columns
  * on `wireline_agents`:
  *
@@ -16,7 +16,7 @@
  * ElevenLabs's defaults), so an Account Holder who touches nothing still gets
  * a great voice — but the sliders invite tuning, and the audible
  * difference is immediately apparent on the next test call. Collapsible
- * for operators who want to tuck it away once dialed in.
+ * for account holders who want to tuck it away once dialed in.
  *
  * Auto-save UX: the slider's `onChange` updates local optimistic
  * state (no API hit), and the commit fires on `onPointerUp` /
@@ -82,7 +82,7 @@ function SliderRow({
           {label}
           {/* Help tooltip — hover/focus to reveal. Plain English, one
               line; the comments in this file carry the deep ElevenLabs
-              context for operators who go reading the source. */}
+              context for account holders who go reading the source. */}
           <span
             className="relative inline-flex items-center"
             onMouseEnter={() => setShowTip(true)}
@@ -232,7 +232,7 @@ export default function VoiceFineTuningPanel({
           />
 
           {/* Speaker boost — boolean toggle in the same visual register as
-              the other "yes / no" pills elsewhere in FleetSettings. */}
+              the other "yes / no" pills elsewhere in AssistantSettings. */}
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="space-y-0.5 min-w-0">
               <label className="wl-label text-foreground/55 flex items-center gap-1.5">

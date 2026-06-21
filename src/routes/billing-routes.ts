@@ -975,7 +975,7 @@ router.post(
       });
 
       // Surface a more specific client error for the well-known root
-      // causes — the generic "Portal failed" leaves operators staring
+      // causes — the generic "Portal failed" leaves account holders staring
       // at a 500 with no remediation path. Stripe documents these codes
       // verbatim, so matching on `code` is safe and durable.
       if (stripeErr.code === "billing_portal_configuration_default_missing") {

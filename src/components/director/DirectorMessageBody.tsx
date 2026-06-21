@@ -11,7 +11,7 @@ import { safeExternalHref } from "../../lib/safe-external-url";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 /** Strip traffic-light emoji from headings — Account Holder UI uses tone chips instead. */
-function stripOperatorStatusEmoji(text: string): string {
+function stripAccountHolderStatusEmoji(text: string): string {
   return text
     .replace(/^[\s\u{1F534}\u{1F7E1}\u{1F7E2}\u{1F7E0}\u26AA\u2705\u274C]+/u, "")
     .trimStart();
@@ -198,14 +198,14 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   if (first.startsWith("### ")) {
     return (
       <h4 key={bi} className="font-display font-semibold text-foreground tracking-[-0.01em] pt-0.5">
-        {renderInline(stripOperatorStatusEmoji(first.slice(4)))}
+        {renderInline(stripAccountHolderStatusEmoji(first.slice(4)))}
       </h4>
     );
   }
   if (first.startsWith("## ")) {
     return (
       <h3 key={bi} className="font-display font-bold text-foreground tracking-[-0.02em] pt-0.5">
-        {renderInline(stripOperatorStatusEmoji(first.slice(3)))}
+        {renderInline(stripAccount HolderStatusEmoji(first.slice(3)))}
         {lines.slice(1).map((l, i) => (
           <span key={i} className="block font-normal text-foreground/90 mt-0.5">
             {renderInline(l)}

@@ -1,1 +1,20 @@
-{"version":"7","dialect":"postgresql","entries":[{"idx":0,"version":"7","when":1782000000000,"tag":"0018_restore_studio_table_grants","breakpoints":true}]}
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0018_restore_studio_table_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782084196170,
+      "tag": "0001_secret_silver_fox",
+      "breakpoints": true
+    }
+  ]
+}

@@ -8,10 +8,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { getStoredSignupIntent, syncSignupIntent } from "../lib/signup-intent";
-import {
-  readStoredWorkspaceMode,
-  resolvePostAuthDestination,
-} from "../lib/auth-redirect";
+import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth-redirect";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
 

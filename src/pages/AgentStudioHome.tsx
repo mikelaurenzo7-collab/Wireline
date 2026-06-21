@@ -34,7 +34,8 @@ export default function AgentStudioHome() {
 
   useEffect(() => {
     if (!showCreate) return;
-    priorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    priorFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const frame = requestAnimationFrame(() => nameRef.current?.focus());
     return () => {
       cancelAnimationFrame(frame);
@@ -111,7 +112,10 @@ export default function AgentStudioHome() {
     <>
       <StudioWorkspaceV2 />
       {showCreate ? (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-[color:var(--wl-focus)] p-4" role="presentation">
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center bg-[color:var(--wl-focus)] p-4"
+          role="presentation"
+        >
           <form
             ref={modalRef}
             onSubmit={create}
@@ -125,16 +129,77 @@ export default function AgentStudioHome() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="wl-stitch-label">New assistant</p>
-                <h2 id="create-assistant-title" className="mt-1 text-xl font-semibold tracking-[-.04em]">Start with one useful call.</h2>
-                <p id="create-assistant-description" className="mt-2 text-sm leading-5 text-muted-foreground">Name the help you want and teach the details in Studio.</p>
+                <h2
+                  id="create-assistant-title"
+                  className="mt-1 text-xl font-semibold tracking-[-.04em]"
+                >
+                  Start with one useful call.
+                </h2>
+                <p
+                  id="create-assistant-description"
+                  className="mt-2 text-sm leading-5 text-muted-foreground"
+                >
+                  Name the help you want and teach the details in Studio.
+                </p>
               </div>
-              <button type="button" onClick={close} className="grid h-8 w-8 place-items-center rounded-md hover:bg-muted" aria-label="Close"><X size={16} /></button>
+              <button
+                type="button"
+                onClick={close}
+                className="grid h-8 w-8 place-items-center rounded-md hover:bg-muted"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <label className="mt-5 block text-xs font-semibold">Name<input ref={nameRef} value={name} onChange={(event) => setName(event.target.value)} placeholder="Casey" className="wl-stitch-input mt-1.5" /></label>
-            <label className="mt-4 block text-xs font-semibold">What kind of help?<select value={role} onChange={(event) => setRole(event.target.value as Role)} className="wl-stitch-input mt-1.5">{roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="mt-4 block text-xs font-semibold">First brief<textarea value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="Call my pharmacy, wait on hold, and text me when my prescription is ready." className="wl-stitch-input mt-1.5 min-h-[96px] resize-none" /></label>
-            {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
-            <button disabled={!name.trim() || creating} className="workspace-btn-primary mt-5 w-full justify-center px-4 py-3 disabled:opacity-40">{creating ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}Create and open Studio</button>
+            <label className="mt-5 block text-xs font-semibold">
+              Name
+              <input
+                ref={nameRef}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Casey"
+                className="wl-stitch-input mt-1.5"
+              />
+            </label>
+            <label className="mt-4 block text-xs font-semibold">
+              What kind of help?
+              <select
+                value={role}
+                onChange={(event) => setRole(event.target.value as Role)}
+                className="wl-stitch-input mt-1.5"
+              >
+                {roles.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="mt-4 block text-xs font-semibold">
+              First brief
+              <textarea
+                value={brief}
+                onChange={(event) => setBrief(event.target.value)}
+                placeholder="Call my pharmacy, wait on hold, and text me when my prescription is ready."
+                className="wl-stitch-input mt-1.5 min-h-[96px] resize-none"
+              />
+            </label>
+            {error ? (
+              <p className="mt-3 text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <button
+              disabled={!name.trim() || creating}
+              className="workspace-btn-primary mt-5 w-full justify-center px-4 py-3 disabled:opacity-40"
+            >
+              {creating ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <WandSparkles size={16} />
+              )}
+              Create and open Studio
+            </button>
           </form>
         </div>
       ) : null}

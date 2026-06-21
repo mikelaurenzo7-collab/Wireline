@@ -9,7 +9,7 @@ import { getErrorMessage } from "./server-utils";
 /**
  * X (Twitter) Integration Service — OAuth 2.0 authorization_code + PKCE.
  *
- * Operators connect their X account via Admin → Integrations.
+ * Account Holders connect their X account via Admin → Integrations.
  * Tokens are stored encrypted in wireline_crm_connections (provider='x').
  */
 
@@ -17,7 +17,7 @@ const X_AUTH_URL = "https://twitter.com/i/oauth2/authorize";
 const X_TOKEN_URL = "https://api.twitter.com/2/oauth2/token";
 const X_API = "https://api.twitter.com/2";
 
-/** Scopes for posting, engagement, and DMs. Operators must reconnect after scope upgrades. */
+/** Scopes for posting, engagement, and DMs. Account Holders must reconnect after scope upgrades. */
 const X_SCOPES = [
   "tweet.read",
   "tweet.write",

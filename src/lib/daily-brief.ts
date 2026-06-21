@@ -74,10 +74,15 @@ export async function computeDailyBrief(userId: string, opts?: { force?: boolean
         ),
       ),
     drizzle
-      .select({ priority: schema.fleetTasks.priority, description: schema.fleetTasks.description })
-      .from(schema.fleetTasks)
-      .where(and(eq(schema.fleetTasks.userId, userId), eq(schema.fleetTasks.status, "pending")))
-      .orderBy(desc(schema.fleetTasks.createdAt))
+      .select({
+        priority: schema.followUpTasks.priority,
+        description: schema.followUpTasks.description,
+      })
+      .from(schema.followUpTasks)
+      .where(
+        and(eq(schema.followUpTasks.userId, userId), eq(schema.followUpTasks.status, "pending")),
+      )
+      .orderBy(desc(schema.followUpTasks.createdAt))
       .limit(8),
     drizzle
       .select({ id: schema.outboundLeads.id })

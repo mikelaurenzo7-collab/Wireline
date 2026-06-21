@@ -1,9 +1,9 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
-import IntegrationsWorkspace from "../components/IntegrationsWorkspace";
+import ActionsWorkspace from "../components/ActionsWorkspace";
 
-export default function IntegrationsPage() {
+export default function ActionsPage() {
   const [params] = useSearchParams();
   const agentId = params.get("agent") || "";
 
@@ -27,7 +27,7 @@ export default function IntegrationsPage() {
         </div>
       }
     >
-      <IntegrationsWorkspace />
+      <ActionsWorkspace />
     </WorkspaceShell>
   );
 }

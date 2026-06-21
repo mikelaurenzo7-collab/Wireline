@@ -42,17 +42,34 @@ export default function SettingsPage() {
                 to={section.href}
                 className="group flex min-h-[216px] flex-col rounded-lg border border-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 hover:scale-[1.005] hover:border-[color:var(--wl-line-strong)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)] active:scale-[0.98]"
               >
-                <span className="grid h-12 w-12 place-items-center rounded border border-border bg-muted text-foreground"><Icon size={20} /></span>
+                <span className="grid h-12 w-12 place-items-center rounded border border-border bg-muted text-foreground">
+                  <Icon size={20} />
+                </span>
                 <div className="mt-auto">
-                  <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">{section.title}</h2>
-                  <p className="mt-2 text-[14px] leading-5 text-muted-foreground">{section.detail}</p>
-                  <span className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-foreground">Open <ArrowRight size={14} /></span>
+                  <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">
+                    {section.title}
+                  </h2>
+                  <p className="mt-2 text-[14px] leading-5 text-muted-foreground">
+                    {section.detail}
+                  </p>
+                  <span className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-foreground">
+                    Open <ArrowRight size={14} />
+                  </span>
                 </div>
               </Link>
             );
           })}
         </section>
-        <p className="mt-5 text-[13px] text-muted-foreground">Detailed account controls are available in <Link to="/admin" className="font-medium text-foreground underline underline-offset-4 hover:text-primary">advanced settings</Link>.</p>
+        <p className="mt-5 text-[13px] text-muted-foreground">
+          Detailed account controls are available in{" "}
+          <Link
+            to="/admin"
+            className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+          >
+            advanced settings
+          </Link>
+          .
+        </p>
       </div>
     </WorkspaceShell>
   );

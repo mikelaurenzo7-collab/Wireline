@@ -3,7 +3,11 @@
  * Replaces upward popovers that clipped or covered the message thread.
  */
 import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
-import { DIRECTOR_COMPOSER_ACCESSORY_HINTS, DIRECTOR_CAPABILITY_CATALOG, ComposerAccessoryKind } from "../../lib/director-copy";
+import {
+  DIRECTOR_COMPOSER_ACCESSORY_HINTS,
+  DIRECTOR_CAPABILITY_CATALOG,
+  ComposerAccessoryKind,
+} from "../../lib/director-copy";
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -35,7 +39,6 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import { DirectorCapabilityCatalog } from "./DirectorCapabilityCatalog";
 import { AGENT_TOOL_CATALOG } from "../../lib/agent-capabilities";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
-
 
 export type { ComposerAccessoryKind };
 
@@ -161,7 +164,7 @@ export function DirectorComposerAccessory({
                   {CONNECTOR_CATALOG.map((c) => (
                     <Link
                       key={c.id}
-                      to="/integrations"
+                      to="/actions"
                       onClick={onClose}
                       className="wl-composer-accessory-connector touch-press hover:scale-[1.02]"
                     >
@@ -178,7 +181,7 @@ export function DirectorComposerAccessory({
                   ))}
                 </div>
                 <Link
-                  to="/integrations"
+                  to="/actions"
                   onClick={onClose}
                   className="mt-2 inline-flex items-center gap-1.5 wl-micro-meta font-medium text-brand hover:text-brand/80"
                 >

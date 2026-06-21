@@ -296,7 +296,7 @@ export async function sendTenantMessage(
   try {
     const message = await client.messages.create(prepared.payload as any);
 
-    // Mirror the outbound message into the SMS inbox so operators see
+    // Mirror the outbound message into the SMS inbox so account holders see
     // the full two-way history alongside replies. Idempotent thread
     // upsert keyed by (user_id, customer_number). Wrapped in its own
     // try/catch so a transient DB issue can never block the actual SMS

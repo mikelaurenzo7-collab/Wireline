@@ -98,9 +98,11 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
   }
 
   type DeliveryHook = { id: string; url: string; secret: string | null };
-  const hookRaw = (deliveryWithHook as unknown as {
-    webhook?: DeliveryHook | DeliveryHook[];
-  }).webhook;
+  const hookRaw = (
+    deliveryWithHook as unknown as {
+      webhook?: DeliveryHook | DeliveryHook[];
+    }
+  ).webhook;
   // Drizzle `with` relations may infer as array; normalize to single object.
   const hook = Array.isArray(hookRaw) ? hookRaw[0] : hookRaw;
   if (!hook?.url) {

@@ -1,4 +1,4 @@
-/* Precision Operator public controls. */
+/* Precision Account Holder public controls. */
 :root {
   --wl-cta-bg: var(--wl-accent);
   --wl-cta-fg: #ffffff;
@@ -19,22 +19,52 @@
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
-  transition: all .2s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
-.marketing-btn-primary { border: 1px solid var(--wl-cta-bg); background: var(--wl-cta-bg); color: var(--wl-cta-fg) !important; box-shadow: 0 1px 2px rgba(26,60,52,.05); }
-.marketing-btn-primary :where(svg, span) { color: currentColor !important; }
-.marketing-btn-primary:hover { border-color: var(--wl-cta-hover); background: var(--wl-cta-hover); box-shadow: 0 4px 12px rgba(26,60,52,.08); }
-.marketing-btn-primary:active { transform: scale(.98); }
-.marketing-btn-secondary { border: 1px solid var(--wl-line); background: var(--wl-cta-subtle-bg); color: var(--wl-cta-subtle-fg) !important; }
-.marketing-btn-secondary:hover { border-color: var(--wl-line-strong); background: var(--wl-surface-subtle); }
-.marketing-btn-secondary:active { transform: scale(.98); }
+.marketing-btn-primary {
+  border: 1px solid var(--wl-cta-bg);
+  background: var(--wl-cta-bg);
+  color: var(--wl-cta-fg) !important;
+  box-shadow: 0 1px 2px rgba(26, 60, 52, 0.05);
+}
+.marketing-btn-primary :where(svg, span) {
+  color: currentColor !important;
+}
+.marketing-btn-primary:hover {
+  border-color: var(--wl-cta-hover);
+  background: var(--wl-cta-hover);
+  box-shadow: 0 4px 12px rgba(26, 60, 52, 0.08);
+}
+.marketing-btn-primary:active {
+  transform: scale(0.98);
+}
+.marketing-btn-secondary {
+  border: 1px solid var(--wl-line);
+  background: var(--wl-cta-subtle-bg);
+  color: var(--wl-cta-subtle-fg) !important;
+}
+.marketing-btn-secondary:hover {
+  border-color: var(--wl-line-strong);
+  background: var(--wl-surface-subtle);
+}
+.marketing-btn-secondary:active {
+  transform: scale(0.98);
+}
 
 [data-testid="header-cta"],
 [data-testid="header-dashboard"],
-#public-mobile-nav a[href="/pricing"] { background-color: var(--wl-cta-bg) !important; color: #ffffff !important; }
+#public-mobile-nav a[href="/pricing"] {
+  background-color: var(--wl-cta-bg) !important;
+  color: #ffffff !important;
+}
 [data-testid="header-cta"] :where(svg, span),
 [data-testid="header-dashboard"] :where(svg, span),
-#public-mobile-nav a[href="/pricing"] :where(svg, span) { color: currentColor !important; }
+#public-mobile-nav a[href="/pricing"] :where(svg, span) {
+  color: currentColor !important;
+}
 
 button:focus-visible,
-a:focus-visible { outline: 2px solid var(--wl-accent); outline-offset: 2px; }
+a:focus-visible {
+  outline: 2px solid var(--wl-accent);
+  outline-offset: 2px;
+}

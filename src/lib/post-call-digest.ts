@@ -232,9 +232,9 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
     });
     // Send to the Account Holder's own connected mailbox address (first one we find).
     // If they have no mailbox connected we skip — log only.
-    const operatorEmail = await pickOperatorEmail(ctx.userId);
-    if (operatorEmail) {
-      emailSent = await integ.sendEmail({ to: operatorEmail, subject, body });
+    const accountHolderEmail = await pickAccountHolderEmail(ctx.userId);
+    if (accountHolderEmail) {
+      emailSent = await integ.sendEmail({ to: accountHolderEmail, subject, body });
     }
   } catch (err: any) {
     log.warn("post-call digest: email send failed", { error: err?.message });
@@ -290,7 +290,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
   return { outcomeTag, campaignSource, crmLogged, emailSent, csatSent };
 }
 
-async function pickOperatorEmail(userId: string): Promise<string | null> {
+async function pickAccountHolderEmail(userId: string): Promise<string | null> {
   try {
     const [acct] = await drizzle
       .select({ emailAddress: schema.emailAccounts.emailAddress })

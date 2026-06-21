@@ -8,7 +8,7 @@ import { getErrorMessage } from "./server-utils";
 /**
  * Slack Integration Service — real OAuth 2.0 flow.
  *
- * Operators connect their Slack workspace via Admin → Integrations.
+ * Account Holders connect their Slack workspace via Admin → Integrations.
  * The bot token is stored encrypted in wireline_crm_connections (provider='slack').
  * Agents can post notifications to configured channels.
  */

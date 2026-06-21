@@ -24,10 +24,13 @@ export default function PersonalDashboard() {
             <div className="w-10 h-10 rounded-full bg-muted text-foreground flex items-center justify-center">
               <User className="w-5 h-5" />
             </div>
-            <h1 className="text-3xl font-semibold tracking-[-.03em] text-foreground">My Assistant</h1>
+            <h1 className="text-3xl font-semibold tracking-[-.03em] text-foreground">
+              My Assistant
+            </h1>
           </div>
           <p className="text-foreground/70 text-lg max-w-2xl leading-relaxed">
-            Hand off the calls you keep putting off. Your assistant makes the call, waits on hold, and texts you what matters.
+            Hand off the calls you keep putting off. Your assistant makes the call, waits on hold,
+            and texts you what matters.
           </p>
         </header>
 
@@ -99,7 +102,8 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-6">
                 <p className="text-foreground/80 leading-relaxed mb-6">
-                  Use your assistant from your phone, your watch, or just by saying "Hey Siri, ask Wireline."
+                  Use your assistant from your phone, your watch, or just by saying "Hey Siri, ask
+                  Wireline."
                 </p>
 
                 <div className="space-y-4">
@@ -111,10 +115,14 @@ export default function PersonalDashboard() {
                     <div className="flex-1">
                       <h3 className="font-medium text-foreground mb-1">Voice Activation</h3>
                       <p className="text-sm text-foreground/60">
-                        Say "Hey Siri, Ask Wireline" to start a call hands-free — from your phone, AirPods, or car.
+                        Say "Hey Siri, Ask Wireline" to start a call hands-free — from your phone,
+                        AirPods, or car.
                       </p>
                     </div>
-                    <Link to="/settings" className="px-4 py-2 bg-muted hover:bg-accent rounded-lg text-sm font-semibold transition-colors shrink-0">
+                    <Link
+                      to="/settings"
+                      className="px-4 py-2 bg-muted hover:bg-accent rounded-lg text-sm font-semibold transition-colors shrink-0"
+                    >
                       Set up
                     </Link>
                   </div>
@@ -127,7 +135,8 @@ export default function PersonalDashboard() {
                     <div className="flex-1">
                       <h3 className="font-medium text-foreground mb-1">Get Updates by Text</h3>
                       <p className="text-sm text-foreground/60">
-                        Your assistant will text you the important details after every call. No app needed.
+                        Your assistant will text you the important details after every call. No app
+                        needed.
                       </p>
                     </div>
                   </div>
@@ -153,7 +162,8 @@ export default function PersonalDashboard() {
               </div>
               <div className="p-5">
                 <p className="text-sm text-foreground/80 leading-relaxed mb-4">
-                  Forward missed calls to your assistant. They'll handle it and text you the summary.
+                  Forward missed calls to your assistant. They'll handle it and text you the
+                  summary.
                 </p>
                 <div className="p-4 bg-muted rounded-xl border border-border text-center mb-5">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">

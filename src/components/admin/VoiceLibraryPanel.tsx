@@ -2,14 +2,14 @@
 /**
  * Voice Library — Account Holder-side clone management surface.
  *
- * Lives under Admin → Voices. Lets operators:
+ * Lives under Admin → Voices. Lets account holders:
  *   1. Browse their cloned voices (with playable previews)
  *   2. Clone a new voice from a 30-90s audio sample
  *   3. Delete clones they no longer need
  *
  * Clones flow through /api/voices/clone (ElevenLabs Instant Voice
  * Clone). Pricing surface clearly disclosed before the upload button
- * fires so operators know the unit cost.
+ * fires so account holders know the unit cost.
  */
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";

@@ -85,14 +85,14 @@ const CODE_BLOCK = `## Code mode (this turn)
 - Add a short "How to use" section after the blocks.`;
 
 /** Extra system-prompt sections for the current Account Holder message. */
-export function buildDirectorDeliverableGuidance(operatorMessage: string): string {
+export function buildDirectorDeliverableGuidance(userMessage: string): string {
   const parts: string[] = [];
   const needsUniversal =
-    wantsWebsiteDeliverable(operatorMessage) ||
-    wantsCodeDeliverable(operatorMessage) ||
-    wantsLongDeliverable(operatorMessage);
+    wantsWebsiteDeliverable(userMessage) ||
+    wantsCodeDeliverable(userMessage) ||
+    wantsLongDeliverable(userMessage);
   if (needsUniversal) parts.push(UNIVERSAL_BLOCK);
-  if (wantsWebsiteDeliverable(operatorMessage)) parts.push(WEBSITE_BLOCK);
-  if (wantsCodeDeliverable(operatorMessage)) parts.push(CODE_BLOCK);
+  if (wantsWebsiteDeliverable(userMessage)) parts.push(WEBSITE_BLOCK);
+  if (wantsCodeDeliverable(userMessage)) parts.push(CODE_BLOCK);
   return parts.join("\n\n");
 }

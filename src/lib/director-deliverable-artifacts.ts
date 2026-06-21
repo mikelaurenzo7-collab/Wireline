@@ -30,36 +30,36 @@ function hasSubstantialCodeFence(reply: string): boolean {
   return Boolean(match && match[1].trim().length >= 400);
 }
 
-function slugifyDeliverableName(operatorMessage: string): string {
-  const base = operatorMessage
+function slugifyDeliverableName(userMessage: string): string {
+  const base = userMessage
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
   const stamp = new Date().toISOString().slice(0, 10);
-  if (wantsWebsiteDeliverable(operatorMessage)) {
+  if (wantsWebsiteDeliverable(userMessage)) {
     return `website-${base || "design"}-${stamp}.md`;
   }
-  if (wantsCodeDeliverable(operatorMessage)) {
+  if (wantsCodeDeliverable(userMessage)) {
     return `code-${base || "snippet"}-${stamp}.md`;
   }
-  if (wantsLongDeliverable(operatorMessage)) {
+  if (wantsLongDeliverable(userMessage)) {
     return `deliverable-${base || "doc"}-${stamp}.md`;
   }
   return `director-${base || "export"}-${stamp}.md`;
 }
 
 /** Whether this reply should be saved as a downloadable markdown file. */
-export function shouldPersistDeliverableArtifact(operatorMessage: string, reply: string): boolean {
+export function shouldPersistDeliverableArtifact(userMessage: string, reply: string): boolean {
   const trimmed = reply.trim();
   if (trimmed.length < DELIVERABLE_ARTIFACT_MIN_CHARS) return false;
   if (/trouble responding|can't respond right now|LLM isn't configured/i.test(trimmed)) {
     return false;
   }
   if (
-    wantsLongDeliverable(operatorMessage) ||
-    wantsWebsiteDeliverable(operatorMessage) ||
-    wantsCodeDeliverable(operatorMessage)
+    wantsLongDeliverable(userMessage) ||
+    wantsWebsiteDeliverable(userMessage) ||
+    wantsCodeDeliverable(userMessage)
   ) {
     return true;
   }
@@ -72,10 +72,10 @@ function sanitizeMarkdownInline(text: string): string {
   return text.trim().slice(0, 500).replace(/\r?\n/g, " ").replace(/#/g, "\\#");
 }
 
-function buildMarkdownFile(operatorMessage: string, reply: string): string {
+function buildMarkdownFile(userMessage: string, reply: string): string {
   const header = `# Director deliverable
 
-**Request:** ${sanitizeMarkdownInline(operatorMessage)}
+**Request:** ${sanitizeMarkdownInline(userMessage)}
 
 **Exported:** ${new Date().toISOString()}
 
@@ -90,12 +90,12 @@ function buildMarkdownFile(operatorMessage: string, reply: string): string {
  */
 export async function persistDirectorDeliverableArtifact(input: {
   userId: string;
-  operatorMessage: string;
+  userMessage: string;
   reply: string;
 }): Promise<DirectorDeliverableArtifactMeta | null> {
-  if (!shouldPersistDeliverableArtifact(input.operatorMessage, input.reply)) return null;
+  if (!shouldPersistDeliverableArtifact(input.userMessage, input.reply)) return null;
   try {
-    const body = buildMarkdownFile(input.operatorMessage, input.reply);
+    const body = buildMarkdownFile(input.userMessage, input.reply);
     const data = Buffer.from(body, "utf8");
     if (data.byteLength > DELIVERABLE_ARTIFACT_MAX_BYTES) {
       log.warn("director deliverable artifact skipped — exceeds size cap", {
@@ -109,11 +109,11 @@ export async function persistDirectorDeliverableArtifact(input: {
       userId: input.userId,
       toolName: "director_deliverable",
       artifactType: DELIVERABLE_ARTIFACT_TYPE,
-      name: slugifyDeliverableName(input.operatorMessage),
+      name: slugifyDeliverableName(input.userMessage),
       mimeType: "text/markdown; charset=utf-8",
       data,
       metadata: {
-        operatorPreview: input.operatorMessage.trim().slice(0, 120),
+        accountHolderPreview: input.userMessage.trim().slice(0, 120),
         charCount: input.reply.length,
       },
     });

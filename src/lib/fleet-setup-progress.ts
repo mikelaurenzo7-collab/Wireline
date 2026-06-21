@@ -1,6 +1,6 @@
 import { authFetch } from "./api";
 
-export type FleetSetupProgress = {
+export type AssistantSetupProgress = {
   agents: number;
   knowledge: number;
   numbers: number;
@@ -25,7 +25,7 @@ export async function fetchActivationStatus(): Promise<boolean> {
   }
 }
 
-export async function fetchFleetSetupProgress(): Promise<FleetSetupProgress> {
+export async function fetchAssistantSetupProgress(): Promise<AssistantSetupProgress> {
   const [agents, knowledge, numbers, activated] = await Promise.all([
     authFetch("/api/agents")
       .then((r) => r.json())
@@ -44,7 +44,7 @@ export async function fetchFleetSetupProgress(): Promise<FleetSetupProgress> {
   return { agents, knowledge, numbers, activated };
 }
 
-export function fleetSetupCompletedCount(progress: FleetSetupProgress): number {
+export function fleetSetupCompletedCount(progress: AssistantSetupProgress): number {
   let n = 0;
   if (progress.agents > 0) n++;
   if (progress.knowledge > 0) n++;
@@ -53,6 +53,6 @@ export function fleetSetupCompletedCount(progress: FleetSetupProgress): number {
   return n;
 }
 
-export function isFleetSetupComplete(progress: FleetSetupProgress): boolean {
+export function isAssistantSetupComplete(progress: AssistantSetupProgress): boolean {
   return fleetSetupCompletedCount(progress) >= FLEET_SETUP_STEP_COUNT;
 }

@@ -20,7 +20,7 @@
  *   authoritative  - formal + crisp; for medical, legal, financial
  *                    intake where the caller needs gravity.
  *
- * Account Holder picks per agent in FleetSettings. Vibe defaults to warm
+ * Account Holder picks per agent in AssistantSettings. Vibe defaults to warm
  * for any agent that doesn't pick.
  *
  * The directive is injected into the system prompt under the

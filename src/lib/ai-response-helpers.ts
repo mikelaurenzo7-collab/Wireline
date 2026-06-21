@@ -13,6 +13,10 @@ export function aiErr(res: any, error: any, endpoint = "/api/ai"): void {
   const message = getErrorMessage(error);
   log.error("AI endpoint error", { error: message, endpoint });
   SentryEvents.aiApiFailure({ endpoint, error_message: message, model: "openai" });
-  const isKnownApiError = error?.status >= 400 && error?.status < 600 && typeof error?.message === "string" && error.message.length < 500;
+  const isKnownApiError =
+    error?.status >= 400 &&
+    error?.status < 600 &&
+    typeof error?.message === "string" &&
+    error.message.length < 500;
   res.status(500).json({ error: isKnownApiError ? error.message : "AI request failed" });
 }

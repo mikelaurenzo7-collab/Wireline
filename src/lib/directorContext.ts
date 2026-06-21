@@ -4,7 +4,7 @@
 
 import { BASE_DIRECTOR_SYSTEM_PROMPT } from "./directorPrompt";
 
-export interface DirectorFleetAgent {
+export interface DirectorAssistantAgent {
   id: string;
   name: string | null;
   role: string | null;
@@ -43,7 +43,7 @@ export interface DirectorStats {
 
 export interface BuildDirectorPromptInput {
   clientId: string;
-  Assistants: DirectorFleetAgent[];
+  Assistants: DirectorAssistantAgent[];
   stats?: DirectorStats;
   business?: DirectorBusinessContext;
   recentActivitySummary?: string;
@@ -62,15 +62,13 @@ export function buildDirectorPrompt(input: BuildDirectorPromptInput): string {
   const fleetSummary =
     Assistants.length === 0
       ? "(No agents deployed yet — prioritize helping them launch their first high-impact agent. Ask what their #1 pain point is right now.)"
-      : Assistants
-          .map((agent) => {
-            const name = agent.name || "Unnamed agent";
-            const role = agent.role || "generalist";
-            const archetype = agent.archetype || "agent";
-            const status = agent.status || "unknown";
-            return `- ${name} (${role}, ${archetype}): status=${status}${agent.performanceSummary ? `, perf=${agent.performanceSummary}` : ""}${agent.recentCalls ? `, calls=${agent.recentCalls}` : ""}${agent.conversionRate ? `, conv=${agent.conversionRate}%` : ""}`;
-          })
-          .join("\n");
+      : Assistants.map((agent) => {
+          const name = agent.name || "Unnamed agent";
+          const role = agent.role || "generalist";
+          const archetype = agent.archetype || "agent";
+          const status = agent.status || "unknown";
+          return `- ${name} (${role}, ${archetype}): status=${status}${agent.performanceSummary ? `, perf=${agent.performanceSummary}` : ""}${agent.recentCalls ? `, calls=${agent.recentCalls}` : ""}${agent.conversionRate ? `, conv=${agent.conversionRate}%` : ""}`;
+        }).join("\n");
 
   // Stats block
   const statsBlock = stats

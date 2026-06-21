@@ -3,7 +3,7 @@
  * Multi-touch outbound cadence routes.
  *
  * A cadence is a sequence of touchpoints (call / sms / email) with delays.
- * Operators create one, enroll leads into it, and the job-worker ticks
+ * Account Holders create one, enroll leads into it, and the job-worker ticks
  * through each step automatically.
  *
  * Endpoints:

@@ -2,7 +2,7 @@
  * ElevenLabs API wrapper — typed helpers for voice library + cloning.
  *
  * Why this lives in its own file: the existing voice catalog
- * (PREMIUM_VOICES in FleetSettings.tsx) is static + curated.
+ * (PREMIUM_VOICES in AssistantSettings.tsx) is static + curated.
  * ElevenLabs is dynamic: every tenant can clone voices, the library
  * grows, voices get deleted. We hit the live API on demand and merge
  * with the curated list at the route layer.
@@ -181,7 +181,7 @@ export function elevenLabsConfigured(): boolean {
 /**
  * Voice Isolator — strip background noise from an audio sample before
  * we send it to the clone endpoint. Game-changer for clone quality:
- * the cleaner the input, the better the cloned voice. Operators record
+ * the cleaner the input, the better the cloned voice. Account Holders record
  * on phones / in cafes / with kids in the background; isolator gets
  * us a studio-quality input from a real-world one.
  *
@@ -213,7 +213,7 @@ export async function isolateVoice(audioBase64: string, mimeType?: string): Prom
  * Pronunciation Dictionary rule shape that the ElevenLabs API expects.
  * "alias" replaces one written form with another spelled-out form
  * ("HVAC" → "H-V-A-C"). "phoneme" replaces the source with an IPA
- * phoneme string ("ACL" → "ˈeɪ siː ɛl"), giving operators in
+ * phoneme string ("ACL" → "ˈeɪ siː ɛl"), giving account holders in
  * regulated verticals (medical / legal) precise control over how
  * jargon is voiced.
  *

@@ -81,7 +81,7 @@ export interface DirectorStitchSessionMeta {
   projectTitle?: string;
   deviceType?: DirectorPreviewMeta["deviceType"];
   renderId?: string;
-  operatorMessage?: string;
+  userMessage?: string;
 }
 
 export type DirectorStitchSessionLookup = Pick<

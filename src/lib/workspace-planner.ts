@@ -227,7 +227,7 @@ export interface WorkspacePlan {
 }
 
 export interface PlanWorkspaceInput {
-  operatorMessage: string;
+  userMessage: string;
   history: Array<{ role: "Account Holder" | "agent"; content: string }>;
   agent: {
     name?: string | null;
@@ -449,7 +449,7 @@ function buildUserContent(input: PlanWorkspaceInput): string {
     .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You"}: ${m.content}`)
     .join("\n");
   const prefix = transcript ? `Conversation so far:\n${transcript}\n\n` : "";
-  const base = `${prefix}Account Holder's new message:\n${input.operatorMessage}`;
+  const base = `${prefix}Account Holder's new message:\n${input.userMessage}`;
   return input.researchBlock ? `${input.researchBlock}\n\n${base}` : base;
 }
 

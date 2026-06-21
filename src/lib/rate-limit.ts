@@ -4,7 +4,7 @@
 //
 // In Vercel serverless every invocation is a fresh process, so the
 // in-memory fallback is per-invocation only and gives near-zero
-// protection. Operators should set UPSTASH_REDIS_REST_URL +
+// protection. Account Holders should set UPSTASH_REDIS_REST_URL +
 // UPSTASH_REDIS_REST_TOKEN in production for the limit to be global
 // across the Assistants.
 //

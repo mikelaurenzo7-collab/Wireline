@@ -1,18 +1,18 @@
 /**
- * Assistants helpers — extracted from FleetSettings.tsx as part of the
+ * Assistants helpers — extracted from AssistantSettings.tsx as part of the
  * god-file slicing pass (May 2026 audit). These are pure
  * presentational utilities + constants with no shared state.
  *
  * Why a dedicated `components/Assistants/` directory:
- *   FleetSettings.tsx is 2K+ LOC. Slicing it safely needs a clear
+ *   AssistantSettings.tsx is 2K+ LOC. Slicing it safely needs a clear
  *   home for the children that will be extracted next pass — the
  *   roster list, the agent detail editor, and the role/voice
  *   pickers. Putting helpers here first establishes the pattern.
  *
- * Re-exports stay in FleetSettings.tsx so InsightsView and
+ * Re-exports stay in AssistantSettings.tsx so InsightsView and
  * DeployAgentModal continue importing from there without churn:
  *
- *     // FleetSettings.tsx
+ *     // AssistantSettings.tsx
  *     export { PREMIUM_VOICES, DEFAULT_VOICE_BY_GENDER, AGENT_ROLES } from "./Assistants/helpers";
  *
  * No behavior change. ~230 LOC moved.

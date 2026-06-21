@@ -32,7 +32,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme: "light", resolvedTheme: "light", setTheme: enforceLight, toggleTheme: enforceLight }),
+    () => ({
+      theme: "light",
+      resolvedTheme: "light",
+      setTheme: enforceLight,
+      toggleTheme: enforceLight,
+    }),
     [enforceLight],
   );
 
@@ -41,10 +46,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
-  return context ?? {
-    theme: "light",
-    resolvedTheme: "light",
-    setTheme: () => {},
-    toggleTheme: () => {},
-  };
+  return (
+    context ?? {
+      theme: "light",
+      resolvedTheme: "light",
+      setTheme: () => {},
+      toggleTheme: () => {},
+    }
+  );
 }

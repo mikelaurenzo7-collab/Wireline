@@ -58,8 +58,8 @@ export async function executeAction(
 
     // Per-agent tool gating — if the action targets a specific agent and
     // that agent's enabled_tools array excludes this action type, refuse
-    // the action regardless of autonomy mode. Operators control this from
-    // FleetSettings → agent detail → Channels. When enabled_tools is null
+    // the action regardless of autonomy mode. Account Holders control this from
+    // AssistantSettings → agent detail → Channels. When enabled_tools is null
     // (the default), fall back to role-based defaults (resolveAgentTools).
     if (action.agentId) {
       const [agentRow] = await drizzle
@@ -166,9 +166,9 @@ export async function executeAction(
     }
 
     // Default: draft/manual handling — mirror the send_email/schedule_calendar
-    // pattern. We queue every action type into `wireline_fleet_tasks` (or
+    // pattern. We queue every action type into `wireline_follow_up_tasks` (or
     // `wireline_outbound_leads` for prospect runs) for Account Holder approval
-    // instead of touching DocuSign / Apollo directly. Operators flip
+    // instead of touching DocuSign / Apollo directly. Account Holders flip
     // autonomy_level to "auto" to bypass this gate.
     switch (action.type) {
       case "send_email":
@@ -191,52 +191,144 @@ export async function executeAction(
         return { success: false, error: `Unsupported action type: ${action.type}` };
     }
   } catch (error) {
-    log.error("Action execution failed", { userId, actionType: action.type, error: getErrorMessage(error) });
+    log.error("Action execution failed", {
+      userId,
+      actionType: action.type,
+      error: getErrorMessage(error),
+    });
     return { success: false, error: getErrorMessage(error) };
   }
 }
 
-async function handleSendEmail(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
+async function handleSendEmail(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
   const description = `Email draft to ${action.payload.to || "recipient"}: ${action.payload.subject || "No subject"}`;
-  await drizzle.insert(schema.fleetTasks).values({ userId, agentId: action.agentId, taskType: "send_email", description, priority: action.priority || "medium", status: "pending", sourceType: context.sourceType, sourceId: context.sourceId, targetChannel: "email" });
+  await drizzle
+    .insert(schema.followUpTasks)
+    .values({
+      userId,
+      agentId: action.agentId,
+      taskType: "send_email",
+      description,
+      priority: action.priority || "medium",
+      status: "pending",
+      sourceType: context.sourceType,
+      sourceId: context.sourceId,
+      targetChannel: "email",
+    });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
-async function handleSendTextMessage(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
-  const sent = await sendTenantMessage(userId, { to: action.payload.to, body: action.payload.body, agentId: action.agentId });
+async function handleSendTextMessage(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
+  const sent = await sendTenantMessage(userId, {
+    to: action.payload.to,
+    body: action.payload.body,
+    agentId: action.agentId,
+  });
   return sent.ok ? { success: true } : { success: false, error: sent.reason || "SMS send failed" };
 }
-async function handleDraftSendTextMessage(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
-  await drizzle.insert(schema.fleetTasks).values({ userId, agentId: action.agentId, taskType: "send_text_message", description: `SMS draft to ${action.payload.to || "recipient"}`, priority: action.priority || "medium", status: "pending", sourceType: context.sourceType, sourceId: context.sourceId, targetChannel: "sms" });
+async function handleDraftSendTextMessage(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
+  await drizzle
+    .insert(schema.followUpTasks)
+    .values({
+      userId,
+      agentId: action.agentId,
+      taskType: "send_text_message",
+      description: `SMS draft to ${action.payload.to || "recipient"}`,
+      priority: action.priority || "medium",
+      status: "pending",
+      sourceType: context.sourceType,
+      sourceId: context.sourceId,
+      targetChannel: "sms",
+    });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
-async function handleScheduleCalendar(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
-  await drizzle.insert(schema.fleetTasks).values({ userId, agentId: action.agentId, taskType: "schedule_calendar", description: `Calendar request: ${action.payload.event_name || "Meeting"}`, priority: action.priority || "medium", status: "pending", sourceType: context.sourceType, sourceId: context.sourceId, targetChannel: "calendar" });
+async function handleScheduleCalendar(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
+  await drizzle
+    .insert(schema.followUpTasks)
+    .values({
+      userId,
+      agentId: action.agentId,
+      taskType: "schedule_calendar",
+      description: `Calendar request: ${action.payload.event_name || "Meeting"}`,
+      priority: action.priority || "medium",
+      status: "pending",
+      sourceType: context.sourceType,
+      sourceId: context.sourceId,
+      targetChannel: "calendar",
+    });
   await touchNavCounts(userId);
   return { success: true, queued: true };
 }
-async function handleUpdateCRM(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
+async function handleUpdateCRM(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
   const crm = new CRMService(userId);
   const updated = await crm.updateLead(action.payload);
   return { success: updated };
 }
-async function handleCreateInternalTask(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
-  await drizzle.insert(schema.fleetTasks).values({ userId, agentId: action.agentId, taskType: "internal_task", description: action.payload.description || action.reasoning || "Internal follow-up", priority: action.priority || "medium", status: "pending", sourceType: context.sourceType, sourceId: context.sourceId, targetChannel: "manual" });
+async function handleCreateInternalTask(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
+  await drizzle
+    .insert(schema.followUpTasks)
+    .values({
+      userId,
+      agentId: action.agentId,
+      taskType: "internal_task",
+      description: action.payload.description || action.reasoning || "Internal follow-up",
+      priority: action.priority || "medium",
+      status: "pending",
+      sourceType: context.sourceType,
+      sourceId: context.sourceId,
+      targetChannel: "manual",
+    });
   await touchNavCounts(userId);
   return { success: true };
 }
-async function handleSendContract(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
+async function handleSendContract(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
   const response = await sendContract(userId, action.payload);
   return { success: !!response };
 }
-async function handleProspectLeads(userId: string, action: ActionItem, context: { sourceId: string; sourceType: string }): Promise<ActionResult> {
+async function handleProspectLeads(
+  userId: string,
+  action: ActionItem,
+  context: { sourceId: string; sourceType: string },
+): Promise<ActionResult> {
   const leads = await searchLeads(userId, action.payload);
   return { success: Array.isArray(leads) };
 }
 async function handleNotifySlack(userId: string, action: ActionItem): Promise<ActionResult> {
   const channel = await getDefaultChannel(userId);
   if (!channel) return { success: false, error: "No Slack channel is configured." };
-  await postAgentNotification(userId, channel, action.payload.message || action.reasoning || "Wireline action requires review.");
+  await postAgentNotification(
+    userId,
+    channel,
+    action.payload.message || action.reasoning || "Wireline action requires review.",
+  );
   return { success: true };
 }

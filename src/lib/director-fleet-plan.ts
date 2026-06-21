@@ -4,7 +4,7 @@
 
 import {
   buildDirectorPrompt,
-  type DirectorFleetAgent,
+  type DirectorAssistantAgent,
   type DirectorBusinessContext,
   type DirectorStats,
 } from "./directorContext";
@@ -14,7 +14,7 @@ import type { StructuredToolSchema as ToolSchema } from "./ai-structured";
 import { wantsLongDeliverable } from "./director-deliverables";
 
 // Re-export types for backward compatibility with your existing code
-export type { DirectorFleetAgent, DirectorBusinessContext, DirectorStats };
+export type { DirectorAssistantAgent, DirectorBusinessContext, DirectorStats };
 
 export const DIRECTOR_SUGGESTION_KINDS = [
   "create_agent",
@@ -34,10 +34,10 @@ export interface DirectorSuggestion {
 
 /**
  * Legacy-compatible wrapper.
- * Your existing calls to buildDirectorFleetSystemPrompt will now get the perfect upgraded prompt.
+ * Your existing calls to buildDirectorAssistantSystemPrompt will now get the perfect upgraded prompt.
  */
-export function buildDirectorFleetSystemPrompt(input: {
-  Assistants: DirectorFleetAgent[];
+export function buildDirectorAssistantSystemPrompt(input: {
+  Assistants: DirectorAssistantAgent[];
   stats?: DirectorStats;
   business?: DirectorBusinessContext;
   recentActivitySummary?: string;
@@ -75,7 +75,8 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
     properties: {
       reply: {
         type: "string",
-        description: "Director's conversational reply to the Account Holder. Always present and helpful.",
+        description:
+          "Director's conversational reply to the Account Holder. Always present and helpful.",
       },
       suggestions: {
         type: "array",
@@ -88,7 +89,8 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
           required: ["kind", "label"],
           additionalProperties: false,
         },
-        description: "Quick-action chips the Account Holder can tap (e.g. create agent, run audit).",
+        description:
+          "Quick-action chips the Account Holder can tap (e.g. create agent, run audit).",
       },
       actions: {
         type: "array",
@@ -99,7 +101,8 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
             label: { type: "string" },
             agent_id: {
               type: "string",
-              description: "Target agent ID from Assistants (falls back to first agent if omitted).",
+              description:
+                "Target agent ID from Assistants (falls back to first agent if omitted).",
             },
             to: { type: "string" },
             body: { type: "string" },
@@ -164,7 +167,7 @@ export interface DirectorIntegrationJob {
   [key: string]: unknown;
 }
 
-export interface DirectorFleetPlan {
+export interface DirectorAssistantPlan {
   reply: string;
   suggestions: DirectorSuggestion[];
   actions: DirectorProposedAction[];
@@ -176,18 +179,18 @@ function objectValue(value: unknown): Record<string, unknown> {
 }
 
 /**
- * Validate + normalize Claude's (or Grok's) raw tool output into a safe DirectorFleetPlan.
+ * Validate + normalize Claude's (or Grok's) raw tool output into a safe DirectorAssistantPlan.
  * Handles agent_id fallback, dedupes integration jobs, assigns step numbers,
  * and throws DirectorEmptyPlanError for empty replies on deliverable intents.
  */
-export function normalizeDirectorFleetPlan(
+export function normalizeDirectorAssistantPlan(
   raw: Record<string, unknown>,
-  Assistants: DirectorFleetAgent[],
-  operatorMessage?: string,
-): DirectorFleetPlan {
+  Assistants: DirectorAssistantAgent[],
+  userMessage?: string,
+): DirectorAssistantPlan {
   const reply = typeof raw.reply === "string" ? raw.reply.trim() : "";
 
-  const isLongDeliverable = operatorMessage ? wantsLongDeliverable(operatorMessage) : false;
+  const isLongDeliverable = userMessage ? wantsLongDeliverable(userMessage) : false;
 
   if (!reply && isLongDeliverable) {
     throw new DirectorEmptyPlanError();
@@ -197,7 +200,8 @@ export function normalizeDirectorFleetPlan(
   const rawActions = Array.isArray(raw.actions) ? raw.actions : [];
   const actions: DirectorProposedAction[] = rawActions.map((value, index: number) => {
     const a = objectValue(value);
-    const rawAgentId = a.agent_id || a.agentId || (Assistants.length > 0 ? Assistants[0]?.id : undefined);
+    const rawAgentId =
+      a.agent_id || a.agentId || (Assistants.length > 0 ? Assistants[0]?.id : undefined);
     const agentId = rawAgentId ? String(rawAgentId) : undefined;
     return {
       ...a,

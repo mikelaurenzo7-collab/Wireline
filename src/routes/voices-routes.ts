@@ -192,7 +192,7 @@ router.post(
       }
 
       // Voice isolator pre-clean: strip background noise from the
-      // sample before sending to the clone endpoint. Operators record
+      // sample before sending to the clone endpoint. Account Holders record
       // on phones with kids in the background; isolator gets us
       // studio-quality input from a real-world one. Optional via
       // `skip_isolation: true` in body (for ops who pre-cleaned

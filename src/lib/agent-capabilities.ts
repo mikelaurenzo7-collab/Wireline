@@ -223,7 +223,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "post_x_tweet",
     label: "Post on X",
-    description: "Publishes a tweet to the Account Holder's connected X account (max 280 characters).",
+    description:
+      "Publishes a tweet to the Account Holder's connected X account (max 280 characters).",
     group: "messaging",
     integration: "x",
   },
@@ -485,7 +486,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "play_music",
     label: "Play music",
-    description: "Opens music playback for a song, artist, or playlist on the Account Holder's phone.",
+    description:
+      "Opens music playback for a song, artist, or playlist on the Account Holder's phone.",
     group: "device",
   },
 ] as const;

@@ -317,7 +317,7 @@ export const agents = pgTable(
      * Personality vibe layered on top of the agent's role + archetype.
      * Drives a single short directive block injected into the system
      * prompt at runtime. Defaults to "warm" — the trustworthy + warm
-     * receptionist tone every vertical can wear. Operators bump to
+     * receptionist tone every vertical can wear. Account Holders bump to
      * "playful" for retail / agencies / SaaS where memorability beats
      * formality, or to "authoritative" for medical / legal / financial
      * intake where the caller needs to feel they're in capable hands.
@@ -340,7 +340,7 @@ export const agents = pgTable(
      * NULL (the default) → fall back to the auto-composed prompt,
      * preserving existing behaviour for every agent that hasn't been
      * overridden. Surfaced as the "System prompt" textarea in
-     * FleetSettings → AgentConfigPanel with a "Use auto-composed prompt"
+     * AssistantSettings → AgentConfigPanel with a "Use auto-composed prompt"
      * reset that sets this back to NULL.
      */
     systemPromptOverride: text("system_prompt_override"),
@@ -350,7 +350,7 @@ export const agents = pgTable(
     /**
      * Per-agent escalation routing. When set, the `escalate_to_human`
      * tool routes here INSTEAD of the tenant-wide
-     * `wireline_settings.twilio_manager_alert_number`. Lets operators
+     * `wireline_settings.twilio_manager_alert_number`. Lets account holders
      * route sales escalations to the sales manager and support
      * escalations to the support lead without splitting tenants.
      *
@@ -381,9 +381,9 @@ export const agents = pgTable(
     silenceTimeoutSeconds: integer("silence_timeout_seconds"),
     /**
      * Per-agent ElevenLabs speaking rate multiplier. Range 0.7 – 1.2,
-     * default 1.0 (normal pace). Operators slow agents down for elderly
+     * default 1.0 (normal pace). Account Holders slow agents down for elderly
      * customers (0.85) or speed them up for impatient callers (1.1).
-     * Surfaced as a slider in FleetSettings → Voice and wired into the
+     * Surfaced as a slider in AssistantSettings → Voice and wired into the
      * Vapi assistant voice block as `voice.speed` when the provider is
      * 11labs.
      *
@@ -411,7 +411,7 @@ export const agents = pgTable(
     llmModel: text("llm_model"),
     llmTemperature: decimal("llm_temperature", { precision: 3, scale: 2 }),
     /**
-     * ElevenLabs voice fine-tuning — quality knobs operators with cloned
+     * ElevenLabs voice fine-tuning — quality knobs account holders with cloned
      * voices need to dial in their exact sound. All four map 1:1 to the
      * ElevenLabs voice settings payload Vapi forwards to ElevenLabs at
      * synthesis time. Defaults match ElevenLabs's documented defaults so
@@ -426,7 +426,7 @@ export const agents = pgTable(
      *   speaker_boost     (bool, default true) — boosts perceived loudness/
      *                      presence; off for "intimate" voices.
      *
-     * Surfaced as the Voice fine-tuning panel in FleetSettings → carrier
+     * Surfaced as the Voice fine-tuning panel in AssistantSettings → carrier
      * signal parameters. Numerics stored as `numeric(3,2)` (returned as a
      * string by pg) — the factory coerces + clamps to [0,1] before send.
      *
@@ -533,7 +533,7 @@ export const clonedVoices = pgTable(
 );
 
 // Per-tenant pronunciation dictionaries for ElevenLabs TTS.
-// Operators in regulated verticals (medical, legal, real estate) need
+// Account Holders in regulated verticals (medical, legal, real estate) need
 // industry jargon pronounced correctly — "HVAC" should say "H-V-A-C",
 // not "h-vack"; "ACL" should be spelled out; "deposition" might need
 // an IPA phoneme override. ElevenLabs exposes this via their
@@ -547,7 +547,7 @@ export const clonedVoices = pgTable(
 //    { from: "ACL",   to: "ˈeɪ siː ɛl",     kind: "phoneme" }]
 // Validated route-side before we sync to ElevenLabs.
 //
-// `active` lets operators toggle a dictionary off without deleting it
+// `active` lets account holders toggle a dictionary off without deleting it
 // (e.g. seasonal vocabularies, A/B testing legal vs medical jargon
 // across the same Assistants).
 export const pronunciationDictionaries = pgTable(
@@ -694,7 +694,7 @@ export const appointments = pgTable(
     notes: text("notes"),
     phoneNumber: text("phone_number"),
     // True when the row was inserted by /api/admin/seed-demo-account so
-    // the UI can render a "DEMO" pill and operators won't mistake the
+    // the UI can render a "DEMO" pill and account holders won't mistake the
     // seeded showcase rows for real customer activity.
     demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -740,7 +740,7 @@ export const callLogs = pgTable(
     // write time so /insights queries don't need a join.
     campaignSource: text("campaign_source"),
     // True when the row was inserted by /api/admin/seed-demo-account so
-    // the UI can render a "DEMO" pill and operators won't mistake seeded
+    // the UI can render a "DEMO" pill and account holders won't mistake seeded
     // showcase activity for real call traffic.
     demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -1047,7 +1047,7 @@ export const callQueues = pgTable(
 
 /**
  * Multi-touch outbound cadences. A cadence is a sequence of steps (call /
- * sms / email) with delays between them. Operators define one once; the
+ * sms / email) with delays between them. Account Holders define one once; the
  * sentinel job worker ticks through it for every lead enrolled.
  *
  * Example steps payload:
@@ -1124,8 +1124,8 @@ export const supervisorSubscriptions = pgTable(
 );
 
 // 3.2 Assistants HANDOFF (TASKS)
-export const fleetTasks = pgTable(
-  "wireline_fleet_tasks",
+export const followUpTasks = pgTable(
+  "wireline_follow_up_tasks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
@@ -1151,10 +1151,10 @@ export const fleetTasks = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   () => ({
-    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_user_id ON wireline_fleet_tasks USING btree (user_id)`,
-    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_status ON wireline_fleet_tasks USING btree (status)`,
-    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_user_status ON wireline_fleet_tasks USING btree (user_id, status)`,
-    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_created_at ON wireline_fleet_tasks USING btree (created_at)`,
+    userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_user_id ON wireline_follow_up_tasks USING btree (user_id)`,
+    statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_status ON wireline_follow_up_tasks USING btree (status)`,
+    userStatusIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_user_status ON wireline_follow_up_tasks USING btree (user_id, status)`,
+    createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_fleet_tasks_created_at ON wireline_follow_up_tasks USING btree (created_at)`,
   }),
 );
 
@@ -1253,7 +1253,7 @@ export const outboundLeads = pgTable(
     receivedAt: timestamp("received_at", { withTimezone: true }),
     idempotencyKey: text("idempotency_key"),
     // True when the lead was inserted by /api/admin/seed-demo-account. UI
-    // surfaces a "DEMO" pill on these rows so operators don't mistake the
+    // surfaces a "DEMO" pill on these rows so account holders don't mistake the
     // showcase pipeline for real customer leads. /api/admin/demo-data
     // (DELETE) wipes every row where demo=true scoped to the tenant.
     demo: boolean("demo").default(false).notNull(),

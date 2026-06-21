@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Phone, Mail, MessageSquare, ShieldCheck, Send, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MessageSquare,
+  ShieldCheck,
+  Send,
+  Loader2,
+  CheckCircle2,
+  ArrowLeft,
+} from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
@@ -44,7 +53,9 @@ export function SupportPage() {
     } catch {
       const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
       window.location.href = fallback;
-      setError("The ticket service did not respond, so your email client has opened with everything filled in.");
+      setError(
+        "The ticket service did not respond, so your email client has opened with everything filled in.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -52,42 +63,164 @@ export function SupportPage() {
 
   return (
     <MarketingPageFrame stickyCta={false} mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
-      <PageMeta title="Support — Wireline" description="Get help with Wireline for personal call assistance or business call coverage." path="/support" />
+      <PageMeta
+        title="Support — Wireline"
+        description="Get help with Wireline for personal call assistance or business call coverage."
+        path="/support"
+      />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
-        <Link to="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Back home</Link>
+        <Link
+          to="/"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back home
+        </Link>
         <div className="mt-8 max-w-3xl">
           <p className="wl-stitch-eyebrow">Support</p>
-          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">Help with your assistant, without the runaround.</h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">We aim for a first response within one business day. For a service interruption or a live call that needs attention, call us directly.</p>
+          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
+            Help with your assistant, without the runaround.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
+            We aim for a first response within one business day. For a service interruption or a
+            live call that needs attention, call us directly.
+          </p>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a href={`tel:${supportAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5"><Phone className="h-5 w-5 text-primary" /><h2 className="mt-5 text-sm font-semibold text-foreground">Call Wireline</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{supportAgent.display} for urgent help and call triage.</p></a>
-          <a href="mailto:support@trywireline.com" className="wl-stitch-card wl-stitch-card-hover p-5"><Mail className="h-5 w-5 text-primary" /><h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Billing, account access, personal use, and business coverage questions.</p></a>
-          <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5"><MessageSquare className="h-5 w-5 text-primary" /><h2 className="mt-5 text-sm font-semibold text-foreground">Open Studio</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Already signed in? Review your assistant and live activity in one place.</p></Link>
+          <a href={`tel:${supportAgent.tel}`} className="wl-stitch-card wl-stitch-card-hover p-5">
+            <Phone className="h-5 w-5 text-primary" />
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Call Wireline</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {supportAgent.display} for urgent help and call triage.
+            </p>
+          </a>
+          <a
+            href="mailto:support@trywireline.com"
+            className="wl-stitch-card wl-stitch-card-hover p-5"
+          >
+            <Mail className="h-5 w-5 text-primary" />
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Email support</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Billing, account access, personal use, and business coverage questions.
+            </p>
+          </a>
+          <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Open Studio</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Already signed in? Review your assistant and live activity in one place.
+            </p>
+          </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
-          <div className="flex items-start gap-3"><span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary"><ShieldCheck className="h-4 w-4" /></span><div><h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Open a ticket</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Pick the closest category. It helps us get your message to the right person faster.</p></div></div>
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
+              <ShieldCheck className="h-4 w-4" />
+            </span>
+            <div>
+              <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
+                Open a ticket
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Pick the closest category. It helps us get your message to the right person faster.
+              </p>
+            </div>
+          </div>
           {submitted ? (
-            <div className="py-10 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-primary" /><h3 className="mt-4 text-xl font-semibold text-foreground">Ticket received</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">You will hear from us within one business day at <strong className="text-foreground">{email}</strong>.</p></div>
+            <div className="py-10 text-center">
+              <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
+              <h3 className="mt-4 text-xl font-semibold text-foreground">Ticket received</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                You will hear from us within one business day at{" "}
+                <strong className="text-foreground">{email}</strong>.
+              </p>
+            </div>
           ) : (
             <form onSubmit={onSubmit} className="mt-7 space-y-5">
               <div>
                 <label className="block wl-stitch-label mb-2">What is this about?</label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {ISSUE_TYPES.map((item) => <button type="button" key={item.value} onClick={() => setIssueType(item.value)} className={`min-h-11 rounded border px-3 py-2 text-left text-[12px] font-semibold ${issueType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}>{item.label}</button>)}
+                  {ISSUE_TYPES.map((item) => (
+                    <button
+                      type="button"
+                      key={item.value}
+                      onClick={() => setIssueType(item.value)}
+                      className={`min-h-11 rounded border px-3 py-2 text-left text-[12px] font-semibold ${issueType === item.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <label className="grid gap-2 text-sm font-semibold text-foreground">Your email<Input required type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>
-              <label className="grid gap-2 text-sm font-semibold text-foreground">Subject<Input required value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="A short summary of what you need" /></label>
-              <label className="grid gap-2 text-sm font-semibold text-foreground">Details<textarea required value={body} onChange={(event) => setBody(event.target.value)} rows={6} placeholder={issueType === "billing" ? "Invoice or charge in question, what you expected, and what happened." : issueType === "agent" ? "Assistant name, approximate call time, what happened, and what should have happened." : "What you did, what happened, and what you expected."} className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary" /></label>
-              {error && <p role="alert" className="text-sm leading-6 text-destructive">{error}</p>}
-              <button type="submit" disabled={submitting} className="marketing-btn-primary w-full min-h-12 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{submitting ? "Sending…" : "Send ticket"}</button>
+              <label className="grid gap-2 text-sm font-semibold text-foreground">
+                Your email
+                <Input
+                  required
+                  type="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-semibold text-foreground">
+                Subject
+                <Input
+                  required
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                  placeholder="A short summary of what you need"
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-semibold text-foreground">
+                Details
+                <textarea
+                  required
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  rows={6}
+                  placeholder={
+                    issueType === "billing"
+                      ? "Invoice or charge in question, what you expected, and what happened."
+                      : issueType === "agent"
+                        ? "Assistant name, approximate call time, what happened, and what should have happened."
+                        : "What you did, what happened, and what you expected."
+                  }
+                  className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
+                />
+              </label>
+              {error && (
+                <p role="alert" className="text-sm leading-6 text-destructive">
+                  {error}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="marketing-btn-primary w-full min-h-12 px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {submitting ? "Sending…" : "Send ticket"}
+              </button>
             </form>
           )}
         </section>
-        <p className="mt-7 text-center text-sm leading-6 text-muted-foreground">Tickets are handled according to the <Link to="/privacy" className="font-semibold text-primary underline underline-offset-4">Privacy Policy</Link>. You can request deletion at any time through account settings.</p>
+        <p className="mt-7 text-center text-sm leading-6 text-muted-foreground">
+          Tickets are handled according to the{" "}
+          <Link to="/privacy" className="font-semibold text-primary underline underline-offset-4">
+            Privacy Policy
+          </Link>
+          . You can request deletion at any time through account settings.
+        </p>
       </section>
     </MarketingPageFrame>
   );

@@ -32,7 +32,7 @@ const BASE_ITEMS: ChecklistItem[] = [
     id: "integrations",
     label: "OAuth integrations re-authorized",
     done: false,
-    href: "/integrations",
+    href: "/actions",
   },
 ];
 

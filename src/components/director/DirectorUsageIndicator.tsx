@@ -7,7 +7,6 @@ import { Loader2 } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 
-
 interface UsageRingSnapshot {
   plan_id: string | null;
   voice_minutes_used: number;

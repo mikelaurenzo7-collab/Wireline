@@ -84,10 +84,7 @@ export async function updateLeadStatusOnCallEnd(
         .select()
         .from(schema.outboundLeads)
         .where(
-          and(
-            eq(schema.outboundLeads.userId, userId),
-            eq(schema.outboundLeads.callId, vapiCallId),
-          ),
+          and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.callId, vapiCallId)),
         )
         .limit(1);
       lead = row;

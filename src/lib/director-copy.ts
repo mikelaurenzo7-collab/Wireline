@@ -247,13 +247,7 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
   },
 ] as const;
 
-
-export type ComposerAccessoryKind =
-  | "connectors"
-  | "capabilities"
-  | "coach"
-  | "tools"
-  | "attach";
+export type ComposerAccessoryKind = "connectors" | "capabilities" | "coach" | "tools" | "attach";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
   connectors: "Connector lanes your Assistants can orchestrate through Assistant",
@@ -262,7 +256,6 @@ export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, st
   tools: "Abilities currently armed for the coached agent",
   attach: "Documents, Assistants context rules, or playbook instructions",
 };
-
 
 export type DirectorStreamPhase = "connecting" | "preparing" | "thinking" | "replying" | "done";
 
@@ -322,7 +315,7 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
     id: "first-agent",
     label: "What agent should I hire first?",
-    intent: "Assistants planning for new operators",
+    intent: "Assistants planning for new account holders",
   },
   {
     id: "sales-setup",
@@ -395,9 +388,9 @@ export const DIRECTOR_EMPTY_HERO = {
   eyebrow: "Assistants coach",
   title: "Orchestrate your Assistants from",
   titleAccent: "one console",
-  subtitleWithFleet: (n: number) =>
+  subtitleWithAssistant: (n: number) =>
     `${n} agent${n === 1 ? "" : "s"} on deck — orchestrate calls, comms, and integrations from one thread.`,
-  subtitleNoFleet:
+  subtitleNoAssistant:
     "Plan your Assistants, research your market, coach agents, and run CRM work — before agent #1 goes live.",
   capabilityEyebrow: "One console for",
   starterEyebrow: "Start here",
@@ -427,8 +420,10 @@ export const AGENT_WORKSPACE_STARTER_PROMPTS: readonly DirectorStarterPrompt[] =
 
 export const DIRECTOR_LIVE_STEP_COPY = {
   contextCoach: (name: string) => `Loading ${name} coaching context`,
-  contextFleet: (n: number) =>
-    n > 0 ? `Scanning ${n} agent${n === 1 ? "" : "s"} in Assistants` : "Reading your business setup",
+  contextAssistant: (n: number) =>
+    n > 0
+      ? `Scanning ${n} agent${n === 1 ? "" : "s"} in Assistants`
+      : "Reading your business setup",
   contextSub: "Thread history · settings · recent calls",
   integrationsOn: "Arming connected integrations",
   integrationsOnSub: "Shopify · CRM · Slack · calendar paths",
@@ -437,7 +432,7 @@ export const DIRECTOR_LIVE_STEP_COPY = {
   executeTitle: "Staging approval cards",
   executeSub: "Calls · texts · emails · integration jobs",
   composeCoach: "Tailoring coach recommendations",
-  composeFleet: "Composing co-pilot response",
+  composeAssistant: "Composing co-pilot response",
   composeSub: "Clear · actionable · ready to approve",
 } as const;
 

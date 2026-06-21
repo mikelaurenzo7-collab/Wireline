@@ -31,7 +31,7 @@ export interface WirelinePersona {
   name: string;
   /** Role label for routing + logs. */
   role: string;
-  /** ElevenLabs voice ID — picked from PREMIUM_VOICES in FleetSettings. */
+  /** ElevenLabs voice ID — picked from PREMIUM_VOICES in AssistantSettings. */
   voiceId: string;
   /** First sentence the agent speaks when the call connects. */
   firstMessage: string;

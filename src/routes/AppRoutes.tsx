@@ -4,7 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
 const AgentsPage = lazy(() => import("../pages/AgentsPage"));
 const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
-const IntegrationsPage = lazy(() => import("../pages/IntegrationsPage"));
+const ActionsPage = lazy(() => import("../pages/ActionsPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
@@ -24,8 +24,8 @@ export default function AppRoutes() {
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
-        <Route path="/actions" element={<IntegrationsPage />} />
-        <Route path="/integrations" element={<Navigate to="/actions" replace />} />
+        <Route path="/actions" element={<ActionsPage />} />
+        <Route path="/actions" element={<Navigate to="/actions" replace />} />
         <Route path="/ops" element={<Navigate to="/studio" replace />} />
         <Route path="/ops/*" element={<Navigate to="/studio" replace />} />
         <Route path="/settings" element={<SettingsPage />} />

@@ -66,7 +66,7 @@ export async function handleWorkflowToolCall(
     try {
       const { issue_summary, error_codes, severity } = args || {};
       const [task] = await drizzle
-        .insert(schema.fleetTasks)
+        .insert(schema.followUpTasks)
         .values({
           userId: agent?.user_id,
           agentId: webhookAgentId,
@@ -77,7 +77,7 @@ export async function handleWorkflowToolCall(
           sourceType: "phone_call",
           targetChannel: "manual",
         })
-        .returning({ id: schema.fleetTasks.id });
+        .returning({ id: schema.followUpTasks.id });
       return {
         toolCallId,
         result: `Support ticket #${task.id.split("-")[0]} created.`,
@@ -101,7 +101,7 @@ export async function handleWorkflowToolCall(
   if (fn === "schedule_callback") {
     try {
       const { callback_datetime, notes } = args || {};
-      await drizzle.insert(schema.fleetTasks).values({
+      await drizzle.insert(schema.followUpTasks).values({
         userId: agent?.user_id,
         agentId: webhookAgentId,
         taskType: "callback",
@@ -127,7 +127,7 @@ export async function handleWorkflowToolCall(
 
   if (fn === "capture_customer_profile") {
     try {
-      await drizzle.insert(schema.fleetTasks).values({
+      await drizzle.insert(schema.followUpTasks).values({
         userId: agent?.user_id,
         agentId: webhookAgentId,
         taskType: "customer_profile_captured",

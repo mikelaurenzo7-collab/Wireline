@@ -1,6 +1,12 @@
-/* Precision Operator Studio composition. These selectors target the current Studio module only. */
-.wl-stitch-studio-glow{display:none}
+/* Precision Account Holder Studio composition. These selectors target the current Studio module only. */
+.wl-stitch-studio-glow {
+  display: none;
+}
 /* The source uses a tonal overlay, never a frosted-glass treatment. */
-.studio-precision-surface{backdrop-filter:none}
+.studio-precision-surface {
+  backdrop-filter: none;
+}
 /* Tailwind's utility remains on a legacy Studio node; this prevents a rendered blur while that node is preserved for behavior compatibility. */
-.backdrop-blur-sm{backdrop-filter:none!important}
+.backdrop-blur-sm {
+  backdrop-filter: none !important;
+}

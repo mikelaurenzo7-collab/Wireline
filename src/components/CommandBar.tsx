@@ -226,7 +226,7 @@ export default function CommandBar() {
       description: "Phone numbers and integrations",
       icon: PlugZap,
       category: "Navigation",
-      action: () => navigate("/integrations"),
+      action: () => navigate("/actions"),
     },
     {
       id: "admin",

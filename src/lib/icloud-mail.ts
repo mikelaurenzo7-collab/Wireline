@@ -33,9 +33,7 @@ function createImapClient(email: string, appPassword: string) {
   });
 }
 
-function formatAddressList(
-  list: Array<{ name?: string; address?: string }> | undefined,
-): string {
+function formatAddressList(list: Array<{ name?: string; address?: string }> | undefined): string {
   if (!list?.length) return "";
   return list
     .map((a) => (a.name ? `${a.name} <${a.address ?? ""}>` : (a.address ?? "")))

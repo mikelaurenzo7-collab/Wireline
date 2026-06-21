@@ -23,7 +23,6 @@ import { useToast } from "../../contexts/ToastContext";
 import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 import { fetchInsight, InsightSkeleton, ErrCard, qaColor, InsightEmpty } from "./shared";
 
-
 const QA_BRAND = WL_BRAND.accentHex;
 
 export default function QualityView({ days }: { days: number }) {
@@ -252,7 +251,11 @@ export default function QualityView({ days }: { days: number }) {
                     fontSize: "12px",
                     padding: "8px 12px",
                   }}
-                  labelStyle={{ color: "var(--muted-foreground)", fontWeight: 500, marginBottom: 4 }}
+                  labelStyle={{
+                    color: "var(--muted-foreground)",
+                    fontWeight: 500,
+                    marginBottom: 4,
+                  }}
                   itemStyle={{ color: "var(--foreground)" }}
                 />
                 <Area

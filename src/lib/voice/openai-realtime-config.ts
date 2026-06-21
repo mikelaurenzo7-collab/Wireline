@@ -31,7 +31,9 @@ export interface OpenAIRealtimeToolDefinition {
 }
 
 export function normalizeOpenAIRealtimeVoice(raw: unknown): OpenAIRealtimeVoice {
-  const value = String(raw || "").trim().toLowerCase();
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase();
   return (OPENAI_REALTIME_VOICES as readonly string[]).includes(value)
     ? (value as OpenAIRealtimeVoice)
     : (OPENAI_REALTIME_DEFAULT_VOICE as OpenAIRealtimeVoice);

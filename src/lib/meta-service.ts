@@ -159,7 +159,7 @@ export async function subscribePageToLeadgen(
  *
  * v1 uses a single platform-wide META_PIXEL_ID + META_CAPI_ACCESS_TOKEN
  * for the first paying clients. Per-tenant pixel/token storage is
- * phase 2 — operators paste their own pixel ID into Settings.
+ * phase 2 — account holders paste their own pixel ID into Settings.
  *
  * Per Meta's spec, every user identifier (email, phone) must be
  * SHA-256 hashed (lowercase, trimmed) before transmission.

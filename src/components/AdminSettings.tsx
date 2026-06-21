@@ -28,7 +28,7 @@ import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import { AuditActivityPanel } from "./admin/AuditActivityPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
-import { isOwnerOnlyAdminTab, isWirelineOperator } from "../lib/admin-access";
+import { isOwnerOnlyAdminTab, isWirelineAccountHolder } from "../lib/admin-access";
 
 type ConfirmState = { open: boolean; title: string; message: string; onConfirm: () => void };
 const CLOSED_CONFIRM: ConfirmState = { open: false, title: "", message: "", onConfirm: () => {} };
@@ -93,7 +93,14 @@ export default function AdminSettings() {
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
-  type AdminTab = "accounts" | "branding" | "carrier" | "subscription" | "team" | "flywheel" | "activity";
+  type AdminTab =
+    | "accounts"
+    | "branding"
+    | "carrier"
+    | "subscription"
+    | "team"
+    | "flywheel"
+    | "activity";
   const VALID_TABS: AdminTab[] = [
     "accounts",
     "branding",
@@ -131,7 +138,7 @@ export default function AdminSettings() {
     // Legacy / mistaken deep link — system health moved to Founder dashboard.
     if (isOwnerOnlyAdminTab(qsRaw ?? "")) {
       queueMicrotask(() =>
-        navigate(isWirelineOperator(user) ? "/founder" : "/admin?tab=subscription", {
+        navigate(isWirelineAccountHolder(user) ? "/founder" : "/admin?tab=subscription", {
           replace: true,
         }),
       );
@@ -373,7 +380,7 @@ export default function AdminSettings() {
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner
               health={integrationHealth}
-              onOpenIntegrations={() => navigate("/integrations")}
+              onOpenIntegrations={() => navigate("/actions")}
             />
             <div className="flex-1 min-h-0 scroll-viewport scroll-pb-safe">
               {isLoading ? (

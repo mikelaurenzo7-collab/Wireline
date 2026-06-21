@@ -14,7 +14,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { Check, Loader2, Circle } from "lucide-react";
 import { cn } from "../../lib/utils";
 
-
 export type PipelineStepStatus = "done" | "active" | "pending";
 
 export interface PipelineStep {

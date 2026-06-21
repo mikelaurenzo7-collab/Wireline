@@ -239,7 +239,7 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
   }
 
   // ─── TWO-WAY THREAD STORAGE ────────────────────────────────────
-  // Persist the inbound message into the SMS inbox so operators can
+  // Persist the inbound message into the SMS inbox so account holders can
   // see + reply from /inbox. Idempotent thread upsert keyed by
   // (user_id, customer_number). If the sms tables haven't been
   // migrated yet, the catch just logs and we still return 200 to

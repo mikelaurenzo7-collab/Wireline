@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { fetchInsight, InsightSkeleton, ErrCard } from "./shared";
 import { cn } from "../../lib/utils";
 
-
 export default function HeatmapView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

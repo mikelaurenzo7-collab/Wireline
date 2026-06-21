@@ -20,25 +20,25 @@ import { runStructuredWithThinking } from "./claude-structured";
 import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
 import {
   DIRECTOR_FLEET_TOOL,
-  buildDirectorFleetSystemPrompt,
-  normalizeDirectorFleetPlan,
+  buildDirectorAssistantSystemPrompt,
+  normalizeDirectorAssistantPlan,
   type DirectorBusinessContext,
-  type DirectorFleetAgent,
-  type DirectorFleetPlan,
+  type DirectorAssistantAgent,
+  type DirectorAssistantPlan,
 } from "./director-Assistants-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import {
-  buildFleetAuditGuidance,
+  buildAssistantAuditGuidance,
   resolveDirectorMaxTokens,
-  wantsFleetAudit,
+  wantsAssistantAudit,
   wantsLongDeliverable,
   wantsOpusModel,
 } from "./director-deep-analysis";
 import { buildDirectorDeliverableGuidance } from "./director-deliverables";
 export {
   wantsDeepAnalysis,
-  wantsFleetAudit,
+  wantsAssistantAudit,
   wantsLongDeliverable,
   wantsOpusModel,
 } from "./director-deep-analysis";
@@ -58,10 +58,10 @@ export {
   DIRECTOR_SUGGESTION_KINDS,
   type DirectorSuggestionKind,
   type DirectorSuggestion,
-  type DirectorFleetAgent,
+  type DirectorAssistantAgent,
 } from "./director-Assistants-plan";
 
-export interface DirectorPlan extends DirectorFleetPlan {
+export interface DirectorPlan extends DirectorAssistantPlan {
   /** Which model tier handled this turn (for UI/telemetry). */
   model: "sonnet" | "opus";
   /** Claude's adaptive thinking reasoning (only present on deep-analysis turns). */
@@ -77,9 +77,9 @@ export interface PlanDirectorInput {
   /** Skip Opus/deep heuristics (used when retrying after a deep-turn failure). */
   shallowOnly?: boolean;
   userId: string;
-  operatorMessage: string;
+  userMessage: string;
   history: Array<{ role: "Account Holder" | "director"; content: string }>;
-  Assistants: DirectorFleetAgent[];
+  Assistants: DirectorAssistantAgent[];
   /** Aggregate activity context across the whole Assistants (last 7d). */
   stats?: {
     calls7d?: number;
@@ -96,8 +96,8 @@ function buildSystemPrompt(
   deep: boolean,
   integrationPrompt?: string,
 ): string {
-  const fleetAudit = wantsFleetAudit(input.operatorMessage);
-  return buildDirectorFleetSystemPrompt({
+  const fleetAudit = wantsAssistantAudit(input.userMessage);
+  return buildDirectorAssistantSystemPrompt({
     Assistants: input.Assistants,
     stats: input.stats,
     business: input.business,
@@ -105,18 +105,20 @@ function buildSystemPrompt(
     integrationPrompt,
     deliverableGuidance:
       fleetAudit && !input.forceDeep
-        ? buildFleetAuditGuidance()
-        : buildDirectorDeliverableGuidance(input.operatorMessage),
+        ? buildAssistantAuditGuidance()
+        : buildDirectorDeliverableGuidance(input.userMessage),
   });
 }
 
 function buildUserContent(input: PlanDirectorInput, researchBlock?: string): string {
   const transcript = input.history
     .slice(-12)
-    .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You (Director)"}: ${m.content}`)
+    .map(
+      (m) => `${m.role === "Account Holder" ? "Account Holder" : "You (Director)"}: ${m.content}`,
+    )
     .join("\n");
   const prefix = transcript ? `Conversation so far:\n${transcript}\n\n` : "";
-  const base = `${prefix}Account Holder's new message:\n${input.operatorMessage}`;
+  const base = `${prefix}Account Holder's new message:\n${input.userMessage}`;
   return appendResearchToUserPrompt(base, researchBlock);
 }
 
@@ -132,11 +134,11 @@ interface RawDirectorReply extends Record<string, unknown> {
  */
 export function normalizeDirectorPlan(
   raw: RawDirectorReply,
-  Assistants: DirectorFleetAgent[],
+  Assistants: DirectorAssistantAgent[],
   model: "sonnet" | "opus",
-  operatorMessage?: string,
+  userMessage?: string,
 ): DirectorPlan {
-  const fleetPlan = normalizeDirectorFleetPlan(raw, Assistants, operatorMessage);
+  const fleetPlan = normalizeDirectorAssistantPlan(raw, Assistants, userMessage);
   return { ...fleetPlan, model };
 }
 
@@ -146,19 +148,19 @@ export function normalizeDirectorPlan(
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
-  const fleetAudit = !input.shallowOnly && wantsFleetAudit(input.operatorMessage);
+  const fleetAudit = !input.shallowOnly && wantsAssistantAudit(input.userMessage);
   const deepThink = !input.shallowOnly && input.forceDeep === true;
   const useOpus =
     !input.shallowOnly &&
-    (input.forceDeep === true || (!fleetAudit && wantsOpusModel(input.operatorMessage)));
-  const longDeliverable = wantsLongDeliverable(input.operatorMessage);
+    (input.forceDeep === true || (!fleetAudit && wantsOpusModel(input.userMessage)));
+  const longDeliverable = wantsLongDeliverable(input.userMessage);
   const model = useOpus ? CLAUDE_DIRECTOR_MODEL : CLAUDE_MODELS.SONNET;
   const [connections, research] = await Promise.all([
     loadTenantIntegrationConnections(input.userId),
     fleetAudit
       ? Promise.resolve(null)
       : fetchDirectorResearchContext({
-          operatorMessage: input.operatorMessage,
+          userMessage: input.userMessage,
           history: input.history,
         }),
   ]);
@@ -183,7 +185,7 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
     raw,
     input.Assistants,
     useOpus ? "opus" : "sonnet",
-    input.operatorMessage,
+    input.userMessage,
   );
   return {
     ...plan,

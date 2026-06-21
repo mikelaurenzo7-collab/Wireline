@@ -1,7 +1,4 @@
-import {
-  recommendedPlanFromIntent,
-  type SignupIntent,
-} from "./signup-intent";
+import { recommendedPlanFromIntent, type SignupIntent } from "./signup-intent";
 
 export type WorkspaceMode = "personal" | "business";
 
@@ -29,9 +26,7 @@ export function persistWorkspaceMode(mode: WorkspaceMode) {
 function isSafeInternalPath(value: string | null): value is string {
   if (!value) return false;
   if (!value.startsWith("/") || value.startsWith("//")) return false;
-  return !/^\/auth\b|^\/signin\b|^\/login\b|^\/signup\b|^\/get-started\b|^\/reset\b/.test(
-    value,
-  );
+  return !/^\/auth\b|^\/signin\b|^\/login\b|^\/signup\b|^\/get-started\b|^\/reset\b/.test(value);
 }
 
 export function readRedirectFromSearch(search: string): string | null {

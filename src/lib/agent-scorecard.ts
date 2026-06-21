@@ -4,7 +4,7 @@
 //  Extracted from server.ts so the outcome-aligned metric for each
 //  kpi_focus is a unit-testable pure function. Misreporting a
 //  conversion rate or first-call resolution is the kind of subtle bug
-//  that quietly mis-steers operators for weeks before anyone notices,
+//  that quietly mis-steers account holders for weeks before anyone notices,
 //  so this module gets dense test coverage.
 //
 //  No I/O. The route handler does the queries and feeds them in;

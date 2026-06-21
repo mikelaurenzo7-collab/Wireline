@@ -164,9 +164,12 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
 
 export function planById(id: string | null | undefined): StripePlan | null {
   if (!id) return null;
-  if (id === "lite" || id === "business-lite") return STRIPE_PLANS.find((plan) => plan.id === "business-starter") || null;
-  if (id === "pro" || id === "business-growth") return STRIPE_PLANS.find((plan) => plan.id === "starter") || null;
-  if (id === "business" || id === "enterprise") return STRIPE_PLANS.find((plan) => plan.id === "scale") || null;
+  if (id === "lite" || id === "business-lite")
+    return STRIPE_PLANS.find((plan) => plan.id === "business-starter") || null;
+  if (id === "pro" || id === "business-growth")
+    return STRIPE_PLANS.find((plan) => plan.id === "starter") || null;
+  if (id === "business" || id === "enterprise")
+    return STRIPE_PLANS.find((plan) => plan.id === "scale") || null;
   return STRIPE_PLANS.find((plan) => plan.id === id) || null;
 }
 

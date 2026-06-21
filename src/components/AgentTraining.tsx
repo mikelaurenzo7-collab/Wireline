@@ -44,7 +44,6 @@ import {
 import RoleplaySandbox from "./RoleplaySandbox";
 import IntegrationDirectivePresets from "./IntegrationDirectivePresets";
 
-
 type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
 const VALID_TRAINING_TABS: TrainingTab[] = [
@@ -111,7 +110,7 @@ export default function AgentTraining({
   const [directives, setDirectives] = useState<any[]>([]);
   const [personality, setPersonality] = useState("");
   const [lessons, setLessons] = useState<any[]>([]);
-  const [agentRole, setAgentRole] = useState("customer_service");
+  const [_agentRole, setAgentRole] = useState("customer_service");
 
   const [editingDirective, setEditingDirective] = useState<{ id: string; content: string } | null>(
     null,
@@ -894,8 +893,6 @@ export default function AgentTraining({
                   </div>
                 </motion.div>
               )}
-
-
             </motion.div>
           )}
 

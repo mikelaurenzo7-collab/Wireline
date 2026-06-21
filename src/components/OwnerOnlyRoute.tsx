@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { isWirelineOperator } from "../lib/admin-access";
+import { isWirelineAccountHolder } from "../lib/admin-access";
 
 /**
  * Gates owner-only surfaces (Founder's Dashboard). Waits for session hydration
@@ -23,7 +23,7 @@ export default function OwnerOnlyRoute({ children }: { children: React.ReactNode
     );
   }
 
-  if (!isWirelineOperator(user)) {
+  if (!isWirelineAccountHolder(user)) {
     return <Navigate to="/studio" replace />;
   }
 

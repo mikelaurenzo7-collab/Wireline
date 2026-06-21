@@ -27,7 +27,7 @@ export async function handleCoreToolCall(
     try {
       const { description, priority } = args || {};
       const [task] = await drizzle
-        .insert(schema.fleetTasks)
+        .insert(schema.followUpTasks)
         .values({
           userId: agent?.user_id,
           agentId: webhookAgentId,
@@ -42,7 +42,7 @@ export async function handleCoreToolCall(
             "in-call",
           targetChannel: "manual",
         })
-        .returning({ id: schema.fleetTasks.id });
+        .returning({ id: schema.followUpTasks.id });
 
       return {
         toolCallId,

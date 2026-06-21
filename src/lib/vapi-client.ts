@@ -309,18 +309,18 @@ export async function placeOutboundCall(opts: {
     safeOutboundPhone
       ? drizzle
           .select({
-            description: schema.fleetTasks.description,
-            createdAt: schema.fleetTasks.createdAt,
+            description: schema.followUpTasks.description,
+            createdAt: schema.followUpTasks.createdAt,
           })
-          .from(schema.fleetTasks)
+          .from(schema.followUpTasks)
           .where(
             and(
-              eq(schema.fleetTasks.agentId, agentId),
-              eq(schema.fleetTasks.taskType, "customer_profile_captured"),
-              ilike(schema.fleetTasks.description, `%${safeOutboundPhone}%`),
+              eq(schema.followUpTasks.agentId, agentId),
+              eq(schema.followUpTasks.taskType, "customer_profile_captured"),
+              ilike(schema.followUpTasks.description, `%${safeOutboundPhone}%`),
             ),
           )
-          .orderBy(desc(schema.fleetTasks.createdAt))
+          .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(1)
       : Promise.resolve([]),
   ]);

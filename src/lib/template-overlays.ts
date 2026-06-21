@@ -448,13 +448,13 @@ export function substituteBusinessVariables(input: string, ctx: BusinessContext 
 export function composeAgentPersonality(opts: {
   rolePersonality: string;
   templateId?: string | null;
-  operatorCustom?: string | null;
+  accountHolderCustom?: string | null;
   businessContext?: BusinessContext;
 }): string {
   const parts: string[] = [opts.rolePersonality];
   const overlay = opts.templateId ? TEMPLATE_OVERLAYS[opts.templateId] : undefined;
   if (overlay) parts.push(overlay);
-  if (opts.operatorCustom?.trim()) parts.push(opts.operatorCustom.trim());
+  if (opts.accountHolderCustom?.trim()) parts.push(opts.accountHolderCustom.trim());
   const combined = parts.join("\n\n");
   return substituteBusinessVariables(combined, opts.businessContext || {});
 }

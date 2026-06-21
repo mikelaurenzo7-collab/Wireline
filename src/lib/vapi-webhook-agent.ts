@@ -4,7 +4,7 @@
  *
  * Vapi forwards `call.phoneNumberId` when the dialed line is provisioned under
  * Wireline Admin → Phone Numbers (`wireline_phone_numbers.vapi_number_id`).
- * Operators can omit `?agentId=` on serverUrl when routing is inferred from this id.
+ * Account Holders can omit `?agentId=` on serverUrl when routing is inferred from this id.
  */
 
 import { drizzle, log } from "./server-context";

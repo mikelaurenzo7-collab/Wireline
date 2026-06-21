@@ -127,7 +127,7 @@ const KPI_OPTIONS: { value: KpiFocus; label: string; hint: string }[] = [
   { value: "satisfaction", label: "Satisfaction", hint: "Optimize for caller experience and CSAT" },
 ];
 
-// Common timezones — the most-likely-needed subset. Operators with
+// Common timezones — the most-likely-needed subset. Account Holders with
 // unusual zones can paste any IANA string into the input.
 const COMMON_TZS = [
   "America/New_York",

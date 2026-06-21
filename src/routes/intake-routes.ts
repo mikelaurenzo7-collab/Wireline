@@ -161,7 +161,7 @@ async function processIntakeLead(
 
   // Lenient E.164 validation: strip common separators then check for 7–20 digits
   // with an optional leading +. Intentionally not enforcing strict E.164 length
-  // to accommodate pre-normalised numbers from operators; rejects non-phone strings
+  // to accommodate pre-normalised numbers from account holders; rejects non-phone strings
   // (SQL injection attempts, etc.).
   const PHONE_RE = /^\+?[0-9]{7,20}$/;
   const phoneClean = customer_number.replace(/[\s\-().]/g, "");

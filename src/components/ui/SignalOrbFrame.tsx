@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/utils";
 import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
-import { FleetConstellation, type FleetConstellationSize } from "./FleetConstellation";
+import { AssistantConstellation, type AssistantConstellationSize } from "./AssistantConstellation";
 
 type SignalOrbFrameProps = {
   children: ReactNode;
   className?: string;
   /** Constellation diameter preset */
-  size?: FleetConstellationSize;
+  size?: AssistantConstellationSize;
   /** Dormant Assistants nodes behind the focal orb */
   withConstellation?: boolean;
   /** Soft brand bloom behind content (Director hero) */
@@ -36,10 +36,8 @@ export function SignalOrbFrame({
         className,
       )}
     >
-      {withConstellation ? <FleetConstellation size={size} refined={refined} /> : null}
-      {withBloom ? (
-        <div aria-hidden className="wl-signal-orb-bloom" />
-      ) : null}
+      {withConstellation ? <AssistantConstellation size={size} refined={refined} /> : null}
+      {withBloom ? <div aria-hidden className="wl-signal-orb-bloom" /> : null}
       <div className="relative z-[1]">{children}</div>
     </div>
   );

@@ -112,7 +112,7 @@ router.post(
   },
 );
 
-/** Vercel cron: send daily briefs for all operators with the feature enabled (Bearer CRON_SECRET). */
+/** Vercel cron: send daily briefs for all account holders with the feature enabled (Bearer CRON_SECRET). */
 router.post("/api/daily-brief/schedule", async (req: Request, res: Response) => {
   const expected = process.env.CRON_SECRET || "";
   const authz = String(req.headers.authorization || "");

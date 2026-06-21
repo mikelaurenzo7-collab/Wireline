@@ -28,7 +28,6 @@ import { Input } from "./ui/shadcn/Input";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
-
 interface WebhookRow {
   id: string;
   name: string;

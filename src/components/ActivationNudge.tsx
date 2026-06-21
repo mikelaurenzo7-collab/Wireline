@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Phone, X } from "lucide-react";
 import { authFetch } from "../lib/api";
-import { fetchFleetSetupProgress } from "../lib/Assistants-setup-progress";
+import { fetchAssistantSetupProgress } from "../lib/Assistants-setup-progress";
 import {
   fetchActivationStatusFull,
   isActivationCelebrated,
@@ -43,7 +43,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
 
       const [activation, progress] = await Promise.all([
         fetchActivationStatusFull(),
-        fetchFleetSetupProgress().catch(() => null),
+        fetchAssistantSetupProgress().catch(() => null),
       ]);
 
       if (cancelled) return;

@@ -8,10 +8,10 @@ import { eq, and, sql, desc, like, ne, gte } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { fleetRateLimit } from "../middleware/api-rate-limits";
-import { validateBody, updateFleetTaskSchema } from "../lib/api-validation";
+import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
-import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
+import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/Assistants-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
@@ -217,36 +217,36 @@ router.get(
           ? req.query.priority
           : null;
 
-      const whereClauses = [eq(schema.fleetTasks.userId, req.user.id)];
-      if (statusFilter) whereClauses.push(eq(schema.fleetTasks.status, statusFilter));
-      if (priorityFilter) whereClauses.push(eq(schema.fleetTasks.priority, priorityFilter));
+      const whereClauses = [eq(schema.followUpTasks.userId, req.user.id)];
+      if (statusFilter) whereClauses.push(eq(schema.followUpTasks.status, statusFilter));
+      if (priorityFilter) whereClauses.push(eq(schema.followUpTasks.priority, priorityFilter));
 
       const tasks = await drizzle
         .select({
-          id: schema.fleetTasks.id,
-          userId: schema.fleetTasks.userId,
-          sourceType: schema.fleetTasks.sourceType,
-          sourceId: schema.fleetTasks.sourceId,
-          targetChannel: schema.fleetTasks.targetChannel,
-          agentId: schema.fleetTasks.agentId,
-          customerInfo: schema.fleetTasks.customerInfo,
+          id: schema.followUpTasks.id,
+          userId: schema.followUpTasks.userId,
+          sourceType: schema.followUpTasks.sourceType,
+          sourceId: schema.followUpTasks.sourceId,
+          targetChannel: schema.followUpTasks.targetChannel,
+          agentId: schema.followUpTasks.agentId,
+          customerInfo: schema.followUpTasks.customerInfo,
           // `payload` is the action body that the Account Holder reviews/approves —
           // proposed email body, contract envelope, prospect search args.
           // The ActionFeed UI reads `payload.to`, `payload.body`, etc.
-          payload: schema.fleetTasks.payload,
-          taskType: schema.fleetTasks.taskType,
-          description: schema.fleetTasks.description,
-          status: schema.fleetTasks.status,
-          priority: schema.fleetTasks.priority,
-          dueDate: schema.fleetTasks.dueDate,
-          resolutionNotes: schema.fleetTasks.resolutionNotes,
-          createdAt: schema.fleetTasks.createdAt,
+          payload: schema.followUpTasks.payload,
+          taskType: schema.followUpTasks.taskType,
+          description: schema.followUpTasks.description,
+          status: schema.followUpTasks.status,
+          priority: schema.followUpTasks.priority,
+          dueDate: schema.followUpTasks.dueDate,
+          resolutionNotes: schema.followUpTasks.resolutionNotes,
+          createdAt: schema.followUpTasks.createdAt,
           agent: {
             name: schema.agents.name,
           },
         })
-        .from(schema.fleetTasks)
-        .leftJoin(schema.agents, eq(schema.fleetTasks.agentId, schema.agents.id))
+        .from(schema.followUpTasks)
+        .leftJoin(schema.agents, eq(schema.followUpTasks.agentId, schema.agents.id))
         .where(and(...whereClauses))
         .limit(1000);
 
@@ -275,7 +275,7 @@ router.post(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validation = parseFormData(FleetTaskCreateSchema, req.body);
+      const validation = parseFormData(FollowUpTaskCreateSchema, req.body);
       if (!validation.success) {
         return res.status(400).json({
           code: "BAD_REQUEST",
@@ -295,7 +295,7 @@ router.post(
         due_date,
       } = validation.data!;
 
-      await drizzle.insert(schema.fleetTasks).values({
+      await drizzle.insert(schema.followUpTasks).values({
         sourceType: source_type,
         sourceId: source_id,
         targetChannel: target_channel,
@@ -320,7 +320,7 @@ router.post(
 router.patch(
   "/api/Assistants/tasks/:id",
   authenticateUser,
-  validateBody(updateFleetTaskSchema),
+  validateBody(updateFollowUpTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { status, priority, due_date, agent_id, resolution_notes } = req.body;
@@ -346,10 +346,13 @@ router.patch(
       if (resolution_notes !== undefined) updateData.resolutionNotes = resolution_notes;
 
       await drizzle
-        .update(schema.fleetTasks)
+        .update(schema.followUpTasks)
         .set(updateData)
         .where(
-          and(eq(schema.fleetTasks.id, req.params.id), eq(schema.fleetTasks.userId, req.user.id)),
+          and(
+            eq(schema.followUpTasks.id, req.params.id),
+            eq(schema.followUpTasks.userId, req.user.id),
+          ),
         );
       if (status !== undefined) touchNavCounts(req.user.id);
       res.json({ success: true });
@@ -370,8 +373,8 @@ router.post(
 
       const [task] = await drizzle
         .select()
-        .from(schema.fleetTasks)
-        .where(and(eq(schema.fleetTasks.id, taskId), eq(schema.fleetTasks.userId, userId)))
+        .from(schema.followUpTasks)
+        .where(and(eq(schema.followUpTasks.id, taskId), eq(schema.followUpTasks.userId, userId)))
         .limit(1);
 
       if (!task) {
@@ -384,7 +387,7 @@ router.post(
 
       // Prefer the structured `payload` (written by the AI Action Engine);
       // fall back to legacy `customerInfo` for rows created before
-      // `wireline_fleet_tasks.payload` existed.
+      // `wireline_follow_up_tasks.payload` existed.
       const actionItem: ActionItem = {
         type: task.taskType as any,
         priority: task.priority as any,
@@ -404,9 +407,9 @@ router.post(
 
       if (result.success) {
         await drizzle
-          .update(schema.fleetTasks)
+          .update(schema.followUpTasks)
           .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
-          .where(eq(schema.fleetTasks.id, taskId));
+          .where(eq(schema.followUpTasks.id, taskId));
         touchNavCounts(userId);
         res.json({ success: true });
       } else {
@@ -443,15 +446,15 @@ router.get(
           .limit(5),
         drizzle
           .select({
-            id: schema.fleetTasks.id,
-            description: schema.fleetTasks.description,
-            status: schema.fleetTasks.status,
-            priority: schema.fleetTasks.priority,
-            createdAt: schema.fleetTasks.createdAt,
+            id: schema.followUpTasks.id,
+            description: schema.followUpTasks.description,
+            status: schema.followUpTasks.status,
+            priority: schema.followUpTasks.priority,
+            createdAt: schema.followUpTasks.createdAt,
           })
-          .from(schema.fleetTasks)
-          .where(eq(schema.fleetTasks.userId, req.user.id))
-          .orderBy(desc(schema.fleetTasks.createdAt))
+          .from(schema.followUpTasks)
+          .where(eq(schema.followUpTasks.userId, req.user.id))
+          .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(5),
         drizzle
           .select({
@@ -521,27 +524,27 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
           .limit(30),
         drizzle
           .select()
-          .from(schema.fleetTasks)
+          .from(schema.followUpTasks)
           .where(
             and(
-              eq(schema.fleetTasks.userId, req.user.id),
-              eq(schema.fleetTasks.taskType, "compliance_review"),
-              eq(schema.fleetTasks.status, "pending"),
+              eq(schema.followUpTasks.userId, req.user.id),
+              eq(schema.followUpTasks.taskType, "compliance_review"),
+              eq(schema.followUpTasks.status, "pending"),
             ),
           )
-          .orderBy(desc(schema.fleetTasks.createdAt))
+          .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(20),
         drizzle
           .select()
-          .from(schema.fleetTasks)
+          .from(schema.followUpTasks)
           .where(
             and(
-              eq(schema.fleetTasks.userId, req.user.id),
-              eq(schema.fleetTasks.status, "pending"),
-              ne(schema.fleetTasks.taskType, "compliance_review"),
+              eq(schema.followUpTasks.userId, req.user.id),
+              eq(schema.followUpTasks.status, "pending"),
+              ne(schema.followUpTasks.taskType, "compliance_review"),
             ),
           )
-          .orderBy(desc(schema.fleetTasks.createdAt))
+          .orderBy(desc(schema.followUpTasks.createdAt))
           .limit(30),
         drizzle
           .select({

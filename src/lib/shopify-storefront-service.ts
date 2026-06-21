@@ -78,9 +78,14 @@ function getString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-async function getConnectedShopifyStorefrontClient(userId: string): Promise<StorefrontClient | null> {
+async function getConnectedShopifyStorefrontClient(
+  userId: string,
+): Promise<StorefrontClient | null> {
   const [connection] = await drizzle
-    .select({ instanceUrl: schema.crmConnections.instanceUrl, metadata: schema.crmConnections.metadata })
+    .select({
+      instanceUrl: schema.crmConnections.instanceUrl,
+      metadata: schema.crmConnections.metadata,
+    })
     .from(schema.crmConnections)
     .where(
       and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "shopify")),
@@ -88,9 +93,11 @@ async function getConnectedShopifyStorefrontClient(userId: string): Promise<Stor
     .limit(1);
 
   if (!connection) return null;
-  const meta = connection.metadata as
-    | { shop?: unknown; storefrontAccessToken?: unknown; storefront_access_token?: unknown }
-    | null;
+  const meta = connection.metadata as {
+    shop?: unknown;
+    storefrontAccessToken?: unknown;
+    storefront_access_token?: unknown;
+  } | null;
 
   let shop = meta && typeof meta.shop === "string" ? normalizeShopDomain(meta.shop) : null;
   if (!shop && connection.instanceUrl) {
@@ -102,7 +109,8 @@ async function getConnectedShopifyStorefrontClient(userId: string): Promise<Stor
   }
   if (!shop) return null;
 
-  const metadataToken = getString(meta?.storefrontAccessToken) || getString(meta?.storefront_access_token);
+  const metadataToken =
+    getString(meta?.storefrontAccessToken) || getString(meta?.storefront_access_token);
   const envToken = getString(process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN);
   return { shop, storefrontAccessToken: metadataToken || envToken };
 }
@@ -137,7 +145,10 @@ async function storefrontGraphql<T>(
   );
   const json = (await response.json()) as GraphqlResponse<T>;
   if (!response.ok || json.errors?.length || !json.data) {
-    const message = json.errors?.map((e) => e.message).filter(Boolean).join("; ");
+    const message = json.errors
+      ?.map((e) => e.message)
+      .filter(Boolean)
+      .join("; ");
     throw new Error(message || `Shopify Storefront API failed with ${response.status}`);
   }
   return json.data;
@@ -218,7 +229,11 @@ export async function loadShopifyStorefrontStatus(userId: string): Promise<{
     };
   }
   try {
-    const catalog = await loadShopifyStorefrontCatalog({ userId, productsFirst: 1, collectionsFirst: 1 });
+    const catalog = await loadShopifyStorefrontCatalog({
+      userId,
+      productsFirst: 1,
+      collectionsFirst: 1,
+    });
     return {
       connected: true,
       ready: true,
@@ -247,7 +262,10 @@ export async function loadShopifyStorefrontCatalog(params: {
   if (!client) throw new Error("Connect Shopify before generating a live storefront catalog.");
   const productsFirst = Math.min(Math.max(params.productsFirst ?? 12, 1), 24);
   const collectionsFirst = Math.min(Math.max(params.collectionsFirst ?? 6, 1), 12);
-  const data = await storefrontGraphql<any>(client, CATALOG_QUERY, { productsFirst, collectionsFirst });
+  const data = await storefrontGraphql<any>(client, CATALOG_QUERY, {
+    productsFirst,
+    collectionsFirst,
+  });
 
   return {
     shop: client.shop,

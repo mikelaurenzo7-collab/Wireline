@@ -6,7 +6,7 @@
  * Tyler, Maya) needs to hand a caller to a human, it invokes the
  * `escalate_to_human` tool. Vapi posts here. We:
  *
- *   1. Insert into wireline_fleet_tasks so it appears on the admin
+ *   1. Insert into wireline_follow_up_tasks so it appears on the admin
  *      Triage page (the existing Account Holder inbox).
  *   2. SMS the platform owner (OWNER_PHONE env var) via Twilio so
  *      they get a real-time ping for urgent issues.
@@ -16,7 +16,7 @@
  *
  * The SMS sender is PLATFORM_SMS_FROM (env var). If not configured,
  * the SMS step is skipped silently — the Assistants-task insert still
- * lands so nothing falls through the cracks. Operators see all
+ * lands so nothing falls through the cracks. Account Holders see all
  * pending escalations in /triage regardless of SMS state.
  *
  * Public endpoint (no auth) — Vapi calls it from its servers with
@@ -109,7 +109,7 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
   // 1. Persist as a Assistants task — surfaces in /triage automatically
   if (tenantUserId) {
     try {
-      await drizzle.insert(schema.fleetTasks).values({
+      await drizzle.insert(schema.followUpTasks).values({
         userId: tenantUserId,
         taskType: "human_escalation",
         description: `[${urgency.toUpperCase()}] ${agentName} → ${callerName} (${callerPhone}). ${summary}${callerEmail ? ` · email: ${callerEmail}` : ""}`,

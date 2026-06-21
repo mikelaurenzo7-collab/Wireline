@@ -24,7 +24,7 @@ export interface CallLogRow {
   createdAt: Date | string;
 }
 
-export interface FleetTaskRow {
+export interface FollowUpTaskRow {
   id: string;
   description?: string | null;
   status?: string | null;
@@ -80,7 +80,7 @@ export function callLogToActivity(l: CallLogRow): ActivityEntry {
   };
 }
 
-export function fleetTaskToActivity(t: FleetTaskRow): ActivityEntry {
+export function followUpTaskToActivity(t: FollowUpTaskRow): ActivityEntry {
   return {
     id: t.id,
     type: "MISSION_INJECTED",
@@ -127,14 +127,14 @@ function ts(s: string): number {
 
 export function compileActivityFeed(input: {
   logs: CallLogRow[];
-  tasks: FleetTaskRow[];
+  tasks: FollowUpTaskRow[];
   lessons: AgentLessonRow[];
   emails: EmailThreadRow[];
   limit?: number;
 }): ActivityEntry[] {
   const merged: ActivityEntry[] = [
     ...input.logs.map(callLogToActivity),
-    ...input.tasks.map(fleetTaskToActivity),
+    ...input.tasks.map(followUpTaskToActivity),
     ...input.lessons.map(agentLessonToActivity),
     ...input.emails.map(emailThreadToActivity),
   ];

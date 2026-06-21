@@ -10,7 +10,7 @@ import { BRAND } from "../constants/brand-colors";
 /* ──────────────────────────────────────────────────────────────────────────
    GoalsView — the Insights → Goals tab.
 
-   Operators set monthly Assistants targets (calls handled, appointments booked,
+   Account Holders set monthly Assistants targets (calls handled, appointments booked,
    qualified leads, voice minutes) and watch live progress against an even
    daily run-rate. Reads /api/goals; the progress math lives in
    src/lib/goals.ts and is computed server-side on every fetch.

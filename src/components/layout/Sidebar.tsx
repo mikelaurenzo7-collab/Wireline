@@ -232,7 +232,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
                         Settings
                       </Link>
                       <Link
-                        to="/integrations"
+                        to="/actions"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium text-foreground/70 hover:bg-brand/[0.04] hover:text-foreground transition-colors group"
                         role="menuitem"
@@ -297,7 +297,7 @@ export default function Sidebar({ navBadges }: SidebarProps) {
             dataTour="settings"
             active={
               location.pathname === "/admin" ||
-              ["/integrations", "/dnc", "/audit", "/admin"].some(
+              ["/actions", "/dnc", "/audit", "/admin"].some(
                 (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
               )
             }

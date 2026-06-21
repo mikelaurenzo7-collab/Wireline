@@ -153,7 +153,7 @@ export function isWithinBusinessHours(
 /**
  * Compliance presets — opt-in disclosures appended to the agent's
  * first-message + woven into directive guardrails. The text is short
- * and intentionally generic; operators must consult counsel for the
+ * and intentionally generic; account holders must consult counsel for the
  * binding language in their jurisdiction.
  *
  * 'none' returns an empty block.

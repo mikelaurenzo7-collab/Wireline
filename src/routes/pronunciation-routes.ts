@@ -8,7 +8,7 @@ import { AppError } from "../lib/api-error";
  *   PATCH  /api/pronunciation-dicts/:id    — update entries (recreate on EL side)
  *   DELETE /api/pronunciation-dicts/:id    — remove locally + on EL
  *
- * Why: operators in regulated verticals (medical, legal, real estate)
+ * Why: account holders in regulated verticals (medical, legal, real estate)
  * need their AI receptionist to pronounce industry jargon correctly.
  * ElevenLabs has first-class support: we maintain the rules locally
  * (so we control the UX) and mirror them to ElevenLabs so the

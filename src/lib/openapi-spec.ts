@@ -991,7 +991,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         "Wireline's public API. Designed for three audiences:",
         "",
         "1. **CRM / form / Zapier integrations** — push leads in via `POST /api/intake/lead`.",
-        "2. **Operators & ops dashboards** — read agents, calls, settings, quotas, SLOs.",
+        "2. **Account Holders & ops dashboards** — read agents, calls, settings, quotas, SLOs.",
         "3. **AI-agent frameworks** — consume this spec as a tool catalog (Claude Desktop, Cursor, ChatGPT custom GPTs, etc).",
         "",
         "Authentication:",

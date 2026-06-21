@@ -4,7 +4,7 @@
  *   1. Injected into every Vapi assistant's system prompt as a
  *      "WIRELINE KNOWLEDGE" block (so all 10 landing-page agents answer
  *      questions about Wireline the same way).
- *   2. Rendered in the in-app /help route so signed-in operators see
+ *   2. Rendered in the in-app /help route so signed-in account holders see
  *      the same product story.
  *   3. Surfaced in the public landing copy.
  *
@@ -24,10 +24,10 @@ export const WIRELINE_VOICE_STACK =
   "Live calls run through our voice bridge with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
 
 const PLAN_BEST_FOR: Record<string, string> = {
-  personal: "Solo operators, side hustles, founders testing the waters.",
+  personal: "Solo account holders, side hustles, founders testing the waters.",
   starter: "Small teams running a single playbook: inbound support, outbound SDR, or scheduling.",
-  pro: "Growing operators running multiple playbooks side by side: sales, support, and outbound.",
-  business: "Multi-team operators who need supervisor visibility, SSO, and serious volume.",
+  pro: "Growing account holders running multiple playbooks side by side: sales, support, and outbound.",
+  business: "Multi-team account holders who need supervisor visibility, SSO, and serious volume.",
   enterprise: "Companies that need white-glove onboarding, dedicated support, and custom terms.",
 };
 

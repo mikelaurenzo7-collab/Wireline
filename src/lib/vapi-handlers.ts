@@ -234,7 +234,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       // QA score: agent-quality assessment (vs leadScore which is
       // customer-intent). Derived from the analysis output so we don't
       // burn another LLM round-trip per call. Surfaced on CallLogs as
-      // a colored score badge so operators see at a glance which calls
+      // a colored score badge so account holders see at a glance which calls
       // need coaching review.
       //
       //   baseScore = 60 (neutral)

@@ -5,10 +5,10 @@
 
 import { authFetch } from "./api";
 import {
-  fetchFleetSetupProgress,
+  fetchAssistantSetupProgress,
   fetchActivationStatus,
-  isFleetSetupComplete,
-  type FleetSetupProgress,
+  isAssistantSetupComplete,
+  type AssistantSetupProgress,
 } from "./fleet-setup-progress";
 import type { TenantActivationStatus } from "./tenant-activation";
 
@@ -162,7 +162,7 @@ export function markActivationCelebrated(): void {
 export type PostSignupEligibility = {
   shouldShow: boolean;
   reason: "fresh_signup" | "incomplete_fleet" | null;
-  progress: FleetSetupProgress | null;
+  progress: AssistantSetupProgress | null;
   planId: string | null;
   activated: boolean;
 };
@@ -171,7 +171,7 @@ export type PostSignupEligibility = {
 export async function evaluatePostSignupEligibility(): Promise<PostSignupEligibility> {
   const [prefs, progress, planId, activation] = await Promise.all([
     fetchUserPreferences(),
-    fetchFleetSetupProgress().catch(() => null),
+    fetchAssistantSetupProgress().catch(() => null),
     authFetch("/api/billing/status")
       .then((r) => (r.ok ? r.json() : null))
       .then(
@@ -199,7 +199,7 @@ export async function evaluatePostSignupEligibility(): Promise<PostSignupEligibi
     return { shouldShow: false, reason: null, progress, planId, activated: false };
   }
 
-  if (progress && isFleetSetupComplete(progress)) {
+  if (progress && isAssistantSetupComplete(progress)) {
     clearFreshSignupSession();
     return { shouldShow: false, reason: null, progress, planId, activated: false };
   }

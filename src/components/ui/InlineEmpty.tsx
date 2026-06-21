@@ -15,8 +15,6 @@ import React from "react";
 
 import { cn } from "../../lib/utils";
 
-
-
 interface InlineEmptyProps {
   /** Short message like "No hot leads" or "All clear" */
 

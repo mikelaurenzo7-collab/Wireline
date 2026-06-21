@@ -39,7 +39,7 @@ interface AgentFlowComposerProps {
 }
 
 /**
- * Starter templates — operators pick one to skip the blank-slate barrier.
+ * Starter templates — account holders pick one to skip the blank-slate barrier.
  * Each template models a real conversation arc the four demo agents on the
  * landing page follow. Customizable after load — these are starting points
  * not constraints. Templates compose into the same FlowStep[] shape the
@@ -405,7 +405,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
 
   /**
    * Surface-level validation surfaced as a non-blocking banner. We don't
-   * stop the save — operators may genuinely want to draft a half-finished
+   * stop the save — account holders may genuinely want to draft a half-finished
    * flow and come back — but we tell them what's incomplete so they can
    * fix it before going live.
    */
@@ -610,7 +610,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
             </ShadButton>
           </div>
 
-          {/* Template picker — operators rarely want a blank slate.
+          {/* Template picker — account holders rarely want a blank slate.
             Seeded flows for the 4 demo agent archetypes get them to a
             working draft in one click, then they customize. */}
           <div className="pt-3 border-t border-white/8 space-y-2">
@@ -638,7 +638,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           {/* Snippet drawer — paste building-block prose into the active
               stage's instructions. Smaller-grained than templates: an
               objection handler, a discovery question, a compliance line.
-              Groups by category so operators can scan for the pattern
+              Groups by category so account holders can scan for the pattern
               they need. */}
           <div className="pt-3 border-t border-white/8 space-y-2">
             <ShadButton
@@ -684,7 +684,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           </div>
         </div>
 
-        {/* Validation banner — non-blocking. Shows operators what's
+        {/* Validation banner — non-blocking. Shows account holders what's
           incomplete without preventing them from saving a draft. */}
         {validationIssues.length > 0 && (
           <div className="rounded-md border border-brand/30 bg-brand/5 p-3 space-y-1.5 shrink-0">
@@ -926,7 +926,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                     placeholder="e.g. You are now qualifying the lead. Ask about their budget and timeline. Do not mention specific pricing yet."
                     className="w-full h-40 bg-black/10 border border-white/10 rounded-md p-4 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:border-brand/40 transition-colors placeholder:text-foreground/55"
                   />
-                  {/* Pacing / length hints — operators tend to write
+                  {/* Pacing / length hints — account holders tend to write
                       either too terse ("be friendly") or too verbose
                       (paragraphs). Surfacing word count + estimated
                       read-aloud time + a soft cap keeps stages in the

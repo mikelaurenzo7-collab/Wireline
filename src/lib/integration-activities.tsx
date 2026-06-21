@@ -39,6 +39,10 @@ export const INTEGRATION_STYLES: Record<
   shopify: { name: "Shopify", color: "#95BF47", icon: <ShoppingBag className="w-4 h-4" /> },
   square: { name: "Square", color: "#006AFF", icon: <CreditCard className="w-4 h-4" /> },
   microsoft_teams: { name: "MS Teams", color: "#6264A7", icon: <Users className="w-4 h-4" /> },
-  microsoft_excel: { name: "Excel", color: "#217346", icon: <FileSpreadsheet className="w-4 h-4" /> },
+  microsoft_excel: {
+    name: "Excel",
+    color: "#217346",
+    icon: <FileSpreadsheet className="w-4 h-4" />,
+  },
   google_sheets: { name: "Sheets", color: "#34A853", icon: <Table className="w-4 h-4" /> },
 };

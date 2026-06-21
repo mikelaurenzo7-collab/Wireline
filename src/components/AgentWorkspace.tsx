@@ -493,13 +493,13 @@ export default function AgentWorkspace({
   const triggerCommand = useCallback(
     (text: string) => {
       if (!text || isSending) return;
-      const optimisticOperator: WorkspaceMessage = {
+      const optimisticAccountHolder: WorkspaceMessage = {
         id: `tmp-${Date.now()}`,
         role: "Account Holder",
         content: text,
         createdAt: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, optimisticOperator]);
+      setMessages((prev) => [...prev, optimisticAccountHolder]);
       setIsSending(true);
       setToolsOpen(false);
       setAttachmentsOpen(false);
@@ -1052,7 +1052,7 @@ export default function AgentWorkspace({
                   </div>
                   <div className="mt-2 pt-2 border-t border-border">
                     <a
-                      href="/integrations"
+                      href="/actions"
                       className="flex items-center gap-2 px-2 py-2 text-[11px] text-brand hover:text-brand/80 transition-colors"
                     >
                       <ArrowUpRight className="w-3 h-3" />
@@ -1270,7 +1270,7 @@ export default function AgentWorkspace({
         <div className="flex-1 min-h-0 scroll-viewport">
           <div className="px-4 pt-3">
             <a
-              href="/integrations"
+              href="/actions"
               className="inline-flex items-center gap-1.5 text-[11px] text-brand hover:text-brand/80 transition-colors"
             >
               <ArrowUpRight className="w-3.5 h-3.5" />

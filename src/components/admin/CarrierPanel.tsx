@@ -577,7 +577,7 @@ export function CarrierPanel({
                 - Webhook delivery failed
               The wireline_settings table has had `twilio_manager_alerts_enabled`
               + `twilio_manager_alert_number` columns since the schema
-              was set up — this just exposes them to operators. */}
+              was set up — this just exposes them to account holders. */}
           <div className="mt-6 pt-5 border-t border-input space-y-3">
             <div>
               <p className="wl-label text-foreground/55 mb-1">Alerts to you</p>

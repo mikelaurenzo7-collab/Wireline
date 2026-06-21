@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- agent + agentConfig are the
- * untyped snake_case API rows mirrored from FleetSettings. */
+ * untyped snake_case API rows mirrored from AssistantSettings. */
 /**
  * AgentReadinessStage — the launch-readiness ribbon at the top of the Studio
  * canvas.

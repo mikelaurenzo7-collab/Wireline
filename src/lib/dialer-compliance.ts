@@ -29,7 +29,8 @@ export function isNumberOnDncList(num: string, entries: DncEntry[]): boolean {
 
     // 10 vs 11 digits North American fallback
     const d1 = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-    const d2 = entryDigits.length === 11 && entryDigits.startsWith("1") ? entryDigits.slice(1) : entryDigits;
+    const d2 =
+      entryDigits.length === 11 && entryDigits.startsWith("1") ? entryDigits.slice(1) : entryDigits;
     return d1 === d2 && d1.length >= 10;
   });
 }

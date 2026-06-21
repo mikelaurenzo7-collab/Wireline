@@ -420,7 +420,7 @@ export const pronunciationEntrySchema = z.object({
 // Assistants Task Schemas
 // ============================================================================
 
-export const updateFleetTaskSchema = z.object({
+export const updateFollowUpTaskSchema = z.object({
   status: z.enum(["open", "in_progress", "done", "cancelled"]).optional(),
   priority: z.enum(["low", "medium", "high", "critical"]).optional(),
   due_date: z.string().optional().nullable(),
@@ -498,7 +498,7 @@ export const directorMessageSchema = z
   .object({
     content: z.string().max(4000).optional(),
     focusAgentId: z.string().max(120).optional(),
-    skipOperatorPersist: z.boolean().optional(),
+    skipAccountHolderPersist: z.boolean().optional(),
     forceDeep: z.boolean().optional(),
     modelSelection: directorChatModelSelectionSchema.optional(),
     stitchOptions: directorStitchOptionsSchema.optional(),
@@ -512,7 +512,7 @@ export const directorMessageSchema = z
 export const directorStreamMessageSchema = z.object({
   content: z.string().min(1, "Message content required").max(4000),
   focusAgentId: z.string().max(120).optional(),
-  skipOperatorPersist: z.boolean().optional(),
+  skipAccountHolderPersist: z.boolean().optional(),
   forceDeep: z.boolean().optional(),
   modelSelection: directorChatModelSelectionSchema.optional(),
   stitchOptions: directorStitchOptionsSchema.optional(),

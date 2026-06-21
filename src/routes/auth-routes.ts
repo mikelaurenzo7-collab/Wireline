@@ -30,7 +30,10 @@ import {
   resetPasswordSchema,
 } from "../lib/api-validation";
 import { getPostgresErrorCode } from "../lib/pg-errors";
-import { bootstrapFounderFleetIfEmpty, scheduleFounderBootstrap } from "../lib/founder-bootstrap";
+import {
+  bootstrapFounderAssistantIfEmpty,
+  scheduleFounderBootstrap,
+} from "../lib/founder-bootstrap";
 import { authSuccessBody, clearSessionCookie, setSessionCookie } from "../lib/session-cookie";
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
@@ -554,7 +557,7 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await bootstrapFounderFleetIfEmpty(req.user.id, req.user.email);
+      const result = await bootstrapFounderAssistantIfEmpty(req.user.id, req.user.email);
       res.json({
         ok: true,
         founderSeeded: result.seeded,

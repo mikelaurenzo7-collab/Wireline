@@ -6,7 +6,7 @@ import type { WebhookEvent } from "./webhook-helpers";
 
 export type SloHealth = "ok" | "warn" | "critical";
 
-export interface OperatorSloSnapshot {
+export interface AccountHolderSloSnapshot {
   window_hours: number;
   evaluated_at: string;
   jobs: {
@@ -45,7 +45,7 @@ function nextUtcMidnightIso(from = new Date()): string {
 
 const DEFAULT_WINDOW_H = 24;
 
-export function evaluateOperatorSloHealth(input: {
+export function evaluateAccountHolderSloHealth(input: {
   pendingJobs: number;
   deadEnrichmentWindow: number;
   webhookAttemptsWindow: number;
@@ -147,11 +147,11 @@ export function getSloWebhookEvents(
   return payloads;
 }
 
-export async function getOperatorSloSnapshot(
+export async function getAccountHolderSloSnapshot(
   drizzle: VercelPgDatabase<typeof schema>,
   userId: string,
   windowHours: number = DEFAULT_WINDOW_H,
-): Promise<OperatorSloSnapshot> {
+): Promise<AccountHolderSloSnapshot> {
   const now = new Date();
   const since = new Date(now.getTime() - windowHours * 3_600_000);
   const evaluated_at = now.toISOString();
@@ -326,7 +326,7 @@ export async function getOperatorSloSnapshot(
   const errSev = Number(errSevRes[0].count);
   const critSev = Number(critSevRes[0].count);
 
-  const health = evaluateOperatorSloHealth({
+  const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
     deadEnrichmentWindow: enDead,
     webhookAttemptsWindow: attempts_in_window,

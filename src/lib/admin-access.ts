@@ -1,9 +1,9 @@
-/** Tabs and APIs reserved for Wireline platform operators (founder / staff). */
+/** Tabs and APIs reserved for Wireline platform account holders (founder / staff). */
 export const OWNER_ONLY_ADMIN_TABS = ["system"] as const;
 
 export type OwnerOnlyAdminTab = (typeof OWNER_ONLY_ADMIN_TABS)[number];
 
-export function isWirelineOperator(user: { is_owner?: boolean } | null | undefined): boolean {
+export function isWirelineAccountHolder(user: { is_owner?: boolean } | null | undefined): boolean {
   return user?.is_owner === true;
 }
 

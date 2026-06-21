@@ -2,7 +2,7 @@
 /**
  * Pronunciation Dictionary — Account Holder-side jargon management surface.
  *
- * Lives under Admin → Pronunciation. Lets operators in regulated
+ * Lives under Admin → Pronunciation. Lets account holders in regulated
  * verticals (medical, legal, real estate) drive how the AI receptionist
  * voices industry terms: "HVAC" → "H-V-A-C", "ACL" → "A-C-L"
  * (not "ackle"), "deposition" → "dep-uh-zish-un".
@@ -393,7 +393,7 @@ export default function PronunciationDictionaryPanel() {
 /**
  * Inline rules table — used by both the create form and the
  * per-dictionary edit panel. Keeps the visual treatment identical
- * across both surfaces so operators don't have to relearn the UI.
+ * across both surfaces so account holders don't have to relearn the UI.
  */
 interface EntryEditorProps {
   entries: DictEntry[];

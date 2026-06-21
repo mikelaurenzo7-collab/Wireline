@@ -396,7 +396,9 @@ function TemplateCard({
               <span
                 className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
-                  deployedCount === 1 ? "Already in your Assistants" : `${deployedCount} in your Assistants`
+                  deployedCount === 1
+                    ? "Already in your Assistants"
+                    : `${deployedCount} in your Assistants`
                 }
               >
                 <Check className="w-2.5 h-2.5" />

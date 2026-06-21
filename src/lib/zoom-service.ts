@@ -8,7 +8,7 @@ import { getErrorMessage } from "./server-utils";
 /**
  * Zoom Integration Service — OAuth 2.0 authorization_code flow.
  *
- * Operators connect their Zoom account via Admin → Integrations.
+ * Account Holders connect their Zoom account via Admin → Integrations.
  * When an agent books a calendar appointment, a Zoom meeting link
  * is automatically generated and attached to the event.
  */

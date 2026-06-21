@@ -7,7 +7,6 @@ import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
-
 export default function TopicsView() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
