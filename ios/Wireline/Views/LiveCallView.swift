@@ -232,6 +232,15 @@ struct LiveCallView: View {
         } else {
             call = all.first
         }
+
+        if let active = call {
+            await WirelineCallLiveActivityManager.shared.update(
+                callId: active.callId,
+                caller: active.customerNumber ?? active.label,
+                status: active.status,
+                canTakeCall: true
+            )
+        }
     }
 
     private func transfer() async {
@@ -243,6 +252,7 @@ struct LiveCallView: View {
         }
         do {
             try await WirelineAPI.shared.handoffCall(callId: target)
+            await WirelineCallLiveActivityManager.shared.end(callId: target)
             state = .done
             try? await Task.sleep(for: .seconds(1.5))
             router.dismissLiveCall()
