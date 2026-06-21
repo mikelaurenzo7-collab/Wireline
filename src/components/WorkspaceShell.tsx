@@ -6,7 +6,7 @@ const navigation = [
   { href: "/studio", label: "Studio", icon: WandSparkles },
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
-  { href: "/integrations", label: "Actions", icon: Workflow },
+  { href: "/actions", label: "Actions", icon: Workflow },
   { href: "/ops", label: "Live", icon: Activity },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ] as const;
@@ -39,17 +39,12 @@ export default function WorkspaceShell({
           <nav className="mt-3 grid grid-cols-6 gap-0.5 lg:mt-8 lg:flex lg:flex-col lg:gap-1" aria-label="Workspace">
             {navigation.map((item) => {
               const Icon = item.icon;
-              const active =
-                location.pathname === item.href ||
+              const active = location.pathname === item.href ||
                 (item.href === "/studio" && location.pathname.startsWith("/studio")) ||
                 (item.href === "/ops" && location.pathname.startsWith("/ops"));
               return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`wl-stitch-sidebar-link min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:py-2 lg:text-[13px] ${active ? "" : "font-medium"}`}
-                >
+                <Link key={item.href} to={item.href} aria-current={active ? "page" : undefined}
+                  className={`wl-stitch-sidebar-link min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 py-1.5 text-[10px] lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:py-2 lg:text-[13px] ${active ? "" : "font-medium"}`}>
                   <Icon size={16} strokeWidth={active ? 2.25 : 1.9} />
                   <span className="truncate">{item.label}</span>
                 </Link>
@@ -57,7 +52,7 @@ export default function WorkspaceShell({
             })}
           </nav>
           <div className="mt-auto hidden flex-col gap-3 border-t border-border/50 px-1 pt-4 lg:flex">
-            <div className="rounded-lg border border-border/60 bg-card/80 p-3">
+            <div className="rounded-[4px] border border-border/60 bg-card/80 p-3">
               <p className="wl-stitch-label">Status</p>
               <p className="mt-1 text-[12px] leading-5 text-muted-foreground">Assistants ready</p>
             </div>

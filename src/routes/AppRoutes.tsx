@@ -16,8 +16,10 @@ export default function AppRoutes() {
     <Route path="/agents" element={<AgentsPage />} />
     <Route path="/studio" element={<AgentStudioHome />} />
     <Route path="/knowledge" element={<KnowledgePage />} />
-    <Route path="/training" element={<KnowledgePage />} />
-    <Route path="/integrations" element={<IntegrationsPage />} />
+    <Route path="/training" element={<Navigate to="/knowledge" replace />} />
+    <Route path="/actions" element={<IntegrationsPage />} />
+    {/* Preserve bookmarked integration URLs while keeping the Stitch IA canonical. */}
+    <Route path="/integrations" element={<Navigate to="/actions" replace />} />
     <Route path="/ops" element={<OperationsPage />} />
     <Route path="/ops/*" element={<OperationsPage />} />
     <Route path="/settings" element={<SettingsPage />} />

@@ -145,7 +145,7 @@ export default function OperationsPage() {
               })}
             </div>
             <Link
-              to="/integrations"
+              to="/actions"
               className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-semibold text-primary"
             >
               Manage permissions <ArrowUpRight size={13} />

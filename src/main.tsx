@@ -2,8 +2,12 @@ import "./lib/polyfills";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import "./index.css";
+
+// Global design cascade: tokens/reset → Tailwind + product patterns → legacy guards.
+// Keep the foundational token layer first so every downstream stylesheet resolves
+// the same Stitch semantic variables.
 import "./styles/foundation.css";
+import "./index.css";
 import "./styles/monochrome-guard.css";
 import "./styles/readability-guard.css";
 

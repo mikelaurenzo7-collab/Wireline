@@ -1,10 +1,4 @@
-/**
- * RobotHead — Wireline landing mascot.
- * Editorial line-art robot with pose-specific accessories (phone, on-call,
- * texting, typing). Each instance uses unique gradient IDs via useId().
- */
-import React, { useId } from "react";
-import { phoneLayoutForGutter, ROBOT_PHONE_W } from "./robot-phone-layout";
+import { useId } from "react";
 
 export type RobotPose = "phone" | "on-call" | "typing" | "texting";
 
@@ -14,643 +8,72 @@ interface RobotHeadProps {
   size?: number;
   className?: string;
   animated?: boolean;
-  /** Hero gutter: richer fills and no extra SVG shadow (parent applies halo). */
   vivid?: boolean;
-  /** Which page gutter this sticker sits in — drives phone-to-ear side. */
   gutterSide?: "left" | "right";
 }
 
-const COLORS = {
-  purple: "var(--wl-purple, #7C3AED)",
-  purpleLight: "var(--wl-purple-light, #A78BFA)",
-  purpleDeep: "var(--wl-purple-deep, #5B21B6)",
-  emerald: "var(--wl-emerald, #7C3AED)",
-  emeraldSoft: "var(--wl-emerald-soft, #A78BFA)",
-  cream: "var(--wl-cream, #FAF8FF)",
-  paper: "var(--wl-paper, #F3EFFA)",
-  ink: "var(--wl-ink, #1E1B2E)",
+const poseLabel: Record<RobotPose, string> = {
+  phone: "Call",
+  "on-call": "Live",
+  typing: "Draft",
+  texting: "Reply",
 };
 
-const POSE_LAYOUT: Record<RobotPose, { viewBox: string; heightRatio: number }> = {
-  phone: { viewBox: "0 0 64 64", heightRatio: 1 },
-  "on-call": { viewBox: "0 0 64 64", heightRatio: 1 },
-  texting: { viewBox: "0 0 64 70", heightRatio: 1.09 },
-  typing: { viewBox: "0 0 64 76", heightRatio: 1.19 },
-};
-
-function gazeForPose(pose: RobotPose, variant: number): { dx: number; dy: number } {
-  if (pose === "texting") return { dx: 0.5, dy: 2.8 };
-  if (pose === "typing") return { dx: 0, dy: 3.2 };
-  if (pose === "on-call") return { dx: variant % 2 === 1 ? -0.6 : 0.6, dy: -0.4 };
-  return { dx: variant === 1 || variant === 6 ? 0.8 : 0, dy: 0 };
-}
-
-function Eyes({
-  variant,
-  pose,
-  strokeWidth,
-}: {
-  variant: 1 | 2 | 3 | 4 | 5 | 6;
-  pose: RobotPose;
-  strokeWidth: number;
-}) {
-  const { dx, dy } = gazeForPose(pose, variant);
-  const squint = pose === "on-call" && variant !== 4;
-
-  if (variant === 2) {
-    const h = squint ? 6 : 8;
-    const y = squint ? 27 : 26;
-    return (
-      <>
-        <rect x="20" y={y} width="8" height={h} rx="2" fill={COLORS.cream} />
-        <rect x="36" y={y} width="8" height={h} rx="2" fill={COLORS.cream} />
-        <circle cx={24 + dx} cy={30 + dy} r="2" fill={COLORS.emerald} />
-        <circle cx={40 + dx} cy={30 + dy} r="2" fill={COLORS.emerald} />
-        <circle cx={25 + dx} cy={29 + dy} r="0.7" fill="white" fillOpacity="0.85" />
-        <circle cx={41 + dx} cy={29 + dy} r="0.7" fill="white" fillOpacity="0.85" />
-      </>
-    );
-  }
-
-  if (variant === 4) {
-    return (
-      <>
-        <ellipse cx="24" cy="30" rx="5.5" ry="5" fill={COLORS.cream} />
-        <ellipse cx="40" cy="30" rx="5.5" ry="5" fill={COLORS.cream} />
-        <circle cx="24" cy="30" r="1.75" fill={COLORS.emerald} />
-        <circle cx="40" cy="30" r="1.75" fill={COLORS.emerald} />
-        <path
-          d={squint ? "M20 28 Q24 32 28 28" : "M20 27 Q24 34 28 27"}
-          stroke={COLORS.purpleDeep}
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.85"
-        />
-        <path
-          d={squint ? "M36 28 Q40 32 44 28" : "M36 27 Q40 34 44 27"}
-          stroke={COLORS.purpleDeep}
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.85"
-        />
-      </>
-    );
-  }
-
-  const r = variant === 3 ? 3.5 : variant === 5 ? 4 : 4.5;
-  const pr = variant === 3 || variant === 5 ? 1.6 : 1.8;
-  const pupil = variant === 5 || pose === "on-call" ? COLORS.emerald : COLORS.purple;
-  const lx = variant === 1 || variant === 6 ? 25 : 24;
-  const rx = variant === 1 || variant === 6 ? 41 : 40;
-
-  return (
-    <>
-      <circle cx="24" cy="30" r={r} fill={COLORS.cream} />
-      <circle cx="40" cy="30" r={r} fill={COLORS.cream} />
-      <circle cx={lx + dx} cy={29 + dy} r={pr} fill={pupil} />
-      <circle cx={rx + dx} cy={29 + dy} r={pr} fill={pupil} />
-      <circle cx={lx + dx + 0.6} cy={28 + dy} r="0.65" fill="white" fillOpacity="0.9" />
-      <circle cx={rx + dx + 0.6} cy={28 + dy} r="0.65" fill="white" fillOpacity="0.9" />
-      {pose === "on-call" && (
-        <>
-          <path
-            d="M22 24 Q24 22 26 24"
-            stroke={COLORS.cream}
-            strokeWidth={strokeWidth * 0.7}
-            strokeLinecap="round"
-          />
-          <path
-            d="M38 24 Q40 22 42 24"
-            stroke={COLORS.cream}
-            strokeWidth={strokeWidth * 0.7}
-            strokeLinecap="round"
-          />
-        </>
-      )}
-    </>
-  );
-}
-
-function HeadShell({ strokeWidth, uid }: { strokeWidth: number; uid: string }) {
-  return (
-    <>
-      <ellipse cx="32" cy="52" rx="18" ry="4" fill={COLORS.purple} fillOpacity="0.06" />
-      <rect
-        x="12"
-        y="14"
-        width="40"
-        height="36"
-        rx="8"
-        fill={`url(#headGrad-${uid})`}
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth}
-        strokeLinejoin="round"
-      />
-      <rect x="15" y="17" width="34" height="12" rx="4" fill={COLORS.cream} fillOpacity="0.18" />
-      <rect x="18" y="19" width="14" height="3" rx="1.5" fill="white" fillOpacity="0.12" />
-      <circle cx="14" cy="22" r="1.2" fill={COLORS.ink} fillOpacity="0.25" />
-      <circle cx="50" cy="22" r="1.2" fill={COLORS.ink} fillOpacity="0.25" />
-      <circle cx="20" cy="38" r="2.2" fill={COLORS.emerald} fillOpacity="0.08" />
-      <circle cx="44" cy="38" r="2.2" fill={COLORS.emerald} fillOpacity="0.08" />
-    </>
-  );
-}
-
-function Antenna({
-  uid: _uid,
-  strokeWidth,
-  animated,
-}: {
-  uid: string;
-  strokeWidth: number;
-  animated: boolean;
-}) {
-  return (
-    <>
-      <line
-        x1="32"
-        y1="14"
-        x2="32"
-        y2="6"
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth * 1.2}
-        strokeLinecap="round"
-      />
-      <circle
-        cx="32"
-        cy="4"
-        r="3"
-        fill={COLORS.emerald}
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth}
-        className={animated ? "robot-antenna-pulse" : undefined}
-      />
-      <circle cx="32" cy="4" r="1.2" fill="white" fillOpacity="0.45" />
-    </>
-  );
-}
-
-function PhoneBody({
-  uid,
-  strokeWidth,
-  x,
-  y,
-  scale = 1,
-  screenMode,
-  animated,
-  scaleAnchor = "left",
-}: {
-  uid: string;
-  strokeWidth: number;
-  x: number;
-  y: number;
-  scale?: number;
-  screenMode: "idle" | "call" | "sms" | "wave";
-  animated: boolean;
-  /** Edge of the phone that touches the head — scale expands away from the head. */
-  scaleAnchor?: "left" | "right";
-}) {
-  const phoneH = 17;
-  const anchorX = scaleAnchor === "right" ? ROBOT_PHONE_W : 0;
-  const anchorY = phoneH / 2;
-
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      <g
-        transform={`translate(${anchorX} ${anchorY}) scale(${scale}) translate(${-anchorX} ${-anchorY})`}
-      >
-        <rect
-          x="0"
-          y="0"
-          width="10"
-          height="17"
-          rx="2"
-          fill={`url(#phoneGrad-${uid})`}
-          stroke={COLORS.ink}
-          strokeWidth={strokeWidth * 0.75}
-        />
-        <rect x="3" y="1.2" width="4" height="1.2" rx="0.6" fill={COLORS.ink} fillOpacity="0.35" />
-        <rect
-          x="1.5"
-          y="3.5"
-          width="7"
-          height="9.5"
-          rx="0.6"
-          fill={COLORS.cream}
-          fillOpacity="0.94"
-        />
-        {screenMode === "call" && (
-          <path d="M3.5 7.5 Q5 6 6.5 7.5 Q5 9 3.5 7.5" fill={COLORS.emerald} fillOpacity="0.85" />
-        )}
-        {screenMode === "sms" && (
-          <>
-            <rect
-              x="2.5"
-              y="5.5"
-              width="5"
-              height="2"
-              rx="0.5"
-              fill={COLORS.purple}
-              fillOpacity="0.35"
-            />
-            <rect
-              x="2.5"
-              y="8.5"
-              width="3.5"
-              height="2"
-              rx="0.5"
-              fill={COLORS.emerald}
-              fillOpacity="0.5"
-            />
-          </>
-        )}
-        {screenMode === "wave" &&
-          [0, 1, 2].map((i) => (
-            <rect
-              key={i}
-              x={2.8 + i * 2.2}
-              y="7"
-              width="1.4"
-              height="4"
-              rx="0.4"
-              fill={COLORS.purple}
-              fillOpacity="0.55"
-              data-index={i}
-              className={animated ? "robot-wave-bar" : undefined}
-            />
-          ))}
-        <circle cx="5" cy="14.5" r="0.65" fill={COLORS.ink} fillOpacity="0.5" />
-      </g>
-    </g>
-  );
-}
-
-function SidePhonePose({
-  uid,
-  strokeWidth,
-  phoneOffset,
-  phoneY,
-  phoneSide,
-  pose,
-  animated,
-}: {
-  uid: string;
-  strokeWidth: number;
-  phoneOffset: number;
-  phoneY: number;
-  /** Which side of the head the phone sits on (toward page center for gutter stickers). */
-  phoneSide: "left" | "right";
-  pose: "phone" | "on-call";
-  animated: boolean;
-}) {
-  const scale = pose === "on-call" ? 1.18 : 1;
-  const screenMode = pose === "on-call" ? "call" : "wave";
-  const phoneOnRight = phoneSide === "right";
-
-  return (
-    <>
-      {pose === "on-call" &&
-        [0, 1, 2].map((i) => (
-          <path
-            key={i}
-            d={
-              phoneOnRight
-                ? `M${phoneOffset - 4 + i * 2} 20 Q${phoneOffset + 6 + i * 3} 26 ${phoneOffset + 10 + i} 32`
-                : `M${phoneOffset + 14 - i * 2} 20 Q${phoneOffset + 4 - i * 3} 26 ${phoneOffset + 2 - i} 32`
-            }
-            stroke={COLORS.emerald}
-            strokeWidth={1.4 - i * 0.25}
-            strokeLinecap="round"
-            fill="none"
-            opacity={0.75 - i * 0.2}
-            data-index={i}
-            className={animated ? "robot-call-wave" : undefined}
-          />
-        ))}
-      <PhoneBody
-        uid={uid}
-        strokeWidth={strokeWidth}
-        x={phoneOffset}
-        y={phoneY}
-        scale={scale}
-        screenMode={screenMode}
-        animated={animated}
-        scaleAnchor={phoneOnRight ? "left" : "right"}
-      />
-      {pose === "on-call" && (
-        <circle
-          cx={phoneOffset + 5}
-          cy={29}
-          r="9"
-          fill={COLORS.emerald}
-          fillOpacity="0.06"
-          className={animated ? "robot-call-glow" : undefined}
-        />
-      )}
-    </>
-  );
-}
-
-function TextingPose({
-  uid,
-  strokeWidth,
-  animated,
-  vivid = false,
-}: {
-  uid: string;
-  strokeWidth: number;
-  animated: boolean;
-  vivid?: boolean;
-}) {
-  return (
-    <g transform="translate(18, 34)">
-      <path
-        d="M8 22 Q14 24 20 22"
-        stroke={COLORS.cream}
-        strokeWidth={strokeWidth * 0.8}
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.7"
-      />
-      <PhoneBody
-        uid={uid}
-        strokeWidth={strokeWidth}
-        x={6}
-        y={8}
-        scale={1.05}
-        screenMode="sms"
-        animated={animated}
-      />
-      <g transform="translate(20, 0)">
-        <rect
-          x="0"
-          y="0"
-          width="22"
-          height="12"
-          rx="4"
-          fill={COLORS.cream}
-          fillOpacity="0.97"
-          stroke={COLORS.ink}
-          strokeWidth={strokeWidth * 0.55}
-        />
-        <path
-          d="M4 12 L2 15 L7 12"
-          fill={COLORS.cream}
-          stroke={COLORS.ink}
-          strokeWidth={strokeWidth * 0.4}
-        />
-        {[0, 1, 2].map((i) => (
-          <circle
-            key={i}
-            cx={8 + i * 4.5}
-            cy="6"
-            r="1.15"
-            fill={COLORS.purple}
-            data-index={i}
-            className={animated ? "robot-text-dot" : undefined}
-          />
-        ))}
-      </g>
-      <g transform="translate(2, 18)">
-        <rect
-          x="0"
-          y="0"
-          width="16"
-          height="9"
-          rx="3"
-          fill={COLORS.emerald}
-          fillOpacity={vivid ? 0.5 : 0.22}
-          stroke={COLORS.emerald}
-          strokeWidth={strokeWidth * 0.45}
-        />
-        <rect
-          x="3"
-          y="3"
-          width="8"
-          height="1.5"
-          rx="0.5"
-          fill={COLORS.purpleDeep}
-          fillOpacity="0.45"
-        />
-        <rect
-          x="3"
-          y="5.5"
-          width="5"
-          height="1.5"
-          rx="0.5"
-          fill={COLORS.purpleDeep}
-          fillOpacity="0.35"
-        />
-      </g>
-    </g>
-  );
-}
-
-function TypingPose({
-  uid: _uid,
-  strokeWidth,
-  animated,
-}: {
-  uid: string;
-  strokeWidth: number;
-  animated: boolean;
-}) {
-  const keys = [
-    { x: 4, y: 26, i: 0 },
-    { x: 14, y: 26, i: 1 },
-    { x: 24, y: 26, i: 2 },
-    { x: 34, y: 26, i: 3 },
-    { x: 9, y: 33, i: 4 },
-    { x: 19, y: 33, i: 5 },
-    { x: 29, y: 33, i: 6 },
-  ];
-
-  return (
-    <g transform="translate(10, 44)">
-      <path
-        d="M0 18 L44 18 L40 24 L4 24 Z"
-        fill={COLORS.ink}
-        fillOpacity="0.14"
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth * 0.55}
-        strokeLinejoin="round"
-      />
-      <rect
-        x="2"
-        y="0"
-        width="40"
-        height="18"
-        rx="2"
-        fill={COLORS.purpleDeep}
-        fillOpacity="0.92"
-        stroke={COLORS.ink}
-        strokeWidth={strokeWidth * 0.55}
-      />
-      <rect x="4" y="2" width="36" height="12" rx="1" fill={COLORS.purple} fillOpacity="0.55" />
-      {[5, 9, 13].map((y, i) => (
-        <rect
-          key={y}
-          x={6 + i * 2}
-          y={y}
-          width={22 - i * 4}
-          height="1.2"
-          rx="0.4"
-          fill={COLORS.emeraldSoft}
-          fillOpacity={0.35 + i * 0.12}
-        />
-      ))}
-      <rect
-        x="28"
-        y="12"
-        width="1.2"
-        height="3"
-        rx="0.3"
-        fill={COLORS.cream}
-        className={animated ? "robot-typing-cursor" : undefined}
-      />
-      {keys.map(({ x, y, i }) => (
-        <rect
-          key={i}
-          x={x}
-          y={y}
-          width="8"
-          height="5"
-          rx="0.6"
-          fill={COLORS.cream}
-          fillOpacity="0.88"
-          stroke={COLORS.ink}
-          strokeWidth={strokeWidth * 0.35}
-          data-index={i}
-          className={animated ? "robot-key" : undefined}
-        />
-      ))}
-    </g>
-  );
-}
-
-function Mouth({
-  variant,
-  pose,
-  strokeWidth,
-}: {
-  variant: number;
-  pose: RobotPose;
-  strokeWidth: number;
-}) {
-  const d =
-    pose === "on-call"
-      ? "M25 40 Q32 47 39 40"
-      : pose === "texting"
-        ? "M28 41 Q32 43.5 36 41"
-        : pose === "typing"
-          ? "M27 40 Q32 42 37 40"
-          : variant % 2 === 0
-            ? "M26 40 Q32 44 38 40"
-            : "M27 41 Q32 43 37 41";
-
-  return (
-    <path
-      d={d}
-      stroke={COLORS.cream}
-      strokeWidth={strokeWidth * 0.9}
-      strokeLinecap="round"
-      fill="none"
-    />
-  );
-}
-
-export function RobotHead({
+/**
+ * Wireline’s marketing signal mark. The former violet robot illustration was
+ * retired with the Stitch migration; this compact, high-contrast mark carries
+ * the same placement API without introducing a competing visual language.
+ */
+export default function RobotHead({
   variant = 1,
   pose = "phone",
-  size = 64,
-  className = "",
-  animated = true,
+  size = 128,
+  className,
+  animated = false,
   vivid = false,
-  gutterSide,
-  "aria-hidden": ariaHidden,
-}: RobotHeadProps & { "aria-hidden"?: boolean }) {
+  gutterSide = "right",
+}: RobotHeadProps) {
   const uid = useId().replace(/:/g, "");
-  const strokeWidth = size / 32;
-  const resolvedGutterSide: "left" | "right" =
-    gutterSide ?? (variant === 1 || variant === 3 || variant === 5 ? "left" : "right");
-  const phoneLayout =
-    pose === "phone" || pose === "on-call" ? phoneLayoutForGutter(resolvedGutterSide, pose) : null;
-  const layout = POSE_LAYOUT[pose];
+  const mirrored = gutterSide === "left";
+  const pulseClass = animated ? "robot-antenna-pulse" : undefined;
+  const opacity = vivid ? 1 : 0.9;
 
   return (
     <svg
+      viewBox="0 0 96 96"
       width={size}
-      height={size * layout.heightRatio}
-      viewBox={layout.viewBox}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={[
-        className,
-        `robot-head-tilt-${variant}`,
-        animated ? "robot-head--animated" : "",
-        vivid ? "robot-head--vivid" : "robot-head-shadow",
-        "overflow-visible",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      aria-hidden={ariaHidden ?? true}
+      height={size}
+      className={className}
+      role="img"
+      aria-label={`Wireline ${poseLabel[pose]} assistant`}
+      style={{ opacity }}
     >
       <defs>
-        <linearGradient id={`headGrad-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={COLORS.purple} stopOpacity={vivid ? 1 : 0.98} />
-          <stop offset="55%" stopColor={COLORS.purpleLight} stopOpacity={vivid ? 0.98 : 0.9} />
-          <stop offset="100%" stopColor={COLORS.purpleDeep} stopOpacity={vivid ? 0.96 : 0.88} />
-        </linearGradient>
-        <linearGradient id={`phoneGrad-${uid}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={COLORS.emeraldSoft} />
-          <stop offset="100%" stopColor="#5B21B6" />
+        <linearGradient id={`wireline-signal-${uid}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="var(--wl-accent, #1A3C34)" />
+          <stop offset="100%" stopColor="var(--wl-accent-deep, #01261F)" />
         </linearGradient>
       </defs>
-
-      <HeadShell strokeWidth={strokeWidth} uid={uid} />
-      <Eyes variant={variant} pose={pose} strokeWidth={strokeWidth} />
-      <Antenna uid={uid} strokeWidth={strokeWidth} animated={animated} />
-
-      {(pose === "phone" || pose === "on-call") && phoneLayout && (
-        <SidePhonePose
-          uid={uid}
-          strokeWidth={strokeWidth}
-          phoneOffset={phoneLayout.phoneOffset}
-          phoneY={phoneLayout.phoneY}
-          phoneSide={phoneLayout.phoneSide}
-          pose={pose}
-          animated={animated}
+      <rect x="8" y="8" width="80" height="80" rx="8" fill="var(--wl-surface, #FFFFFF)" stroke="var(--wl-line, #E5E5E1)" />
+      <g transform={mirrored ? "translate(96 0) scale(-1 1)" : undefined}>
+        <path
+          d="M20 60V36C20 30.5 24.5 26 30 26H52C57.5 26 62 30.5 62 36V60C62 65.5 57.5 70 52 70H30C24.5 70 20 65.5 20 60Z"
+          fill={`url(#wireline-signal-${uid})`}
         />
-      )}
-
-      {pose === "texting" && (
-        <TextingPose uid={uid} strokeWidth={strokeWidth} animated={animated} vivid={vivid} />
-      )}
-
-      {pose === "typing" && <TypingPose uid={uid} strokeWidth={strokeWidth} animated={animated} />}
-
-      <Mouth variant={variant} pose={pose} strokeWidth={strokeWidth} />
+        <path d="M31 44H51M31 53H44" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" opacity="0.9" />
+        <path d="M66 35C72 39 75 44 75 48C75 52 72 57 66 61" fill="none" stroke="var(--wl-accent, #1A3C34)" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="70" cy="27" r="5" fill="var(--wl-accent-muted, #AACEC3)" className={pulseClass} />
+      </g>
+      <text x="48" y="82" textAnchor="middle" fill="var(--wl-muted, #6E6E73)" fontFamily="Inter, sans-serif" fontSize="7" fontWeight="700" letterSpacing="1.1">
+        {poseLabel[pose].toUpperCase()} {variant}
+      </text>
     </svg>
   );
 }
 
-export const RobotHeadTopLeft = (props: Omit<RobotHeadProps, "variant">) => (
-  <RobotHead variant={1} {...props} />
-);
-export const RobotHeadTopRight = (props: Omit<RobotHeadProps, "variant">) => (
-  <RobotHead variant={2} {...props} />
-);
-export const RobotHeadBottomLeft = (props: Omit<RobotHeadProps, "variant">) => (
-  <RobotHead variant={3} {...props} />
-);
-export const RobotHeadBottomRight = (props: Omit<RobotHeadProps, "variant">) => (
-  <RobotHead variant={4} {...props} />
-);
-export const RobotHeadMiddleLeft = (props: Omit<RobotHeadProps, "variant">) => (
-  <RobotHead variant={5} {...props} />
-);
-export const RobotHeadMiddleRight = (props: Omit<RobotHeadProps, "variant">) => (
-  <RobotHead variant={6} {...props} />
-);
+export const RobotHeadTopLeft = (props: Omit<RobotHeadProps, "variant">) => <RobotHead variant={1} {...props} />;
+export const RobotHeadTopRight = (props: Omit<RobotHeadProps, "variant">) => <RobotHead variant={2} {...props} />;
+export const RobotHeadBottomLeft = (props: Omit<RobotHeadProps, "variant">) => <RobotHead variant={3} {...props} />;
+export const RobotHeadBottomRight = (props: Omit<RobotHeadProps, "variant">) => <RobotHead variant={4} {...props} />;
+export const RobotHeadMiddleLeft = (props: Omit<RobotHeadProps, "variant">) => <RobotHead variant={5} {...props} />;
+export const RobotHeadMiddleRight = (props: Omit<RobotHeadProps, "variant">) => <RobotHead variant={6} {...props} />;
