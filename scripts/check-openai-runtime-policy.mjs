@@ -1,56 +1,30 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), "utf8");
-const fail = (message) => {
-  console.error(`OpenAI runtime policy check failed: ${message}`);
-  process.exitCode = 1;
-};
-
+const fail = (message) => { console.error(`OpenAI runtime policy check failed: ${message}`); process.exitCode = 1; };
+const contains = (path, value) => existsSync(resolve(root, path)) && read(path).includes(value);
 const packageJson = read("package.json");
-const client = read("src/lib/claude-client.ts");
-const models = read("src/lib/claude-models.ts");
-const voice = read("src/lib/voice-model-defaults.ts");
-const openRouter = read("src/lib/openrouter-structured.ts");
-const director = read("src/lib/director-model-policy.ts");
-const migration = read("drizzle/migrations/0061_openai_primary_gemini_fallback.sql");
+const client = read("src/lib/ai-client.ts");
+const models = read("src/lib/ai-models.ts");
+const registry = read("src/lib/runtime-integrations-registry.ts");
+const migration = read("drizzle/migrations/0060_openai_runtime_defaults.sql");
 
-if (packageJson.includes('"@anthropic-ai/sdk"')) {
-  fail("Anthropic SDK remains in the install manifest");
-}
-if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com")) {
-  fail("the managed runtime adapter still references Anthropic");
-}
-if (!client.includes("https://api.openai.com/v1/responses")) {
-  fail("the managed runtime adapter is not using OpenAI Responses");
-}
-if (!client.includes("OpenAI request failed; trying Gemini fallback")) {
-  fail("OpenAI-to-Gemini fallback order is missing");
-}
-if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"')) {
-  fail("managed voice default is not OpenAI");
-}
-if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [VAPI_VOICE_FALLBACK_MODEL]")) {
-  fail("managed voice does not carry native Gemini fallback models");
-}
-if (!models.includes('provider === "openrouter" && isOpenRouterModelId(model)')) {
-  fail("explicit OpenRouter model validation is missing");
-}
-if (!models.includes('return { provider: "openrouter", model, userSelected: true }')) {
-  fail("explicit OpenRouter selections are not preserved exactly");
-}
-if (!openRouter.includes("model: opts.model")) {
-  fail("OpenRouter client does not forward the selected model ID");
-}
-if (!voice.includes('VAPI_VOICE_FALLBACK_PROVIDER: DefaultVoiceProvider = "google"')) {
-  fail("managed voice fallback is not Gemini");
-}
-if (!director.includes("process.env.OPENAI_API_KEY")) {
-  fail("Director managed model validation does not require OpenAI");
-}
-if (!migration.includes("voice_llm_provider SET DEFAULT 'openai'")) {
-  fail("tenant migration does not default managed voice to OpenAI");
-}
-
+if (packageJson.includes('"@anthropic-ai/sdk"')) fail("Anthropic SDK remains in the install manifest");
+if (client.includes("@anthropic-ai/sdk") || client.includes("api.anthropic.com")) fail("managed runtime references Anthropic");
+if (!client.includes("https://api.openai.com/v1/responses")) fail("managed runtime is not using OpenAI Responses");
+if (!client.includes("OpenAI request failed; trying Gemini fallback")) fail("OpenAI-to-Gemini fallback order is missing");
+if (!models.includes('VAPI_TENANT_DEFAULT_PROVIDER = "openai"')) fail("managed voice default is not OpenAI");
+if (!models.includes("VAPI_DEFAULT_FALLBACK_MODELS")) fail("managed voice does not carry Gemini fallback models");
+if (!models.includes('provider === "openrouter" && isOpenRouterModelId(model)')) fail("OpenRouter model validation is missing");
+if (!models.includes('return { provider: "openrouter", model, userSelected: true }')) fail("OpenRouter selections are not preserved exactly");
+if (!registry.includes('item("deepgram-flux"')) fail("Deepgram Flux is not registered as production voice transcription");
+if (!registry.includes('item("elevenlabs"')) fail("ElevenLabs is not registered as production voice synthesis");
+if (!registry.includes('item("openai-realtime"')) fail("OpenAI Realtime optional web/mobile mode is not registered");
+if (!migration.includes("voice_llm_provider SET DEFAULT 'openai'")) fail("tenant migration does not default managed voice to OpenAI");
+const legacyFiles = ["claude-brain.ts", "claude-client.ts", "claude-models.ts", "claude-structured.ts", "claude-audit.ts", "claude-tools.ts", "claude-recipes.ts", "claude-response-helpers.ts", "claude-supervisor-tools.ts"];
+const remaining = legacyFiles.filter((file) => existsSync(resolve(root, "src/lib", file)));
+if (remaining.length) fail(`legacy Claude modules remain: ${remaining.join(", ")}`);
+if (existsSync(resolve(root, "src/routes/claude-routes.ts"))) fail("legacy Claude routes remain");
 if (!process.exitCode) console.log("OpenAI-first runtime policy check passed");
