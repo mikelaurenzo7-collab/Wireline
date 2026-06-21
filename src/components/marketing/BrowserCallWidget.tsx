@@ -161,7 +161,7 @@ export default function BrowserCallWidget({
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wl-status-error)]/20 bg-[color:var(--wl-surface-subtle)] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-destructive">
+        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wl-status-error)] bg-[color:var(--wl-surface-subtle)] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-destructive">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>
