@@ -10,12 +10,11 @@ Use this document whenever implementing, reviewing, or testing product UI.
 | Committed desktop export | `.stitch-export/` and the current attached Stitch handoff | React web workspace + public web |
 | Committed mobile export | The current attached Stitch handoff (`*_mobile`, SwiftUI, Compose files) | Native iOS and Android only |
 | Design specification | `.stitch-export/DESIGN.md` | Tokens, type, geometry, layout |
-| Route-to-export bridge | `src/lib/stitch-design-system.ts` | Web route mapping |
 | Web tokens | `src/styles/foundation.css` | React/Tailwind |
 | iOS tokens | `ios/Wireline/Theme/WirelineTheme.swift` | SwiftUI |
 | Android tokens | `android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt` | Jetpack Compose |
 
-The Stitch project and committed exports are the implementation contract. Do not reintroduce a parallel Figma, preview, or no-code design source.
+The Stitch project and committed exports are the implementation contract. Do not reintroduce a parallel Figma, preview, no-code, or source-bridge design authority.
 
 ## Product framing
 
@@ -81,7 +80,7 @@ Use styles in this order:
 1. Semantic utilities (`bg-card`, `text-muted-foreground`, `border-border`)
 2. Workspace utilities (`wl-surface`, `wl-stitch-card`, `wl-segmented`, `workspace-btn-*`)
 3. Typography utilities (`wl-text-*`, `wl-stitch-label`, `wl-stitch-eyebrow`)
-4. Shared class constants from `src/lib/wireline-design-system.ts`
+4. Current product components and shared class constants only when they resolve to the same token layer
 
 ## Implementation rules
 
