@@ -3,18 +3,20 @@
 ## Current sources
 
 - Google Stitch project: `https://stitch.withgoogle.com/projects/15464421841872665077`
-- Latest production handoff: `stitch_wireline_operator_system (6).zip` — **Professional Heritage** visual system, source screens, native state references, and marketing assets.
+- **Current production handoff:** `stitch_wireline_operator_system (7).zip` — Professional Heritage v2 source screens, cross-platform blueprint, native state references, and brand/store assets.
+- `wireline_unified_execution_plan.md` in that handoff establishes the personal-assistant IA and platform mapping. It does not override real product contracts or platform eligibility requirements.
 - Desktop handoff maps to React web at desktop/laptop widths only.
 - Mobile handoff maps to native SwiftUI iOS and Jetpack Compose Android only; it must not be recreated as mobile browser UI.
 - Active shared tokens: `src/styles/foundation.css`, `ios/Wireline/Theme/WirelineTheme.swift`, and `android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt`.
+- The automated source guard lives in `scripts/check-active-surface-drift.mjs`; keep it synchronized with the handoff instead of preserving a legacy design test.
 
-Do not restore a Figma source, source bridge, preview route, design OAuth hook, no-code design authority, or the retired violet/lavender visual system.
+Do not restore a Figma source, source bridge, preview route, design OAuth hook, no-code design authority, gray placeholder-only marketing panels, or the retired violet/lavender visual system.
 
 ## Product posture
 
 Wireline is a personal call and message assistant first. It handles appointments, support lines, school or pharmacy calls, reservations, hold time, answers, and follow-ups. Business configuration is available, but it must be an optional expansion rather than the default story.
 
-Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowledge**, and **actions**. Avoid fleet, operator, command center, queue, SDR, telemetry, and Live Ops in primary product copy. When the Stitch handoff uses those legacy labels, map them to consumer equivalents:
+Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowledge**, and **actions**. Avoid fleet, operator, command center, queue, SDR, telemetry, and Live Ops in primary product copy. When the Stitch handoff uses legacy labels, translate them:
 
 | Stitch label | Wireline product label |
 |---|---|
@@ -22,17 +24,18 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 | Live Ops / Live Review | Recaps, active-call status, and follow-ups |
 | Operator | You / account holder |
 | Integrations | Actions (with connected accounts inside) |
-| Handoff | Take call / callback |
+| Handoff | Take this call / callback |
 
-## Shared visual system — Professional Heritage
+## Shared visual system — Professional Heritage v2
 
-- Warm canvas `#F9F9F7`; white elevated cards `#FFFFFF`; input/secondary surfaces `#F4F4F2`.
+- Warm canvas `#F9F9F7`; elevated card `#FFFFFF`; input/secondary surface `#F4F4F2`; raised well `#EEEEEC`.
 - Forest action and primary text `#1A3C34`; pressed state `#01261F`; active container `#E1E9E6`.
 - Borders `#DADAD8`; secondary text `#4A5F59`; destructive `#BA1A1A`.
-- Inter on web; platform system typography natively; mono only for compact metadata.
+- Inter on web; platform system typography natively; JetBrains Mono only for compact metadata.
+- `-0.02em` on display/headline hierarchy; `cv05`, `cv08`, and `ss01` for web headings.
 - 8px default cards, inputs, and standard buttons; 4px micro-controls; 12px sheets/modals. Pills only for status and avatars.
-- Tonal layering before shadows. No violet, lavender, cyan, mesh, glass, gradients, or mascot treatment.
-- 4px/8px rhythm; 0.98 press feedback for deliberate actions.
+- Tonal layering before shadows. No violet, lavender, cyan, mesh, glass, decorative gradients, or mascot treatment.
+- Base-4 spacing rhythm. Deliberate interactive controls use 200ms `0.98` press feedback.
 
 ## Web rules
 
@@ -41,7 +44,8 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 - `/studio`, `/agents`, `/knowledge`, `/actions`, and `/settings` are canonical workspace destinations.
 - `/ops` is only a backward-compatible redirect to Studio; never restore a primary real-time operations destination.
 - Keep Studio above the fold: roster, training, and inspector must remain useful on laptop viewports.
-- The latest Stitch desktop screens map as follows: homepage → public landing; agents → `/agents`; facts/rules → `/knowledge`; actions → `/actions`; training → `/studio`; settings → `/settings`; pricing/auth → public routes.
+- The latest source mapping: homepage → public landing; agents → `/agents`; facts/rules → `/knowledge`; actions → `/actions`; training → `/studio`; settings → `/settings`; pricing/auth → public routes.
+- Every public product visual must show a comprehensible user job, work-in-progress state, or outcome. Do not ship inert skeleton bars as explanatory product imagery.
 
 ## Native rules
 
@@ -49,12 +53,12 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 - Native tabs map to Studio, Assistants, Knowledge, Actions, and Recaps. Recaps replaces retired live-operations screens.
 - Preserve CallKit/App Intents/widgets/VoiceOver/Dynamic Type/safe areas on iOS.
 - Preserve Material 3/Telecom/FCM/TalkBack/dynamic type/system insets on Android.
-- The handoff's Smart Route, incoming-call, lock-screen, and CarPlay frames are behavior and high-glanceability references. They must preserve real phone-transfer, consent, and platform eligibility constraints.
+- Smart Route, incoming-call, lock-screen, and CarPlay frames are behavior and high-glanceability references. They must preserve real phone-transfer, consent, and platform eligibility constraints.
 - Do not trade real phone, push, billing, or device flows for decorative replica screens.
 
 ## Assets and marketing
 
-- Use the latest handoff’s W-mark, App Store frames, social banner, and architecture artwork only where their rendered sizes and platform requirements are appropriate.
+- Use the handoff’s W-mark, App Store frames, social banner, and architecture artwork only where rendered size and platform requirements are appropriate.
 - App icons must be placed through platform-native asset catalogs with correct resize/crop QA; never use a marketing screenshot as an app icon.
 - App Store and Play screenshots must contain real, release-valid UI states. Do not ship mock text or unsupported reliability/compliance claims.
 
@@ -65,4 +69,4 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 3. Use Lucide on web, SF Symbols on iOS, and Material icons on Android.
 4. Keep keyboard/focus states on web, focus-trap modals, and explicit accessible labels natively.
 5. Treat phone provisioning, voice, models, agent config, connections, billing, consent, and device behavior as production contracts to preserve.
-6. Run TypeScript/build validation and native simulator/device validation before release.
+6. Run `npm run design:contract`, TypeScript/build validation, and native simulator/device validation before release.
