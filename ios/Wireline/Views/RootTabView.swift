@@ -1,25 +1,27 @@
 import SwiftUI
 
-/// Signed-in shell: Home (workspace) + Calls (activity), with the "Ask Wireline"
-/// sheet presentable from anywhere via the router (Siri / widget / button).
+/// Signed-in native shell. The Stitch mobile export informs the compact tab
+/// rhythm and visual hierarchy, while the destinations remain real consumer
+/// flows: ask, assistants, call recaps, wallet, and settings.
 struct RootTabView: View {
     @EnvironmentObject private var router: WirelineRouter
+
     var body: some View {
         TabView {
             WorkspaceView()
-                .tabItem { Label("Home", systemImage: "house.fill") }
-            
+                .tabItem { Label("Studio", systemImage: "slider.horizontal.3") }
+
             CallsView()
-                .tabItem { Label("Calls", systemImage: "phone.fill") }
+                .tabItem { Label("Recaps", systemImage: "phone.arrow.down.left") }
+
             NavigationStack { WalletView() }
-                .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
+                .tabItem { Label("Wallet", systemImage: "creditcard") }
 
             NavigationStack { SettingsView() }
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
-        .tint(Brand.purple)
+        .tint(Brand.accent)
         .sheet(isPresented: $router.showAsk) { AskWirelineView() }
-        // Covers the full screen when the operator answers a CallKit inbound call.
         .fullScreenCover(isPresented: $router.showLiveCall) {
             LiveCallView(callId: router.liveCallId)
                 .environmentObject(router)
