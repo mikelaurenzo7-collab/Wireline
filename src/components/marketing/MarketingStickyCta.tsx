@@ -18,11 +18,11 @@ export default function MarketingStickyCta({
   className,
 }: Props) {
   return (
-    <div className={cn("marketing-sticky-cta lg:hidden fixed inset-x-0 bottom-0 z-[45] pointer-events-none", className)} aria-hidden={false}>
-      <div className="pointer-events-auto border-t border-ink/[0.08] bg-card/80 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_-16px_rgba(29,29,31,0.12)] backdrop-blur-md">
+    <div className={cn("marketing-sticky-cta pointer-events-none fixed inset-x-0 bottom-0 z-[45] lg:hidden", className)} aria-hidden={false}>
+      <div className="pointer-events-auto border-t border-border bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.05)]">
         <div className="mx-auto flex max-w-lg gap-2">
-          <Link to={secondaryHref} className="marketing-btn-secondary flex-1 min-h-[48px] text-sm">{secondaryLabel}</Link>
-          <Link to={href} className="marketing-btn-primary flex-[1.35] min-h-[48px] text-sm">{label}<ArrowRight className="w-4 h-4" /></Link>
+          <Link to={secondaryHref} className="marketing-btn-secondary min-h-[48px] flex-1 text-sm">{secondaryLabel}</Link>
+          <Link to={href} className="marketing-btn-primary min-h-[48px] flex-[1.35] text-sm">{label}<ArrowRight className="h-4 w-4" /></Link>
         </div>
       </div>
     </div>
