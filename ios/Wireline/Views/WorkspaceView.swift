@@ -156,10 +156,13 @@ struct WorkspaceView: View {
             async let activeTask = WirelineAPI.shared.activeCalls()
             async let recentsTask = WirelineAPI.shared.recentCalls()
             let resolvedMe = try await meTask
+            let resolvedAgents = try await agentsTask
+            let resolvedActiveCalls = try await activeTask
+            let resolvedRecents = try await recentsTask
             me = resolvedMe
-            agents = try await agentsTask
-            activeCalls = (try? await activeTask.count) ?? 0
-            followUps = (try? await recentsTask.needsAttention) ?? 0
+            agents = resolvedAgents
+            activeCalls = resolvedActiveCalls.count
+            followUps = resolvedRecents.needsAttention
             error = nil
             auth.accountType = resolvedMe.account.mode.rawValue
         } catch {
