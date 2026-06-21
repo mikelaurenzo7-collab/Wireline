@@ -2,29 +2,200 @@ import { ArrowRight, Bot, Headphones, Play, Radio, SlidersHorizontal } from "luc
 import { Link } from "react-router-dom";
 import BrowserCallWidget from "./BrowserCallWidget";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import VoiceOpsVisual from "./VoiceOpsVisual";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 
 function ProductFrame() {
   return (
     <div className="border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] sm:p-6">
-      <div className="flex h-7 items-center gap-2 border-b border-border pb-4"><span className="h-4 w-4 rounded-full bg-muted" /><span className="h-2 w-24 bg-muted" /><span className="ml-auto h-4 w-16 bg-[color:var(--wl-accent-container)]" /><span className="h-4 w-5 bg-muted" /></div>
-      <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]"><div className="min-h-[220px] border border-border bg-[color:var(--wl-surface-subtle)] p-5"><span className="h-4 w-28 bg-[color:var(--wl-surface-variant)]" /><div className="mt-7 space-y-4"><span className="block h-3 w-11/12 bg-[color:var(--wl-surface-variant)]" /><span className="block h-3 w-4/5 bg-[color:var(--wl-surface-variant)]" /><span className="block h-3 w-3/4 bg-[color:var(--wl-surface-variant)]" /></div></div><div className="grid gap-4"><div className="grid min-h-[130px] place-items-center border border-border bg-[color:var(--wl-surface-subtle)]"><Headphones size={46} className="text-[color:var(--wl-accent-fixed-dim)]" /></div><div className="border border-border bg-[color:var(--wl-surface-subtle)] p-4"><span className="block h-3 w-20 bg-[color:var(--wl-surface-variant)]" /><span className="mt-3 block h-3 w-full bg-[color:var(--wl-surface-variant)]" /><span className="mt-2 block h-3 w-4/5 bg-[color:var(--wl-surface-variant)]" /></div></div></div>
+      <div className="flex h-7 items-center gap-2 border-b border-border pb-4">
+        <span className="h-4 w-4 rounded-full bg-muted" />
+        <span className="h-2 w-24 bg-muted" />
+        <span className="ml-auto h-4 w-16 bg-[color:var(--wl-accent-container)]" />
+        <span className="h-4 w-5 bg-muted" />
+      </div>
+      <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="min-h-[220px] border border-border bg-[color:var(--wl-surface-subtle)] p-5">
+          <span className="h-4 w-28 bg-[color:var(--wl-surface-variant)]" />
+          <div className="mt-7 space-y-4">
+            <span className="block h-3 w-11/12 bg-[color:var(--wl-surface-variant)]" />
+            <span className="block h-3 w-4/5 bg-[color:var(--wl-surface-variant)]" />
+            <span className="block h-3 w-3/4 bg-[color:var(--wl-surface-variant)]" />
+          </div>
+        </div>
+        <div className="grid gap-4">
+          <div className="grid min-h-[130px] place-items-center border border-border bg-[color:var(--wl-surface-subtle)]">
+            <Headphones size={46} className="text-[color:var(--wl-accent-fixed-dim)]" />
+          </div>
+          <div className="border border-border bg-[color:var(--wl-surface-subtle)] p-4">
+            <span className="block h-3 w-20 bg-[color:var(--wl-surface-variant)]" />
+            <span className="mt-3 block h-3 w-full bg-[color:var(--wl-surface-variant)]" />
+            <span className="mt-2 block h-3 w-4/5 bg-[color:var(--wl-surface-variant)]" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function PrecisionLanding() {
-  const demoAgent = LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jordan") || LANDING_PUBLIC_DEMO_AGENTS[0];
+  const demoAgent =
+    LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jordan") ||
+    LANDING_PUBLIC_DEMO_AGENTS[0];
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PrecisionPublicHeader />
       <main id="main-content" className="pt-16">
-        <section className="border-b border-border bg-[radial-gradient(circle_at_1px_1px,rgba(26,60,52,.10)_1px,transparent_0)] bg-[size:16px_16px] px-4 py-20 sm:px-6 sm:py-24 lg:px-8"><div className="mx-auto max-w-[1040px] text-center"><h1 className="mx-auto max-w-[760px] text-balance text-[clamp(42px,6vw,68px)] font-semibold leading-[1.05] tracking-[-.045em] text-foreground">Never wait on hold again.<br />Wireline will.</h1><p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">Your personal AI phone call assistant for scheduling, sales, and support. Operator-grade reliability for modern life and work.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Link to="/signup?mode=personal" className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]">Start free</Link><Link to="/showcase" className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"><Play size={14} /> Watch demo</Link></div><div className="mx-auto mt-16 max-w-[920px] text-left"><ProductFrame /></div></div></section>
-        <section className="border-b border-border px-4 py-10 text-center sm:px-6"><p className="wl-stitch-label">Built for the calls that take your day</p><div className="mt-5 flex flex-wrap justify-center gap-x-10 gap-y-3 text-[16px] font-semibold text-muted-foreground"><span>Appointments</span><span>Support lines</span><span>Schools</span><span>Insurance</span><span>Restaurants</span></div></section>
-        <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8"><div className="mx-auto max-w-2xl text-center"><h2 className="text-[32px] font-semibold tracking-[-.02em]">Precision engineering for voice</h2><p className="mt-3 text-[16px] leading-6 text-muted-foreground">Build one personal assistant or a coordinated business fleet from the same calm operating system.</p></div><div className="mt-12 grid gap-4 md:grid-cols-2"><article className="wl-stitch-card p-6"><SlidersHorizontal size={20} className="text-primary" /><h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em]">Studio: agent training</h3><p className="mt-3 text-[14px] leading-5 text-muted-foreground">Tell your assistant what matters in plain English. Add facts, rules, and a personality it can follow consistently.</p><div className="mt-6 border border-border bg-[color:var(--wl-surface-subtle)] p-5"><span className="block h-7 w-24 border border-border bg-card" /><span className="mt-6 block h-7 w-24 border border-border bg-card" /></div></article><article className="wl-stitch-card p-6"><Radio size={20} className="text-primary" /><h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em]">Live operations</h3><p className="mt-3 text-[14px] leading-5 text-muted-foreground">See active calls in real time, step in when you need to, and keep the routine work moving without you.</p><div className="mt-6 border border-border bg-[color:var(--wl-surface-subtle)] p-5"><BrowserCallWidget agentName={demoAgent.name} /></div></article><article className="wl-stitch-card md:col-span-2 p-6"><div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] md:items-center"><div><Bot size={20} className="text-primary" /><h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em]">A personal assistant when you need one. A fleet when you grow.</h3><p className="mt-3 max-w-xl text-[14px] leading-5 text-muted-foreground">Use Wireline for your own calls and messages, then add purpose-built assistants for sales, service, operations, and follow-up without learning a different product.</p></div><div className="grid grid-cols-2 gap-3"><div className="border border-border bg-[color:var(--wl-surface-subtle)] p-5 text-center"><Headphones size={24} className="mx-auto text-primary" /><span className="mt-3 block font-mono text-[12px] text-muted-foreground">Personal</span></div><div className="border border-border bg-[color:var(--wl-surface-subtle)] p-5 text-center"><Bot size={24} className="mx-auto text-primary" /><span className="mt-3 block font-mono text-[12px] text-muted-foreground">Business</span></div></div></div></article></div></section>
-        <section className="border-t border-border px-4 py-20 text-center sm:px-6"><h2 className="mx-auto max-w-2xl text-[32px] font-semibold leading-tight tracking-[-.02em]">Stop missing opportunities to hold music.<br />Deploy your first assistant today.</h2><div className="mt-8 flex flex-wrap justify-center gap-3"><Link to="/signup?mode=personal" className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]">Start free</Link><Link to="/solutions/support" className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]">For business <ArrowRight size={14} /></Link></div></section>
+        <section className="border-b border-border bg-[radial-gradient(circle_at_1px_1px,rgba(26,60,52,.10)_1px,transparent_0)] bg-[size:16px_16px] px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+          <div className="mx-auto max-w-[1040px] text-center">
+            <h1 className="mx-auto max-w-[760px] text-balance text-[clamp(42px,6vw,68px)] font-semibold leading-[1.05] tracking-[-.045em] text-foreground">
+              Never wait on hold again.
+              <br />
+              Wireline will.
+            </h1>
+            <p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">
+              Your personal AI phone call assistant for scheduling, sales, and support.
+              Operator-grade reliability for modern life and work.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                to="/signup?mode=personal"
+                className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
+              >
+                Start free
+              </Link>
+              <Link
+                to="/showcase"
+                className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
+              >
+                <Play size={14} /> Watch demo
+              </Link>
+            </div>
+            <div className="mx-auto mt-16 max-w-[920px] text-left">
+              <ProductFrame />
+            </div>
+          </div>
+        </section>
+        <section className="border-b border-border px-4 py-10 text-center sm:px-6">
+          <p className="wl-stitch-label">Built for the calls that take your day</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-x-10 gap-y-3 text-[16px] font-semibold text-muted-foreground">
+            <span>Appointments</span>
+            <span>Support lines</span>
+            <span>Schools</span>
+            <span>Insurance</span>
+            <span>Restaurants</span>
+          </div>
+        </section>
+        <section className="border-b border-border px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mx-auto max-w-[1040px]">
+            <p className="wl-stitch-label text-center">Real conversations, handled in real time</p>
+            <div className="mt-8">
+              <VoiceOpsVisual />
+            </div>
+          </div>
+        </section>
+        <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-[32px] font-semibold tracking-[-.02em]">
+              Precision engineering for voice
+            </h2>
+            <p className="mt-3 text-[16px] leading-6 text-muted-foreground">
+              Build one personal assistant or a coordinated business fleet from the same calm
+              operating system.
+            </p>
+          </div>
+          <div className="mt-12 grid gap-4 md:grid-cols-2">
+            <article className="wl-stitch-card p-6">
+              <SlidersHorizontal size={20} className="text-primary" />
+              <h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em]">
+                Studio: agent training
+              </h3>
+              <p className="mt-3 text-[14px] leading-5 text-muted-foreground">
+                Tell your assistant what matters in plain English. Add facts, rules, and a
+                personality it can follow consistently.
+              </p>
+              <div className="mt-6 border border-border bg-[color:var(--wl-surface-subtle)] p-5">
+                <span className="block h-7 w-24 border border-border bg-card" />
+                <span className="mt-6 block h-7 w-24 border border-border bg-card" />
+              </div>
+            </article>
+            <article className="wl-stitch-card p-6">
+              <Radio size={20} className="text-primary" />
+              <h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em]">Live operations</h3>
+              <p className="mt-3 text-[14px] leading-5 text-muted-foreground">
+                See active calls in real time, step in when you need to, and keep the routine work
+                moving without you.
+              </p>
+              <div className="mt-6 border border-border bg-[color:var(--wl-surface-subtle)] p-5">
+                <BrowserCallWidget agentName={demoAgent.name} />
+              </div>
+            </article>
+            <article className="wl-stitch-card md:col-span-2 p-6">
+              <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] md:items-center">
+                <div>
+                  <Bot size={20} className="text-primary" />
+                  <h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em]">
+                    A personal assistant when you need one. A fleet when you grow.
+                  </h3>
+                  <p className="mt-3 max-w-xl text-[14px] leading-5 text-muted-foreground">
+                    Use Wireline for your own calls and messages, then add purpose-built assistants
+                    for sales, service, operations, and follow-up without learning a different
+                    product.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-border bg-[color:var(--wl-surface-subtle)] p-5 text-center">
+                    <Headphones size={24} className="mx-auto text-primary" />
+                    <span className="mt-3 block font-mono text-[12px] text-muted-foreground">
+                      Personal
+                    </span>
+                  </div>
+                  <div className="border border-border bg-[color:var(--wl-surface-subtle)] p-5 text-center">
+                    <Bot size={24} className="mx-auto text-primary" />
+                    <span className="mt-3 block font-mono text-[12px] text-muted-foreground">
+                      Business
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section className="border-t border-border px-4 py-20 text-center sm:px-6">
+          <h2 className="mx-auto max-w-2xl text-[32px] font-semibold leading-tight tracking-[-.02em]">
+            Stop missing opportunities to hold music.
+            <br />
+            Deploy your first assistant today.
+          </h2>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/signup?mode=personal"
+              className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
+            >
+              Start free
+            </Link>
+            <Link
+              to="/solutions/support"
+              className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
+            >
+              For business <ArrowRight size={14} />
+            </Link>
+          </div>
+        </section>
       </main>
-      <footer className="border-t border-border px-4 py-8 text-[13px] text-muted-foreground sm:px-6"><div className="mx-auto flex max-w-[1200px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><span><strong className="text-foreground">Wireline</strong> · AI voice + messaging</span><div className="flex gap-5"><Link to="/pricing">Pricing</Link><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/support">Contact</Link></div></div></footer>
+      <footer className="border-t border-border px-4 py-8 text-[13px] text-muted-foreground sm:px-6">
+        <div className="mx-auto flex max-w-[1200px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            <strong className="text-foreground">Wireline</strong> · AI voice + messaging
+          </span>
+          <div className="flex gap-5">
+            <Link to="/pricing">Pricing</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
+            <Link to="/support">Contact</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
