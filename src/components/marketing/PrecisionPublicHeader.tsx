@@ -1,6 +1,7 @@
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import WirelineMark from "../brand/WirelineMark";
 
 const links = [
   { to: "/for/personal", label: "Product", match: ["/", "/for/personal", "/for/business"] },
@@ -17,8 +18,9 @@ export default function PrecisionPublicHeader() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-[color:var(--wl-page)]">
       <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="text-[20px] font-semibold tracking-[-.03em] text-foreground">
-            Wireline
+          <Link to="/" className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-.03em] text-foreground" aria-label="Wireline home">
+            <WirelineMark className="h-6 w-6 text-[21px] leading-none text-primary" />
+            <span>Wireline</span>
           </Link>
 
           <nav className="hidden h-full items-center gap-7 md:flex" aria-label="Site">
