@@ -17,7 +17,7 @@ export const STITCH_SCREENS = {
 } as const;
 
 export const STITCH_CODE_SYSTEM = {
-  tokens: "src/styles/foundation.css",
+  tokens: "src/styles/precision-operator-web.css",
   patterns: "src/styles/stitch-patterns.css",
   workspace: "src/components/WorkspaceShell.tsx",
   designMd: ".stitch/DESIGN.md",
