@@ -1,15 +1,33 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ArrowUp, Check, ChevronRight, CirclePlus, Loader2, Plus, Sparkles, Workflow } from "lucide-react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUp, Check, ChevronDown, CirclePlus, Cpu, FileImage, FileText, Loader2, Paperclip, Plus, ShieldCheck, Sparkles, WandSparkles, X } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { authFetch, safeJson } from "../lib/api";
 import { AGENTS_CHANGED_EVENT, useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
-import { WORKSPACE_INTEGRATION_CATALOG } from "../lib/workspace-integration-catalog";
+import { AGENT_TOOL_CATALOG, type AgentToolName } from "../lib/agent-capabilities";
+import WorkspaceShell from "./WorkspaceShell";
 
 type ChatMessage = { id: string; role: "assistant" | "user"; content: string };
-type Config = { personality?: string; directives?: unknown[]; knowledge?: unknown[]; flowConfig?: unknown[] | null };
+type RuntimeConfig = { provider?: string | null; model?: string | null; temperature?: number | string | null };
+type Config = { personality?: string; directives?: Array<{ content?: string }>; knowledge?: Array<{ content?: string }>; flowConfig?: unknown[] | null; enabledTools?: AgentToolName[]; runtime?: RuntimeConfig };
+type Inspector = "overview" | "identity" | "rules" | "facts" | "tone" | "actions" | "model" | "assets";
+type Attachment = { id: string; name: string; mimeType: string; kind: "text" | "image"; text?: string; dataUrl?: string; status: "ready" | "uploading" | "uploaded" | "error"; error?: string };
+
 const roles = ["scheduler", "sales", "customer_service", "receptionist", "custom"] as const;
+const MODEL_OPTIONS = [
+  { value: "managed", label: "Managed · OpenAI first", detail: "Gemini fallback" },
+  { value: "openai:gpt-4o", label: "OpenAI GPT-4o", detail: "Voice runtime" },
+  { value: "google:gemini-3.5-flash", label: "Gemini Flash", detail: "Direct alternative" },
+  { value: "openrouter", label: "OpenRouter custom", detail: "Exact provider/model" },
+] as const;
 const roleLabel = (role?: string | null) => role?.replace(/_/g, " ") || "Assistant";
-const welcome = (name?: string): ChatMessage => ({ id: `welcome-${name || "new"}`, role: "assistant", content: name ? `Teach ${name} the job in plain English. I will save clear rules, facts, and tone changes to the agent profile.` : "Create an agent, then teach it the job in plain English." });
+const welcome = (name?: string): ChatMessage => ({ id: `welcome-${name || "new"}`, role: "assistant", content: name ? `Teach ${name} the job in plain English. I will turn clear guidance into rules, facts, tone, and scoped actions.` : "Create an agent, then teach it the job in plain English." });
+const isTextAsset = (file: File) => file.type.startsWith("text/") || /\.(txt|md|csv|json|xml)$/i.test(file.name);
+const readFile = (file: File, mode: "text" | "data-url") => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error("Could not read this file.")); reader.onload = () => resolve(String(reader.result || "")); mode === "text" ? reader.readAsText(file) : reader.readAsDataURL(file); });
+
+function runtimeValue(runtime?: RuntimeConfig) {
+  if (!runtime?.provider || !runtime.model) return "managed";
+  return runtime.provider === "openrouter" ? "openrouter" : `${runtime.provider}:${runtime.model}`;
+}
 
 export default function StudioWorkspaceV2() {
   const { agents, loading, refresh } = useAgents();
@@ -25,18 +43,236 @@ export default function StudioWorkspaceV2() {
   const [role, setRole] = useState<(typeof roles)[number]>("scheduler");
   const [brief, setBrief] = useState("");
   const [creating, setCreating] = useState(false);
-  const loadConfig = useCallback(async (agentId: string) => { try { const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`); const body = await safeJson(response); if (response.ok && body && typeof body === "object") setConfig(body as Config); } catch { setConfig({}); } }, []);
-  const selectAgent = useCallback((agent: WorkspaceAgentSummary) => { setSelectedId(agent.id); setParams({ agent: agent.id }); setMessages([welcome(agent.name)]); void loadConfig(agent.id); }, [loadConfig, setParams]);
-  useEffect(() => { if (!loading && !agents.length) setShowCreate(true); }, [agents.length, loading]);
-  useEffect(() => { if (active && active.id !== selectedId) selectAgent(active); }, [active?.id]);
-  async function extract(agentId: string, content: string) { const response = await authFetch("/api/train/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentId, message: content }) }); const body = await safeJson(response) as { responseContent?: unknown; reply?: unknown } | null; const reply = typeof body?.responseContent === "string" ? body.responseContent : typeof body?.reply === "string" ? body.reply : response.ok ? "Saved. What else should this agent know?" : "I could not save that yet. Please try again."; return { ok: response.ok, reply }; }
-  async function sendTraining(event?: FormEvent) { event?.preventDefault(); if (!active || !composer.trim() || sending) return; const content = composer.trim(); setComposer(""); setMessages((current) => [...current, { id: `user-${Date.now()}`, role: "user", content }]); setSending(true); try { const result = await extract(active.id, content); setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", content: result.reply }]); if (result.ok) await loadConfig(active.id); } finally { setSending(false); } }
-  async function createAgent(event: FormEvent) { event.preventDefault(); if (!name.trim() || creating) return; setCreating(true); const cleanName = name.trim(); const initialBrief = brief.trim(); try { const response = await authFetch("/api/agents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: cleanName, role, deferPhoneProvision: true }) }); const body = await safeJson(response) as { id?: string } | null; if (!response.ok || !body?.id) return; window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT)); refresh(); setSelectedId(body.id); setParams({ agent: body.id }); setShowCreate(false); const initial: ChatMessage[] = [welcome(cleanName)]; if (initialBrief) { initial.push({ id: `brief-${body.id}`, role: "user", content: initialBrief }); const result = await extract(body.id, initialBrief); initial.push({ id: `brief-result-${body.id}`, role: "assistant", content: result.reply }); } setMessages(initial); await loadConfig(body.id); setName(""); setBrief(""); } finally { setCreating(false); } }
+  const [inspector, setInspector] = useState<Inspector>("overview");
+  const [panelEntry, setPanelEntry] = useState("");
+  const [savingPanel, setSavingPanel] = useState(false);
+  const [runtimeSaving, setRuntimeSaving] = useState(false);
+  const [openRouterModel, setOpenRouterModel] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadConfig = useCallback(async (agentId: string) => {
+    try {
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`);
+      const body = await safeJson(response);
+      if (response.ok && body && typeof body === "object") setConfig(body as Config);
+    } catch {
+      setConfig({});
+    }
+  }, []);
+
+  const selectAgent = useCallback((agent: WorkspaceAgentSummary) => {
+    setSelectedId(agent.id);
+    setParams({ agent: agent.id });
+    setMessages([welcome(agent.name)]);
+    setConfig({});
+    setInspector("overview");
+    setAttachments([]);
+    void loadConfig(agent.id);
+  }, [loadConfig, setParams]);
+
+  useEffect(() => {
+    if (!loading && !agents.length) setShowCreate(true);
+  }, [agents.length, loading]);
+
+  useEffect(() => {
+    if (!active) return;
+    if (active.id !== selectedId) selectAgent(active);
+  }, [active?.id, selectedId, selectAgent]);
+
+  useEffect(() => {
+    if (config.runtime?.provider === "openrouter" && config.runtime.model) setOpenRouterModel(config.runtime.model);
+  }, [config.runtime?.provider, config.runtime?.model]);
+
+  async function extract(agentId: string, content: string) {
+    const response = await authFetch("/api/train/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentId, message: content }) });
+    const body = await safeJson(response) as { responseContent?: unknown; reply?: unknown } | null;
+    const reply = typeof body?.responseContent === "string" ? body.responseContent : typeof body?.reply === "string" ? body.reply : response.ok ? "Saved. What else should this agent know?" : "I could not save that yet. Please try again.";
+    return { ok: response.ok, reply };
+  }
+
+  async function ingestAttachments(agentId: string) {
+    const ready = attachments.filter((asset) => asset.status === "ready");
+    const summaries: string[] = [];
+    for (const asset of ready) {
+      setAttachments((items) => items.map((item) => item.id === asset.id ? { ...item, status: "uploading" } : item));
+      try {
+        const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/assets`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: asset.name, mimeType: asset.mimeType, text: asset.text, dataUrl: asset.dataUrl }),
+        });
+        const body = await safeJson(response) as { summary?: unknown; error?: unknown } | null;
+        if (!response.ok) throw new Error(typeof body?.error === "string" ? body.error : "This asset could not be added.");
+        summaries.push(typeof body?.summary === "string" ? body.summary : `Added ${asset.name} to the agent profile.`);
+        setAttachments((items) => items.map((item) => item.id === asset.id ? { ...item, status: "uploaded" } : item));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "This asset could not be added.";
+        setAttachments((items) => items.map((item) => item.id === asset.id ? { ...item, status: "error", error: message } : item));
+      }
+    }
+    return summaries;
+  }
+
+  async function sendTraining(event?: FormEvent) {
+    event?.preventDefault();
+    if (!active || sending || (!composer.trim() && !attachments.some((asset) => asset.status === "ready"))) return;
+    const content = composer.trim();
+    const assetLabels = attachments.filter((asset) => asset.status === "ready").map((asset) => `Attached ${asset.kind}: ${asset.name}`);
+    setComposer("");
+    setMessages((current) => [...current, { id: `user-${Date.now()}`, role: "user", content: [content, ...assetLabels].filter(Boolean).join("\n") }]);
+    setSending(true);
+    try {
+      const assetSummaries = await ingestAttachments(active.id);
+      const result = content ? await extract(active.id, content) : { ok: assetSummaries.length > 0, reply: assetSummaries.join(" ") || "No asset could be saved." };
+      setMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: "assistant", content: [assetSummaries.join(" "), content ? result.reply : ""].filter(Boolean).join(" ") }]);
+      if (result.ok || assetSummaries.length) await loadConfig(active.id);
+      setAttachments((items) => items.filter((item) => item.status === "error"));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function createAgent(event: FormEvent) {
+    event.preventDefault();
+    if (!name.trim() || creating) return;
+    setCreating(true);
+    const cleanName = name.trim();
+    const initialBrief = brief.trim();
+    try {
+      const response = await authFetch("/api/agents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: cleanName, role, deferPhoneProvision: true }) });
+      const body = await safeJson(response) as { id?: string } | null;
+      if (!response.ok || !body?.id) return;
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      refresh();
+      setSelectedId(body.id);
+      setParams({ agent: body.id });
+      setShowCreate(false);
+      setMessages([welcome(cleanName)]);
+      if (initialBrief) {
+        setMessages((current) => [...current, { id: `brief-${body.id}`, role: "user", content: initialBrief }]);
+        const result = await extract(body.id, initialBrief);
+        setMessages((current) => [...current, { id: `brief-result-${body.id}`, role: "assistant", content: result.reply }]);
+      }
+      await loadConfig(body.id);
+      setName("");
+      setBrief("");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function savePanel() {
+    if (!active || !panelEntry.trim() || savingPanel) return;
+    const type = inspector === "rules" ? "directive" : inspector === "facts" ? "knowledge" : inspector === "tone" ? "personality" : null;
+    if (!type) return;
+    setSavingPanel(true);
+    try {
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(active.id)}/manual`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, content: panelEntry.trim() }) });
+      if (response.ok) {
+        setPanelEntry("");
+        await loadConfig(active.id);
+      }
+    } finally {
+      setSavingPanel(false);
+    }
+  }
+
+  async function updateRuntime(value: string) {
+    if (!active || runtimeSaving) return;
+    const [provider, presetModel] = value === "managed" || value === "openrouter" ? ["", ""] : value.split(":", 2);
+    const model = value === "openrouter" ? (openRouterModel || "openai/gpt-4o") : presetModel;
+    setRuntimeSaving(true);
+    try {
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(active.id)}/runtime`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, temperature: config.runtime?.temperature ?? null }) });
+      const body = await safeJson(response) as { runtime?: RuntimeConfig } | null;
+      if (response.ok && body?.runtime) setConfig((current) => ({ ...current, runtime: body.runtime }));
+    } finally {
+      setRuntimeSaving(false);
+    }
+  }
+
+  async function saveOpenRouterModel() {
+    if (!active || !openRouterModel.trim() || runtimeSaving) return;
+    setRuntimeSaving(true);
+    try {
+      const response = await authFetch(`/api/agent-config/${encodeURIComponent(active.id)}/runtime`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: "openrouter", model: openRouterModel.trim(), temperature: config.runtime?.temperature ?? null }) });
+      const body = await safeJson(response) as { runtime?: RuntimeConfig } | null;
+      if (response.ok && body?.runtime) setConfig((current) => ({ ...current, runtime: body.runtime }));
+    } finally {
+      setRuntimeSaving(false);
+    }
+  }
+
+  async function toggleTool(tool: AgentToolName) {
+    if (!active) return;
+    const current = config.enabledTools || [];
+    const next = current.includes(tool) ? current.filter((name) => name !== tool) : [...current, tool];
+    setConfig((value) => ({ ...value, enabledTools: next }));
+    const response = await authFetch(`/api/agents/${encodeURIComponent(active.id)}/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled_tools: next }) });
+    const body = await safeJson(response) as { enabledTools?: AgentToolName[] } | null;
+    if (!response.ok) setConfig((value) => ({ ...value, enabledTools: current }));
+    else if (body?.enabledTools) setConfig((value) => ({ ...value, enabledTools: body.enabledTools }));
+  }
+
+  async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    const prepared = await Promise.all(files.slice(0, 4).map(async (file): Promise<Attachment> => {
+      const id = `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`;
+      if (file.size > 3_000_000) return { id, name: file.name, mimeType: file.type || "application/octet-stream", kind: "text", status: "error", error: "Keep uploads under 3 MB." };
+      try {
+        if (file.type.startsWith("image/")) return { id, name: file.name, mimeType: file.type, kind: "image", dataUrl: await readFile(file, "data-url"), status: "ready" };
+        if (isTextAsset(file)) return { id, name: file.name, mimeType: file.type || "text/plain", kind: "text", text: (await readFile(file, "text")).slice(0, 28_000), status: "ready" };
+        return { id, name: file.name, mimeType: file.type || "application/octet-stream", kind: "text", status: "error", error: "Use a text document or PNG, JPG, WEBP, or GIF image." };
+      } catch {
+        return { id, name: file.name, mimeType: file.type || "application/octet-stream", kind: "text", status: "error", error: "Could not read this asset." };
+      }
+    }));
+    setAttachments((items) => [...items, ...prepared]);
+  }
+
   const ruleCount = config.directives?.length || 0;
   const factCount = config.knowledge?.length || 0;
   const toneReady = Boolean(config.personality?.trim());
-  const complete = ruleCount > 0 && factCount > 0;
-  const readiness = [["Identity", Boolean(active), active ? roleLabel(active.role) : "Name and role"], ["Rules", ruleCount > 0, ruleCount ? `${ruleCount} saved` : "Add boundaries"], ["Facts", factCount > 0, factCount ? `${factCount} saved` : "Add business context"], ["Tone", toneReady, toneReady ? "Defined" : "Describe the voice"], ["Actions", false, "Grant only what it needs"]] as const;
+  const toolCount = config.enabledTools?.length || 0;
+  const completion = [Boolean(active), ruleCount > 0, factCount > 0, toneReady, toolCount > 0].filter(Boolean).length;
+  const readiness: Array<{ key: Inspector; label: string; done: boolean; detail: string }> = [
+    { key: "identity", label: "Identity", done: Boolean(active), detail: active ? roleLabel(active.role) : "Name and role" },
+    { key: "rules", label: "Rules", done: ruleCount > 0, detail: ruleCount ? `${ruleCount} saved` : "Add boundaries" },
+    { key: "facts", label: "Facts", done: factCount > 0, detail: factCount ? `${factCount} saved` : "Add business context" },
+    { key: "tone", label: "Tone", done: toneReady, detail: toneReady ? "Defined" : "Describe the voice" },
+    { key: "actions", label: "Actions", done: toolCount > 0, detail: toolCount ? `${toolCount} enabled` : "Grant only what it needs" },
+  ];
+  const actionTools = AGENT_TOOL_CATALOG.filter((item) => ["view_recent_interactions", "escalate_to_human", "send_email", "check_calendar_availability", "book_appointment", "crm_log_call", "send_slack_notification", "generate_zoom_link", "log_to_google_sheets", "log_to_excel", "meta_submit_lead", "enrich_lead"].includes(item.name));
+  const modelValue = runtimeValue(config.runtime);
 
-  return <div className="h-[100dvh] overflow-hidden bg-[#f6f6f4] text-[#1d1d1f]"><div className="mx-auto grid h-full max-w-[1680px] grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[224px_minmax(0,1fr)_306px] lg:grid-rows-1"><aside className="z-10 flex min-h-0 flex-col border-b border-black/[.08] bg-white px-3 py-2.5 lg:border-b-0 lg:border-r lg:px-4 lg:py-5"><div className="flex items-center justify-between"><Link to="/agents" className="text-[15px] font-semibold tracking-[-.025em]">Wireline</Link><button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#1d1d1f] px-2.5 py-2 text-xs font-semibold text-white lg:hidden"><Plus size={14} />New</button></div><button onClick={() => setShowCreate(true)} className="mt-6 hidden w-full items-center justify-center gap-2 rounded-xl bg-[#1d1d1f] px-3 py-2.5 text-sm font-semibold text-white lg:inline-flex"><Plus size={15} />New agent</button><div className="mt-3 lg:hidden"><select value={active?.id || ""} onChange={(event) => { const next = agents.find((agent) => agent.id === event.target.value); if (next) selectAgent(next); }} className="w-full rounded-xl border border-black/[.1] bg-[#fafaf9] px-3 py-2 text-xs font-semibold outline-none"><option value="">Choose an agent</option>{agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name} · {roleLabel(agent.role)}</option>)}</select></div><div className="mt-7 hidden min-h-0 flex-1 lg:flex lg:flex-col"><p className="px-2 text-[10px] font-semibold uppercase tracking-[.13em] text-[#7a7a81]">Your agents</p><div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">{agents.map((agent) => <button key={agent.id} onClick={() => selectAgent(agent)} className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition ${active?.id === agent.id ? "bg-[#efefec]" : "hover:bg-[#f6f6f4]"}`}><span className="grid h-7 w-7 place-items-center rounded-lg bg-white text-xs font-semibold">{agent.name.slice(0, 1).toUpperCase()}</span><span className="min-w-0"><strong className="block truncate text-xs">{agent.name}</strong><small className="block truncate text-[10px] capitalize text-[#73737a]">{roleLabel(agent.role)}</small></span></button>)}</div><div className="mt-5 space-y-1 border-t border-black/[.08] pt-4"><Link className="block rounded-lg px-2 py-2 text-xs font-semibold text-[#57575e] hover:bg-[#f0f0ee]" to="/agents">Agents</Link><Link className="block rounded-lg px-2 py-2 text-xs font-semibold text-[#57575e] hover:bg-[#f0f0ee]" to={active ? `/knowledge?agent=${active.id}` : "/knowledge"}>Knowledge</Link><Link className="block rounded-lg px-2 py-2 text-xs font-semibold text-[#57575e] hover:bg-[#f0f0ee]" to={active ? `/integrations?agent=${active.id}` : "/integrations"}>Integrations</Link></div></div></aside><main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 pt-3 sm:px-7 sm:pb-6 lg:px-9 lg:pb-7 lg:pt-7"><header className="flex shrink-0 items-end justify-between gap-3 border-b border-black/[.08] pb-3.5"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#73737a]">Agent Studio</p><div className="mt-0.5 flex items-center gap-2"><h1 className="truncate text-[26px] font-semibold tracking-[-.05em] sm:text-[31px]">{active?.name || "New agent"}</h1><span className="shrink-0 rounded-full border border-black/[.1] bg-white px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em] text-[#5f5f66]">{complete ? "Review" : ruleCount || factCount || toneReady ? "Training" : "Draft"}</span></div></div><Link to="/agents" className="rounded-xl border border-black/[.1] bg-white px-3 py-2 text-xs font-semibold">Fleet</Link></header><section className="flex min-h-0 flex-1 flex-col"><div className="flex shrink-0 items-start justify-between gap-3 py-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">Training</p><h2 className="mt-1 text-lg font-semibold tracking-[-.03em]">Teach the job. We save the structure.</h2></div><span className="hidden items-center gap-1.5 rounded-full border border-black/[.08] bg-white px-2.5 py-1.5 text-[10px] font-semibold text-[#626269] sm:inline-flex"><Sparkles size={12} />Managed runtime</span></div><div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-black/[.08] bg-white px-3 py-4 sm:px-5"><div className="mx-auto flex max-w-[760px] min-h-full flex-col justify-end gap-3">{messages.map((message) => <article key={message.id} className={`flex gap-2.5 ${message.role === "user" ? "justify-end" : ""}`}>{message.role === "assistant" ? <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[#f0f0ee]"><Sparkles size={12} /></span> : null}<p className={`max-w-[86%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[13px] leading-6 ${message.role === "user" ? "bg-[#1d1d1f] text-white" : "bg-[#f3f3f1] text-[#34343a]"}`}>{message.content}</p></article>)}{sending ? <div className="flex items-center gap-2 text-xs text-[#6f6f76]"><Loader2 className="animate-spin" size={14} />Saving this to the agent profile…</div> : null}</div></div><form className="shrink-0 pt-3" onSubmit={sendTraining}><div className="mx-auto max-w-[760px] rounded-[22px] border border-black/[.12] bg-white p-2.5 shadow-[0_12px_35px_rgba(0,0,0,.07)]"><textarea value={composer} onChange={(event) => setComposer(event.target.value)} rows={2} placeholder={active ? `Tell ${active.name} what to do, avoid, or know…` : "Create an agent first…"} className="block w-full resize-none bg-transparent px-2 py-1 text-sm leading-6 outline-none placeholder:text-[#929298]" /><div className="flex items-center justify-between gap-2 border-t border-black/[.06] px-1 pt-2"><span className="truncate text-[10px] text-[#7b7b82]">Plain English in · rules, facts, and tone saved out</span><button disabled={!active || !composer.trim() || sending} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#1d1d1f] text-white transition hover:scale-105 disabled:opacity-40" aria-label="Save instruction"><ArrowUp size={15} /></button></div></div></form></section></main><aside className="hidden min-h-0 border-l border-black/[.08] bg-white p-4 lg:flex lg:flex-col"><div className="shrink-0"><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">Readiness</p><h2 className="mt-1 text-base font-semibold tracking-[-.025em]">A clear path to live</h2></div><div className="mt-4 shrink-0 space-y-2.5">{readiness.map(([label, done, detail]) => <div key={label} className="flex items-start gap-2.5"><span className={`mt-0.5 grid h-5 w-5 place-items-center rounded-full border ${done ? "border-[#1d1d1f] bg-[#1d1d1f] text-white" : "border-black/[.18] text-transparent"}`}><Check size={11} strokeWidth={3} /></span><span><strong className="block text-xs">{label}</strong><small className="mt-0.5 block text-[10px] text-[#707077]">{detail}</small></span></div>)}</div><div className="mt-5 min-h-0 flex-1 rounded-2xl bg-[#f4f4f2] p-3"><div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2"><Workflow size={14} /><h3 className="text-xs font-semibold">Connected capabilities</h3></div><Link to={active ? `/integrations?agent=${active.id}` : "/integrations"} className="inline-flex items-center gap-0.5 text-[10px] font-semibold">Manage <ChevronRight size={12} /></Link></div><p className="mt-2 text-[10px] leading-4 text-[#68686f]">Every workspace system is visible here. Grant actions only in Integrations.</p><div className="mt-3 grid max-h-[330px] grid-cols-2 gap-1 overflow-y-auto pr-1">{WORKSPACE_INTEGRATION_CATALOG.map((item) => <Link key={item.id} to={active ? `/integrations?agent=${active.id}` : "/integrations"} className="rounded-lg border border-black/[.06] bg-white px-2 py-1.5 text-[9px] font-semibold text-[#5d5d65] transition hover:border-black/[.18] hover:text-[#1d1d1f]">{item.label}</Link>)}</div></div></aside></div>{showCreate ? <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4"><form onSubmit={createAgent} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">New agent</p><h2 className="mt-1 text-2xl font-semibold tracking-[-.04em]">Start with a clear job.</h2><label className="mt-5 block text-xs font-semibold">Name<input value={name} onChange={(event) => setName(event.target.value)} autoFocus className="mt-2 w-full rounded-xl border border-black/[.12] p-3 text-sm outline-none" placeholder="e.g. Casey" /></label><label className="mt-4 block text-xs font-semibold">Starting role<select value={role} onChange={(event) => setRole(event.target.value as typeof role)} className="mt-2 w-full rounded-xl border border-black/[.12] bg-white p-3 text-sm outline-none">{roles.map((item) => <option value={item} key={item}>{roleLabel(item)}</option>)}</select></label><label className="mt-4 block text-xs font-semibold">Initial operating brief<textarea value={brief} onChange={(event) => setBrief(event.target.value)} className="mt-2 min-h-28 w-full rounded-xl border border-black/[.12] p-3 text-sm outline-none" placeholder="Qualify inbound leads, book demos, log CRM notes, and escalate pricing questions." /></label><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowCreate(false)} className="rounded-xl px-3 py-2 text-sm font-semibold">Cancel</button><button disabled={!name.trim() || creating} className="inline-flex items-center gap-2 rounded-xl bg-[#1d1d1f] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">{creating ? <Loader2 className="animate-spin" size={15} /> : <CirclePlus size={15} />}Create</button></div></form></div> : null}</div>;
+  const inspectorContent = (() => {
+    if (!active) return <p className="text-sm leading-6 text-[#68686f]">Choose or create an agent to begin.</p>;
+    if (inspector === "identity") return <div className="space-y-3"><p className="text-sm leading-6 text-[#626269]">{active.name} is configured as a {roleLabel(active.role).toLowerCase()}. Build the job below, then return here to review readiness.</p><div className="rounded-xl border border-black/[.08] bg-[#fafaf9] p-3"><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#73737a]">Current runtime</p><p className="mt-1 text-sm font-semibold">{modelValue === "managed" ? "Managed OpenAI → Gemini fallback" : config.runtime?.model}</p><button onClick={() => setInspector("model")} className="mt-2 text-xs font-semibold underline underline-offset-4">Change model</button></div></div>;
+    if (inspector === "rules" || inspector === "facts" || inspector === "tone") {
+      const labels = { rules: ["Operating rule", "Set a boundary this agent must follow."], facts: ["Business fact", "Save context this agent can rely on."], tone: ["Tone guidance", "Describe how this agent should sound."] } as const;
+      const [heading, description] = labels[inspector];
+      return <div className="space-y-3"><p className="text-sm leading-6 text-[#626269]">{description}</p><textarea value={panelEntry} onChange={(event) => setPanelEntry(event.target.value)} placeholder={inspector === "rules" ? "Never quote final pricing without approval…" : inspector === "facts" ? "We are open Monday–Friday, 8am–6pm…" : "Warm, brief, clear, and never pushy…"} className="min-h-[116px] w-full resize-none rounded-xl border border-black/[.1] bg-[#fafaf9] p-3 text-sm leading-6 outline-none" /><button disabled={!panelEntry.trim() || savingPanel} onClick={() => void savePanel()} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1d1d1f] px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-40">{savingPanel ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}Save {heading.toLowerCase()}</button></div>;
+    }
+    if (inspector === "actions") return <div className="space-y-2"><p className="text-sm leading-6 text-[#626269]">Grant scoped actions here. Connections never silently give an agent permission.</p><div className="max-h-[330px] space-y-1.5 overflow-y-auto pr-1">{actionTools.map((tool) => { const enabled = (config.enabledTools || []).includes(tool.name); return <button key={tool.name} onClick={() => void toggleTool(tool.name)} className={`flex w-full items-start gap-2.5 rounded-xl border p-2.5 text-left transition ${enabled ? "border-black/[.16] bg-[#f0f0ed]" : "border-black/[.08] bg-white hover:border-black/[.16]"}`}><span className={`mt-0.5 grid h-4 w-4 place-items-center rounded border ${enabled ? "border-[#1d1d1f] bg-[#1d1d1f] text-white" : "border-black/[.2]"}`}>{enabled ? <Check size={10} strokeWidth={3} /> : null}</span><span><strong className="block text-xs">{tool.label}</strong><small className="mt-0.5 block text-[10px] leading-4 text-[#707077]">{tool.description}</small></span></button>; })}</div></div>;
+    if (inspector === "model") return <div className="space-y-3"><p className="text-sm leading-6 text-[#626269]">Choose the call runtime for this agent. Managed calls use OpenAI first and Gemini only on failure.</p><select value={modelValue} onChange={(event) => void updateRuntime(event.target.value)} disabled={runtimeSaving} className="w-full rounded-xl border border-black/[.1] bg-[#fafaf9] px-3 py-2.5 text-sm font-semibold outline-none">{MODEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label} — {option.detail}</option>)}</select>{modelValue === "openrouter" ? <div className="space-y-2"><input value={openRouterModel} onChange={(event) => setOpenRouterModel(event.target.value)} onBlur={() => void saveOpenRouterModel()} placeholder="x-ai/grok-4.3" className="w-full rounded-xl border border-black/[.1] bg-[#fafaf9] px-3 py-2.5 font-mono text-xs outline-none" /><p className="text-[11px] leading-4 text-[#707077]">Use a valid provider/model ID. Wireline preserves this exact OpenRouter choice.</p></div> : null}</div>;
+    if (inspector === "assets") return <div className="space-y-3"><p className="text-sm leading-6 text-[#626269]">Add product sheets, policies, schedules, screenshots, or service menus. Text documents and supported images become structured training context.</p><button onClick={() => fileInputRef.current?.click()} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-black/[.12] bg-[#fafaf9] px-3 py-2.5 text-sm font-semibold hover:bg-[#f1f1ee]"><Paperclip size={15} />Add files or images</button><div className="space-y-1.5">{attachments.length ? attachments.map((asset) => <div key={asset.id} className="flex items-center gap-2 rounded-xl border border-black/[.08] bg-white px-2.5 py-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-[#f0f0ed]">{asset.kind === "image" ? <FileImage size={14} /> : <FileText size={14} />}</span><span className="min-w-0 flex-1"><strong className="block truncate text-xs">{asset.name}</strong><small className="block truncate text-[10px] text-[#74747b]">{asset.status === "error" ? asset.error : asset.status}</small></span><button onClick={() => setAttachments((items) => items.filter((item) => item.id !== asset.id))} className="grid h-7 w-7 place-items-center rounded-lg hover:bg-[#f0f0ed]" aria-label={`Remove ${asset.name}`}><X size={14} /></button></div>) : <p className="rounded-xl border border-dashed border-black/[.14] px-3 py-4 text-center text-xs leading-5 text-[#74747b]">Nothing attached yet.</p>}</div></div>;
+    return <div className="space-y-3"><p className="text-sm leading-6 text-[#626269]">Build this agent without leaving the Studio. The checklist and controls update from the same profile you are training.</p><div className="grid grid-cols-2 gap-2">{[["Rules", ruleCount], ["Facts", factCount], ["Actions", toolCount], ["Progress", `${completion}/5`]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-black/[.08] bg-[#fafaf9] p-3"><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-[#77777f]">{label}</p><p className="mt-1 text-lg font-semibold tracking-[-.04em]">{value}</p></div>)}</div><button onClick={() => setInspector("model")} className="flex w-full items-center justify-between rounded-xl border border-black/[.08] bg-white px-3 py-2.5 text-sm font-semibold hover:bg-[#f6f6f4]"><span className="inline-flex items-center gap-2"><Cpu size={15} />Runtime</span><span className="text-xs font-medium text-[#6e6e75]">{modelValue === "managed" ? "Managed" : config.runtime?.model}</span></button></div>;
+  })();
+
+  return <WorkspaceShell eyebrow="Build" title="Studio" contentClassName="pt-3 pb-0" action={<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#1d1d1f] px-3.5 py-2.5 text-sm font-semibold text-white"><Plus size={16} />New agent</button>}>
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <section className="flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-black/[.08] bg-white px-3.5 py-3 sm:px-4">
+        <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">Active build</p><div className="mt-1 flex min-w-0 items-center gap-2"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#ecece9] text-xs font-semibold">{active?.name.slice(0, 1).toUpperCase() || "W"}</span><strong className="truncate text-sm tracking-[-.025em]">{active?.name || "Create an agent"}</strong><span className="hidden rounded-full border border-black/[.08] bg-[#fafaf9] px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em] text-[#67676e] sm:inline">{completion === 5 ? "Ready to review" : `${completion}/5 ready`}</span></div></div><div className="flex shrink-0 items-center gap-2"><button onClick={() => setInspector("assets")} className="hidden rounded-xl border border-black/[.1] bg-white px-3 py-2 text-xs font-semibold sm:inline-flex sm:items-center sm:gap-1.5"><Paperclip size={14} />Assets</button><button onClick={() => setInspector("model")} className="inline-flex items-center gap-1.5 rounded-xl border border-black/[.1] bg-white px-3 py-2 text-xs font-semibold"><Cpu size={14} />Model</button></div>
+      </section>
+      <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[210px_minmax(0,1fr)_286px]">
+        <aside className="hidden min-h-0 flex-col rounded-2xl border border-black/[.08] bg-white p-3 xl:flex"><div className="flex items-center justify-between"><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">Agent roster</p><button onClick={() => setShowCreate(true)} className="grid h-7 w-7 place-items-center rounded-lg bg-[#1d1d1f] text-white" aria-label="Create agent"><Plus size={14} /></button></div><div className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">{agents.map((agent) => <button key={agent.id} onClick={() => selectAgent(agent)} className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition ${active?.id === agent.id ? "bg-[#ecece9]" : "hover:bg-[#f4f4f1]"}`}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white text-xs font-semibold">{agent.name.slice(0, 1).toUpperCase()}</span><span className="min-w-0"><strong className="block truncate text-xs">{agent.name}</strong><small className="block truncate text-[10px] capitalize text-[#73737a]">{roleLabel(agent.role)}</small></span></button>)}</div></aside>
+        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-black/[.08] bg-white"><div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[.08] px-4 py-3"><div><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">Build conversation</p><p className="mt-0.5 text-sm font-semibold tracking-[-.02em]">Teach the job. The profile updates in place.</p></div><button onClick={() => setInspector("overview")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#f1f1ee] px-2.5 py-1.5 text-[10px] font-semibold xl:hidden"><ShieldCheck size={13} />{completion}/5</button></div><div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5"><div className="mx-auto flex min-h-full max-w-[760px] flex-col gap-3">{messages.length <= 1 ? <div className="grid flex-1 content-center gap-3 py-5"><div className="max-w-[540px]"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#77777f]">Start with an outcome</p><h2 className="mt-2 text-[clamp(1.45rem,2.2vw,2rem)] font-semibold tracking-[-.045em]">Give {active?.name || "this agent"} a job worth owning.</h2><p className="mt-2 max-w-lg text-sm leading-6 text-[#68686f]">Write naturally. Wireline separates approved facts, operating rules, and tone so you can see exactly what the agent learned.</p></div><div className="grid gap-2 sm:grid-cols-3">{["Qualify leads, book qualified demos, and send a concise follow-up.", "Answer service questions from our policy, then escalate anything outside it.", "Handle my personal calls, wait on hold, and text the important answer."].map((prompt) => <button key={prompt} onClick={() => setComposer(prompt)} className="rounded-2xl border border-black/[.08] bg-[#fafaf9] p-3 text-left text-xs leading-5 text-[#55555d] transition hover:border-black/[.18] hover:bg-white">{prompt}</button>)}</div></div> : null}{messages.map((message) => <article key={message.id} className={`flex gap-2.5 ${message.role === "user" ? "justify-end" : ""}`}>{message.role === "assistant" ? <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#efefec]"><Sparkles size={13} /></span> : null}<p className={`max-w-[86%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-[13px] leading-6 ${message.role === "user" ? "bg-[#1d1d1f] text-white" : "bg-[#f3f3f1] text-[#34343a]"}`}>{message.content}</p></article>)}{sending ? <div className="flex items-center gap-2 text-xs text-[#6f6f76]"><Loader2 className="animate-spin" size={14} />Updating the agent profile…</div> : null}</div></div><form className="shrink-0 border-t border-black/[.08] bg-[#fbfbfa] p-3" onSubmit={sendTraining}><div className="mx-auto max-w-[760px] rounded-[20px] border border-black/[.12] bg-white p-2.5 shadow-[0_10px_28px_rgba(0,0,0,.06)]"><textarea value={composer} onChange={(event) => setComposer(event.target.value)} rows={2} placeholder={active ? `Tell ${active.name} what to do, avoid, or know…` : "Create an agent first…"} className="block w-full resize-none bg-transparent px-2 py-1 text-sm leading-6 outline-none placeholder:text-[#929298]" /><div className="flex min-w-0 items-center justify-between gap-2 border-t border-black/[.06] px-1 pt-2"><div className="flex min-w-0 items-center gap-1.5"><button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-[11px] font-semibold text-[#55555d] hover:bg-[#f0f0ee]"><Paperclip size={14} />Attach</button><select value={modelValue} onChange={(event) => void updateRuntime(event.target.value)} disabled={runtimeSaving} className="min-w-0 max-w-[160px] rounded-lg border border-black/[.08] bg-[#fafaf9] px-2 py-1.5 text-[10px] font-semibold text-[#56565d] outline-none"><option value="managed">Managed model</option><option value="openai:gpt-4o">GPT-4o</option><option value="google:gemini-3.5-flash">Gemini Flash</option><option value="openrouter">OpenRouter</option></select><span className="hidden truncate text-[10px] text-[#7b7b82] sm:block">Plain English → structured profile</span></div><button disabled={!active || sending || (!composer.trim() && !attachments.some((asset) => asset.status === "ready"))} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#1d1d1f] text-white transition hover:scale-105 disabled:opacity-40" aria-label="Save instruction"><ArrowUp size={15} /></button></div>{attachments.length ? <div className="mt-2 flex flex-wrap gap-1.5">{attachments.map((asset) => <span key={asset.id} className={`inline-flex max-w-full items-center gap-1 rounded-lg border px-2 py-1 text-[10px] ${asset.status === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-black/[.08] bg-[#f5f5f2] text-[#5d5d64]"}`}>{asset.kind === "image" ? <FileImage size={11} /> : <FileText size={11} />}<span className="max-w-[150px] truncate">{asset.name}</span><button type="button" onClick={() => setAttachments((items) => items.filter((item) => item.id !== asset.id))} aria-label={`Remove ${asset.name}`}><X size={11} /></button></span>)}</div> : null}</div></form></section>
+        <aside className="hidden min-h-0 flex-col rounded-2xl border border-black/[.08] bg-white p-3 xl:flex"><div className="flex shrink-0 items-start justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">Build map</p><h2 className="mt-1 text-sm font-semibold tracking-[-.025em]">A clear path to live</h2></div><span className="rounded-full bg-[#efefec] px-2 py-1 text-[10px] font-semibold">{completion}/5</span></div><div className="mt-3 shrink-0 space-y-1">{readiness.map((step) => <button key={step.key} onClick={() => setInspector(step.key)} className={`flex w-full items-start gap-2.5 rounded-xl p-2 text-left transition ${inspector === step.key ? "bg-[#efefec]" : "hover:bg-[#f5f5f2]"}`}><span className={`mt-0.5 grid h-5 w-5 place-items-center rounded-full border ${step.done ? "border-[#1d1d1f] bg-[#1d1d1f] text-white" : "border-black/[.18] text-transparent"}`}><Check size={11} strokeWidth={3} /></span><span><strong className="block text-xs">{step.label}</strong><small className="mt-0.5 block text-[10px] text-[#707077]">{step.detail}</small></span></button>)}</div><div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-black/[.08] pt-3">{inspectorContent}</div><div className="mt-3 shrink-0 border-t border-black/[.08] pt-3"><button onClick={() => setInspector("actions")} className="flex w-full items-center justify-between rounded-xl bg-[#f3f3f1] px-3 py-2.5 text-left text-xs font-semibold"><span>Connected capabilities</span><ChevronDown size={14} className="-rotate-90" /></button><div className="mt-2 grid grid-cols-2 gap-1">{["Google Workspace", "Microsoft 365", "HubSpot", "Salesforce", "Slack", "Zoom", "Apollo", "Meta", "Shopify", "Square", "X", "Yahoo Mail", "iCloud Mail"].map((label) => <button key={label} onClick={() => setInspector("actions")} className="rounded-lg border border-black/[.06] bg-white px-2 py-1.5 text-left text-[9px] font-semibold text-[#5d5d65] hover:border-black/[.16]">{label}</button>)}</div></div></aside>
+      </div>
+      <input ref={fileInputRef} type="file" className="hidden" accept="image/png,image/jpeg,image/webp,image/gif,.txt,.md,.csv,.json,.xml" multiple onChange={handleFiles} />
+      {showCreate ? <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4"><form onSubmit={createAgent} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#77777f]">New agent</p><h2 className="mt-1 text-xl font-semibold tracking-[-.04em]">Start with one clear job.</h2></div><button type="button" onClick={() => setShowCreate(false)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-[#f0f0ee]" aria-label="Close"><X size={16} /></button></div><label className="mt-5 block text-xs font-semibold">Name<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Casey" className="mt-1.5 w-full rounded-xl border border-black/[.12] px-3 py-2.5 text-sm outline-none" /></label><label className="mt-4 block text-xs font-semibold">Role<select value={role} onChange={(event) => setRole(event.target.value as (typeof roles)[number])} className="mt-1.5 w-full rounded-xl border border-black/[.12] bg-white px-3 py-2.5 text-sm capitalize outline-none">{roles.map((item) => <option key={item} value={item}>{roleLabel(item)}</option>)}</select></label><label className="mt-4 block text-xs font-semibold">First brief<textarea value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="What should this agent own?" className="mt-1.5 min-h-[96px] w-full resize-none rounded-xl border border-black/[.12] p-3 text-sm outline-none" /></label><button disabled={!name.trim() || creating} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1d1d1f] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40">{creating ? <Loader2 className="animate-spin" size={16} /> : <WandSparkles size={16} />}Create and open Studio</button></form></div> : null}
+    </div>
+  </WorkspaceShell>;
 }
