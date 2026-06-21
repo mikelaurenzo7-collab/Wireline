@@ -45,8 +45,7 @@ export default function Features() {
       <PrecisionPublicHeader />
 
       <main id="main-content" className="pt-16">
-        {/* Hero */}
-        <section className="border-b border-border bg-[radial-gradient(circle_at_1px_1px,rgba(26,60,52,.08)_1px,transparent_0)] bg-[size:16px_16px] px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <section className="border-b border-border bg-background px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
           <div className="mx-auto max-w-[1040px]">
             <p className="wl-stitch-eyebrow">How it works</p>
             <h1 className="mt-4 max-w-[760px] text-balance text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.05] tracking-[-.04em] text-foreground">
@@ -58,10 +57,10 @@ export default function Features() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                to="/signup?mode=personal"
+                to="/pricing"
                 className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
               >
-                Start free
+                See plans
               </Link>
               <Link
                 to="/showcase"
@@ -73,7 +72,6 @@ export default function Features() {
           </div>
         </section>
 
-        {/* Two-up: natural voice + boundaries */}
         <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
           <div className="grid gap-4 lg:grid-cols-2">
             <article className="wl-stitch-card p-7 sm:p-8">
@@ -128,7 +126,6 @@ export default function Features() {
           </div>
         </section>
 
-        {/* Actions & integrations diagram */}
         <section className="border-y border-border bg-card px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1040px]">
             <Workflow size={22} className="text-primary" />
@@ -168,7 +165,6 @@ export default function Features() {
           </div>
         </section>
 
-        {/* Use cases */}
         <section className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] lg:items-end">
             <div>
@@ -194,7 +190,6 @@ export default function Features() {
           </div>
         </section>
 
-        {/* Closing CTA */}
         <section className="border-t border-border px-4 py-20 text-center sm:px-6">
           <h2 className="mx-auto max-w-2xl text-[28px] font-semibold leading-tight tracking-[-.02em] sm:text-[32px]">
             A personal assistant, not a black box.
@@ -204,10 +199,10 @@ export default function Features() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              to="/signup?mode=personal"
+              to="/pricing"
               className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
             >
-              Start free
+              See plans
             </Link>
             <Link
               to="/for/personal"
@@ -222,7 +217,7 @@ export default function Features() {
       <footer className="border-t border-border px-4 py-8 text-[13px] text-muted-foreground sm:px-6">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            <strong className="text-foreground">Wireline</strong> · AI voice + messaging
+            <strong className="text-foreground">Wireline</strong> · calls + messages, handled
           </span>
           <div className="flex gap-5">
             <Link to="/pricing">Pricing</Link>

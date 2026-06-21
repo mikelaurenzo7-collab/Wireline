@@ -1,28 +1,22 @@
 import SwiftUI
 
-/// Signed-in shell: Home (workspace) + Calls (activity), with the "Ask Wireline"
-/// sheet presentable from anywhere via the router (Siri / widget / button).
 struct RootTabView: View {
     @EnvironmentObject private var router: WirelineRouter
+
     var body: some View {
         TabView {
-            WorkspaceView()
-                .tabItem { Label("Home", systemImage: "house.fill") }
-            
-            CallsView()
-                .tabItem { Label("Calls", systemImage: "phone.fill") }
-            NavigationStack { WalletView() }
-                .tabItem { Label("Wallet", systemImage: "creditcard.fill") }
-
-            NavigationStack { SettingsView() }
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+            WorkspaceView().tabItem { Label("Studio", systemImage: "slider.horizontal.3") }
+            AssistantLibraryView().tabItem { Label("Assistants", systemImage: "person.2") }
+            KnowledgeView().tabItem { Label("Knowledge", systemImage: "book.closed") }
+            ActionsView().tabItem { Label("Actions", systemImage: "bolt") }
+            CallsView().tabItem { Label("Recaps", systemImage: "phone.arrow.down.left") }
         }
-        .tint(Brand.purple)
+        .tint(Brand.accent)
+        .toolbarBackground(Brand.panel, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .sheet(isPresented: $router.showAsk) { AskWirelineView() }
-        // Covers the full screen when the operator answers a CallKit inbound call.
         .fullScreenCover(isPresented: $router.showLiveCall) {
-            LiveCallView(callId: router.liveCallId)
-                .environmentObject(router)
+            LiveCallView(callId: router.liveCallId).environmentObject(router)
         }
     }
 }

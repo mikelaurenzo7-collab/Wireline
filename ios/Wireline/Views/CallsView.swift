@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// The Calls tab — live calls on top, completed-call history below. Tapping a
-/// recent call opens its recap detail. Backed by /api/mobile/calls/active and
-/// /api/mobile/calls/recent.
+/// Call recaps are the native replacement for the retired Live Ops surface:
+/// active calls appear first, followed by plain-language completed-call recaps.
 struct CallsView: View {
     @EnvironmentObject private var router: WirelineRouter
     @State private var live: [ActiveCall] = []
@@ -15,41 +14,49 @@ struct CallsView: View {
         NavigationStack {
             Group {
                 if let loadError, recent.isEmpty, live.isEmpty {
-                    BrandEmptyState(title: "Couldn't load calls", message: loadError,
-                                    systemImage: "wifi.exclamationmark")
+                    BrandEmptyState(
+                        title: "Couldn't load recaps",
+                        message: loadError,
+                        systemImage: "wifi.exclamationmark"
+                    )
                 } else {
                     List {
-                        // Live call banner — gradient card that floats above the
-                        // recent list; visible without scrolling.
                         if !live.isEmpty {
                             Section {
                                 ForEach(live) { call in
-                                    LiveBannerCard(call: call,
+                                    LiveCallCard(
+                                        call: call,
                                         onTake: { Task { await takeCall(call) } },
                                         onView: { router.presentLiveCall(callId: call.callId) }
                                     )
-                                    .listRowInsets(EdgeInsets(top: 8, leading: 16,
-                                                              bottom: 4, trailing: 16))
+                                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
                                 }
-                                if let err = handoffError {
-                                    Text(err)
+                                if let handoffError {
+                                    Text(handoffError)
                                         .font(.caption)
                                         .foregroundStyle(Brand.destructive)
                                         .listRowBackground(Color.clear)
                                         .listRowSeparator(.hidden)
                                 }
+                            } header: {
+                                Text("On a call")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Brand.text3)
+                                    .textCase(nil)
                             }
                         }
 
                         Section {
                             if recent.isEmpty {
-                                BrandEmptyState(title: "No calls yet",
-                                                message: "Completed calls and recaps show up here.",
-                                                systemImage: "phone.down")
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
+                                BrandEmptyState(
+                                    title: "No calls yet",
+                                    message: "Completed calls and recaps will show up here.",
+                                    systemImage: "phone.down"
+                                )
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             } else {
                                 ForEach(recent) { call in
                                     NavigationLink { CallDetailView(call: call) } label: {
@@ -59,17 +66,18 @@ struct CallsView: View {
                             }
                         } header: {
                             if !recent.isEmpty {
-                                Text("Recent")
+                                Text("Recent recaps")
                                     .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Brand.text3)
                                     .textCase(nil)
                             }
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Calls")
+            .navigationTitle("Recaps")
             .wirelineBrand()
             .sheet(isPresented: $showingSettings) { NavigationStack { SettingsView() } }
             .task { await load() }
@@ -79,10 +87,10 @@ struct CallsView: View {
 
     private func load() async {
         do {
-            async let liveReq = WirelineAPI.shared.activeCalls()
-            async let recentReq = WirelineAPI.shared.recentCalls(limit: 30)
-            live = try await liveReq
-            recent = try await recentReq.calls
+            async let liveRequest = WirelineAPI.shared.activeCalls()
+            async let recentRequest = WirelineAPI.shared.recentCalls(limit: 30)
+            live = try await liveRequest
+            recent = try await recentRequest.calls
             loadError = nil
         } catch {
             loadError = error.localizedDescription
@@ -105,8 +113,7 @@ struct CallsView: View {
     }
 }
 
-/// Gradient card shown when an agent call is live.
-private struct LiveBannerCard: View {
+private struct LiveCallCard: View {
     let call: ActiveCall
     let onTake: () -> Void
     let onView: () -> Void
@@ -114,72 +121,61 @@ private struct LiveBannerCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                // Pulsing live indicator
                 LivePulse()
-
                 VStack(alignment: .leading, spacing: 3) {
                     Text(call.customerNumber ?? "Active call")
-                        .font(.headline).foregroundStyle(.white)
+                        .font(.headline)
+                        .foregroundStyle(Brand.text)
                     Text(call.label ?? call.status?.capitalized ?? "In progress")
-                        .font(.caption).foregroundStyle(.white.opacity(0.6))
+                        .font(.caption)
+                        .foregroundStyle(Brand.text2)
                 }
-
                 Spacer()
-
                 Image(systemName: "waveform")
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(Brand.accent)
                     .symbolEffect(.variableColor.iterative)
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Button(action: onTake) {
                     Label("Take call", systemImage: "arrow.down.left.circle.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(Brand.signal, in: Capsule())
+                        .padding(.vertical, 10)
+                        .background(Brand.accent, in: RoundedRectangle(cornerRadius: Brand.radiusSm, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TouchPressStyle())
 
                 Button(action: onView) {
                     Text("View")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Brand.text)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(.white.opacity(0.15), in: Capsule())
+                        .padding(.vertical, 10)
+                        .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusSm, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(TouchPressStyle())
             }
         }
         .padding(16)
-        .background(
-            LinearGradient(
-                colors: [Brand.purple, Brand.purpleDeep],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: 16)
-        )
-        .shadow(color: Brand.purple.opacity(0.4), radius: 16, y: 6)
+        .brandGlowCard()
     }
 }
 
-/// Animated pulsing dot for the live call indicator.
 private struct LivePulse: View {
     @State private var pulsing = false
 
     var body: some View {
         ZStack {
             Circle()
-                .fill(Brand.signal.opacity(pulsing ? 0 : 0.3))
-                .frame(width: 32, height: 32)
-                .scaleEffect(pulsing ? 1.6 : 1)
-                .animation(.easeOut(duration: 1.0).repeatForever(autoreverses: false),
-                           value: pulsing)
+                .fill(Brand.signal.opacity(pulsing ? 0 : 0.28))
+                .frame(width: 28, height: 28)
+                .scaleEffect(pulsing ? 1.5 : 1)
+                .animation(.easeOut(duration: 1.1).repeatForever(autoreverses: false), value: pulsing)
             Circle()
                 .fill(Brand.signal)
-                .frame(width: 12, height: 12)
+                .frame(width: 8, height: 8)
         }
         .onAppear { pulsing = true }
     }
@@ -190,20 +186,22 @@ private struct RecentCallRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Direction badge
             ZStack {
                 Circle().fill(Brand.accentTint).frame(width: 36, height: 36)
-                Image(systemName: call.direction == "outbound"
-                      ? "arrow.up.right" : "arrow.down.left")
+                Image(systemName: call.direction == "outbound" ? "arrow.up.right" : "arrow.down.left")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Brand.purple)
+                    .foregroundStyle(Brand.accent)
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(call.customerNumber ?? "Unknown").font(.headline)
+                Text(call.customerNumber ?? "Unknown")
+                    .font(.headline)
+                    .foregroundStyle(Brand.text)
                 if let summary = call.summary {
                     Text(summary)
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        .font(.caption)
+                        .foregroundStyle(Brand.text2)
+                        .lineLimit(1)
                 }
             }
 
@@ -213,9 +211,10 @@ private struct RecentCallRow: View {
                 if let sentiment = call.sentiment {
                     SentimentDot(sentiment: sentiment)
                 }
-                if let d = call.durationSeconds, d > 0 {
-                    Text(durationLabel(d))
-                        .font(.caption2).foregroundStyle(.tertiary)
+                if let duration = call.durationSeconds, duration > 0 {
+                    Text(durationLabel(duration))
+                        .font(.caption2)
+                        .foregroundStyle(Brand.text3)
                 }
             }
         }
@@ -234,7 +233,7 @@ private struct SentimentDot: View {
         switch sentiment.lowercased() {
         case "positive": return Brand.signal
         case "negative": return Brand.destructive
-        default: return Color.secondary
+        default: return Brand.text3
         }
     }
 

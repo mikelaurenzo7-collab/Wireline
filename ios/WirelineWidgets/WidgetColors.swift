@@ -1,22 +1,24 @@
 import SwiftUI
 
-// Stitch Noir widget colors — shared palette for extension targets.
+/// Widget palette shared by all extension views. Keep widgets visibly aligned
+/// with the native Professional Heritage surfaces while using WidgetKit-friendly fills.
 enum WidgetColors {
-    static let violet = Color(hex: WirelinePalette.violet)
-    static let violetDeep = Color(hex: WirelinePalette.violetDeep)
-    static let violetSoft = Color(hex: WirelinePalette.violetSoft)
+    static let accent = Color(hex: WirelinePalette.accent)
+    static let accentDeep = Color(hex: WirelinePalette.accentDeep)
+    static let accentSoft = Color(hex: WirelinePalette.accentSoft)
     static let canvas = Color(hex: WirelinePalette.canvas)
     static let panel = Color(hex: WirelinePalette.panel)
+    static let panel2 = Color(hex: WirelinePalette.panel2)
     static let text = Color(hex: WirelinePalette.text)
     static let text2 = Color(hex: WirelinePalette.text2)
+    static let text3 = Color(hex: WirelinePalette.text3)
+    static let border = Color(hex: WirelinePalette.border)
 
-    static var violetGradient: LinearGradient {
-        LinearGradient(
-            colors: [violet, violetDeep],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
+    // Compatibility aliases for existing widget views. These deliberately map
+    // to forest colors so legacy names cannot recreate a purple widget.
+    static let violet = accent
+    static let violetDeep = accentDeep
+    static let violetSoft = accentSoft
 }
 
 private extension Color {

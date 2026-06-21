@@ -1,8 +1,6 @@
 # Build Wireline for iOS Simulator on macOS runners (no signing).
-# Use from Windows/Linux: push ios/** changes or workflow_dispatch → download artifacts.
-#
-# Simulator covers UI, navigation, and API wiring. It does NOT replace a device for
-# PushKit VoIP, CallKit audio fidelity, or CarPlay Communication entitlement testing.
+# Simulator covers UI, navigation, and API wiring. It does not replace a device
+# for PushKit VoIP, CallKit audio fidelity, Live Activity delivery, or CarPlay.
 
 name: ios-simulator
 
@@ -24,20 +22,21 @@ concurrency:
 
 jobs:
   build-and-screenshot:
-    runs-on: macos-15
+    # macos-14 is broadly provisioned and supports Xcode 16 / iPhone 16-era
+    # simulators. This avoids the prior runner startup failures before checkout.
+    runs-on: macos-14
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
-      - name: Warm CoreSimulator
-        run: xcrun simctl list > /dev/null
-
-      - name: Show available simulators
-        run: xcrun simctl list devices available
-
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+
+      - name: Show Xcode and available simulators
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -46,18 +45,30 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
-      - name: Boot simulator
+      - name: Resolve and boot simulator
+        id: simulator
         run: |
-          DEVICE="iPhone 16"
-          xcrun simctl boot "$DEVICE" 2>/dev/null || true
-          xcrun simctl bootstatus "$DEVICE" -b
+          DEVICE_UDID="$(xcrun simctl list devices available | sed -nE 's/.*iPhone 16 \(([0-9A-F-]+)\).*/\1/p' | head -1)"
+          if [[ -z "$DEVICE_UDID" ]]; then
+            DEVICE_UDID="$(xcrun simctl list devices available | sed -nE 's/.*iPhone 15 \(([0-9A-F-]+)\).*/\1/p' | head -1)"
+          fi
+          if [[ -z "$DEVICE_UDID" ]]; then
+            DEVICE_UDID="$(xcrun simctl list devices available | sed -nE 's/.*iPhone [^)]* \(([0-9A-F-]+)\).*/\1/p' | head -1)"
+          fi
+          if [[ -z "$DEVICE_UDID" ]]; then
+            echo "No available iPhone simulator was found."
+            exit 1
+          fi
+          echo "udid=$DEVICE_UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$DEVICE_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$DEVICE_UDID" -b
 
       - name: Build Wireline (simulator, no signing)
         working-directory: ios
         run: |
           xcodebuild \
             -scheme Wireline \
-            -destination "platform=iOS Simulator,name=iPhone 16" \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             build
@@ -71,10 +82,10 @@ jobs:
             find build -name "*.app" || true
             exit 1
           fi
-          xcrun simctl install booted "$APP"
-          xcrun simctl launch booted com.wireline.app || true
+          xcrun simctl install "${{ steps.simulator.outputs.udid }}" "$APP"
+          xcrun simctl launch "${{ steps.simulator.outputs.udid }}" com.wireline.app || true
           sleep 3
-          xcrun simctl io booted screenshot /tmp/wireline-launch.png
+          xcrun simctl io "${{ steps.simulator.outputs.udid }}" screenshot /tmp/wireline-launch.png
 
       - uses: actions/upload-artifact@v4
         with:

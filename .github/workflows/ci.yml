@@ -21,8 +21,13 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      # See verify-build.yml: resolve packages from the active manifest while
+      # historical root entries in package-lock are being retired.
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      - name: Professional Heritage contract
+        run: npm run active-surface:check
 
       - name: Type check
         run: npm run lint

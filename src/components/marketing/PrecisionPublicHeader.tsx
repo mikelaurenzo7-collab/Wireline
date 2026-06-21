@@ -1,6 +1,7 @@
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import WirelineMark from "../brand/WirelineMark";
 
 const links = [
   { to: "/for/personal", label: "Product", match: ["/", "/for/personal", "/for/business"] },
@@ -17,8 +18,9 @@ export default function PrecisionPublicHeader() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-[color:var(--wl-page)]">
       <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
-          <Link to="/" className="text-[20px] font-semibold tracking-[-.03em] text-foreground">
-            Wireline
+          <Link to="/" className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-.03em] text-foreground" aria-label="Wireline home">
+            <WirelineMark className="h-6 w-6 text-primary" />
+            <span>Wireline</span>
           </Link>
 
           <nav className="hidden h-full items-center gap-7 md:flex" aria-label="Site">
@@ -28,7 +30,7 @@ export default function PrecisionPublicHeader() {
                 to={link.to}
                 className={`flex h-full items-center border-b-2 text-[12px] font-medium uppercase tracking-[.05em] transition-colors ${
                   isActive(link.match)
-                    ? "border-foreground text-foreground"
+                    ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -49,7 +51,7 @@ export default function PrecisionPublicHeader() {
 
         <button
           type="button"
-          className="grid h-9 w-9 place-items-center border border-border bg-card md:hidden"
+          className="grid h-9 w-9 place-items-center rounded-md border border-border bg-card md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((current) => !current)}
         >
@@ -65,14 +67,14 @@ export default function PrecisionPublicHeader() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setOpen(false)}
-                className={`px-3 py-3 text-[14px] font-medium ${
-                  isActive(link.match) ? "bg-muted text-foreground" : "text-foreground hover:bg-muted"
+                className={`rounded-md px-3 py-3 text-[14px] font-medium ${
+                  isActive(link.match) ? "bg-[color:var(--wl-accent-container)] text-primary" : "text-foreground hover:bg-muted"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <Link to="/signin" onClick={() => setOpen(false)} className="mt-2 px-3 py-3 text-[14px] font-medium text-foreground">
+            <Link to="/signin" onClick={() => setOpen(false)} className="mt-2 rounded-md px-3 py-3 text-[14px] font-medium text-foreground">
               Log in
             </Link>
             <Link to="/pricing" onClick={() => setOpen(false)} className="marketing-btn-primary mt-1 py-3 text-[13px]">

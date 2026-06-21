@@ -1,12 +1,13 @@
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Bot, Database, Menu, PenLine, Settings, X, Zap } from "lucide-react";
+import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
   { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/agents", label: "Assistants", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Connections", icon: Zap },
+  { href: "/actions", label: "Actions", icon: Zap },
 ] as const;
 
 function NavItem({
@@ -60,7 +61,7 @@ export default function WorkspaceShell({
       {drawerOpen ? (
         <button
           aria-label="Close navigation"
-          className="fixed inset-0 z-40 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-40 bg-[color:var(--wl-focus)] lg:hidden"
           onClick={closeDrawer}
         />
       ) : null}
@@ -69,17 +70,18 @@ export default function WorkspaceShell({
           className={`wl-stitch-sidebar fixed inset-y-0 left-0 z-50 flex w-[212px] flex-col px-4 py-10 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="flex shrink-0 items-center justify-between px-2">
-            <Link to="/studio" onClick={closeDrawer} className="block">
-              <span className="block text-[24px] font-semibold leading-8 tracking-[-.02em] text-foreground">
-                Wireline
-              </span>
-              <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
-                calls + messages, handled
+            <Link to="/studio" onClick={closeDrawer} className="flex items-center gap-2.5" aria-label="Wireline Studio">
+              <WirelineMark className="h-7 w-7 text-[24px] leading-none text-primary" />
+              <span>
+                <span className="block text-[24px] font-semibold leading-7 tracking-[-.02em] text-foreground">Wireline</span>
+                <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
+                  calls + messages, handled
+                </span>
               </span>
             </Link>
             <button
               aria-label="Close navigation"
-              className="grid h-10 w-10 place-items-center border border-border bg-card text-muted-foreground lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-md border border-border bg-card text-muted-foreground lg:hidden"
               onClick={closeDrawer}
             >
               <X size={18} />
@@ -113,7 +115,7 @@ export default function WorkspaceShell({
             <div className="flex min-w-0 items-center gap-3">
               <button
                 aria-label="Open navigation"
-                className="grid h-10 w-10 shrink-0 place-items-center border border-border bg-card text-foreground lg:hidden"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-border bg-card text-foreground lg:hidden"
                 onClick={() => setDrawerOpen(true)}
               >
                 <Menu size={18} />

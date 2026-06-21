@@ -1,48 +1,48 @@
 export const BRAND = {
-  signal: "#1D1D1F",
-  signalBright: "#4F4F55",
-  signalDeep: "#000000",
+  signal: "#1A1C1B",
+  signalBright: "#414846",
+  signalDeep: "#01261F",
   forest: "#1A3C34",
   forestDeep: "#01261F",
   forestMuted: "#2D5A27",
-  teal: "#4F4F55",
-  tealBright: "#1D1D1F",
-  amber: "#6E6E73",
-  /** @deprecated Stitch primary — use forest */
+  teal: "#4A635D",
+  tealBright: "#1A3C34",
+  amber: "#B45309",
+  /** @deprecated Professional Heritage alias — use forest */
   purple: "#1A3C34",
   purpleDeep: "#01261F",
   purpleMid: "#1A3C34",
   purpleRim: "#01261F",
   purpleLight: "#2D5A27",
-  purpleMuted: "#6E6E73",
-  purpleInk: "#1D1D1F",
-  cream: "#F7F7F5",
+  purpleMuted: "#4A5F59",
+  purpleInk: "#1A1C1B",
+  cream: "#F9F9F7",
   paper: "#FFFFFF",
-  creamWarm: "#F2F2EF",
-  creamDeep: "#E7E7E3",
-  ink: "#1D1D1F",
+  creamWarm: "#F4F4F2",
+  creamDeep: "#E2E3E1",
+  ink: "#1A1C1B",
   /** @deprecated use forest */
   velvet: "#1A3C34",
-  chromeGlow: "#D8D8D2",
-  rose: "#B42318",
+  chromeGlow: "#DADAD8",
+  rose: "#BA1A1A",
 } as const;
 
 export type BrandAccentPair = readonly [string, string];
-export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.purple, BRAND.purpleDeep];
+export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.forest, BRAND.forestDeep];
 export const ROUTE_ACCENT_VARIANTS = {
-  primary: [BRAND.purple, BRAND.purpleDeep] as BrandAccentPair,
-  soft: [BRAND.purple, BRAND.purpleMuted] as BrandAccentPair,
-  warm: [BRAND.purpleDeep, BRAND.creamWarm] as BrandAccentPair,
-  light: [BRAND.purpleLight, BRAND.purple] as BrandAccentPair,
-  cream: [BRAND.purple, BRAND.creamDeep] as BrandAccentPair,
-  critical: [BRAND.purple, BRAND.rose] as BrandAccentPair,
+  primary: [BRAND.forest, BRAND.forestDeep] as BrandAccentPair,
+  soft: [BRAND.forest, BRAND.teal] as BrandAccentPair,
+  warm: [BRAND.forestDeep, BRAND.creamWarm] as BrandAccentPair,
+  light: [BRAND.forestMuted, BRAND.forest] as BrandAccentPair,
+  cream: [BRAND.forest, BRAND.creamDeep] as BrandAccentPair,
+  critical: [BRAND.forest, BRAND.rose] as BrandAccentPair,
 } as const;
 export const NAV_GROUP_ACCENTS: Record<string, string> = {
-  Command: BRAND.purple,
-  Channels: BRAND.purpleLight,
-  Agents: BRAND.purpleDeep,
-  Design: BRAND.purpleMid,
-  Admin: BRAND.purpleMuted,
+  Command: BRAND.forest,
+  Channels: BRAND.forestMuted,
+  Agents: BRAND.forestDeep,
+  Design: BRAND.forest,
+  Admin: BRAND.teal,
 };
 export const ROUTE_ACCENTS: Record<string, BrandAccentPair> = {
   "/ops": ROUTE_ACCENT_VARIANTS.primary,

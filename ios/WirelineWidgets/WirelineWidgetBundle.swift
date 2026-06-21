@@ -8,5 +8,8 @@ struct WirelineWidgetBundle: WidgetBundle {
         AssistantWidget()
         NeedsAttentionWidget()
         WalletWidget()
+        if #available(iOS 16.1, *) {
+            WirelineCallLiveActivity()
+        }
     }
 }

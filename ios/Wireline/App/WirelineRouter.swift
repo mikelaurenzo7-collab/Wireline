@@ -1,8 +1,6 @@
 import SwiftUI
 
-/// Bridges App Intents (Siri / Action button / Back Tap / widgets) to in-app
-/// UI. When an intent foregrounds the app it sets `route`; the app shell
-/// observes it and presents the matching surface.
+/// Bridges App Intents, widgets, and CallKit into focused native surfaces.
 @MainActor
 final class WirelineRouter: ObservableObject {
     static let shared = WirelineRouter()
@@ -10,9 +8,6 @@ final class WirelineRouter: ObservableObject {
     enum Route { case workspace, ask }
 
     @Published var showAsk = false
-
-    /// Driven by CallManager when the user answers a CallKit call. RootTabView
-    /// presents LiveCallView as a fullScreenCover while this is true.
     @Published var showLiveCall = false
     @Published var liveCallId: String?
 
@@ -28,5 +23,19 @@ final class WirelineRouter: ObservableObject {
     func dismissLiveCall() {
         showLiveCall = false
         liveCallId = nil
+    }
+
+    /// Handles deep links from the active-call Live Activity / Dynamic Island.
+    /// `wireline://call/<call-id>` opens the existing handoff-capable call view.
+    func open(url: URL) {
+        switch url.host {
+        case "ask":
+            showAsk = true
+        case "call":
+            let callId = url.pathComponents.dropFirst().first
+            presentLiveCall(callId: callId)
+        default:
+            break
+        }
     }
 }

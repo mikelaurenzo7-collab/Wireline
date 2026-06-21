@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// Full-screen active-call overlay presented when the operator answers a CallKit
-/// call from the lock-screen or taps "View" on a live call in CallsView.
-/// Shows who's on the line, an elapsed timer, and two clear actions: transfer
-/// the call to the operator's number, or let the AI agent keep handling it.
+/// Full-screen active-call surface presented after a CallKit answer or from
+/// Recaps. It is intentionally high-glanceability: Wireline's current state,
+/// the person or service on the line, elapsed time, and two clear choices.
 struct LiveCallView: View {
     @EnvironmentObject private var router: WirelineRouter
 
@@ -25,33 +24,18 @@ struct LiveCallView: View {
 
     var body: some View {
         ZStack {
-            // Deep purple → near-black gradient
-            LinearGradient(
-                colors: [Brand.violetDeep, Brand.canvas],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            Brand.canvas.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Dismiss handle at top
-                dismissBar
-
-                Spacer()
-
-                // Pulsing call indicator
-                callIndicator
-                    .padding(.bottom, 36)
-
-                // Caller details
-                callerInfo
-
-                Spacer()
-
-                // Action buttons
+                header
+                Spacer(minLength: 20)
+                activePulse
+                    .padding(.bottom, 28)
+                callSummary
+                Spacer(minLength: 28)
                 actionStack
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 48)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 32)
             }
         }
         .task { await refreshCall() }
@@ -61,73 +45,137 @@ struct LiveCallView: View {
         }
     }
 
-    // MARK: - Subviews
-
-    private var dismissBar: some View {
-        HStack {
+    private var header: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("ACTIVE CALL")
+                    .font(.mono(.caption2, weight: .semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(Brand.text3)
+                Text("Wireline is handling this")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Brand.text)
+            }
             Spacer()
             Button { router.dismissLiveCall() } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.white.opacity(0.35))
-                    .padding(20)
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Brand.text2)
+                    .frame(width: 40, height: 40)
+                    .background(Brand.panel, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous)
+                            .stroke(Brand.border, lineWidth: 1)
+                    )
             }
+            .buttonStyle(TouchPressStyle())
+            .accessibilityLabel("Close active call view")
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
     }
 
-    private var callIndicator: some View {
+    private var activePulse: some View {
         ZStack {
-            CallRing(scale: 2.6, delay: 0.0)
-            CallRing(scale: 2.6, delay: 0.6)
-            CallRing(scale: 2.6, delay: 1.2)
-            Medallion(systemImage: "phone.fill", size: 88)
-                .shadow(color: Brand.purple.opacity(0.7), radius: 28)
+            CallRing(scale: 2.2, delay: 0.0)
+            CallRing(scale: 2.2, delay: 0.6)
+            CallRing(scale: 2.2, delay: 1.2)
+            Image(systemName: "waveform")
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(Brand.accent)
+                .frame(width: 88, height: 88)
+                .background(Brand.accentSoft, in: Circle())
+                .overlay(Circle().stroke(Brand.border, lineWidth: 1))
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Active Wireline call")
     }
 
-    private var callerInfo: some View {
-        VStack(spacing: 8) {
-            Text(call?.customerNumber ?? "Active call")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+    private var callSummary: some View {
+        VStack(spacing: 12) {
+            Text(call?.customerNumber ?? call?.label ?? "Active call")
+                .font(.display(.title2, weight: .bold))
+                .tracking(-0.4)
+                .foregroundStyle(Brand.text)
                 .multilineTextAlignment(.center)
 
-            if let label = call?.label, !label.isEmpty {
+            if let label = call?.label, !label.isEmpty, label != call?.customerNumber {
                 Text(label)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(Brand.text2)
+                    .multilineTextAlignment(.center)
             }
 
-            Text(timerLabel)
-                .font(.system(size: 15, weight: .regular, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.38))
-                .padding(.top, 4)
+            HStack(spacing: 8) {
+                metric(label: "Duration", value: timerLabel, systemImage: "timer")
+                metric(label: "Status", value: statusLabel, systemImage: "waveform")
+            }
+            .padding(.top, 8)
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, 20)
+    }
+
+    private func metric(label: String, value: String, systemImage: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemImage)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Brand.accent)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.mono(.caption2, weight: .semibold))
+                    .tracking(0.45)
+                    .foregroundStyle(Brand.text3)
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Brand.text)
+                    .lineLimit(1)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Brand.panel, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous)
+                .stroke(Brand.border, lineWidth: 1)
+        )
     }
 
     @ViewBuilder
     private var actionStack: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             switch state {
             case .idle:
                 takeButton
 
             case .working:
-                HStack { Spacer(); ProgressView().tint(.white); Spacer() }
-                    .frame(height: 56)
+                HStack(spacing: 10) {
+                    ProgressView().tint(.white)
+                    Text("Connecting you to this call…")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Brand.accent, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
 
             case .done:
                 HStack(spacing: 10) {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Brand.signal)
-                    Text("Transferred").font(.headline).foregroundStyle(.white)
+                    Text("Call transferred")
+                        .font(.headline)
+                        .foregroundStyle(Brand.text)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
+                .padding(.vertical, 16)
+                .background(Brand.panel, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous)
+                        .stroke(Brand.border, lineWidth: 1)
+                )
 
-            case .failed(let msg):
+            case .failed(let message):
                 VStack(spacing: 10) {
-                    Text(msg)
+                    Text(message)
                         .font(.footnote)
                         .foregroundStyle(Brand.destructive)
                         .multilineTextAlignment(.center)
@@ -136,11 +184,19 @@ struct LiveCallView: View {
             }
 
             Button { router.dismissLiveCall() } label: {
-                Text("Let agent handle it")
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .padding(.vertical, 12)
+                Text("Keep handling it")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Brand.text)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(Brand.panel, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous)
+                            .stroke(Brand.border, lineWidth: 1)
+                    )
             }
+            .buttonStyle(TouchPressStyle())
+            .accessibilityHint("Closes this view and lets Wireline continue the call")
         }
     }
 
@@ -150,18 +206,23 @@ struct LiveCallView: View {
                 .font(.headline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .background(Brand.signal, in: Capsule())
-                .shadow(color: Brand.signal.opacity(0.5), radius: 14, y: 4)
+                .padding(.vertical, 16)
+                .background(Brand.accent, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
         }
+        .buttonStyle(TouchPressStyle())
+        .accessibilityHint("Transfers the active Wireline call to your callback number")
     }
 
-    // MARK: - Logic
-
     private var timerLabel: String {
-        let m = Int(elapsed) / 60
-        let s = Int(elapsed) % 60
-        return String(format: "%d:%02d", m, s)
+        let minutes = Int(elapsed) / 60
+        let seconds = Int(elapsed) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private var statusLabel: String {
+        let raw = call?.status?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "In progress"
+        guard !raw.isEmpty else { return "In progress" }
+        return raw.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     private func refreshCall() async {
@@ -170,6 +231,15 @@ struct LiveCallView: View {
             call = all.first(where: { $0.callId == id }) ?? all.first
         } else {
             call = all.first
+        }
+
+        if let active = call {
+            await WirelineCallLiveActivityManager.shared.update(
+                callId: active.callId,
+                caller: active.customerNumber ?? active.label,
+                status: active.status,
+                canTakeCall: true
+            )
         }
     }
 
@@ -182,31 +252,33 @@ struct LiveCallView: View {
         }
         do {
             try await WirelineAPI.shared.handoffCall(callId: target)
+            await WirelineCallLiveActivityManager.shared.end(callId: target)
             state = .done
             try? await Task.sleep(for: .seconds(1.5))
             router.dismissLiveCall()
-        } catch let WirelineAPI.APIError.http(s, _) where s == 400 {
+        } catch let WirelineAPI.APIError.http(status, _) where status == 400 {
             state = .failed("Set a callback number in Settings first.")
             showingSettings = true
-        } catch let WirelineAPI.APIError.http(s, _) where s == 409 {
-            state = .failed("Transfer not ready yet — wait a moment and try again.")
+        } catch let WirelineAPI.APIError.http(status, _) where status == 409 {
+            state = .failed("Transfer is not ready yet. Wait a moment and try again.")
         } catch {
             state = .failed("Transfer failed. Try again.")
         }
     }
 }
 
-/// Expanding translucent ring for the live-call pulse animation.
+/// Expanding, low-contrast pulse for an active call. It deliberately uses the
+/// semantic forest action token rather than the retired purple live treatment.
 private struct CallRing: View {
     let scale: CGFloat
     let delay: Double
 
     @State private var animScale: CGFloat = 1
-    @State private var animOpacity: Double = 0.4
+    @State private var animOpacity: Double = 0.32
 
     var body: some View {
         Circle()
-            .stroke(Brand.purple.opacity(animOpacity), lineWidth: 1.5)
+            .stroke(Brand.accent.opacity(animOpacity), lineWidth: 1.5)
             .frame(width: 88, height: 88)
             .scaleEffect(animScale)
             .onAppear {

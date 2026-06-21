@@ -4,24 +4,25 @@ import CallKit
 import PushKit
 import AVFoundation
 
-/// Owns the CallKit provider and the PushKit (VoIP) registry. On launch the app
-/// calls `registerForVoIPPushes()`; thereafter inbound-call VoIP pushes wake the
-/// app and are turned into native CallKit calls — on the phone and in CarPlay.
+/// Owns the CallKit provider and PushKit registry. VoIP pushes wake the app and
+/// become native CallKit calls; the same lifecycle starts and ends Wireline's
+/// high-glanceability Live Activity when the platform permits it.
 final class CallManager: NSObject {
     static let shared = CallManager()
+
+    private struct PendingCall {
+        let callId: String
+        let caller: String
+        let assistantName: String?
+    }
 
     private let provider: CXProvider
     private let callController = CXCallController()
     private var voipRegistry: PKPushRegistry?
     private let deviceId = (UIDevice.current.identifierForVendor?.uuidString) ?? UUID().uuidString
-    /// Latest tokens (hex), cached so each registration sends BOTH — otherwise
-    /// a VoIP-only or alert-only POST would null out the other column.
     private var lastVoipToken: String?
     private var lastAlertToken: String?
-    /// Maps the CallKit UUID iOS assigns to each reported call → the Wireline
-    /// callId from the VoIP push. Used in CXAnswerCallAction so the live-call
-    /// view can fetch the right call from /api/mobile/calls/active.
-    private var pendingCalls: [UUID: String] = [:]
+    private var pendingCalls: [UUID: PendingCall] = [:]
 
     override init() {
         let config = CXProviderConfiguration()
@@ -43,20 +44,15 @@ final class CallManager: NSObject {
         voipRegistry = registry
     }
 
-    /// Cache the standard alert token (from APNs remote-notification
-    /// registration) and re-register. Recap pushes are delivered to this token.
     func setAlertToken(_ token: String) {
         lastAlertToken = token
         Task { await pushRegistration() }
     }
 
-    /// Re-register after a fresh sign-in (the tokens don't change, but the
-    /// authenticated user they bind to does).
     func refreshDeviceRegistration() async {
         await pushRegistration()
     }
 
-    /// POST both cached tokens together so neither overwrites the other.
     private func pushRegistration() async {
         guard lastVoipToken != nil || lastAlertToken != nil else { return }
         try? await WirelineAPI.shared.registerDevice(
@@ -64,9 +60,9 @@ final class CallManager: NSObject {
         )
     }
 
-    /// Drop this device server-side on sign-out so it stops receiving pushes.
     func unregisterDevice() async {
         try? await WirelineAPI.shared.unregisterDevice(deviceId: deviceId)
+        await WirelineCallLiveActivityManager.shared.endAll()
     }
 
     // MARK: - Outbound (CallKit start)
@@ -96,20 +92,20 @@ extension CallManager: PKPushRegistryDelegate {
                       didReceiveIncomingPushWith payload: PKPushPayload,
                       for type: PKPushType,
                       completion: @escaping () -> Void) {
-        // CRITICAL: report a CallKit call immediately or iOS kills the app.
+        // Report a CallKit call promptly after a VoIP push so iOS can preserve
+        // the system call experience.
         let info = payload.dictionaryPayload
-        let from = info["from"] as? String ?? "Unknown"
-        let agentName = info["agentName"] as? String
+        let caller = info["from"] as? String ?? "Unknown"
+        let assistantName = info["agentName"] as? String
         let callId = info["callId"] as? String ?? UUID().uuidString
 
         let update = CXCallUpdate()
-        update.remoteHandle = CXHandle(type: .phoneNumber, value: from)
-        update.localizedCallerName = agentName.map { "\($0) · \(from)" } ?? from
+        update.remoteHandle = CXHandle(type: .phoneNumber, value: caller)
+        update.localizedCallerName = assistantName.map { "\($0) · \(caller)" } ?? caller
         update.hasVideo = false
 
         let uuid = UUID(uuidString: callId) ?? UUID()
-        // Store the mapping before reporting so CXAnswerCallAction can look it up.
-        pendingCalls[uuid] = callId
+        pendingCalls[uuid] = PendingCall(callId: callId, caller: caller, assistantName: assistantName)
         provider.reportNewIncomingCall(with: uuid, update: update) { _ in
             completion()
         }
@@ -120,24 +116,39 @@ extension CallManager: PKPushRegistryDelegate {
 
 extension CallManager: CXProviderDelegate {
     func providerDidReset(_ provider: CXProvider) {
+        let existing = pendingCalls.values.map(\.callId)
         pendingCalls.removeAll()
+        Task { @MainActor in
+            for callId in existing {
+                await WirelineCallLiveActivityManager.shared.end(callId: callId)
+            }
+        }
     }
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
         configureAudioSession()
-        let callId = pendingCalls[action.callUUID]
+        let pending = pendingCalls[action.callUUID]
         action.fulfill()
-        // Navigate into the in-app live-call view so the operator can take
-        // over or monitor — audio is already bridged by the AI agent.
+
         Task { @MainActor in
-            WirelineRouter.shared.presentLiveCall(callId: callId)
+            if let pending {
+                WirelineCallLiveActivityManager.shared.start(
+                    callId: pending.callId,
+                    caller: pending.caller,
+                    assistantName: pending.assistantName
+                )
+            }
+            WirelineRouter.shared.presentLiveCall(callId: pending?.callId)
         }
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
-        pendingCalls.removeValue(forKey: action.callUUID)
+        let pending = pendingCalls.removeValue(forKey: action.callUUID)
         action.fulfill()
         Task { @MainActor in
+            if let callId = pending?.callId {
+                await WirelineCallLiveActivityManager.shared.end(callId: callId)
+            }
             WirelineRouter.shared.dismissLiveCall()
         }
     }

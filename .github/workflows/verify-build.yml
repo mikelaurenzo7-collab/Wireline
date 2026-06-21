@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # package-lock is retained for local installs but has historical root-entry
+      # drift. Install from package.json until its full regeneration lands.
+      - run: npm install
+      - run: npm run active-surface:check
       - run: npm run build
       - run: node -e "process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')"

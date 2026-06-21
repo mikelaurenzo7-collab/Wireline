@@ -38,7 +38,7 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
     fun signIn(email: String, pass: String) = viewModelScope.launch {
         state = state.copy(isWorking = true, error = null)
         runCatching { api.signIn(email, pass) }
-            .onSuccess { 
+            .onSuccess {
                 state = state.copy(isSignedIn = true, isWorking = false)
                 refresh()
             }
@@ -54,8 +54,21 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
     fun saveHandoffPhone(phone: String) = viewModelScope.launch {
         state = state.copy(isWorking = true, error = null)
         runCatching { api.setHandoffPhone(phone.ifBlank { null }) }
-            .onSuccess { 
+            .onSuccess {
                 state = state.copy(isWorking = false, handoffPhone = phone)
+            }
+            .onFailure { state = state.copy(isWorking = false, error = it.message) }
+    }
+
+    fun createAssistant(name: String, role: String, onCreated: () -> Unit = {}) = viewModelScope.launch {
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return@launch
+        state = state.copy(isWorking = true, error = null)
+        runCatching { api.createAssistant(cleanName, role) }
+            .onSuccess { assistant ->
+                state = state.copy(isWorking = false, agents = listOf(assistant) + state.agents)
+                onCreated()
+                refresh()
             }
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }

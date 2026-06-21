@@ -1,89 +1,72 @@
-# Wireline — Google Stitch Design System Rules
+# Wireline Design Rules
 
-Use this document whenever implementing, reviewing, or testing product UI.
+## Current sources
 
-## Source of truth
+- Google Stitch project: `https://stitch.withgoogle.com/projects/15464421841872665077`
+- **Current production handoff:** `stitch_wireline_operator_system (7).zip` — Professional Heritage v2 source screens, cross-platform blueprint, native state references, and brand/store assets.
+- `wireline_unified_execution_plan.md` in that handoff establishes the personal-assistant IA and platform mapping. It does not override real product contracts or platform eligibility requirements.
+- Desktop handoff maps to React web at desktop/laptop widths only.
+- Mobile handoff maps to native SwiftUI iOS and Jetpack Compose Android only; it must not be recreated as mobile browser UI.
+- Active shared tokens: `src/styles/foundation.css`, `ios/Wireline/Theme/WirelineTheme.swift`, and `android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt`.
+- The automated source guard lives in `scripts/check-active-surface-drift.mjs`; keep it synchronized with the handoff instead of preserving a legacy design test.
 
-| Asset | Location |
+Do not restore a Figma source, source bridge, preview route, design OAuth hook, no-code design authority, gray placeholder-only marketing panels, or the retired violet/lavender visual system.
+
+## Product posture
+
+Wireline is a personal call and message assistant first. It handles appointments, support lines, school or pharmacy calls, reservations, hold time, answers, and follow-ups. Business configuration is available, but it must be an optional expansion rather than the default story.
+
+Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowledge**, and **actions**. Avoid fleet, operator, command center, queue, SDR, telemetry, and Live Ops in primary product copy. When the Stitch handoff uses legacy labels, translate them:
+
+| Stitch label | Wireline product label |
 |---|---|
-| Google Stitch project | `https://stitch.withgoogle.com/projects/6981221452983374608` |
-| Design specification | `.stitch/DESIGN.md` |
-| Export manifest | `.stitch-export/manifest.json` |
-| Route-to-export bridge | `src/lib/stitch-design-system.ts` |
-| Tokens | `src/styles/foundation.css` |
-| Shared patterns | `src/styles/stitch-patterns.css`, `src/styles/design-system.css`, `src/styles/workspace-buttons.css` |
+| Agent(s) / Fleet | Assistant(s) |
+| Live Ops / Live Review | Recaps, active-call status, and follow-ups |
+| Operator | You / account holder |
+| Integrations | Actions (with connected accounts inside) |
+| Handoff | Take this call / callback |
 
-The committed Stitch export and `.stitch/DESIGN.md` are the implementation contract. Do not reintroduce a parallel Figma, preview, or no-code design source.
+## Shared visual system — Professional Heritage v2
 
-## Wireline OS visual language
+- Warm canvas `#F9F9F7`; elevated card `#FFFFFF`; input/secondary surface `#F4F4F2`; raised well `#EEEEEC`.
+- Forest action and primary text `#1A3C34`; pressed state `#01261F`; active container `#E1E9E6`.
+- Borders `#DADAD8`; secondary text `#4A5F59`; destructive `#BA1A1A`.
+- Inter on web; platform system typography natively; JetBrains Mono only for compact metadata.
+- `-0.02em` on display/headline hierarchy; `cv05`, `cv08`, and `ss01` for web headings.
+- 8px default cards, inputs, and standard buttons; 4px micro-controls; 12px sheets/modals. Pills only for status and avatars.
+- Tonal layering before shadows. No violet, lavender, cyan, mesh, glass, decorative gradients, or mascot treatment.
+- Base-4 spacing rhythm. Deliberate interactive controls use 200ms `0.98` press feedback.
 
-- **Surfaces:** warm off-white `#F7F7F5`, white elevated cards, low-contrast warm borders.
-- **Primary action:** forest `#1A3C34`; use semantic `primary` classes and variables rather than literal component hex values.
-- **Typography:** Inter for interface copy, JetBrains Mono only for metrics and technical data.
-- **Geometry:** 4px as the default control/card radius. Pills are reserved for status and avatars.
-- **Elevation:** tonal layering and borders first; soft shadows only for popovers and modals.
-- **Density:** dashboard utility, 8px rhythm, concise labels, no decorative gradients or oversized hero surfaces in the workspace.
+## Web rules
 
-## Workspace architecture
+- Web is desktop/laptop-first. Standard QA: 1280×800 and 1440×900.
+- Use the fixed 212px left navigation, `#F4F4F2` sidebar surface, fluid main stage, and optional 320px inspector.
+- `/studio`, `/agents`, `/knowledge`, `/actions`, and `/settings` are canonical workspace destinations.
+- `/ops` is only a backward-compatible redirect to Studio; never restore a primary real-time operations destination.
+- Keep Studio above the fold: roster, training, and inspector must remain useful on laptop viewports.
+- The latest source mapping: homepage → public landing; agents → `/agents`; facts/rules → `/knowledge`; actions → `/actions`; training → `/studio`; settings → `/settings`; pricing/auth → public routes.
+- Every public product visual must show a comprehensible user job, work-in-progress state, or outcome. Do not ship inert skeleton bars as explanatory product imagery.
 
-The app shell is a fixed 212px sidebar plus a fluid main stage, capped at 1680px. Standard desktop frames are 1440×900.
+## Native rules
 
-| Canonical route | Navigation label | Implementation |
-|---|---|---|
-| `/studio` | Studio | `src/components/StudioWorkspaceV2.tsx` |
-| `/agents` | Agents | `src/pages/AgentsPage.tsx` |
-| `/knowledge` | Knowledge | `src/pages/KnowledgePage.tsx` |
-| `/actions` | Actions | `src/pages/IntegrationsPage.tsx` |
-| `/ops` | Live | `src/pages/OperationsPage.tsx` |
-| `/settings` | Settings | `src/pages/SettingsPage.tsx` |
+- iOS and Android use the mobile Stitch layouts as their visual source, not mobile-web layout.
+- Native tabs map to Studio, Assistants, Knowledge, Actions, and Recaps. Recaps replaces retired live-operations screens.
+- Preserve CallKit/App Intents/widgets/VoiceOver/Dynamic Type/safe areas on iOS.
+- Preserve Material 3/Telecom/FCM/TalkBack/dynamic type/system insets on Android.
+- Smart Route, incoming-call, lock-screen, and CarPlay frames are behavior and high-glanceability references. They must preserve real phone-transfer, consent, and platform eligibility constraints.
+- Do not trade real phone, push, billing, or device flows for decorative replica screens.
 
-`/integrations` is a backward-compatible redirect only. All new UI links, menus, shortcuts, and tests must use `/actions`.
+## Assets and marketing
 
-## Studio requirements
-
-Studio is the core product surface, not a settings form.
-
-- Keep the agent roster, conversation/training stage, and inspector clearly differentiated.
-- Keep the inspector actionable: identity, rules, facts, tone, actions, model, and assets.
-- Preserve model selection and text/image asset ingestion in the composer workflow.
-- Send agent and integration selection into Studio context; do not bounce operators into unrelated sidebar pages.
-- Keep side navigation visible and the primary training workflow usable above the fold on laptop viewports.
-
-## CSS cascade
-
-The global import order in `src/main.tsx` is intentional:
-
-```text
-foundation.css → index.css → monochrome-guard.css → readability-guard.css
-```
-
-`index.css` owns Tailwind plus product-pattern imports. Foundation must load first so downstream styles resolve the same semantic token layer.
-
-Use styles in this order:
-
-1. Semantic utilities (`bg-card`, `text-muted-foreground`, `border-border`)
-2. Workspace utilities (`wl-surface`, `wl-stitch-card`, `wl-segmented`, `workspace-btn-*`)
-3. Typography utilities (`wl-text-*`, `wl-stitch-label`, `wl-stitch-eyebrow`)
-4. Shared class constants from `src/lib/wireline-design-system.ts`
+- Use the handoff’s W-mark, App Store frames, social banner, and architecture artwork only where rendered size and platform requirements are appropriate.
+- App icons must be placed through platform-native asset catalogs with correct resize/crop QA; never use a marketing screenshot as an app icon.
+- App Store and Play screenshots must contain real, release-valid UI states. Do not ship mock text or unsupported reliability/compliance claims.
 
 ## Implementation rules
 
-1. Map design values through semantic tokens; do not copy raw design colors into components.
-2. Prefer `WorkspaceShell` for authenticated workspace pages.
-3. Use Lucide icons, 16px by default in navigation.
-4. Keep controls keyboard-accessible with visible focus states.
-5. Use the exact `stitchFile` mapping in `STITCH_SCREENS` when changing a mapped surface.
-6. Preserve mobile behavior while optimizing desktop and laptop workspace density.
-7. Run the Stitch contract, TypeScript, test, and build verification before shipping.
-
-## Retired design surfaces
-
-Do not restore any of the following:
-
-- violet/lavender brand palette (`#7C3AED`) or purple/cyan Tailwind utilities
-- old Figma bridge/configuration
-- `/design/preview` Stitch preview route
-- `WIRELINE_DESIGN_UI`, `studio-home`, or no-code website-builder scaffolding
-- oversized rounded cards, purple gradients, or ornamental mascot treatments
-
-The compatibility guards may neutralize old lazy-loaded UI temporarily, but new product code must be token-driven and Stitch-compliant.
+1. Map through semantic tokens, never raw component colors.
+2. Prefer `WorkspaceShell` for authenticated web pages.
+3. Use Lucide on web, SF Symbols on iOS, and Material icons on Android.
+4. Keep keyboard/focus states on web, focus-trap modals, and explicit accessible labels natively.
+5. Treat phone provisioning, voice, models, agent config, connections, billing, consent, and device behavior as production contracts to preserve.
+6. Run `npm run design:contract`, TypeScript/build validation, and native simulator/device validation before release.

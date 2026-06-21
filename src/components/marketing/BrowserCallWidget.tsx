@@ -8,7 +8,7 @@ const VAPI_PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY || "";
 
 type BrowserCallWidgetProps = {
   agentName: string;
-  /** Retained for call-site compatibility. The public demo is intentionally monochrome. */
+  /** Retained for call-site compatibility. The public demo uses shared semantic tokens. */
   tintColor?: string;
   buttonLabel?: string;
 };
@@ -29,7 +29,6 @@ export default function BrowserCallWidget({
   const [volume, setVolume] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [speakerActive, setSpeakerActive] = useState(false);
-  const activeColor = "#1d1d1f";
 
   useEffect(() => {
     if (!VAPI_PUBLIC_KEY) {
@@ -118,10 +117,10 @@ export default function BrowserCallWidget({
         disabled={connecting || !vapi}
         aria-label={callActive ? "End conversation" : "Talk to agent"}
         className={cn(
-          "relative z-10 h-12 select-none rounded-full border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.2em]",
+          "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
           callActive
-            ? "border-rose-600 bg-rose-600 text-white shadow-[0_10px_22px_rgba(190,24,93,0.18)]"
-            : "border-[#1d1d1f] bg-[#1d1d1f] text-white shadow-[0_10px_22px_rgba(29,29,31,0.16)] hover:border-black hover:bg-black hover:text-white",
+            ? "border-[color:var(--wl-status-error)] bg-[color:var(--wl-status-error)] text-white shadow-[0_1px_2px_rgba(26,60,52,0.12)]"
+            : "border-primary bg-primary text-white shadow-[0_1px_2px_rgba(26,60,52,0.12)] hover:border-[color:var(--wl-accent-hover)] hover:bg-[color:var(--wl-accent-hover)] hover:text-white",
         )}
       >
         {connecting ? (
@@ -133,15 +132,15 @@ export default function BrowserCallWidget({
         )}
         {callActive && (
           <span
-            className="pointer-events-none absolute inset-0 -z-10 animate-ping rounded-full bg-[#1d1d1f] opacity-15"
+            className="pointer-events-none absolute inset-0 -z-10 animate-ping rounded-md bg-primary opacity-15"
             aria-hidden="true"
           />
         )}
       </ShadButton>
 
       {callActive && (
-        <div className="flex h-7 items-center gap-2 rounded-full border border-[#1d1d1f]/10 bg-[#f2f2ef] px-4 py-1.5">
-          <Volume2 className={cn("h-3.5 w-3.5 text-[#6e6e73]", speakerActive && "animate-pulse text-[#1d1d1f]")} />
+        <div className="flex h-7 items-center gap-2 rounded-full border border-border bg-[color:var(--wl-surface-subtle)] px-4 py-1.5">
+          <Volume2 className={cn("h-3.5 w-3.5 text-muted-foreground", speakerActive && "animate-pulse text-primary")} />
           <div className="flex h-3 items-end gap-0.5">
             {[1, 2, 3, 4, 5].map((bar) => {
               const scaled = volume * (1 + bar * 0.3);
@@ -149,20 +148,20 @@ export default function BrowserCallWidget({
               return (
                 <div
                   key={bar}
-                  className="w-0.5 rounded-full bg-[#1d1d1f] transition-all duration-75"
+                  className="w-0.5 rounded-full bg-primary transition-all duration-75"
                   style={{ height: `${height}%`, opacity: speakerActive ? 1 : 0.35 }}
                 />
               );
             })}
           </div>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[#5e5e64]">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             {speakerActive ? "Assistant speaking" : "Listening"}
           </span>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-500/15 bg-rose-500/5 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-rose-700">
+        <div className="flex items-center gap-2 rounded-md border border-[color:var(--wl-status-error)] bg-[color:var(--wl-surface-subtle)] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-destructive">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>

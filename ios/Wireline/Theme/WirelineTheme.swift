@@ -1,31 +1,36 @@
 import SwiftUI
 
-/// Wireline's native foundation: quiet warm surfaces, direct typography, and one
-/// high-contrast action color. It intentionally matches the active web product.
+/// Native Wireline foundation. This is the mobile translation of the current
+/// Stitch Professional Heritage system: warm paper surfaces, compact geometry,
+/// quiet borders, and a single forest action color. Keep platform-native behavior.
 enum Brand {
     // ── Surfaces ─────────────────────────────────────────────────────────────
-    static let canvas = Color(hex: 0xF7F7F5)
+    static let canvas = Color(hex: 0xF9F9F7)
     static let panel = Color.white
-    static let panel2 = Color(hex: 0xF2F2EF)
-    static let raised = Color(hex: 0xEAEAE6)
+    static let panel2 = Color(hex: 0xF4F4F2)
+    static let raised = Color(hex: 0xEEEEEC)
+    static let border = Color(hex: 0xDADAD8)
 
-    // ── Text ────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0x1D1D1F)
-    static let text2 = Color(hex: 0x54545B)
-    static let text3 = Color(hex: 0x6E6E73)
+    // ── Text ─────────────────────────────────────────────────────────────────
+    // V7 uses the forest ink for primary hierarchy, not a competing charcoal.
+    static let text = Color(hex: 0x1A3C34)
+    static let text2 = Color(hex: 0x4A5F59)
+    static let text3 = Color(hex: 0x4A5F59, opacity: 0.72)
 
-    // ── Accent ──────────────────────────────────────────────────────────────
-    static let accent = Color(hex: 0x1D1D1F)
-    static let accentSoft = Color(hex: 0xEAEAE6)
-    static let accentDeep = Color.black
-    static let accentTint = Color(hex: 0x1D1D1F, opacity: 0.08)
+    // ── Accent ───────────────────────────────────────────────────────────────
+    static let accent = Color(hex: 0x1A3C34)
+    static let accentSoft = Color(hex: 0xE1E9E6)
+    static let accentDeep = Color(hex: 0x01261F)
+    static let accentTint = Color(hex: 0x1A3C34, opacity: 0.10)
 
-    // ── Semantic ────────────────────────────────────────────────────────────
-    static let destructive = Color(hex: 0xB42318)
-    static let signal = text3
-    static let success = Color(hex: 0x267A52)
+    // ── Semantic ─────────────────────────────────────────────────────────────
+    static let destructive = Color(hex: 0xBA1A1A)
+    static let signal = Color(hex: 0x2D5A27)
+    static let success = Color(hex: 0x2D5A27)
 
-    // ── Compatibility aliases ───────────────────────────────────────────────
+    // ── Compatibility aliases ─────────────────────────────────────────────────
+    // Legacy views still compile through these aliases, but all resolve to the
+    // Professional Heritage palette—never violet or black.
     static let violet = accent
     static let violetSoft = accentSoft
     static let violetDeep = accentDeep
@@ -35,14 +40,14 @@ enum Brand {
     static let paperWarm = panel2
     static let ink = text
 
-    // ── Radius ──────────────────────────────────────────────────────────────
-    static let radiusSm: CGFloat = 10
-    static let radiusMd: CGFloat = 16
-    static let radiusLg: CGFloat = 24
+    // ── Geometry ─────────────────────────────────────────────────────────────
+    static let radiusSm: CGFloat = 4
+    static let radiusMd: CGFloat = 8
+    static let radiusLg: CGFloat = 12
 }
 
 extension Color {
-    /// Opaque RGB from a 24-bit hex literal, e.g. `Color(hex: 0x1D1D1F)`.
+    /// Opaque RGB from a 24-bit hex literal, e.g. `Color(hex: 0x1A3C34)`.
     init(hex: UInt32, opacity: Double = 1.0) {
         let r = Double((hex >> 16) & 0xFF) / 255.0
         let g = Double((hex >> 8) & 0xFF) / 255.0
@@ -52,8 +57,10 @@ extension Color {
 }
 
 extension Font {
-    static func display(_ style: Font.TextStyle, weight: Font.Weight = .bold) -> Font {
-        Font.system(style, design: .rounded).weight(weight)
+    /// Native text remains native; hierarchy comes from weight and tracking,
+    /// not a rounded display family that drifts from the web system.
+    static func display(_ style: Font.TextStyle, weight: Font.Weight = .semibold) -> Font {
+        Font.system(style, design: .default).weight(weight)
     }
 
     static func mono(_ style: Font.TextStyle, weight: Font.Weight = .medium) -> Font {
@@ -65,46 +72,69 @@ extension Font {
     }
 }
 
+/// Shared tactile feedback for deliberately interactive native controls.
 struct TouchPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.78 : 1)
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.86 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.20), value: configuration.isPressed)
     }
 }
 
-struct BrandMeshBackground: View {
-    var body: some View {
-        LinearGradient(
-            colors: [Brand.canvas, Brand.panel2.opacity(0.74), Brand.canvas],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .ignoresSafeArea()
+/// The shared 16pt-padded Professional Heritage card from the current handoff.
+struct OperatorCard<Content: View>: View {
+    private let content: Content
+    private let radius: CGFloat
+
+    init(radius: CGFloat = Brand.radiusMd, @ViewBuilder content: () -> Content) {
+        self.radius = radius
+        self.content = content()
     }
+
+    var body: some View {
+        content
+            .padding(16)
+            .background(Brand.panel, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Brand.border, lineWidth: 1)
+            )
+    }
+}
+
+/// The native equivalent of the Stitch root surface. Deliberately flat: the
+/// design uses tonal layering and borders rather than decorative gradients.
+struct BrandMeshBackground: View {
+    var body: some View { Brand.canvas.ignoresSafeArea() }
 }
 
 extension View {
-    /// Standard Wireline shell. Views remain deliberately light and legible.
+    /// Standard Wireline shell. Keep system navigation, materials, and Dynamic
+    /// Type behavior; only the semantic palette comes from Stitch.
     func wirelineBrand() -> some View {
         self.tint(Brand.accent)
+            .buttonStyle(TouchPressStyle())
             .scrollContentBackground(.hidden)
             .background(BrandMeshBackground())
             .preferredColorScheme(.light)
     }
 
-    func touchPress() -> some View {
-        buttonStyle(TouchPressStyle())
-    }
+    func touchPress() -> some View { buttonStyle(TouchPressStyle()) }
 
-    /// Quiet elevated card for grouped information and actions.
-    func brandGlowCard(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 0.9) -> some View {
+    /// Surface modifier for views that already own their internal padding.
+    func operatorCardSurface(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 1) -> some View {
         background(Brand.panel)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(Brand.raised.opacity(borderOpacity), lineWidth: 1)
+                    .stroke(Brand.border.opacity(borderOpacity), lineWidth: 1)
             )
+    }
+
+    /// Backward-compatible name for existing views while they migrate to
+    /// `OperatorCard` or `operatorCardSurface`.
+    func brandGlowCard(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 1) -> some View {
+        operatorCardSurface(radius: radius, borderOpacity: borderOpacity)
     }
 }

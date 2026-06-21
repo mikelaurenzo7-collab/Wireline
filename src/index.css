@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "./styles/design-system.css";
 @import "./styles/stitch-patterns.css";
@@ -8,12 +9,14 @@
 @import "./styles/precision-auth.css";
 
 :root {
+  --wl-font-display: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @theme inline {
   --font-sans: var(--wl-font-sans);
+  --font-serif: var(--wl-font-display);
   --font-mono: var(--wl-font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -55,12 +58,12 @@ button { cursor: pointer; }
 ::selection { background: var(--primary); color: var(--primary-foreground); }
 
 .studio-route-loading { display: grid; min-height: 100dvh; place-items: center; background: var(--background); color: var(--muted-foreground); font-size: 14px; }
-.wl-text-display { font-size: 40px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
-.wl-text-headline { font-size: 30px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
-.wl-text-title { font-size: 22px; font-weight: 600; line-height: 1.3; }
+.wl-text-display { font-family: var(--wl-font-display); font-size: 40px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; color: var(--wl-accent); }
+.wl-text-headline { font-family: var(--wl-font-display); font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; color: var(--wl-accent); }
+.wl-text-title { font-family: var(--wl-font-display); font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: var(--wl-accent); }
 .wl-text-body { font-size: 16px; font-weight: 400; line-height: 1.5; }
 .wl-text-caption { font-size: 14px; font-weight: 400; color: var(--muted-foreground); line-height: 1.5; }
-.wl-text-micro { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); }
+.wl-text-micro { font-family: var(--wl-font-mono); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); }
 .wl-numeric { font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 
 @keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }

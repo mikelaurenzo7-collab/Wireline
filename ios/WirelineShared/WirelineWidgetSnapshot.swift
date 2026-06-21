@@ -1,34 +1,35 @@
 import Foundation
 
-// Shared between the Wireline Assistant app target and the WirelineWidgets extension.
-//
-// The widget extension has no auth and no network access of its own, so the
-// app fetches `/api/mobile/*` and writes a small snapshot into the shared App
-// Group container; the widgets only ever READ it. Keep these types
-// self-contained (no app-only models) so both targets compile against them.
+// Shared between the Wireline Assistant app target and WirelineWidgets.
+// The extension does not authenticate or make network requests; the app writes
+// a compact snapshot to the shared App Group and widgets only render that data.
 
 public enum WirelineWidgetShared {
-    /// App Group container shared by the app + widget extension.
     public static let appGroupId = "group.com.wireline.assistant"
 }
 
-/// Stitch Noir palette shared by the app and widget targets. The extension cannot
-/// import app `Brand`, so this small immutable mirror is the only color source for widgets.
+/// Small immutable mirror of the native Professional Heritage palette. Widgets
+/// cannot import the app target's Brand type, so visual drift is prevented here.
 public enum WirelinePalette {
-    public static let violet = "5D5CFF"
-    public static let violetDeep = "4643E9"
-    public static let violetSoft = "C1C1FF"
-    public static let canvas = "0A0A0C"
-    public static let panel = "131315"
-    public static let panel2 = "1B1B1D"
-    public static let text = "F4F2F7"
-    public static let text2 = "C7C4D8"
-    public static let text3 = "908FA1"
-    public static let destructive = "EF4444"
+    public static let accent = "1A3C34"
+    public static let accentDeep = "01261F"
+    public static let accentSoft = "E1E9E6"
+    public static let canvas = "F9F9F7"
+    public static let panel = "FFFFFF"
+    public static let panel2 = "F4F4F2"
+    public static let text = "1A3C34"
+    public static let text2 = "4A5F59"
+    public static let text3 = "4A5F59"
+    public static let border = "DADAD8"
+    public static let destructive = "BA1A1A"
+
+    // Compatibility aliases for currently compiled widget views. They all use
+    // the forest Professional Heritage palette rather than the retired violet palette.
+    public static let violet = accent
+    public static let violetDeep = accentDeep
+    public static let violetSoft = accentSoft
 }
 
-/// One glanceable recent call. Pre-formatted by the app so the widget stays a
-/// dumb renderer (no date math / business logic in the extension).
 public struct WirelineWidgetCall: Codable, Identifiable, Hashable {
     public let id: String
     public let title: String
