@@ -12,8 +12,8 @@ enum Brand {
     static let border = Color(hex: 0xDADAD8)
 
     // ── Text ─────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0x1A3C34)
-    static let text2 = Color(hex: 0x4A5F59)
+    static let text = Color(hex: 0x1A1C1B)
+    static let text2 = Color(hex: 0x414846)
     static let text3 = Color(hex: 0x4A5F59, opacity: 0.72)
 
     // ── Accent ───────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ enum Brand {
 
     // ── Compatibility aliases ─────────────────────────────────────────────────
     // Legacy views still compile through these aliases, but all resolve to the
-    // forest Professional Heritage palette—never violet or black.
+    // Professional Heritage palette—never violet or black.
     static let violet = accent
     static let violetSoft = accentSoft
     static let violetDeep = accentDeep
@@ -105,9 +105,7 @@ struct OperatorCard<Content: View>: View {
 /// The native equivalent of the Stitch root surface. Deliberately flat: the
 /// design uses tonal layering and borders rather than decorative gradients.
 struct BrandMeshBackground: View {
-    var body: some View {
-        Brand.canvas.ignoresSafeArea()
-    }
+    var body: some View { Brand.canvas.ignoresSafeArea() }
 }
 
 extension View {
@@ -121,9 +119,7 @@ extension View {
             .preferredColorScheme(.light)
     }
 
-    func touchPress() -> some View {
-        buttonStyle(TouchPressStyle())
-    }
+    func touchPress() -> some View { buttonStyle(TouchPressStyle()) }
 
     /// Surface modifier for views that already own their internal padding.
     func operatorCardSurface(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 1) -> some View {
