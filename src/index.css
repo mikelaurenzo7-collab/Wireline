@@ -4,6 +4,7 @@
 @import "./styles/cta-readability.css";
 @import "./styles/workspace-buttons.css";
 @import "./styles/phone-agent-blueprint.css";
+@import "./styles/precision-studio.css";
 
 :root {
   --wl-font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
