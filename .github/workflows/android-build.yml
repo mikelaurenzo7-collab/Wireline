@@ -12,6 +12,9 @@ on:
       - ".github/workflows/android-build.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: android-build-${{ github.ref }}
   cancel-in-progress: true
