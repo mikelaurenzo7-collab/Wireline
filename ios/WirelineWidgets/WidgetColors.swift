@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Widget palette shared by all extension views. Keep widgets visibly aligned
-/// with the native mobile Stitch surfaces while using WidgetKit-friendly fills.
+/// with the native Professional Heritage surfaces while using WidgetKit-friendly fills.
 enum WidgetColors {
     static let accent = Color(hex: WirelinePalette.accent)
     static let accentDeep = Color(hex: WirelinePalette.accentDeep)
@@ -19,10 +19,6 @@ enum WidgetColors {
     static let violet = accent
     static let violetDeep = accentDeep
     static let violetSoft = accentSoft
-
-    static var accentGradient: LinearGradient {
-        LinearGradient(colors: [accent, accentDeep], startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
 }
 
 private extension Color {
