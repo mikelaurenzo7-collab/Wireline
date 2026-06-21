@@ -1,0 +1,68 @@
+/* Canonical Wireline system — one visual foundation for personal and business. */
+:root {
+  --wl-bg: #f9f9f7;
+  --wl-surface: #ffffff;
+  --wl-surface-subtle: #f4f4f2;
+  --wl-surface-hover: #eeeeec;
+  --wl-surface-active: #e8e8e6;
+  --wl-ink: #1a1c1b;
+  --wl-ink-soft: #414846;
+  --wl-muted: #414846;
+  --wl-muted-2: #717976;
+  --wl-faint: #717976;
+  --wl-hint: #717976;
+  --wl-line: #e5e5e1;
+  --wl-line-strong: #c1c8c4;
+  --wl-line-subtle: rgba(26, 28, 27, 0.06);
+  --wl-line-weak: rgba(26, 28, 27, 0.08);
+  --wl-accent: #1a3c34;
+  --wl-accent-deep: #01261f;
+  --wl-accent-foreground: #ffffff;
+  --wl-accent-muted: #aacec3;
+  --wl-accent-container: #c5eadf;
+  --wl-status-active: #2d5a27;
+  --wl-status-warning: #b45309;
+  --wl-status-info: #2b4d44;
+  --wl-status-attention: #9f402d;
+  --radius: 0.25rem;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --wl-control-radius: var(--radius);
+  --wl-card-radius: var(--radius);
+  --wl-feature-radius: var(--radius-lg);
+  --wl-focus: color-mix(in srgb, var(--wl-accent) 38%, transparent);
+  --background: var(--wl-bg);
+  --foreground: var(--wl-ink);
+  --card: var(--wl-surface);
+  --card-foreground: var(--wl-ink);
+  --popover: var(--wl-surface);
+  --popover-foreground: var(--wl-ink);
+  --primary: var(--wl-accent-deep);
+  --primary-foreground: var(--wl-accent-foreground);
+  --secondary: var(--wl-surface-subtle);
+  --secondary-foreground: var(--wl-ink);
+  --muted: var(--wl-surface-subtle);
+  --muted-foreground: var(--wl-muted);
+  --accent: var(--wl-surface-subtle);
+  --accent-foreground: var(--wl-ink);
+  --border: var(--wl-line);
+  --input: var(--wl-line-strong);
+  --input-background: var(--wl-surface);
+  --ring: var(--wl-accent);
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+}
+
+html { min-height: 100%; background: var(--wl-bg); color-scheme: light; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--wl-bg);
+  color: var(--wl-ink);
+  font-family: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-kerning: normal;
+  font-synthesis: none;
+}
