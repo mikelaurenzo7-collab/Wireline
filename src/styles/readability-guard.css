@@ -126,7 +126,7 @@ select:hover,
 }
 
 /* Standard links need a visible affordance unless they are intentional UI controls. */
-main a[href]:not(.marketing-btn-primary):not(.marketing-btn-secondary):not(.studio-nav-link):not(.studio-agent-row):not([role="button"]) {
+main a[href]:not(.marketing-btn-primary):not(.marketing-btn-secondary):not(.workspace-btn-primary):not(.workspace-btn-secondary):not(.studio-nav-link):not(.studio-agent-row):not([role="button"]) {
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
@@ -151,6 +151,28 @@ tbody tr:hover,
 
 [class~="text-primary"] {
   color: #18181b !important;
+}
+
+/* foundation.css loads after Tailwind layers; unlayered `a { color: inherit }` was
+   painting graphite text on graphite workspace CTAs. */
+main a.workspace-btn-primary,
+a.workspace-btn-primary,
+button.workspace-btn-primary,
+main a[class*="bg-[#1d1d1f]"],
+main button[class*="bg-[#1d1d1f]"],
+main a[class*="bg-[#1d1d1f]"].text-white,
+main button[class*="bg-[#1d1d1f]"].text-white {
+  color: #ffffff !important;
+}
+
+main a.workspace-btn-primary :where(svg, span, strong),
+a.workspace-btn-primary :where(svg, span, strong),
+button.workspace-btn-primary :where(svg, span, strong),
+main a[class*="bg-[#1d1d1f]"] :where(svg, span, strong),
+main button[class*="bg-[#1d1d1f]"] :where(svg, span, strong),
+main a[class*="bg-[#1d1d1f]"].text-white :where(svg, span, strong),
+main button[class*="bg-[#1d1d1f]"].text-white :where(svg, span, strong) {
+  color: currentColor !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

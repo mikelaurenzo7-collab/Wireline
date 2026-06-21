@@ -14,7 +14,15 @@ import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getDefaultAgentTools, isAgentToolName, normalizeEnabledTools, type AgentToolName } from "../lib/agent-capabilities";
 import { runStructured } from "../lib/ai-structured";
 import { AI_TOOLS } from "../lib/ai-tools";
-import { isGeminiModelId, isOpenAIModelId, isOpenRouterModelId, OPENAI_STRUCTURED_PRIMARY_MODEL } from "../lib/ai-models";
+import {
+  isGeminiModelId,
+  isOpenAIModelId,
+  isOpenRouterModelId,
+  OPENAI_STRUCTURED_PRIMARY_MODEL,
+  VAPI_TENANT_DEFAULT_MODEL,
+  VAPI_TENANT_DEFAULT_PROVIDER,
+} from "../lib/ai-models";
+import { listOpenRouterModelsForDirector } from "../lib/openrouter-models";
 
 const router = Router();
 const roleArchetypes: Record<string, string> = {
@@ -228,6 +236,34 @@ router.post("/api/agent-config/:id/manual", authenticateUser, agentMutationRateL
     throw AppError.fromHttpStatus(400, "Invalid configuration type");
   }
   res.json({ success: true });
+});
+
+router.get("/api/agents/openrouter-models", authenticateUser, async (_req: AuthenticatedRequest, res: Response) => {
+  const { enabled, catalog } = await listOpenRouterModelsForDirector();
+  res.json({
+    enabled,
+    models: catalog.map((model) => ({
+      id: model.id,
+      label: model.label,
+      description: model.description,
+      category: model.category,
+    })),
+  });
+});
+
+router.get("/api/agents/voice-models", authenticateUser, async (_req: AuthenticatedRequest, res: Response) => {
+  const { catalog } = await listOpenRouterModelsForDirector();
+  res.json({
+    tenantDefaultProvider: VAPI_TENANT_DEFAULT_PROVIDER,
+    tenantDefaultModel: VAPI_TENANT_DEFAULT_MODEL,
+    options: catalog.map((model) => ({
+      provider: "openrouter",
+      model: model.id,
+      label: model.label,
+      speed: "balanced" as const,
+      envKey: "OPENROUTER_API_KEY",
+    })),
+  });
 });
 
 router.patch("/api/agent-config/:id/runtime", authenticateUser, agentMutationRateLimit, async (req: AuthenticatedRequest, res: Response) => {
