@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Cpu, RefreshCw } from "lucide-react";
 import { cn } from "../lib/utils";
 import { authFetch, readApiJson } from "../lib/api";
-import type { VoiceModelOption, VoiceModelSpeed } from "../lib/claude-models";
+import type { VoiceModelOption, VoiceModelSpeed } from "../lib/ai-models";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Slider } from "./ui/shadcn/Slider";
 import { ShadButton } from "./ui/shadcn/ShadButton";
