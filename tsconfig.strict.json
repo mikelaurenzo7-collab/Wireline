@@ -12,7 +12,6 @@
     "alwaysStrict": true
   },
   "include": [
-    "src/lib/stitch-design-system.ts",
     "src/lib/wireline-design-system.ts"
   ]
 }
