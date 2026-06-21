@@ -3,6 +3,8 @@ import { and, eq, ilike } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { sendTenantMessage } from "./twilio-service";
 import { normalizeDncPhone } from "./compliance";
+import { IntegrationService } from "./integrations";
+import { superviseClientCommunication } from "./ai-supervisor";
 
 export type ScopedToolContext = { toolCallId: string; userId: string; agentId: string; callerNumber?: string; agentName?: string; drizzle: any; };
 const result = (toolCallId: string, text: string) => ({ toolCallId, result: text });
@@ -13,6 +15,19 @@ export async function dispatchScopedToolCall(name: string, args: any, context: S
     const description = String(args?.description || args?.reason || "Caller requested follow-up").slice(0, 2000);
     await context.drizzle.insert(schema.fleetTasks).values({ userId: context.userId, agentId: context.agentId, taskType: name === "escalate_to_human" ? "escalation" : "follow_up", description, priority: args?.priority || "high", status: "pending", sourceType: "phone_call", sourceId: args?.callId || "live-call", targetChannel: "manual" });
     return result(context.toolCallId, name === "escalate_to_human" ? "A human teammate has been alerted with the call context." : "A follow-up task has been created.");
+  }
+  if (name === "send_email") {
+    const to = String(args?.to_email || args?.to || "").trim();
+    const subject = String(args?.subject || "").slice(0, 500);
+    const body = String(args?.body || args?.message || "").slice(0, 12000);
+    if (!to || !body) return result(context.toolCallId, "I need a recipient and message before I can send an email.");
+    const reviewed = await superviseClientCommunication({ channel: "email", agentName: context.agentName || context.agentId, source: "voice_tool", purpose: "caller-requested follow-up", recipient: to, subject, body, context: "Tenant email from a live phone call." });
+    if (!reviewed.approved) {
+      await context.drizzle.insert(schema.fleetTasks).values({ userId: context.userId, agentId: context.agentId, taskType: "send_email", description: `Review email to ${to}: ${reviewed.rationale}`.slice(0, 2000), priority: "medium", status: "pending", sourceType: "phone_call", sourceId: "live-call", targetChannel: "email" });
+      return result(context.toolCallId, "I queued that email for a human review before it is sent.");
+    }
+    const sent = await new IntegrationService(context.userId).sendEmail({ to, subject: reviewed.subject || subject, body: reviewed.body });
+    return result(context.toolCallId, sent ? "The email has been sent." : "The email could not be sent from this workspace right now.");
   }
   if (name === "search_leads" || name === "crm_search_contacts") {
     const query = String(args?.query || args?.name || args?.email || args?.phone || "").replace(/[^A-Za-z0-9 @.\-+]/g, "").slice(0, 80);
