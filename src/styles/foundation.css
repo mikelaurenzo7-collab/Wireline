@@ -1,38 +1,81 @@
-/* Wireline Operator — Stitch design system tokens (project 6981221452983374608) */
+/* Wireline Stitch systems — project 6981221452983374608.
+   Operator is the dense authenticated workspace. Prosumer is the warmer personal/public surface.
+   Both use the same Inter + JetBrains Mono type stack and semantic token names. */
 :root {
-  --wl-bg: #f7f7f5;
-  --wl-surface: #ffffff;
-  --wl-surface-subtle: #f4f4f2;
-  --wl-surface-warm: #fafaf9;
-  --wl-surface-hover: #eeeeec;
-  --wl-surface-active: #e8e8e6;
-  --wl-ink: #1d1d1f;
-  --wl-ink-soft: #414846;
-  --wl-muted: #6e6e73;
-  --wl-muted-2: #717976;
-  --wl-faint: #a1a1a6;
-  --wl-hint: #929298;
-  --wl-line: #e5e5e1;
-  --wl-line-strong: #c1c8c4;
-  --wl-line-subtle: rgba(0, 0, 0, 0.06);
-  --wl-line-weak: rgba(0, 0, 0, 0.08);
-  --wl-accent: #1a3c34;
+  /* Stitch Operator — Wireline Operating System */
+  --wl-operator-bg: #f9f9f7;
+  --wl-operator-surface: #ffffff;
+  --wl-operator-surface-subtle: #f4f4f2;
+  --wl-operator-surface-hover: #eeeeec;
+  --wl-operator-surface-active: #e8e8e6;
+  --wl-operator-ink: #1a1c1b;
+  --wl-operator-muted: #414846;
+  --wl-operator-faint: #717976;
+  --wl-operator-line: #e5e5e1;
+  --wl-operator-line-strong: #c1c8c4;
+  --wl-operator-primary: #01261f;
+  --wl-operator-accent: #1a3c34;
+  --wl-operator-accent-muted: #aacec3;
+  --wl-operator-accent-container: #c5eadf;
+  --wl-operator-radius: 0.25rem;
+
+  /* Stitch Prosumer — personal assistants and public conversion */
+  --wl-prosumer-bg: #f8f9fa;
+  --wl-prosumer-surface: #ffffff;
+  --wl-prosumer-surface-subtle: #f3f4f5;
+  --wl-prosumer-surface-hover: #edeeef;
+  --wl-prosumer-surface-active: #e1e3e4;
+  --wl-prosumer-ink: #191c1d;
+  --wl-prosumer-muted: #414943;
+  --wl-prosumer-faint: #717973;
+  --wl-prosumer-line: #e1e3e4;
+  --wl-prosumer-line-strong: #c0c9c1;
+  --wl-prosumer-primary: #14422d;
+  --wl-prosumer-accent: #2d5a43;
+  --wl-prosumer-terra: #9f402d;
+  --wl-prosumer-sky: #003e5d;
+  --wl-prosumer-radius: 0.5rem;
+  --wl-prosumer-card-radius: 1rem;
+  --wl-prosumer-feature-radius: 1.5rem;
+
+  /* Default semantic values are Operator-safe for the authenticated shell. */
+  --wl-bg: var(--wl-operator-bg);
+  --wl-surface: var(--wl-operator-surface);
+  --wl-surface-subtle: var(--wl-operator-surface-subtle);
+  --wl-surface-warm: var(--wl-operator-surface);
+  --wl-surface-hover: var(--wl-operator-surface-hover);
+  --wl-surface-active: var(--wl-operator-surface-active);
+  --wl-ink: var(--wl-operator-ink);
+  --wl-ink-soft: var(--wl-operator-muted);
+  --wl-muted: var(--wl-operator-muted);
+  --wl-muted-2: var(--wl-operator-faint);
+  --wl-faint: var(--wl-operator-faint);
+  --wl-hint: var(--wl-operator-faint);
+  --wl-line: var(--wl-operator-line);
+  --wl-line-strong: var(--wl-operator-line-strong);
+  --wl-line-subtle: rgba(26, 28, 27, 0.06);
+  --wl-line-weak: rgba(26, 28, 27, 0.08);
+  --wl-accent: var(--wl-operator-accent);
   --wl-accent-foreground: #ffffff;
-  --wl-accent-deep: #01261f;
-  --wl-accent-muted: #aacec3;
-  --wl-accent-container: #c5eadf;
+  --wl-accent-deep: var(--wl-operator-primary);
+  --wl-accent-muted: var(--wl-operator-accent-muted);
+  --wl-accent-container: var(--wl-operator-accent-container);
   --wl-status-active: #2d5a27;
   --wl-status-warning: #b45309;
-  --radius: 0.25rem;
-  --wl-focus: rgba(26, 60, 52, 0.35);
+  --wl-focus: color-mix(in srgb, var(--wl-accent) 38%, transparent);
+  --radius: var(--wl-operator-radius);
+  --wl-control-radius: var(--wl-operator-radius);
+  --wl-card-radius: var(--wl-operator-radius);
+  --wl-feature-radius: var(--wl-operator-radius);
+
   --background: var(--wl-bg);
   --foreground: var(--wl-ink);
   --card: var(--wl-surface);
   --card-foreground: var(--wl-ink);
   --popover: var(--wl-surface);
   --popover-foreground: var(--wl-ink);
-  --primary: var(--wl-accent);
-  --primary-foreground: var(--wl-accent-foreground);
+  --primary: var(--wl-operator-primary);
+  --primary-foreground: #ffffff;
   --secondary: var(--wl-surface-subtle);
   --secondary-foreground: var(--wl-ink);
   --muted: var(--wl-surface-subtle);
@@ -40,22 +83,82 @@
   --accent: var(--wl-surface-subtle);
   --accent-foreground: var(--wl-ink);
   --border: var(--wl-line);
-  --input: var(--wl-line);
+  --input: var(--wl-line-strong);
   --input-background: var(--wl-surface);
-  --ring: var(--wl-ink);
-  --destructive: #b42318;
+  --ring: var(--wl-accent);
+  --destructive: #ba1a1a;
   --destructive-foreground: #ffffff;
+}
+
+.wireline-operator {
+  --radius: var(--wl-operator-radius);
+  --wl-control-radius: var(--wl-operator-radius);
+  --wl-card-radius: var(--wl-operator-radius);
+  --wl-feature-radius: var(--wl-operator-radius);
+}
+
+.wireline-prosumer {
+  --wl-bg: var(--wl-prosumer-bg);
+  --wl-surface: var(--wl-prosumer-surface);
+  --wl-surface-subtle: var(--wl-prosumer-surface-subtle);
+  --wl-surface-warm: var(--wl-prosumer-bg);
+  --wl-surface-hover: var(--wl-prosumer-surface-hover);
+  --wl-surface-active: var(--wl-prosumer-surface-active);
+  --wl-ink: var(--wl-prosumer-ink);
+  --wl-ink-soft: var(--wl-prosumer-muted);
+  --wl-muted: var(--wl-prosumer-muted);
+  --wl-muted-2: var(--wl-prosumer-faint);
+  --wl-faint: var(--wl-prosumer-faint);
+  --wl-hint: var(--wl-prosumer-faint);
+  --wl-line: var(--wl-prosumer-line);
+  --wl-line-strong: var(--wl-prosumer-line-strong);
+  --wl-line-subtle: rgba(25, 28, 29, 0.06);
+  --wl-line-weak: rgba(25, 28, 29, 0.08);
+  --wl-accent: var(--wl-prosumer-accent);
+  --wl-accent-deep: var(--wl-prosumer-primary);
+  --wl-accent-muted: #a1d1b4;
+  --wl-accent-container: #bceecf;
+  --wl-focus: color-mix(in srgb, var(--wl-prosumer-primary) 34%, transparent);
+  --radius: var(--wl-prosumer-radius);
+  --wl-control-radius: var(--wl-prosumer-radius);
+  --wl-card-radius: var(--wl-prosumer-card-radius);
+  --wl-feature-radius: var(--wl-prosumer-feature-radius);
+  --background: var(--wl-prosumer-bg);
+  --foreground: var(--wl-prosumer-ink);
+  --card: var(--wl-prosumer-surface);
+  --card-foreground: var(--wl-prosumer-ink);
+  --popover: var(--wl-prosumer-surface);
+  --popover-foreground: var(--wl-prosumer-ink);
+  --primary: var(--wl-prosumer-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--wl-prosumer-surface-subtle);
+  --secondary-foreground: var(--wl-prosumer-ink);
+  --muted: var(--wl-prosumer-surface-subtle);
+  --muted-foreground: var(--wl-prosumer-muted);
+  --accent: var(--wl-prosumer-surface-subtle);
+  --accent-foreground: var(--wl-prosumer-ink);
+  --border: var(--wl-prosumer-line);
+  --input: var(--wl-prosumer-line-strong);
+  --input-background: var(--wl-prosumer-surface);
+  --ring: var(--wl-prosumer-primary);
 }
 
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--wl-bg); color-scheme: light; }
-body { margin: 0; min-height: 100dvh; background: var(--wl-bg); color: var(--wl-ink); font-family: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--wl-bg);
+  color: var(--wl-ink);
+  font-family: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-kerning: normal;
+  font-synthesis: none;
+}
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
 
-/* Legacy studio primitives — PhoneAgentBlueprint + shared kicker/card chrome only.
-   Workspace routes use WorkspaceShell (see Patterns / Workspace Shell in Stitch). */
+/* Shared operator primitives retained for the phone-agent workspace. */
 .studio-primary-button,
 .studio-secondary-button {
   display: inline-flex;
@@ -64,7 +167,7 @@ a { color: inherit; }
   justify-content: center;
   gap: 7px;
   padding: 0 12px;
-  border-radius: var(--radius);
+  border-radius: var(--wl-control-radius);
   font-size: 13px;
   font-weight: 600;
   border: 0;
@@ -72,45 +175,27 @@ a { color: inherit; }
   text-decoration: none;
   cursor: pointer;
 }
-.studio-primary-button {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-.studio-primary-button:hover {
-  background: var(--foreground);
-}
-.studio-secondary-button {
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--foreground);
-}
-.studio-secondary-button:hover {
-  background: var(--secondary);
-}
+.studio-primary-button { background: var(--primary); color: var(--primary-foreground); }
+.studio-primary-button:hover { background: var(--wl-accent); }
+.studio-secondary-button { border: 1px solid var(--border); background: var(--card); color: var(--foreground); }
+.studio-secondary-button:hover { background: var(--secondary); }
 .studio-kicker {
   display: block;
-  color: var(--wl-faint);
+  color: var(--wl-muted);
   font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 16px;
   text-transform: uppercase;
 }
 .studio-card {
   padding: 18px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--card) 75%, transparent);
+  border-radius: var(--wl-card-radius);
+  background: var(--card);
 }
-.studio-card-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.studio-card h2 {
-  margin-top: 4px;
-  font-size: 16px;
-}
+.studio-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.studio-card h2 { margin-top: 4px; font-size: 16px; }
 .studio-count {
   display: grid;
   min-width: 24px;
@@ -120,17 +205,7 @@ a { color: inherit; }
   background: var(--secondary);
   color: var(--muted-foreground);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
 }
-.studio-muted-copy {
-  margin: 18px 0;
-  color: var(--muted-foreground);
-  font-size: 13px;
-  line-height: 1.5;
-}
-.studio-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
-}
+.studio-muted-copy { margin: 18px 0; color: var(--muted-foreground); font-size: 13px; line-height: 18px; }
+.studio-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
