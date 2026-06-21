@@ -1,0 +1,24 @@
+/* Google Stitch geometry authority — the operating system uses 4px corners.
+   Pills remain limited to status indicators and avatars. */
+.wl-stitch-card,
+.wl-stitch-agent-card,
+.wl-stitch-stat-box,
+.wl-stitch-sidebar-link,
+.wl-stitch-pricing-card,
+.wl-stitch-roster-card,
+.wl-stitch-knowledge-panel,
+.wl-stitch-knowledge-entry,
+.wl-stitch-connection-card {
+  border-radius: var(--radius);
+}
+
+.wl-stitch-pricing-badge {
+  border-bottom-left-radius: var(--radius);
+  border-top-right-radius: calc(var(--radius) - 2px);
+}
+
+/* A billing interval is a segmented control, not a status pill. */
+.wl-stitch-interval-toggle,
+.wl-stitch-interval-toggle button {
+  border-radius: var(--radius);
+}
