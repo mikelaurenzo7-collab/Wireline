@@ -17,16 +17,17 @@ const required = [
   "src/lib/stitch-design-system.ts",
   "src/lib/wireline-design-system.ts",
   "src/routes/AppRoutes.tsx",
-  "src/constants/navigation.ts",
+  "src/App.tsx",
   "src/components/WorkspaceShell.tsx",
-  "src/pages/AgentsPage.tsx",
-  "src/pages/SettingsPage.tsx",
-  "src/pages/OperationsPage.tsx",
-  "src/components/StudioWorkspaceV2.tsx",
-  "src/components/KnowledgeWorkspace.tsx",
-  "src/components/IntegrationsWorkspace.tsx",
+  "src/components/marketing/PublicSiteHeader.tsx",
+  "src/components/marketing/MarketingFooter.tsx",
   "src/pages/LandingPage.tsx",
+  "src/pages/Features.tsx",
   "src/pages/Pricing.tsx",
+  "src/pages/Showcase.tsx",
+  "src/pages/Compare.tsx",
+  "src/pages/About.tsx",
+  "src/pages/VerticalLanding.tsx",
   "src/components/AuthPortal.tsx",
   "public/favicon.svg",
   "public/wireline-icon.svg",
@@ -59,14 +60,13 @@ for (const file of exportedScreens) {
 }
 
 const foundation = read("src/styles/foundation.css");
-if (!/--wl-accent:\s*#1a3c34/i.test(foundation)) {
-  report("src/styles/foundation.css", "must define --wl-accent as Stitch forest #1a3c34");
-}
-if (!/--primary:\s*var\(--wl-accent\)/.test(foundation)) {
-  report("src/styles/foundation.css", "must alias --primary to --wl-accent");
-}
-if (!/--wl-bg:\s*#f7f7f5/i.test(foundation)) {
-  report("src/styles/foundation.css", "must define the Stitch warm surface #f7f7f5");
+for (const [pattern, description] of [
+  [/--wl-accent:\s*#1a3c34/i, "must define the Stitch forest accent"],
+  [/--wl-bg:\s*#f7f7f5/i, "must define the Stitch warm surface"],
+  [/--radius:\s*0\.25rem/i, "must retain the four-pixel default geometry"],
+  [/--primary:\s*var\(--wl-accent\)/, "must alias primary to the Stitch accent"],
+]) {
+  if (!pattern.test(foundation)) report("src/styles/foundation.css", description);
 }
 
 const main = read("src/main.tsx");
@@ -86,79 +86,63 @@ for (const statement of cascade) {
   previous = position;
 }
 
-const indexCss = read("src/index.css");
-for (const importPath of [
-  "stitch-patterns.css",
-  "cta-readability.css",
-  "workspace-buttons.css",
-]) {
-  if (!indexCss.includes(importPath)) {
-    report("src/index.css", `must import ${importPath}`);
-  }
-}
-
-const routes = read("src/routes/AppRoutes.tsx");
-if (!routes.includes('path="/actions" element={<IntegrationsPage />}')) {
+const workspaceRoutes = read("src/routes/AppRoutes.tsx");
+if (!workspaceRoutes.includes('path="/actions" element={<IntegrationsPage />}')) {
   report("src/routes/AppRoutes.tsx", "must expose /actions as the canonical Actions route");
 }
-if (!routes.includes('path="/integrations" element={<Navigate to="/actions" replace />}')) {
-  report("src/routes/AppRoutes.tsx", "must redirect legacy /integrations bookmarks to /actions");
+if (!workspaceRoutes.includes('path="/integrations" element={<Navigate to="/actions" replace />}')) {
+  report("src/routes/AppRoutes.tsx", "must redirect legacy integration bookmarks to /actions");
 }
 
-const shell = read("src/components/WorkspaceShell.tsx");
-if (!shell.includes('{ href: "/actions", label: "Actions"')) {
-  report("src/components/WorkspaceShell.tsx", "must navigate to canonical /actions");
+const publicRoutes = read("src/App.tsx");
+if (!publicRoutes.includes('path="/for/personal" element={<VerticalLanding slug="personal" />}')) {
+  report("src/App.tsx", "must expose the first-class consumer /for/personal route");
 }
-if (shell.includes('{ href: "/integrations", label: "Actions"')) {
-  report("src/components/WorkspaceShell.tsx", "must not keep /integrations as an active navigation target");
-}
+
+const header = read("src/components/marketing/PublicSiteHeader.tsx");
+const footer = read("src/components/marketing/MarketingFooter.tsx");
+if (!header.includes('to: "/for/personal"')) report("src/components/marketing/PublicSiteHeader.tsx", "must expose personal navigation");
+if (!footer.includes('to: "/for/personal"')) report("src/components/marketing/MarketingFooter.tsx", "must expose personal navigation");
 
 const bridge = read("src/lib/stitch-design-system.ts");
-if (!bridge.includes("6981221452983374608")) {
-  report("src/lib/stitch-design-system.ts", "must reference the active Stitch project id");
-}
+if (!bridge.includes("6981221452983374608")) report("src/lib/stitch-design-system.ts", "must reference the active Stitch project id");
 for (const file of exportedScreens) {
-  if (!bridge.includes(file)) {
-    report("src/lib/stitch-design-system.ts", `must map ${file} exactly`);
-  }
+  if (!bridge.includes(file)) report("src/lib/stitch-design-system.ts", `must map ${file} exactly`);
 }
 
-for (const retired of [
-  "src/lib/design-preview-route.ts",
-  "src/lib/figma-design-system.ts",
-  "figma.config.json",
+for (const page of [
+  "src/pages/Features.tsx",
+  "src/pages/Compare.tsx",
+  "src/pages/Showcase.tsx",
+  "src/pages/About.tsx",
+  "src/pages/VerticalLanding.tsx",
 ]) {
-  if (exists(retired)) report(retired, "retired design bridge must be removed");
+  const source = read(page);
+  if (!source.includes("wl-stitch")) report(page, "must use Stitch component primitives");
+  if (/font-display|bg-gradient-to-r|#1d1d1f|#f2f2ef/i.test(source)) {
+    report(page, "contains pre-Stitch marketing styling");
+  }
 }
 
 const strictConfig = read("tsconfig.strict.json");
-if (strictConfig.includes("design-preview-route.ts")) {
-  report("tsconfig.strict.json", "must not reference the removed design preview helper");
+if (!strictConfig.includes("stitch-design-contract.test.ts")) {
+  report("tsconfig.strict.json", "must validate the live Stitch contract");
 }
 
 const productSources = [
   "src/components/WorkspaceShell.tsx",
-  "src/pages/AgentsPage.tsx",
-  "src/pages/SettingsPage.tsx",
-  "src/pages/OperationsPage.tsx",
   "src/pages/LandingPage.tsx",
+  "src/pages/Pricing.tsx",
   "src/components/AuthPortal.tsx",
-  "src/components/marketing/RobotHead.tsx",
-  "src/contexts/BrandingContext.tsx",
   "public/favicon.svg",
   "public/wireline-icon.svg",
   "public/og-image.svg",
   "public/site.webmanifest",
 ];
-
 for (const file of productSources) {
   const source = read(file);
-  if (/#7c3aed|#a78bfa|#5b21b6|#3d1e7c/i.test(source)) {
-    report(file, "contains retired violet brand values");
-  }
-  if (/(?:text|bg|from|to)-(?:violet|purple|indigo)-/i.test(source)) {
-    report(file, "contains retired purple utility classes");
-  }
+  if (/#7c3aed|#a78bfa|#5b21b6|#3d1e7c/i.test(source)) report(file, "contains retired violet brand values");
+  if (/(?:text|bg|from|to)-(?:violet|purple|indigo)-/i.test(source)) report(file, "contains retired purple utility classes");
 }
 
 if (failures.length) {
