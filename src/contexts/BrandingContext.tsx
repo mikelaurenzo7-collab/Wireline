@@ -15,7 +15,7 @@ type BrandingSettings = {
 const DEFAULT_BRANDING: BrandingSettings = {
   brand_name: "Wireline",
   brand_logo_url: "",
-  primary_color: "#7C3AED",
+  primary_color: "#1A3C34",
   business_name: "",
   business_type: "",
   primary_product: "",
@@ -62,7 +62,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         if (e?.name === "AbortError" || String(e?.message || "").includes("Failed to fetch")) {
           return;
         }
-        // Unexpected error — branding falls back to defaults; log for visibility
         console.error("[BrandingContext] settings fetch failed:", e?.message ?? e);
       } finally {
         setIsLoading(false);
