@@ -4,6 +4,7 @@ export const STITCH_DESIGN_SYSTEM = {
   title: "Precision Operator",
   designSpec: ".stitch/DESIGN.md",
   sourceManifest: ".stitch/precision-operator/manifest.json",
+  sourceDesignMd: ".stitch/precision-operator/design-md-source.md",
 } as const;
 
 export const STITCH_SCREENS = {
@@ -17,7 +18,7 @@ export const STITCH_SCREENS = {
 } as const;
 
 export const STITCH_CODE_SYSTEM = {
-  tokens: "src/styles/precision-operator-web.css",
+  tokens: "src/styles/foundation.css",
   patterns: "src/styles/stitch-patterns.css",
   workspace: "src/components/WorkspaceShell.tsx",
   designMd: ".stitch/DESIGN.md",
