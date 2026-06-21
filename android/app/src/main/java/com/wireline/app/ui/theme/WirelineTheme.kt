@@ -2,7 +2,14 @@ package com.wireline.app.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LightColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
@@ -13,34 +20,33 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 /**
- * Wireline native foundation — quiet warm surfaces, direct typography, and one
- * high-contrast action color. Mirrors the active web product rather than the
- * retired dark-violet presentation.
+ * Native Android translation of the Stitch Precision system. It stays
+ * Material-native while sharing the warm paper surfaces, compact geometry,
+ * quiet borders, and forest action color used by web and iOS.
  */
 object Brand {
-    // ── Surfaces ─────────────────────────────────────────────────────────────
-    val Canvas = Color(0xFFF7F7F5)
+    val Canvas = Color(0xFFF9F9F7)
     val Panel = Color(0xFFFFFFFF)
-    val Panel2 = Color(0xFFF2F2EF)
-    val Raised = Color(0xFFEAEAE6)
+    val Panel2 = Color(0xFFF4F4F2)
+    val Raised = Color(0xFFEEEEEC)
+    val Border = Color(0xFFDADAD8)
+    val BorderStrong = Color(0xFFAEB8B4)
 
-    // ── Text ─────────────────────────────────────────────────────────────────
-    val Text = Color(0xFF1D1D1F)
-    val Text2 = Color(0xFF54545B)
-    val Text3 = Color(0xFF6E6E73)
+    val Text = Color(0xFF1A1C1B)
+    val Text2 = Color(0xFF414846)
+    val Text3 = Color(0xFF717976)
 
-    // ── Accent ───────────────────────────────────────────────────────────────
-    val Accent = Color(0xFF1D1D1F)
-    val AccentSoft = Color(0xFFEAEAE6)
-    val AccentDeep = Color(0xFF000000)
-    val AccentTint = Color(0x141D1D1F)
+    val Accent = Color(0xFF1A3C34)
+    val AccentSoft = Color(0xFFE1E9E6)
+    val AccentDeep = Color(0xFF01261F)
+    val AccentTint = Color(0x1A1A3C34)
 
-    // ── Semantic ─────────────────────────────────────────────────────────────
-    val Destructive = Color(0xFFB42318)
-    val Success = Color(0xFF267A52)
-    val Signal = Text3
+    val Destructive = Color(0xFFBA1A1A)
+    val Success = Color(0xFF2D5A27)
+    val Signal = Success
 
-    // ── Compatibility aliases ───────────────────────────────────────────────
+    // Compatibility aliases keep existing native screens compiling. They all
+    // resolve to the Stitch forest palette, not the retired violet palette.
     val Violet = Accent
     val VioletSoft = AccentSoft
     val VioletDeep = AccentDeep
@@ -54,16 +60,14 @@ object Brand {
     val Velvet = Canvas
     val VelvetSurface = Panel
     val VelvetInk = Text
+    val BorderViolet = Border
 
-    val Border = Color(0x1F1D1D1F)
-    val BorderViolet = Color(0x241D1D1F)
-
-    val RadiusSm = 10.dp
-    val RadiusMd = 16.dp
-    val RadiusLg = 24.dp
+    val RadiusSm = 4.dp
+    val RadiusMd = 8.dp
+    val RadiusLg = 12.dp
 }
 
-private val LightColors = lightColorScheme(
+private val LightColors: ColorScheme = lightColorScheme(
     primary = Brand.Accent,
     onPrimary = Color.White,
     primaryContainer = Brand.AccentSoft,
@@ -111,7 +115,6 @@ fun WirelineTheme(
     content: @Composable () -> Unit,
 ) {
     val colorScheme = LightColors
-
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -128,10 +131,10 @@ fun WirelineTheme(
             colorScheme = colorScheme,
             shapes = Shapes(
                 extraSmall = RoundedCornerShape(Brand.RadiusSm),
-                small = RoundedCornerShape(10.dp),
+                small = RoundedCornerShape(Brand.RadiusSm),
                 medium = RoundedCornerShape(Brand.RadiusMd),
                 large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(28.dp),
+                extraLarge = RoundedCornerShape(16.dp),
             ),
             typography = AppTypography,
             content = content,
