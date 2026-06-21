@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const activeFiles = [
+  "index.html",
   "src/App.tsx",
   "src/pages/LandingPage.tsx",
   "src/pages/Features.tsx",
@@ -89,6 +90,16 @@ requirePatterns("src/index.css", indexCss, [
   [/h1, h2, h3, h4\s*\{[^}]*font-feature-settings:\s*"cv05",\s*"cv08",\s*"ss01"/is, "must apply Stitch precision headline feature settings"],
 ]);
 
+const documentHead = read("index.html");
+requirePatterns("index.html", documentHead, [
+  [/family=Inter:/i, "must preload Inter in the document head"],
+  [/family=JetBrains\+Mono/i, "must preload JetBrains Mono in the document head"],
+  [/theme-color" content="#F9F9F7"/i, "must preserve the warm mobile browser surface"],
+]);
+if (/Source\+Serif|Work\+Sans/i.test(documentHead)) {
+  report("index.html", "must not preload retired Source Serif or Work Sans fonts");
+}
+
 const shell = read("src/components/WorkspaceShell.tsx");
 if (!/w-\[212px\]/.test(shell) || !/lg:grid-cols-\[212px_minmax\(0,1fr\)\]/.test(shell)) {
   report("src/components/WorkspaceShell.tsx", "must retain the fixed 212px Professional Heritage workspace shell");
@@ -106,15 +117,18 @@ for (const copy of [
   "Move my cleaning to next week.",
   "No follow-up needed",
 ]) {
-  if (!landing.includes(copy)) {
-    report("src/components/marketing/PrecisionLanding.tsx", `must render meaningful product content: ${copy}`);
-  }
+  if (!landing.includes(copy)) report("src/components/marketing/PrecisionLanding.tsx", `must render meaningful product content: ${copy}`);
 }
 if (/h-(?:2|3|4|7)\s+w-(?:\d|full|\d\/\d).*bg-\[color:var\(--wl-surface-variant\)\]/.test(landing)) {
   report("src/components/marketing/PrecisionLanding.tsx", "must not use gray placeholder bars as product imagery");
 }
 if (/BrowserCallWidget/.test(landing)) {
   report("src/components/marketing/PrecisionLanding.tsx", "must not make the landing explanation depend on an optional browser-call demo");
+}
+
+const features = read("src/pages/Features.tsx");
+if (/radial-gradient|Start free/i.test(features)) {
+  report("src/pages/Features.tsx", "must use flat Professional Heritage public surfaces and current-plan CTAs");
 }
 
 const browserDemo = read("src/components/marketing/BrowserCallWidget.tsx");
@@ -128,12 +142,8 @@ if (!/role="dialog"/.test(createAssistant) || /bg-black|backdrop-blur/i.test(cre
 }
 
 const runtime = read("src/lib/ai-client.ts");
-if (!runtime.includes("https://api.openai.com/v1/responses")) {
-  report("src/lib/ai-client.ts", "must use OpenAI Responses as the managed runtime");
-}
-if (!runtime.includes("OpenAI request failed; trying Gemini fallback")) {
-  report("src/lib/ai-client.ts", "must preserve the OpenAI-to-Gemini fallback order");
-}
+if (!runtime.includes("https://api.openai.com/v1/responses")) report("src/lib/ai-client.ts", "must use OpenAI Responses as the managed runtime");
+if (!runtime.includes("OpenAI request failed; trying Gemini fallback")) report("src/lib/ai-client.ts", "must preserve the OpenAI-to-Gemini fallback order");
 
 const voiceDefaults = read("src/lib/voice-model-defaults.ts");
 if (!/VAPI_TENANT_DEFAULT_PROVIDER[^=]*=\s*"openai"/.test(voiceDefaults)) {
@@ -151,9 +161,7 @@ requirePatterns("ios/Wireline/Theme/WirelineTheme.swift", iosTheme, [
   [/scaleEffect\(configuration\.isPressed\s*\?\s*0\.98\s*:\s*1\)/, "must retain 0.98 tactile press feedback"],
   [/duration:\s*0\.20/, "must retain 200ms tactile press timing"],
 ]);
-if (/LinearGradient|RadialGradient|AngularGradient/.test(iosTheme)) {
-  report("ios/Wireline/Theme/WirelineTheme.swift", "must not restore decorative gradients to the native foundation");
-}
+if (/LinearGradient|RadialGradient|AngularGradient/.test(iosTheme)) report("ios/Wireline/Theme/WirelineTheme.swift", "must not restore decorative gradients to the native foundation");
 
 const iosTabs = read("ios/Wireline/Views/RootTabView.swift");
 for (const tab of ["Studio", "Assistants", "Knowledge", "Actions", "Recaps"]) {
@@ -162,9 +170,7 @@ for (const tab of ["Studio", "Assistants", "Knowledge", "Actions", "Recaps"]) {
 if (/Live Ops|Fleet/.test(iosTabs)) report("ios/Wireline/Views/RootTabView.swift", "must not restore Live Ops or Fleet to native primary navigation");
 
 const iosWidget = read("ios/WirelineWidgets/WidgetColors.swift");
-if (/LinearGradient|RadialGradient|AngularGradient/.test(iosWidget)) {
-  report("ios/WirelineWidgets/WidgetColors.swift", "must use flat Professional Heritage widget surfaces");
-}
+if (/LinearGradient|RadialGradient|AngularGradient/.test(iosWidget)) report("ios/WirelineWidgets/WidgetColors.swift", "must use flat Professional Heritage widget surfaces");
 
 const androidTheme = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", androidTheme, [
