@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Home
@@ -41,6 +42,7 @@ import com.wireline.app.ui.theme.Brand
 
 private enum class Tab { Studio, Assistants, Knowledge, Actions, Recaps, Wallet, Settings }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     val state = model.state
@@ -51,6 +53,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 
     var tab by rememberSaveable { mutableStateOf(Tab.Studio) }
     var showAsk by rememberSaveable { mutableStateOf(false) }
+    var showCreateAssistant by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         containerColor = Brand.Canvas,
@@ -62,25 +65,60 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             )
         },
         floatingActionButton = {
-            if (tab == Tab.Studio) {
-                FloatingActionButton(onClick = { showAsk = true }, containerColor = Brand.Accent, contentColor = Color.White) {
-                    Icon(Icons.Default.Mic, contentDescription = "Ask Wireline")
-                }
+            when (tab) {
+                Tab.Studio -> FloatingActionButton(
+                    onClick = { showAsk = true },
+                    containerColor = Brand.Accent,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(Brand.RadiusMd),
+                ) { Icon(Icons.Default.Mic, contentDescription = "Ask Wireline") }
+                Tab.Assistants -> FloatingActionButton(
+                    onClick = { showCreateAssistant = true },
+                    containerColor = Brand.Accent,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(Brand.RadiusMd),
+                ) { Icon(Icons.Default.Add, contentDescription = "Create assistant") }
+                else -> Unit
             }
         },
         bottomBar = {
             NavigationBar(containerColor = Brand.Panel) {
-                NavigationBarItem(selected = tab == Tab.Studio, onClick = { tab = Tab.Studio }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Studio") })
-                NavigationBarItem(selected = tab == Tab.Assistants, onClick = { tab = Tab.Assistants }, icon = { Icon(Icons.Default.PhoneInTalk, null) }, label = { Text("Assistants") })
-                NavigationBarItem(selected = tab == Tab.Knowledge, onClick = { tab = Tab.Knowledge }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Knowledge") })
-                NavigationBarItem(selected = tab == Tab.Actions, onClick = { tab = Tab.Actions }, icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Actions") })
-                NavigationBarItem(selected = tab == Tab.Recaps, onClick = { tab = Tab.Recaps }, icon = { Icon(Icons.Default.Call, null) }, label = { Text("Recaps") })
+                NavigationBarItem(
+                    selected = tab == Tab.Studio,
+                    onClick = { tab = Tab.Studio },
+                    icon = { Icon(Icons.Default.Home, null) },
+                    label = { Text("Studio") },
+                )
+                NavigationBarItem(
+                    selected = tab == Tab.Assistants,
+                    onClick = { tab = Tab.Assistants },
+                    icon = { Icon(Icons.Default.PhoneInTalk, null) },
+                    label = { Text("Assistants") },
+                )
+                NavigationBarItem(
+                    selected = tab == Tab.Knowledge,
+                    onClick = { tab = Tab.Knowledge },
+                    icon = { Icon(Icons.Default.Home, null) },
+                    label = { Text("Knowledge") },
+                )
+                NavigationBarItem(
+                    selected = tab == Tab.Actions,
+                    onClick = { tab = Tab.Actions },
+                    icon = { Icon(Icons.Default.Settings, null) },
+                    label = { Text("Actions") },
+                )
+                NavigationBarItem(
+                    selected = tab == Tab.Recaps,
+                    onClick = { tab = Tab.Recaps },
+                    icon = { Icon(Icons.Default.Call, null) },
+                    label = { Text("Recaps") },
+                )
             }
         },
     ) { padding ->
         when (tab) {
             Tab.Studio -> StudioScreen(padding, state, model)
-            Tab.Assistants -> AssistantsScreen(padding, state.agents)
+            Tab.Assistants -> AssistantsScreen(padding, state.agents, onCreate = { showCreateAssistant = true })
             Tab.Knowledge -> KnowledgeScreen(padding)
             Tab.Actions -> ActionsScreen(padding)
             Tab.Recaps -> RecapsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
@@ -92,6 +130,17 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     if (showAsk) {
         ModalBottomSheet(onDismissRequest = { showAsk = false }, containerColor = Brand.Canvas) {
             AskWirelineScreen(model = model, onBack = { showAsk = false })
+        }
+    }
+
+    if (showCreateAssistant) {
+        ModalBottomSheet(onDismissRequest = { if (!state.isWorking) showCreateAssistant = false }, containerColor = Brand.Canvas) {
+            CreateAssistantSheet(
+                state = state,
+                onCreate = { name, role ->
+                    model.createAssistant(name, role) { showCreateAssistant = false }
+                },
+            )
         }
     }
 }
@@ -190,16 +239,33 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 }
 
 @Composable
-private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>) {
-    LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCreate: () -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         item {
-            Column {
-                Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                Text("The callers you have set up for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                    Text("The callers you have set up for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+                }
+                TextButton(onClick = onCreate) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("New")
+                }
             }
         }
         if (agents.isEmpty()) {
-            item { LavenderCard { Text("No assistants yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Create your first assistant on the web, then come back here to make calls.", color = Brand.Text2) } }
+            item {
+                LavenderCard {
+                    Text("Start with one assistant", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
+                    Text("Give your first helper a name and a clear job. You can teach it more in Studio afterward.", color = Brand.Text2)
+                    Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create assistant") }
+                }
+            }
         } else {
             items(agents, key = { it.id }) { agent ->
                 LavenderCard {
@@ -218,6 +284,65 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>) {
 }
 
 @Composable
+private fun CreateAssistantSheet(state: WirelineUiState, onCreate: (String, String) -> Unit) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var role by rememberSaveable { mutableStateOf("scheduler") }
+    val choices = listOf(
+        "scheduler" to "Personal assistant",
+        "customer_service" to "Helpful caller",
+        "receptionist" to "Call concierge",
+        "custom" to "Something else",
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text("New assistant", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+        Text("Start with one useful call.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+        Text("Name the help you want. You can add its knowledge, actions, and voice in Studio next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Name") },
+            placeholder = { Text("Casey") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(Brand.RadiusSm),
+        )
+        Text("What kind of help?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+        choices.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { (value, label) ->
+                    FilterChip(
+                        selected = role == value,
+                        onClick = { role = value },
+                        label = { Text(label, maxLines = 1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+        ErrorText(state.error)
+        Button(
+            onClick = { onCreate(name, role) },
+            enabled = name.isNotBlank() && !state.isWorking,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(Brand.RadiusSm),
+        ) {
+            if (state.isWorking) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+            } else {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Create assistant")
+            }
+        }
+    }
+}
+
+@Composable
 private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, recentCalls: List<RecentCall>, onTakeCall: (String) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("Recaps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text) }
@@ -226,7 +351,7 @@ private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, 
         items(activeCalls, key = { it.callId }) { call ->
             SectionCard {
                 Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                Text(call.status ?: "Active", color = Brand.Text2)
+                Text(call.status?.replace("_", " ") ?: "In progress", color = Brand.Text2)
                 Button(onClick = { onTakeCall(call.callId) }, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Take this call") }
             }
         }
