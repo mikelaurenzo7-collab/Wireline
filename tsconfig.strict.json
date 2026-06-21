@@ -13,7 +13,6 @@
   },
   "include": [
     "src/lib/stitch-design-system.ts",
-    "src/lib/wireline-design-system.ts",
-    "src/lib/stitch-design-contract.test.ts"
+    "src/lib/wireline-design-system.ts"
   ]
 }
