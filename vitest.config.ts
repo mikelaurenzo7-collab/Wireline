@@ -2,6 +2,6 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    exclude: ["tests/e2e/**", "src/lib/stitch-design-contract.test.ts"],
+    exclude: ["tests/e2e/**"],
   },
 });
