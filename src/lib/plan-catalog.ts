@@ -25,10 +25,10 @@ export type StripePlan = {
 };
 
 /**
- * Launch catalog principles:
- * - Personal is intentionally light-use, not an unlimited calling bundle.
- * - Business starts with clear coverage and grows through add-on assistants.
- * - Usage allowances reserve room for voice, model, carrier, support, and payment costs.
+ * Catalog principles:
+ * - Wireline starts as a personal call assistant, with clear and bounded use.
+ * - Households and small teams can add assistants without changing products.
+ * - Allowances reserve room for voice, model, carrier, support, and payment costs.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
@@ -49,7 +49,7 @@ export const STRIPE_PLANS: StripePlan[] = [
       "1 AI call assistant",
       "1 dedicated Wireline number",
       "60 voice minutes each month",
-      "Call summaries and follow-up queue",
+      "Call recaps and follow-up reminders",
       "Web, mobile, Siri, and widget access",
       "Add assistants for $7 / month",
       "Overage at $0.20 / minute",
@@ -73,14 +73,14 @@ export const STRIPE_PLANS: StripePlan[] = [
       "2 personal assistants",
       "180 voice minutes each month",
       "Calendar and email context",
-      "Priority memory and follow-up queue",
+      "Priority memory and follow-up reminders",
       "Add assistants for $7 / month",
       "Overage at $0.18 / minute",
     ],
   },
   {
     id: "business-starter",
-    name: "Studio",
+    name: "Household",
     price_usd_monthly: 29,
     max_agents: 4,
     voice_minutes_monthly: 500,
@@ -95,16 +95,16 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "4 assistants and 2 dedicated numbers",
       "500 voice minutes each month",
-      "Full Studio for instructions, routing, memory, and handoffs",
-      "Calendar, SMS, email, and contact workflows",
-      "Works for personal projects or a small business",
+      "Shared instructions, memory, and handoffs",
+      "Calendar, text, email, and contact workflows",
+      "Great for a household, personal projects, or a small business",
       "Add assistants for $9 / month",
       "Overage at $0.16 / minute",
     ],
   },
   {
     id: "starter",
-    name: "Operator",
+    name: "Concierge",
     price_usd_monthly: 59,
     max_agents: 8,
     voice_minutes_monthly: 1_200,
@@ -119,9 +119,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "8 assistants and 4 dedicated numbers",
       "1,200 voice minutes each month",
-      "Call review, analytics, and outbound workflows",
-      "Outbound calling with email and SMS follow-up",
-      "Team collaboration and escalation controls",
+      "Call recaps, activity history, and outbound help",
+      "Outbound calls with email and text follow-up",
+      "Share access with the people who help you run things",
       "Add assistants for $12 / month",
       "Overage at $0.14 / minute",
     ],
@@ -141,10 +141,10 @@ export const STRIPE_PLANS: StripePlan[] = [
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     overagePriceIdEnv: "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     features: [
-      "Multiple locations, departments, or brands",
-      "Custom assistants, numbers, minutes, and integrations",
+      "Custom assistants, numbers, minutes, and connections",
+      "Multiple homes, locations, departments, or brands",
       "Security review, SSO, and audit exports",
-      "Dedicated implementation and success support",
+      "Dedicated implementation and support",
     ],
   },
 ];
@@ -153,38 +153,38 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
   if (!priceId) return null;
   return (
     STRIPE_PLANS.find(
-      (p) =>
-        process.env[p.priceIdEnv] === priceId ||
-        process.env[p.annualPriceIdEnv] === priceId ||
-        (p.extraAgentPriceIdEnv ? process.env[p.extraAgentPriceIdEnv] === priceId : false) ||
-        (p.overagePriceIdEnv ? process.env[p.overagePriceIdEnv] === priceId : false),
+      (plan) =>
+        process.env[plan.priceIdEnv] === priceId ||
+        process.env[plan.annualPriceIdEnv] === priceId ||
+        (plan.extraAgentPriceIdEnv ? process.env[plan.extraAgentPriceIdEnv] === priceId : false) ||
+        (plan.overagePriceIdEnv ? process.env[plan.overagePriceIdEnv] === priceId : false),
     ) || null
   );
 }
 
 export function planById(id: string | null | undefined): StripePlan | null {
   if (!id) return null;
-  if (id === "lite" || id === "business-lite") return STRIPE_PLANS.find((p) => p.id === "business-starter") || null;
-  if (id === "pro" || id === "business-growth") return STRIPE_PLANS.find((p) => p.id === "starter") || null;
-  if (id === "business" || id === "enterprise") return STRIPE_PLANS.find((p) => p.id === "scale") || null;
-  return STRIPE_PLANS.find((p) => p.id === id) || null;
+  if (id === "lite" || id === "business-lite") return STRIPE_PLANS.find((plan) => plan.id === "business-starter") || null;
+  if (id === "pro" || id === "business-growth") return STRIPE_PLANS.find((plan) => plan.id === "starter") || null;
+  if (id === "business" || id === "enterprise") return STRIPE_PLANS.find((plan) => plan.id === "scale") || null;
+  return STRIPE_PLANS.find((plan) => plan.id === id) || null;
 }
 
 export function plansForClient() {
-  return STRIPE_PLANS.map((p) => ({
-    id: p.id,
-    name: p.name,
-    price_usd_monthly: p.price_usd_monthly,
-    price_usd_annual: p.price_usd_annual,
-    max_agents: p.max_agents,
-    voice_minutes_monthly: p.voice_minutes_monthly,
-    overage_per_min_usd: p.overage_per_min_usd,
-    included_phone_numbers: p.included_phone_numbers,
-    extra_agent_price_usd: p.extra_agent_price_usd ?? null,
-    features: p.features,
-    configured: !!process.env[p.priceIdEnv],
-    annual_configured: !!process.env[p.annualPriceIdEnv],
-    contact_sales: p.price_usd_monthly === 0,
-    public: p.public !== false,
+  return STRIPE_PLANS.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    price_usd_monthly: plan.price_usd_monthly,
+    price_usd_annual: plan.price_usd_annual,
+    max_agents: plan.max_agents,
+    voice_minutes_monthly: plan.voice_minutes_monthly,
+    overage_per_min_usd: plan.overage_per_min_usd,
+    included_phone_numbers: plan.included_phone_numbers,
+    extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
+    features: plan.features,
+    configured: !!process.env[plan.priceIdEnv],
+    annual_configured: !!process.env[plan.annualPriceIdEnv],
+    contact_sales: plan.price_usd_monthly === 0,
+    public: plan.public !== false,
   }));
 }
