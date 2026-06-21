@@ -23,11 +23,6 @@ public enum WirelinePalette {
     public static let border = "DADAD8"
     public static let destructive = "BA1A1A"
 
-    // Compatibility aliases for currently compiled widget views. They all use
-    // the forest Professional Heritage palette rather than the retired violet palette.
-    public static let violet = accent
-    public static let violetDeep = accentDeep
-    public static let violetSoft = accentSoft
 }
 
 public struct WirelineWidgetCall: Codable, Identifiable, Hashable {

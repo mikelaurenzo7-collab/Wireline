@@ -70,11 +70,11 @@ fun StitchMeshSurface(modifier: Modifier = Modifier) {
 }
 
 /**
- * The shared Professional Heritage container: white, 8dp, 1dp warm border,
- * 16dp internal spacing, and no ornamental gradient or heavy elevation.
+ * AssistantCard displays information inside a flat card matching the Professional Heritage design system:
+ * white, 8dp, 1dp warm border, 16dp internal spacing, and no ornamental gradient or heavy elevation.
  */
 @Composable
-fun OperatorCard(
+fun AssistantCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -92,13 +92,6 @@ fun OperatorCard(
         )
     }
 }
-
-/** Compatibility alias for existing screen composition while callers migrate. */
-@Composable
-fun LavenderCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) = OperatorCard(modifier = modifier, content = content)
 
 /** 200ms 0.98 press response required by the Professional Heritage system. */
 @Composable

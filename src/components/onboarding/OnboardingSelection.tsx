@@ -34,7 +34,7 @@ export default function OnboardingSelection() {
           className="max-w-4xl w-full"
         >
           <div className="text-center mb-12">
-            <div className="mb-6 inline-flex items-center justify-center w-12 h-12 bg-violet-100 text-violet-600">
+            <div className="mb-6 inline-flex items-center justify-center w-12 h-12 bg-brand/10 text-brand">
               <span className="font-display text-2xl font-bold">W</span>
             </div>
             <h1 className="font-display text-4xl md:text-5xl text-foreground tracking-tight mb-4">
@@ -50,22 +50,22 @@ export default function OnboardingSelection() {
             <button
               onClick={() => handleSelect("personal")}
               disabled={creating !== null}
-              className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-violet-400/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-violet-500/5 disabled:opacity-60"
+              className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-brand/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5 disabled:opacity-60"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-violet-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <div>
-                <div className="w-12 h-12 bg-violet-50 group-hover:bg-violet-100 text-charcoal/60 group-hover:text-violet-600 flex items-center justify-center mb-6 transition-colors">
+                <div className="w-12 h-12 bg-brand/[0.03] group-hover:bg-brand/10 text-charcoal/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
                   <User className="w-6 h-6" />
                 </div>
-                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-violet-600 transition-colors">
+                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
                   Personal
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  One agent for the calls you avoid — pharmacy, doctor, school, landlord, airline,
-                  support lines. Siri, widgets, and the mobile app come with it.
+                  One assistant for the calls you avoid — pharmacy, doctor, school, landlord,
+                  airline, support lines. Siri, widgets, and the mobile app come with it.
                 </p>
               </div>
-              <div className="mt-8 flex items-center text-violet-600 font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+              <div className="mt-8 flex items-center text-brand font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
                 {creating === "personal" ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
@@ -79,22 +79,22 @@ export default function OnboardingSelection() {
             <button
               onClick={() => handleSelect("business")}
               disabled={creating !== null}
-              className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-violet-400/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-violet-500/5 disabled:opacity-60"
+              className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-brand/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5 disabled:opacity-60"
             >
-              <div className="absolute inset-0 bg-gradient-to-bl from-violet-500/0 to-violet-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-bl from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <div>
-                <div className="w-12 h-12 bg-violet-50 group-hover:bg-violet-100 text-charcoal/60 group-hover:text-violet-600 flex items-center justify-center mb-6 transition-colors">
+                <div className="w-12 h-12 bg-brand/[0.03] group-hover:bg-brand/10 text-charcoal/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
                   <Building className="w-6 h-6" />
                 </div>
-                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-violet-600 transition-colors">
+                <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
                   Business
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  Multiple agents, live call review, routing, analytics, outbound, and integrations.
-                  Same Studio for setup — more power on the rail.
+                  Multiple assistants, active-call Recaps, routing, analytics, outbound, and
+                  integrations. Same Studio for setup — more power on the rail.
                 </p>
               </div>
-              <div className="mt-8 flex items-center text-violet-600 font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+              <div className="mt-8 flex items-center text-brand font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
                 {creating === "business" ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
@@ -107,7 +107,7 @@ export default function OnboardingSelection() {
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Same agent, same Studio. The choice just trims the sidebar.
+            Same assistant, same Studio. The choice just trims the sidebar.
           </p>
         </motion.div>
       </div>

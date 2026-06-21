@@ -48,23 +48,6 @@ object Brand {
     val Success = Color(0xFF2D5A27)
     val Signal = Success
 
-    // Legacy aliases keep existing screens compiling. They all resolve to the
-    // Professional Heritage forest palette rather than the retired violet palette.
-    val Violet = Accent
-    val VioletSoft = AccentSoft
-    val VioletDeep = AccentDeep
-    val VioletGlass = AccentTint
-    val Purple = Accent
-    val PurpleDeep = AccentDeep
-    val PurpleMuted = AccentSoft
-    val Paper = Canvas
-    val PaperWarm = Panel2
-    val Ink = Text
-    val Velvet = Canvas
-    val VelvetSurface = Panel
-    val VelvetInk = Text
-    val BorderViolet = Border
-
     val RadiusSm = 4.dp
     val RadiusMd = 8.dp
     val RadiusLg = 12.dp

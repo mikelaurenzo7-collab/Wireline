@@ -48,7 +48,7 @@ struct SignInView: View {
         }
         .padding(24)
         .background(Brand.canvas.ignoresSafeArea())
-        .tint(Brand.violet)
+        .tint(Brand.accent)
     }
 }
 

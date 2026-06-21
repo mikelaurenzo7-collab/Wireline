@@ -14,11 +14,6 @@ enum WidgetColors {
     static let text3 = Color(hex: WirelinePalette.text3)
     static let border = Color(hex: WirelinePalette.border)
 
-    // Compatibility aliases for existing widget views. These deliberately map
-    // to forest colors so legacy names cannot recreate a purple widget.
-    static let violet = accent
-    static let violetDeep = accentDeep
-    static let violetSoft = accentSoft
 }
 
 private extension Color {

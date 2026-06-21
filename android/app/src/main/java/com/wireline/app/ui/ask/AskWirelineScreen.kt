@@ -187,9 +187,9 @@ fun AskWirelineScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Brand.PaperWarm),
+                        colors = CardDefaults.cardColors(containerColor = Brand.Panel2),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Brand.BorderViolet)
+                        border = BorderStroke(1.dp, Brand.Border)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
@@ -202,7 +202,7 @@ fun AskWirelineScreen(
                                 Text(
                                     "Wireline Assistant Response",
                                     style = MaterialTheme.typography.labelMedium,
-                                    color = Brand.PurpleMuted,
+                                    color = Brand.Text2,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Icon(
@@ -232,7 +232,7 @@ fun AskWirelineScreen(
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = Brand.Purple, strokeWidth = 3.dp)
+                        CircularProgressIndicator(color = Brand.Accent, strokeWidth = 3.dp)
                     }
                 }
 
@@ -244,9 +244,9 @@ fun AskWirelineScreen(
                     // Action 1: Place a call (Expandable)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Brand.PaperWarm),
+                        colors = CardDefaults.cardColors(containerColor = Brand.Panel2),
                         shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Brand.VioletGlass)
+                        border = BorderStroke(1.dp, Brand.AccentTint)
                     ) {
                         Column {
                             Row(
@@ -291,7 +291,7 @@ fun AskWirelineScreen(
                                         .padding(bottom = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Divider(color = Brand.VioletGlass)
+                                    Divider(color = Brand.AccentTint)
                                     
                                     Text("Select Agent:", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
                                     Row(
@@ -299,8 +299,7 @@ fun AskWirelineScreen(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         state.agents.take(3).forEach { agent ->
-                                            val isSelected = selectedAgent?.id == agent.id
-                                            val containerColor = if (isSelected) Brand.Purple else Brand.Paper
+                                            val containerColor = if (isSelected) Brand.Accent else Brand.Canvas
                                             val contentColor = if (isSelected) Color.White else Color.LightGray
                                             
                                             AssistChip(
@@ -310,7 +309,7 @@ fun AskWirelineScreen(
                                                     containerColor = containerColor,
                                                     labelColor = contentColor
                                                 ),
-                                                border = AssistChipDefaults.assistChipBorder(borderColor = Brand.BorderViolet)
+                                                border = AssistChipDefaults.assistChipBorder(borderColor = Brand.Border)
                                             )
                                         }
                                     }
@@ -322,8 +321,8 @@ fun AskWirelineScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         singleLine = true,
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Brand.Purple,
-                                            unfocusedBorderColor = Brand.BorderViolet
+                                            focusedBorderColor = Brand.Accent,
+                                            unfocusedBorderColor = Brand.Border
                                         )
                                     )
 
@@ -334,8 +333,8 @@ fun AskWirelineScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         singleLine = true,
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = Brand.Purple,
-                                            unfocusedBorderColor = Brand.BorderViolet
+                                            focusedBorderColor = Brand.Accent,
+                                            unfocusedBorderColor = Brand.Border
                                         )
                                     )
 
@@ -413,16 +412,16 @@ fun AskWirelineScreen(
                                 Icon(
                                     imageVector = Icons.Default.Send,
                                     contentDescription = "Send",
-                                    tint = if (inputText.isNotBlank()) Brand.Purple else Color.Gray
+                                    tint = if (inputText.isNotBlank()) Brand.Accent else Color.Gray
                                 )
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
-                            containerColor = Brand.PaperWarm,
-                            focusedBorderColor = Brand.Purple,
-                            unfocusedBorderColor = Brand.BorderViolet
+                            containerColor = Brand.Panel2,
+                            focusedBorderColor = Brand.Accent,
+                            unfocusedBorderColor = Brand.Border
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -434,13 +433,13 @@ fun AskWirelineScreen(
                 Text(
                     text = "Try these questions:",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Brand.PurpleMuted,
+                    color = Brand.Text2,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Spacer(Modifier.height(8.dp))
                 
-                Text("• \"Which agents do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
+                Text("• \"Which assistants do I have on my roster?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
                 Text("• \"What is my wallet credit balance?\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
                 Text("• \"Show me which calls need attention\"", style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.padding(vertical = 2.dp))
             }
@@ -456,9 +455,9 @@ private fun ActionRowCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Brand.PaperWarm),
+        colors = CardDefaults.cardColors(containerColor = Brand.Panel2),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Brand.VioletGlass)
+        border = BorderStroke(1.dp, Brand.AccentTint)
     ) {
         Row(
             modifier = Modifier
@@ -470,7 +469,7 @@ private fun ActionRowCard(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(Brand.Purple.copy(alpha = 0.15f), CircleShape),
+                    .background(Brand.Accent.copy(alpha = 0.15f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

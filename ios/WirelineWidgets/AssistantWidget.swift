@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-/// Deep-link launcher for Assistant handoff — Lavender Noir styling.
+/// Deep-link launcher for Assistant handoff — Professional Heritage v2 styling.
 struct AssistantWidget: Widget {
     let kind = "AssistantWidget"
 
@@ -56,7 +56,7 @@ private struct AssistantWidgetView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Image(systemName: "sparkles")
                     .font(.title.weight(.semibold))
-                    .foregroundStyle(WidgetColors.violet)
+                    .foregroundStyle(WidgetColors.accent)
                 Spacer()
                 Text("Send call to Assistant")
                     .font(Font.system(.headline, design: .serif).weight(.bold))

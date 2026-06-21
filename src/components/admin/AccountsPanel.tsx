@@ -25,14 +25,14 @@ function AccountCard({
       className={cn(
         "relative flex items-start gap-4 p-5 border text-left transition-all w-full",
         isActive
-          ? "border-violet-500 bg-violet-500/5 shadow-sm"
-          : "border-border bg-card hover:border-violet-400/30 hover:bg-violet-500/[0.02]",
+          ? "border-brand bg-brand/[0.03] shadow-sm"
+          : "border-border bg-card hover:border-brand/30 hover:bg-brand/[0.01]",
       )}
     >
       <div
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center",
-          isActive ? "bg-violet-500/15 text-violet-600" : "bg-muted text-muted-foreground",
+          isActive ? "bg-brand/10 text-brand" : "bg-muted text-muted-foreground",
         )}
       >
         <Icon className="h-5 w-5" />
@@ -43,20 +43,20 @@ function AccountCard({
             {account.label ?? (account.type === "personal" ? "Personal" : "Business")}
           </span>
           {account.isPrimary && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-medium text-violet-600 bg-violet-500/10 border border-violet-500/20">
+            <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-medium text-brand bg-brand/10 border border-brand/20">
               Primary
             </span>
           )}
           {isActive && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-medium text-violet-600 bg-violet-500/10 border border-violet-500/20">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] uppercase tracking-wider font-medium text-brand bg-brand/10 border border-brand/20">
               <Check className="h-2.5 w-2.5" /> Active
             </span>
           )}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           {account.type === "personal"
-            ? "Single agent, streamlined interface — your personal AI assistant."
-            : "Assistants Recaps — multiple agents, Recaps, analytics, pipeline."}
+            ? "Single assistant, streamlined interface — your personal AI assistant."
+            : "Assistants Recaps — multiple assistants, Recaps, analytics, pipeline."}
         </p>
       </div>
     </button>
@@ -73,10 +73,9 @@ export function AccountsPanel() {
 
   const handleSwitch = (account: Account) => {
     switchAccount(account.id);
-    navigate(
-      account.type === "personal" ? "/app/personal" : "/app/business/live",
-      { replace: true },
-    );
+    navigate(account.type === "personal" ? "/app/personal" : "/app/business/live", {
+      replace: true,
+    });
   };
 
   const handleAdd = async (type: "personal" | "business") => {
@@ -84,10 +83,7 @@ export function AccountsPanel() {
     const created = await addAccount(type);
     setCreating(null);
     if (created) {
-      navigate(
-        type === "personal" ? "/app/personal" : "/app/business/live",
-        { replace: true },
-      );
+      navigate(type === "personal" ? "/app/personal" : "/app/business/live", { replace: true });
     }
   };
 
@@ -104,8 +100,8 @@ export function AccountsPanel() {
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-1">Your Accounts</h3>
         <p className="text-xs text-muted-foreground">
-          Switch between workspaces or add a new account type. Your active account determines
-          which workspace and navigation you see.
+          Switch between workspaces or add a new account type. Your active account determines which
+          workspace and navigation you see.
         </p>
       </div>
 
@@ -123,14 +119,15 @@ export function AccountsPanel() {
       {(canAddPersonal || canAddBusiness) && (
         <div>
           <p className="text-xs text-muted-foreground mb-3">
-            You can have one personal and one business account. Add the other to unlock its workspace.
+            You can have one personal and one business account. Add the other to unlock its
+            workspace.
           </p>
           <div className="flex gap-3">
             {canAddPersonal && (
               <button
                 onClick={() => handleAdd("personal")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-violet-400/30 hover:bg-violet-500/[0.02] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-brand/30 hover:bg-brand/[0.01] transition-colors disabled:opacity-50"
               >
                 {creating === "personal" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -144,7 +141,7 @@ export function AccountsPanel() {
               <button
                 onClick={() => handleAdd("business")}
                 disabled={creating !== null}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-violet-400/30 hover:bg-violet-500/[0.02] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border border-border bg-card text-foreground hover:border-brand/30 hover:bg-brand/[0.01] transition-colors disabled:opacity-50"
               >
                 {creating === "business" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,6 +28,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.wireline.app.data.ActiveCall
 import com.wireline.app.data.Agent
 import com.wireline.app.data.RecentCall
@@ -34,13 +40,33 @@ import com.wireline.app.data.WalletEntry
 import com.wireline.app.ui.ask.AskWirelineScreen
 import com.wireline.app.ui.components.AskWirelineHeroCard
 import com.wireline.app.ui.components.FleetStatCard
-import com.wireline.app.ui.components.LavenderCard
+import com.wireline.app.ui.components.AssistantCard
 import com.wireline.app.ui.components.Medallion
 import com.wireline.app.ui.setup.ActionsScreen
 import com.wireline.app.ui.setup.KnowledgeScreen
 import com.wireline.app.ui.theme.Brand
 
-private enum class Tab { Studio, Assistants, Knowledge, Actions, Recaps, Wallet, Settings }
+sealed class Screen(val route: String, val title: String) {
+    object Studio : Screen("studio", "Studio")
+    object Assistants : Screen("assistants", "Assistants")
+    object Knowledge : Screen("knowledge", "Knowledge")
+    object Actions : Screen("actions", "Actions")
+    object Recaps : Screen("recaps", "Recaps")
+    object Wallet : Screen("wallet", "Wallet")
+    object Settings : Screen("settings", "Settings")
+}
+
+class NavigationActions(private val navController: NavHostController) {
+    fun navigateTo(screen: Screen) {
+        navController.navigate(screen.route) {
+            popUpTo(navController.graph.startDestinationId) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +77,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
         return
     }
 
-    var tab by rememberSaveable { mutableStateOf(Tab.Studio) }
+    val navController = rememberNavController()
+    val navActions = remember(navController) { NavigationActions(navController) }
     var showAsk by rememberSaveable { mutableStateOf(false) }
     var showCreateAssistant by rememberSaveable { mutableStateOf(false) }
 
@@ -60,19 +87,22 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
         topBar = {
             WirelineTopBar(
                 title = "Wireline AI",
-                onWallet = { tab = Tab.Wallet },
-                onSettings = { tab = Tab.Settings },
+                onWallet = { navActions.navigateTo(Screen.Wallet) },
+                onSettings = { navActions.navigateTo(Screen.Settings) },
             )
         },
         floatingActionButton = {
-            when (tab) {
-                Tab.Studio -> FloatingActionButton(
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Studio.route
+
+            when (currentRoute) {
+                Screen.Studio.route -> FloatingActionButton(
                     onClick = { showAsk = true },
                     containerColor = Brand.Accent,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(Brand.RadiusMd),
                 ) { Icon(Icons.Default.Mic, contentDescription = "Ask Wireline") }
-                Tab.Assistants -> FloatingActionButton(
+                Screen.Assistants.route -> FloatingActionButton(
                     onClick = { showCreateAssistant = true },
                     containerColor = Brand.Accent,
                     contentColor = Color.White,
@@ -82,48 +112,69 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             }
         },
         bottomBar = {
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Studio.route
+
             NavigationBar(containerColor = Brand.Panel) {
                 NavigationBarItem(
-                    selected = tab == Tab.Studio,
-                    onClick = { tab = Tab.Studio },
+                    selected = currentRoute == Screen.Studio.route,
+                    onClick = { navActions.navigateTo(Screen.Studio) },
                     icon = { Icon(Icons.Default.Home, null) },
                     label = { Text("Studio") },
                 )
                 NavigationBarItem(
-                    selected = tab == Tab.Assistants,
-                    onClick = { tab = Tab.Assistants },
+                    selected = currentRoute == Screen.Assistants.route,
+                    onClick = { navActions.navigateTo(Screen.Assistants) },
                     icon = { Icon(Icons.Default.PhoneInTalk, null) },
                     label = { Text("Assistants") },
                 )
                 NavigationBarItem(
-                    selected = tab == Tab.Knowledge,
-                    onClick = { tab = Tab.Knowledge },
+                    selected = currentRoute == Screen.Knowledge.route,
+                    onClick = { navActions.navigateTo(Screen.Knowledge) },
                     icon = { Icon(Icons.Default.Home, null) },
                     label = { Text("Knowledge") },
                 )
                 NavigationBarItem(
-                    selected = tab == Tab.Actions,
-                    onClick = { tab = Tab.Actions },
+                    selected = currentRoute == Screen.Actions.route,
+                    onClick = { navActions.navigateTo(Screen.Actions) },
                     icon = { Icon(Icons.Default.Settings, null) },
                     label = { Text("Actions") },
                 )
                 NavigationBarItem(
-                    selected = tab == Tab.Recaps,
-                    onClick = { tab = Tab.Recaps },
+                    selected = currentRoute == Screen.Recaps.route,
+                    onClick = { navActions.navigateTo(Screen.Recaps) },
                     icon = { Icon(Icons.Default.Call, null) },
                     label = { Text("Recaps") },
                 )
             }
         },
     ) { padding ->
-        when (tab) {
-            Tab.Studio -> StudioScreen(padding, state, model)
-            Tab.Assistants -> AssistantsScreen(padding, state.agents, onCreate = { showCreateAssistant = true })
-            Tab.Knowledge -> KnowledgeScreen(padding)
-            Tab.Actions -> ActionsScreen(padding)
-            Tab.Recaps -> RecapsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
-            Tab.Wallet -> WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
-            Tab.Settings -> SettingsScreen(padding, state, model)
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Studio.route,
+            modifier = Modifier.padding(padding)
+        ) {
+            composable(Screen.Studio.route) {
+                StudioScreen(PaddingValues(0.dp), state, model)
+            }
+            composable(Screen.Assistants.route) {
+                AssistantsScreen(PaddingValues(0.dp), state.agents, onCreate = { showCreateAssistant = true })
+            }
+            composable(Screen.Knowledge.route) {
+                KnowledgeScreen(PaddingValues(0.dp))
+            }
+            composable(Screen.Actions.route) {
+                ActionsScreen(PaddingValues(0.dp))
+            }
+            composable(Screen.Recaps.route) {
+                RecapsScreen(PaddingValues(0.dp), state.activeCalls, state.recentCalls, model::takeCall)
+            }
+            composable(Screen.Wallet.route) {
+                WalletScreen(PaddingValues(0.dp), state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen(PaddingValues(0.dp), state, model)
+            }
         }
     }
 
@@ -202,7 +253,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
     ) {
         item { AskWirelineHeroCard(onClick = { showAsk = true }) }
         item {
-            LavenderCard {
+            AssistantCard {
                 Text("YOUR DAY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     FleetStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
@@ -213,14 +264,14 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
         }
         state.me?.let { me ->
             item {
-                LavenderCard {
+                AssistantCard {
                     Text(me.user.fullName ?: me.account.businessName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
                     Text("${me.account.planName} · ${state.agents.size} assistants", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
                 }
             }
         }
         item {
-            LavenderCard {
+            AssistantCard {
                 Text("PLACE A CALL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                 AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("Phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
@@ -260,7 +311,7 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
         }
         if (agents.isEmpty()) {
             item {
-                LavenderCard {
+                AssistantCard {
                     Text("Start with one assistant", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
                     Text("Give your first helper a name and a clear job. You can teach it more in Studio afterward.", color = Brand.Text2)
                     Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create assistant") }
@@ -268,7 +319,7 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
             }
         } else {
             items(agents, key = { it.id }) { agent ->
-                LavenderCard {
+                AssistantCard {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Medallion(Icons.Default.PhoneInTalk, size = 40.dp)
                         Column(Modifier.weight(1f)) {
@@ -390,7 +441,7 @@ private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model
 }
 
 @Composable
-fun SectionCard(content: @Composable () -> Unit) = LavenderCard { content() }
+fun SectionCard(content: @Composable () -> Unit) = AssistantCard { content() }
 
 @Composable
 private fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (String) -> Unit) {

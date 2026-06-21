@@ -1,54 +1,55 @@
 # Wireline Brand Guidelines
 
-Wireline is an operator-grade AI agent workspace for small businesses. It gives teams one fleet of trained assistants for inbound support, outbound sales, email follow-up, and live operational handoffs.
+Wireline is a personal AI call concierge that handles routine phone work first, then scales into side-project and business workflows. It gives users a powerful Assistant Studio to configure scripts, hours, routing, preferences, and callbacks.
 
-## Colors
+## Colors — Professional Heritage v2
 
-| Name | Hex | Usage |
+| Token | Hex | Usage |
 | --- | --- | --- |
-| Warm Surface | `#F7F7F5` | Primary canvas |
-| White Surface | `#FFFFFF` | Cards, inputs, elevated surfaces |
-| Forest | `#1A3C34` | Primary actions, active navigation, brand presence |
-| Forest Deep | `#01261F` | Dense emphasis and dark brand marks |
-| Charcoal | `#1D1D1F` | Primary text |
-| Slate | `#6E6E73` | Supporting text and metadata |
-| Border | `#E5E5E1` | Low-contrast rules and card edges |
-| Destructive Red | `#B42318` | Errors and destructive actions only |
+| **Warm Canvas** | `#F9F9F7` | Primary root canvas background |
+| **Elevated Card** | `#FFFFFF` | Cards, buttons, and elevated content surfaces |
+| **Secondary Surface** | `#F4F4F2` | Input fields, sidebar backgrounds, and sub-wells |
+| **Raised Well** | `#EEEEEC` | Quiet structural backing wells |
+| **Forest Action** | `#1A3C34` | Primary brand presence, core buttons, and active items |
+| **Pressed State** | `#01261F` | Darker forest for pressed active state feedbacks |
+| **Active Container** | `#E1E9E6` | Soft forest tint for active list selections |
+| **Border** | `#DADAD8` | Flat geometric borders and thin rules |
+| **Secondary Text** | `#4A5F59` | Low-emphasis labels and supporting copy |
+| **Destructive** | `#BA1A1A` | Errors and warning controls |
 
 ## Typography
 
-| Typeface | Usage |
-| --- | --- |
-| Inter | Interface, body, product and marketing copy |
-| JetBrains Mono | Metrics, compact metadata, and technical values |
+| Font Stack | Tracking & Attributes | Usage |
+| --- | --- | --- |
+| **Inter** | `-0.02em` on headings; OpenType `cv05`, `cv08`, `ss01` | Primary display, headings, buttons, and body copy |
+| **Platform System** | Native layout sizing rules | Natively on iOS (SF Symbols/System) and Android (Material/System) |
+| **JetBrains Mono** | Tight monospaced labels | Metrics, status badges, and compact metadata |
 
 ## Voice & Tone
 
 ### Do
 
-- Lead with a specific operational job: answer inbound calls, qualify leads, schedule meetings, or follow up by email.
-- Write with calm precision and plain language.
-- Position Wireline as a practical system for teams that need reliable assistance around the clock.
-- Explain permissions, escalation, and human handoff clearly.
+- Lead with everyday call concierge delegating: pharmacy, doctor, landlord, airline, or restaurant.
+- Keep responses direct, useful, calm, and warm. No enterprise fog, no fake magic.
+- Highlight specific recaps, active-call status, and easy callback options.
+- Maintain transparent usage guidelines, boundaries, and clear security controls.
 
 ### Don't
 
-- Lead with generic AI hype or “always-on magic.”
-- Use SaaS-purple visuals, decorative gradients, or playful mascot language.
-- Overload a page with stacked claims, badges, or competing calls to action.
-- Promise autonomous actions without explaining controls and approvals.
+- Avoid SaaS-purple/violet tones, decorative gradients, playful mascots, or abstract mesh designs.
+- Do not use enterprise jargon like "fleet operating system", "telemetry", "Live Ops", or "SDR queue".
+- Do not make over-the-top, non-transparent claims or promise actions without user approval.
 
 ## Positioning
 
-Wireline is not:
-
-- A chatbot widget.
-- A generic automation builder.
-- A call center outsourcing service.
-- An ungoverned agent experiment.
-
 Wireline is:
 
-- A fleet operating system for AI agents.
-- A clear control surface for training, connections, permissions, live operations, and review.
-- A dependable layer between a business playbook and customer communication.
+- Your personal AI call concierge.
+- A simple, dependable control surface for assistants, recaps, knowledge, and actions.
+- A beautiful utility that saves you time and handles calls you put off.
+
+Wireline is NOT:
+
+- A B2B real-time call center live ops workspace.
+- An autonomous agent experiment without human verification.
+- A spam/robocall utility.

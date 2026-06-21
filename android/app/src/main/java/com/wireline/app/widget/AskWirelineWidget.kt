@@ -39,7 +39,7 @@ class AskWirelineWidget : GlanceAppWidget() {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(WidgetPalette.Violet)
+                .background(WidgetPalette.Accent)
                 .padding(16.dp)
                 .clickable(intentAction),
             verticalAlignment = Alignment.CenterVertically,

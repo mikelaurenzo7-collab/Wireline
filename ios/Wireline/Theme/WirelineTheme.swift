@@ -31,11 +31,6 @@ enum Brand {
     // ── Compatibility aliases ─────────────────────────────────────────────────
     // Legacy views still compile through these aliases, but all resolve to the
     // Professional Heritage palette—never violet or black.
-    static let violet = accent
-    static let violetSoft = accentSoft
-    static let violetDeep = accentDeep
-    static let purple = accent
-    static let purpleDeep = accentDeep
     static let paper = canvas
     static let paperWarm = panel2
     static let ink = text
@@ -138,3 +133,77 @@ extension View {
         operatorCardSurface(radius: radius, borderOpacity: borderOpacity)
     }
 }
+
+// MARK: - Custom View Modifiers
+
+/// The "Operator Card" - The atomic container for the Wireline UI.
+/// Handles the 8pt radius, 1px stroke, and subtle brand-colored shadow.
+public struct OperatorCardModifier: ViewModifier {
+    public var isHoverable: Bool = true
+    
+    public init(isHoverable: Bool = true) {
+        self.isHoverable = isHoverable
+    }
+    
+    public func makeBody(content: Content) -> some View {
+        content
+            .padding(16)
+            .background(Brand.panel)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Brand.border, lineWidth: 1)
+            )
+            .shadow(color: Brand.accent.opacity(0.05), radius: 2, x: 0, y: 1)
+    }
+}
+
+/// Force-applies the "Linear-grade" tracking and Inter-specific features to text.
+public struct OperatorTextModifier: ViewModifier {
+    public enum Style {
+        case display, headline, body, labelCaps
+    }
+    
+    public let style: Style
+    
+    public init(style: Style) {
+        self.style = style
+    }
+    
+    public func makeBody(content: Content) -> some View {
+        switch style {
+        case .display:
+            content
+                .font(.system(size: 32, weight: .bold))
+                .tracking(-0.64) // -0.02em
+                .foregroundColor(Brand.text)
+        case .headline:
+            content
+                .font(.system(size: 22, weight: .semibold))
+                .tracking(-0.22) // -0.01em
+                .foregroundColor(Brand.text)
+        case .body:
+            content
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(Brand.text)
+        case .labelCaps:
+            content
+                .font(.system(size: 11, weight: .bold))
+                .tracking(0.55) // 0.05em
+                .textCase(.uppercase)
+                .foregroundColor(Brand.text2)
+        }
+    }
+}
+
+// MARK: - Custom View Extensions
+public extension View {
+    func asOperatorCard(isHoverable: Bool = true) -> some View {
+        modifier(OperatorCardModifier(isHoverable: isHoverable))
+    }
+    
+    func operatorTextStyle(_ style: OperatorTextModifier.Style) -> some View {
+        modifier(OperatorTextModifier(style: style))
+    }
+}
+

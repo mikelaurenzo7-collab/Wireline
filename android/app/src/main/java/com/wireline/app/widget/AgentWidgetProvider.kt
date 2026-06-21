@@ -49,9 +49,9 @@ class AgentStatusWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start,
         ) {
             Text(
-                text = "Wireline Fleet",
+                text = "Wireline Assistants",
                 style = TextStyle(
-                    color = ColorProvider(WidgetPalette.VioletSoft),
+                    color = ColorProvider(WidgetPalette.Accent),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                 ),

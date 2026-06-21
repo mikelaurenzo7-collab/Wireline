@@ -51,9 +51,9 @@ export const CAMPAIGN_STATUS: Record<
     iconBorder: "border-amber-500/30",
   },
   completed: {
-    text: "text-violet-600",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/30",
-    iconBorder: "border-violet-500/30",
+    text: "text-brand",
+    bg: "bg-brand/10",
+    border: "border-brand/30",
+    iconBorder: "border-brand/30",
   },
 };

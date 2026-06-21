@@ -84,7 +84,7 @@ private struct NeedsAttentionWidgetView: View {
                 HStack(spacing: 10) {
                     Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(count == 0 ? WidgetColors.violetSoft : WidgetColors.violet)
+                        .foregroundStyle(count == 0 ? WidgetColors.accentSoft : WidgetColors.accent)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(count == 0 ? "All caught up" : "\(count) need attention")
                             .font(.headline.weight(.bold))
@@ -98,13 +98,13 @@ private struct NeedsAttentionWidgetView: View {
                     HStack {
                         Image(systemName: count == 0 ? "checkmark.circle.fill" : "bell.badge.fill")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(count == 0 ? WidgetColors.violetSoft : WidgetColors.violet)
+                            .foregroundStyle(count == 0 ? WidgetColors.accentSoft : WidgetColors.accent)
                         Spacer()
                     }
                     Spacer()
                     Text("\(count)")
                         .font(Font.system(size: 48, design: .serif).weight(.bold))
-                        .foregroundStyle(count == 0 ? WidgetColors.text2 : WidgetColors.violet)
+                        .foregroundStyle(count == 0 ? WidgetColors.text2 : WidgetColors.accent)
                     Text(count == 1 ? "needs follow-up" : "need follow-up")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(WidgetColors.text2)

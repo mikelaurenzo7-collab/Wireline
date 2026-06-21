@@ -363,7 +363,7 @@ export default function RoleplaySandbox({ agentId }: { agentId: string }) {
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                             m.coaching.score >= 90
-                              ? "bg-violet-500/15 text-violet-500 border border-violet-500/20"
+                              ? "bg-brand/15 text-brand border border-brand/20"
                               : m.coaching.score >= 70
                                 ? "bg-amber-500/15 text-amber-500 border border-amber-500/20"
                                 : "bg-rose-500/15 text-rose-500 border border-rose-500/20"

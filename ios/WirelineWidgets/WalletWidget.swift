@@ -105,7 +105,7 @@ private struct WalletWidgetView: View {
                     HStack {
                         Image(systemName: "creditcard.fill")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(WidgetColors.violet)
+                            .foregroundStyle(WidgetColors.accent)
                         Spacer()
                     }
                     Spacer()

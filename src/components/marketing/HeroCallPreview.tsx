@@ -46,9 +46,9 @@ export default function HeroCallPreview() {
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <span className="relative flex h-2 w-2" aria-hidden="true">
               {!reduce && (
-                <span className="absolute inline-flex h-full w-full animate-ping bg-violet-500/45" />
+                <span className="absolute inline-flex h-full w-full animate-ping bg-brand/45" />
               )}
-              <span className="relative inline-flex h-2 w-2 bg-violet-500" />
+              <span className="relative inline-flex h-2 w-2 bg-brand" />
             </span>
             <span className="font-mono text-[10px] text-foreground/72 tracking-[0.08em] tabular-nums">
               ON CALL · 0:42
@@ -130,7 +130,7 @@ export default function HeroCallPreview() {
           transition={{ duration: 0.42, delay: 1.08, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-wrap items-center gap-2.5 border-t border-ink/[0.1] bg-white/[0.48] px-4 sm:px-5 py-3"
         >
-          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-violet-500 text-white">
+          <span className="grid h-[18px] w-[18px] shrink-0 place-items-center bg-brand text-white">
             <Check className="h-3 w-3" strokeWidth={3} />
           </span>
           <span className="text-[12.5px] text-foreground">
@@ -153,11 +153,11 @@ export default function HeroCallPreview() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.42, delay: 1.24, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-violet-500/22 bg-[#FAF8FF]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(30,27,46,0.5)] backdrop-blur-sm"
+        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-brand/22 bg-[#F9F9F7]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(30,27,46,0.5)] backdrop-blur-sm"
       >
-        <PhoneCall className="h-3 w-3 text-violet-600" aria-hidden="true" />
-        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-violet-700">
-          Live · handled by agent
+        <PhoneCall className="h-3 w-3 text-brand" aria-hidden="true" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand/90">
+          Active · handled by assistant
         </span>
       </motion.div>
     </motion.div>

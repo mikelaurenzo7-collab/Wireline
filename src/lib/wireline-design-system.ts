@@ -9,12 +9,7 @@ export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */
   accentHex: "#1a3c34",
-  /** @deprecated use WL_BRAND.accent */
-  violet: "var(--primary)",
 } as const;
-
-/** @deprecated use WL_BRAND — kept for one release; remove when grep is clean */
-export const WIRELINE_DIRECTOR_BRAND = WL_BRAND;
 
 /** Workspace surfaces, settings, insights, ops panels */
 export const WL_APP_CLASSES = {
@@ -72,13 +67,15 @@ export const WL_COMPOSER_CLASSES = {
     "wl-composer-dock wl-panel-elevated transition-all duration-200 ease-out focus-within:ring-2 focus-within:ring-ring/30",
   directorBubble: "rounded-xl border border-border bg-card transition-all duration-200",
   operatorBubble: "rounded-xl border border-border bg-secondary transition-all duration-200",
-  proposalCard: "wl-proposal-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
+  proposalCard:
+    "wl-proposal-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm",
   proposalRail: "wl-proposal-rail",
   docBody: "wl-director-doc",
   liveFeedHeader: "wl-live-feed-header",
   heroOrb: "wl-director-hero-orb animate-pulse",
   fleetConstellation: WL_SIGNAL_CLASSES.fleetConstellation,
-  starterChip: "wl-starter-chip transition-all duration-200 hover:border-border active:scale-[0.98]",
+  starterChip:
+    "wl-starter-chip transition-all duration-200 hover:border-border active:scale-[0.98]",
   orchestrationStep: "wl-orchestration-step transition-all duration-200",
   liveOutput: "wl-live-output",
   threadHeader: "wl-director-thread-header",
@@ -101,8 +98,7 @@ export const WL_COMPOSER_CLASSES = {
   composerToolbarScroll: "wl-composer-toolbar-scroll",
   assistantMessage: "wl-director-message--assistant",
   messageMeta: "wl-director-message-meta",
-  capabilityCatPill:
-    "wl-director-cap-pill transition-all duration-150 hover:bg-secondary",
+  capabilityCatPill: "wl-director-cap-pill transition-all duration-150 hover:bg-secondary",
   scrollToBottom:
     "wl-scroll-to-bottom-btn transition-all duration-200 active:scale-95 hover:shadow-sm",
   artifactsPanel: "wl-director-artifacts-panel",
@@ -112,8 +108,7 @@ export const WL_COMPOSER_CLASSES = {
   microLabel: "wl-director-micro",
   metaCaption: "wl-director-meta",
   spotlightLabel: "wl-director-spotlight-label",
-  turnStratum:
-    "wl-turn-stratum rounded-xl border border-border bg-secondary/40 overflow-hidden",
+  turnStratum: "wl-turn-stratum rounded-xl border border-border bg-secondary/40 overflow-hidden",
   turnStratumDeep: "border-l-2 border-l-primary",
   turnStratumHeader:
     "w-full h-auto justify-start gap-2 rounded-xl px-2 py-1.5 hover:bg-secondary active:bg-muted",

@@ -18,9 +18,4 @@ internal object WidgetPalette {
     val Border = Color(0xFFDADAD8)
     val Success = Color(0xFF2D5A27)
 
-    // Existing widget layouts keep compiling through these aliases. They no
-    // longer allow a legacy purple palette to reach the rendered surface.
-    val Violet = Accent
-    val VioletDeep = AccentDeep
-    val VioletSoft = AccentSoft
 }

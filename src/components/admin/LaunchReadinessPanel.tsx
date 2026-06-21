@@ -20,7 +20,7 @@ type LaunchReport = {
 };
 
 const LEVEL_STYLE: Record<Capability["level"], string> = {
-  ready: "text-[color:var(--wl-signal,#7C3AED)]",
+  ready: "text-[color:var(--wl-signal,#1A3C34)]",
   degraded: "text-amber-600",
   blocked: "text-rose-600",
 };

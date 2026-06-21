@@ -193,11 +193,11 @@ export function sanitizeLogoSvgForExport(svg: string): string {
 
 function paletteFromColors(colors: string): [string, string, string] {
   const presets: Array<[RegExp, [string, string, string]]> = [
-    [/cream|#f3effa|wireline|#7c3aed/i, ["#7C3AED", "#F3EFFA", "#5B21B6"]],
-    [/blue|navy|indigo/i, ["#1d4ed8", "#0ea5e9", "#0f172a"]],
-    [/green|emerald|mint/i, ["#7C3AED", "#A78BFA", "#5B21B6"]],
-    [/red|rose|crimson/i, ["#dc2626", "#fb7185", "#450a0a"]],
-    [/purple|violet/i, ["#7c3aed", "#a78bfa", "#2e1065"]],
+    [/cream|#f9f9f7|#f4f4f2|warm/i, ["#1A3C34", "#F9F9F7", "#4A5F59"]],
+    [/blue|navy|indigo/i, ["#1A3C34", "#E1E9E6", "#01261F"]],
+    [/green|emerald|mint|wireline|forest/i, ["#1A3C34", "#E1E9E6", "#01261F"]],
+    [/red|rose|crimson/i, ["#BA1A1A", "#F9F9F7", "#01261F"]],
+    [/purple|violet/i, ["#1A3C34", "#E1E9E6", "#01261F"]],
   ];
   for (const [rx, palette] of presets) {
     if (rx.test(colors)) return palette;
