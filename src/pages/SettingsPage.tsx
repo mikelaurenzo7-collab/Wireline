@@ -5,7 +5,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 const sections = [
   { icon: FolderCog, title: "Profile", detail: "Your name, hours, and how Wireline reaches you.", href: "/agents" },
   { icon: Mic, title: "Voice", detail: "How your assistant sounds on live calls.", href: "/studio" },
-  { icon: ShieldCheck, title: "Permissions", detail: "What each assistant is allowed to do.", href: "/integrations" },
+  { icon: ShieldCheck, title: "Permissions", detail: "What each assistant is allowed to do.", href: "/actions" },
 ] as const;
 
 export default function SettingsPage() {
@@ -15,7 +15,7 @@ export default function SettingsPage() {
       title="Settings"
       contentClassName="pt-2"
       action={
-        <Link to="/integrations" className="workspace-btn-secondary px-3 py-2 text-sm">
+        <Link to="/actions" className="workspace-btn-secondary px-3 py-2 text-sm">
           Connections <ArrowUpRight size={13} />
         </Link>
       }
@@ -60,7 +60,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:min-w-[280px]">
-              {[["Brain", "Latest AI"], ["Voice", "Natural speech"], ["Calls", "HD quality"]].map(([title, value], index) => (
+              {[['Brain', 'Latest AI'], ['Voice', 'Natural speech'], ['Calls', 'HD quality']].map(([title, value], index) => (
                 <div key={title} className="rounded-lg border border-white/10 bg-white/10 p-3">
                   <p className="wl-stitch-label text-primary-foreground/50">0{index + 1}</p>
                   <p className="mt-2 text-[11px] font-semibold">{title}</p>
