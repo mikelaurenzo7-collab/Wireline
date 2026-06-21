@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Database, Loader2, Plus, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { authFetch, safeJson } from "../lib/api";
@@ -7,7 +7,7 @@ import { useAgents } from "../contexts/AgentsContext";
 type Config = { directives?: Array<{ content?: string }>; knowledge?: Array<{ content?: string }>; personality?: string };
 type View = "facts" | "rules" | "tone";
 
-function Panel({ title, icon, items, empty, loading }: { title: string; icon: React.ReactNode; items: string[]; empty: string; loading: boolean }) {
+function Panel({ title, icon, items, empty, loading }: { title: string; icon: ReactNode; items: string[]; empty: string; loading: boolean }) {
   return <section className="flex min-h-0 flex-col rounded-2xl border border-black/[.08] bg-white p-4"><div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-[#f0f0ee] text-[#55555d]">{icon}</span><strong className="text-sm tracking-[-.02em]">{title}</strong><span className="ml-auto rounded-full bg-[#f0f0ee] px-2 py-0.5 text-[10px] font-semibold text-[#66666d]">{loading ? "—" : items.length}</span></div><div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">{loading ? <div className="space-y-2">{[1, 2, 3].map((id) => <div key={id} className="h-11 animate-pulse rounded-xl bg-[#f2f2f0]" />)}</div> : items.length ? <div className="space-y-2">{items.map((item, index) => <p key={`${item}-${index}`} className="rounded-xl bg-[#f6f6f4] px-3 py-2.5 text-[13px] leading-5 text-[#515158]">{item}</p>)}</div> : <p className="grid h-full min-h-[110px] place-items-center text-center text-[13px] leading-5 text-[#77777e]">{empty}</p>}</div></section>;
 }
 
@@ -26,7 +26,7 @@ export default function KnowledgeWorkspace() {
   const rules = useMemo(() => config.directives?.map((item) => item.content || "").filter(Boolean) || [], [config.directives]);
   const load = useCallback(async () => { if (!agentId) return setConfig({}); setLoading(true); try { const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`); const payload = await safeJson(response); if (response.ok && payload && typeof payload === "object") setConfig(payload as Config); } finally { setLoading(false); } }, [agentId]);
   useEffect(() => { void load(); }, [load]);
-  async function save() { if (!entry.trim() || !agentId || saving) return; setSaving(true); try { const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: kind, content: entry.trim() }) }); if (response.ok) { setEntry(""); await load(); } } finally { setSaving(false); } }
+  async function save() { if (!entry.trim() || !agentId || saving) return; setSaving(true); try { const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: kind, content: entry.trim() }) }); if (response.ok) { setEntry(""); await load(); } finally { setSaving(false); } }
   if (!agents.length) return <div className="grid h-full place-items-center rounded-2xl border border-dashed border-black/[.15] bg-white p-8 text-center text-sm text-[#67676e]">Create an agent before adding knowledge.</div>;
   const tone = <section className="flex min-h-0 flex-col rounded-2xl border border-black/[.08] bg-white p-4"><div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-[#f0f0ee]"><SlidersHorizontal size={15} /></span><strong className="text-sm tracking-[-.02em]">Tone</strong></div><div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1"><p className="whitespace-pre-wrap text-[13px] leading-6 text-[#55555d]">{config.personality || "Tone has not been set. Describe how this agent should sound in Studio."}</p></div></section>;
   const selected = view === "facts" ? <Panel title="Business facts" icon={<Database size={15} />} items={facts} empty="Add approved hours, services, policies, or product context." loading={loading} /> : view === "rules" ? <Panel title="Operating rules" icon={<ShieldCheck size={15} />} items={rules} empty="Add promises, boundaries, and handoff rules." loading={loading} /> : tone;
