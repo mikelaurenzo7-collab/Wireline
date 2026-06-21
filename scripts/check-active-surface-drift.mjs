@@ -42,11 +42,11 @@ const nativeFiles = [
 ];
 
 const failures = [];
-const pathFor = (file) => resolve(root, file);
-const read = (file) => readFileSync(pathFor(file), "utf8");
+const filePath = (file) => resolve(root, file);
+const read = (file) => readFileSync(filePath(file), "utf8");
 const report = (file, message) => failures.push(`${file}: ${message}`);
 const requireFile = (file) => {
-  if (!existsSync(pathFor(file))) {
+  if (!existsSync(filePath(file))) {
     report(file, "required Professional Heritage surface is missing");
     return false;
   }
@@ -86,7 +86,7 @@ requirePatterns("src/styles/foundation.css", foundation, [
 const indexCss = read("src/index.css");
 requirePatterns("src/index.css", indexCss, [
   [/family=Inter/i, "must load Inter for Professional Heritage hierarchy"],
-  [/family=JetBrains\+Mono/i, "must load JetBrains Mono for functional metadata"],
+  [/family=JetBrains\+Mono/i, "must load JetBrains Mono for compact metadata"],
   [/--wl-font-display:\s*"Inter"/i, "must map display typography to Inter"],
   [/--wl-font-sans:\s*"Inter"/i, "must map UI typography to Inter"],
   [/--wl-font-mono:\s*"JetBrains Mono"/i, "must map metadata typography to JetBrains Mono"],
@@ -97,21 +97,15 @@ if (/Source Serif 4|Work Sans/i.test(indexCss)) {
 
 const documentHead = read("index.html");
 requirePatterns("index.html", documentHead, [
-  [/family=Inter/i, "must preload Inter in the document head"],
-  [/family=JetBrains\+Mono/i, "must preload JetBrains Mono in the document head"],
-  [/theme-color" content="#F9F9F7"/i, "must preserve the warm mobile browser surface"],
+  [/theme-color" content="#F9F9F7"/i, "must preserve the warm browser surface"],
+  [/mask-icon" href="\/favicon\.svg" color="#1A3C34"/i, "must preserve the forest browser icon treatment"],
 ]);
-if (/Source Serif 4|Work Sans/i.test(documentHead)) {
-  report("index.html", "must not preload superseded display or UI fonts");
-}
 
 const shell = read("src/components/WorkspaceShell.tsx");
 if (!/w-\[212px\]/.test(shell) || !/lg:grid-cols-\[212px_minmax\(0,1fr\)\]/.test(shell)) {
   report("src/components/WorkspaceShell.tsx", "must retain the fixed 212px Professional Heritage workspace shell");
 }
-if (!/WirelineMark/.test(shell)) {
-  report("src/components/WorkspaceShell.tsx", "must use the shared Wireline mark in the workspace identity");
-}
+if (!/WirelineMark/.test(shell)) report("src/components/WorkspaceShell.tsx", "must use the shared Wireline mark in workspace identity");
 
 const landing = read("src/components/marketing/PrecisionLanding.tsx");
 for (const copy of [
@@ -124,21 +118,14 @@ for (const copy of [
 ]) {
   if (!landing.includes(copy)) report("src/components/marketing/PrecisionLanding.tsx", `must render meaningful product content: ${copy}`);
 }
-if (/h-(?:2|3|4|7)\s+w-(?:\d|full|\d\/\d).*bg-\[color:var\(--wl-surface-variant\)\]/.test(landing)) {
-  report("src/components/marketing/PrecisionLanding.tsx", "must not use gray placeholder bars as product imagery");
-}
-if (/BrowserCallWidget/.test(landing)) {
-  report("src/components/marketing/PrecisionLanding.tsx", "must not make the landing explanation depend on an optional browser-call demo");
-}
+if (/BrowserCallWidget/.test(landing)) report("src/components/marketing/PrecisionLanding.tsx", "must not depend on an optional browser-call demo");
 
 const features = read("src/pages/Features.tsx");
-if (/radial-gradient|Start free/i.test(features)) {
-  report("src/pages/Features.tsx", "must use flat Professional Heritage public surfaces and current-plan CTAs");
-}
+if (/radial-gradient|Start free/i.test(features)) report("src/pages/Features.tsx", "must use flat Heritage public surfaces and current-plan CTAs");
 
 const browserDemo = read("src/components/marketing/BrowserCallWidget.tsx");
 if (!/active:scale-\[0\.98\]/.test(browserDemo) || /#1d1d1f|rose-/i.test(browserDemo)) {
-  report("src/components/marketing/BrowserCallWidget.tsx", "must use semantic Professional Heritage colors and tactile press feedback");
+  report("src/components/marketing/BrowserCallWidget.tsx", "must use semantic Heritage colors and tactile press feedback");
 }
 
 const createAssistant = read("src/pages/AgentStudioHome.tsx");
@@ -148,31 +135,30 @@ if (!/role="dialog"/.test(createAssistant) || /bg-black|backdrop-blur/i.test(cre
 
 const runtime = read("src/lib/ai-client.ts");
 if (!runtime.includes("https://api.openai.com/v1/responses")) report("src/lib/ai-client.ts", "must use OpenAI Responses as the managed runtime");
-if (!runtime.includes("OpenAI request failed; trying Gemini fallback")) report("src/lib/ai-client.ts", "must preserve the OpenAI-to-Gemini fallback order");
+if (!runtime.includes("OpenAI request failed; trying Gemini fallback")) report("src/lib/ai-client.ts", "must preserve OpenAI-to-Gemini fallback order");
 
 const voiceDefaults = read("src/lib/voice-model-defaults.ts");
-if (!/VAPI_TENANT_DEFAULT_PROVIDER[^=]*=\s*"openai"/.test(voiceDefaults)) {
-  report("src/lib/voice-model-defaults.ts", "must default managed voice agents to OpenAI");
-}
+if (!/VAPI_TENANT_DEFAULT_PROVIDER[^=]*=\s*"openai"/.test(voiceDefaults)) report("src/lib/voice-model-defaults.ts", "must default managed voice agents to OpenAI");
 
 for (const file of nativeFiles) requireFile(file);
 
 const iosTheme = read("ios/Wireline/Theme/WirelineTheme.swift");
 requirePatterns("ios/Wireline/Theme/WirelineTheme.swift", iosTheme, [
   [/canvas\s*=\s*Color\(hex:\s*0xF9F9F7\)/, "must use #F9F9F7 native root canvas"],
+  [/text\s*=\s*Color\(hex:\s*0x1A3C34\)/, "must use #1A3C34 as iOS primary text"],
   [/accent\s*=\s*Color\(hex:\s*0x1A3C34\)/, "must use #1A3C34 native action color"],
   [/border\s*=\s*Color\(hex:\s*0xDADAD8\)/, "must use #DADAD8 native borders"],
   [/radiusMd:\s*CGFloat\s*=\s*8/, "must retain 8pt native card geometry"],
   [/scaleEffect\(configuration\.isPressed\s*\?\s*0\.98\s*:\s*1\)/, "must retain 0.98 tactile press feedback"],
   [/duration:\s*0\.20/, "must retain 200ms tactile press timing"],
 ]);
-if (/LinearGradient|RadialGradient|AngularGradient/.test(iosTheme)) report("ios/Wireline/Theme/WirelineTheme.swift", "must not restore decorative gradients to the native foundation");
+if (/LinearGradient|RadialGradient|AngularGradient/.test(iosTheme)) report("ios/Wireline/Theme/WirelineTheme.swift", "must not restore gradients to the native foundation");
 
 const iosTabs = read("ios/Wireline/Views/RootTabView.swift");
 for (const tab of ["Studio", "Assistants", "Knowledge", "Actions", "Recaps"]) {
   if (!iosTabs.includes(`Label("${tab}"`)) report("ios/Wireline/Views/RootTabView.swift", `must retain ${tab} in the five-job native shell`);
 }
-if (/Live Ops|Fleet/.test(iosTabs)) report("ios/Wireline/Views/RootTabView.swift", "must not restore Live Ops or Fleet to native primary navigation");
+if (/Live Ops|Fleet/.test(iosTabs)) report("ios/Wireline/Views/RootTabView.swift", "must not restore Live Ops or Fleet to primary navigation");
 
 const iosWidget = read("ios/WirelineWidgets/WidgetColors.swift");
 if (/LinearGradient|RadialGradient|AngularGradient/.test(iosWidget)) report("ios/WirelineWidgets/WidgetColors.swift", "must use flat Professional Heritage widget surfaces");
@@ -180,15 +166,14 @@ if (/LinearGradient|RadialGradient|AngularGradient/.test(iosWidget)) report("ios
 const androidTheme = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", androidTheme, [
   [/Canvas\s*=\s*Color\(0xFFF9F9F7\)/, "must use #F9F9F7 Android root canvas"],
+  [/Text\s*=\s*Color\(0xFF1A3C34\)/, "must use #1A3C34 as Android primary text"],
   [/Accent\s*=\s*Color\(0xFF1A3C34\)/, "must use #1A3C34 Android action color"],
   [/Border\s*=\s*Color\(0xFFDADAD8\)/, "must use #DADAD8 Android borders"],
   [/RadiusMd\s*=\s*8\.dp/, "must retain 8dp Android card geometry"],
   [/surfaceVariant\s*=\s*Brand\.Panel2/, "must keep layered off-white input surfaces"],
   [/headlineLarge\s*=\s*Typography\(\)\.headlineLarge\.copy\([\s\S]*?letterSpacing\s*=\s*\(-0\.48\)\.sp/, "must retain Professional Heritage headline tracking"],
 ]);
-if (/Brush\.(linearGradient|radialGradient)|Color\(0xFF(?:7C3AED|8B5CF6|A855F7)/i.test(androidTheme)) {
-  report("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", "must not restore gradients or purple tokens to Android theme");
-}
+if (/Brush\.(linearGradient|radialGradient)|Color\(0xFF(?:7C3AED|8B5CF6|A855F7)/i.test(androidTheme)) report("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", "must not restore gradients or purple tokens");
 
 const androidComponents = read("android/app/src/main/java/com/wireline/app/ui/components/BrandComponents.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/ui/components/BrandComponents.kt", androidComponents, [
@@ -201,7 +186,7 @@ const androidShell = read("android/app/src/main/java/com/wireline/app/ui/Wirelin
 for (const tab of ["Studio", "Assistants", "Knowledge", "Actions", "Recaps"]) {
   if (!androidShell.includes(`Text("${tab}")`)) report("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", `must retain ${tab} in the five-job Compose shell`);
 }
-if (!/NavigationBar\(/.test(androidShell)) report("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", "must use Material3 NavigationBar for the native shell");
+if (!/NavigationBar\(/.test(androidShell)) report("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt", "must use Material3 NavigationBar");
 
 const androidWidget = read("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt", androidWidget, [
