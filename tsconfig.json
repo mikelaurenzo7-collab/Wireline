@@ -15,7 +15,7 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "server.ts", "scripts/**/*"],
+  "include": ["src/**/*", "server.ts", "server-v2.ts", "scripts/**/*"],
   "exclude": [
     "node_modules",
     "src/**/*.test.ts",
@@ -26,6 +26,21 @@
     "src/lib/director-*.ts",
     "src/routes/director-routes.ts",
     "src/components/FastStartWizard.tsx",
-    "src/components/FleetSetupNudge.tsx"
+    "src/components/FleetSetupNudge.tsx",
+    "src/routes/agent-workspace-routes.ts",
+    "src/routes/insights-routes.ts",
+    "src/routes/daily-brief-routes.ts",
+    "src/routes/admin-vapi-sync-routes.ts",
+    "src/routes/drive-routes.ts",
+    "src/routes/vapi/**",
+    "src/lib/agent-tool-dispatch.ts",
+    "src/lib/showcase-assistant.ts",
+    "src/lib/vapi-assistant-factory.ts",
+    "src/lib/vapi-client.ts",
+    "src/lib/vapi-handlers.ts",
+    "src/lib/daily-brief.ts",
+    "src/lib/job-worker.ts",
+    "src/services/google-drive-sync.ts",
+    "scripts/sync-wireline-showcase.mts"
   ]
 }
