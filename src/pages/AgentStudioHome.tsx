@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Loader2, WandSparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
@@ -24,16 +24,53 @@ export default function AgentStudioHome() {
   const [brief, setBrief] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const modalRef = useRef<HTMLFormElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const priorFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!loading && agents.length > 0 && params.get("create") === "1") setShowCreate(true);
   }, [agents.length, loading, params]);
+
+  useEffect(() => {
+    if (!showCreate) return;
+    priorFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => nameRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      priorFocusRef.current?.focus();
+    };
+  }, [showCreate]);
 
   function close() {
     const next = new URLSearchParams(params);
     next.delete("create");
     setParams(next, { replace: true });
     setShowCreate(false);
+  }
+
+  function onModalKeyDown(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = Array.from(
+      modalRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) || [],
+    ).filter((element) => !element.hasAttribute("hidden"));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   async function create(event: FormEvent) {
@@ -74,17 +111,26 @@ export default function AgentStudioHome() {
     <>
       <StudioWorkspaceV2 />
       {showCreate ? (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/30 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="create-assistant-title">
-          <form onSubmit={create} className="wl-stitch-auth-card w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/30 p-4 backdrop-blur-sm" role="presentation">
+          <form
+            ref={modalRef}
+            onSubmit={create}
+            onKeyDown={onModalKeyDown}
+            className="wl-stitch-auth-card w-full max-w-md shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-assistant-title"
+            aria-describedby="create-assistant-description"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="wl-stitch-label">New assistant</p>
                 <h2 id="create-assistant-title" className="mt-1 text-xl font-semibold tracking-[-.04em]">Start with one useful call.</h2>
-                <p className="mt-2 text-sm leading-5 text-muted-foreground">Name the help you want and teach the details in Studio.</p>
+                <p id="create-assistant-description" className="mt-2 text-sm leading-5 text-muted-foreground">Name the help you want and teach the details in Studio.</p>
               </div>
-              <button type="button" onClick={close} className="grid h-8 w-8 place-items-center rounded-sm hover:bg-muted" aria-label="Close"><X size={16} /></button>
+              <button type="button" onClick={close} className="grid h-8 w-8 place-items-center rounded-md hover:bg-muted" aria-label="Close"><X size={16} /></button>
             </div>
-            <label className="mt-5 block text-xs font-semibold">Name<input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Casey" className="wl-stitch-input mt-1.5" /></label>
+            <label className="mt-5 block text-xs font-semibold">Name<input ref={nameRef} value={name} onChange={(event) => setName(event.target.value)} placeholder="Casey" className="wl-stitch-input mt-1.5" /></label>
             <label className="mt-4 block text-xs font-semibold">What kind of help?<select value={role} onChange={(event) => setRole(event.target.value as Role)} className="wl-stitch-input mt-1.5">{roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label className="mt-4 block text-xs font-semibold">First brief<textarea value={brief} onChange={(event) => setBrief(event.target.value)} placeholder="Call my pharmacy, wait on hold, and text me when my prescription is ready." className="wl-stitch-input mt-1.5 min-h-[96px] resize-none" /></label>
             {error ? <p className="mt-3 text-sm text-destructive" role="alert">{error}</p> : null}
