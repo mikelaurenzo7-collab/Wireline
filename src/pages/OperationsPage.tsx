@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowUpRight, CheckCircle2, Eye, MessageSquareText, Play, ShieldAlert } from "lucide-react";
+import { CheckCircle2, Eye, MessageSquareText, Play, ShieldAlert } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const views = [
