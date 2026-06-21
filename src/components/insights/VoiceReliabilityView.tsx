@@ -260,10 +260,10 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                     type="monotone"
                     dataKey="p95TtftMs"
                     name="p95 TTFT"
-                    stroke="#5B21B6"
+                    stroke="var(--muted-foreground)"
                     strokeWidth={2}
-                    fill="#5B21B6"
-                    fillOpacity={0.06}
+                    fill="var(--muted-foreground)"
+                    fillOpacity={0.08}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -284,24 +284,27 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                     dataKey="abnormalHangupRate"
                     name="Hangups"
                     stackId="1"
-                    stroke="#A78BFA"
-                    fill="#A78BFA33"
+                    stroke="var(--muted-foreground)"
+                    fill="var(--muted-foreground)"
+                    fillOpacity={0.1}
                   />
                   <Area
                     type="monotone"
                     dataKey="toolCallFailureRate"
                     name="Tool failures"
                     stackId="1"
-                    stroke="#A78BFA"
-                    fill="#A78BFA33"
+                    stroke="var(--foreground)"
+                    fill="var(--foreground)"
+                    fillOpacity={0.08}
                   />
                   <Area
                     type="monotone"
                     dataKey="webhookFailureRate"
                     name="Webhook failures"
                     stackId="1"
-                    stroke="#DC2626"
-                    fill="#DC262633"
+                    stroke="var(--destructive)"
+                    fill="var(--destructive)"
+                    fillOpacity={0.12}
                   />
                 </AreaChart>
               </ResponsiveContainer>

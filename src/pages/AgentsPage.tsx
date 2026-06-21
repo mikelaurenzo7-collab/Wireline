@@ -19,11 +19,11 @@ function agentHint(agent: WorkspaceAgentSummary) {
 
 function EmptyAgents() {
   return (
-    <div className="grid h-full min-h-0 place-items-center rounded-2xl border border-dashed border-black/[.12] bg-white/70 px-6 text-center">
+    <div className="grid h-full min-h-0 place-items-center rounded-2xl border border-dashed border-border bg-card/70 px-6 text-center">
       <div>
-        <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#f0f0ee]"><Bot size={20} /></span>
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-muted"><Bot size={20} /></span>
         <h2 className="mt-4 text-lg font-semibold tracking-[-.025em]">Create your first assistant</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#606067]">Tell it what to do in plain English. We'll handle the rest.</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">Tell it what to do in plain English. We'll handle the rest.</p>
         <Link to="/studio" className="workspace-btn-primary mt-5 px-4 py-2.5"><Plus size={16} />Create assistant</Link>
       </div>
     </div>
@@ -32,18 +32,18 @@ function EmptyAgents() {
 
 function AgentCard({ agent }: { agent: WorkspaceAgentSummary }) {
   return (
-    <article className="group flex min-h-[148px] flex-col rounded-xl border border-black/[.07] bg-white/90 p-3.5 transition hover:border-black/[.14] hover:bg-white sm:p-4">
+    <article className="group flex min-h-[148px] flex-col rounded-xl border border-border/70 bg-card/90 p-3.5 transition hover:border-border hover:bg-card sm:p-4">
       <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efefed] text-sm font-semibold">{agent.name.slice(0, 1).toUpperCase()}</span>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-sm font-semibold">{agent.name.slice(0, 1).toUpperCase()}</span>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[15px] font-semibold tracking-[-.025em]">{agent.name}</h2>
-          <p className="mt-0.5 truncate text-xs capitalize text-[#6d6d74]">{roleLabel(agent.role)} · {agent.channel || "voice"}</p>
+          <p className="mt-0.5 truncate text-xs capitalize text-muted-foreground">{roleLabel(agent.role)} · {agent.channel || "voice"}</p>
         </div>
       </div>
-      <p className="mt-3 line-clamp-2 text-[12px] leading-5 text-[#65656c]">{agentHint(agent)}</p>
+      <p className="mt-3 line-clamp-2 text-[12px] leading-5 text-muted-foreground">{agentHint(agent)}</p>
       <div className="mt-auto flex items-center gap-2 pt-3">
         <Link to={`/studio?agent=${encodeURIComponent(agent.id)}`} className="workspace-btn-primary px-3 py-1.5 text-xs">Open Studio <ArrowUpRight size={13} /></Link>
-        <Link to={`/integrations?agent=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-[#5f5f66] hover:bg-[#f2f2f0]"><ShieldCheck size={14} />Access</Link>
+        <Link to={`/integrations?agent=${encodeURIComponent(agent.id)}`} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"><ShieldCheck size={14} />Access</Link>
       </div>
     </article>
   );

@@ -5,15 +5,15 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid #1d1d1f;
+  border: 1px solid var(--wl-ink);
   border-radius: 0.75rem;
-  background: #1d1d1f;
+  background: var(--wl-ink);
   color: #ffffff !important;
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.1;
   text-decoration: none !important;
-  transition: background-color 160ms ease, border-color 160ms ease;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 80ms ease;
 }
 
 .workspace-btn-primary :where(svg, span, strong) {
@@ -26,6 +26,16 @@
   color: #ffffff !important;
 }
 
+.workspace-btn-primary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.workspace-btn-primary:focus-visible {
+  outline: 3px solid var(--wl-focus);
+  outline-offset: 2px;
+  border-color: var(--wl-ink);
+}
+
 .workspace-btn-primary:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -36,20 +46,30 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid rgba(29, 29, 31, 0.14);
+  border: 1px solid var(--wl-line);
   border-radius: 0.75rem;
-  background: #ffffff;
-  color: #1d1d1f !important;
+  background: var(--wl-surface);
+  color: var(--wl-ink) !important;
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.1;
   text-decoration: none !important;
-  transition: background-color 160ms ease, border-color 160ms ease;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 80ms ease;
 }
 
 .workspace-btn-secondary:hover:not(:disabled) {
-  border-color: rgba(29, 29, 31, 0.28);
-  background: #f2f2ef;
+  border-color: var(--wl-line-strong);
+  background: var(--wl-surface-subtle);
+}
+
+.workspace-btn-secondary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.workspace-btn-secondary:focus-visible {
+  outline: 3px solid var(--wl-focus);
+  outline-offset: 2px;
+  border-color: var(--wl-line-strong);
 }
 
 .wl-stat-strip {
@@ -58,42 +78,44 @@
   align-items: center;
   gap: 0.65rem 1.25rem;
   border-radius: 1rem;
-  border: 1px solid rgba(29, 29, 31, 0.08);
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--wl-line);
+  background: color-mix(in srgb, var(--wl-surface) 72%, transparent);
   padding: 0.65rem 1rem;
   font-size: 0.8125rem;
-  color: #6e6e73;
+  color: var(--wl-muted);
 }
 
 .wl-stat-strip strong {
-  color: #1d1d1f;
+  color: var(--wl-ink);
   font-weight: 650;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .wl-stat-strip .wl-dot {
   width: 3px;
   height: 3px;
   border-radius: 999px;
-  background: rgba(29, 29, 31, 0.22);
+  background: var(--wl-ink);
+  opacity: 0.22;
 }
 
 .wl-surface {
   border-radius: 1rem;
-  border: 1px solid rgba(29, 29, 31, 0.08);
-  background: #ffffff;
+  border: 1px solid var(--wl-line);
+  background: var(--wl-surface);
 }
 
 .wl-surface-ghost {
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in srgb, var(--wl-surface) 55%, transparent);
 }
 
 .wl-segmented {
   display: grid;
   gap: 0.25rem;
   border-radius: 0.75rem;
-  background: #ececea;
+  background: var(--wl-surface-active);
   padding: 0.25rem;
 }
 
@@ -104,28 +126,29 @@
   padding: 0.45rem 0.65rem;
   font-size: 0.6875rem;
   font-weight: 650;
-  color: #717178;
+  color: var(--wl-muted-2);
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .wl-segmented button[aria-selected="true"],
 .wl-segmented button.is-active {
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(29, 29, 31, 0.06);
-  color: #1d1d1f;
+  background: var(--wl-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wl-ink) 6%, transparent);
+  color: var(--wl-ink);
 }
 
 .wl-page-lead {
   max-width: 42rem;
   font-size: 0.8125rem;
   line-height: 1.55;
-  color: #64646b;
+  color: var(--wl-muted-2);
 }
 
 .wl-agent-select {
   max-width: 13rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(29, 29, 31, 0.12);
-  background: #ffffff;
+  border: 1px solid var(--wl-line);
+  background: var(--wl-surface);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -133,12 +156,12 @@
 }
 
 .wl-agent-select:focus {
-  border-color: rgba(29, 29, 31, 0.28);
+  border-color: var(--wl-line-strong);
 }
 
 .wl-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(29, 29, 31, 0.22) transparent;
+  scrollbar-color: color-mix(in srgb, var(--wl-ink) 22%, transparent) transparent;
 }
 
 .wl-scroll::-webkit-scrollbar {
@@ -148,10 +171,11 @@
 
 .wl-scroll::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(29, 29, 31, 0.22);
+  background: var(--wl-ink);
+  opacity: 0.22;
 }
 
 main .overflow-y-auto {
   scrollbar-width: thin;
-  scrollbar-color: rgba(29, 29, 31, 0.22) transparent;
+  scrollbar-color: color-mix(in srgb, var(--wl-ink) 22%, transparent) transparent;
 }

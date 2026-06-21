@@ -1,6 +1,6 @@
 /**
- * Rich Cream + Purple Skeleton System
- * Animated placeholder components that match the frosted-wl-panel design language.
+ * Monochrome Skeleton System
+ * Minimal animated placeholders matching the warm neutral design system.
  * Use these instead of spinners for any data-loading state.
  */
 
@@ -11,19 +11,10 @@ import { cn } from "../lib/utils";
 
 interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
-  /** Accent color for the shimmer — defaults to the brand cyan */
-  accent?: "cyan" | "violet" | "magenta" | "emerald";
 }
 
-const ACCENT_SHIMMER: Record<string, string> = {
-  cyan: "from-brand/0 via-brand/20 to-brand/0",
-  violet: "from-brand-2/0 via-brand-2/20 to-brand-2/0",
-  magenta: "from-brand-3/0 via-brand-3/20 to-brand-3/0",
-  emerald: "from-brand/0 via-brand/15 to-brand/0",
-};
-
 /** Single skeleton line / block — the atom of the system. */
-export function Skeleton({ className, accent = "cyan", ...props }: SkeletonProps) {
+export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
       role="status"
@@ -31,17 +22,12 @@ export function Skeleton({ className, accent = "cyan", ...props }: SkeletonProps
       aria-live="polite"
       aria-label="Loading…"
       className={cn(
-        "relative overflow-hidden rounded-md bg-black/[0.07] border border-white/[0.05]",
+        "relative overflow-hidden rounded-md bg-foreground/[0.06]",
         className,
       )}
       {...props}
     >
-      <div
-        className={cn(
-          "skeleton-shimmer absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r",
-          ACCENT_SHIMMER[accent],
-        )}
-      />
+      <div className="skeleton-shimmer absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-foreground/[0.04] to-transparent" />
     </div>
   );
 }
@@ -49,21 +35,19 @@ export function Skeleton({ className, accent = "cyan", ...props }: SkeletonProps
 /* ── Row skeleton (for lists) ─────────────────────────────────────── */
 
 interface RowSkeletonProps {
-  /** Show an icon slot on the left. Default true. */
   showIcon?: boolean;
-  /** Show a right-side value. Default true. */
   showValue?: boolean;
 }
 
 function RowSkeleton({ showIcon = true, showValue = true }: RowSkeletonProps) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      {showIcon && <Skeleton className="w-9 h-9 rounded-md shrink-0" accent="violet" />}
+      {showIcon && <Skeleton className="w-9 h-9 rounded-lg shrink-0" />}
       <div className="flex-1 space-y-1.5">
-        <Skeleton className="h-3 w-3/5 rounded" accent="cyan" />
-        <Skeleton className="h-2 w-4/5 rounded" accent="cyan" />
+        <Skeleton className="h-3 w-3/5 rounded" />
+        <Skeleton className="h-2 w-4/5 rounded" />
       </div>
-      {showValue && <Skeleton className="h-4 w-12 rounded shrink-0" accent="magenta" />}
+      {showValue && <Skeleton className="h-4 w-12 rounded shrink-0" />}
     </div>
   );
 }
@@ -77,7 +61,7 @@ interface PanelSkeletonProps {
 
 export function PanelSkeleton({ rows = 4, className }: PanelSkeletonProps) {
   return (
-    <div className={cn("flex flex-col divide-y divide-white/5", className)}>
+    <div className={cn("flex flex-col divide-y divide-border/40", className)}>
       {Array.from({ length: rows }).map((_, i) => (
         <RowSkeleton key={i} />
       ))}

@@ -198,7 +198,7 @@ export default function QualityView({ days }: { days: number }) {
                 <PolarGrid stroke="rgba(0,0,0,0.06)" />
                 <PolarAngleAxis
                   dataKey="dimension"
-                  tick={{ fill: "#6E6584", fontSize: 9, fontFamily: "Plus Jakarta Sans" }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 9 }}
                 />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
@@ -232,26 +232,27 @@ export default function QualityView({ days }: { days: number }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
                 <XAxis
                   dataKey="day"
-                  tick={{ fill: "#6E6584", fontSize: 9 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 9 }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
                   domain={[0, 100]}
-                  tick={{ fill: "#6E6584", fontSize: 9 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 9 }}
                   tickLine={false}
                   axisLine={false}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "rgba(28, 25, 23, 0.95)",
-                    border: "1px solid rgba(107, 43, 153 , 0.3)",
-                    borderRadius: 0,
-                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
-                    fontSize: "11px",
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 12,
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+                    fontSize: "12px",
+                    padding: "8px 12px",
                   }}
-                  labelStyle={{ color: "#6E6584", fontWeight: "bold" }}
-                  itemStyle={{ color: QA_BRAND }}
+                  labelStyle={{ color: "var(--muted-foreground)", fontWeight: 500, marginBottom: 4 }}
+                  itemStyle={{ color: "var(--foreground)" }}
                 />
                 <Area
                   type="monotone"

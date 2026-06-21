@@ -193,10 +193,10 @@ export default function PersonalDashboard() {
                     <span className="font-semibold text-foreground">1m 12s</span>
                   </div>
                   <Link
-                    to="/contact"
+                    to="/ops"
                     className="block text-center w-full py-2.5 mt-3 bg-card-warm text-foreground border border-ink/10 hover:border-brand/30 hover:bg-brand/5 rounded-md text-sm font-semibold transition-colors"
                   >
-                    View Call Logs
+                    View Activity
                   </Link>
                 </div>
               </div>

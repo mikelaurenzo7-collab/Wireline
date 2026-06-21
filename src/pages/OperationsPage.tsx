@@ -28,29 +28,29 @@ export default function OperationsPage() {
         <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-3">
           <section className="wl-surface flex min-h-0 flex-col p-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#f0f0ee]"><Icon size={17} /></span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-muted"><Icon size={17} /></span>
               <div>
                 <h2 className="text-base font-semibold tracking-[-.03em]">{active.title}</h2>
-                <p className="mt-1 max-w-xl text-[13px] leading-5 text-[#66666d]">{active.detail}</p>
+                <p className="mt-1 max-w-xl text-[13px] leading-5 text-muted-foreground">{active.detail}</p>
               </div>
             </div>
             <div className="grid min-h-0 flex-1 place-items-center py-8 text-center">
               <div>
-                <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[#f5f5f3]"><CircleDot size={17} /></span>
+                <span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-muted"><CircleDot size={17} /></span>
                 <p className="mt-3 text-sm font-semibold">All clear.</p>
-                <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-[#727279]">When your assistant needs you, it will appear here. No news is good news.</p>
+                <p className="mx-auto mt-1 max-w-sm text-[12px] leading-5 text-muted-foreground">When your assistant needs you, it will appear here. No news is good news.</p>
               </div>
             </div>
           </section>
           <aside className="wl-surface mt-2.5 hidden min-h-0 flex-col p-4 lg:mt-0 lg:flex">
-            <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-[#8a8a91]">How it works</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[.13em] text-muted-foreground">How it works</p>
             <div className="mt-3 space-y-3">
               {[[CheckCircle2, "Watch", "See every call and message in real time."], [Workflow, "Act", "Your assistant handles tasks you've allowed."], [ShieldAlert, "Escalate", "Anything unclear or sensitive comes to you."]].map(([StepIcon, title, detail]) => {
                 const Step = StepIcon as typeof CheckCircle2;
                 return (
                   <div key={String(title)} className="flex gap-2.5">
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#f0f0ee]"><Step size={14} /></span>
-                    <span><strong className="block text-xs">{title}</strong><small className="mt-0.5 block text-[11px] leading-4 text-[#717178]">{detail}</small></span>
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted"><Step size={14} /></span>
+                    <span><strong className="block text-xs">{title}</strong><small className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{detail}</small></span>
                   </div>
                 );
               })}

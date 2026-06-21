@@ -22,7 +22,7 @@ const buttonVariants = cva(
         glass:
           "wl-panel border border-border bg-background text-foreground hover:border-foreground/35 hover:bg-accent transition-colors",
         chrome:
-          "border border-black bg-[#1d1d1f] text-white shadow-sm hover:bg-black hover:text-white transition-colors",
+          "border border-primary bg-primary text-primary-foreground shadow-sm hover:bg-foreground transition-colors",
         editorial:
           "bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_2px_0_#000,0_8px_18px_rgba(29,29,31,0.18)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_#000] border border-primary/80",
       },

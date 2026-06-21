@@ -1,15 +1,18 @@
 import { cn } from "../../../lib/utils";
 
-/** Neutral loading primitive shared by public and authenticated surfaces. */
+/** Neutral loading primitive — monochrome shimmer, shared across surfaces. */
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-md border border-black/5 bg-[linear-gradient(90deg,var(--color-muted)_25%,rgba(29,29,31,0.05)_50%,var(--color-muted)_75%)] dark:border-white/8",
-        className,
-      )}
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      aria-label="Loading…"
+      className={cn("relative overflow-hidden rounded-md bg-foreground/[0.06]", className)}
       {...props}
-    />
+    >
+      <div className="skeleton-shimmer absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-foreground/[0.04] to-transparent" />
+    </div>
   );
 }
 

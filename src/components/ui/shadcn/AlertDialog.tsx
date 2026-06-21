@@ -14,7 +14,7 @@ const AlertDialogOverlay = React.forwardRef<
   <AlertDialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[200] bg-black/70 backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[200] bg-foreground/35 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -31,14 +31,14 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed z-[200] grid w-full max-w-md gap-4 border border-border bg-background shadow-lg duration-200",
+        "fixed z-[200] grid w-full max-w-md gap-4 border border-border/60 bg-card shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] duration-200",
         "inset-x-0 bottom-0 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:max-w-sm sm:translate-x-[-50%] sm:translate-y-[-50%]",
-        "rounded-t-md sm:rounded-md max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain",
-        "wl-panel elev-glow data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "rounded-t-2xl sm:rounded-2xl max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:slide-out-to-bottom-8 data-[state=open]:slide-in-from-bottom-8",
         "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0",
-        "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
+        "sm:data-[state=closed]:zoom-out-[0.98] sm:data-[state=open]:zoom-in-[0.98]",
         "pb-[max(0px,env(safe-area-inset-bottom,0px))]",
         className,
       )}

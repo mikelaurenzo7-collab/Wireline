@@ -16,16 +16,16 @@ export default function SettingsPage() {
           {sections.map((section) => {
             const Icon = section.icon;
             return (
-              <Link key={section.title} to={section.href} className="wl-surface flex min-h-[118px] flex-col p-3.5 transition hover:border-black/[.14] hover:bg-white sm:min-h-[132px] sm:p-4">
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#f0f0ee]"><Icon size={15} /></span>
+              <Link key={section.title} to={section.href} className="wl-surface flex min-h-[118px] flex-col p-3.5 transition hover:border-border hover:bg-card sm:min-h-[132px] sm:p-4">
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-muted"><Icon size={15} /></span>
                 <h2 className="mt-2.5 text-sm font-semibold tracking-[-.02em]">{section.title}</h2>
-                <p className="mt-1 hidden text-[12px] leading-5 text-[#68686f] sm:block">{section.detail}</p>
+                <p className="mt-1 hidden text-[12px] leading-5 text-muted-foreground sm:block">{section.detail}</p>
                 <span className="mt-auto inline-flex items-center gap-1 pt-2.5 text-[11px] font-semibold">Open <ArrowUpRight size={12} /></span>
               </Link>
             );
           })}
         </section>
-        <section className="wl-surface shrink-0 rounded-2xl border-[#1d1d1f] bg-[#1d1d1f] p-4 text-white sm:p-5">
+        <section className="wl-surface shrink-0 rounded-2xl border-primary bg-primary p-4 text-primary-foreground sm:p-5">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/50">Powered by</p>
