@@ -11,8 +11,11 @@ const activeFiles = [
   "src/pages/Compare.tsx",
   "src/pages/About.tsx",
   "src/pages/SolutionsPage.tsx",
+  "src/pages/AgentStudioHome.tsx",
   "src/components/PhoneAgentBlueprint.tsx",
-  "src/components/marketing/PublicSiteHeader.tsx",
+  "src/components/marketing/PrecisionLanding.tsx",
+  "src/components/marketing/PrecisionPublicHeader.tsx",
+  "src/components/marketing/BrowserCallWidget.tsx",
   "src/components/marketing/MarketingFooter.tsx",
   "src/components/WorkspaceShell.tsx",
   "src/pages/AgentsPage.tsx",
@@ -42,14 +45,67 @@ for (const file of activeFiles) {
     report(file, "must not reference Anthropic in the active product surface");
   }
 
-  if (/from-(violet|purple|indigo|fuchsia|pink)-|to-(violet|purple|indigo|fuchsia|pink)-|bg-(violet|purple|indigo|fuchsia|pink)-|text-(violet|purple|indigo|fuchsia|pink)-|#7C3AED/i.test(source)) {
-    report(file, "contains a retired colored design token");
+  if (/(?:from|to|bg|text|border)-(?:violet|purple|indigo|fuchsia|pink)-|#7C3AED|#1d1d1f|#000000\b|\bbg-black\b|\bbackdrop-blur\b/i.test(source)) {
+    report(file, "contains a retired or non-Professional-Heritage visual token");
   }
 }
 
 const foundation = read("src/styles/foundation.css");
-if (!/--wl-accent:\s*#1a3c34/i.test(foundation)) {
-  report("src/styles/foundation.css", "must use Stitch forest accent #1a3c34");
+for (const [pattern, message] of [
+  [/--wl-page:\s*#f9f9f7/i, "must use warm root surface #f9f9f7"],
+  [/--wl-accent:\s*#1a3c34/i, "must use Stitch forest accent #1a3c34"],
+  [/--wl-surface-subtle:\s*#f4f4f2/i, "must use layered secondary surface #f4f4f2"],
+  [/--wl-line:\s*#dadad8/i, "must use #dadad8 as the primary divider"],
+  [/--radius-md:\s*0\.5rem/i, "must retain 8px standard geometry"],
+  [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
+]) {
+  if (!pattern.test(foundation)) report("src/styles/foundation.css", message);
+}
+
+const indexCss = read("src/index.css");
+if (!/family=Inter:/i.test(indexCss) || !/--wl-font-sans:\s*"Inter"/i.test(indexCss)) {
+  report("src/index.css", "must load and use Inter for the Professional Heritage text system");
+}
+if (!/h1, h2, h3, h4\s*\{[^}]*font-feature-settings:\s*"cv05",\s*"cv08",\s*"ss01"/is.test(indexCss)) {
+  report("src/index.css", "must apply the Stitch precision headline feature settings");
+}
+
+const shell = read("src/components/WorkspaceShell.tsx");
+if (!/w-\[212px\]/.test(shell) || !/lg:grid-cols-\[212px_minmax\(0,1fr\)\]/.test(shell)) {
+  report("src/components/WorkspaceShell.tsx", "must retain the fixed 212px Professional Heritage workspace shell");
+}
+if (!/WirelineMark/.test(shell)) {
+  report("src/components/WorkspaceShell.tsx", "must use the shared Wireline mark in the workspace identity");
+}
+
+const landing = read("src/components/marketing/PrecisionLanding.tsx");
+for (const copy of [
+  "Never wait on hold again.",
+  "A real call, handled for you",
+  "Your request",
+  "What you receive",
+  "Move my cleaning to next week.",
+  "No follow-up needed",
+]) {
+  if (!landing.includes(copy)) {
+    report("src/components/marketing/PrecisionLanding.tsx", `must render meaningful product content: ${copy}`);
+  }
+}
+if (/h-(?:2|3|4|7)\s+w-(?:\d|full|\d\/\d).*bg-\[color:var\(--wl-surface-variant\)\]/.test(landing)) {
+  report("src/components/marketing/PrecisionLanding.tsx", "must not use gray placeholder bars as product imagery");
+}
+if (/BrowserCallWidget/.test(landing)) {
+  report("src/components/marketing/PrecisionLanding.tsx", "must not make the landing explanation depend on an optional browser-call demo");
+}
+
+const browserDemo = read("src/components/marketing/BrowserCallWidget.tsx");
+if (!/active:scale-\[0\.98\]/.test(browserDemo) || /#1d1d1f|rose-/i.test(browserDemo)) {
+  report("src/components/marketing/BrowserCallWidget.tsx", "must use semantic Professional Heritage colors and tactile press feedback");
+}
+
+const createAssistant = read("src/pages/AgentStudioHome.tsx");
+if (!/role="dialog"/.test(createAssistant) || /bg-black|backdrop-blur/i.test(createAssistant)) {
+  report("src/pages/AgentStudioHome.tsx", "must retain the accessible flat Professional Heritage create dialog");
 }
 
 const runtime = read("src/lib/ai-client.ts");
@@ -66,8 +122,8 @@ if (!/VAPI_TENANT_DEFAULT_PROVIDER[^=]*=\s*"openai"/.test(voiceDefaults)) {
 }
 
 if (failures.length) {
-  console.error("Active-surface drift check failed:\n- " + failures.join("\n- "));
+  console.error("Professional Heritage contract check failed:\n- " + failures.join("\n- "));
   process.exitCode = 1;
 } else {
-  console.log("Active-surface drift check passed");
+  console.log("Professional Heritage contract check passed");
 }
