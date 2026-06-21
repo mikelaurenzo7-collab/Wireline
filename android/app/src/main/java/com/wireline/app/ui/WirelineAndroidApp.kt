@@ -35,15 +35,12 @@ import com.wireline.app.ui.components.AskWirelineHeroCard
 import com.wireline.app.ui.components.FleetStatCard
 import com.wireline.app.ui.components.LavenderCard
 import com.wireline.app.ui.components.Medallion
+import com.wireline.app.ui.setup.ActionsScreen
+import com.wireline.app.ui.setup.KnowledgeScreen
 import com.wireline.app.ui.theme.Brand
 
-private enum class Tab { Studio, Assistants, Recaps, Wallet, Settings }
+private enum class Tab { Studio, Assistants, Knowledge, Actions, Recaps, Wallet, Settings }
 
-/**
- * Android's native counterpart to the mobile Stitch delivery. Destinations are
- * consumer jobs: start a request, review assistants, read recaps, and manage
- * account controls. The retired Live Ops shell is intentionally absent.
- */
 @Composable
 fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     val state = model.state
@@ -57,7 +54,13 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 
     Scaffold(
         containerColor = Brand.Canvas,
-        topBar = { WirelineTopBar("Wireline AI") },
+        topBar = {
+            WirelineTopBar(
+                title = "Wireline AI",
+                onWallet = { tab = Tab.Wallet },
+                onSettings = { tab = Tab.Settings },
+            )
+        },
         floatingActionButton = {
             if (tab == Tab.Studio) {
                 FloatingActionButton(onClick = { showAsk = true }, containerColor = Brand.Accent, contentColor = Color.White) {
@@ -69,15 +72,17 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             NavigationBar(containerColor = Brand.Panel) {
                 NavigationBarItem(selected = tab == Tab.Studio, onClick = { tab = Tab.Studio }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Studio") })
                 NavigationBarItem(selected = tab == Tab.Assistants, onClick = { tab = Tab.Assistants }, icon = { Icon(Icons.Default.PhoneInTalk, null) }, label = { Text("Assistants") })
+                NavigationBarItem(selected = tab == Tab.Knowledge, onClick = { tab = Tab.Knowledge }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Knowledge") })
+                NavigationBarItem(selected = tab == Tab.Actions, onClick = { tab = Tab.Actions }, icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Actions") })
                 NavigationBarItem(selected = tab == Tab.Recaps, onClick = { tab = Tab.Recaps }, icon = { Icon(Icons.Default.Call, null) }, label = { Text("Recaps") })
-                NavigationBarItem(selected = tab == Tab.Wallet, onClick = { tab = Tab.Wallet }, icon = { Icon(Icons.Default.CreditCard, null) }, label = { Text("Wallet") })
-                NavigationBarItem(selected = tab == Tab.Settings, onClick = { tab = Tab.Settings }, icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Settings") })
             }
         },
     ) { padding ->
         when (tab) {
             Tab.Studio -> StudioScreen(padding, state, model)
             Tab.Assistants -> AssistantsScreen(padding, state.agents)
+            Tab.Knowledge -> KnowledgeScreen(padding)
+            Tab.Actions -> ActionsScreen(padding)
             Tab.Recaps -> RecapsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
             Tab.Wallet -> WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
             Tab.Settings -> SettingsScreen(padding, state, model)
@@ -93,9 +98,13 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WirelineTopBar(title: String) {
+private fun WirelineTopBar(title: String, onWallet: () -> Unit, onSettings: () -> Unit) {
     TopAppBar(
         title = { Text(title, fontWeight = FontWeight.SemiBold, color = Brand.Text) },
+        actions = {
+            IconButton(onClick = onWallet) { Icon(Icons.Default.CreditCard, contentDescription = "Wallet") }
+            IconButton(onClick = onSettings) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
+        },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Brand.Canvas, titleContentColor = Brand.Text),
     )
 }
@@ -167,9 +176,7 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("Phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
                 OutlinedTextField(value = context, onValueChange = { context = it }, label = { Text("What should Wireline handle?") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm))
-                Button(onClick = { agent?.let { model.placeCall(it.id, number, context) } }, enabled = agent != null && number.isNotBlank() && !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) {
-                    Text("Place call")
-                }
+                Button(onClick = { agent?.let { model.placeCall(it.id, number, context) } }, enabled = agent != null && number.isNotBlank() && !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Place call") }
             }
         }
         item { ErrorText(state.error) }
@@ -186,8 +193,10 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
 private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>) {
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-            Text("The callers you have set up for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+            Column {
+                Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                Text("The callers you have set up for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+            }
         }
         if (agents.isEmpty()) {
             item { LavenderCard { Text("No assistants yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Create your first assistant on the web, then come back here to make calls.", color = Brand.Text2) } }
@@ -255,7 +264,8 @@ private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model
     }
 }
 
-@Composable private fun SectionCard(content: @Composable () -> Unit) = LavenderCard { content() }
+@Composable
+fun SectionCard(content: @Composable () -> Unit) = LavenderCard { content() }
 
 @Composable
 private fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (String) -> Unit) {
