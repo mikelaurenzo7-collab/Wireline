@@ -1,7 +1,8 @@
+import { type ReactNode } from "react";
 import { FolderCog, PanelLeft, ShieldCheck } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 
-function Card({ icon, title, detail }: { icon: React.ReactNode; title: string; detail: string }) {
+function Card({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
   return <article className="rounded-2xl border border-black/[.08] bg-white p-5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#f0f0ee]">{icon}</span><h2 className="mt-4 font-semibold tracking-[-.02em]">{title}</h2><p className="mt-2 text-sm leading-6 text-[#65656c]">{detail}</p></article>;
 }
 
