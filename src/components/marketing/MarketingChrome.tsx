@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import PublicSiteHeader, { type PublicNavActive } from "./PublicSiteHeader";
+import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import type { PublicNavActive } from "./PublicSiteHeader";
 import MarketingFooter from "./MarketingFooter";
 import MarketingStickyCta from "./MarketingStickyCta";
 import { cn } from "../../lib/utils";
@@ -21,7 +22,6 @@ type Props = {
  */
 export default function MarketingChrome({
   children,
-  active,
   stickyCta = true,
   footer = true,
   authCanvas = false,
@@ -35,7 +35,7 @@ export default function MarketingChrome({
         className,
       )}
     >
-      <PublicSiteHeader active={active} />
+      <PrecisionPublicHeader />
       <div
         id="main-content"
         tabIndex={-1}

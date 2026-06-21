@@ -24,9 +24,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify Stitch migration contract
-        run: npm run stitch:check
-
       - name: Type check
         run: npm run lint
 

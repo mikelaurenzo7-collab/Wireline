@@ -192,17 +192,11 @@ function OAuthSignInButtons({
           aria-label={`Continue with ${p.label}`}
           className="wl-stitch-oauth-btn"
         >
-          {pending === p.id ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            p.mark
-          )}
+          {pending === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : p.mark}
           Continue with {p.label}
         </button>
       ))}
-      <div className="wl-stitch-auth-divider">
-        or {isSignUp ? "sign up" : "sign in"} with email
-      </div>
+      <div className="wl-stitch-auth-divider">or {isSignUp ? "sign up" : "sign in"} with email</div>
     </div>
   );
 }
@@ -229,7 +223,7 @@ function AuthShell({
               Wireline
             </Link>
             <h1 className="wl-stitch-headline mt-3">
-              {headerActive === "signup" ? "Create your account" : "Welcome back"}
+              {headerActive === "signup" ? "Create your account" : "Welcome Back"}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {mode === "personal"
@@ -239,9 +233,15 @@ function AuthShell({
           </div>
           <div className="wl-stitch-auth-card">{children}</div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-primary hover:underline">Back to home</Link>
-            <Link to="/showcase" className="hover:text-primary hover:underline">Hear a demo</Link>
-            <Link to="/pricing" className="hover:text-primary hover:underline">Compare plans</Link>
+            <Link to="/" className="hover:text-primary hover:underline">
+              Back to home
+            </Link>
+            <Link to="/showcase" className="hover:text-primary hover:underline">
+              Hear a demo
+            </Link>
+            <Link to="/pricing" className="hover:text-primary hover:underline">
+              Compare plans
+            </Link>
           </div>
         </div>
       </main>
@@ -249,9 +249,15 @@ function AuthShell({
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
           <span className="font-bold text-primary">Wireline</span>
           <div className="flex gap-6">
-            <Link to="/privacy" className="hover:text-primary hover:underline">Privacy</Link>
-            <Link to="/terms" className="hover:text-primary hover:underline">Terms</Link>
-            <Link to="/support" className="hover:text-primary hover:underline">Support</Link>
+            <Link to="/privacy" className="hover:text-primary hover:underline">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-primary hover:underline">
+              Terms
+            </Link>
+            <Link to="/support" className="hover:text-primary hover:underline">
+              Support
+            </Link>
           </div>
         </div>
       </footer>
@@ -307,7 +313,9 @@ function WorkspaceSelector({
               {option.title}
               {mode === option.id && <Check className="h-4 w-4 text-brand" />}
             </span>
-            <span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.text}</span>
+            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+              {option.text}
+            </span>
           </span>
         </button>
       ))}
@@ -320,8 +328,11 @@ export default function AuthPortal() {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(() =>
-    workspaceFromIntent(captureSignupIntentFromLocation()) || readStoredWorkspaceMode() || "personal",
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(
+    () =>
+      workspaceFromIntent(captureSignupIntentFromLocation()) ||
+      readStoredWorkspaceMode() ||
+      "personal",
   );
   const initialMode: AuthMode = pathname === "/signup" ? "signup" : "signin";
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -497,7 +508,9 @@ export default function AuthPortal() {
           <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
           {isSignUp && intentLabel ? (
-            <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">{intentLabel}</p>
+            <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">
+              {intentLabel}
+            </p>
           ) : null}
         </div>
 
@@ -512,205 +525,204 @@ export default function AuthPortal() {
         )}
 
         <div className="rounded-lg border border-border bg-card">
+          {!isReset && (
+            <div className="grid grid-cols-2 border-b border-ink/10 p-1">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(false)}
+                className={`min-h-[44px] rounded text-sm font-semibold transition ${
+                  !isSignUp
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSignUp(true)}
+                className={`min-h-[44px] rounded text-sm font-semibold transition ${
+                  isSignUp
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Create account
+              </button>
+            </div>
+          )}
+
+          <div className="p-6 sm:p-7">
+            {!isReset && (
+              <OAuthSignInButtons
+                disabled={loading}
+                isSignUp={isSignUp}
+                onError={(m) => setError(m || null)}
+              />
+            )}
+
+            <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-5">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
+                  Email address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
+                  <input
+                    id="auth-email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    spellCheck={false}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="wl-stitch-input h-11 pl-10"
+                    placeholder="you@email.com"
+                  />
+                </div>
+              </div>
+
               {!isReset && (
-                <div className="grid grid-cols-2 border-b border-ink/10 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(false)}
-                    className={`min-h-[44px] rounded text-sm font-semibold transition ${
-                      !isSignUp
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(true)}
-                    className={`min-h-[44px] rounded text-sm font-semibold transition ${
-                      isSignUp
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Create account
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <label
+                      className="text-sm font-semibold text-foreground"
+                      htmlFor="auth-password"
+                    >
+                      Password
+                    </label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode("reset");
+                          setError(null);
+                          setMessage(null);
+                        }}
+                        className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
+                    <input
+                      id="auth-password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={isSignUp ? 8 : undefined}
+                      autoComplete={isSignUp ? "new-password" : "current-password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="wl-stitch-input h-11 pl-10 pr-11"
+                      placeholder={isSignUp ? "Create a secure password" : "Enter your password"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {isSignUp && strengthLabel && (
+                    <p className="text-xs text-foreground/55">
+                      Password strength:{" "}
+                      <span className="font-semibold text-foreground">{strengthLabel}</span>
+                    </p>
+                  )}
                 </div>
               )}
 
-              <div className="p-6 sm:p-7">
-                {!isReset && (
-                  <OAuthSignInButtons
-                    disabled={loading}
-                    isSignUp={isSignUp}
-                    onError={(m) => setError(m || null)}
+              {isReset && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signin");
+                    setError(null);
+                    setMessage(null);
+                  }}
+                  className="inline-flex items-center gap-2 self-start text-sm font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to sign in
+                </button>
+              )}
+
+              {error && (
+                <div className="flex items-start gap-2 rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-600">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div>{error}</div>
+                </div>
+              )}
+              {message && (
+                <div className="flex items-start gap-2 rounded-xl border border-border bg-muted p-3 text-sm text-foreground">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div>{message}</div>
+                </div>
+              )}
+
+              {isSignUp && (
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 accent-primary"
                   />
-                )}
-
-                <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-5">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground" htmlFor="auth-email">
-                      Email address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
-                      <input
-                        id="auth-email"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        spellCheck={false}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="wl-stitch-input h-11 pl-10"
-                        placeholder="you@email.com"
-                      />
-                    </div>
-                  </div>
-
-                  {!isReset && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <label
-                          className="text-sm font-semibold text-foreground"
-                          htmlFor="auth-password"
-                        >
-                          Password
-                        </label>
-                        {!isSignUp && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMode("reset");
-                              setError(null);
-                              setMessage(null);
-                            }}
-                            className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
-                          >
-                            Forgot password?
-                          </button>
-                        )}
-                      </div>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/60" />
-                        <input
-                          id="auth-password"
-                          type={showPassword ? "text" : "password"}
-                          required
-                          minLength={isSignUp ? 8 : undefined}
-                          autoComplete={isSignUp ? "new-password" : "current-password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="wl-stitch-input h-11 pl-10 pr-11"
-                          placeholder={
-                            isSignUp ? "Create a secure password" : "Enter your password"
-                          }
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((value) => !value)}
-                          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-sm text-foreground/60 transition hover:bg-ink/5 hover:text-foreground"
-                          tabIndex={-1}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                      {isSignUp && strengthLabel && (
-                        <p className="text-xs text-foreground/55">
-                          Password strength:{" "}
-                          <span className="font-semibold text-foreground">{strengthLabel}</span>
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {isReset && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMode("signin");
-                        setError(null);
-                        setMessage(null);
-                      }}
-                      className="inline-flex items-center gap-2 self-start text-sm font-medium text-foreground underline-offset-4 hover:underline"
+                  <span>
+                    I agree to the{" "}
+                    <Link
+                      to="/terms"
+                      className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
                     >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back to sign in
-                    </button>
-                  )}
+                      Terms
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                      to="/privacy"
+                      className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
+              )}
 
-                  {error && (
-                    <div className="flex items-start gap-2 rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-600">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <div>{error}</div>
-                    </div>
-                  )}
-                  {message && (
-                    <div className="flex items-start gap-2 rounded-xl border border-border bg-muted p-3 text-sm text-foreground">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0" />
-                      <div>{message}</div>
-                    </div>
-                  )}
-
-                  {isSignUp && (
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
-                      <input
-                        type="checkbox"
-                        checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-1 h-4 w-4 shrink-0 accent-primary"
-                      />
-                      <span>
-                        I agree to the{" "}
-                        <Link to="/terms" className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80">
-                          Terms
-                        </Link>{" "}
-                        and{" "}
-                        <Link to="/privacy" className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80">
-                          Privacy Policy
-                        </Link>
-                        .
-                      </span>
-                    </label>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading || (isSignUp && !agreedToTerms)}
-                    aria-disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wl-accent-deep)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Working…
-                      </>
-                    ) : isReset ? (
-                      <>
-                        Send reset link
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    ) : isSignUp ? (
-                      <>
-                        Create account
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        Sign in
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-            </div>
-
+              <button
+                type="submit"
+                disabled={loading || (isSignUp && !agreedToTerms)}
+                aria-disabled={loading || (isSignUp && !agreedToTerms)}
+                className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wl-accent-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Working…
+                  </>
+                ) : isReset ? (
+                  <>
+                    Send reset link
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                ) : isSignUp ? (
+                  <>
+                    Create account
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                ) : (
+                  <>
+                    Sign in
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
       </AuthShell>
     </>
   );
