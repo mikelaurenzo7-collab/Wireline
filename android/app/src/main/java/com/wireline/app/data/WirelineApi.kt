@@ -50,6 +50,17 @@ class WirelineApi(context: Context) {
     suspend fun recentCalls(limit: Int = 20): RecentCallsResponse = get("/api/mobile/calls/recent?limit=$limit")
     suspend fun wallet(): WalletResponse = get("/api/mobile/wallet")
 
+    /** Creates an owned assistant through the same production contract as web Studio. */
+    suspend fun createAssistant(name: String, role: String = "scheduler"): Agent {
+        return post(
+            "/api/agents",
+            JSONObject()
+                .put("name", name)
+                .put("role", role)
+                .put("deferPhoneProvision", true),
+        )
+    }
+
     suspend fun registerDevice(fcmToken: String?) {
         val body = JSONObject().put("device_id", tokenStore.deviceId()).put("platform", "android").put("app_version", BuildConfig.VERSION_NAME)
         if (!fcmToken.isNullOrBlank()) body.put("fcm_token", fcmToken)
