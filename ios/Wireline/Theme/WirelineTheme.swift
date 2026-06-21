@@ -12,8 +12,9 @@ enum Brand {
     static let border = Color(hex: 0xDADAD8)
 
     // ── Text ─────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0x1A1C1B)
-    static let text2 = Color(hex: 0x414846)
+    // V7 uses the forest ink for primary hierarchy, not a competing charcoal.
+    static let text = Color(hex: 0x1A3C34)
+    static let text2 = Color(hex: 0x4A5F59)
     static let text3 = Color(hex: 0x4A5F59, opacity: 0.72)
 
     // ── Accent ───────────────────────────────────────────────────────────────
