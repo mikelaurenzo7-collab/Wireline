@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import PublicSiteHeader, { type PublicNavActive } from "../marketing/PublicSiteHeader";
+import PrecisionPublicHeader from "../marketing/PrecisionPublicHeader";
+import type { PublicNavActive } from "../marketing/PublicSiteHeader";
 import MarketingFooter from "../marketing/MarketingFooter";
 import MarketingStickyCta from "../marketing/MarketingStickyCta";
 import { cn } from "../../lib/utils";
@@ -29,7 +30,6 @@ interface MarketingPageFrameProps {
  */
 export default function MarketingPageFrame({
   children,
-  active,
   scroll = true,
   stickyCta = true,
   footer = true,
@@ -48,7 +48,7 @@ export default function MarketingPageFrame({
         className,
       )}
     >
-      <PublicSiteHeader active={active} />
+      <PrecisionPublicHeader />
 
       <main
         id="main-content"
