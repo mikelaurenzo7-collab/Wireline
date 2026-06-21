@@ -1,13 +1,12 @@
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Database, Menu, PenLine, Radio, Settings, X, Zap } from "lucide-react";
+import { Bot, Database, Menu, PenLine, Settings, X, Zap } from "lucide-react";
 
 const primaryNavigation = [
   { href: "/studio", label: "Studio", icon: PenLine },
-  { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/agents", label: "Assistants", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Actions", icon: Zap },
-  { href: "/ops", label: "Live", icon: Radio },
+  { href: "/actions", label: "Connections", icon: Zap },
 ] as const;
 
 function NavItem({
@@ -53,8 +52,7 @@ export default function WorkspaceShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isActive = (href: string) =>
     location.pathname === href ||
-    (href === "/studio" && location.pathname.startsWith("/studio")) ||
-    (href === "/ops" && location.pathname.startsWith("/ops"));
+    (href === "/studio" && location.pathname.startsWith("/studio"));
   const closeDrawer = () => setDrawerOpen(false);
 
   return (
@@ -76,7 +74,7 @@ export default function WorkspaceShell({
                 Wireline
               </span>
               <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
-                AI voice + messaging
+                calls + messages, handled
               </span>
             </Link>
             <button
@@ -99,7 +97,7 @@ export default function WorkspaceShell({
             ))}
           </nav>
 
-          <nav className="mt-auto border-t border-transparent pt-6" aria-label="Workspace settings">
+          <nav className="mt-auto border-t border-transparent pt-6" aria-label="Account settings">
             <NavItem
               href="/settings"
               label="Settings"
