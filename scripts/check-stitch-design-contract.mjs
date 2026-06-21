@@ -2,58 +2,31 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
-const issues = [];
 const read = (path) => readFileSync(resolve(root, path), "utf8");
-const has = (path) => existsSync(resolve(root, path));
-const check = (condition, message) => { if (!condition) issues.push(message); };
+const issues = [];
+const check = (ok, text) => { if (!ok) issues.push(text); };
+for (const path of ["src/main.tsx","src/index.css","src/styles/precision-operator-web.css","src/lib/stitch-design-system.ts","src/routes/AppRoutes.tsx","src/App.tsx","src/components/WorkspaceShell.tsx",".stitch/DESIGN.md"]) check(existsSync(resolve(root, path)), `${path} is required`);
 
-for (const path of [
-  "src/main.tsx",
-  "src/index.css",
-  "src/styles/foundation.css",
-  "src/styles/stitch-patterns.css",
-  "src/lib/stitch-design-system.ts",
-  "src/lib/stitch-design-contract.test.ts",
-  "src/routes/AppRoutes.tsx",
-  "src/App.tsx",
-  "src/components/WorkspaceShell.tsx",
-  "src/components/AuthPortal.tsx",
-  "src/pages/LandingPage.tsx",
-  "src/pages/Pricing.tsx",
-  ".stitch/DESIGN.md",
-  ".stitch/precision-operator/manifest.json",
-]) check(has(path), `${path} is required`);
+const css = read("src/styles/precision-operator-web.css").toLowerCase();
+for (const token of ["#f7f7f5","#f9f9f7","#ffffff","#f4f4f2","#eeeeec","#e8e8e6","#e2e3e1","#1a1c1b","#414846","#717976","#c1c8c4","#e5e5e2","#1a3c34","#01261f","#c5eadf","#aacec3"]) check(css.includes(token), `missing source token ${token}`);
+for (const value of ["--radius-sm:.125rem","--radius:.25rem","--radius-md:.375rem","--radius-lg:.5rem","--radius-xl:.75rem"]) check(css.includes(value), `missing source radius ${value}`);
+for (const value of ["font-size:11px;font-weight:600;line-height:16px","font-size:32px;font-weight:600;line-height:40px","font-size:16px;line-height:24px","font-size:14px;line-height:20px","font-size:12px;font-weight:500;line-height:16px"]) check(css.includes(value), `missing source type rule ${value}`);
+check(!css.includes("font-weight:650"), "source layer must not use synthetic 650 weight");
+check(!css.includes("font-smoothing"), "source layer must not force font smoothing");
 
-const foundation = read("src/styles/foundation.css");
-for (const [value, label] of [
-  ["--wl-bg: #f7f7f5", "warm page surface"],
-  ["--wl-surface: #ffffff", "white surface"],
-  ["--wl-ink: #1d1d1f", "primary ink"],
-  ["--wl-muted: #6e6e73", "secondary ink"],
-  ["--wl-accent: #1a3c34", "forest accent"],
-  ["--wl-accent-deep: #01261f", "deep forest primary"],
-  ["--radius: 0.25rem", "4px controls"],
-  ["--radius-lg: 0.5rem", "8px cards"],
-]) check(foundation.toLowerCase().includes(value), `foundation is missing ${label}`);
-check(foundation.includes("-webkit-font-smoothing: auto"), "foundation must preserve native type rendering");
-check(!foundation.includes("font-weight: 650"), "foundation must not use synthetic 650 weight");
-
-const main = read("src/main.tsx");
-check(main.indexOf('import "./styles/foundation.css";') >= 0, "foundation import is required");
-check(main.indexOf('import "./index.css";') > main.indexOf('import "./styles/foundation.css";'), "product styles must follow foundation");
-for (const path of ["monochrome-guard.css", "readability-guard.css", "stitch-geometry.css"]) check(!main.includes(path), `${path} must not be in the active cascade`);
-
+const index = read("src/index.css");
+check(index.includes('"./styles/precision-operator-web.css"'), "exact source layer must be imported");
+check(!index.includes("precision-type.css"), "retired type layer must not be imported");
+check(!index.includes("font-smoothing"), "global body must not force font smoothing");
 const registry = read("src/lib/stitch-design-system.ts");
 check(registry.includes("15464421841872665077"), "registry must use Precision Operator");
-for (const name of ["studio_agent_training", "agents_fleet_roster", "knowledge_facts_rules", "actions_permissions_connections", "live_real_time_ops", "settings_workspace_admin"]) check(registry.includes(name), `registry is missing ${name}`);
-
-const workspace = read("src/routes/AppRoutes.tsx");
-check(workspace.includes('path="/actions" element={<IntegrationsPage />}'), "Actions must remain canonical");
-check(workspace.includes('path="/integrations" element={<Navigate to="/actions" replace />}'), "integration redirect is required");
-const app = read("src/App.tsx");
-check(app.includes('path="/for/personal" element={<VerticalLanding slug="personal" />}'), "personal route is required");
-
-if (issues.length) {
-  console.error("Precision Operator contract failed:\n- " + issues.join("\n- "));
-  process.exitCode = 1;
-} else console.log("Precision Operator contract passed");
+check(registry.includes('tokens: "src/styles/precision-operator-web.css"'), "registry must use exact source layer");
+for (const source of ["studio_agent_training","agents_fleet_roster","knowledge_facts_rules","actions_permissions_connections","live_real_time_ops","settings_workspace_admin"]) check(registry.includes(source), `missing route source ${source}`);
+const shell = read("src/components/WorkspaceShell.tsx");
+check(shell.includes("212px") && shell.includes("max-w-[1680px]"), "shell must retain fixed-fluid layout");
+check(shell.includes("lg:px-10"), "shell must retain 40px desktop margin");
+const routes = read("src/routes/AppRoutes.tsx");
+check(routes.includes('path="/actions" element={<IntegrationsPage />}'), "Actions must be canonical");
+check(routes.includes('path="/integrations" element={<Navigate to="/actions" replace />}'), "integrations redirect is required");
+check(read("src/App.tsx").includes('path="/for/personal" element={<VerticalLanding slug="personal" />}'), "personal route is required");
+if (issues.length) { console.error("Precision Operator contract failed:\n- " + issues.join("\n- ")); process.exitCode = 1; } else console.log("Precision Operator contract passed");
