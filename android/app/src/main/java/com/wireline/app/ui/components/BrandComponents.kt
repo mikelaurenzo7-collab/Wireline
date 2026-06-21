@@ -1,7 +1,11 @@
 package com.wireline.app.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,10 +27,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -64,11 +70,11 @@ fun StitchMeshSurface(modifier: Modifier = Modifier) {
 }
 
 /**
- * Compatibility name for existing screens. The implementation is now a quiet
- * white, bordered Stitch card—not lavender and not decorative.
+ * The shared Professional Heritage container: white, 8dp, 1dp warm border,
+ * 16dp internal spacing, and no ornamental gradient or heavy elevation.
  */
 @Composable
-fun LavenderCard(
+fun OperatorCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -87,16 +93,37 @@ fun LavenderCard(
     }
 }
 
+/** Compatibility alias for existing screen composition while callers migrate. */
+@Composable
+fun LavenderCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) = OperatorCard(modifier = modifier, content = content)
+
+/** 200ms 0.98 press response required by the Professional Heritage system. */
+@Composable
+private fun Modifier.tactileScale(interactionSource: MutableInteractionSource): Modifier {
+    val pressed = interactionSource.collectIsPressedAsState().value
+    val scale = animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = tween(durationMillis = 200),
+        label = "wireline-tactile-scale",
+    ).value
+    return graphicsLayer { scaleX = scale; scaleY = scale }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val interactionSource = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().tactileScale(interactionSource),
         colors = CardDefaults.cardColors(containerColor = Brand.Panel),
         shape = RoundedCornerShape(Brand.RadiusMd),
         border = BorderStroke(1.dp, Brand.Border),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = interactionSource,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
