@@ -1,13 +1,10 @@
 /**
- * Wireline Claude Brain — barrel re-export.
- * ---------------------------------------------------------------------------
- * The implementation has been decomposed into focused modules for
- * maintainability. This file preserves backward compatibility so
- * existing `import * as claudeBrain from "./claude-brain"` and
- * named imports continue to work without changes.
+ * @deprecated Import from `./ai-runtime`.
+ *
+ * This compatibility barrel deliberately contains no provider implementation.
+ * Wireline managed work is OpenAI-first with Gemini only as failure fallback.
  */
-
-export * from "./claude-models";
+export * from "./ai-runtime";
 export {
   VAPI_PREMIUM_MODEL,
   VAPI_SHOWCASE_MODEL,
@@ -17,8 +14,3 @@ export {
   VAPI_VOICE_FALLBACK_MODEL,
   VAPI_VOICE_FALLBACK_PROVIDER,
 } from "./voice-model-defaults";
-export * from "./claude-audit";
-export * from "./claude-client";
-export * from "./claude-structured";
-export * from "./claude-tools";
-export * from "./claude-recipes";
