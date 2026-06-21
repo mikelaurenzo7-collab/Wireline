@@ -13,7 +13,7 @@ type View = "facts" | "rules" | "tone";
 
 function Panel({ title, icon, items, empty, loading, countLabel }: { title: string; icon: ReactNode; items: string[]; empty: string; loading: boolean; countLabel?: string }) {
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(26,60,52,0.05)]">
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">{icon}</span>
@@ -35,14 +35,14 @@ function Panel({ title, icon, items, empty, loading, countLabel }: { title: stri
 function TonePanel({ personality, loading }: { personality?: string; loading: boolean }) {
   const traits = personality ? ["Professional", "Concise", "Helpful"] : ["Clear", "Direct", "Helpful"];
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(26,60,52,0.05)]">
       <header className="flex items-center gap-2 border-b border-border px-4 py-4">
         <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground"><SlidersHorizontal size={16} /></span>
         <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">Tone &amp; personality</h2>
       </header>
       <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {loading ? <div className="space-y-3"><div className="h-4 animate-pulse bg-muted" /><div className="h-4 w-5/6 animate-pulse bg-muted" /><div className="h-4 w-4/5 animate-pulse bg-muted" /></div> : <>
-          <blockquote className="border-l-2 border-[color:var(--wl-line-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">{personality || "Define the assistant’s tone in Studio. Keep it clear, confident, concise, and appropriate to the context of every conversation."}</blockquote>
+          <blockquote className="border-l-2 border-[color:var(--wl-line-strong)] pl-3 text-[15px] italic leading-6 text-muted-foreground">{personality || "Define how your assistant should sound. Keep it clear, confident, concise, and appropriate to every conversation."}</blockquote>
           <p className="mt-8 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">Key traits</p>
           <div className="mt-3 flex flex-wrap gap-2">{traits.map((trait) => <span key={trait} className="rounded-sm bg-muted px-2 py-1 font-mono text-[12px] text-foreground">{trait}</span>)}</div>
         </>}
@@ -63,7 +63,6 @@ export default function KnowledgeWorkspace() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const agentId = params.get("agent") || agents[0]?.id || "";
-  const active = agents.find((agent) => agent.id === agentId);
   const facts = useMemo(() => config.knowledge?.map((item) => item.content || "").filter(Boolean) || [], [config.knowledge]);
   const rules = useMemo(() => config.directives?.map((item) => item.content || "").filter(Boolean) || [], [config.directives]);
 
@@ -93,19 +92,19 @@ export default function KnowledgeWorkspace() {
     } finally { setSaving(false); }
   }
 
-  const factsPanel = <Panel title="Business facts" icon={<Database size={16} />} items={facts} empty="Add approved hours, services, policies, or personal context your assistant can state as truth." loading={loading} countLabel={`${facts.length} items`} />;
-  const rulesPanel = <Panel title="Operating rules" icon={<ShieldCheck size={16} />} items={rules} empty="Add promises, boundaries, and handoff rules." loading={loading} countLabel={rules.length ? `${rules.length} active` : "0 items"} />;
+  const factsPanel = <Panel title="Facts & preferences" icon={<Database size={16} />} items={facts} empty="Add preferences, routines, important details, and approved information your assistant can use." loading={loading} countLabel={`${facts.length} items`} />;
+  const rulesPanel = <Panel title="Rules & boundaries" icon={<ShieldCheck size={16} />} items={rules} empty="Add promises, limits, and situations where your assistant should ask you first." loading={loading} countLabel={rules.length ? `${rules.length} active` : "0 items"} />;
   const tonePanel = <TonePanel personality={config.personality} loading={loading} />;
   const selected = view === "facts" ? factsPanel : view === "rules" ? rulesPanel : tonePanel;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex shrink-0 items-center justify-end lg:hidden">
-        <select value={agentId} onChange={(event) => setParams({ agent: event.target.value })} className="h-10 rounded-sm border border-border bg-card px-3 text-sm">
+        <select value={agentId} onChange={(event) => setParams({ agent: event.target.value })} className="h-10 rounded-md border border-border bg-card px-3 text-sm">
           {agents.map((agent) => <option value={agent.id} key={agent.id}>{agent.name}</option>)}
         </select>
       </div>
-      <div className="grid shrink-0 grid-cols-3 overflow-hidden rounded-sm border border-border bg-muted lg:hidden">
+      <div className="grid shrink-0 grid-cols-3 overflow-hidden rounded-md border border-border bg-muted lg:hidden">
         {(["facts", "rules", "tone"] as View[]).map((item) => <button key={item} type="button" aria-selected={view === item} onClick={() => setView(item)} className={`min-h-10 border-r border-border px-3 text-[12px] font-medium capitalize last:border-r-0 ${view === item ? "bg-card text-foreground" : "text-muted-foreground"}`}>{item}</button>)}
       </div>
 
@@ -115,15 +114,15 @@ export default function KnowledgeWorkspace() {
         <div className="hidden min-h-0 xl:block">{tonePanel}</div>
         <div className="min-h-0 xl:hidden">{selected}</div>
 
-        <aside className="mt-4 flex min-h-[520px] flex-col rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] xl:mt-0">
-          <div className="flex items-center gap-2 border-b border-border pb-3"><Plus size={19} className="text-foreground" /><h2 className="text-[20px] font-semibold tracking-[-.01em]">Add knowledge</h2></div>
-          <div className="mt-4 grid grid-cols-2 rounded-sm bg-muted p-1">
-            <button type="button" aria-selected={kind === "knowledge"} className={`min-h-9 rounded-sm text-[14px] font-medium ${kind === "knowledge" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(0,0,0,.04)]" : "text-muted-foreground"}`} onClick={() => setKind("knowledge")}>Add fact</button>
-            <button type="button" aria-selected={kind === "directive"} className={`min-h-9 rounded-sm text-[14px] font-medium ${kind === "directive" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(0,0,0,.04)]" : "text-muted-foreground"}`} onClick={() => setKind("directive")}>Add rule</button>
+        <aside className="mt-4 flex min-h-[520px] flex-col rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(26,60,52,0.05)] xl:mt-0">
+          <div className="flex items-center gap-2 border-b border-border pb-3"><Plus size={19} className="text-foreground" /><h2 className="text-[20px] font-semibold tracking-[-.01em]">Add a detail</h2></div>
+          <div className="mt-4 grid grid-cols-2 rounded-md bg-muted p-1">
+            <button type="button" aria-selected={kind === "knowledge"} className={`min-h-9 rounded-sm text-[14px] font-medium ${kind === "knowledge" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(26,60,52,.04)]" : "text-muted-foreground"}`} onClick={() => setKind("knowledge")}>Add fact</button>
+            <button type="button" aria-selected={kind === "directive"} className={`min-h-9 rounded-sm text-[14px] font-medium ${kind === "directive" ? "bg-card text-foreground shadow-[0_1px_1px_rgba(26,60,52,.04)]" : "text-muted-foreground"}`} onClick={() => setKind("directive")}>Add rule</button>
           </div>
-          <label className="mt-4 block"><span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">Title</span><input value={title} onChange={(event) => setTitle(event.target.value)} className="wl-stitch-input mt-2" placeholder={kind === "knowledge" ? "e.g., Office hours" : "e.g., Escalation trigger"} /></label>
-          <label className="mt-4 flex min-h-0 flex-1 flex-col"><span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">Content</span><textarea value={entry} onChange={(event) => setEntry(event.target.value)} className="wl-stitch-input mt-2 min-h-[150px] flex-1 resize-none leading-6" placeholder={kind === "knowledge" ? "Describe factual information clearly…" : "Describe what the assistant must do or avoid…"} /></label>
-          <label className="mt-4 block"><span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">Tags (optional)</span><input value={tags} onChange={(event) => setTags(event.target.value)} className="wl-stitch-input mt-2" placeholder="Press Enter or separate with commas" /></label>
+          <label className="mt-4 block"><span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">Title</span><input value={title} onChange={(event) => setTitle(event.target.value)} className="wl-stitch-input mt-2" placeholder={kind === "knowledge" ? "e.g., Preferred pharmacy" : "e.g., When to ask me first"} /></label>
+          <label className="mt-4 flex min-h-0 flex-1 flex-col"><span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">Content</span><textarea value={entry} onChange={(event) => setEntry(event.target.value)} className="wl-stitch-input mt-2 min-h-[150px] flex-1 resize-none leading-6" placeholder={kind === "knowledge" ? "Describe a fact, preference, routine, or policy clearly…" : "Describe what the assistant must do or avoid…"} /></label>
+          <label className="mt-4 block"><span className="font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">Tags (optional)</span><input value={tags} onChange={(event) => setTags(event.target.value)} className="wl-stitch-input mt-2" placeholder="Separate with commas" /></label>
           <div className="mt-4 flex justify-end gap-3 border-t border-border pt-4"><button type="button" onClick={() => { setTitle(""); setEntry(""); setTags(""); }} className="workspace-btn-secondary px-4 py-2.5 text-sm"><Trash2 size={14} />Clear</button><button type="button" disabled={!entry.trim() || saving} onClick={() => void save()} className="workspace-btn-primary px-4 py-2.5 text-sm disabled:opacity-40">{saving ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}Save {kind === "knowledge" ? "fact" : "rule"}</button></div>
         </aside>
       </div>
