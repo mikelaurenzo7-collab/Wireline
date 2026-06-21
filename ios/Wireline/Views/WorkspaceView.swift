@@ -117,7 +117,11 @@ struct WorkspaceView: View {
             }
             VStack(spacing: 0) {
                 if agents.isEmpty {
-                    BrandEmptyState(title: "No assistants yet", message: "Create your first assistant on the web, then come back to hand off a call.", systemImage: "person.wave.2")
+                    BrandEmptyState(
+                        title: "Start with one assistant",
+                        message: "Open the Assistants tab to give your first helper a name and a clear job.",
+                        systemImage: "person.wave.2"
+                    )
                 } else {
                     ForEach(agents) { agent in
                         AgentRow(agent: agent).padding(.horizontal, 16).padding(.vertical, 8)
