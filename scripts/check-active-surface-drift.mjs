@@ -73,31 +73,37 @@ const foundation = read("src/styles/foundation.css");
 requirePatterns("src/styles/foundation.css", foundation, [
   [/--wl-page:\s*#f9f9f7/i, "must use warm root surface #f9f9f7"],
   [/--wl-accent:\s*#1a3c34/i, "must use Stitch forest accent #1a3c34"],
+  [/--wl-on-surface:\s*#1a3c34/i, "must use #1a3c34 as primary readable text"],
   [/--wl-surface-subtle:\s*#f4f4f2/i, "must use layered secondary surface #f4f4f2"],
   [/--wl-line:\s*#dadad8/i, "must use #dadad8 as the primary divider"],
   [/--radius-md:\s*0\.5rem/i, "must retain 8px standard geometry"],
   [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
   [/font-feature-settings:\s*"cv05",\s*"cv08",\s*"ss01"/i, "must retain headline precision features"],
-  [/font-family:\s*var\(--wl-font-display,\s*"Source Serif 4"/i, "must use Source Serif 4 headline fallbacks"],
+  [/font-family:\s*var\(--wl-font-display,\s*Inter/i, "must use Inter headline fallbacks"],
+  [/focus-visible[\s\S]*outline:\s*2px solid var\(--wl-accent\)/i, "must retain a high-contrast 2px keyboard focus indicator"],
 ]);
 
 const indexCss = read("src/index.css");
 requirePatterns("src/index.css", indexCss, [
-  [/family=Source\+Serif\+4/i, "must load Source Serif 4 for editorial hierarchy"],
-  [/family=Work\+Sans/i, "must load Work Sans for operational UI"],
+  [/family=Inter/i, "must load Inter for Professional Heritage hierarchy"],
   [/family=JetBrains\+Mono/i, "must load JetBrains Mono for functional metadata"],
-  [/--wl-font-display:\s*"Source Serif 4"/i, "must map display typography to Source Serif 4"],
-  [/--wl-font-sans:\s*"Work Sans"/i, "must map UI typography to Work Sans"],
+  [/--wl-font-display:\s*"Inter"/i, "must map display typography to Inter"],
+  [/--wl-font-sans:\s*"Inter"/i, "must map UI typography to Inter"],
   [/--wl-font-mono:\s*"JetBrains Mono"/i, "must map metadata typography to JetBrains Mono"],
 ]);
+if (/Source Serif 4|Work Sans/i.test(indexCss)) {
+  report("src/index.css", "must not retain superseded display or UI font stacks");
+}
 
 const documentHead = read("index.html");
 requirePatterns("index.html", documentHead, [
-  [/family=Source\+Serif\+4/i, "must preload Source Serif 4 in the document head"],
-  [/family=Work\+Sans/i, "must preload Work Sans in the document head"],
+  [/family=Inter/i, "must preload Inter in the document head"],
   [/family=JetBrains\+Mono/i, "must preload JetBrains Mono in the document head"],
   [/theme-color" content="#F9F9F7"/i, "must preserve the warm mobile browser surface"],
 ]);
+if (/Source Serif 4|Work Sans/i.test(documentHead)) {
+  report("index.html", "must not preload superseded display or UI fonts");
+}
 
 const shell = read("src/components/WorkspaceShell.tsx");
 if (!/w-\[212px\]/.test(shell) || !/lg:grid-cols-\[212px_minmax\(0,1fr\)\]/.test(shell)) {
