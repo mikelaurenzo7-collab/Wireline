@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Phone, X } from "lucide-react";
 import { authFetch } from "../lib/api";
-import { fetchAssistantSetupProgress } from "../lib/Assistants-setup-progress";
+import { fetchAssistantSetupProgress } from "../lib/fleet-setup-progress";
 import {
   fetchActivationStatusFull,
   isActivationCelebrated,
@@ -12,7 +12,6 @@ import {
   isFreshSignupSession,
 } from "../lib/post-signup-onboarding";
 import { ACTIVATION_NUDGE_COPY } from "../lib/wireline-onboarding-copy";
-import { WL_OPS_CLASSES } from "../lib/wireline-ops-design";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 
@@ -84,28 +83,26 @@ export default function ActivationNudge({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        WL_OPS_CLASSES.setupNudge,
-        // Compact footprint — reduces vertical chrome on dense boards (Pipeline, Recaps)
-        "flex flex-col sm:flex-row sm:items-center gap-2 mx-4 mt-2 mb-0.5 py-2 px-3 text-[12px]",
+        "mx-4 mt-2 mb-0.5 flex flex-col gap-2 border border-border bg-card px-3 py-2 text-[12px] sm:flex-row sm:items-center",
         className,
       )}
       role="status"
       aria-live="polite"
     >
-      <div className="flex-1 min-w-0 pl-1">
-        <p className="wl-label text-brand mb-1">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
-        <p className="text-xs text-foreground/75 leading-relaxed">{ACTIVATION_NUDGE_COPY.body}</p>
+      <div className="min-w-0 flex-1 pl-1">
+        <p className="wl-label mb-1 text-brand">{ACTIVATION_NUDGE_COPY.eyebrow}</p>
+        <p className="text-xs leading-relaxed text-foreground/75">{ACTIVATION_NUDGE_COPY.body}</p>
         {phoneNumber ? (
-          <p className="text-[11px] font-mono text-muted mt-1 tabular-nums">{phoneNumber}</p>
+          <p className="mt-1 font-mono text-[11px] tabular-nums text-muted">{phoneNumber}</p>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0 sm:pl-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pl-2">
         {phoneNumber ? (
           <a
             href={formatTel(phoneNumber)}
-            className="touch-press hover:scale-[1.05] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand text-on-brand wl-label min-h-[36px] hover:opacity-95 transition-opacity"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded bg-brand px-4 py-2 wl-label text-on-brand transition-opacity hover:opacity-95 active:scale-[0.98]"
           >
-            <Phone className="w-3.5 h-3.5" />
+            <Phone className="size-3.5" />
             {ACTIVATION_NUDGE_COPY.cta}
           </a>
         ) : null}
@@ -116,9 +113,9 @@ export default function ActivationNudge({ className }: { className?: string }) {
           disableAnimations
           onClick={dismiss}
           aria-label="Dismiss activation reminder"
-          className="touch-press hover:scale-[1.05] h-9 w-9 rounded-full text-muted hover:text-foreground"
+          className="size-9 rounded text-muted hover:text-foreground active:scale-[0.98]"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="size-3.5" />
         </ShadButton>
       </div>
     </div>

@@ -25,7 +25,6 @@ export default function AppRoutes() {
         <Route path="/knowledge" element={<KnowledgePage />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
         <Route path="/actions" element={<ActionsPage />} />
-        <Route path="/actions" element={<Navigate to="/actions" replace />} />
         <Route path="/ops" element={<Navigate to="/studio" replace />} />
         <Route path="/ops/*" element={<Navigate to="/studio" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
