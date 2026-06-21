@@ -1,64 +1,88 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { STITCH_CODE_SYSTEM, STITCH_SCREENS } from "./stitch-design-system";
-import { WL_BRAND } from "./wireline-design-system";
+import { STITCH_CODE_SYSTEM, STITCH_DESIGN_SYSTEM, STITCH_SCREENS } from "./stitch-design-system";
 
 const root = resolve(import.meta.dirname, "../..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const exists = (path: string) => existsSync(resolve(root, path));
 
-describe("Wireline Stitch contract", () => {
-  it("pins the committed forest, warm-surface, and four-pixel system", () => {
-    const foundation = read("src/styles/foundation.css");
-    expect(WL_BRAND.accentHex.toLowerCase()).toBe("#1a3c34");
-    expect(foundation).toMatch(/--wl-accent:\s*#1a3c34/i);
-    expect(foundation).toMatch(/--wl-bg:\s*#f7f7f5/i);
-    expect(foundation).toMatch(/--radius:\s*0\.25rem/i);
+describe("Precision Operator Design MD contract", () => {
+  it("pins the current Stitch project and source records", () => {
+    expect(STITCH_DESIGN_SYSTEM.projectId).toBe("15464421841872665077");
+    expect(STITCH_DESIGN_SYSTEM.title).toBe("Precision Operator");
+    expect(exists(STITCH_DESIGN_SYSTEM.designSpec)).toBe(true);
+    expect(exists(STITCH_DESIGN_SYSTEM.sourceManifest)).toBe(true);
+    expect(exists(STITCH_DESIGN_SYSTEM.sourceDesignMd)).toBe(true);
+    expect(read(STITCH_DESIGN_SYSTEM.sourceDesignMd)).toContain("page #F7F7F5");
   });
 
-  it("maps canonical workspace screens to committed Stitch exports", () => {
-    expect(STITCH_SCREENS["/studio"].stitchFile).toBe(".stitch-export/agent-studio-integrated-creation.html");
-    expect(STITCH_SCREENS["/actions"].stitchFile).toBe(".stitch-export/actions-integrations-polished.html");
-    for (const screen of Object.values(STITCH_SCREENS)) expect(exists(screen.stitchFile)).toBe(true);
+  it("uses the exact visible palette and geometry from the Design MD", () => {
+    const css = read(STITCH_CODE_SYSTEM.tokens).toLowerCase();
+    for (const value of [
+      "--wl-page:#f7f7f5",
+      "--wl-surface-base:#f9f9f7",
+      "--wl-surface:#fff",
+      "--wl-surface-subtle:#f4f4f2",
+      "--wl-surface-container:#eeeeec",
+      "--wl-surface-hover:#e8e8e6",
+      "--wl-surface-variant:#e2e3e1",
+      "--wl-ink:#1d1d1f",
+      "--wl-muted:#6e6e73",
+      "--wl-ink-soft:#414846",
+      "--wl-line:#e5e5e2",
+      "--wl-line-strong:#c1c8c4",
+      "--wl-accent:#1a3c34",
+      "--wl-accent-deep:#01261f",
+      "--wl-accent-container:#c5eadf",
+      "--wl-accent-fixed-dim:#aacec3",
+      "--radius:.25rem",
+      "--radius-lg:.5rem",
+      "--radius-xl:.75rem",
+    ]) expect(css).toContain(value);
   });
 
-  it("keeps Actions canonical and personal use discoverable", () => {
-    const workspaceRoutes = read("src/routes/AppRoutes.tsx");
-    const publicRoutes = read("src/App.tsx");
-    const header = read("src/components/marketing/PublicSiteHeader.tsx");
-    const footer = read("src/components/marketing/MarketingFooter.tsx");
-    expect(workspaceRoutes).toContain('path="/actions" element={<IntegrationsPage />}');
-    expect(workspaceRoutes).toContain('path="/integrations" element={<Navigate to="/actions" replace />}');
-    expect(publicRoutes).toContain('path="/for/personal" element={<VerticalLanding slug="personal" />}');
-    expect(header).toContain('to: "/for/personal"');
-    expect(footer).toContain('to: "/for/personal"');
+  it("enforces source typography without synthetic rendering", () => {
+    const activeCss = [
+      STITCH_CODE_SYSTEM.tokens,
+      STITCH_CODE_SYSTEM.patterns,
+      "src/styles/design-system.css",
+      "src/styles/workspace-buttons.css",
+      "src/styles/cta-readability.css",
+      "src/styles/phone-agent-blueprint.css",
+      "src/index.css",
+    ].map(read).join("\n").toLowerCase();
+    expect(activeCss).toContain("font-size:11px;font-weight:600;line-height:16px");
+    expect(activeCss).toContain("font-size:14px;font-weight:400;line-height:20px");
+    expect(activeCss).not.toContain("font-weight:650");
+    expect(activeCss).not.toContain("font-smoothing");
+    expect(activeCss).not.toContain("backdrop-filter");
   });
 
-  it("keeps public marketing pages on live Stitch primitives", () => {
-    for (const path of [
-      "src/pages/Features.tsx",
-      "src/pages/Compare.tsx",
-      "src/pages/Showcase.tsx",
-      "src/pages/About.tsx",
-      "src/pages/VerticalLanding.tsx",
-    ]) {
-      const source = read(path);
-      expect(source).toContain("wl-stitch");
-      expect(source).not.toMatch(/font-display|bg-gradient-to-r|#1d1d1f|#f2f2ef/i);
+  it("maps the workspace states and keeps personal use first-class", () => {
+    expect(STITCH_SCREENS["/studio"].source).toBe("studio_agent_training");
+    expect(STITCH_SCREENS["/agents"].states).toEqual(["agents_empty_state", "agents_loading_state", "agents_degraded_state"]);
+    expect(STITCH_SCREENS["/knowledge"].states).toEqual(["knowledge_empty_state"]);
+    expect(STITCH_SCREENS["/actions"].source).toBe("actions_permissions_connections");
+    expect(STITCH_SCREENS["/ops"].states).toEqual(["live_handoffs_queue", "live_quality_review"]);
+    expect(STITCH_SCREENS["/settings"].source).toBe("settings_workspace_admin");
+    expect(read("src/App.tsx")).toContain('path="/for/personal" element={<VerticalLanding slug="personal" />}');
+  });
+
+  it("uses one active cascade and the fixed-fluid shell", () => {
+    const main = read("src/main.tsx");
+    const index = read("src/index.css");
+    const shell = read(STITCH_CODE_SYSTEM.workspace);
+    expect(main.indexOf('import "./styles/foundation.css";')).toBeGreaterThanOrEqual(0);
+    expect(main.indexOf('import "./index.css";')).toBeGreaterThan(main.indexOf('import "./styles/foundation.css";'));
+    for (const retired of ["monochrome-guard.css", "readability-guard.css", "stitch-geometry.css", "precision-operator-web.css", "precision-type.css"]) {
+      expect(index).not.toContain(retired);
+      expect(main).not.toContain(retired);
     }
-  });
-
-  it("keeps only the live Stitch contract in strict validation", () => {
-    const strictConfig = read("tsconfig.strict.json");
-    expect(strictConfig).toContain("stitch-design-contract.test.ts");
-    expect(strictConfig).toContain("stitch-design-system.ts");
-  });
-
-  it("documents the committed sources", () => {
-    expect(STITCH_CODE_SYSTEM.tokens).toBe("src/styles/foundation.css");
-    expect(STITCH_CODE_SYSTEM.patterns).toBe("src/styles/stitch-patterns.css");
-    expect(STITCH_CODE_SYSTEM.designMd).toBe(".stitch/DESIGN.md");
-    expect(STITCH_CODE_SYSTEM.apiExport).toBe(".stitch-export/manifest.json");
+    expect(shell).toContain("212px");
+    expect(shell).toContain("max-w-[1680px]");
+    expect(shell).toContain("min-h-16");
+    expect(shell).toContain("lg:px-10");
+    expect(shell).toContain("drawerOpen");
   });
 });

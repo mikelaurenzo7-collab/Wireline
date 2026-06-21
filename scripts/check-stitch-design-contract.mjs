@@ -2,152 +2,62 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
-const failures = [];
-const read = (file) => readFileSync(resolve(root, file), "utf8");
-const exists = (file) => existsSync(resolve(root, file));
-const report = (file, message) => failures.push(`${file}: ${message}`);
+const read = (path) => readFileSync(resolve(root, path), "utf8");
+const issues = [];
+const check = (ok, text) => { if (!ok) issues.push(text); };
 
-const required = [
+for (const path of [
   "src/main.tsx",
   "src/index.css",
   "src/styles/foundation.css",
   "src/styles/stitch-patterns.css",
   "src/styles/design-system.css",
   "src/styles/workspace-buttons.css",
+  "src/styles/phone-agent-blueprint.css",
   "src/lib/stitch-design-system.ts",
-  "src/lib/wireline-design-system.ts",
+  "src/lib/stitch-design-contract.test.ts",
   "src/routes/AppRoutes.tsx",
   "src/App.tsx",
   "src/components/WorkspaceShell.tsx",
-  "src/components/marketing/PublicSiteHeader.tsx",
-  "src/components/marketing/MarketingFooter.tsx",
-  "src/pages/LandingPage.tsx",
-  "src/pages/Features.tsx",
-  "src/pages/Pricing.tsx",
-  "src/pages/Showcase.tsx",
-  "src/pages/Compare.tsx",
-  "src/pages/About.tsx",
-  "src/pages/VerticalLanding.tsx",
-  "src/components/AuthPortal.tsx",
-  "public/favicon.svg",
-  "public/wireline-icon.svg",
-  "public/og-image.svg",
-  "public/site.webmanifest",
   ".stitch/DESIGN.md",
-  ".stitch-export/manifest.json",
-];
+  ".stitch/precision-operator/design-md-source.md",
+]) check(existsSync(resolve(root, path)), `${path} is required`);
 
-for (const file of required) {
-  if (!exists(file)) report(file, "required Stitch migration artifact is missing");
-}
+const foundation = read("src/styles/foundation.css").toLowerCase();
+for (const token of [
+  "--wl-page:#f7f7f5", "--wl-surface-base:#f9f9f7", "--wl-surface:#fff", "--wl-surface-subtle:#f4f4f2",
+  "--wl-surface-container:#eeeeec", "--wl-surface-hover:#e8e8e6", "--wl-surface-variant:#e2e3e1",
+  "--wl-ink:#1d1d1f", "--wl-muted:#6e6e73", "--wl-ink-soft:#414846", "--wl-line:#e5e5e2",
+  "--wl-line-strong:#c1c8c4", "--wl-accent:#1a3c34", "--wl-accent-deep:#01261f",
+  "--wl-accent-container:#c5eadf", "--wl-accent-fixed-dim:#aacec3", "--radius:.25rem", "--radius-lg:.5rem", "--radius-xl:.75rem",
+]) check(foundation.includes(token), `missing Design MD token ${token}`);
+for (const forbidden of ["font-weight:650", "font-smoothing", "backdrop-filter"]) check(!foundation.includes(forbidden), `foundation must not contain ${forbidden}`);
 
-const exportedScreens = [
-  ".stitch-export/wireline-ai-agent-fleet-for-business.html",
-  ".stitch-export/sign-in-wireline.html",
-  ".stitch-export/agent-studio-integrated-creation.html",
-  ".stitch-export/agent-fleet-list-polished.html",
-  ".stitch-export/knowledge-base-polished.html",
-  ".stitch-export/actions-integrations-polished.html",
-  ".stitch-export/live-ops-polished.html",
-  ".stitch-export/workspace-settings.html",
-  ".stitch-export/sales-solutions-wireline.html",
-  ".stitch-export/support-solutions-wireline.html",
-  ".stitch-export/pricing-wireline.html",
-];
-
-for (const file of exportedScreens) {
-  if (!exists(file)) report(file, "canonical Stitch export is missing");
-}
-
-const foundation = read("src/styles/foundation.css");
-for (const [pattern, description] of [
-  [/--wl-accent:\s*#1a3c34/i, "must define the Stitch forest accent"],
-  [/--wl-bg:\s*#f7f7f5/i, "must define the Stitch warm surface"],
-  [/--radius:\s*0\.25rem/i, "must retain the four-pixel default geometry"],
-  [/--primary:\s*var\(--wl-accent\)/, "must alias primary to the Stitch accent"],
-]) {
-  if (!pattern.test(foundation)) report("src/styles/foundation.css", description);
-}
+const activeStyles = ["src/styles/foundation.css", "src/styles/stitch-patterns.css", "src/styles/design-system.css", "src/styles/workspace-buttons.css", "src/styles/cta-readability.css", "src/styles/phone-agent-blueprint.css", "src/index.css"].map(read).join("\n").toLowerCase();
+for (const forbidden of ["font-weight:650", "font-smoothing", "backdrop-filter", "precision-operator-web.css", "precision-type.css"]) check(!activeStyles.includes(forbidden), `active cascade must not contain ${forbidden}`);
 
 const main = read("src/main.tsx");
-const cascade = [
-  'import "./styles/foundation.css";',
-  'import "./index.css";',
-  'import "./styles/monochrome-guard.css";',
-  'import "./styles/readability-guard.css";',
-];
-let previous = -1;
-for (const statement of cascade) {
-  const position = main.indexOf(statement);
-  if (position < 0 || position <= previous) {
-    report("src/main.tsx", `must import global CSS in order: ${cascade.join(" → ")}`);
-    break;
-  }
-  previous = position;
-}
+check(main.indexOf('import "./styles/foundation.css";') >= 0, "foundation import is required");
+check(main.indexOf('import "./index.css";') > main.indexOf('import "./styles/foundation.css";'), "foundation must load before product styles");
+for (const retired of ["monochrome-guard.css", "readability-guard.css", "stitch-geometry.css"]) check(!main.includes(retired), `${retired} must not be imported`);
 
-const workspaceRoutes = read("src/routes/AppRoutes.tsx");
-if (!workspaceRoutes.includes('path="/actions" element={<IntegrationsPage />}')) {
-  report("src/routes/AppRoutes.tsx", "must expose /actions as the canonical Actions route");
-}
-if (!workspaceRoutes.includes('path="/integrations" element={<Navigate to="/actions" replace />}')) {
-  report("src/routes/AppRoutes.tsx", "must redirect legacy integration bookmarks to /actions");
-}
+const registry = read("src/lib/stitch-design-system.ts");
+check(registry.includes("15464421841872665077"), "registry must use Precision Operator");
+check(registry.includes('tokens: "src/styles/foundation.css"'), "registry must use canonical foundation tokens");
+for (const source of ["studio_agent_training", "agents_fleet_roster", "knowledge_facts_rules", "actions_permissions_connections", "live_real_time_ops", "settings_workspace_admin"]) check(registry.includes(source), `missing route source ${source}`);
 
-const publicRoutes = read("src/App.tsx");
-if (!publicRoutes.includes('path="/for/personal" element={<VerticalLanding slug="personal" />}')) {
-  report("src/App.tsx", "must expose the first-class consumer /for/personal route");
-}
+const shell = read("src/components/WorkspaceShell.tsx");
+check(shell.includes("212px") && shell.includes("max-w-[1680px]"), "shell must retain fixed-fluid layout");
+check(shell.includes("min-h-16"), "shell must retain a 64px top bar");
+check(shell.includes("lg:px-10"), "shell must retain 40px desktop page margin");
+check(shell.includes("drawerOpen"), "mobile navigation must be a drawer");
 
-const header = read("src/components/marketing/PublicSiteHeader.tsx");
-const footer = read("src/components/marketing/MarketingFooter.tsx");
-if (!header.includes('to: "/for/personal"')) report("src/components/marketing/PublicSiteHeader.tsx", "must expose personal navigation");
-if (!footer.includes('to: "/for/personal"')) report("src/components/marketing/MarketingFooter.tsx", "must expose personal navigation");
+const routes = read("src/routes/AppRoutes.tsx");
+check(routes.includes('path="/actions" element={<IntegrationsPage />}'), "Actions must be canonical");
+check(routes.includes('path="/integrations" element={<Navigate to="/actions" replace />}'), "integrations redirect is required");
+check(read("src/App.tsx").includes('path="/for/personal" element={<VerticalLanding slug="personal" />}'), "personal route is required");
 
-const bridge = read("src/lib/stitch-design-system.ts");
-if (!bridge.includes("6981221452983374608")) report("src/lib/stitch-design-system.ts", "must reference the active Stitch project id");
-for (const file of exportedScreens) {
-  if (!bridge.includes(file)) report("src/lib/stitch-design-system.ts", `must map ${file} exactly`);
-}
-
-for (const page of [
-  "src/pages/Features.tsx",
-  "src/pages/Compare.tsx",
-  "src/pages/Showcase.tsx",
-  "src/pages/About.tsx",
-  "src/pages/VerticalLanding.tsx",
-]) {
-  const source = read(page);
-  if (!source.includes("wl-stitch")) report(page, "must use Stitch component primitives");
-  if (/font-display|bg-gradient-to-r|#1d1d1f|#f2f2ef/i.test(source)) {
-    report(page, "contains pre-Stitch marketing styling");
-  }
-}
-
-const strictConfig = read("tsconfig.strict.json");
-if (!strictConfig.includes("stitch-design-contract.test.ts")) {
-  report("tsconfig.strict.json", "must validate the live Stitch contract");
-}
-
-const productSources = [
-  "src/components/WorkspaceShell.tsx",
-  "src/pages/LandingPage.tsx",
-  "src/pages/Pricing.tsx",
-  "src/components/AuthPortal.tsx",
-  "public/favicon.svg",
-  "public/wireline-icon.svg",
-  "public/og-image.svg",
-  "public/site.webmanifest",
-];
-for (const file of productSources) {
-  const source = read(file);
-  if (/#7c3aed|#a78bfa|#5b21b6|#3d1e7c/i.test(source)) report(file, "contains retired violet brand values");
-  if (/(?:text|bg|from|to)-(?:violet|purple|indigo)-/i.test(source)) report(file, "contains retired purple utility classes");
-}
-
-if (failures.length) {
-  console.error("Stitch design contract check failed:\n- " + failures.join("\n- "));
+if (issues.length) {
+  console.error("Precision Operator contract failed:\n- " + issues.join("\n- "));
   process.exitCode = 1;
-} else {
-  console.log("Stitch design contract check passed");
-}
+} else console.log("Precision Operator Design MD contract passed");
