@@ -8,8 +8,8 @@ public enum WirelineWidgetShared {
     public static let appGroupId = "group.com.wireline.assistant"
 }
 
-/// Small immutable mirror of the native Precision palette. Widgets cannot
-/// import the app target's Brand type, so visual drift must be prevented here.
+/// Small immutable mirror of the native Professional Heritage palette. Widgets
+/// cannot import the app target's Brand type, so visual drift is prevented here.
 public enum WirelinePalette {
     public static let accent = "1A3C34"
     public static let accentDeep = "01261F"
@@ -17,14 +17,14 @@ public enum WirelinePalette {
     public static let canvas = "F9F9F7"
     public static let panel = "FFFFFF"
     public static let panel2 = "F4F4F2"
-    public static let text = "1A1C1B"
-    public static let text2 = "414846"
-    public static let text3 = "717976"
+    public static let text = "1A3C34"
+    public static let text2 = "4A5F59"
+    public static let text3 = "4A5F59"
     public static let border = "DADAD8"
     public static let destructive = "BA1A1A"
 
     // Compatibility aliases for currently compiled widget views. They all use
-    // the forest Precision palette rather than the retired violet palette.
+    // the forest Professional Heritage palette rather than the retired violet palette.
     public static let violet = accent
     public static let violetDeep = accentDeep
     public static let violetSoft = accentSoft
