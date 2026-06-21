@@ -15,7 +15,10 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
@@ -89,22 +92,75 @@ private val LightColors: ColorScheme = lightColorScheme(
     onError = Color.White,
 )
 
+/**
+ * Compose is intentionally platform-native, but its hierarchy mirrors the
+ * source's Inter geometry: compact semibold headlines (-0.02em equivalent)
+ * and legible utility labels with modest positive tracking.
+ */
 private val AppTypography = Typography(
-    displayLarge = Typography().displayLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    displayMedium = Typography().displayMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    displaySmall = Typography().displaySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    headlineLarge = Typography().headlineLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    headlineMedium = Typography().headlineMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    headlineSmall = Typography().headlineSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    titleLarge = Typography().titleLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    titleMedium = Typography().titleMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    titleSmall = Typography().titleSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    bodyLarge = Typography().bodyLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    bodyMedium = Typography().bodyMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    bodySmall = Typography().bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    labelLarge = Typography().labelLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    labelMedium = Typography().labelMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
-    labelSmall = Typography().labelSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+    displayLarge = Typography().displayLarge.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.64).sp,
+    ),
+    displayMedium = Typography().displayMedium.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.56).sp,
+    ),
+    displaySmall = Typography().displaySmall.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.48).sp,
+    ),
+    headlineLarge = Typography().headlineLarge.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.48).sp,
+    ),
+    headlineMedium = Typography().headlineMedium.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.40).sp,
+    ),
+    headlineSmall = Typography().headlineSmall.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.36).sp,
+    ),
+    titleLarge = Typography().titleLarge.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.32).sp,
+    ),
+    titleMedium = Typography().titleMedium.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.28).sp,
+    ),
+    titleSmall = Typography().titleSmall.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = (-0.20).sp,
+    ),
+    bodyLarge = Typography().bodyLarge.copy(fontFamily = FontFamily.SansSerif),
+    bodyMedium = Typography().bodyMedium.copy(fontFamily = FontFamily.SansSerif),
+    bodySmall = Typography().bodySmall.copy(fontFamily = FontFamily.SansSerif),
+    labelLarge = Typography().labelLarge.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.55.sp,
+    ),
+    labelMedium = Typography().labelMedium.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.5.sp,
+    ),
+    labelSmall = Typography().labelSmall.copy(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.45.sp,
+    ),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
