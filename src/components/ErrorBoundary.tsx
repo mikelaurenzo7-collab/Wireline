@@ -1,8 +1,9 @@
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertOctagon, RefreshCw, Home } from "lucide-react";
 import { captureException } from "../lib/sentry";
 import { cn } from "../lib/utils";
-import { WL_APP_CLASSES } from "../lib/wireline-director-design";
+
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
 interface Props {

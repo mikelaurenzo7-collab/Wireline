@@ -61,35 +61,23 @@ function PlanCard({
 }) {
   return (
     <article
-      className={`flex min-h-full flex-col rounded-2xl border p-6 sm:p-7 ${
-        recommended
-          ? "border-[#1d1d1f] bg-[#1d1d1f] text-white shadow-[0_20px_50px_rgba(29,29,31,0.16)]"
-          : "border-[#1d1d1f]/12 bg-white text-[#1d1d1f]"
-      }`}
+      className={`wl-stitch-pricing-card ${recommended ? "wl-stitch-pricing-card--featured" : ""}`}
     >
+      {recommended && <span className="wl-stitch-pricing-badge">Recommended</span>}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-[-0.035em]">{plan.name}</h2>
-        {recommended && (
-          <span className="rounded-full bg-white/14 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
-            Recommended
-          </span>
-        )}
+        <h2 className="text-xl font-semibold tracking-[-0.035em] text-foreground">{plan.name}</h2>
       </div>
-      <p
-        className={`mt-3 min-h-[72px] text-sm leading-6 ${recommended ? "text-white/76" : "text-[#5e5e64]"}`}
-      >
+      <p className="mt-3 min-h-[72px] text-sm leading-6 text-muted-foreground">
         {PLAN_COPY[plan.id]}
       </p>
 
       <div className="mt-8 flex items-end gap-1">
-        <span className="text-5xl font-semibold leading-none tracking-[-0.065em]">
+        <span className="text-5xl font-semibold leading-none tracking-[-0.065em] text-foreground">
           {price(plan, interval)}
         </span>
-        <span className={`pb-1.5 text-xs ${recommended ? "text-white/65" : "text-[#6e6e73]"}`}>
-          {cadence(interval)}
-        </span>
+        <span className="pb-1.5 text-xs text-muted-foreground">{cadence(interval)}</span>
       </div>
-      <p className={`mt-3 text-xs leading-5 ${recommended ? "text-white/65" : "text-[#6e6e73]"}`}>
+      <p className="mt-3 text-xs leading-5 text-muted-foreground">
         {plan.max_agents} included agent{plan.max_agents === 1 ? "" : "s"} ·{" "}
         {plan.voice_minutes_monthly.toLocaleString("en-US")} minutes · {plan.included_phone_numbers}{" "}
         number{plan.included_phone_numbers === 1 ? "" : "s"}
@@ -98,21 +86,17 @@ function PlanCard({
       <Link
         to={signup(plan)}
         className={`mt-8 min-h-12 px-5 text-sm active:scale-[0.985] ${
-          recommended ? "marketing-btn-secondary" : "marketing-btn-primary"
+          recommended ? "workspace-btn-primary" : "workspace-btn-secondary"
         }`}
       >
         {plan.id === "personal" ? "Choose Personal" : `Start ${plan.name}`}
         <ArrowRight className="h-4 w-4" />
       </Link>
 
-      <ul
-        className={`mt-7 space-y-3 border-t pt-6 text-sm leading-5 ${recommended ? "border-white/14 text-white/78" : "border-[#1d1d1f]/10 text-[#515158]"}`}
-      >
+      <ul className="mt-7 space-y-3 border-t border-border pt-6 text-sm leading-5 text-muted-foreground">
         {plan.features.slice(0, 6).map((feature) => (
           <li className="flex gap-2.5" key={feature}>
-            <Check
-              className={`mt-0.5 h-4 w-4 flex-none ${recommended ? "text-white" : "text-[#1d1d1f]"}`}
-            />
+            <Check className="mt-0.5 h-4 w-4 flex-none text-primary" />
             {feature}
           </li>
         ))}
@@ -138,28 +122,24 @@ export default function Pricing() {
 
       <section className="mx-auto max-w-6xl px-5 pb-12 pt-14 sm:px-8 sm:pb-16 sm:pt-20 lg:px-10">
         <div className="max-w-3xl">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">
-            Simple, usable pricing
-          </p>
-          <h1 className="mt-4 text-balance text-[clamp(3rem,8vw,5.8rem)] font-semibold leading-[0.94] tracking-[-0.065em] text-[#1d1d1f]">
+          <p className="wl-stitch-eyebrow">Simple, usable pricing</p>
+          <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
             Choose the plan that fits your call volume.
           </h1>
-          <p className="mt-6 max-w-2xl text-pretty text-[clamp(1.18rem,2.4vw,1.5rem)] font-medium leading-[1.42] tracking-[-0.02em] text-[#4f4f55]">
-            Start with included coverage, then add agents and minutes as the work grows. No
+          <p className="mt-6 max-w-2xl text-pretty text-lg font-medium leading-relaxed tracking-[-0.02em] text-muted-foreground">
+            Start with included coverage, then add assistants and minutes as the work grows. No
             cluttered bundles. No fake unlimited promises.
           </p>
         </div>
 
-        <div
-          className="mt-10 inline-flex rounded-full border border-[#1d1d1f]/14 bg-white p-1"
-          aria-label="Billing interval"
-        >
+        <div className="wl-stitch-interval-toggle mt-10" aria-label="Billing interval">
           {(["month", "year"] as const).map((option) => (
             <button
               type="button"
               key={option}
+              aria-pressed={interval === option}
               onClick={() => setInterval(option)}
-              className={`min-h-10 rounded-full px-4 text-sm font-semibold transition ${interval === option ? "bg-[#1d1d1f] text-white" : "text-[#5e5e64] hover:text-[#1d1d1f]"}`}
+              className="min-h-10 rounded-full px-4 text-sm font-semibold transition text-muted-foreground hover:text-foreground"
             >
               {option === "month" ? "Monthly" : "Annual"}
               {option === "year" && (
@@ -171,22 +151,20 @@ export default function Pricing() {
       </section>
 
       {personal && (
-        <section className="border-y border-[#1d1d1f]/10 bg-white px-5 py-14 sm:px-8 sm:py-20">
+        <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
             <div>
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">
-                Personal
-              </p>
-              <h2 className="mt-4 text-balance text-[clamp(2.4rem,5vw,4.3rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-[#1d1d1f]">
+              <p className="wl-stitch-eyebrow">Personal</p>
+              <h2 className="wl-stitch-display mt-4 text-balance">
                 Give your day a call assistant.
               </h2>
-              <p className="mt-5 max-w-md text-base leading-7 text-[#515158]">
+              <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">
                 Use Wireline to make the call, wait on hold, capture the answer, and hand the next
                 step back to you.
               </p>
-              <div className="mt-7 flex items-center gap-2 text-sm font-medium text-[#4f4f55]">
-                <ShieldCheck className="h-4 w-4 text-[#1d1d1f]" />A light-use plan built for real
-                life.
+              <div className="mt-7 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                A light-use plan built for real life.
               </div>
             </div>
             <div className="max-w-xl">
@@ -198,13 +176,11 @@ export default function Pricing() {
 
       <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24 lg:px-10">
         <div className="max-w-3xl">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6e6e73]">
-            Business
-          </p>
-          <h2 className="mt-4 text-balance text-[clamp(2.6rem,6vw,4.9rem)] font-semibold leading-[0.96] tracking-[-0.065em] text-[#1d1d1f]">
+          <p className="wl-stitch-eyebrow">Business</p>
+          <h2 className="wl-stitch-display mt-4 text-balance">
             Put an AI front office on every conversation.
           </h2>
-          <p className="mt-5 max-w-2xl text-lg font-medium leading-8 tracking-[-0.02em] text-[#4f4f55]">
+          <p className="mt-5 max-w-2xl text-lg font-medium leading-8 tracking-[-0.02em] text-muted-foreground">
             Answer calls, qualify demand, book the next step, route exceptions, follow up, and
             review what happened—without burying your team in another dashboard.
           </p>
@@ -221,14 +197,14 @@ export default function Pricing() {
           ))}
         </div>
 
-        <div className="mt-7 rounded-2xl border border-[#1d1d1f]/10 bg-[#f2f2ef] p-5 text-sm leading-6 text-[#4f4f55] sm:flex sm:items-center sm:justify-between sm:gap-8">
+        <div className="mt-7 rounded-xl border border-border bg-muted p-5 text-sm leading-6 text-muted-foreground sm:flex sm:items-center sm:justify-between sm:gap-8">
           <span>
-            <strong className="text-[#1d1d1f]">Need a custom rollout?</strong> Multi-brand
+            <strong className="text-foreground">Need a custom rollout?</strong> Multi-brand
             deployment, security review, SSO, and custom integrations are scoped with your operating
             model.
           </span>
           <Link
-            className="mt-3 inline-flex shrink-0 items-center gap-2 font-semibold text-[#1d1d1f] underline underline-offset-4 sm:mt-0"
+            className="mt-3 inline-flex shrink-0 items-center gap-2 font-semibold text-primary underline underline-offset-4 sm:mt-0"
             to="/contact?intent=sales"
           >
             Talk to Wireline <ArrowRight className="h-4 w-4" />
@@ -236,29 +212,26 @@ export default function Pricing() {
         </div>
       </section>
 
-      <section className="border-y border-[#1d1d1f]/10 bg-white px-5 py-14 sm:px-8 sm:py-20">
+      <section className="border-y border-border bg-card px-5 py-14 sm:px-8 sm:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
           <div>
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-[#4f4f55]">
-              <ShieldCheck className="h-4 w-4 text-[#1d1d1f]" />
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-primary" />
               Coverage that stays understandable
             </div>
-            <h2 className="mt-4 text-balance text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[#1d1d1f]">
+            <h2 className="wl-stitch-headline mt-4 text-balance">
               Start with coverage. Scale through usage.
             </h2>
-            <p className="mt-5 max-w-md text-sm leading-6 text-[#5e5e64]">
-              Every plan includes a defined number of agents, phone numbers, and voice minutes. Add
+            <p className="mt-5 max-w-md text-sm leading-6 text-muted-foreground">
+              Every plan includes a defined number of assistants, phone numbers, and voice minutes. Add
               capacity only when it produces useful coverage.
             </p>
           </div>
           <div className="grid gap-3">
             {FAQS.map(([question, answer]) => (
-              <article
-                className="rounded-xl border border-[#1d1d1f]/10 bg-[#f7f7f5] p-5"
-                key={question}
-              >
-                <h3 className="font-semibold tracking-[-0.02em] text-[#1d1d1f]">{question}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#5e5e64]">{answer}</p>
+              <article className="wl-stitch-card p-5" key={question}>
+                <h3 className="font-semibold tracking-[-0.02em] text-foreground">{question}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{answer}</p>
               </article>
             ))}
           </div>

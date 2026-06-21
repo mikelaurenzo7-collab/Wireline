@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline | Agents</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface": "#1a1c1b",
+                      "on-tertiary-fixed-variant": "#623d36",
+                      "surface-bright": "#f9f9f7",
+                      "surface-container-lowest": "#ffffff",
+                      "surface": "#f9f9f7",
+                      "surface-cream": "#F7F7F5",
+                      "background": "#f9f9f7",
+                      "on-tertiary": "#ffffff",
+                      "status-warning": "#B45309",
+                      "outline-variant": "#c1c8c4",
+                      "accent-forest": "#1A3C34",
+                      "ink-slate": "#6E6E73",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#4f2d26",
+                      "ink-charcoal": "#1D1D1F",
+                      "surface-container-highest": "#e2e3e1",
+                      "primary": "#01261f",
+                      "inverse-surface": "#2f3130",
+                      "primary-container": "#1a3c34",
+                      "primary-fixed-dim": "#aacec3",
+                      "on-secondary-container": "#64646a",
+                      "on-error-container": "#93000a",
+                      "surface-container-low": "#f4f4f2",
+                      "inverse-primary": "#aacec3",
+                      "secondary-container": "#e3e1e9",
+                      "on-tertiary-fixed": "#30130d",
+                      "on-secondary-fixed-variant": "#46464c",
+                      "status-active": "#2D5A27",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#dadad8",
+                      "on-primary-fixed": "#00201a",
+                      "inverse-on-surface": "#f1f1ef",
+                      "surface-variant": "#e2e3e1",
+                      "secondary": "#5e5e64",
+                      "tertiary-fixed-dim": "#efbab0",
+                      "on-tertiary-container": "#c4948a",
+                      "on-surface-variant": "#414846",
+                      "border-subtle": "#E5E5E1",
+                      "error": "#ba1a1a",
+                      "secondary-fixed": "#e3e1e9",
+                      "surface-white": "#FFFFFF",
+                      "primary-fixed": "#c5eadf",
+                      "on-secondary-fixed": "#1b1b20",
+                      "on-primary-container": "#83a69c",
+                      "surface-container": "#eeeeec",
+                      "tertiary": "#361812",
+                      "on-background": "#1a1c1b",
+                      "surface-tint": "#43655c",
+                      "on-primary-fixed-variant": "#2b4d44",
+                      "on-error": "#ffffff",
+                      "secondary-fixed-dim": "#c7c5cd",
+                      "outline": "#717976",
+                      "tertiary-fixed": "#ffdad3",
+                      "surface-container-high": "#e8e8e6",
+                      "on-primary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container_margin": "24px",
+                      "stack_md": "8px",
+                      "gutter": "16px",
+                      "sidebar_width": "212px",
+                      "stack_lg": "16px",
+                      "stack_sm": "4px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "mono-ui": ["JetBrains Mono"],
+                      "body-sm": ["Inter"],
+                      "headline-xl": ["Inter"],
+                      "label-caps": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "mono-ui": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "600"}],
+                      "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+      </script>
+</head>
+<body class="bg-surface-cream text-on-surface h-full flex antialiased">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[212px] bg-surface-white dark:bg-surface-white border-r border-border-subtle dark:border-border-subtle flex flex-col py-container_margin z-20">
+<div class="px-container_margin mb-8">
+<h1 class="font-headline-lg text-headline-lg text-primary dark:text-primary font-bold tracking-tight">Wireline</h1>
+<p class="font-label-caps text-label-caps text-ink-slate uppercase mt-1">Operator Workspace</p>
+</div>
+<ul class="flex-1 overflow-y-auto w-full">
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">precision_manufacturing</span>
+<span class="font-body-md text-body-md">Studio</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface dark:text-on-surface font-bold border-l-4 border-accent-forest px-stack_lg py-stack_md bg-surface-container-low dark:bg-surface-container-low opacity-90 transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="font-body-md text-body-md">Agents</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">book_2</span>
+<span class="font-body-md text-body-md">Knowledge</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">settings_input_component</span>
+<span class="font-body-md text-body-md">Actions</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">sensors</span>
+<span class="font-body-md text-body-md">Live</span>
+</a>
+</li>
+</ul>
+<div class="px-stack_lg mt-auto pt-4">
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<button class="w-full mt-4 bg-accent-forest text-surface-white font-body-sm text-body-sm font-semibold py-2 px-3 rounded flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Agent
+            </button>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="ml-[212px] flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-212px)] z-10 bg-surface-cream dark:bg-surface-cream flex justify-between items-center px-container_margin h-16 max-w-[1680px] mx-auto">
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-slate text-[18px]">search</span>
+<input class="bg-surface-white border border-border-subtle text-on-surface font-body-sm text-body-sm rounded pl-9 pr-3 py-1.5 focus:outline-none focus:border-accent-forest focus:ring-0 w-64 transition-colors" placeholder="Search fleet..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-ink-slate hover:text-primary transition-all p-1">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-ink-slate hover:text-primary transition-all p-1">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+<div class="h-5 w-px bg-border-subtle mx-2"></div>
+<button class="bg-surface-white border border-border-subtle text-on-surface font-body-sm text-body-sm font-semibold py-1.5 px-3 rounded hover:bg-surface-container-low transition-colors">
+                    Quick Action
+                </button>
+<button class="bg-accent-forest text-surface-white font-body-sm text-body-sm font-semibold py-1.5 px-3 rounded hover:opacity-90 transition-opacity">
+                    Deploy Fleet
+                </button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-border-subtle ml-2 object-cover" data-alt="A professional headshot of a person looking directly at the camera, neutral background, sharp focus, corporate style, high key lighting, crisp business attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxF85PxDroMeNHprUlXBA9dKksoA1vVR8bSjc7SBUSbEb64sk9ii8CBz8S2YPjh8j9obJqezWvrO5Ty8kAmLHetGGWeSvU2VKNZRo7dusohyE7poAGnBq4yqKZc2XmeJ7ALY5XgpRGZn7J7tzCL_2t7JrzpgEs9t_0QN3y1sZPNoA1mfMY4F_yTC-5saN7XqadiDuEZFj0O1Bohf6LJx3JhPfhCigtYiH2P9ByvOw8vTpfpLi2eUhZ4q0ImzSk_HQLsFBfxUT9gDM"/>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 mt-16 px-container_margin py-8 max-w-[1680px] mx-auto w-full">
+<!-- Page Header -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<span class="font-label-caps text-label-caps text-ink-slate uppercase tracking-wider block mb-1">FLEET</span>
+<h2 class="font-headline-xl text-headline-xl text-on-surface">Agents</h2>
+</div>
+<!-- Stat Strip -->
+<div class="flex gap-4">
+<div class="bg-surface-white border border-border-subtle p-3 rounded flex items-center gap-4 min-w-[140px]">
+<div>
+<span class="font-label-caps text-label-caps text-ink-slate uppercase block">Total</span>
+<span class="font-mono-ui text-mono-ui text-on-surface font-semibold text-lg">12</span>
+</div>
+<div class="h-8 w-px bg-border-subtle"></div>
+<div>
+<span class="font-label-caps text-label-caps text-status-active uppercase block">Active</span>
+<span class="font-mono-ui text-mono-ui text-status-active font-semibold text-lg">8</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Agent Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+<!-- Agent Card 1 -->
+<div class="bg-surface-white border border-border-subtle rounded flex flex-col group relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-status-active"></div>
+<div class="p-4 flex-1">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded bg-primary-fixed-dim text-primary flex items-center justify-center font-headline-md text-headline-md">
+                                S
+                            </div>
+<span class="bg-surface-container-low text-ink-slate px-2 py-0.5 rounded font-label-caps text-label-caps flex items-center gap-1 border border-border-subtle">
+<span class="w-1.5 h-1.5 rounded-full bg-status-active"></span>
+                                Live
+                            </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Sales Development</h3>
+<p class="font-body-sm text-body-sm text-ink-slate mb-3">Outbound Call Agent</p>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[16px] text-ink-slate">call</span>
+<span class="font-mono-ui text-mono-ui text-on-surface bg-surface-container px-2 py-0.5 rounded border border-border-subtle">+1 (555) 019-2834</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                            Books meetings and follows up with leads from the Q3 campaign. Transfers to human agents on complex objections.
+                        </p>
+</div>
+<div class="border-t border-border-subtle p-3 flex justify-between bg-surface-bright">
+<a class="font-body-sm text-body-sm text-primary font-semibold hover:underline flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">build</span>
+                            Open Studio
+                        </a>
+<a class="font-body-sm text-body-sm text-ink-slate hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">key</span>
+                            Access
+                        </a>
+</div>
+</div>
+<!-- Agent Card 2 -->
+<div class="bg-surface-white border border-border-subtle rounded flex flex-col group relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-status-active"></div>
+<div class="p-4 flex-1">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-md text-headline-md">
+                               C
+                           </div>
+<span class="bg-surface-container-low text-ink-slate px-2 py-0.5 rounded font-label-caps text-label-caps flex items-center gap-1 border border-border-subtle">
+<span class="w-1.5 h-1.5 rounded-full bg-status-active"></span>
+                               Live
+                           </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Customer Support</h3>
+<p class="font-body-sm text-body-sm text-ink-slate mb-3">Inbound Tier 1</p>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[16px] text-ink-slate">call</span>
+<span class="font-mono-ui text-mono-ui text-on-surface bg-surface-container px-2 py-0.5 rounded border border-border-subtle">+1 (800) 555-0199</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                           Handles basic account inquiries, password resets, and billing questions. Deflects routine calls.
+                       </p>
+</div>
+<div class="border-t border-border-subtle p-3 flex justify-between bg-surface-bright">
+<a class="font-body-sm text-body-sm text-primary font-semibold hover:underline flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">build</span>
+                           Open Studio
+                       </a>
+<a class="font-body-sm text-body-sm text-ink-slate hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">key</span>
+                           Access
+                       </a>
+</div>
+</div>
+<!-- Agent Card 3 -->
+<div class="bg-surface-white border border-border-subtle rounded flex flex-col group relative overflow-hidden opacity-75">
+<div class="absolute top-0 left-0 w-1 h-full bg-surface-dim"></div>
+<div class="p-4 flex-1">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded bg-surface-variant text-on-surface-variant flex items-center justify-center font-headline-md text-headline-md">
+                           O
+                       </div>
+<span class="bg-surface-container-low text-ink-slate px-2 py-0.5 rounded font-label-caps text-label-caps flex items-center gap-1 border border-border-subtle">
+<span class="w-1.5 h-1.5 rounded-full bg-surface-dim"></span>
+                           Offline
+                       </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Onboarding Bot</h3>
+<p class="font-body-sm text-body-sm text-ink-slate mb-3">SMS Campaign</p>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[16px] text-ink-slate">sms</span>
+<span class="font-mono-ui text-mono-ui text-ink-slate bg-surface-container px-2 py-0.5 rounded border border-border-subtle italic">Unassigned</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                       Guides new signups through the initial setup process via text. Currently undergoing prompt revision.
+                   </p>
+</div>
+<div class="border-t border-border-subtle p-3 flex justify-between bg-surface-bright">
+<a class="font-body-sm text-body-sm text-primary font-semibold hover:underline flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">build</span>
+                       Open Studio
+                   </a>
+<a class="font-body-sm text-body-sm text-ink-slate hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">key</span>
+                       Access
+                   </a>
+</div>
+</div>
+<!-- Add New Placeholder -->
+<button class="bg-surface-cream border border-dashed border-outline-variant rounded flex flex-col items-center justify-center p-8 hover:bg-surface-white hover:border-accent-forest transition-colors min-h-[240px]">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-4 text-ink-slate">
+<span class="material-symbols-outlined text-[24px]">add</span>
+</div>
+<span class="font-headline-md text-headline-md text-on-surface mb-1">Create Agent</span>
+<span class="font-body-sm text-body-sm text-ink-slate text-center">Configure a new AI agent for your fleet</span>
+</button>
+</div>
+</main>
+</div>
+</body></html>

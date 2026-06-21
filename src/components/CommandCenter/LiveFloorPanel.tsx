@@ -3,6 +3,7 @@
  * LiveFloorPanel — active callers, agent availability, listen-in & whisper-coach.
  * Merged from the former /cockpit supervisor surface into Live Ops.
  */
+import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Radio, Users, ShieldAlert, Activity, Headphones, Phone } from "lucide-react";
@@ -16,7 +17,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { AgentActivityIndicator } from "../ui/AgentActivityIndicator";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { WL_OPS_CLASSES, OPS_COPY, OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
-import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 
 export type FloorCall = {
   id: string;

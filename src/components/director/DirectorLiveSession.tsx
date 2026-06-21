@@ -2,11 +2,13 @@
  * DirectorLiveSession — live panel while the Director streams.
  * Shows only SSE-backed state: phase, pipeline, thinking text, reply preview.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
+import { directorPhaseCopy } from "../../lib/director-copy";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Compass, Sparkles, Zap } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES, directorPhaseCopy } from "../../lib/wireline-director-design";
+
 import type { StreamPhase, StreamTurnAction } from "../../hooks/useStreamingChat";
 import { LiveTaskPipeline, type PipelineStep } from "../ui/LiveTaskPipeline";
 import { LiveThinkingIndicator } from "../ui/ThinkingDisplay";

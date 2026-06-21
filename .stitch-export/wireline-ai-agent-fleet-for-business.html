@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline | AI Agent Fleet</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#2f3130",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-container": "#c4948a",
+                      "on-background": "#1a1c1b",
+                      "status-warning": "#B45309",
+                      "on-primary-fixed": "#00201a",
+                      "on-error": "#ffffff",
+                      "on-primary-fixed-variant": "#2b4d44",
+                      "tertiary": "#361812",
+                      "on-tertiary-fixed-variant": "#623d36",
+                      "surface-white": "#FFFFFF",
+                      "surface-container": "#eeeeec",
+                      "primary-container": "#1a3c34",
+                      "tertiary-container": "#4f2d26",
+                      "on-secondary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-secondary-container": "#64646a",
+                      "on-surface": "#1a1c1b",
+                      "surface": "#f9f9f7",
+                      "inverse-on-surface": "#f1f1ef",
+                      "ink-charcoal": "#1D1D1F",
+                      "secondary-fixed-dim": "#c7c5cd",
+                      "on-error-container": "#93000a",
+                      "primary-fixed": "#c5eadf",
+                      "on-secondary-fixed-variant": "#46464c",
+                      "ink-slate": "#6E6E73",
+                      "secondary-container": "#e3e1e9",
+                      "tertiary-fixed-dim": "#efbab0",
+                      "outline": "#717976",
+                      "surface-container-highest": "#e2e3e1",
+                      "background": "#f9f9f7",
+                      "surface-bright": "#f9f9f7",
+                      "accent-forest": "#1A3C34",
+                      "on-tertiary-fixed": "#30130d",
+                      "surface-container-lowest": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "primary": "#01261f",
+                      "surface-dim": "#dadad8",
+                      "secondary": "#5e5e64",
+                      "outline-variant": "#c1c8c4",
+                      "inverse-primary": "#aacec3",
+                      "status-active": "#2D5A27",
+                      "on-surface-variant": "#414846",
+                      "secondary-fixed": "#e3e1e9",
+                      "on-secondary-fixed": "#1b1b20",
+                      "border-subtle": "#E5E5E1",
+                      "surface-variant": "#e2e3e1",
+                      "on-primary-container": "#83a69c",
+                      "surface-cream": "#F7F7F5",
+                      "tertiary-fixed": "#ffdad3",
+                      "surface-container-high": "#e8e8e6",
+                      "surface-container-low": "#f4f4f2",
+                      "on-tertiary": "#ffffff",
+                      "surface-tint": "#43655c",
+                      "primary-fixed-dim": "#aacec3"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container_margin": "24px",
+                      "stack_lg": "16px",
+                      "gutter": "16px",
+                      "stack_md": "8px",
+                      "sidebar_width": "212px",
+                      "stack_sm": "4px"
+              },
+              "fontFamily": {
+                      "mono-ui": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "mono-ui": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.06em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar Component -->
+<nav class="bg-surface-white dark:bg-inverse-surface fixed top-0 w-full z-50 border-b border-border-subtle dark:border-outline flat no shadows">
+<div class="flex justify-between items-center h-16 px-container_margin w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<a class="text-headline-md font-headline-md font-bold text-accent-forest dark:text-on-primary-container" href="#">Wireline</a>
+<div class="hidden md:flex gap-6">
+<a class="font-body-md text-body-md text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-primary-container transition-colors duration-200 ease-in-out px-3 py-2 rounded" href="#">Features</a>
+<a class="font-body-md text-body-md text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-primary-container transition-colors duration-200 ease-in-out px-3 py-2 rounded" href="#">Pricing</a>
+<a class="font-body-md text-body-md text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-primary-container transition-colors duration-200 ease-in-out px-3 py-2 rounded" href="#">Fleet</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="font-body-md text-body-md text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-primary-container transition-colors duration-200 ease-in-out px-3 py-2 rounded" href="#">Login</a>
+<a class="font-body-md text-body-md bg-accent-forest text-on-primary hover:bg-primary transition-colors duration-200 ease-in-out px-4 py-2 rounded font-semibold" href="#">Get Started</a>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-24 pb-16">
+<!-- Hero Section -->
+<section class="max-w-7xl mx-auto px-container_margin py-20 md:py-32 flex flex-col items-center text-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-white border border-border-subtle rounded-full mb-8">
+<span class="w-2 h-2 bg-status-active rounded-full"></span>
+<span class="font-label-caps text-label-caps text-secondary uppercase">System Operational</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-ink-charcoal max-w-4xl mb-6">
+                One fleet of AI agents for inbound support, outbound sales, and email follow-ups.
+            </h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl mb-10">
+                Trained on your playbook, 24/7. Calm, professional, operator-grade software.
+            </p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-accent-forest text-on-primary font-body-md text-body-md px-6 py-3 rounded hover:bg-primary transition-colors">
+                    Get Started
+                </button>
+<button class="bg-surface-white text-ink-charcoal border border-border-subtle font-body-md text-body-md px-6 py-3 rounded hover:bg-surface-container-low transition-colors">
+                    View Documentation
+                </button>
+</div>
+</section>
+<!-- Bento Grid Features -->
+<section class="max-w-7xl mx-auto px-container_margin py-16">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Feature 1: Operator-Grade Intelligence (Span 2 columns) -->
+<div class="md:col-span-2 bg-surface-white border border-border-subtle rounded-lg p-8 flex flex-col justify-between">
+<div>
+<div class="w-10 h-10 bg-surface-container-low rounded flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-accent-forest">neurology</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-ink-charcoal mb-4">Operator-Grade Intelligence</h3>
+<p class="font-body-md text-body-md text-secondary max-w-md">
+                            Upload your company playbooks, FAQs, and past interactions. Agents are trained on your specific context to handle complex workflows with precision and adherence to policy.
+                        </p>
+</div>
+<div class="mt-8 bg-surface-cream border border-border-subtle rounded p-4 font-mono-ui text-mono-ui text-secondary">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span>training_data_v2.csv</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span class="text-status-active">Agent sync complete. Playbook updated.</span>
+</div>
+</div>
+</div>
+<!-- Feature 2: Scoped Permissions -->
+<div class="bg-surface-white border border-border-subtle rounded-lg p-8 flex flex-col">
+<div class="w-10 h-10 bg-surface-container-low rounded flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-accent-forest">lock</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-ink-charcoal mb-4">Scoped Permissions</h3>
+<p class="font-body-md text-body-md text-secondary mb-6 flex-grow">
+                        Connections to HubSpot, Salesforce, or Zendesk are configured per-agent. Restrict read/write access exactly where needed.
+                    </p>
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between border border-border-subtle rounded p-2 bg-surface-cream">
+<span class="font-body-sm text-body-sm text-ink-charcoal">HubSpot CRM</span>
+<span class="font-label-caps text-label-caps bg-surface-variant px-2 py-1 rounded text-secondary">READ ONLY</span>
+</div>
+<div class="flex items-center justify-between border border-border-subtle rounded p-2 bg-surface-cream">
+<span class="font-body-sm text-body-sm text-ink-charcoal">Stripe API</span>
+<span class="font-label-caps text-label-caps bg-surface-variant px-2 py-1 rounded text-secondary">NO ACCESS</span>
+</div>
+</div>
+</div>
+<!-- Feature 3: Voice + Messaging -->
+<div class="md:col-span-3 bg-surface-white border border-border-subtle rounded-lg p-8">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="flex-1">
+<div class="w-10 h-10 bg-surface-container-low rounded flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-accent-forest">forum</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-ink-charcoal mb-4">Voice + Messaging</h3>
+<p class="font-body-md text-body-md text-secondary">
+                                Deploy your agents across all communication channels seamlessly. Whether it's answering phone calls, drafting email follow-ups, or handling SMS inquiries, your fleet maintains a consistent, unified context.
+                            </p>
+</div>
+<div class="flex-1 w-full grid grid-cols-3 gap-4">
+<div class="bg-surface-cream border border-border-subtle rounded p-4 flex flex-col items-center justify-center gap-2 aspect-square">
+<span class="material-symbols-outlined text-ink-charcoal text-[32px]">call</span>
+<span class="font-label-caps text-label-caps text-secondary uppercase">Phone</span>
+</div>
+<div class="bg-surface-cream border border-border-subtle rounded p-4 flex flex-col items-center justify-center gap-2 aspect-square">
+<span class="material-symbols-outlined text-ink-charcoal text-[32px]">mail</span>
+<span class="font-label-caps text-label-caps text-secondary uppercase">Email</span>
+</div>
+<div class="bg-surface-cream border border-border-subtle rounded p-4 flex flex-col items-center justify-center gap-2 aspect-square">
+<span class="material-symbols-outlined text-ink-charcoal text-[32px]">sms</span>
+<span class="font-label-caps text-label-caps text-secondary uppercase">SMS</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component -->
+<footer class="bg-surface-white dark:bg-inverse-surface w-full border-t border-border-subtle dark:border-outline flat no shadows mt-auto">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter px-container_margin py-12 max-w-7xl mx-auto">
+<div class="col-span-2 md:col-span-1 flex flex-col gap-4">
+<a class="text-headline-md font-headline-md font-bold text-accent-forest dark:text-on-primary-container" href="#">Wireline</a>
+<p class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim">© 2024 Wireline AI. All rights reserved.</p>
+</div>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed underline transition-all duration-200" href="#">Features</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed underline transition-all duration-200" href="#">Pricing</a>
+</div>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed underline transition-all duration-200" href="#">Docs</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed underline transition-all duration-200" href="#">About</a>
+</div>
+<div class="flex flex-col gap-2">
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed underline transition-all duration-200" href="#">Privacy</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-accent-forest dark:hover:text-primary-fixed underline transition-all duration-200" href="#">Terms</a>
+</div>
+</div>
+</footer>
+</body></html>

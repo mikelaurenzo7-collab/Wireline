@@ -5,6 +5,8 @@
  * LiveTaskPipeline timeline language, nested detail dropdowns, and explicit
  * rose failure states.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
+import { DIRECTOR_TURN_LEDGER_COPY } from "../../lib/director-copy";
 import React, { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
@@ -20,7 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { DIRECTOR_TURN_LEDGER_COPY, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 export interface TurnActionItem {

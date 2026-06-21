@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Studio - Wireline</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface": "#1a1c1b",
+                      "on-tertiary-fixed-variant": "#623d36",
+                      "surface-bright": "#f9f9f7",
+                      "surface-container-lowest": "#ffffff",
+                      "surface": "#f9f9f7",
+                      "surface-cream": "#F7F7F5",
+                      "background": "#f9f9f7",
+                      "on-tertiary": "#ffffff",
+                      "status-warning": "#B45309",
+                      "outline-variant": "#c1c8c4",
+                      "accent-forest": "#1A3C34",
+                      "ink-slate": "#6E6E73",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#4f2d26",
+                      "ink-charcoal": "#1D1D1F",
+                      "surface-container-highest": "#e2e3e1",
+                      "primary": "#01261f",
+                      "inverse-surface": "#2f3130",
+                      "primary-container": "#1a3c34",
+                      "primary-fixed-dim": "#aacec3",
+                      "on-secondary-container": "#64646a",
+                      "on-error-container": "#93000a",
+                      "surface-container-low": "#f4f4f2",
+                      "inverse-primary": "#aacec3",
+                      "secondary-container": "#e3e1e9",
+                      "on-tertiary-fixed": "#30130d",
+                      "on-secondary-fixed-variant": "#46464c",
+                      "status-active": "#2D5A27",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#dadad8",
+                      "on-primary-fixed": "#00201a",
+                      "inverse-on-surface": "#f1f1ef",
+                      "surface-variant": "#e2e3e1",
+                      "secondary": "#5e5e64",
+                      "tertiary-fixed-dim": "#efbab0",
+                      "on-tertiary-container": "#c4948a",
+                      "on-surface-variant": "#414846",
+                      "border-subtle": "#E5E5E1",
+                      "error": "#ba1a1a",
+                      "secondary-fixed": "#e3e1e9",
+                      "surface-white": "#FFFFFF",
+                      "primary-fixed": "#c5eadf",
+                      "on-secondary-fixed": "#1b1b20",
+                      "on-primary-container": "#83a69c",
+                      "surface-container": "#eeeeec",
+                      "tertiary": "#361812",
+                      "on-background": "#1a1c1b",
+                      "surface-tint": "#43655c",
+                      "on-primary-fixed-variant": "#2b4d44",
+                      "on-error": "#ffffff",
+                      "secondary-fixed-dim": "#c7c5cd",
+                      "outline": "#717976",
+                      "tertiary-fixed": "#ffdad3",
+                      "surface-container-high": "#e8e8e6",
+                      "on-primary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container_margin": "24px",
+                      "stack_md": "8px",
+                      "gutter": "16px",
+                      "sidebar_width": "212px",
+                      "stack_lg": "16px",
+                      "stack_sm": "4px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "mono-ui": ["JetBrains Mono"],
+                      "body-sm": ["Inter"],
+                      "headline-xl": ["Inter"],
+                      "label-caps": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "body-md": ["Inter"]
+              },
+              "fontSize": {
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "mono-ui": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "600"}],
+                      "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body {
+            color: #1a1c1b;
+        }
+        
+        /* Custom scrollbar for minimalist feel */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dadad8;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c1c8c4;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md flex h-screen overflow-hidden bg-gradient-to-br from-surface-cream to-surface-bright selection:bg-accent-forest/20">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface-white/80 backdrop-blur-md border-r border-border-subtle fixed left-0 top-0 h-full w-[212px] flex-col py-container_margin z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+<!-- Brand/Header -->
+<div class="px-container_margin mb-8 flex flex-col gap-1">
+<h1 class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">Wireline</h1>
+<p class="font-body-sm text-body-sm text-ink-slate font-medium">Operator Workspace</p>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-1 overflow-y-auto no-scrollbar">
+<!-- Active Tab: Studio -->
+<a class="flex items-center gap-3 text-on-surface font-semibold border-l-4 border-accent-forest px-stack_lg py-stack_md bg-surface-container-low/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px] text-accent-forest" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span>Studio</span>
+</a>
+<!-- Inactive Tabs -->
+<a class="flex items-center gap-3 text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest/80 transition-colors duration-200 border-l-4 border-transparent hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="groups">groups</span>
+<span>Agents</span>
+</a>
+<a class="flex items-center gap-3 text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest/80 transition-colors duration-200 border-l-4 border-transparent hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="book_2">book_2</span>
+<span>Knowledge</span>
+</a>
+<a class="flex items-center gap-3 text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest/80 transition-colors duration-200 border-l-4 border-transparent hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="settings_input_component">settings_input_component</span>
+<span>Actions</span>
+</a>
+<a class="flex items-center gap-3 text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest/80 transition-colors duration-200 border-l-4 border-transparent hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="sensors">sensors</span>
+<span>Live</span>
+</a>
+<a class="flex items-center gap-3 text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest/80 transition-colors duration-200 border-l-4 border-transparent hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="px-container_margin mt-auto">
+<button class="w-full bg-accent-forest text-on-primary font-headline-md text-body-sm py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(26,60,52,0.3)] hover:shadow-[0_6px_16px_rgba(26,60,52,0.4)] hover:-translate-y-0.5 transition-all duration-300">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+            New Agent
+        </button>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="hidden md:flex bg-surface-white/60 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-212px)] z-10 justify-between items-center px-container_margin h-16 border-b border-border-subtle/50 shadow-[0_1px_12px_rgba(0,0,0,0.02)]">
+<!-- Left area (Breadcrumbs/Title) -->
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-ink-slate uppercase tracking-widest">Studio</span>
+<span class="material-symbols-outlined text-[14px] text-border-subtle" data-icon="chevron_right">chevron_right</span>
+<h2 class="font-headline-md text-headline-md text-primary font-semibold tracking-tight">Create Agent</h2>
+</div>
+<!-- Right actions -->
+<div class="flex items-center gap-4">
+<button class="bg-surface-white border border-border-subtle text-on-surface font-body-sm text-body-sm py-[6px] px-3 rounded-md hover:bg-surface-container-lowest shadow-sm transition-colors">
+            Quick Action
+        </button>
+<button class="bg-surface-container-highest text-on-surface font-body-sm text-body-sm py-[6px] px-3 rounded-md hover:opacity-90 transition-opacity flex items-center gap-1 opacity-50 cursor-not-allowed">
+            Deploy Fleet
+            <span class="material-symbols-outlined text-[16px]" data-icon="rocket_launch">rocket_launch</span>
+</button>
+<div class="w-px h-4 bg-border-subtle mx-2"></div>
+<button class="text-ink-slate hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-ink-slate hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant ml-2 border border-border-subtle overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT2Zzg9hW2Mtmhik7RzyspX9C-1PYktJsd8xFvb0iaOA13KliQXfM1UqfKb5pakBJ_0FtTRZs8pYX6ljjSuuC5EeZWWA6JIAcR_Eu-QEdtqIXzq36lBQwCzoTlKUHO1ClWFfJCP983V8cbky-8cERuNcvjSsfx0iVPPihS-woDTVW4n1iSeF7rxnfXvJpkNCLWz4o6qrkWpAkN5RhX9Odb9qjFNmI-2agOLoxIN185X7d6S8VdK8-TV7_gSXo5epBVkz9svxetYnw"/>
+</div>
+</div>
+</header>
+<!-- Main Workspace Container -->
+<main class="ml-0 md:ml-[212px] mt-16 flex-1 flex h-[calc(100vh-64px)] overflow-hidden w-full relative bg-transparent">
+<!-- Three Column Layout Wrapper -->
+<div class="flex flex-1 w-full h-full overflow-hidden">
+<!-- COL 1: Agent Roster (Left) -->
+<aside class="w-[240px] flex-shrink-0 border-r border-border-subtle/50 bg-surface-white/40 backdrop-blur-sm flex flex-col h-full z-0 relative">
+<div class="p-4 border-b border-border-subtle/50 flex justify-between items-center bg-transparent sticky top-0 backdrop-blur-md z-10">
+<span class="font-label-caps text-label-caps text-ink-slate tracking-widest uppercase">Fleet Roster</span>
+<button class="text-accent-forest hover:text-primary transition-colors" title="Add Agent">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_circle">add_circle</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-3 flex flex-col gap-2 no-scrollbar">
+<!-- Active New Agent State -->
+<div class="bg-surface-white/90 backdrop-blur-md border border-accent-forest/50 rounded-lg p-3 cursor-pointer relative shadow-[0_4px_12px_rgba(26,60,52,0.08)]">
+<div class="absolute inset-0 bg-gradient-to-r from-accent-forest/5 to-transparent rounded-lg pointer-events-none"></div>
+<div class="flex items-start gap-3 mb-2 relative z-10">
+<div class="w-8 h-8 rounded-md bg-accent-forest text-on-primary flex items-center justify-center shadow-[0_0_10px_rgba(26,60,52,0.3)]">
+<span class="material-symbols-outlined text-[18px] animate-pulse" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h3 class="font-headline-md text-[14px] font-semibold text-primary leading-none mb-1 mt-0.5">Draft Agent</h3>
+<p class="font-body-sm text-[11px] text-ink-slate leading-none">Unsaved</p>
+</div>
+</div>
+</div>
+<!-- Existing Inactive Agent Cards (Dimmed) -->
+<div class="opacity-50 hover:opacity-80 transition-opacity">
+<div class="bg-surface-white/60 border border-border-subtle/50 rounded-lg p-3 cursor-pointer hover:border-outline-variant transition-colors group">
+<div class="flex items-start gap-3 mb-2 opacity-70 group-hover:opacity-100 transition-opacity">
+<div class="w-8 h-8 rounded-md bg-surface-container flex items-center justify-center text-ink-slate">
+<span class="material-symbols-outlined text-[18px]" data-icon="support_agent">support_agent</span>
+</div>
+<div>
+<h3 class="font-headline-md text-[14px] font-semibold text-on-surface leading-none mb-1">Support L1</h3>
+<p class="font-body-sm text-[11px] text-ink-slate leading-none">ID: a-84f9</p>
+</div>
+</div>
+<div class="mt-3 flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low border border-border-subtle/50 font-mono-ui text-[10px] text-ink-slate">GPT-4o</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low border border-border-subtle/50 font-mono-ui text-[10px] text-ink-slate">Live</span>
+</div>
+</div>
+</div>
+<div class="opacity-50 hover:opacity-80 transition-opacity">
+<div class="bg-surface-white/60 border border-border-subtle/50 rounded-lg p-3 cursor-pointer hover:border-outline-variant transition-colors group">
+<div class="flex items-start gap-3 mb-2 opacity-70 group-hover:opacity-100 transition-opacity">
+<div class="w-8 h-8 rounded-md bg-surface-container flex items-center justify-center text-ink-slate">
+<span class="material-symbols-outlined text-[18px]" data-icon="sell">sell</span>
+</div>
+<div>
+<h3 class="font-headline-md text-[14px] font-semibold text-on-surface leading-none mb-1">Outbound Sales</h3>
+<p class="font-body-sm text-[11px] text-ink-slate leading-none">ID: a-22b1</p>
+</div>
+</div>
+<div class="mt-3 flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low border border-border-subtle/50 font-mono-ui text-[10px] text-ink-slate">Claude-3.5</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low border border-border-subtle/50 font-mono-ui text-[10px] text-status-warning">Training</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- COL 2: Center Canvas (Creation Flow) -->
+<section class="flex-1 flex flex-col h-full bg-transparent relative z-0 overflow-hidden">
+<!-- Atmospheric background glow for center area -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-accent-forest/5 to-primary-fixed/10 rounded-full blur-[120px] pointer-events-none z-[-1]"></div>
+<div class="flex-1 overflow-y-auto p-8 md:p-12 flex flex-col items-center justify-center relative z-10 no-scrollbar">
+<div class="max-w-2xl w-full relative space-y-10">
+<!-- Header -->
+<div class="text-center space-y-4">
+<div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-surface-white/80 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-border-subtle mb-2 text-accent-forest relative">
+<div class="absolute inset-0 bg-accent-forest/10 rounded-2xl blur-md"></div>
+<span class="material-symbols-outlined text-[28px] relative z-10" data-icon="robot_2">robot_2</span>
+</div>
+<h2 class="font-headline-xl text-[36px] tracking-tight text-primary font-semibold">Initialize Agent</h2>
+<p class="font-body-lg text-ink-slate max-w-lg mx-auto">Select a functional archetype and provide a core directive to generate the initial logic model.</p>
+</div>
+<!-- Role Presets -->
+<div class="space-y-5">
+<div class="flex items-center justify-between">
+<h3 class="font-label-caps text-ink-slate tracking-widest uppercase">1. Select Archetype</h3>
+<span class="font-body-sm text-[12px] text-primary hover:underline cursor-pointer">Start from blank</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Preset Card Active -->
+<div class="p-5 rounded-xl border border-accent-forest/40 bg-surface-white/90 backdrop-blur-md shadow-[0_8px_24px_rgba(26,60,52,0.12)] cursor-pointer relative overflow-hidden group transform transition-transform hover:-translate-y-0.5">
+<div class="absolute inset-0 bg-gradient-to-br from-accent-forest/10 to-transparent opacity-100"></div>
+<div class="absolute top-3 right-3 text-accent-forest">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+</div>
+<div class="relative z-10 flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-accent-forest text-on-primary flex items-center justify-center shadow-[0_0_15px_rgba(26,60,52,0.4)] flex-shrink-0">
+<span class="material-symbols-outlined" data-icon="support_agent">support_agent</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[15px] text-primary mb-1 tracking-tight">Support Specialist</h4>
+<p class="font-body-sm text-ink-slate leading-relaxed text-[13px]">Handles user inquiries, processes returns, and resolves common issues.</p>
+</div>
+</div>
+</div>
+<!-- Preset Card Inactive -->
+<div class="p-5 rounded-xl border border-border-subtle/80 bg-surface-white/50 backdrop-blur-sm hover:bg-surface-white/80 hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-border-subtle cursor-pointer transition-all duration-300 group">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container text-ink-slate flex items-center justify-center transition-colors group-hover:text-primary group-hover:bg-surface-container-high flex-shrink-0">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[15px] text-ink-charcoal mb-1 tracking-tight group-hover:text-primary transition-colors">Scheduler</h4>
+<p class="font-body-sm text-ink-slate leading-relaxed text-[13px]">Manages calendars, coordinates meetings, and resolves conflicts.</p>
+</div>
+</div>
+</div>
+<!-- Preset Card Inactive -->
+<div class="p-5 rounded-xl border border-border-subtle/80 bg-surface-white/50 backdrop-blur-sm hover:bg-surface-white/80 hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-border-subtle cursor-pointer transition-all duration-300 group">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container text-ink-slate flex items-center justify-center transition-colors group-hover:text-primary group-hover:bg-surface-container-high flex-shrink-0">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[15px] text-ink-charcoal mb-1 tracking-tight group-hover:text-primary transition-colors">Data Analyst</h4>
+<p class="font-body-sm text-ink-slate leading-relaxed text-[13px]">Queries databases, generates reports, and identifies key trends.</p>
+</div>
+</div>
+</div>
+<!-- Preset Card Inactive -->
+<div class="p-5 rounded-xl border border-border-subtle/80 bg-surface-white/50 backdrop-blur-sm hover:bg-surface-white/80 hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-border-subtle cursor-pointer transition-all duration-300 group">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container text-ink-slate flex items-center justify-center transition-colors group-hover:text-primary group-hover:bg-surface-container-high flex-shrink-0">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<div>
+<h4 class="font-headline-md text-[15px] text-ink-charcoal mb-1 tracking-tight group-hover:text-primary transition-colors">Sales Rep</h4>
+<p class="font-body-sm text-ink-slate leading-relaxed text-[13px]">Qualifies leads, answers product questions, and guides checkout.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Brief Input -->
+<div class="space-y-4">
+<h3 class="font-label-caps text-ink-slate tracking-widest uppercase">2. Core Directive</h3>
+<div class="relative group">
+<!-- Focus glow -->
+<div class="absolute -inset-[2px] bg-gradient-to-r from-accent-forest/30 to-primary-fixed/30 rounded-xl blur-md opacity-40 group-focus-within:opacity-100 transition duration-500 pointer-events-none"></div>
+<div class="relative bg-surface-white/90 backdrop-blur-md border border-border-subtle rounded-xl p-1 shadow-[0_4px_24px_rgba(0,0,0,0.04)] transition-all group-focus-within:border-accent-forest/50 group-focus-within:shadow-[0_8px_30px_rgba(26,60,52,0.1)]">
+<textarea class="w-full bg-transparent border-none rounded-lg py-5 px-6 font-body-lg text-on-surface placeholder-ink-slate/60 focus:ring-0 resize-none min-h-[140px] text-[15px] leading-relaxed focus:outline-none" placeholder="E.g., You are a Level 1 Support Agent for an e-commerce store. Focus on fast resolution for shipping delays and polite escalation for complex billing issues..."></textarea>
+<div class="flex justify-between items-center px-5 pb-3 border-t border-border-subtle/40 pt-4 mt-2">
+<div class="flex gap-4">
+<button class="flex items-center gap-1.5 text-ink-slate hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="attach_file">attach_file</span>
+<span class="font-body-sm text-[13px] font-medium">Add Context</span>
+</button>
+<button class="flex items-center gap-1.5 text-ink-slate hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="api">api</span>
+<span class="font-body-sm text-[13px] font-medium">Link Tools</span>
+</button>
+</div>
+<span class="font-mono-ui text-[11px] text-ink-slate/60">0/1000</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action -->
+<div class="flex justify-end pt-2">
+<button class="bg-accent-forest text-on-primary font-headline-md text-[15px] font-semibold py-3.5 px-8 rounded-xl shadow-[0_4px_20px_rgba(26,60,52,0.3)] hover:shadow-[0_8px_25px_rgba(26,60,52,0.5)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 group">
+                            Generate Logic Map
+                            <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- COL 3: Inspector / Build Map (Right) -->
+<aside class="w-[320px] flex-shrink-0 border-l border-border-subtle/50 bg-surface-white/40 backdrop-blur-md flex flex-col h-full z-0 relative shadow-[-4px_0_24px_rgba(0,0,0,0.02)]">
+<!-- Inspector Header/Tabs -->
+<div class="bg-surface-white/60 backdrop-blur-md border-b border-border-subtle/50 sticky top-0 z-10">
+<div class="p-4 pb-0 flex overflow-x-auto no-scrollbar gap-4">
+<button class="font-label-caps text-label-caps uppercase text-primary border-b-2 border-accent-forest pb-2 px-1 whitespace-nowrap tracking-widest">Overview</button>
+<button class="font-label-caps text-label-caps uppercase text-ink-slate/50 border-b-2 border-transparent pb-2 px-1 whitespace-nowrap tracking-widest cursor-not-allowed">Rules (0)</button>
+<button class="font-label-caps text-label-caps uppercase text-ink-slate/50 border-b-2 border-transparent pb-2 px-1 whitespace-nowrap tracking-widest cursor-not-allowed">Actions (0)</button>
+</div>
+</div>
+<!-- Inspector Content Pending State -->
+<div class="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center text-center gap-4 no-scrollbar opacity-60">
+<div class="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center text-ink-slate mb-2">
+<span class="material-symbols-outlined text-[32px]" data-icon="account_tree">account_tree</span>
+</div>
+<h4 class="font-headline-md text-primary tracking-tight">Awaiting Generation</h4>
+<p class="font-body-sm text-ink-slate px-4">Provide a core directive to generate the agent's initial logic map, identity settings, and rule structure.</p>
+<div class="w-full mt-8 space-y-4">
+<div class="h-10 bg-surface-variant/50 rounded animate-pulse"></div>
+<div class="h-24 bg-surface-variant/50 rounded animate-pulse"></div>
+<div class="h-10 bg-surface-variant/50 rounded animate-pulse w-2/3 mx-auto"></div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

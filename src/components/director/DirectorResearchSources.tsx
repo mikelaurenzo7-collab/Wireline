@@ -1,8 +1,10 @@
 /**
  * Grounded web research citations on Director replies.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
+import { LIVE_FEED_LABELS } from "../../lib/director-copy";
 import { ExternalLink, Globe } from "lucide-react";
-import { LIVE_FEED_LABELS, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 import { cn } from "../../lib/utils";
 import { safeExternalHref } from "../../lib/safe-external-url";
 

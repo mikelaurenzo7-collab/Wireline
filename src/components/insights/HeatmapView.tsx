@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { fetchInsight, InsightSkeleton, ErrCard } from "./shared";
 import { cn } from "../../lib/utils";
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 
 export default function HeatmapView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);

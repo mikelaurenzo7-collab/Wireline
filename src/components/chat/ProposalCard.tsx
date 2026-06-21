@@ -1,9 +1,10 @@
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import { motion, useReducedMotion } from "motion/react";
 import { Check, Loader2, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 
 const TONE_CLASSES: Record<string, string> = {
   brand: "border-brand/25 bg-brand/[0.04]",

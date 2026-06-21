@@ -17,6 +17,8 @@
  *   - Connectors — wire it to the world: capabilities + integrations
  *   - Memory     — what it carries between calls (thread + recall + lessons)
  */
+import { WL_DIRECTOR_CLASSES } from "../lib/wireline-design-system";
+import { AGENT_WORKSPACE_STARTER_PROMPTS } from "../lib/director-copy";
 import React, { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -44,10 +46,7 @@ import {
 import { authFetch } from "../lib/api";
 import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/utils";
-import {
-  AGENT_WORKSPACE_STARTER_PROMPTS,
-  WL_DIRECTOR_CLASSES,
-} from "../lib/wireline-director-design";
+
 import { ThinkingDisplay, LiveThinkingIndicator } from "./ui/ThinkingDisplay";
 import { LiveTaskPipeline, type PipelineStep } from "./ui/LiveTaskPipeline";
 import { Skeleton } from "./ui/shadcn/Skeleton";

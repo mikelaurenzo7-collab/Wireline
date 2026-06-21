@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- operator telemetry payloads are loosely typed. */
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { Activity, CreditCard, ShieldCheck } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { SystemPanel } from "./SystemPanel";
 import { OwnerBillingSimulator } from "./OwnerBillingSimulator";
 import { cn } from "../../lib/utils";
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 import LaunchReadinessPanel from "./LaunchReadinessPanel";
 
 /**

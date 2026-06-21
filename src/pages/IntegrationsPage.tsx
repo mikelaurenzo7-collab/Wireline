@@ -9,7 +9,7 @@ export default function IntegrationsPage() {
   return (
     <WorkspaceShell
       eyebrow="Build"
-      title="Integrations"
+      title="Actions"
       contentClassName="pt-1"
       action={<Link to={agentId ? `/studio?agent=${encodeURIComponent(agentId)}` : "/studio"} className="workspace-btn-secondary px-3 py-2.5 text-sm"><WandSparkles size={15} />Studio</Link>}
     >

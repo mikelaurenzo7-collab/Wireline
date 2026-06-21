@@ -5,11 +5,12 @@
  *
  * Extracted from DirectorWorkspace for code-size reduction.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import React from "react";
 import { Download, FileText, Image as ImageIcon } from "lucide-react";
 import { dedupeDirectorArtifacts } from "../../lib/director-artifact-dedupe";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 import { ArtifactCard, type ArtifactType } from "../ui/ArtifactCard";
 
 export interface DirectorArtifact {

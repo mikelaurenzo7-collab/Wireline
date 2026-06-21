@@ -10,11 +10,12 @@
 
  */
 
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import React from "react";
 
 import { cn } from "../../lib/utils";
 
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 
 interface InlineEmptyProps {
   /** Short message like "No hot leads" or "All clear" */

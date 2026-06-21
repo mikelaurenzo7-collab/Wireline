@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline Workspace - Actions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#1a1c1b",
+                        "on-tertiary-fixed-variant": "#623d36",
+                        "surface-bright": "#f9f9f7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#f9f9f7",
+                        "surface-cream": "#F7F7F5",
+                        "background": "#f9f9f7",
+                        "on-tertiary": "#ffffff",
+                        "status-warning": "#B45309",
+                        "outline-variant": "#c1c8c4",
+                        "accent-forest": "#1A3C34",
+                        "ink-slate": "#6E6E73",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#4f2d26",
+                        "ink-charcoal": "#1D1D1F",
+                        "surface-container-highest": "#e2e3e1",
+                        "primary": "#01261f",
+                        "inverse-surface": "#2f3130",
+                        "primary-container": "#1a3c34",
+                        "primary-fixed-dim": "#aacec3",
+                        "on-secondary-container": "#64646a",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f4f4f2",
+                        "inverse-primary": "#aacec3",
+                        "secondary-container": "#e3e1e9",
+                        "on-tertiary-fixed": "#30130d",
+                        "on-secondary-fixed-variant": "#46464c",
+                        "status-active": "#2D5A27",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#dadad8",
+                        "on-primary-fixed": "#00201a",
+                        "inverse-on-surface": "#f1f1ef",
+                        "surface-variant": "#e2e3e1",
+                        "secondary": "#5e5e64",
+                        "tertiary-fixed-dim": "#efbab0",
+                        "on-tertiary-container": "#c4948a",
+                        "on-surface-variant": "#414846",
+                        "border-subtle": "#E5E5E1",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#e3e1e9",
+                        "surface-white": "#FFFFFF",
+                        "primary-fixed": "#c5eadf",
+                        "on-secondary-fixed": "#1b1b20",
+                        "on-primary-container": "#83a69c",
+                        "surface-container": "#eeeeec",
+                        "tertiary": "#361812",
+                        "on-background": "#1a1c1b",
+                        "surface-tint": "#43655c",
+                        "on-primary-fixed-variant": "#2b4d44",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#c7c5cd",
+                        "outline": "#717976",
+                        "tertiary-fixed": "#ffdad3",
+                        "surface-container-high": "#e8e8e6",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container_margin": "24px",
+                        "stack_md": "8px",
+                        "gutter": "16px",
+                        "sidebar_width": "212px",
+                        "stack_lg": "16px",
+                        "stack_sm": "4px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "mono-ui": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "mono-ui": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #f9f9f7; color: #1a1c1b; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #dadad8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c1c8c4; }
+
+        /* Smooth state transitions */
+        .checkbox-custom { transition: all 0.2s ease-in-out; }
+        input[type="checkbox"]:checked + .checkbox-custom { background-color: #1A3C34; border-color: #1A3C34; }
+        
+        .card-hover:hover { border-color: #c1c8c4; background-color: #f4f4f2; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden antialiased font-body-md text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-surface-cream dark:bg-surface-cream text-primary dark:text-primary fixed top-0 right-0 w-[calc(100%-212px)] z-10 flat no shadows flex justify-between items-center px-container_margin h-16 max-w-[1680px] mx-auto border-b border-border-subtle hidden md:flex">
+<div class="flex items-center gap-stack_md">
+<!-- Breadcrumbs / Path -->
+<span class="font-body-sm text-body-sm text-ink-slate flex items-center gap-2">
+                Actions
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                integrations
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-primary font-medium">default</span>
+</span>
+</div>
+<div class="flex items-center gap-stack_lg">
+<div class="flex items-center gap-stack_sm">
+<button class="p-2 text-ink-slate hover:text-primary hover:bg-surface-container-lowest transition-colors duration-200 rounded">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-ink-slate hover:text-primary hover:bg-surface-container-lowest transition-colors duration-200 rounded">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+<button class="font-body-md text-body-md font-medium text-ink-slate hover:text-primary px-3 py-1.5 border border-border-subtle rounded bg-surface-white hover:bg-surface-container-lowest transition-colors">
+                Quick Action
+            </button>
+<button class="font-body-md text-body-md font-medium text-surface-white bg-accent-forest hover:bg-primary-container px-4 py-1.5 rounded transition-colors shadow-sm">
+                Deploy Fleet
+            </button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-border-subtle ml-2 flex-shrink-0">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A professional headshot of a person looking forward in a neutral, bright lighting environment. The background is a solid muted color to keep focus on the face. Professional and clean styling, operator aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAB3t5IX9rbMiKdzDeF_cNZYFRTi4bNYWzPqo2qKOCloLH_7Jht47FKuSPEG8ndSO_3kTSpel90kJRnSER4Sve5s1C7bK1PgEhV9QkYE7B1es1KX_bujKkFnfxs7ICANqx4yyozUI6j6IrWyyd2tWpBMgsBF6nBTq7ztLQgOCCh9UHhJO-V4pkYdw4fOifMGYsUW1WBVRBMhthS8yBVv5o1Jap3ehwa99KIYUsW0iVqXLyAr-JKTBWKwQogLhZEYpX3wCphQSwSILc"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="bg-surface-white dark:bg-surface-white text-accent-forest dark:text-accent-forest font-body-md text-body-md fixed left-0 top-0 h-full w-[212px] border-r border-border-subtle dark:border-border-subtle flat no shadows flex flex-col py-container_margin h-full z-20 hidden md:flex">
+<!-- Header -->
+<div class="px-container_margin mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary m-0 leading-tight">Wireline</h1>
+<p class="font-label-caps text-label-caps text-ink-slate m-0">Operator Workspace</p>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<ul class="flex flex-col flex-grow w-full m-0 p-0 list-none">
+<li class="w-full">
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span>Studio</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="groups">groups</span>
+<span>Agents</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="book_2">book_2</span>
+<span>Knowledge</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 text-on-surface dark:text-on-surface font-bold border-l-4 border-accent-forest px-stack_lg py-stack_md bg-surface-container-low dark:bg-surface-container-low Active: opacity-90 transition-all duration-150 pl-[calc(16px-4px)]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings_input_component">settings_input_component</span>
+<span>Actions</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="sensors">sensors</span>
+<span>Live</span>
+</a>
+</li>
+<li class="w-full mt-auto">
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</li>
+</ul>
+<!-- CTA -->
+<div class="px-container_margin mt-4">
+<button class="w-full py-2 bg-surface-white border border-border-subtle text-primary font-body-md text-body-md font-medium rounded hover:bg-surface-container-lowest transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Agent
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-[212px] mt-16 overflow-y-auto bg-background p-container_margin">
+<div class="max-w-[1440px] mx-auto">
+<!-- Page Header -->
+<div class="mb-8">
+<div class="font-label-caps text-label-caps text-ink-slate mb-2">PERMISSIONS</div>
+<h2 class="font-headline-xl text-headline-xl text-primary m-0">Actions</h2>
+</div>
+<!-- Two Column Layout -->
+<div class="flex flex-col lg:flex-row gap-8 items-start">
+<!-- LEFT COLUMN: Agent Action Toggles -->
+<div class="w-full lg:w-5/12 flex flex-col gap-6">
+<div class="bg-surface-white border border-border-subtle rounded-lg p-6 shadow-sm flex flex-col gap-6">
+<!-- Header & Preset -->
+<div class="flex justify-between items-center border-b border-border-subtle pb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary m-0">Agent Capabilities</h3>
+<p class="font-body-sm text-body-sm text-ink-slate mt-1">Configure what actions this fleet can perform autonomously.</p>
+</div>
+<button class="font-body-sm text-body-sm font-medium text-accent-forest bg-surface-container-low hover:bg-surface-container-highest px-3 py-1.5 rounded transition-colors flex items-center gap-1.5 border border-transparent">
+<span class="material-symbols-outlined text-[16px]">magic_button</span>
+                                Sales setup
+                            </button>
+</div>
+<!-- CRM Group -->
+<div class="flex flex-col gap-4">
+<h4 class="font-label-caps text-label-caps text-ink-slate border-l-2 border-border-subtle pl-2">CRM</h4>
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-start pt-1">
+<input checked="" class="opacity-0 absolute h-0 w-0" type="checkbox"/>
+<div class="checkbox-custom w-4 h-4 border border-outline rounded flex items-center justify-center bg-surface-white group-hover:border-accent-forest">
+<span class="material-symbols-outlined text-[12px] text-surface-white hidden">check</span>
+</div>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Create Records</div>
+<div class="font-body-sm text-body-sm text-ink-slate mt-0.5">Allow agent to generate new contacts, leads, and companies.</div>
+</div>
+</label>
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-start pt-1">
+<input checked="" class="opacity-0 absolute h-0 w-0" type="checkbox"/>
+<div class="checkbox-custom w-4 h-4 border border-outline rounded flex items-center justify-center bg-surface-white group-hover:border-accent-forest">
+<span class="material-symbols-outlined text-[12px] text-surface-white hidden">check</span>
+</div>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Update Pipeline Stage</div>
+<div class="font-body-sm text-body-sm text-ink-slate mt-0.5">Permit state transitions on deals and tickets based on conversation outcomes.</div>
+</div>
+</label>
+</div>
+<!-- Calendar Group -->
+<div class="flex flex-col gap-4 pt-4 border-t border-border-subtle">
+<h4 class="font-label-caps text-label-caps text-ink-slate border-l-2 border-border-subtle pl-2">CALENDAR</h4>
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-start pt-1">
+<input checked="" class="opacity-0 absolute h-0 w-0" type="checkbox"/>
+<div class="checkbox-custom w-4 h-4 border border-outline rounded flex items-center justify-center bg-surface-white group-hover:border-accent-forest">
+<span class="material-symbols-outlined text-[12px] text-surface-white hidden">check</span>
+</div>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Schedule Meetings</div>
+<div class="font-body-sm text-body-sm text-ink-slate mt-0.5">Agent can propose times and finalize calendar events directly.</div>
+</div>
+</label>
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-start pt-1">
+<input class="opacity-0 absolute h-0 w-0" type="checkbox"/>
+<div class="checkbox-custom w-4 h-4 border border-outline rounded flex items-center justify-center bg-surface-white group-hover:border-accent-forest">
+<span class="material-symbols-outlined text-[12px] text-surface-white hidden">check</span>
+</div>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Cancel / Reschedule</div>
+<div class="font-body-sm text-body-sm text-ink-slate mt-0.5">Modify existing events on behalf of the user.</div>
+</div>
+</label>
+</div>
+<!-- Messaging Group -->
+<div class="flex flex-col gap-4 pt-4 border-t border-border-subtle">
+<h4 class="font-label-caps text-label-caps text-ink-slate border-l-2 border-border-subtle pl-2">MESSAGING</h4>
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-start pt-1">
+<input checked="" class="opacity-0 absolute h-0 w-0" type="checkbox"/>
+<div class="checkbox-custom w-4 h-4 border border-outline rounded flex items-center justify-center bg-surface-white group-hover:border-accent-forest">
+<span class="material-symbols-outlined text-[12px] text-surface-white hidden">check</span>
+</div>
+</div>
+<div>
+<div class="font-body-md text-body-md font-medium text-on-surface">Send Emails</div>
+<div class="font-body-sm text-body-sm text-ink-slate mt-0.5">Draft and dispatch emails using connected accounts.</div>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Workspace Connections Grid -->
+<div class="w-full lg:w-7/12 flex flex-col gap-4">
+<div class="flex justify-between items-end mb-2">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary m-0">Workspace Connections</h3>
+<p class="font-body-sm text-body-sm text-ink-slate mt-1">Bind external systems to authorize the selected actions.</p>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-ink-slate text-[18px]">search</span>
+<input class="font-body-sm text-body-sm bg-surface-white border border-border-subtle rounded py-1.5 pl-9 pr-3 focus:outline-none focus:border-accent-forest focus:ring-0 w-48 placeholder:text-ink-slate" placeholder="Search systems..." type="text"/>
+</div>
+</div>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Card 1: Connected -->
+<div class="bg-surface-white border border-border-subtle rounded-lg p-5 flex flex-col justify-between min-h-[140px] card-hover cursor-pointer relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-surface-container-low rounded-bl-full -z-0 opacity-50"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-[#ff7a59]/10 flex items-center justify-center border border-[#ff7a59]/20">
+<!-- Placeholder for HubSpot Logo -->
+<span class="font-headline-md text-headline-md text-[#ff7a59]">H</span>
+</div>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface m-0">HubSpot</h4>
+<p class="font-body-sm text-body-sm text-ink-slate m-0">CRM Sync</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-sm bg-status-active/10 text-status-active font-label-caps text-label-caps border border-status-active/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-active"></span>
+                                    Connected
+                                </span>
+</div>
+<div class="mt-4 flex justify-between items-center border-t border-border-subtle pt-3 z-10">
+<span class="font-mono-ui text-mono-ui text-ink-slate">Last sync: 2m ago</span>
+<span class="material-symbols-outlined text-ink-slate text-[18px]">settings</span>
+</div>
+</div>
+<!-- Card 2: Connected -->
+<div class="bg-surface-white border border-border-subtle rounded-lg p-5 flex flex-col justify-between min-h-[140px] card-hover cursor-pointer relative overflow-hidden">
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-blue-50 flex items-center justify-center border border-blue-100">
+<!-- Placeholder for Google Logo -->
+<span class="material-symbols-outlined text-blue-500">mail</span>
+</div>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface m-0">Google Workspace</h4>
+<p class="font-body-sm text-body-sm text-ink-slate m-0">Mail &amp; Calendar</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-sm bg-status-active/10 text-status-active font-label-caps text-label-caps border border-status-active/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-active"></span>
+                                    Connected
+                                </span>
+</div>
+<div class="mt-4 flex justify-between items-center border-t border-border-subtle pt-3 z-10">
+<span class="font-mono-ui text-mono-ui text-ink-slate">Service Account</span>
+<span class="material-symbols-outlined text-ink-slate text-[18px]">settings</span>
+</div>
+</div>
+<!-- Card 3: Connect (Available) -->
+<div class="bg-surface-white border border-border-subtle rounded-lg p-5 flex flex-col justify-between min-h-[140px] card-hover cursor-pointer">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-purple-50 flex items-center justify-center border border-purple-100 grayscale opacity-70">
+<span class="font-headline-md text-headline-md text-purple-700">#</span>
+</div>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface m-0">Slack</h4>
+<p class="font-body-sm text-body-sm text-ink-slate m-0">Messaging</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-sm bg-surface-container-high text-secondary font-label-caps text-label-caps border border-border-subtle">
+                                    Available
+                                </span>
+</div>
+<div class="mt-4 border-t border-border-subtle pt-3">
+<button class="w-full font-body-sm text-body-sm font-medium text-primary bg-surface-white border border-border-subtle hover:bg-surface-container-low py-1.5 rounded transition-colors">
+                                    Connect
+                                </button>
+</div>
+</div>
+<!-- Card 4: Beta -->
+<div class="bg-surface-white border border-border-subtle rounded-lg p-5 flex flex-col justify-between min-h-[140px] card-hover cursor-pointer border-dashed">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-border-subtle grayscale opacity-70">
+<span class="material-symbols-outlined text-ink-slate">shopping_cart</span>
+</div>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface m-0">Shopify</h4>
+<p class="font-body-sm text-body-sm text-ink-slate m-0">Commerce</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-sm bg-status-warning/10 text-status-warning font-label-caps text-label-caps border border-status-warning/20">
+                                    Beta
+                                </span>
+</div>
+<div class="mt-4 border-t border-border-subtle pt-3">
+<button class="w-full font-body-sm text-body-sm font-medium text-primary bg-surface-white border border-border-subtle hover:bg-surface-container-low py-1.5 rounded transition-colors">
+                                    Request Access
+                                </button>
+</div>
+</div>
+<!-- Empty State / Add New -->
+<div class="bg-surface-cream border border-border-subtle border-dashed rounded-lg p-5 flex flex-col items-center justify-center min-h-[140px] hover:bg-surface-container-low transition-colors cursor-pointer text-center">
+<div class="w-10 h-10 rounded-full bg-surface-white border border-border-subtle flex items-center justify-center mb-2 shadow-sm">
+<span class="material-symbols-outlined text-accent-forest">add</span>
+</div>
+<span class="font-body-md text-body-md font-medium text-primary">Explore Directory</span>
+<span class="font-body-sm text-body-sm text-ink-slate">View 40+ integrations</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Inline JS for simple interactions
+        document.querySelectorAll('.checkbox-custom').forEach(el => {
+            el.parentElement.querySelector('input').addEventListener('change', (e) => {
+                const icon = el.querySelector('.material-symbols-outlined');
+                if (e.target.checked) {
+                    icon.classList.remove('hidden');
+                } else {
+                    icon.classList.add('hidden');
+                }
+            });
+            // Initial state check
+            if(el.parentElement.querySelector('input').checked) {
+                el.querySelector('.material-symbols-outlined').classList.remove('hidden');
+            }
+        });
+    </script>
+</body></html>

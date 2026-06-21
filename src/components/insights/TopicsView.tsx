@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 
 export default function TopicsView() {
   const [data, setData] = useState<any>(null);

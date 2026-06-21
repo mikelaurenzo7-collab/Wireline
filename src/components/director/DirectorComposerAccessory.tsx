@@ -2,6 +2,8 @@
  * Inline composer accessory panel — expands inside the dock so chat stays readable.
  * Replaces upward popovers that clipped or covered the message thread.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
+import { DIRECTOR_COMPOSER_ACCESSORY_HINTS, DIRECTOR_CAPABILITY_CATALOG, ComposerAccessoryKind } from "../../lib/director-copy";
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -33,12 +35,7 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import { DirectorCapabilityCatalog } from "./DirectorCapabilityCatalog";
 import { AGENT_TOOL_CATALOG } from "../../lib/agent-capabilities";
 import type { WorkspaceAgentSummary } from "../../contexts/AgentsContext";
-import {
-  WL_DIRECTOR_CLASSES,
-  DIRECTOR_COMPOSER_ACCESSORY_HINTS,
-  DIRECTOR_CAPABILITY_CATALOG,
-  type ComposerAccessoryKind,
-} from "../../lib/wireline-director-design";
+
 
 export type { ComposerAccessoryKind };
 

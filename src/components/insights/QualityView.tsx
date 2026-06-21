@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { WL_BRAND } from "../../lib/wireline-design-system";
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { BarChart3, TrendingUp, Loader2, Star, Play } from "lucide-react";
@@ -21,9 +22,9 @@ import { authFetch, readApiJson } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { OPS_INSIGHTS_EMPTY } from "../../lib/wireline-ops-design";
 import { fetchInsight, InsightSkeleton, ErrCard, qaColor, InsightEmpty } from "./shared";
-import { WIRELINE_DIRECTOR_BRAND } from "../../lib/wireline-director-design";
 
-const QA_BRAND = WIRELINE_DIRECTOR_BRAND.violet;
+
+const QA_BRAND = WL_BRAND.accentHex;
 
 export default function QualityView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);

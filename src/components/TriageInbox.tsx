@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -33,7 +34,7 @@ import { Card } from "./ui/shadcn/Card";
 import { Badge } from "./ui/shadcn/Badge";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
-import { WL_APP_CLASSES } from "../lib/wireline-director-design";
+
 import {
   OPS_TRIAGE_EMPTY,
   OPS_TRIAGE_ACCENTS,

@@ -8,11 +8,12 @@
  *   → Generating document...
  *   ○ Formatting output
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Loader2, Circle } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 
 export type PipelineStepStatus = "done" | "active" | "pending";
 

@@ -1,11 +1,12 @@
 /**
  * Compact usage ring for Director chat — bottom-right, out of the way (Cursor/Claude style).
  */
+import { DIRECTOR_USAGE_RING_COPY } from "../../lib/director-copy";
 import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
-import { DIRECTOR_USAGE_RING_COPY } from "../../lib/wireline-director-design";
+
 
 interface UsageRingSnapshot {
   plan_id: string | null;

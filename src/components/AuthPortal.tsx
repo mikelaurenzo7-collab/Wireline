@@ -15,7 +15,6 @@ import {
   User,
 } from "lucide-react";
 
-import PublicSiteHeader from "./marketing/PublicSiteHeader";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 import {
@@ -101,9 +100,11 @@ type OAuthProvider = "google" | "microsoft" | "yahoo";
 function OAuthSignInButtons({
   disabled,
   onError,
+  isSignUp = false,
 }: {
   disabled?: boolean;
   onError?: (message: string) => void;
+  isSignUp?: boolean;
 }) {
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 
@@ -181,59 +182,32 @@ function OAuthSignInButtons({
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
-        {providers.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => start(p.id)}
-            disabled={disabled || !!pending}
-            aria-label={`Continue with ${p.label}`}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-medium text-foreground shadow-sm transition hover:border-foreground/20 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/15 disabled:cursor-not-allowed disabled:opacity-55"
-          >
-            {pending === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : p.mark}
-            <span className="hidden sm:inline">{p.label}</span>
-          </button>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-foreground/60">
-        <span className="h-px flex-1 bg-ink/10" />
-        <span>Email</span>
-        <span className="h-px flex-1 bg-ink/10" />
+    <div className="space-y-3">
+      {providers.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          onClick={() => start(p.id)}
+          disabled={disabled || !!pending}
+          aria-label={`Continue with ${p.label}`}
+          className="wl-stitch-oauth-btn"
+        >
+          {pending === p.id ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            p.mark
+          )}
+          Continue with {p.label}
+        </button>
+      ))}
+      <div className="wl-stitch-auth-divider">
+        or {isSignUp ? "sign up" : "sign in"} with email
       </div>
     </div>
   );
 }
 
 const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(" ");
-
-function AuthLogo({ light = false }: { light?: boolean }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 font-display text-xl tracking-tight",
-        light ? "text-paper" : "text-foreground",
-      )}
-    >
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-[12px] text-primary-foreground font-semibold">W</span>
-      Wireline
-    </span>
-  );
-}
-
-function AuthChip({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex w-fit items-center gap-1.5 border border-border bg-muted px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground",
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
 
 function AuthShell({
   children,
@@ -244,54 +218,43 @@ function AuthShell({
   mode: WorkspaceMode;
   headerActive: "signin" | "signup";
 }) {
+  void mode;
+  void headerActive;
   return (
-    <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-paper lg:flex">
-        <div className="absolute right-[-12rem] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-brand/30 blur-3xl" />
-        <div className="relative z-10">
-          <Link to="/">
-            <AuthLogo light />
-          </Link>
+    <div className="wl-stitch-auth-shell">
+      <main id="main-content" className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-[440px]">
+          <div className="mb-6 text-center">
+            <Link to="/" className="text-2xl font-bold tracking-[-.03em] text-primary">
+              Wireline
+            </Link>
+            <h1 className="wl-stitch-headline mt-3">
+              {headerActive === "signup" ? "Create your account" : "Welcome back"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {mode === "personal"
+                ? "Sign in to manage your call assistant."
+                : "Sign in to your assistant workspace."}
+            </p>
+          </div>
+          <div className="wl-stitch-auth-card">{children}</div>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-sm text-muted-foreground">
+            <Link to="/" className="hover:text-primary hover:underline">Back to home</Link>
+            <Link to="/showcase" className="hover:text-primary hover:underline">Hear a demo</Link>
+            <Link to="/pricing" className="hover:text-primary hover:underline">Compare plans</Link>
+          </div>
         </div>
-        <div className="relative z-10 max-w-xl">
-          <AuthChip className="border-paper/20 bg-card/5 text-paper/70">
-            {mode === "personal" ? "Personal assistant" : "Business workspace"}
-          </AuthChip>
-          <h2 className="mt-5 font-display text-5xl leading-tight tracking-tight">
-            {mode === "personal"
-              ? "Your assistant for calls you keep putting off."
-              : "Your Business Wireline Assistants, in one place."}
-          </h2>
-          <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/65">
-            {mode === "personal"
-              ? "Wireline makes the call, waits on hold, handles the back-and-forth, and texts you what matters. One private assistant, always ready."
-              : "Set up AI voice, SMS, and email assistants with the tools, training, and approvals your team already uses."}
-          </p>
+      </main>
+      <footer className="mt-auto border-t border-border bg-card px-6 py-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
+          <span className="font-bold text-primary">Wireline</span>
+          <div className="flex gap-6">
+            <Link to="/privacy" className="hover:text-primary hover:underline">Privacy</Link>
+            <Link to="/terms" className="hover:text-primary hover:underline">Terms</Link>
+            <Link to="/support" className="hover:text-primary hover:underline">Support</Link>
+          </div>
         </div>
-        <div className="relative z-10 grid grid-cols-3 gap-px border border-paper/10 bg-card/10 text-center">
-          {[
-            ["Gmail", "OAuth"],
-            ["Outlook", "OAuth"],
-            ["Yahoo", "OAuth"],
-          ].map(([a, b]) => (
-            <div key={a} className="bg-card/[.03] p-4">
-              <div className="font-display text-xl">{a}</div>
-              <div className="mt-1 text-[10px] uppercase tracking-[.18em] text-paper/45">{b}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="flex min-h-screen flex-col">
-        <div className="lg:hidden">
-          <PublicSiteHeader active={headerActive} />
-        </div>
-        <main
-          id="main-content"
-          className="relative z-10 flex flex-1 items-center justify-center px-5 py-16 sm:px-6 lg:py-10"
-        >
-          <div className="w-full max-w-[460px]">{children}</div>
-        </main>
-      </div>
+      </footer>
     </div>
   );
 }
@@ -530,21 +493,12 @@ export default function AuthPortal() {
         noIndex
       />
       <AuthShell mode={workspaceMode} headerActive={headerActive}>
-        <div className="mb-8 text-center lg:text-left">
-          <p className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-brand">
-            Wireline account
-          </p>
-          <h1 className="font-display text-4xl italic tracking-tight text-foreground sm:text-5xl">
-            {pageTitle}
-          </h1>
-          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-foreground/65 lg:mx-0">
-            {pageDescription}
-          </p>
-          {isSignUp && intentLabel && (
-            <p className="mt-4 inline-flex rounded-sm border border-brand/20 bg-brand/8 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-brand">
-              {intentLabel}
-            </p>
-          )}
+        <div className="mb-6 text-center">
+          <h1 className="text-xl font-semibold tracking-[-.02em]">{pageTitle}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{pageDescription}</p>
+          {isSignUp && intentLabel ? (
+            <p className="wl-stitch-label mt-3 inline-flex rounded-full border border-border bg-muted px-3 py-1">{intentLabel}</p>
+          ) : null}
         </div>
 
         {isSignUp && !isReset && (
@@ -557,16 +511,16 @@ export default function AuthPortal() {
           />
         )}
 
-        <div className="rounded-md border border-ink/10 bg-card shadow-[0_24px_80px_-56px_rgba(30,27,46,0.55)]">
+        <div className="rounded-lg border border-border bg-card">
               {!isReset && (
                 <div className="grid grid-cols-2 border-b border-ink/10 p-1">
                   <button
                     type="button"
                     onClick={() => setIsSignUp(false)}
-                    className={`min-h-[48px] rounded-sm text-sm font-semibold transition ${
+                    className={`min-h-[44px] rounded text-sm font-semibold transition ${
                       !isSignUp
-                        ? "bg-brand text-white shadow-sm"
-                        : "text-foreground/65 hover:bg-ink/5 hover:text-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     Sign in
@@ -574,10 +528,10 @@ export default function AuthPortal() {
                   <button
                     type="button"
                     onClick={() => setIsSignUp(true)}
-                    className={`min-h-[48px] rounded-sm text-sm font-semibold transition ${
+                    className={`min-h-[44px] rounded text-sm font-semibold transition ${
                       isSignUp
-                        ? "bg-brand text-white shadow-sm"
-                        : "text-foreground/65 hover:bg-ink/5 hover:text-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     Create account
@@ -587,7 +541,11 @@ export default function AuthPortal() {
 
               <div className="p-6 sm:p-7">
                 {!isReset && (
-                  <OAuthSignInButtons disabled={loading} onError={(m) => setError(m || null)} />
+                  <OAuthSignInButtons
+                    disabled={loading}
+                    isSignUp={isSignUp}
+                    onError={(m) => setError(m || null)}
+                  />
                 )}
 
                 <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-5">
@@ -605,7 +563,7 @@ export default function AuthPortal() {
                         spellCheck={false}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8"
+                        className="wl-stitch-input h-11 pl-10"
                         placeholder="you@email.com"
                       />
                     </div>
@@ -644,7 +602,7 @@ export default function AuthPortal() {
                           autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 w-full rounded-xl border border-border bg-card pl-10 pr-11 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8"
+                          className="wl-stitch-input h-11 pl-10 pr-11"
                           placeholder={
                             isSignUp ? "Create a secure password" : "Enter your password"
                           }
@@ -725,7 +683,7 @@ export default function AuthPortal() {
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
                     aria-disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition hover:bg-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/15 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wl-accent-deep)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? (
                       <>
@@ -753,17 +711,6 @@ export default function AuthPortal() {
               </div>
             </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-foreground/55 lg:justify-start">
-          <Link to="/" className="hover:text-brand hover:underline">
-            Back to home
-          </Link>
-          <Link to="/showcase" className="hover:text-brand hover:underline">
-            View live demos
-          </Link>
-          <Link to="/pricing" className="hover:text-brand hover:underline">
-            Compare plans
-          </Link>
-        </div>
       </AuthShell>
     </>
   );

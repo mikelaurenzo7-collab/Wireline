@@ -2,10 +2,11 @@
  * Lightweight markdown-style rendering for Director replies —
  * headings, lists, code, tables, links, and inline emphasis.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import React, { useCallback, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 import { safeExternalHref } from "../../lib/safe-external-url";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 

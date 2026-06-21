@@ -27,7 +27,7 @@ export default function MarketingFooter({
   return (
     <footer
       className={cn(
-        "relative z-10 shrink-0 border-t border-[#1d1d1f]/10 bg-[#f7f7f5]",
+        "relative z-10 shrink-0 border-t border-border bg-background",
         compact ? "px-4 py-3" : "px-5 py-4 lg:px-8 xl:px-12 2xl:px-16",
         aboveStickyCta && "marketing-footer-above-sticky",
         className,
@@ -38,7 +38,7 @@ export default function MarketingFooter({
           {TRUST.map((label) => (
             <span
               key={label}
-              className="rounded-full border border-[#1d1d1f]/10 bg-white px-2.5 py-1 text-[11px] font-medium text-[#4f4f55]"
+              className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
             >
               {label}
             </span>
@@ -52,19 +52,19 @@ export default function MarketingFooter({
             <Link
               key={link.to}
               to={link.to}
-              className="inline-flex min-h-[44px] items-center text-[#5e5e64] transition hover:text-[#1d1d1f]"
+              className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground"
             >
               {link.label}
             </Link>
           ))}
-          <Link to="/privacy" className="inline-flex min-h-[44px] items-center text-[#5e5e64] transition hover:text-[#1d1d1f]">
+          <Link to="/privacy" className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">
             Privacy
           </Link>
-          <Link to="/terms" className="inline-flex min-h-[44px] items-center text-[#5e5e64] transition hover:text-[#1d1d1f]">
+          <Link to="/terms" className="inline-flex min-h-[44px] items-center text-muted-foreground transition hover:text-foreground">
             Terms
           </Link>
         </nav>
-        <p className="text-[11px] leading-relaxed text-[#6e6e73]">
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
           Start with the plan that fits your call volume. Change or cancel anytime.
         </p>
       </div>

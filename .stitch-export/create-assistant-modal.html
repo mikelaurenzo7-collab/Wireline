@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline Workspace - Create Agent</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#1a1c1b",
+                        "surface-cream": "#F7F7F5",
+                        "accent-forest": "#1A3C34",
+                        "ink-slate": "#6E6E73",
+                        "surface-white": "#FFFFFF",
+                        "border-subtle": "#E5E5E1",
+                        "primary": "#01261f",
+                        "surface-container-low": "#f4f4f2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container_margin": "24px",
+                        "stack_md": "8px",
+                        "gutter": "16px",
+                        "sidebar_width": "212px",
+                        "stack_lg": "16px",
+                        "stack_sm": "4px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "600"}],
+                        "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface-cream font-body-md text-on-surface antialiased overflow-hidden">
+<!-- Background App Shell (Blurred/Dimmed) -->
+<div class="h-screen w-full flex opacity-30 blur-sm pointer-events-none filter">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[212px] bg-surface-white border-r border-border-subtle flex flex-col py-container_margin z-0">
+<div class="px-container_margin mb-8">
+<h1 class="font-headline-lg text-headline-lg text-primary">Wireline</h1>
+<p class="font-body-sm text-body-sm text-ink-slate">Operator Workspace</p>
+</div>
+<div class="flex-1 overflow-y-auto space-y-1">
+<!-- Studio (Active) -->
+<a class="flex items-center space-x-3 text-on-surface font-bold border-l-4 border-accent-forest px-stack_lg py-stack_md bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[16px]">precision_manufacturing</span>
+<span>Studio</span>
+</a>
+<!-- Other links -->
+<a class="flex items-center space-x-3 text-ink-slate px-stack_lg py-stack_md" href="#">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span>Agents</span>
+</a>
+<a class="flex items-center space-x-3 text-ink-slate px-stack_lg py-stack_md" href="#">
+<span class="material-symbols-outlined text-[16px]">book_2</span>
+<span>Knowledge</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[212px] flex-1 flex flex-col h-screen">
+<!-- TopAppBar -->
+<header class="h-16 bg-surface-cream flex items-center justify-between px-container_margin max-w-[1680px] mx-auto w-full z-10 border-b border-border-subtle">
+<div class="flex-1"></div>
+<div class="flex items-center space-x-4">
+<button class="font-body-md text-body-md px-3 py-1.5 border border-border-subtle bg-surface-white rounded hover:bg-surface-cream transition-colors">Quick Action</button>
+<button class="font-body-md text-body-md px-3 py-1.5 bg-accent-forest text-surface-white rounded hover:bg-primary transition-colors">Deploy Fleet</button>
+<div class="flex items-center space-x-2 text-ink-slate">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">help_outline</span>
+</div>
+</div>
+</header>
+<!-- Dummy Grid Content -->
+<div class="p-container_margin grid grid-cols-3 gap-container_margin">
+<div class="bg-surface-white border border-border-subtle p-stack_lg rounded min-h-[300px]"></div>
+<div class="bg-surface-white border border-border-subtle p-stack_lg rounded min-h-[300px] col-span-2"></div>
+</div>
+</main>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/10 backdrop-blur-[2px]">
+<!-- Modal Card (Level 2 Elevation) -->
+<div class="bg-surface-white border border-border-subtle rounded-lg w-full max-w-md shadow-[0_4px_12px_rgba(29,29,31,0.05)] overflow-hidden flex flex-col">
+<!-- Modal Header -->
+<div class="px-container_margin py-stack_lg border-b border-border-subtle flex justify-between items-center bg-surface-white">
+<h2 class="font-headline-lg text-headline-lg text-primary">New Agent</h2>
+<button aria-label="Close modal" class="text-ink-slate hover:text-primary transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<form class="p-container_margin space-y-container_margin flex-1 overflow-y-auto">
+<!-- Name Field -->
+<div class="space-y-stack_sm">
+<label class="block font-label-caps text-label-caps text-ink-slate uppercase" for="agent-name">Agent Name</label>
+<input class="w-full bg-surface-white border border-border-subtle rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:border-accent-forest focus:ring-0 transition-colors placeholder:text-ink-slate/50" id="agent-name" placeholder="e.g., Support Bot v2" type="text"/>
+</div>
+<!-- Role Preset Field -->
+<div class="space-y-stack_sm">
+<label class="block font-label-caps text-label-caps text-ink-slate uppercase">Role Preset</label>
+<div class="grid grid-cols-2 gap-stack_md">
+<label class="relative flex cursor-pointer">
+<input checked="" class="peer sr-only" name="role_preset" type="radio" value="Scheduler"/>
+<div class="w-full p-stack_md border border-border-subtle rounded bg-surface-white text-center peer-checked:border-accent-forest peer-checked:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined block mb-1 text-ink-slate peer-checked:text-accent-forest">calendar_month</span>
+<span class="font-body-md text-body-md text-on-surface">Scheduler</span>
+</div>
+</label>
+<label class="relative flex cursor-pointer">
+<input class="peer sr-only" name="role_preset" type="radio" value="Sales"/>
+<div class="w-full p-stack_md border border-border-subtle rounded bg-surface-white text-center peer-checked:border-accent-forest peer-checked:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined block mb-1 text-ink-slate peer-checked:text-accent-forest">trending_up</span>
+<span class="font-body-md text-body-md text-on-surface">Sales</span>
+</div>
+</label>
+<label class="relative flex cursor-pointer">
+<input class="peer sr-only" name="role_preset" type="radio" value="Customer Service"/>
+<div class="w-full p-stack_md border border-border-subtle rounded bg-surface-white text-center peer-checked:border-accent-forest peer-checked:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined block mb-1 text-ink-slate peer-checked:text-accent-forest">support_agent</span>
+<span class="font-body-md text-body-md text-on-surface">Support</span>
+</div>
+</label>
+<label class="relative flex cursor-pointer">
+<input class="peer sr-only" name="role_preset" type="radio" value="Receptionist"/>
+<div class="w-full p-stack_md border border-border-subtle rounded bg-surface-white text-center peer-checked:border-accent-forest peer-checked:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined block mb-1 text-ink-slate peer-checked:text-accent-forest">desk</span>
+<span class="font-body-md text-body-md text-on-surface">Receptionist</span>
+</div>
+</label>
+<label class="relative flex cursor-pointer col-span-2">
+<input class="peer sr-only" name="role_preset" type="radio" value="Custom"/>
+<div class="w-full p-stack_md border border-border-subtle rounded bg-surface-white flex items-center justify-center space-x-2 peer-checked:border-accent-forest peer-checked:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-ink-slate peer-checked:text-accent-forest">tune</span>
+<span class="font-body-md text-body-md text-on-surface">Custom Build</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Brief Field -->
+<div class="space-y-stack_sm">
+<label class="block font-label-caps text-label-caps text-ink-slate uppercase" for="agent-brief">One-Line Brief</label>
+<input class="w-full bg-surface-white border border-border-subtle rounded px-3 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:border-accent-forest focus:ring-0 transition-colors placeholder:text-ink-slate/50" id="agent-brief" placeholder="Handles inbound technical inquiries..." type="text"/>
+</div>
+</form>
+<!-- Modal Footer -->
+<div class="px-container_margin py-stack_lg border-t border-border-subtle bg-surface-cream flex justify-end space-x-gutter">
+<button class="px-3 py-1.5 font-body-md text-body-md border border-border-subtle bg-surface-white text-on-surface rounded hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-accent-forest focus:ring-offset-1 focus:ring-offset-surface-cream" type="button">
+                    Cancel
+                </button>
+<button class="px-3 py-1.5 font-body-md text-body-md bg-accent-forest text-surface-white rounded hover:bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-accent-forest focus:ring-offset-1 focus:ring-offset-surface-cream flex items-center space-x-1" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Create Assistant</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

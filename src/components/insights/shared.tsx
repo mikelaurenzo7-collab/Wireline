@@ -6,11 +6,12 @@
  * god-file slicing pass. Every tab-view imports these rather than
  * duplicating spinner / empty / error chrome.
  */
+import { WL_BRAND, WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import React from "react";
 import { cn } from "../../lib/utils";
 import { BarChart3, CheckCircle2 as CheckCircle2Icon, AlertOctagon, RotateCw } from "lucide-react";
 import { authFetch, readApiJson } from "../../lib/api";
-import { WIRELINE_DIRECTOR_BRAND, WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 import { BRAND } from "../../constants/brand-colors";
 import { Skeleton } from "../ui/shadcn/Skeleton";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -112,7 +113,7 @@ export function InsightEmpty({
       title={config.title}
       description={descriptionOverride ?? config.description}
       actions={actionsOverride ?? [...config.actions]}
-      accent={success ? WIRELINE_DIRECTOR_BRAND.violet : undefined}
+      accent={success ? WL_BRAND.accent : undefined}
     />
   );
 }
@@ -130,7 +131,7 @@ export function Empty({ label, green }: { label: string; green?: boolean }) {
       eyebrow={green ? "All clear" : "Insights"}
       title={green ? "Looking good" : "No data yet"}
       description={label}
-      accent={green ? WIRELINE_DIRECTOR_BRAND.violet : undefined}
+      accent={green ? WL_BRAND.accent : undefined}
     />
   );
 }
@@ -209,7 +210,7 @@ export function SpendStat({
 /* ── QA colour helper ───────────────────────────────────────────── */
 
 export function qaColor(score: number) {
-  if (score >= 90) return WIRELINE_DIRECTOR_BRAND.violet;
+  if (score >= 90) return WL_BRAND.accentHex;
   if (score >= 75) return BRAND.purple;
   if (score >= 60) return BRAND.purpleMuted;
   if (score >= 40) return BRAND.rose;

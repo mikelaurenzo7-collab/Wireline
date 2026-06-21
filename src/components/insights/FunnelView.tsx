@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { cn } from "../../lib/utils";
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 
 export default function FunnelView({ days }: { days: number }) {
   const [data, setData] = useState<any>(null);

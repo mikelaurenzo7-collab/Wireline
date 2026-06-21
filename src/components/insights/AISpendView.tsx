@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -17,7 +18,7 @@ import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, SpendStat } from "./shared";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 import { BRAND } from "../../constants/brand-colors";
 
 /* ─────────────────────────  Spend Budget Card  ─────────────────── */

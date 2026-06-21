@@ -1,0 +1,279 @@
+/*
+ * Wireline product design system — Figma-aligned surfaces & typography.
+ * Tokens: foundation.css · Patterns: Wireline Design System v1 (Figma)
+ */
+
+/* Panels & surfaces */
+.wl-panel {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.wl-panel-elevated {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.wl-panel-editorial {
+  border-radius: calc(var(--radius) + 4px);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+/* Typography — maps to Figma text/* styles */
+.wl-label {
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  line-height: 1.35;
+}
+
+.wl-label-muted {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--muted-foreground);
+}
+
+.wl-micro-meta {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--foreground);
+}
+
+.wl-micro-meta--muted {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.wl-micro-badge {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.wl-body-caption {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+.wl-pro-eyebrow {
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.wl-pro-title {
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.wl-page-context {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  letter-spacing: -0.01em;
+}
+
+.wl-workspace-eyebrow {
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.wl-workspace-title {
+  font-size: 1.875rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+}
+
+/* Inline empty states */
+.wl-inline-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  padding: 0.5rem 0.75rem;
+}
+
+.wl-inline-empty__label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* Status chips */
+.wl-status-success {
+  color: color-mix(in srgb, var(--foreground) 85%, #15803d);
+}
+
+.wl-text-success {
+  color: color-mix(in srgb, var(--foreground) 85%, #15803d);
+}
+
+.wl-pulse-live {
+  animation: wl-pulse-live 2s ease-in-out infinite;
+}
+
+@keyframes wl-pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Composer / streaming chrome */
+.wl-director-meta {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.wl-director-micro {
+  font-size: 0.5625rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.wl-mission-panel,
+.director-live-panel {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.wl-composer-dock {
+  border-radius: calc(var(--radius) + 4px);
+}
+
+.wl-composer-accessory-panel {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.wl-director-cap-pill {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--secondary);
+  font-size: 0.625rem;
+  font-weight: 650;
+}
+
+.wl-director-cap-pill--active {
+  border-color: var(--foreground);
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.wl-live-output {
+  font-family: var(--wl-font-mono);
+  font-size: 0.75rem;
+}
+
+.wl-proposal-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.wl-proposal-rail {
+  border-left: 2px solid var(--primary);
+}
+
+.wl-director-doc {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--foreground);
+}
+
+.wl-director-research-sources {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--secondary);
+  padding: 0.75rem;
+}
+
+.wl-director-artifacts-panel {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.wl-starter-chip {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.wl-director-opus-badge {
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  padding: 0.125rem 0.5rem;
+}
+
+.wl-turn-action-log .wl-turn-stratum {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--secondary) 50%, transparent);
+}
+
+/* Segment control legacy alias */
+.app-segment-strip {
+  display: inline-flex;
+  gap: 0.125rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.125rem;
+}
+
+.app-section-title {
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.app-micro-cta {
+  font-size: 0.6875rem;
+  font-weight: 650;
+}
+
+/* Signal / empty-state decorative chrome */
+.wl-signal-orb-frame,
+.wl-signal-orb-frame--refined {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--secondary);
+}
+
+.wl-fleet-constellation,
+.wl-fleet-constellation--refined {
+  opacity: 0.35;
+}
+
+.wl-empty-state--signal {
+  position: relative;
+}

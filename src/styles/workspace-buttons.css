@@ -5,10 +5,10 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border: 1px solid var(--wl-ink);
+  border: 1px solid var(--primary);
   border-radius: 0.75rem;
-  background: var(--wl-ink);
-  color: #ffffff !important;
+  background: var(--primary);
+  color: var(--primary-foreground) !important;
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.1;
@@ -21,9 +21,9 @@
 }
 
 .workspace-btn-primary:hover:not(:disabled) {
-  border-color: #000000;
-  background: #000000;
-  color: #ffffff !important;
+  border-color: var(--wl-accent-deep);
+  background: var(--wl-accent-deep);
+  color: var(--primary-foreground) !important;
 }
 
 .workspace-btn-primary:active:not(:disabled) {
@@ -33,7 +33,7 @@
 .workspace-btn-primary:focus-visible {
   outline: 3px solid var(--wl-focus);
   outline-offset: 2px;
-  border-color: var(--wl-ink);
+  border-color: var(--primary);
 }
 
 .workspace-btn-primary:disabled {

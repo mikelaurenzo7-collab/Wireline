@@ -21,6 +21,7 @@ const TermsOfService = lazy(() => import("./components/LegalPage").then((module)
 const AppShell = lazy(() => import("./components/layout/AppShell"));
 const FigmaAuthPortal = lazy(() => import("./FigmaAuthPortal"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
+const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 
 function AppRouter() {
   return (
@@ -31,6 +32,7 @@ function AppRouter() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/showcase" element={<Showcase />} />
         <Route path="/compare" element={<Compare />} />
+        <Route path="/solutions/:wedge" element={<SolutionsPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/*" element={<Navigate to="/blog" replace />} />

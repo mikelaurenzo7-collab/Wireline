@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
+import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -26,7 +27,7 @@ import { PanelSkeleton } from "./Skeleton";
 import { Input } from "./ui/shadcn/Input";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { WL_APP_CLASSES } from "../lib/wireline-director-design";
+
 
 interface WebhookRow {
   id: string;

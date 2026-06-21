@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline - Agent Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface": "#1a1c1b",
+                      "on-tertiary-fixed-variant": "#623d36",
+                      "surface-bright": "#f9f9f7",
+                      "surface-container-lowest": "#ffffff",
+                      "surface": "#f9f9f7",
+                      "surface-cream": "#F7F7F5",
+                      "background": "#f9f9f7",
+                      "on-tertiary": "#ffffff",
+                      "status-warning": "#B45309",
+                      "outline-variant": "#c1c8c4",
+                      "accent-forest": "#1A3C34",
+                      "ink-slate": "#6E6E73",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#4f2d26",
+                      "ink-charcoal": "#1D1D1F",
+                      "surface-container-highest": "#e2e3e1",
+                      "primary": "#01261f",
+                      "inverse-surface": "#2f3130",
+                      "primary-container": "#1a3c34",
+                      "primary-fixed-dim": "#aacec3",
+                      "on-secondary-container": "#64646a",
+                      "on-error-container": "#93000a",
+                      "surface-container-low": "#f4f4f2",
+                      "inverse-primary": "#aacec3",
+                      "secondary-container": "#e3e1e9",
+                      "on-tertiary-fixed": "#30130d",
+                      "on-secondary-fixed-variant": "#46464c",
+                      "status-active": "#2D5A27",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#dadad8",
+                      "on-primary-fixed": "#00201a",
+                      "inverse-on-surface": "#f1f1ef",
+                      "surface-variant": "#e2e3e1",
+                      "secondary": "#5e5e64",
+                      "tertiary-fixed-dim": "#efbab0",
+                      "on-tertiary-container": "#c4948a",
+                      "on-surface-variant": "#414846",
+                      "border-subtle": "#E5E5E1",
+                      "error": "#ba1a1a",
+                      "secondary-fixed": "#e3e1e9",
+                      "surface-white": "#FFFFFF",
+                      "primary-fixed": "#c5eadf",
+                      "on-secondary-fixed": "#1b1b20",
+                      "on-primary-container": "#83a69c",
+                      "surface-container": "#eeeeec",
+                      "tertiary": "#361812",
+                      "on-background": "#1a1c1b",
+                      "surface-tint": "#43655c",
+                      "on-primary-fixed-variant": "#2b4d44",
+                      "on-error": "#ffffff",
+                      "secondary-fixed-dim": "#c7c5cd",
+                      "outline": "#717976",
+                      "tertiary-fixed": "#ffdad3",
+                      "surface-container-high": "#e8e8e6",
+                      "on-primary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "container_margin": "24px",
+                      "stack_md": "8px",
+                      "gutter": "16px",
+                      "sidebar_width": "212px",
+                      "stack_lg": "16px",
+                      "stack_sm": "4px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "mono-ui": [
+                              "JetBrains Mono"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "mono-ui": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.06em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f9f9f7; /* background */
+            color: #1a1c1b; /* on-background */
+        }
+        
+        /* Custom Scrollbar for inner elements if needed, keeping it subtle */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dadad8; /* surface-dim */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c1c8c4; /* outline-variant */
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md bg-background text-on-background flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-white dark:bg-surface-white fixed left-0 top-0 h-full w-[212px] border-r border-border-subtle dark:border-border-subtle flex flex-col py-container_margin z-20">
+<!-- Brand / Header -->
+<div class="px-container_margin mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A minimalist logo for a software company named Wireline, featuring clean geometric lines representing connectivity. The logo is set against a very light cream background, fitting a professional light-mode aesthetic. The design is stark, lacking any extraneous decorative elements, evoking mid-century telecommunications hardware with a modern twist. The color palette primarily uses deep charcoal grey and a subtle forest green accent." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ4SXHgzmSXNRXkJEIvHEY14lt9HvLr6V7unsOPdhsV7V89XM-n8aZEboV9b1fV8rpA4hVm5qyolkqo3U7F8qSb163_fKhZoNzaC3jGxqUnhMUDGXjCBmFaj24MiYTB7e4UJQ7D6s4tQ6PtKyuMlzcT43znIAQZAhKmoV0PaN4iLbqlBV6pwB_H6ns8_zf0gYLZk90y3O7XwInS_TfQLNazNXh4nthQ_9lWUhImrWb9O4V1estJzVgNMKJE8MtnATo5LYtMzOi6dk"/>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-lg text-headline-lg text-primary dark:text-primary tracking-tight">Wireline</span>
+<span class="font-label-caps text-label-caps text-ink-slate uppercase">Operator Workspace</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto w-full">
+<ul class="flex flex-col w-full">
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">precision_manufacturing</span>
+<span class="font-body-md text-body-md">Studio</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-body-md">Agents</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-on-surface dark:text-on-surface font-bold border-l-4 border-accent-forest px-stack_lg py-stack_md bg-surface-container-low dark:bg-surface-container-low Active: opacity-90 transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">book_2</span>
+<span class="font-body-md text-body-md">Knowledge</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">settings_input_component</span>
+<span class="font-body-md text-body-md">Actions</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">sensors</span>
+<span class="font-body-md text-body-md">Live</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-ink-slate dark:text-ink-slate px-stack_lg py-stack_md hover:bg-surface-container-lowest dark:hover:bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[16px]">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- CTA -->
+<div class="px-container_margin mt-auto pt-4">
+<button class="w-full bg-surface-white border border-border-subtle text-on-surface font-body-md text-body-md font-bold py-2 px-3 rounded hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                New Agent
+            </button>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="bg-surface-cream dark:bg-surface-cream fixed top-0 right-0 w-[calc(100%-212px)] z-10 bg-surface-cream dark:bg-surface-cream flex justify-between items-center px-container_margin h-16 max-w-[1680px] mx-auto border-b-0">
+<!-- Left: Branding / Context (Though Topbar JSON specifies product name, usually secondary to sidebar. We'll show nothing or breadcrumbs here if needed, but sticking to JSON structure) -->
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary">Wireline</span>
+<!-- Agent Selector Dropdown (Added as requested) -->
+<div class="relative ml-4 border-l border-border-subtle pl-4 flex items-center">
+<button class="flex items-center gap-2 text-on-surface font-body-sm text-body-sm hover:text-primary transition-colors focus:outline-none">
+<span class="w-2 h-2 rounded-full bg-status-active inline-block"></span>
+                    Support Agent Alpha
+                    <span class="material-symbols-outlined text-[16px] text-ink-slate">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- Right: Actions -->
+<div class="flex items-center gap-stack_lg">
+<button class="text-on-surface font-body-sm text-body-sm font-bold hover:bg-surface-container-low px-3 py-1.5 rounded transition-colors border border-transparent hover:border-border-subtle">
+                Quick Action
+            </button>
+<button class="bg-accent-forest text-surface-white font-body-sm text-body-sm font-bold px-3 py-1.5 rounded hover:opacity-90 transition-opacity">
+                Deploy Fleet
+            </button>
+<div class="h-6 w-px bg-border-subtle mx-1"></div>
+<button class="text-ink-slate hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-ink-slate hover:text-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-border-subtle shrink-0 ml-2">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A small, professional headshot avatar of an operator in a minimalist style, set against a neutral cream background. The lighting is soft and flat, emphasizing utility over drama. The image feels like a high-quality employee badge photo." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6xWxN67QovWmcdyeXuc409gesTz6G2xeAuPm1-svCa314aUi2fFbgfnY9xdM_NURz7QYk0gomcPk-7hV_HUZwGN9Od6U9GluMyYROvHRzLkharfYmf4ffKgeA3gHocWE7rr8bxQVSlbvxZRgWhbDKDI4zjzMfJq12v0U0g84xWo4BhzPw6DxuiWa8hl7cBVsJdpB_8wsLw2X3KiIcDyhFaKPKo2LeH-1yUfpHnP_q2xSpPqaJzHklKVZGK9zgKSs3OxInT_YuR4k"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area (Fluid Stage + Inspector) -->
+<main class="ml-[212px] mt-16 flex-1 flex w-full h-[calc(100vh-64px)] overflow-hidden bg-background">
+<!-- Fluid Stage (Knowledge Panels) -->
+<section class="flex-1 overflow-y-auto p-container_margin flex flex-col gap-container_margin">
+<!-- Header Section -->
+<div class="flex flex-col gap-1 mb-2">
+<span class="font-label-caps text-label-caps text-ink-slate uppercase tracking-widest">Knowledge Base</span>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Agent Intelligence</h1>
+<p class="font-body-md text-body-md text-ink-slate mt-1 max-w-2xl">
+                    Configure the foundational facts, rules, and behavioral boundaries for this agent. This knowledge acts as the primary grounding context during interactions.
+                </p>
+</div>
+<!-- Bento Grid / Three Panels -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-container_margin items-start">
+<!-- Business Facts Panel -->
+<article class="bg-surface-white border border-border-subtle rounded flex flex-col h-full">
+<header class="p-gutter border-b border-border-subtle flex justify-between items-center bg-surface-cream/50 rounded-t">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-ink-slate">corporate_fare</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Business Facts</h2>
+</div>
+<span class="font-mono-ui text-mono-ui text-ink-slate bg-surface-container px-2 py-0.5 rounded text-xs">12 entries</span>
+</header>
+<div class="p-gutter flex flex-col gap-4">
+<p class="font-body-sm text-body-sm text-ink-slate mb-2">Core information the agent can state as absolute truth (hours, services, policies).</p>
+<!-- Fact Item -->
+<div class="group border border-transparent hover:border-border-subtle hover:bg-surface-bright rounded p-3 -mx-3 transition-colors cursor-default">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-md text-body-md font-semibold text-on-surface">Operating Hours</h3>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+<button class="text-ink-slate hover:text-primary"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Monday-Friday 9AM-5PM EST. Closed on federal holidays.</p>
+</div>
+<!-- Fact Item -->
+<div class="group border border-transparent hover:border-border-subtle hover:bg-surface-bright rounded p-3 -mx-3 transition-colors cursor-default">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-md text-body-md font-semibold text-on-surface">Return Policy</h3>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+<button class="text-ink-slate hover:text-primary"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">30-day money back guarantee on hardware. Software subscriptions are non-refundable after initial billing cycle.</p>
+</div>
+<!-- Fact Item -->
+<div class="group border border-transparent hover:border-border-subtle hover:bg-surface-bright rounded p-3 -mx-3 transition-colors cursor-default">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-body-md text-body-md font-semibold text-on-surface">Supported Services</h3>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+<button class="text-ink-slate hover:text-primary"><span class="material-symbols-outlined text-[16px]">edit</span></button>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Installation, basic troubleshooting, account migrations. DO NOT support custom API integrations on standard tier.</p>
+</div>
+</div>
+</article>
+<div class="flex flex-col gap-container_margin h-full">
+<!-- Operating Rules Panel -->
+<article class="bg-surface-white border border-border-subtle rounded flex flex-col flex-1">
+<header class="p-gutter border-b border-border-subtle flex justify-between items-center bg-surface-cream/50 rounded-t">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-status-warning">rule</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Operating Rules</h2>
+</div>
+<span class="font-mono-ui text-mono-ui text-ink-slate bg-surface-container px-2 py-0.5 rounded text-xs">5 active</span>
+</header>
+<div class="p-gutter flex flex-col gap-3">
+<p class="font-body-sm text-body-sm text-ink-slate mb-1">Strict behavioral boundaries and escalation triggers.</p>
+<div class="flex items-start gap-3 bg-error-container/20 border border-error-container/50 p-3 rounded">
+<span class="material-symbols-outlined text-[18px] text-error mt-0.5">block</span>
+<div>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface block mb-0.5">Never guarantee SLA recovery times</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Always state: "Our engineering team is investigating and will provide an update shortly." Do not estimate hours.</span>
+</div>
+</div>
+<div class="flex items-start gap-3 bg-surface-bright border border-border-subtle p-3 rounded">
+<span class="material-symbols-outlined text-[18px] text-primary mt-0.5">call_split</span>
+<div>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface block mb-0.5">Escalate Angry Customers immediately</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">If sentiment drops below threshold or user requests "human" twice, trigger handoff protocol <code>#ESC-01</code>.</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Tone Panel -->
+<article class="bg-surface-white border border-border-subtle rounded flex flex-col">
+<header class="p-gutter border-b border-border-subtle flex items-center gap-2 bg-surface-cream/50 rounded-t">
+<span class="material-symbols-outlined text-[18px] text-accent-forest">record_voice_over</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Tone &amp; Personality</h2>
+</header>
+<div class="p-gutter relative">
+<!-- Subtle background element to make it feel prose-like -->
+<div class="absolute top-4 right-4 text-surface-container-highest opacity-50">
+<span class="material-symbols-outlined text-[48px]">format_quote</span>
+</div>
+<div class="relative z-10 font-body-sm text-body-sm text-on-surface leading-relaxed max-w-[90%]">
+                                "You are a professional, highly competent technical support operator. You speak clearly, without jargon unless initiated by the user. You are polite but direct, prioritizing swift resolution over overly conversational pleasantries. Never use emojis. Address the user respectfully but do not overly apologize for system issues; focus on the fix."
+                             </div>
+<button class="mt-4 text-accent-forest font-label-caps text-label-caps hover:underline uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">edit_note</span> Edit Prose
+                             </button>
+</div>
+</article>
+</div>
+</div>
+</section>
+<!-- Right Rail (Inspector / Composer) -->
+<aside class="w-[320px] bg-surface-white border-l border-border-subtle h-full flex flex-col shrink-0">
+<!-- Composer Header -->
+<div class="h-16 border-b border-border-subtle px-gutter flex items-center bg-surface-cream/30">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+                    Add Knowledge
+                </h3>
+</div>
+<!-- Composer Form Area -->
+<div class="flex-1 overflow-y-auto p-gutter flex flex-col gap-6">
+<!-- Type Toggle -->
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-ink-slate uppercase">Entry Type</label>
+<div class="flex bg-surface-container-low p-1 rounded border border-border-subtle">
+<button class="flex-1 bg-surface-white border border-border-subtle shadow-sm rounded text-on-surface font-body-sm text-body-sm py-1.5 font-semibold text-center transition-all">Fact</button>
+<button class="flex-1 text-ink-slate hover:text-on-surface font-body-sm text-body-sm py-1.5 text-center transition-all">Rule</button>
+</div>
+</div>
+<!-- Input Fields -->
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-ink-slate uppercase" for="title">Title / Subject</label>
+<input class="w-full bg-surface-white border border-outline-variant rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-accent-forest focus:ring-0 transition-colors placeholder:text-surface-dim" id="title" placeholder="e.g. Password Reset Policy" type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-ink-slate uppercase" for="content">Content</label>
+<textarea class="w-full bg-surface-white border border-outline-variant rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-accent-forest focus:ring-0 transition-colors resize-none placeholder:text-surface-dim" id="content" placeholder="Enter the factual statement or rule..." rows="6"></textarea>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-caps text-label-caps text-ink-slate uppercase">Tags (Optional)</label>
+<input class="w-full bg-surface-white border border-outline-variant rounded px-3 py-2 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-accent-forest focus:ring-0 transition-colors placeholder:text-surface-dim" placeholder="Add tags separated by comma" type="text"/>
+<div class="flex gap-2 mt-1">
+<span class="inline-block bg-surface-container px-2 py-1 rounded text-xs font-mono-ui text-ink-slate border border-border-subtle cursor-pointer hover:bg-surface-variant transition-colors">+ billing</span>
+<span class="inline-block bg-surface-container px-2 py-1 rounded text-xs font-mono-ui text-ink-slate border border-border-subtle cursor-pointer hover:bg-surface-variant transition-colors">+ technical</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Composer Actions -->
+<div class="p-gutter border-t border-border-subtle bg-surface-cream/30">
+<button class="w-full bg-accent-forest text-surface-white font-body-md text-body-md font-bold py-2 rounded hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                    Save Entry
+                </button>
+</div>
+</aside>
+</main>
+</body></html>

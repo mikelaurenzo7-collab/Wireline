@@ -1,10 +1,11 @@
 /**
  * Per-message download link when Director auto-exported a markdown deliverable.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import React from "react";
 import { Download } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 import type { DirectorDeliverableArtifactMeta } from "../../lib/director-message-metadata";
 
 export function DirectorDeliverableDownload({

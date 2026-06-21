@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
+import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
 import React, { useState } from "react";
 import {
   CheckCircle2,
@@ -30,7 +31,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import type { ActionType } from "../../lib/action-types";
 import { OPS_COPY, OPS_CHANNEL_EMPTY, WL_OPS_CLASSES } from "../../lib/wireline-ops-design";
-import { WL_APP_CLASSES, WL_DIRECTOR_CLASSES } from "../../lib/wireline-director-design";
+
 
 interface ActionItem {
   id: string;

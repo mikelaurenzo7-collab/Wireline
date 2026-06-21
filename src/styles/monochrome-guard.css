@@ -87,6 +87,24 @@
   background-image: none !important;
 }
 
+/* Retired text-brand / bg-brand utilities map to semantic graphite (Tailwind theme alias). */
+:where([class*="text-brand"]) {
+  color: var(--foreground) !important;
+}
+
+:where([class*="bg-brand"]) {
+  background-color: var(--muted) !important;
+  background-image: none !important;
+}
+
+:where([class*="border-brand"]) {
+  border-color: var(--border) !important;
+}
+
+:where([class*="ring-brand"]) {
+  --tw-ring-color: var(--ring) !important;
+}
+
 /* Legacy iris shadows become the same subtle graphite depth used by new cards. */
 :where(
   [class*="rgba(124,58,237"],

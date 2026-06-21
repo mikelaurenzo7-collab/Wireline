@@ -2,6 +2,8 @@
  * Director capability catalog — grouped matrix of what the co-pilot can do.
  * Used in empty state and composer popover so operators discover gen + execute paths.
  */
+import { WL_DIRECTOR_CLASSES } from "../../lib/wireline-design-system";
+import { DIRECTOR_CAPABILITY_CATEGORY_LABELS, DIRECTOR_CAPABILITY_CATALOG, DirectorCapabilityCategory, DirectorCapabilityItem, directorCapabilitiesByCategory } from "../../lib/director-copy";
 import React, { useMemo, useState } from "react";
 import {
   ArrowUpRight,
@@ -16,14 +18,7 @@ import {
 import { cn } from "../../lib/utils";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Input } from "../ui/shadcn/Input";
-import {
-  DIRECTOR_CAPABILITY_CATEGORY_LABELS,
-  DIRECTOR_CAPABILITY_CATALOG,
-  WL_DIRECTOR_CLASSES,
-  type DirectorCapabilityCategory,
-  type DirectorCapabilityItem,
-  directorCapabilitiesByCategory,
-} from "../../lib/wireline-director-design";
+
 
 const CATEGORY_ICON: Record<DirectorCapabilityCategory, React.ElementType> = {
   strategy: BarChart3,

@@ -1,3 +1,4 @@
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -6,7 +7,7 @@ import { cn } from "../../lib/utils";
 import { Medallion } from "./Medallion";
 import { SectionHeader } from "./SectionHeader";
 import { ShadButton } from "./shadcn/ShadButton";
-import { WL_APP_CLASSES } from "../../lib/wireline-director-design";
+
 import { WL_SIGNAL_CLASSES } from "../../lib/wireline-signal-design";
 import { SignalOrbFrame } from "./SignalOrbFrame";
 

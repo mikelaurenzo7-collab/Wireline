@@ -10,15 +10,23 @@ const activeFiles = [
   "src/pages/Showcase.tsx",
   "src/pages/Compare.tsx",
   "src/pages/About.tsx",
-  "src/pages/AgentStudioHome.tsx",
+  "src/pages/SolutionsPage.tsx",
   "src/components/PhoneAgentBlueprint.tsx",
-  "src/components/layout/AppShell.tsx",
   "src/components/marketing/PublicSiteHeader.tsx",
+  "src/components/marketing/MarketingFooter.tsx",
+  "src/components/WorkspaceShell.tsx",
+  "src/pages/AgentsPage.tsx",
+  "src/pages/SettingsPage.tsx",
+  "src/pages/OperationsPage.tsx",
+  "src/components/StudioWorkspaceV2.tsx",
+  "src/components/AuthPortal.tsx",
   "src/index.css",
   "src/styles/foundation.css",
-  "src/styles/monochrome-guard.css",
+  "src/styles/stitch-patterns.css",
+  "src/styles/design-system.css",
   "src/lib/claude-client.ts",
   "src/lib/voice-model-defaults.ts",
+  "src/lib/stitch-design-system.ts",
 ];
 
 const failures = [];
@@ -36,9 +44,14 @@ for (const file of activeFiles) {
     report(file, "must not reference Anthropic in the active product surface");
   }
 
-  if (/from-(violet|purple|indigo|fuchsia|pink)-|to-(violet|purple|indigo|fuchsia|pink)-|bg-(violet|purple|indigo|fuchsia|pink)-|text-(violet|purple|indigo|fuchsia|pink)-/.test(source)) {
+  if (/from-(violet|purple|indigo|fuchsia|pink)-|to-(violet|purple|indigo|fuchsia|pink)-|bg-(violet|purple|indigo|fuchsia|pink)-|text-(violet|purple|indigo|fuchsia|pink)-|#7C3AED/i.test(source)) {
     report(file, "contains a retired colored design token");
   }
+}
+
+const foundation = read("src/styles/foundation.css");
+if (!/--wl-accent:\s*#1a3c34/i.test(foundation)) {
+  report("src/styles/foundation.css", "must use Stitch forest accent #1a3c34");
 }
 
 const runtime = read("src/lib/claude-client.ts");
