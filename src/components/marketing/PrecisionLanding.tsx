@@ -58,10 +58,10 @@ export default function PrecisionLanding() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
-                to="/signup?mode=personal"
+                to="/pricing"
                 className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
               >
-                Start free
+                See plans
               </Link>
               <Link
                 to="/showcase"
@@ -149,10 +149,10 @@ export default function PrecisionLanding() {
           </h2>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
-              to="/signup?mode=personal"
+              to="/pricing"
               className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
             >
-              Start with one assistant
+              Choose your plan
             </Link>
             <Link
               to="/features"
