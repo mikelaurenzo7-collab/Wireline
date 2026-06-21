@@ -34,8 +34,9 @@ object Brand {
     val Border = Color(0xFFDADAD8)
     val BorderStrong = Color(0xFFAEB8B4)
 
-    val Text = Color(0xFF1A1C1B)
-    val Text2 = Color(0xFF414846)
+    // V7 uses forest ink for primary hierarchy, with a quiet green-gray second line.
+    val Text = Color(0xFF1A3C34)
+    val Text2 = Color(0xFF4A5F59)
     val Text3 = Color(0xB84A5F59)
 
     val Accent = Color(0xFF1A3C34)
