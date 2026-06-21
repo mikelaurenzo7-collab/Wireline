@@ -25,7 +25,6 @@ const activeFiles = [
   "src/styles/design-system.css",
   "src/lib/ai-client.ts",
   "src/lib/voice-model-defaults.ts",
-  "src/lib/stitch-design-system.ts",
 ];
 
 const failures = [];
