@@ -10,19 +10,26 @@ describe("plan-catalog", () => {
     expect(personal?.extra_agent_price_usd).toBe(7);
   });
 
-  it("makes Business Studio the clear operational entry tier", () => {
-    const studio = planById("business-starter");
-    expect(studio?.name).toBe("Studio");
-    expect(studio?.price_usd_monthly).toBe(29);
-    expect(studio?.max_agents).toBe(4);
-    expect(studio?.voice_minutes_monthly).toBe(500);
-    expect(studio?.included_phone_numbers).toBe(2);
-    expect(studio?.extra_agent_price_usd).toBe(9);
+  it("makes Household the practical multi-assistant tier", () => {
+    const household = planById("business-starter");
+    expect(household?.name).toBe("Household");
+    expect(household?.price_usd_monthly).toBe(29);
+    expect(household?.max_agents).toBe(4);
+    expect(household?.voice_minutes_monthly).toBe(500);
+    expect(household?.included_phone_numbers).toBe(2);
+    expect(household?.extra_agent_price_usd).toBe(9);
+  });
+
+  it("keeps Concierge as the expanded personal or work tier", () => {
+    const concierge = planById("starter");
+    expect(concierge?.name).toBe("Concierge");
+    expect(concierge?.price_usd_monthly).toBe(59);
+    expect(concierge?.max_agents).toBe(8);
   });
 
   it("keeps the canonical Stripe plan identifiers for subscriptions and migrations", () => {
     expect(STRIPE_PLANS).toHaveLength(5);
-    expect(STRIPE_PLANS.map((p) => p.id)).toEqual([
+    expect(STRIPE_PLANS.map((plan) => plan.id)).toEqual([
       "personal",
       "personal-plus",
       "business-starter",
@@ -39,10 +46,7 @@ describe("plan-catalog", () => {
   });
 
   it("keeps paid plans positive and overage above variable voice cost", () => {
-    for (const plan of STRIPE_PLANS.filter((p) => p.price_usd_monthly > 0)) {
-      // Included minutes are an allowance, not a 100%-utilization cost forecast.
-      // Stripe is the commercial source of truth; the hard guardrail is that
-      // incremental overage never sells below the blended variable cost.
+    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
       expect(plan.price_usd_monthly).toBeGreaterThan(0);
       expect(plan.overage_per_min_usd).toBeGreaterThan(VOICE_VARIABLE_COST_PER_MIN_USD);
     }
