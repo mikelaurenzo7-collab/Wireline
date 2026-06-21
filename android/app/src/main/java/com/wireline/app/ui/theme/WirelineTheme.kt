@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 /**
- * Native Android translation of the Stitch Precision system. It stays
- * Material-native while sharing the warm paper surfaces, compact geometry,
- * quiet borders, and forest action color used by web and iOS.
+ * Native Android translation of the current Stitch Professional Heritage system.
+ * It stays Material-native while sharing warm paper surfaces, compact geometry,
+ * quiet borders, and the forest action color used by web and iOS.
  */
 object Brand {
     val Canvas = Color(0xFFF9F9F7)
@@ -31,9 +31,9 @@ object Brand {
     val Border = Color(0xFFDADAD8)
     val BorderStrong = Color(0xFFAEB8B4)
 
-    val Text = Color(0xFF1A1C1B)
-    val Text2 = Color(0xFF414846)
-    val Text3 = Color(0xFF717976)
+    val Text = Color(0xFF1A3C34)
+    val Text2 = Color(0xFF4A5F59)
+    val Text3 = Color(0xB84A5F59)
 
     val Accent = Color(0xFF1A3C34)
     val AccentSoft = Color(0xFFE1E9E6)
@@ -45,7 +45,7 @@ object Brand {
     val Signal = Success
 
     // Legacy aliases keep existing screens compiling. They all resolve to the
-    // Stitch forest palette rather than the retired violet palette.
+    // Professional Heritage forest palette rather than the retired violet palette.
     val Violet = Accent
     val VioletSoft = AccentSoft
     val VioletDeep = AccentDeep
@@ -127,7 +127,7 @@ fun WirelineTheme(content: @Composable () -> Unit) {
             colorScheme = colorScheme,
             shapes = Shapes(
                 extraSmall = RoundedCornerShape(Brand.RadiusSm),
-                small = RoundedCornerShape(Brand.RadiusSm),
+                small = RoundedCornerShape(Brand.RadiusMd),
                 medium = RoundedCornerShape(Brand.RadiusMd),
                 large = RoundedCornerShape(Brand.RadiusLg),
                 extraLarge = RoundedCornerShape(16.dp),
