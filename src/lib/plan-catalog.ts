@@ -27,7 +27,7 @@ export type StripePlan = {
 /**
  * Launch catalog principles:
  * - Personal is intentionally light-use, not an unlimited calling bundle.
- * - Business has a clear operational entry plan and grows through add-on agents.
+ * - Business starts with clear coverage and grows through add-on assistants.
  * - Usage allowances reserve room for voice, model, carrier, support, and payment costs.
  */
 export const STRIPE_PLANS: StripePlan[] = [
@@ -105,7 +105,7 @@ export const STRIPE_PLANS: StripePlan[] = [
   },
   {
     id: "starter",
-    name: "Business Operator",
+    name: "Business Plus",
     price_usd_monthly: 249,
     max_agents: 5,
     voice_minutes_monthly: 1_000,
@@ -120,7 +120,7 @@ export const STRIPE_PLANS: StripePlan[] = [
     features: [
       "5 agents and 4 business numbers",
       "1,000 voice minutes each month",
-      "Live operations, review workflows, and analytics",
+      "Call activity, review workflows, and analytics",
       "Outbound calling with email and SMS follow-up",
       "Team collaboration and escalation controls",
       "Add agents for $29 / month",
