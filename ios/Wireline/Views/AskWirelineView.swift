@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// The in-app "Ask Wireline" surface — the on-screen twin of the Siri/Action-
-/// button entry points. Presents the same approved actions, and runs the ones
-/// that return spoken answers (summary, attention digest) inline.
+/// The in-app Ask surface mirrors Siri and widget entry points with native,
+/// concise actions that hand a request directly into real Wireline flows.
 struct AskWirelineView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var agents: [Agent] = []
@@ -13,115 +12,93 @@ struct AskWirelineView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    // Header
+                VStack(spacing: 16) {
                     VStack(spacing: 10) {
-                        Medallion(systemImage: "mic.fill", size: 68)
-                            .shadow(color: Brand.purple.opacity(0.3), radius: 16)
-                        Text("What can Wireline do?")
+                        Medallion(systemImage: "mic.fill", size: 60)
+                        Text("What can Wireline help with?")
                             .font(.title3.weight(.semibold))
+                            .foregroundStyle(Brand.text)
+                        Text("Start a call, get a recap, or check the follow-ups that need you.")
+                            .font(.subheadline)
+                            .foregroundStyle(Brand.text2)
+                            .multilineTextAlignment(.center)
                     }
                     .padding(.top, 8)
 
-                    // Inline answer card
                     if let answer {
                         Text(answer)
                             .font(.callout)
+                            .foregroundStyle(Brand.text)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(16)
-                            .background(Brand.paperWarm, in: RoundedRectangle(cornerRadius: 12))
+                            .background(Brand.panel2, in: RoundedRectangle(cornerRadius: Brand.radiusMd, style: .continuous))
                     }
 
-                    // Action cards
-                    VStack(spacing: 10) {
-                        actionCard("Place a call", "phone.arrow.up.right") {
-                            showingDialer = true
-                        }
-                        actionCard("Summarize my last call", "text.bubble") {
-                            await run { try await summary() }
-                        }
-                        actionCard("What needs my attention", "bell.badge") {
-                            await run { try await attention() }
-                        }
+                    VStack(spacing: 8) {
+                        actionCard("Place a call", "phone.arrow.up.right") { showingDialer = true }
+                        actionCard("Summarize my last call", "text.bubble") { await run { try await summary() } }
+                        actionCard("What needs my attention", "bell.badge") { await run { try await attention() } }
                     }
 
-                    if isWorking {
-                        ProgressView().padding(.top, 4)
-                    }
+                    if isWorking { ProgressView().tint(Brand.accent).padding(.top, 4) }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 16)
                 .padding(.bottom, 32)
             }
-            .background(Brand.paper.ignoresSafeArea())
+            .background(Brand.canvas.ignoresSafeArea())
             .navigationTitle("Ask Wireline")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
             }
-            .tint(Brand.purple)
+            .tint(Brand.accent)
             .sheet(isPresented: $showingDialer) { OutboundCallView(agents: agents) }
             .task {
-                if agents.isEmpty {
-                    agents = (try? await WirelineAPI.shared.agents()) ?? []
-                }
+                if agents.isEmpty { agents = (try? await WirelineAPI.shared.agents()) ?? [] }
             }
         }
     }
 
-    private func actionCard(
-        _ title: String,
-        _ icon: String,
-        _ action: @escaping () async -> Void
-    ) -> some View {
+    private func actionCard(_ title: String, _ icon: String, _ action: @escaping () async -> Void) -> some View {
         Button { Task { await action() } } label: {
             HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(Brand.accentTint).frame(width: 40, height: 40)
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Brand.purple)
-                }
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Brand.accent)
+                    .frame(width: 40, height: 40)
+                    .background(Brand.accentSoft, in: Circle())
                 Text(title)
                     .font(.callout.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Brand.text)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Brand.text3)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .padding(16)
+            .brandGlowCard()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TouchPressStyle())
     }
 
     private func run(_ work: @escaping () async throws -> String) async {
         isWorking = true
         defer { isWorking = false }
-        do {
-            answer = try await work()
-        } catch {
-            answer = "Couldn't reach Wireline just now."
-        }
+        do { answer = try await work() }
+        catch { answer = "Couldn't reach Wireline just now." }
     }
 
     private func summary() async throws -> String {
         let recent = try await WirelineAPI.shared.recentCalls(limit: 1)
         guard let call = recent.calls.first else { return "You don't have any calls yet." }
-        let who = call.customerNumber ?? "an unknown number"
-        return "Last call with \(who): \(call.summary ?? "No summary available.")"
+        return "Last call with \(call.customerNumber ?? "an unknown number"): \(call.summary ?? "No summary available.")"
     }
 
     private func attention() async throws -> String {
         let recent = try await WirelineAPI.shared.recentCalls(limit: 20)
         if recent.calls.isEmpty { return "No recent calls." }
-        if recent.needsAttention == 0 {
-            return "You're all caught up — \(recent.calls.count) recent calls, none flagged."
-        }
+        if recent.needsAttention == 0 { return "You're all caught up — \(recent.calls.count) recent calls, none flagged." }
         return "\(recent.needsAttention) of your \(recent.calls.count) recent calls need follow-up."
     }
 }
