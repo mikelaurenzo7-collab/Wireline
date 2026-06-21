@@ -34,8 +34,8 @@ export async function dispatchScopedToolCall(name: string, args: any, context: S
   if (name === "send_text_message") {
     const to = String(args?.to || callerNumber); const body = String(args?.body || args?.message || "").slice(0, 1200);
     if (!to || !body) return result(context.toolCallId, "I need a recipient and message before I can send a text.");
-    await sendTenantMessage({ userId: context.userId, to, body });
-    return result(context.toolCallId, "The text message has been sent.");
+    const sent = await sendTenantMessage(context.userId, { to, body, agentId: context.agentId });
+    return result(context.toolCallId, sent.ok ? "The text message has been sent." : sent.reason || "The text could not be sent from this workspace.");
   }
   if (name === "book_appointment" || name === "check_calendar_availability" || name === "generate_zoom_link" || name === "send_slack_notification" || name === "send_teams_message" || name === "log_to_google_sheets" || name === "log_to_excel" || name === "meta_submit_lead") {
     await context.drizzle.insert(schema.fleetTasks).values({ userId: context.userId, agentId: context.agentId, taskType: "integration_action", description: `${name}: ${JSON.stringify(args || {}).slice(0, 1800)}`, priority: "medium", status: "pending", sourceType: "phone_call", sourceId: "live-call", targetChannel: "integration" });
