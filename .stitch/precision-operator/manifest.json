@@ -1,0 +1,35 @@
+{
+  "projectId": "15464421841872665077",
+  "projectName": "Precision Operator",
+  "sourceArchive": "stitch_wireline_operator_system.zip",
+  "publicReferenceArchive": "stitch_wireline_operator_design_system (3).zip",
+  "tokens": {
+    "page": "#F7F7F5",
+    "surface": "#FFFFFF",
+    "textPrimary": "#1D1D1F",
+    "textSecondary": "#6E6E73",
+    "primary": "#01261F",
+    "primaryContainer": "#1A3C34",
+    "border": "#E5E5E2",
+    "radiusControl": 4,
+    "radiusCard": 8,
+    "sidebarWidth": 212,
+    "desktopGutter": 24,
+    "mobileGutter": 16
+  },
+  "workspaceScreens": {
+    "/studio": ["studio_agent_training", "studio_create_agent_modal"],
+    "/agents": ["agents_fleet_roster", "agents_empty_state", "agents_loading_state", "agents_degraded_state"],
+    "/knowledge": ["knowledge_facts_rules", "knowledge_empty_state"],
+    "/actions": ["actions_permissions_connections"],
+    "/ops": ["live_real_time_ops", "live_handoffs_queue", "live_quality_review"],
+    "/settings": ["settings_workspace_admin"]
+  },
+  "publicScreens": {
+    "/": ["wireline_home_final", "wireline_personal_ai_agents_for_life_work", "wireline_home_mobile_final"],
+    "/pricing": ["pricing_wireline_personal", "pricing_wireline"],
+    "/signin": ["sign_in_wireline"],
+    "/solutions/sales": ["sales_solutions_wireline"],
+    "/solutions/support": ["support_solutions_wireline"]
+  }
+}
