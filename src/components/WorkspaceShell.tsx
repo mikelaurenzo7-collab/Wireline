@@ -27,7 +27,7 @@ export default function WorkspaceShell({
   const location = useLocation();
   return (
     <div className="h-[100dvh] overflow-hidden bg-[#f6f6f4] text-[#1d1d1f]">
-      <div className="mx-auto grid h-full max-w-[1680px] grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[232px_minmax(0,1fr)] lg:grid-rows-1">
+      <div className="mx-auto grid h-full max-w-[1720px] grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[232px_minmax(0,1fr)] lg:grid-rows-1">
         <aside className="z-10 flex min-h-0 flex-col border-b border-black/[.08] bg-white px-3 py-2.5 lg:border-b-0 lg:border-r lg:px-4 lg:py-5">
           <div className="flex shrink-0 items-center justify-between px-1.5 lg:block">
             <Link to="/agents" className="inline-flex items-center gap-2 text-[15px] font-semibold tracking-[-.025em]">
@@ -41,9 +41,15 @@ export default function WorkspaceShell({
               const Icon = item.icon;
               const active = location.pathname === item.href || (item.href === "/ops" && location.pathname.startsWith("/ops"));
               return (
-                <Link key={item.href} to={item.href} className={`group inline-flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:text-[13px] lg:font-medium ${active ? "bg-[#1d1d1f] text-white shadow-[0_5px_14px_rgba(0,0,0,.12)]" : "text-[#67676f] hover:bg-[#efefec] hover:text-[#1d1d1f]"}`}>
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`group relative inline-flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:py-2.5 lg:text-[13px] lg:font-medium ${active ? "bg-[#ecece8] text-[#1d1d1f] shadow-[inset_0_0_0_1px_rgba(0,0,0,.04)]" : "text-[#67676f] hover:bg-[#f1f1ee] hover:text-[#1d1d1f]"}`}
+                >
+                  {active ? <span className="absolute bottom-2 left-1 top-2 hidden w-0.5 rounded-full bg-[#1d1d1f] lg:block" /> : null}
                   <Icon size={16} strokeWidth={active ? 2.25 : 1.9} />
-                  <span className="truncate">{item.label}</span>
+                  <span className={active ? "truncate font-semibold text-[#1d1d1f]" : "truncate"}>{item.label}</span>
                 </Link>
               );
             })}
@@ -51,10 +57,10 @@ export default function WorkspaceShell({
           <div className="mt-auto hidden rounded-2xl border border-black/[.08] bg-[#fafaf8] p-3 lg:block">
             <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[#73737a]">Live stack</p>
             <p className="mt-2 text-[12px] leading-5 text-[#505057]">Vapi phone handling · Flux turn-taking · ElevenLabs voice.</p>
-            <Link to="/settings" className="mt-3 inline-flex text-[12px] font-semibold text-[#1d1d1f]">Runtime settings →</Link>
+            <Link to="/settings" className="mt-3 inline-flex text-[12px] font-semibold text-[#1d1d1f] underline decoration-black/[.18] underline-offset-4">Runtime settings</Link>
           </div>
         </aside>
-        <main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-6 lg:px-9 lg:pb-8 lg:pt-7">
+        <main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-6 lg:px-8 lg:pb-7 lg:pt-6 xl:px-9">
           <header className="flex shrink-0 items-end justify-between gap-3 border-b border-black/[.08] pb-3.5 sm:pb-4">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#77777f]">{eyebrow}</p>
