@@ -6,7 +6,7 @@ const primaryNavigation = [
   { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/agents", label: "Assistants", icon: Bot },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Connections", icon: Zap },
+  { href: "/actions", label: "Actions", icon: Zap },
 ] as const;
 
 function NavItem({
@@ -69,7 +69,7 @@ export default function WorkspaceShell({
           className={`wl-stitch-sidebar fixed inset-y-0 left-0 z-50 flex w-[212px] flex-col px-4 py-10 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="flex shrink-0 items-center justify-between px-2">
-            <Link to="/studio" onClick={closeDrawer} className="block">
+            <Link to="/studio" onClick={closeDrawer} className="block" aria-label="Wireline Studio">
               <span className="block text-[24px] font-semibold leading-8 tracking-[-.02em] text-foreground">
                 Wireline
               </span>
@@ -79,7 +79,7 @@ export default function WorkspaceShell({
             </Link>
             <button
               aria-label="Close navigation"
-              className="grid h-10 w-10 place-items-center border border-border bg-card text-muted-foreground lg:hidden"
+              className="grid h-10 w-10 place-items-center rounded-md border border-border bg-card text-muted-foreground lg:hidden"
               onClick={closeDrawer}
             >
               <X size={18} />
@@ -113,7 +113,7 @@ export default function WorkspaceShell({
             <div className="flex min-w-0 items-center gap-3">
               <button
                 aria-label="Open navigation"
-                className="grid h-10 w-10 shrink-0 place-items-center border border-border bg-card text-foreground lg:hidden"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-border bg-card text-foreground lg:hidden"
                 onClick={() => setDrawerOpen(true)}
               >
                 <Menu size={18} />
