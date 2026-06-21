@@ -8,7 +8,7 @@ const ROLE_HINT: Record<string, string> = {
   scheduler: "Handles scheduling, reminders, and calendar back-and-forth.",
   customer_service: "Answers common questions and escalates what needs a human.",
   receptionist: "Routes calls and captures the details you need.",
-  custom: "Trained for the calls, messages, and tasks you describe in Studio.",
+  custom: "Handles the calls, messages, and tasks you describe in Studio.",
 };
 
 function roleLabel(role?: string | null) {
@@ -19,27 +19,26 @@ function agentHint(agent: WorkspaceAgentSummary) {
   return ROLE_HINT[agent.role || "custom"] || ROLE_HINT.custom;
 }
 
-function EmptyAgents() {
+function EmptyAssistants() {
   return (
-    <section className="grid min-h-[480px] flex-1 place-items-center rounded-lg border border-dashed border-border bg-card px-6 text-center">
+    <section className="grid min-h-[430px] flex-1 place-items-center rounded-lg border border-dashed border-border bg-card px-6 text-center">
       <div className="max-w-lg">
         <span className="mx-auto grid h-20 w-20 place-items-center rounded-xl bg-muted text-muted-foreground">
           <Bot size={34} strokeWidth={1.7} />
         </span>
         <h2 className="mt-7 text-[24px] font-semibold tracking-[-.01em] text-foreground">
-          No assistants configured
+          Meet your first assistant
         </h2>
         <p className="mx-auto mt-3 max-w-md text-[16px] leading-6 text-muted-foreground">
-          Create your first assistant to start handling interactions, automating tasks, and managing
-          workflows.
+          Give it a name, explain what you need, and Wireline will help turn it into someone who can take care of the calls and follow-ups you do not want to chase.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <Link to="/studio?create=1" className="workspace-btn-primary px-5 py-2.5">
             <Plus size={16} />
-            New assistant
+            Create assistant
           </Link>
           <Link to="/studio" className="workspace-btn-secondary px-5 py-2.5">
-            Go to Studio
+            Open Studio
           </Link>
         </div>
       </div>
@@ -47,16 +46,16 @@ function EmptyAgents() {
   );
 }
 
-function LoadingAgents() {
+function LoadingAssistants() {
   return (
     <section
-      className="grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-y-auto pb-1 sm:grid-cols-2 xl:grid-cols-4"
+      className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto pb-1 sm:grid-cols-2 xl:grid-cols-4"
       aria-label="Loading assistants"
     >
       {Array.from({ length: 8 }, (_, index) => (
         <div
           key={index}
-          className="h-[294px] rounded-lg border border-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+          className="h-[270px] rounded-lg border border-border bg-card p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
         >
           <div className="flex items-start justify-between">
             <div className="h-12 w-12 animate-pulse rounded-lg bg-muted" />
@@ -75,19 +74,19 @@ function LoadingAgents() {
   );
 }
 
-function AgentCard({ agent }: { agent: WorkspaceAgentSummary }) {
+function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
   const channel = agent.channel || "voice";
   const isVoice = channel === "voice" || channel === "phone";
   const ChannelIcon = isVoice ? Phone : MessageSquare;
   return (
-    <article className="wl-stitch-agent-card flex min-h-[294px] flex-col p-6">
+    <article className="wl-stitch-agent-card flex min-h-[270px] flex-col p-6">
       <div className="flex items-start justify-between gap-4">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[color:var(--wl-accent-container)] text-[17px] font-semibold text-primary">
           {agent.name.slice(0, 1).toUpperCase()}
         </span>
         <span className="wl-stitch-status-pill wl-stitch-status-pill--live">
           <span className="wl-stitch-status-dot" aria-hidden />
-          Live
+          Ready
         </span>
       </div>
       <h2 className="mt-5 text-[18px] font-semibold leading-6 tracking-[-.01em] text-foreground">
@@ -112,83 +111,77 @@ function AgentCard({ agent }: { agent: WorkspaceAgentSummary }) {
           to={`/actions?agent=${encodeURIComponent(agent.id)}`}
           className="inline-flex items-center gap-2 text-[14px] text-muted-foreground hover:text-foreground"
         >
-          Access Logs
+          Connections
         </Link>
       </div>
     </article>
   );
 }
 
-function FleetMetric({
-  label,
-  value,
-  detail,
-  live,
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-  live?: boolean;
-}) {
+function SetupNote({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
     <div className="rounded-lg border border-border bg-card px-4 py-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <p className="font-mono text-[12px] uppercase tracking-[.02em] text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-2 flex items-center gap-2">
-        {live ? <span className="h-2 w-2 rounded-full bg-[color:var(--wl-status-active)]" /> : null}
-        <strong className="text-[24px] font-semibold leading-7 tracking-[-.02em] text-foreground">
-          {value}
-        </strong>
-      </div>
-      {detail ? <p className="mt-1 text-[13px] text-muted-foreground">{detail}</p> : null}
+      <p className="font-mono text-[12px] uppercase tracking-[.02em] text-muted-foreground">{label}</p>
+      <strong className="mt-2 block text-[18px] font-semibold leading-6 tracking-[-.02em] text-foreground">{value}</strong>
+      <p className="mt-1 text-[13px] text-muted-foreground">{detail}</p>
     </div>
   );
 }
 
 export default function AgentsPage() {
   const { agents, loading, degraded } = useAgents();
-  const activeCount = agents.length;
+  const assistantCount = agents.length;
+
   return (
     <WorkspaceShell
-      eyebrow="Fleet management"
-      title="Agents"
-      contentClassName="pt-6"
+      eyebrow="Your AI team"
+      title="Assistants"
+      contentClassName="pt-5"
       action={
         <Link to="/studio?create=1" className="workspace-btn-primary px-4 py-2.5">
           <Plus size={16} />
-          Create new
+          Create assistant
         </Link>
       }
     >
-      <div className="flex h-full min-h-0 flex-col gap-8">
+      <div className="flex h-full min-h-0 flex-col gap-5">
         {degraded ? (
           <div className="flex shrink-0 items-start gap-3 rounded border border-red-300 bg-red-50 px-4 py-4 text-red-800">
             <CircleAlert size={18} className="mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold">Agent fleet connection degraded</p>
+              <p className="font-semibold">We cannot load your assistants right now</p>
               <p className="mt-1 text-[14px] leading-5">
-                Agent data is temporarily unavailable. Your saved configurations are unchanged and
-                will return when the connection restores.
+                Your saved setup is safe. Please try again in a moment.
               </p>
             </div>
           </div>
         ) : null}
         {!loading && agents.length ? (
-          <section className="grid shrink-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <FleetMetric label="Active assistants" value={String(activeCount)} />
-            <FleetMetric label="Conversations" value="—" detail="Across your assistants" />
-            <FleetMetric label="Response time" value="—" detail="Available after activity" />
-            <FleetMetric label="System health" value="Optimal" live />
+          <section className="grid shrink-0 gap-4 md:grid-cols-3">
+            <SetupNote
+              label="Assistants"
+              value={String(assistantCount)}
+              detail="Ready for the work you have given them"
+            />
+            <SetupNote
+              label="Teach them"
+              value="In Studio"
+              detail="Add the details that make each assistant useful"
+            />
+            <SetupNote
+              label="Connect them"
+              value="Your way"
+              detail="Choose the accounts and actions they can use"
+            />
           </section>
         ) : null}
-        {!loading && !agents.length ? <EmptyAgents /> : null}
-        {loading ? <LoadingAgents /> : null}
+        {!loading && !agents.length ? <EmptyAssistants /> : null}
+        {loading ? <LoadingAssistants /> : null}
         {!loading && agents.length ? (
           <section className="min-h-0 flex-1 overflow-y-auto pr-0.5">
-            <div className="grid gap-6 pb-1 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 pb-1 sm:grid-cols-2 xl:grid-cols-4">
               {agents.map((agent) => (
-                <AgentCard key={agent.id} agent={agent} />
+                <AssistantCard key={agent.id} agent={agent} />
               ))}
             </div>
           </section>
