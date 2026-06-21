@@ -19,7 +19,7 @@ const ContactPage = lazy(() => import("./components/ContactPage").then((module) 
 const PrivacyPolicy = lazy(() => import("./components/LegalPage").then((module) => ({ default: module.PrivacyPolicy })));
 const TermsOfService = lazy(() => import("./components/LegalPage").then((module) => ({ default: module.TermsOfService })));
 const AppShell = lazy(() => import("./components/layout/AppShell"));
-const FigmaAuthPortal = lazy(() => import("./FigmaAuthPortal"));
+const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
@@ -54,10 +54,10 @@ function AppRouter() {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/developers" element={<Navigate to="/features" replace />} />
         <Route path="/training" element={<Navigate to="/studio" replace />} />
-        <Route path="/signin/*" element={<FigmaAuthPortal />} />
-        <Route path="/signup/*" element={<FigmaAuthPortal />} />
-        <Route path="/get-started" element={<FigmaAuthPortal />} />
-        <Route path="/auth" element={<FigmaAuthPortal />} />
+        <Route path="/signin/*" element={<AuthPortalRoute />} />
+        <Route path="/signup/*" element={<AuthPortalRoute />} />
+        <Route path="/get-started" element={<AuthPortalRoute />} />
+        <Route path="/auth" element={<AuthPortalRoute />} />
         <Route path="/login" element={<Navigate to="/signin" replace />} />
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
