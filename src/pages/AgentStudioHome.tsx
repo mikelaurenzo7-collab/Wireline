@@ -111,7 +111,7 @@ export default function AgentStudioHome() {
     <>
       <StudioWorkspaceV2 />
       {showCreate ? (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/30 p-4 backdrop-blur-sm" role="presentation">
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-[color:var(--wl-focus)] p-4" role="presentation">
           <form
             ref={modalRef}
             onSubmit={create}
