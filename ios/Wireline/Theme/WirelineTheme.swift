@@ -81,6 +81,27 @@ struct TouchPressStyle: ButtonStyle {
     }
 }
 
+/// The shared 16pt-padded Professional Heritage card from the current handoff.
+struct OperatorCard<Content: View>: View {
+    private let content: Content
+    private let radius: CGFloat
+
+    init(radius: CGFloat = Brand.radiusMd, @ViewBuilder content: () -> Content) {
+        self.radius = radius
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .padding(16)
+            .background(Brand.panel, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Brand.border, lineWidth: 1)
+            )
+    }
+}
+
 /// The native equivalent of the Stitch root surface. Deliberately flat: the
 /// design uses tonal layering and borders rather than decorative gradients.
 struct BrandMeshBackground: View {
@@ -103,13 +124,19 @@ extension View {
         buttonStyle(TouchPressStyle())
     }
 
-    /// Quiet grouped surface for native settings, assistant, and recap content.
-    func brandGlowCard(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 1) -> some View {
+    /// Surface modifier for views that already own their internal padding.
+    func operatorCardSurface(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 1) -> some View {
         background(Brand.panel)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(Brand.border.opacity(borderOpacity), lineWidth: 1)
             )
+    }
+
+    /// Backward-compatible name for existing views while they migrate to
+    /// `OperatorCard` or `operatorCardSurface`.
+    func brandGlowCard(radius: CGFloat = Brand.radiusMd, borderOpacity: Double = 1) -> some View {
+        operatorCardSurface(radius: radius, borderOpacity: borderOpacity)
     }
 }
