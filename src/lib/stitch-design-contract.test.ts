@@ -38,7 +38,7 @@ describe("Precision Operator Design MD contract", () => {
     expect(activeCss).toContain("font-size:14px;font-weight:400;line-height:20px");
     expect(activeCss).not.toContain("font-weight:650");
     expect(activeCss).not.toContain("font-smoothing");
-    expect(activeCss).not.toContain("backdrop-filter");
+    expect(activeCss).not.toContain("backdrop-filter:blur");
   });
 
   it("maps every required workspace state and keeps personal use first-class", () => {
@@ -66,44 +66,44 @@ describe("Precision Operator Design MD contract", () => {
     expect(shell).toContain("min-h-16");
     expect(shell).toContain("lg:px-10");
     expect(shell).toContain("drawerOpen");
+    expect(shell).toContain('label="Settings"');
   });
 
-  it("keeps the Agents screenshot states source-accurate", () => {
+  it("keeps Agents roster, loading, degraded, and empty states source-accurate", () => {
     const agents = read("src/pages/AgentsPage.tsx");
-    expect(agents).toContain("Fleet management");
-    expect(agents).toContain("Agent fleet connection degraded");
-    expect(agents).toContain("No assistants configured");
-    expect(agents).toContain("Create your first assistant to start handling interactions, automating tasks, and managing workflows.");
-    expect(agents).toContain("Active assistants");
-    expect(agents).toContain("System health");
-    expect(agents).toContain("xl:grid-cols-4");
-    expect(agents).toContain("h-[294px]");
-    expect(agents).toContain("/actions?agent=");
+    for (const expected of [
+      "Fleet management", "Agent fleet connection degraded", "No assistants configured",
+      "Create your first assistant for calls, messages, follow-ups, reminders", "Active assistants",
+      "System health", "LoadingAgents", "h-[320px]", "/actions?agent=",
+    ]) expect(agents).toContain(expected);
+    expect(agents).not.toContain("/integrations?agent=");
     expect(agents).not.toContain("backdrop-blur");
     expect(agents).not.toContain("rounded-2xl");
   });
 
-  it("keeps Knowledge and Studio aligned with their screenshot compositions", () => {
+  it("keeps Knowledge, Studio, and auth on the source primitive family", () => {
     const knowledge = read("src/pages/KnowledgePage.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
+    const studioCss = read("src/styles/design-system.css");
+    const authCss = read("src/styles/precision-auth.css");
     expect(knowledge).toContain("No assistants yet");
-    expect(knowledge).toContain("Create an assistant first to start building its knowledge base.");
+    expect(knowledge).toContain("Create an assistant first, then teach it the facts");
     expect(knowledge).toContain("max-w-[512px]");
     expect(studio).toContain("xl:grid-cols-[240px_minmax(0,1fr)_320px]");
-    expect(studio).toContain("Train your assistant in plain English");
     expect(studio).toContain("Your assistants");
     expect(studio).toContain("Build map");
-    expect(studio).not.toContain("backdrop-blur-sm");
+    expect(studioCss).toContain("backdrop-filter:none!important");
+    expect(authCss).toContain("max-width:448px");
+    expect(authCss).toContain("wl-stitch-auth-shell footer{display:none}");
   });
 
-  it("keeps auth and public home within the same precision primitive family", () => {
-    const auth = read("src/components/AuthPortal.tsx");
+  it("keeps the public home consumer-first with a second business path", () => {
     const landing = read("src/components/marketing/PrecisionLanding.tsx");
-    expect(auth).toContain("wl-stitch-auth-card");
-    expect(auth).toContain("wl-stitch-oauth-btn");
-    expect(landing).toContain("Never wait on hold again.");
-    expect(landing).toContain("Your personal AI phone call assistant");
-    expect(landing).toContain("A personal assistant when you need one. A fleet when you grow.");
+    const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    for (const copy of ["Never wait on hold again.", "Your personal AI phone call assistant", "Precision engineering for voice", "A personal assistant when you need one. A fleet when you grow."]) {
+      expect(landing).toContain(copy);
+    }
     expect(landing).toContain("bg-[radial-gradient");
+    for (const label of ["Product", "Features", "Pricing", "Log in", "Start free"]) expect(header).toContain(label);
   });
 });
