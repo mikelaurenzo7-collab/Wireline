@@ -1,5 +1,5 @@
-import StudioWorkspace from "../components/StudioWorkspace";
+import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 
 export default function AgentStudioHome() {
-  return <StudioWorkspace />;
+  return <StudioWorkspaceV2 />;
 }
