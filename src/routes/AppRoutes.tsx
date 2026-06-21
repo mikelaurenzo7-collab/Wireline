@@ -8,11 +8,11 @@ const IntegrationsPage = lazy(() => import("../pages/IntegrationsPage"));
 const OperationsPage = lazy(() => import("../pages/OperationsPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 
-const loading = <div className="min-h-screen bg-[#f7f7f5] p-8 text-sm text-[#66666d]">Opening workspace…</div>;
+const loading = <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">Opening workspace…</div>;
 
 export default function AppRoutes() {
   return <Suspense fallback={loading}><Routes>
-    <Route path="/" element={<Navigate to="/agents" replace />} />
+    <Route path="/" element={<Navigate to="/studio" replace />} />
     <Route path="/agents" element={<AgentsPage />} />
     <Route path="/studio" element={<AgentStudioHome />} />
     <Route path="/knowledge" element={<KnowledgePage />} />
@@ -23,6 +23,9 @@ export default function AppRoutes() {
     <Route path="/settings" element={<SettingsPage />} />
     <Route path="/admin" element={<Navigate to="/settings" replace />} />
     <Route path="/help" element={<Navigate to="/studio" replace />} />
-    <Route path="*" element={<Navigate to="/agents" replace />} />
+    <Route path="/app/personal" element={<Navigate to="/studio" replace />} />
+    <Route path="/app/business" element={<Navigate to="/studio" replace />} />
+    <Route path="/app/business/*" element={<Navigate to="/studio" replace />} />
+    <Route path="*" element={<Navigate to="/studio" replace />} />
   </Routes></Suspense>;
 }

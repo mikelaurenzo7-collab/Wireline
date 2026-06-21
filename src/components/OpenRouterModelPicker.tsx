@@ -68,15 +68,15 @@ export default function OpenRouterModelPicker({
 
   const selectedLabel = labelFor(value, models);
   const triggerClass = compact
-    ? "inline-flex h-8 max-w-[min(14rem,calc(100vw-8rem))] items-center gap-1.5 rounded-lg border border-black/[.08] bg-[#fafaf9] px-2 text-[10px] font-semibold text-[#56565d] outline-none hover:border-black/[.16] disabled:opacity-50"
-    : "inline-flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-black/[.1] bg-[#fafaf9] px-3 text-sm font-semibold text-[#1d1d1f] outline-none hover:border-black/[.16] disabled:opacity-50";
+    ? "inline-flex h-8 max-w-[min(14rem,calc(100vw-8rem))] items-center gap-1.5 rounded-lg border border-border bg-card px-2 text-[10px] font-semibold text-muted-foreground outline-none transition-colors hover:border-foreground/20 focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:opacity-50"
+    : "inline-flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none transition-colors hover:border-foreground/20 focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8 disabled:opacity-50";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild disabled={disabled || loading}>
         <button type="button" aria-label="Choose model" className={cn(triggerClass, className)}>
           <span className="inline-flex min-w-0 items-center gap-1.5">
-            {loading ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Cpu className="h-3.5 w-3.5 shrink-0 text-[#6d6d74]" />}
+            {loading ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" /> : <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
             <span className="truncate">{loading ? "Loading models…" : selectedLabel}</span>
           </span>
           <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />

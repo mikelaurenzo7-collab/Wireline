@@ -190,7 +190,7 @@ function OAuthSignInButtons({
             onClick={() => start(p.id)}
             disabled={disabled || !!pending}
             aria-label={`Continue with ${p.label}`}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-ink/10 bg-card text-sm font-medium text-foreground shadow-sm transition hover:border-brand/30 hover:bg-card-warm/40 focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-55"
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-medium text-foreground shadow-sm transition hover:border-foreground/20 hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/15 disabled:cursor-not-allowed disabled:opacity-55"
           >
             {pending === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : p.mark}
             <span className="hidden sm:inline">{p.label}</span>
@@ -216,7 +216,7 @@ function AuthLogo({ light = false }: { light?: boolean }) {
         light ? "text-paper" : "text-foreground",
       )}
     >
-      <span className="flex h-7 w-7 items-center justify-center bg-brand text-[12px] text-paper">W</span>
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-[12px] text-primary-foreground font-semibold">W</span>
       Wireline
     </span>
   );
@@ -226,7 +226,7 @@ function AuthChip({ children, className }: { children: ReactNode; className?: st
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 border border-brand bg-brand/8 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-brand",
+        "inline-flex w-fit items-center gap-1.5 border border-border bg-muted px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground",
         className,
       )}
     >
@@ -605,7 +605,7 @@ export default function AuthPortal() {
                         spellCheck={false}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
+                        className="h-12 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8"
                         placeholder="you@email.com"
                       />
                     </div>
@@ -628,7 +628,7 @@ export default function AuthPortal() {
                               setError(null);
                               setMessage(null);
                             }}
-                            className="text-sm font-medium text-brand hover:underline"
+                            className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
                           >
                             Forgot password?
                           </button>
@@ -644,7 +644,7 @@ export default function AuthPortal() {
                           autoComplete={isSignUp ? "new-password" : "current-password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 w-full rounded-md border border-ink/12 bg-card-warm/40 pl-10 pr-11 text-base text-foreground outline-none transition placeholder:text-foreground/55 focus:border-brand focus:ring-4 focus:ring-brand/12"
+                          className="h-12 w-full rounded-xl border border-border bg-card pl-10 pr-11 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/8"
                           placeholder={
                             isSignUp ? "Create a secure password" : "Enter your password"
                           }
@@ -665,7 +665,7 @@ export default function AuthPortal() {
                       {isSignUp && strengthLabel && (
                         <p className="text-xs text-foreground/55">
                           Password strength:{" "}
-                          <span className="font-semibold text-brand">{strengthLabel}</span>
+                          <span className="font-semibold text-foreground">{strengthLabel}</span>
                         </p>
                       )}
                     </div>
@@ -679,7 +679,7 @@ export default function AuthPortal() {
                         setError(null);
                         setMessage(null);
                       }}
-                      className="inline-flex items-center gap-2 self-start text-sm font-medium text-brand hover:underline"
+                      className="inline-flex items-center gap-2 self-start text-sm font-medium text-foreground underline-offset-4 hover:underline"
                     >
                       <ArrowLeft className="h-4 w-4" />
                       Back to sign in
@@ -693,27 +693,27 @@ export default function AuthPortal() {
                     </div>
                   )}
                   {message && (
-                    <div className="flex items-start gap-2 rounded-md border border-brand/20 bg-brand/10 p-3 text-sm text-brand">
+                    <div className="flex items-start gap-2 rounded-xl border border-border bg-muted p-3 text-sm text-foreground">
                       <Check className="mt-0.5 h-4 w-4 shrink-0" />
                       <div>{message}</div>
                     </div>
                   )}
 
                   {isSignUp && (
-                    <label className="flex cursor-pointer items-start gap-3 rounded-md border border-ink/8 bg-card-warm/30 p-3 text-sm leading-relaxed text-foreground/75">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-muted/50 p-3 text-sm leading-relaxed text-foreground/75">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
                         onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-1 h-4 w-4 shrink-0 accent-brand"
+                        className="mt-1 h-4 w-4 shrink-0 accent-primary"
                       />
                       <span>
                         I agree to the{" "}
-                        <Link to="/terms" className="font-medium text-brand hover:underline">
+                        <Link to="/terms" className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80">
                           Terms
                         </Link>{" "}
                         and{" "}
-                        <Link to="/privacy" className="font-medium text-brand hover:underline">
+                        <Link to="/privacy" className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/80">
                           Privacy Policy
                         </Link>
                         .
@@ -725,7 +725,7 @@ export default function AuthPortal() {
                     type="submit"
                     disabled={loading || (isSignUp && !agreedToTerms)}
                     aria-disabled={loading || (isSignUp && !agreedToTerms)}
-                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-md bg-brand px-5 text-base font-semibold text-white shadow-[0_18px_50px_-28px_rgba(124,58,237,0.9)] transition hover:bg-brand-deep focus:outline-none focus:ring-4 focus:ring-brand/25 disabled:cursor-not-allowed disabled:bg-brand/35 disabled:text-white/80"
+                    className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground shadow-sm transition hover:bg-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/15 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? (
                       <>

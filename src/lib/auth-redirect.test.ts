@@ -13,8 +13,8 @@ describe("auth-redirect", () => {
     expect(readRedirectFromSearch("?redirect=/signin")).toBeNull();
   });
 
-  it("defaults to workspace home", () => {
-    expect(resolvePostAuthDestination("business", "")).toBe("/app/business");
-    expect(resolvePostAuthDestination("personal", "")).toBe("/app/personal");
+  it("defaults to studio", () => {
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
 });

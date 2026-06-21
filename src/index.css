@@ -53,7 +53,7 @@
 
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--background); }
-body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wl-font-sans); }
+body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wl-font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 :focus-visible {

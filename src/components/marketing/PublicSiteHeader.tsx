@@ -34,7 +34,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
   const { user, loading: authLoading } = useAuth();
   const isAuth = active === "signin" || active === "signup";
   const signedIn = Boolean(user) && !authLoading;
-  const homeTo = signedIn ? "/agents" : "/";
+  const homeTo = signedIn ? "/studio" : "/";
 
   useEffect(() => setMenuOpen(false), [active, location.pathname]);
 
@@ -107,7 +107,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
           <div className="flex flex-none items-center gap-2">
             {signedIn && !isAuth ? (
               <Link
-                to="/agents"
+                to="/studio"
                 data-testid="header-dashboard"
                 className="marketing-btn-primary hidden min-h-10 px-4 text-[13px] font-semibold md:inline-flex"
               >
@@ -182,7 +182,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
             </nav>
             <div className="border-t border-[#1d1d1f]/10 p-4">
               {signedIn && !isAuth ? (
-                <Link to="/agents" className="marketing-btn-primary flex min-h-12 text-[14px] font-semibold" onClick={() => setMenuOpen(false)}>
+                <Link to="/studio" className="marketing-btn-primary flex min-h-12 text-[14px] font-semibold" onClick={() => setMenuOpen(false)}>
                   Open Studio <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : active === "home" ? (

@@ -24,7 +24,7 @@ export default function OwnerOnlyRoute({ children }: { children: React.ReactNode
   }
 
   if (!isWirelineOperator(user)) {
-    return <Navigate to="/agents" replace />;
+    return <Navigate to="/studio" replace />;
   }
 
   return <>{children}</>;

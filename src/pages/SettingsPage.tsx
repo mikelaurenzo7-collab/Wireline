@@ -10,14 +10,14 @@ const sections = [
 
 export default function SettingsPage() {
   return (
-    <WorkspaceShell eyebrow="Admin" title="Settings" contentClassName="pt-1" action={<Link to="/integrations" className="workspace-btn-secondary px-3 py-2.5 text-sm">Connections <ArrowUpRight size={14} /></Link>}>
-      <div className="flex h-full min-h-0 flex-col gap-2.5">
-        <section className="grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-2.5">
+    <WorkspaceShell eyebrow="Admin" title="Settings" contentClassName="pt-1" action={<Link to="/integrations" className="workspace-btn-secondary px-3 py-2 text-sm">Connections <ArrowUpRight size={13} /></Link>}>
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <section className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-3">
           {sections.map((section) => {
             const Icon = section.icon;
             return (
-              <Link key={section.title} to={section.href} className="wl-surface flex min-h-[118px] flex-col p-3.5 transition hover:border-border hover:bg-card sm:min-h-[132px] sm:p-4">
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-muted"><Icon size={15} /></span>
+              <Link key={section.title} to={section.href} className="wl-surface flex min-h-[104px] flex-col p-3 transition hover:border-border hover:bg-card sm:min-h-[112px] sm:p-3.5">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-muted"><Icon size={14} /></span>
                 <h2 className="mt-2.5 text-sm font-semibold tracking-[-.02em]">{section.title}</h2>
                 <p className="mt-1 hidden text-[12px] leading-5 text-muted-foreground sm:block">{section.detail}</p>
                 <span className="mt-auto inline-flex items-center gap-1 pt-2.5 text-[11px] font-semibold">Open <ArrowUpRight size={12} /></span>

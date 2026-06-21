@@ -15,8 +15,8 @@ export default function OperationsPage() {
   const active = useMemo(() => views.find((view) => view.id === viewId) || views[0], [viewId]);
   const Icon = active.icon;
   return (
-    <WorkspaceShell eyebrow="Run" title="Operations" contentClassName="pt-1" action={<Link to="/agents" className="workspace-btn-secondary px-3 py-2.5 text-sm"><Bot size={15} />Agents</Link>}>
-      <div className="flex h-full min-h-0 flex-col gap-2.5">
+    <WorkspaceShell eyebrow="Run" title="Operations" contentClassName="pt-1" action={<Link to="/studio" className="workspace-btn-secondary px-3 py-2 text-sm"><Bot size={14} />Studio</Link>}>
+      <div className="flex h-full min-h-0 flex-col gap-3">
         <div className="wl-stat-strip shrink-0">
           <span><strong>0</strong> live</span>
           <span className="wl-dot" aria-hidden />
@@ -27,8 +27,8 @@ export default function OperationsPage() {
         <div className="wl-segmented grid shrink-0 grid-cols-3">{views.map((view) => <button key={view.id} type="button" aria-selected={active.id === view.id} className={active.id === view.id ? "is-active" : ""} onClick={() => setParams({ view: view.id })}>{view.label}</button>)}</div>
         <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-3">
           <section className="wl-surface flex min-h-0 flex-col p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-muted"><Icon size={17} /></span>
+            <div className="flex items-start gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-muted"><Icon size={15} /></span>
               <div>
                 <h2 className="text-base font-semibold tracking-[-.03em]">{active.title}</h2>
                 <p className="mt-1 max-w-xl text-[13px] leading-5 text-muted-foreground">{active.detail}</p>

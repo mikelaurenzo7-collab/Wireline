@@ -57,5 +57,5 @@ export function resolvePostAuthDestination(
       return stored;
     }
   }
-  return workspaceMode === "personal" ? "/app/personal" : "/app/business";
+  return "/studio";
 }

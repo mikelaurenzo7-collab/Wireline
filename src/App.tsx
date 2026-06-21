@@ -41,7 +41,7 @@ function AppRouter() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/developers" element={<Navigate to="/features" replace />} />
-        <Route path="/training" element={<Navigate to="/agents" replace />} />
+        <Route path="/training" element={<Navigate to="/studio" replace />} />
         <Route path="/signin/*" element={<FigmaAuthPortal />} />
         <Route path="/signup/*" element={<FigmaAuthPortal />} />
         <Route path="/get-started" element={<FigmaAuthPortal />} />
@@ -50,7 +50,7 @@ function AppRouter() {
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
-        <Route path="/onboarding" element={<Navigate to="/agents" replace />} />
+        <Route path="/onboarding" element={<Navigate to="/studio" replace />} />
         <Route path="/*" element={<AppShell />} />
       </Routes>
     </Suspense>
