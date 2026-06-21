@@ -3,22 +3,21 @@ import SwiftUI
 import WidgetKit
 
 /// Live Activity / Dynamic Island view for a real active Wireline call. The
-/// content is intentionally factual and high-glanceability: service or caller,
-/// current state, elapsed time, and a direct route to the in-app call controls.
+/// main app supplies factual call state; this extension renders the compact
+/// Smart Route affordance and never fabricates a transcript or action result.
 @available(iOS 16.1, *)
 struct WirelineCallLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WirelineCallActivityAttributes.self) { context in
             LockScreenCallActivityView(context: context)
+                .widgetURL(routeURL(for: context.attributes.callId))
                 .activityBackgroundTint(WidgetColors.panel)
                 .activitySystemActionForegroundColor(WidgetColors.accent)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 6) {
-                        Image(systemName: "waveform")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(WidgetColors.accent)
+                        PulseMark(size: 22)
                         Text("LIVE")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(WidgetColors.text3)
@@ -32,31 +31,41 @@ struct WirelineCallLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.center) {
-                    VStack(spacing: 4) {
-                        Text(context.state.caller)
-                            .font(.headline.weight(.semibold))
+                    VStack(spacing: 3) {
+                        Text(context.attributes.assistantName)
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(WidgetColors.text)
                             .lineLimit(1)
                         Text(context.state.status)
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(WidgetColors.text2)
                             .lineLimit(1)
                     }
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    Link(destination: routeURL(for: context.attributes.callId)) {
-                        HStack(spacing: 8) {
-                            Image(systemName: context.state.canTakeCall ? "arrow.down.left.circle.fill" : "waveform")
-                            Text(context.state.canTakeCall ? "Open call controls" : "View call status")
-                            Spacer()
-                            Image(systemName: "chevron.right")
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(context.state.transcriptSnippet ?? context.state.caller)
+                                .font(.caption)
+                                .foregroundStyle(.primary)
+                                .lineLimit(2)
+                            Text(context.state.caller)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(WidgetColors.accent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        Spacer(minLength: 8)
+                        if context.state.canTakeCall {
+                            Link(destination: routeURL(for: context.attributes.callId)) {
+                                Label("Smart Route", systemImage: "arrow.triangle.branch")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(WidgetColors.text)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 8)
+                                    .background(WidgetColors.accentSoft, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            }
+                        }
                     }
                 }
             } compactLeading: {
@@ -71,6 +80,7 @@ struct WirelineCallLiveActivity: Widget {
                     .foregroundStyle(WidgetColors.accent)
             }
             .widgetURL(routeURL(for: context.attributes.callId))
+            .keylineTint(WidgetColors.accent)
         }
     }
 
@@ -85,8 +95,9 @@ private struct LockScreenCallActivityView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Label("Wireline is handling this", systemImage: "waveform")
+            HStack(spacing: 8) {
+                PulseMark(size: 22)
+                Text("Wireline is handling this")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(WidgetColors.accent)
                 Spacer()
@@ -95,32 +106,43 @@ private struct LockScreenCallActivityView: View {
                     .foregroundStyle(WidgetColors.text2)
             }
 
-            Text(context.state.caller)
+            Text(context.attributes.assistantName)
                 .font(.headline.weight(.semibold))
                 .foregroundStyle(WidgetColors.text)
                 .lineLimit(1)
 
-            Text(context.state.status)
+            Text(context.state.transcriptSnippet ?? context.state.caller)
                 .font(.subheadline)
                 .foregroundStyle(WidgetColors.text2)
-                .lineLimit(1)
+                .lineLimit(2)
 
-            if let snippet = context.state.transcriptSnippet {
-                Text("“\(snippet)”")
-                    .font(.caption)
-                    .foregroundStyle(WidgetColors.text2)
-                    .lineLimit(2)
-            }
-
-            Link(destination: URL(string: "wireline://call/\(context.attributes.callId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? context.attributes.callId)")!) {
-                Text(context.state.canTakeCall ? "Open call controls" : "View call status")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(WidgetColors.accent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            if context.state.canTakeCall {
+                Link(destination: URL(string: "wireline://call/\(context.attributes.callId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? context.attributes.callId)")!) {
+                    Label("Smart Route", systemImage: "arrow.triangle.branch")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(WidgetColors.accent, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                }
             }
         }
         .padding(16)
+    }
+}
+
+@available(iOS 16.1, *)
+private struct PulseMark: View {
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle().fill(WidgetColors.accentSoft)
+            Image(systemName: "waveform")
+                .font(.system(size: size * 0.45, weight: .semibold))
+                .foregroundStyle(WidgetColors.accent)
+        }
+        .frame(width: size, height: size)
+        .accessibilityLabel("Wireline active call")
     }
 }
