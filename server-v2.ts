@@ -80,4 +80,4 @@ async function startServer() {
   const html = readFileSync(path.join(dist, "index.html"));
   app.get("*", (_req, res) => res.type("html").send(html));
 }
-if (process.env.VERCEL !== "1") void startServer();
+if (process.env.VERCEL !== "1") void startServer().then(() => { const port = Number(process.env.PORT) || 3000; app.listen(port, () => log.info("Wireline server started", { port })); });
