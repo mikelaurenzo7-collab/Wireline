@@ -1,24 +1,24 @@
 {
-  "name": "Wireline",
+  "name": "Wireline — AI Call Assistant",
   "short_name": "Wireline",
-  "description": "AI voice and email agents for your business.",
+  "description": "Wireline makes the calls, waits on hold, captures the answer, and handles follow-ups so you get time back.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/studio",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "theme_color": "#1A3C34",
-  "background_color": "#F7F7F5",
+  "background_color": "#F9F9F7",
   "lang": "en-US",
-  "categories": ["business", "productivity", "communications"],
+  "categories": ["productivity", "utilities", "communications"],
   "icons": [
     { "src": "/wireline-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "Triage", "short_name": "Triage", "description": "Open hot leads and compliance inbox", "url": "/triage" },
-    { "name": "Call Logs", "short_name": "Calls", "description": "View recorded calls and agent responses", "url": "/logs" },
-    { "name": "Agents", "short_name": "Agents", "description": "Manage your AI agents", "url": "/agents" }
+    { "name": "Studio", "short_name": "Studio", "description": "Ask Wireline to handle a call or follow-up", "url": "/studio" },
+    { "name": "Assistants", "short_name": "Assistants", "description": "See the assistants you have set up", "url": "/agents" },
+    { "name": "Knowledge", "short_name": "Knowledge", "description": "Add facts, preferences, and boundaries", "url": "/knowledge" }
   ],
   "prefer_related_applications": false
 }
