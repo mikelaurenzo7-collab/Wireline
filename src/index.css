@@ -4,16 +4,10 @@
 @import "./styles/cta-readability.css";
 @import "./styles/workspace-buttons.css";
 @import "./styles/phone-agent-blueprint.css";
-@import "./styles/precision-operator-web.css";
 
 :root {
   --wl-font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --wl-duration-fast: 120ms;
-  --wl-duration-normal: 200ms;
-  --wl-duration-slow: 320ms;
-  --wl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --wl-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @theme inline {
@@ -52,22 +46,22 @@
 
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--background); }
-body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wl-font-sans); font-synthesis: none; font-kerning: normal; text-rendering: optimizeLegibility; }
+body { min-height: 100dvh; margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wl-font-sans); font-synthesis: none; font-kerning: normal; }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--wl-accent); outline-offset: 2px; }
 ::selection { background: var(--primary); color: var(--primary-foreground); }
 
 .studio-route-loading { display: grid; min-height: 100dvh; place-items: center; background: var(--background); color: var(--muted-foreground); font-size: 14px; }
-.wl-text-display { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
-.wl-text-headline { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.wl-text-display { font-size: 40px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.wl-text-headline { font-size: 30px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
 .wl-text-title { font-size: 22px; font-weight: 600; line-height: 1.3; }
 .wl-text-body { font-size: 16px; font-weight: 400; line-height: 1.5; }
 .wl-text-caption { font-size: 14px; font-weight: 400; color: var(--muted-foreground); line-height: 1.5; }
-.wl-text-micro { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground); }
-.wl-numeric { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.wl-text-micro { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-foreground); }
+.wl-numeric { font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 
 @keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
 .skeleton-shimmer { animation: skeleton-shimmer 1.8s ease-in-out infinite; }
 @media (max-width: 639px) { .wl-text-display { font-size: 32px; } .wl-text-headline { font-size: 24px; } }
-@media (prefers-reduced-motion: reduce) { .skeleton-shimmer { animation: none; } *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+@media (prefers-reduced-motion: reduce) { .skeleton-shimmer { animation: none; } *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
