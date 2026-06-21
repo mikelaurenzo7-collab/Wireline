@@ -1,15 +1,7 @@
 package com.wireline.app.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,23 +12,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,8 +37,13 @@ import com.wireline.app.ui.components.LavenderCard
 import com.wireline.app.ui.components.Medallion
 import com.wireline.app.ui.theme.Brand
 
-private enum class Tab { Home, Calls, Wallet, Settings }
+private enum class Tab { Studio, Assistants, Recaps, Wallet, Settings }
 
+/**
+ * Android's native counterpart to the mobile Stitch delivery. Destinations are
+ * consumer jobs: start a request, review assistants, read recaps, and manage
+ * account controls. The retired Live Ops shell is intentionally absent.
+ */
 @Composable
 fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
     val state = model.state
@@ -71,67 +52,41 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
         return
     }
 
-    var tab by rememberSaveable { mutableStateOf(Tab.Home) }
-    var showAskWireline by rememberSaveable { mutableStateOf(false) }
+    var tab by rememberSaveable { mutableStateOf(Tab.Studio) }
+    var showAsk by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         containerColor = Brand.Canvas,
-        topBar = { WirelineTopBar("Wireline") },
+        topBar = { WirelineTopBar("Wireline AI") },
         floatingActionButton = {
-            if (tab == Tab.Home) {
-                FloatingActionButton(
-                    onClick = { showAskWireline = true },
-                    containerColor = Brand.Violet,
-                ) {
-                    Icon(Icons.Default.Mic, contentDescription = "Ask Wireline", tint = Color.White)
+            if (tab == Tab.Studio) {
+                FloatingActionButton(onClick = { showAsk = true }, containerColor = Brand.Accent, contentColor = Color.White) {
+                    Icon(Icons.Default.Mic, contentDescription = "Ask Wireline")
                 }
             }
         },
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = tab == Tab.Home,
-                    onClick = { tab = Tab.Home },
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                    label = { Text("Home") },
-                )
-                
-                NavigationBarItem(
-                    selected = tab == Tab.Calls,
-                    onClick = { tab = Tab.Calls },
-                    icon = { Icon(Icons.Default.Call, contentDescription = null) },
-                    label = { Text("Calls") },
-                )
-                NavigationBarItem(
-                    selected = tab == Tab.Wallet,
-                    onClick = { tab = Tab.Wallet },
-                    icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
-                    label = { Text("Wallet") },
-                )
-
-                NavigationBarItem(
-                    selected = tab == Tab.Settings,
-                    onClick = { tab = Tab.Settings },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                    label = { Text("Settings") },
-                )
+            NavigationBar(containerColor = Brand.Panel) {
+                NavigationBarItem(selected = tab == Tab.Studio, onClick = { tab = Tab.Studio }, icon = { Icon(Icons.Default.Home, null) }, label = { Text("Studio") })
+                NavigationBarItem(selected = tab == Tab.Assistants, onClick = { tab = Tab.Assistants }, icon = { Icon(Icons.Default.PhoneInTalk, null) }, label = { Text("Assistants") })
+                NavigationBarItem(selected = tab == Tab.Recaps, onClick = { tab = Tab.Recaps }, icon = { Icon(Icons.Default.Call, null) }, label = { Text("Recaps") })
+                NavigationBarItem(selected = tab == Tab.Wallet, onClick = { tab = Tab.Wallet }, icon = { Icon(Icons.Default.CreditCard, null) }, label = { Text("Wallet") })
+                NavigationBarItem(selected = tab == Tab.Settings, onClick = { tab = Tab.Settings }, icon = { Icon(Icons.Default.Settings, null) }, label = { Text("Settings") })
             }
         },
     ) { padding ->
         when (tab) {
-            Tab.Home -> HomeScreen(padding, state, model)
-            Tab.Calls -> CallsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
+            Tab.Studio -> StudioScreen(padding, state, model)
+            Tab.Assistants -> AssistantsScreen(padding, state.agents)
+            Tab.Recaps -> RecapsScreen(padding, state.activeCalls, state.recentCalls, model::takeCall)
             Tab.Wallet -> WalletScreen(padding, state.wallet?.balanceUsd, state.wallet?.ledger.orEmpty())
             Tab.Settings -> SettingsScreen(padding, state, model)
         }
     }
-    
-    if (showAskWireline) {
-        ModalBottomSheet(
-            onDismissRequest = { showAskWireline = false },
-            containerColor = Brand.Canvas,
-        ) {
-            AskWirelineScreen(model = model, onBack = { showAskWireline = false })
+
+    if (showAsk) {
+        ModalBottomSheet(onDismissRequest = { showAsk = false }, containerColor = Brand.Canvas) {
+            AskWirelineScreen(model = model, onBack = { showAsk = false })
         }
     }
 }
@@ -141,10 +96,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
 private fun WirelineTopBar(title: String) {
     TopAppBar(
         title = { Text(title, fontWeight = FontWeight.SemiBold, color = Brand.Text) },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Brand.Canvas,
-            titleContentColor = Brand.Text,
-        ),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Brand.Canvas, titleContentColor = Brand.Text),
     )
 }
 
@@ -153,152 +105,69 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brand.Canvas)
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.Start,
     ) {
         Medallion(Icons.Default.PhoneInTalk, size = 56.dp)
         Spacer(Modifier.height(16.dp))
         Text("WIRELINE", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Brand.Text)
-        Text(
-            "Your AI agents, on every line.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Brand.Text2,
-        )
+        Text("Your personal call assistant.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
         Spacer(Modifier.height(24.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(Brand.RadiusMd),
-        )
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            shape = RoundedCornerShape(Brand.RadiusMd),
-        )
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(Brand.RadiusSm))
         Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { onSignIn(email, password) },
-            enabled = !state.isWorking && email.isNotBlank() && password.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(Brand.RadiusMd),
-        ) {
-            if (state.isWorking) {
-                CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
-            } else {
-                Text("Sign in")
-            }
+        Button(onClick = { onSignIn(email, password) }, enabled = !state.isWorking && email.isNotBlank() && password.isNotBlank(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm)) {
+            if (state.isWorking) CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp) else Text("Sign in")
         }
         ErrorText(state.error)
         Spacer(Modifier.height(24.dp))
-        Text(
-            "New to Wireline? Create an account on the web.",
-            style = MaterialTheme.typography.bodySmall,
-            color = Brand.Text3,
-            textAlign = TextAlign.Center,
-        )
+        Text("New to Wireline? Create an account on the web.", style = MaterialTheme.typography.bodySmall, color = Brand.Text3, textAlign = TextAlign.Center)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel) {
-    var outboundNumber by rememberSaveable { mutableStateOf("") }
-    var outboundContext by rememberSaveable { mutableStateOf("") }
+private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel) {
+    var number by rememberSaveable { mutableStateOf("") }
+    var context by rememberSaveable { mutableStateOf("") }
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
     var showAsk by rememberSaveable { mutableStateOf(false) }
-    val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
+    val agent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
     val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brand.Canvas)
-            .padding(padding),
+        modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { AskWirelineHeroCard(onClick = { showAsk = true }) }
-
         item {
             LavenderCard {
-                Text("CONSOLE", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Violet)
+                Text("YOUR DAY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    FleetStatCard(
-                        value = "${state.activeCalls.size}",
-                        label = "LIVE CALLS",
-                        highlighted = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    FleetStatCard(
-                        value = "$followUps",
-                        label = "FOLLOW UPS",
-                        highlighted = followUps > 0,
-                        modifier = Modifier.weight(1f),
-                    )
-                    FleetStatCard(
-                        value = "${state.agents.size}",
-                        label = "AGENTS",
-                        highlighted = false,
-                        modifier = Modifier.weight(1f),
-                    )
+                    FleetStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
+                    FleetStatCard(value = "$followUps", label = "FOLLOW-UPS", highlighted = followUps > 0, modifier = Modifier.weight(1f))
+                    FleetStatCard(value = "${state.agents.size}", label = "ASSISTANTS", highlighted = false, modifier = Modifier.weight(1f))
                 }
             }
         }
-
         state.me?.let { me ->
             item {
                 LavenderCard {
-                    Text(
-                        me.user.fullName ?: me.account.businessName ?: me.user.email,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Brand.Text,
-                    )
-                    Text(
-                        "${me.account.planName} · ${state.agents.size} agents",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Brand.Text2,
-                    )
+                    Text(me.user.fullName ?: me.account.businessName ?: me.user.email, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                    Text("${me.account.planName} · ${state.agents.size} assistants", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
                 }
             }
         }
-
         item {
             LavenderCard {
-                Text("PLACE A CALL", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                AgentChips(state.agents, selectedAgent?.id, onSelect = { selectedAgentId = it })
-                OutlinedTextField(
-                    value = outboundNumber,
-                    onValueChange = { outboundNumber = it },
-                    label = { Text("Phone number, contact, or business") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(Brand.RadiusMd),
-                )
-                OutlinedTextField(
-                    value = outboundContext,
-                    onValueChange = { outboundContext = it },
-                    label = { Text("Context") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(Brand.RadiusMd),
-                )
-                Button(
-                    onClick = { selectedAgent?.let { model.placeCall(it.id, outboundNumber, outboundContext) } },
-                    enabled = selectedAgent != null && outboundNumber.isNotBlank() && !state.isWorking,
-                    shape = RoundedCornerShape(Brand.RadiusMd),
-                ) {
+                Text("PLACE A CALL", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
+                OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("Phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
+                OutlinedTextField(value = context, onValueChange = { context = it }, label = { Text("What should Wireline handle?") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm))
+                Button(onClick = { agent?.let { model.placeCall(it.id, number, context) } }, enabled = agent != null && number.isNotBlank() && !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) {
                     Text("Place call")
                 }
             }
@@ -314,33 +183,49 @@ private fun HomeScreen(padding: PaddingValues, state: WirelineUiState, model: Wi
 }
 
 @Composable
-private fun CallsScreen(
-    padding: PaddingValues,
-    activeCalls: List<ActiveCall>,
-    recentCalls: List<RecentCall>,
-    onTakeCall: (String) -> Unit,
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { Text("Live", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
-        if (activeCalls.isEmpty()) item { Text("No active calls.") }
-        items(activeCalls, key = { it.callId }) { call ->
-            SectionCard {
-                Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold)
-                Text(call.status ?: "Active")
-                Button(onClick = { onTakeCall(call.callId) }) { Text("Take this call") }
+private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>) {
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+            Text("The callers you have set up for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        }
+        if (agents.isEmpty()) {
+            item { LavenderCard { Text("No assistants yet", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("Create your first assistant on the web, then come back here to make calls.", color = Brand.Text2) } }
+        } else {
+            items(agents, key = { it.id }) { agent ->
+                LavenderCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Medallion(Icons.Default.PhoneInTalk, size = 40.dp)
+                        Column(Modifier.weight(1f)) {
+                            Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                            Text(agent.role?.replace("_", " ") ?: "Assistant", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
+                        }
+                        Text("Ready", style = MaterialTheme.typography.labelSmall, color = Brand.Success)
+                    }
+                }
             }
         }
-        item { Text("Recent", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
+    }
+}
+
+@Composable
+private fun RecapsScreen(padding: PaddingValues, activeCalls: List<ActiveCall>, recentCalls: List<RecentCall>, onTakeCall: (String) -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Text("Recaps", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text) }
+        item { Text("On a call", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
+        if (activeCalls.isEmpty()) item { Text("No calls in progress.", color = Brand.Text2) }
+        items(activeCalls, key = { it.callId }) { call ->
+            SectionCard {
+                Text(call.label ?: call.customerNumber ?: "Wireline call", fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                Text(call.status ?: "Active", color = Brand.Text2)
+                Button(onClick = { onTakeCall(call.callId) }, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Take this call") }
+            }
+        }
+        item { Text("Recent recaps", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3) }
         items(recentCalls, key = { it.id }) { call ->
             SectionCard {
-                Text(call.customerNumber ?: "Unknown caller", fontWeight = FontWeight.SemiBold)
-                Text(call.summary ?: "No summary yet.")
+                Text(call.customerNumber ?: "Unknown caller", fontWeight = FontWeight.SemiBold, color = Brand.Text)
+                Text(call.summary ?: "No summary yet.", color = Brand.Text2)
                 call.outcomeTag?.let { AssistChip(onClick = {}, label = { Text(it) }) }
             }
         }
@@ -349,89 +234,39 @@ private fun CallsScreen(
 
 @Composable
 private fun WalletScreen(padding: PaddingValues, balance: Double?, ledger: List<WalletEntry>) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            SectionCard {
-                Text("Credit balance", style = MaterialTheme.typography.titleMedium)
-                Text("$${"%.2f".format(balance ?: 0.0)}", style = MaterialTheme.typography.headlineMedium)
-            }
-        }
-        items(ledger, key = { it.id }) { entry ->
-            SectionCard {
-                Text(entry.reason, fontWeight = FontWeight.SemiBold)
-                Text("${"%+.2f".format(entry.deltaUsd)} -> ${"%.2f".format(entry.balanceAfterUsd)}")
-            }
-        }
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { SectionCard { Text("Credit balance", style = MaterialTheme.typography.titleMedium, color = Brand.Text); Text("$${"%.2f".format(balance ?: 0.0)}", style = MaterialTheme.typography.headlineMedium, color = Brand.Text) } }
+        items(ledger, key = { it.id }) { entry -> SectionCard { Text(entry.reason, fontWeight = FontWeight.SemiBold, color = Brand.Text); Text("${"%+.2f".format(entry.deltaUsd)} → ${"%.2f".format(entry.balanceAfterUsd)}", color = Brand.Text2) } }
     }
 }
 
 @Composable
 private fun SettingsScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel) {
     var phone by rememberSaveable(state.handoffPhone) { mutableStateOf(state.handoffPhone) }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    Column(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionCard {
-            Text("Callback number", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("E.164 phone number") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-            Button(onClick = { model.saveHandoffPhone(phone) }, enabled = !state.isWorking) {
-                Text("Save")
-            }
+            Text("Callback number", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = Brand.Text)
+            Text("Where Wireline should send a call when you take over.", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
+            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("E.164 phone number") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
+            Button(onClick = { model.saveHandoffPhone(phone) }, enabled = !state.isWorking, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Save") }
         }
-        Button(
-            onClick = { model.signOut() },
-            enabled = !state.isWorking,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Sign out")
-        }
+        Button(onClick = { model.signOut() }, enabled = !state.isWorking, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Brand.Panel2, contentColor = Brand.Text), shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Sign out") }
+        ErrorText(state.error)
     }
 }
 
-@Composable
-fun SectionCard(content: @Composable () -> Unit) {
-    LavenderCard { content() }
-}
+@Composable private fun SectionCard(content: @Composable () -> Unit) = LavenderCard { content() }
 
 @Composable
-fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (String) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        agents.forEach { agent ->
-            AssistChip(
-                onClick = { onSelect(agent.id) },
-                label = { Text(agent.name) },
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+private fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (String) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        agents.take(3).forEach { agent ->
+            AssistChip(onClick = { onSelect(agent.id) }, label = { Text(agent.name) }, modifier = Modifier.padding(vertical = 4.dp), colors = AssistChipDefaults.assistChipColors(containerColor = if (agent.id == selectedId) Brand.AccentSoft else Brand.Panel2))
         }
     }
 }
 
 @Composable
-fun ErrorText(error: String?) {
-    if (!error.isNullOrBlank()) {
-        Text(
-            text = error,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-    }
+private fun ErrorText(error: String?) {
+    if (!error.isNullOrBlank()) Text(text = error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
 }
