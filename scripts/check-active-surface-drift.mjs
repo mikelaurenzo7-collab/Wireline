@@ -58,16 +58,21 @@ for (const [pattern, message] of [
   [/--wl-line:\s*#dadad8/i, "must use #dadad8 as the primary divider"],
   [/--radius-md:\s*0\.5rem/i, "must retain 8px standard geometry"],
   [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
+  [/font-feature-settings:\s*"cv05",\s*"cv08",\s*"ss01"/i, "must retain headline precision features"],
 ]) {
   if (!pattern.test(foundation)) report("src/styles/foundation.css", message);
 }
 
 const indexCss = read("src/index.css");
-if (!/family=Inter:/i.test(indexCss) || !/--wl-font-sans:\s*"Inter"/i.test(indexCss)) {
-  report("src/index.css", "must load and use Inter for the Professional Heritage text system");
-}
-if (!/h1, h2, h3, h4\s*\{[^}]*font-feature-settings:\s*"cv05",\s*"cv08",\s*"ss01"/is.test(indexCss)) {
-  report("src/index.css", "must apply the Stitch precision headline feature settings");
+for (const [pattern, message] of [
+  [/family=Source\+Serif\+4/i, "must load Source Serif 4 for editorial hierarchy"],
+  [/family=Work\+Sans/i, "must load Work Sans for operational UI"],
+  [/family=JetBrains\+Mono/i, "must load JetBrains Mono for metadata"],
+  [/--wl-font-display:\s*"Source Serif 4"/i, "must map display typography to Source Serif 4"],
+  [/--wl-font-sans:\s*"Work Sans"/i, "must map UI typography to Work Sans"],
+  [/--wl-font-mono:\s*"JetBrains Mono"/i, "must map metadata typography to JetBrains Mono"],
+]) {
+  if (!pattern.test(indexCss)) report("src/index.css", message);
 }
 
 const shell = read("src/components/WorkspaceShell.tsx");
@@ -122,8 +127,8 @@ if (!/VAPI_TENANT_DEFAULT_PROVIDER[^=]*=\s*"openai"/.test(voiceDefaults)) {
 }
 
 if (failures.length) {
-  console.error("Professional Heritage contract check failed:\n- " + failures.join("\n- "));
+  console.error("Professional Heritage v2 contract check failed:\n- " + failures.join("\n- "));
   process.exitCode = 1;
 } else {
-  console.log("Professional Heritage contract check passed");
+  console.log("Professional Heritage v2 contract check passed");
 }
