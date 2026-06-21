@@ -4,7 +4,6 @@ import android.app.Activity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LightColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Shapes
@@ -45,8 +44,8 @@ object Brand {
     val Success = Color(0xFF2D5A27)
     val Signal = Success
 
-    // Compatibility aliases keep existing native screens compiling. They all
-    // resolve to the Stitch forest palette, not the retired violet palette.
+    // Legacy aliases keep existing screens compiling. They all resolve to the
+    // Stitch forest palette rather than the retired violet palette.
     val Violet = Accent
     val VioletSoft = AccentSoft
     val VioletDeep = AccentDeep
@@ -110,10 +109,7 @@ private val AppTypography = Typography(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WirelineTheme(
-    darkTheme: Boolean = false,
-    content: @Composable () -> Unit,
-) {
+fun WirelineTheme(content: @Composable () -> Unit) {
     val colorScheme = LightColors
     val view = LocalView.current
     if (!view.isInEditMode) {
