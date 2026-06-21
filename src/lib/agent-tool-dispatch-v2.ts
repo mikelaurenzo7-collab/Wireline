@@ -28,7 +28,7 @@ export async function dispatchScopedToolCall(name: string, args: any, context: S
   if (name === "add_to_dnc") {
     const phone = normalizeDncPhone(String(args?.phone || callerNumber));
     if (!phone) return result(context.toolCallId, "I need a valid phone number to process that request.");
-    await context.drizzle.insert(schema.doNotCall).values({ userId: context.userId, phoneNumber: phone, reason: "Caller request", source: "voice" }).onConflictDoNothing();
+    await context.drizzle.insert(schema.dncList).values({ userId: context.userId, phone, phoneRaw: String(args?.phone || callerNumber), reason: "Caller request", source: "voice" }).onConflictDoNothing();
     return result(context.toolCallId, "That number has been added to the do-not-contact list.");
   }
   if (name === "send_text_message") {
