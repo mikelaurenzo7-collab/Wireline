@@ -7,7 +7,8 @@ import { cn } from "../../lib/utils";
 export type PublicNavActive = "signin" | "signup" | "home";
 
 const NAV_LINKS = [
-  { to: "/features", label: "Features" },
+  { to: "/for/personal", label: "For you" },
+  { to: "/features", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
   { to: "/showcase", label: "Demos" },
   { to: "/solutions/support", label: "For business" },
@@ -112,7 +113,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
       {menuOpen && (
         <div id="public-mobile-nav" className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true" aria-label="Site navigation">
           <button className="absolute inset-0 h-full w-full bg-foreground/15" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
-          <div className="absolute inset-x-4 top-[4.5rem] overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+          <div className="absolute inset-x-4 top-[4.5rem] overflow-hidden rounded border border-border bg-card shadow-lg">
             <nav className="p-2" aria-label="Mobile">
               {MOBILE_LINKS.map((link) => {
                 const isActive = location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
@@ -122,7 +123,7 @@ export default function PublicSiteHeader({ className, active = "home" }: PublicS
                     to={link.to}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex min-h-11 items-center rounded-lg px-4 text-[15px] font-medium transition-colors",
+                      "flex min-h-11 items-center rounded px-4 text-[15px] font-medium transition-colors",
                       isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted",
                     )}
                     onClick={() => setMenuOpen(false)}
