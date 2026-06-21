@@ -1,7 +1,6 @@
-import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import React from "react";
+import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { cn } from "../../lib/utils";
-
 
 interface SectionHeaderProps {
   eyebrow?: string;
@@ -9,19 +8,13 @@ interface SectionHeaderProps {
   description?: string;
   className?: string;
   actions?: React.ReactNode;
-  /** Renders a delicate hairline divider beneath the header (default true for consistency) */
+  /** Renders a delicate hairline divider beneath the header. */
   divider?: boolean;
-  /**
-   * editorial — Fraunces display (marketing-forward).
-   * instrument — sans semibold (authenticated product surfaces).
-   */
-  tone?: "editorial" | "instrument";
+  /** Marketing retains the same Inter hierarchy at a larger scale. */
+  tone?: "marketing" | "instrument";
 }
 
-/**
- * SectionHeader — consistent editorial header used across the product.
- * Use for every major content block (empty states, panels, page sections).
- */
+/** Shared Stitch-style section hierarchy for product and marketing surfaces. */
 export function SectionHeader({
   eyebrow,
   title,
@@ -31,36 +24,21 @@ export function SectionHeader({
   divider = true,
   tone = "instrument",
 }: SectionHeaderProps) {
-  const editorial = tone === "editorial";
+  const marketing = tone === "marketing";
 
   return (
     <div className={cn("flex flex-col", className)}>
       {eyebrow && (
-        <p
-          className={cn(
-            editorial ? "app-section-title text-brand/70" : WL_APP_CLASSES.proEyebrow,
-            "mb-1",
-          )}
-        >
+        <p className={cn(marketing ? "wl-stitch-eyebrow" : WL_APP_CLASSES.proEyebrow, "mb-1")}>
           {eyebrow}
         </p>
       )}
       <div className="flex items-baseline justify-between gap-4">
         <div className="min-w-0">
-          <h3
-            className={cn(
-              editorial
-                ? "font-display italic text-[21px] leading-[1.05] text-foreground tracking-[-0.01em]"
-                : WL_APP_CLASSES.proTitle,
-            )}
-          >
+          <h3 className={cn(marketing ? "wl-stitch-headline text-[21px]" : WL_APP_CLASSES.proTitle)}>
             {title}
           </h3>
-          {description && (
-            <p className="mt-1.5 text-[13px] leading-relaxed text-muted max-w-prose text-pretty">
-              {description}
-            </p>
-          )}
+          {description && <p className="mt-1.5 max-w-prose text-[13px] leading-relaxed text-muted">{description}</p>}
         </div>
         {actions && <div className="shrink-0 self-start pt-0.5">{actions}</div>}
       </div>
