@@ -17,17 +17,17 @@ import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 
-export type AccessRole = "owner" | "admin" | "operator" | "viewer" | "auditor";
+export type AccessRole = "owner" | "admin" | "Account Holder" | "viewer" | "auditor";
 
 export const ROLE_HIERARCHY: Record<AccessRole, number> = {
   owner: 50,
   admin: 40,
-  operator: 30,
+  "Account Holder": 30,
   viewer: 20,
   auditor: 10,
 };
 
-export const ALL_ROLES: AccessRole[] = ["owner", "admin", "operator", "viewer", "auditor"];
+export const ALL_ROLES: AccessRole[] = ["owner", "admin", "Account Holder", "viewer", "auditor"];
 
 /** Permissions granted to each role (additive). */
 export const ROLE_PERMISSIONS: Record<AccessRole, string[]> = {
@@ -62,7 +62,7 @@ export const ROLE_PERMISSIONS: Record<AccessRole, string[]> = {
     "quotas.override",
     "jobs.admin",
   ],
-  operator: [
+  "Account Holder": [
     "agents.read",
     "calls.read",
     "calls.manage",
@@ -80,9 +80,9 @@ export function hasPermission(role: AccessRole, permission: string): boolean {
 }
 
 export function canGrantRole(granterRole: AccessRole, targetRole: AccessRole): boolean {
-  // Granter must have at least operator-level privilege, AND the target
+  // Granter must have at least Account Holder-level privilege, AND the target
   // role must be strictly below the granter's level.
-  const MIN_GRANT_LEVEL = ROLE_HIERARCHY["operator"]; // 30
+  const MIN_GRANT_LEVEL = ROLE_HIERARCHY["Account Holder"]; // 30
   return (
     ROLE_HIERARCHY[granterRole] >= MIN_GRANT_LEVEL &&
     ROLE_HIERARCHY[granterRole] > ROLE_HIERARCHY[targetRole]

@@ -13,7 +13,7 @@
  * Surfaced as a first-class "Voice character" control (open by default)
  * so shaping how an agent sounds is part of building it, not a buried
  * power-user escape hatch. The defaults are sane (they exactly match
- * ElevenLabs's defaults), so an operator who touches nothing still gets
+ * ElevenLabs's defaults), so an Account Holder who touches nothing still gets
  * a great voice — but the sliders invite tuning, and the audible
  * difference is immediately apparent on the next test call. Collapsible
  * for operators who want to tuck it away once dialed in.
@@ -174,7 +174,7 @@ export default function VoiceFineTuningPanel({
     <div className="rounded-md border border-ink/[0.08] bg-ink/[0.015]">
       {/* Header — click to collapse. Open by default so voice shaping is
           part of building the agent; the "modified" pip surfaces a small
-          visual cue when the operator has tuned away from defaults. */}
+          visual cue when the Account Holder has tuned away from defaults. */}
       <ShadButton
         type="button"
         variant="ghost"

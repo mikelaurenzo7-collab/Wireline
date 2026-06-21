@@ -15,7 +15,7 @@ import { AppError } from "../lib/api-error";
  *
  * Privacy: each clone uploads someone's voice sample. The /clone
  * route requires an explicit consent flag in the body
- * (`consent_given: true`) — operator must confirm they have
+ * (`consent_given: true`) — Account Holder must confirm they have
  * permission to clone this voice. Logged for the record.
  */
 import { Router, type Request, type Response } from "express";
@@ -66,7 +66,7 @@ router.get("/api/voices", authenticateUser, async (req: AuthenticatedRequest, re
       ownClones = rows;
     } catch (e: any) {
       // 42P01 = undefined_table in Postgres. Surface a clear log line
-      // so the operator knows to run /api/admin/migrate-cloned-voices
+      // so the Account Holder knows to run /api/admin/migrate-cloned-voices
       // but don't break the catalog response.
       if (e?.code === "42P01" || /does not exist/i.test(e?.message || "")) {
         log.warn("wireline_cloned_voices table missing — run migrate-cloned-voices");

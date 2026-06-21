@@ -1,5 +1,5 @@
 /**
- * Founder fleet seed — provisions the platform owner's account with a
+ * Founder Assistants seed — provisions the platform owner's account with a
  * full roster of agents, max capabilities, and training artifacts so
  * Mike can dogfood chat, training, and integrations end-to-end.
  */
@@ -17,13 +17,13 @@ export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 
 const CHAT_COLLABORATOR_OVERLAY = `
 
-CHAT MODE (operator workspace):
+CHAT MODE (Account Holder workspace):
 You are also a full AI collaborator in private chat — not just a voice agent. In chat you can:
-- Draft business plans, GTM strategies, SOPs, email sequences, and marketing copy tailored to the operator's business.
+- Draft business plans, GTM strategies, SOPs, email sequences, and marketing copy tailored to the Account Holder's business.
 - Outline logo concepts, brand voice guides, and pitch decks (for production logo SVGs, suggest the Director chat).
 - Propose config changes, tool toggles, and outbound actions via approval cards — never mutate settings silently.
-- Coach the operator on call performance, objection handling, and fleet strategy using your role expertise.
-Be substantive, structured, and actionable. Match the operator's industry when known.`;
+- Coach the Account Holder on call performance, objection handling, and Assistants strategy using your role expertise.
+Be substantive, structured, and actionable. Match the Account Holder's industry when known.`;
 
 export interface FleetAgentTemplate {
   id: string;
@@ -155,7 +155,7 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
     "Wireline plans start at $7/mo (Everyday) with a free trial path and an included phone number.",
     "Operators configure agents via Chat (coaching), Training (knowledge + lessons), and Integrations.",
-    "Escalations route to the operator's configured phone/email; use escalate_to_human when risk is high.",
+    "Escalations route to the Account Holder's configured phone/email; use escalate_to_human when risk is high.",
   ],
   sales: [
     "Lead with outcome before features. Always propose a concrete next step before ending the conversation.",
@@ -173,7 +173,7 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
 const DIRECTIVE_SNIPPETS: string[] = [
   "Always confirm spelling of names and callback numbers before ending a call.",
   "If the caller asks for a human, escalate immediately — no friction.",
-  "In chat, draft deliverables (plans, copy, briefs) in structured sections the operator can approve or edit.",
+  "In chat, draft deliverables (plans, copy, briefs) in structured sections the Account Holder can approve or edit.",
   "Never invent integration credentials — say when an integration needs to be connected in Settings.",
 ];
 
@@ -181,7 +181,7 @@ const LESSON_SNIPPETS: string[] = [
   "When price objections arise, acknowledge first then reframe around ROI and cost of inaction.",
   "For scheduling, always read back date, time, timezone, and contact method before closing.",
   "In chat, offer to turn a business plan outline into config changes (greeting, tone, tools) when relevant.",
-  "Logo requests in agent chat → outline concepts here; send operator to Director for SVG brand packs.",
+  "Logo requests in agent chat → outline concepts here; send Account Holder to Director for SVG brand packs.",
 ];
 
 function personalityForRole(role: string): string {
@@ -268,7 +268,7 @@ async function upsertPersonality(agentId: string, userId: string, content: strin
     .where(eq(schema.personality.agentId, agentId))
     .limit(1);
   if (foreign) {
-    log.warn("founder fleet seed: personality row owned by another tenant, skipping", {
+    log.warn("founder Assistants seed: personality row owned by another tenant, skipping", {
       agentId,
       userId,
     });
@@ -331,7 +331,7 @@ async function seedTrainingArtifacts(
         agentId,
         userId,
         lesson,
-        source: "founder-fleet-seed",
+        source: "founder-Assistants-seed",
       });
       report.lessonsInserted++;
     } catch {
@@ -402,7 +402,7 @@ async function upsertAgent(
 }
 
 /**
- * Seed (or refresh) the founder's full agent fleet with max capabilities
+ * Seed (or refresh) the founder's full agent Assistants with max capabilities
  * and training artifacts. Idempotent — safe to re-run.
  */
 export async function seedFounderFleet(userId: string): Promise<FounderFleetSeedReport> {
@@ -464,7 +464,7 @@ export async function seedFounderFleet(userId: string): Promise<FounderFleetSeed
     }
   }
 
-  log.info("founder fleet seed completed", { userId, ...report });
+  log.info("founder Assistants seed completed", { userId, ...report });
   return report;
 }
 

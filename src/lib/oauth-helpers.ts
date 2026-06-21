@@ -244,7 +244,7 @@ export const MICROSOFT_CALENDAR_WRITE_SCOPE = "Calendars.ReadWrite";
 
 /**
  * Returns whether a previously granted Google OAuth scope string includes calendar event creation.
- * Used when stored `scopes` are persisted for an account; if scopes are unknown, operator should re-connect after scope upgrades.
+ * Used when stored `scopes` are persisted for an account; if scopes are unknown, Account Holder should re-connect after scope upgrades.
  */
 export function googleGrantedScopesAllowCalendarWrite(
   scopeStr: string | null | undefined,

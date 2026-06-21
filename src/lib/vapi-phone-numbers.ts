@@ -35,7 +35,7 @@ export interface VapiPhoneNumber {
   number?: string | null;
   /** "vapi" for Vapi-managed, "twilio" for BYO Twilio, etc. */
   provider?: string;
-  /** Display name (the operator's label, not the e164 number) */
+  /** Display name (the Account Holder's label, not the e164 number) */
   name?: string | null;
   /** assistantId currently answering this number, if assigned */
   assistantId?: string | null;
@@ -199,7 +199,7 @@ export async function attachAssistantToNumber(
  * Account-level free-tier headroom. Vapi gives every account 10 free
  * vapi-managed numbers — past that, each one is billable monthly. We
  * use this to gate auto-provisioning so we never accidentally bill the
- * operator just because they hit signup.
+ * Account Holder just because they hit signup.
  */
 export const VAPI_FREE_NUMBER_CAP = 10;
 
@@ -223,7 +223,7 @@ export async function vapiAccountHeadroom(): Promise<{
 }
 
 /**
- * Curated list of US area codes for the operator-facing picker. We
+ * Curated list of US area codes for the Account Holder-facing picker. We
  * keep this short so the UI stays fast — Vapi has inventory for most
  * but a dropdown of 300+ NANPA codes is unusable. Operators who need
  * something exotic can pass `areaCode` directly via API.

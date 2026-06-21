@@ -546,7 +546,7 @@ router.post(
 
 /**
  * GET /api/auth/bootstrap
- * One-shot session bootstrap — seeds the founder fleet when the owner account
+ * One-shot session bootstrap — seeds the founder Assistants when the owner account
  * has zero agents. Safe to call on every app load; no-ops when already seeded.
  */
 router.get(

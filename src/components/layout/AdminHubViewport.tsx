@@ -10,7 +10,7 @@ type AdminHubViewportProps = {
 
 /**
  * Unified admin shell: settings tab strip + full-height body region.
- * Used by Settings, DNC, Audit, and Integrations — not the Agents fleet page.
+ * Used by Settings, DNC, Audit, and Integrations — not the Agents Assistants page.
  *
  * Long pages use `scroll` so ClientRouteViewport owns the sole scroll axis
  * (same contract as HelpCenter). Fixed-height pages keep inner panel scroll.

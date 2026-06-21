@@ -201,7 +201,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               },
               {
                 label: "Member",
-                role: "Agent Operator",
+                role: "Agent Account Holder",
                 desc: "Access to specific agents and call logs for day-to-day work.",
                 color: "text-foreground",
               },

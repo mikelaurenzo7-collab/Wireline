@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- operator settings payloads are loosely typed. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Account Holder settings payloads are loosely typed. */
 import { useState } from "react";
 import { CreditCard, AlertTriangle, Activity, CheckCircle2, ServerCog } from "lucide-react";
 import { Panel } from "../PageShell";
@@ -85,7 +85,7 @@ export function OwnerBillingSimulator({
               </ShadButton>
             </div>
             <p className="wl-micro-meta--muted leading-relaxed">
-              Suspending an account locks fleet routing and disables carrier webhooks immediately.
+              Suspending an account locks Assistants routing and disables carrier webhooks immediately.
             </p>
           </div>
 

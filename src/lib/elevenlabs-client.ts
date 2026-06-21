@@ -57,7 +57,7 @@ export async function listVoices(): Promise<ElevenLabsVoice[]> {
 
 /**
  * Single voice metadata. Used after cloning to pull the fresh
- * preview_url so the operator hears the cloned voice immediately.
+ * preview_url so the Account Holder hears the cloned voice immediately.
  */
 export async function getVoice(voiceId: string): Promise<ElevenLabsVoice> {
   const r = await fetch(`${BASE}/voices/${encodeURIComponent(voiceId)}`, {
@@ -284,7 +284,7 @@ export async function createPronunciationDictionary(args: {
 /**
  * Add (append) more rules to an existing dictionary. ElevenLabs treats
  * every add as a new version — the returned version_id replaces what
- * we had stored. We use this for incremental edits when the operator
+ * we had stored. We use this for incremental edits when the Account Holder
  * doesn't want to recreate the whole dictionary.
  *
  * Note: ElevenLabs has no "replace all rules" endpoint. For full

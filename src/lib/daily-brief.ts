@@ -350,7 +350,7 @@ function escapeHtml(s: any): string {
 }
 
 export async function sendDailyBriefEmail(userId: string, opts?: { force?: boolean }) {
-  // Pull settings + the operator's connected Gmail account.
+  // Pull settings + the Account Holder's connected Gmail account.
   const [settingsRow, accountRow] = await Promise.all([
     drizzle
       .select({

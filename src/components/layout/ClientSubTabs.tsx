@@ -21,7 +21,7 @@ type ClientSubTabsProps = {
 };
 
 /**
- * URL-driven sub-tabs for channel pages (Phone logs/outbound, Live Ops, etc.).
+ * URL-driven sub-tabs for channel pages (Phone logs/outbound, Recaps, etc.).
  * Matches HubTabs / SettingsTabSwitcher with animated brand pill.
  */
 export default function ClientSubTabs({

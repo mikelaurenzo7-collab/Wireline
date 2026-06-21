@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────────────────────────────
 //  Dashboard performance benchmarks math.
 //
-//  /api/dashboard/benchmarks compares the operator's actual 30-day stats
+//  /api/dashboard/benchmarks compares the Account Holder's actual 30-day stats
 //  against industry-average reference points so the PerformanceBenchmarks
 //  panel on the Dashboard's Brief tab can render the comparison bars.
 //
@@ -57,7 +57,7 @@ export const HOT_LEAD_THRESHOLD = 70;
 export const CONTACTED_STATUSES = new Set(["Completed", "Interested", "Callback"]);
 
 // Reference benchmarks — research-based industry averages for AI voice
-// agents. The label/unit/better_when/tip strings are operator-facing,
+// agents. The label/unit/better_when/tip strings are Account Holder-facing,
 // so changing them means updating snapshots / UI assumptions; the
 // numbers are calibration knobs.
 export const BENCHMARK_TARGETS = {

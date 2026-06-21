@@ -93,7 +93,7 @@ function clampText(v: unknown, max: number): string {
 
 export function parseCreativeBriefFromText(
   message: string,
-  history: Array<{ role: "operator" | "director"; content: string }>,
+  history: Array<{ role: "Account Holder" | "director"; content: string }>,
 ): Partial<DirectorCreativeBrief> {
   const text = `${history
     .slice(-8)
@@ -136,7 +136,7 @@ export function parseCreativeBriefFromText(
   }
 
   const logoHistory = history
-    .filter((h) => h.role === "operator" && /logo|brand|mark|icon/i.test(h.content))
+    .filter((h) => h.role === "Account Holder" && /logo|brand|mark|icon/i.test(h.content))
     .map((h) => h.content);
   const promptSource = /logo|brand|mark|icon/i.test(message)
     ? message
@@ -443,7 +443,7 @@ export function exportBrandPack(input: {
 export function isCreativeIntent(text: string): boolean {
   const trimmed = text.trim();
   if (wantsLogoCreativePath(trimmed)) return true;
-  // Website / landing asks stay on fleet LLM (HTML prototype) — not logo approvals.
+  // Website / landing asks stay on Assistants LLM (HTML prototype) — not logo approvals.
   if (wantsWebsiteDeliverable(trimmed)) return false;
   return /(generate\s+(?:an?\s+)?(?:image|picture|illustration|banner|hero)|create\s+(?:an?\s+)?(?:brand\s+visual|illustration))/i.test(
     trimmed,

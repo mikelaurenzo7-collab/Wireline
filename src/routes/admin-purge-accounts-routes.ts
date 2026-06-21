@@ -57,7 +57,7 @@ router.post(
       });
     }
 
-    // Dry run is the default. Operator must explicitly pass dry_run=false
+    // Dry run is the default. Account Holder must explicitly pass dry_run=false
     // (in body OR query) to actually delete. Body takes precedence.
     const bodyDryRun = (req.body as { dry_run?: boolean } | undefined)?.dry_run;
     const queryDryRun = (req.query.dry_run as string | undefined)?.toLowerCase();

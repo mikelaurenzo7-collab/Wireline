@@ -73,7 +73,7 @@ export function ActionFeed({
     e.stopPropagation();
     setProcessingId(id);
     try {
-      const res = await authFetch(`/api/fleet/tasks/${id}/approve`, { method: "POST" });
+      const res = await authFetch(`/api/Assistants/tasks/${id}/approve`, { method: "POST" });
       if (res.ok) {
         toastSuccess("Action executed", "The autonomous task has been completed successfully.");
         onRefresh?.();
@@ -92,10 +92,10 @@ export function ActionFeed({
     e.stopPropagation();
     setProcessingId(id);
     try {
-      const res = await authFetch(`/api/fleet/tasks/${id}`, {
+      const res = await authFetch(`/api/Assistants/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled", resolution_notes: "Rejected by operator" }),
+        body: JSON.stringify({ status: "cancelled", resolution_notes: "Rejected by Account Holder" }),
       });
       if (res.ok) {
         toastSuccess("Action rejected", "The task has been removed from the queue.");

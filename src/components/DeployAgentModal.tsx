@@ -108,7 +108,7 @@ interface DeployAgentModalProps {
 }
 
 /**
- * Quick Deploy modal — opens when an operator clicks "Deploy Agent" on a
+ * Quick Deploy modal — opens when an Account Holder clicks "Deploy Agent" on a
  * template card. Lets them set the two things they almost always want to
  * customize before the agent goes live:
  *

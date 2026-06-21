@@ -292,7 +292,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
           continue;
         }
 
-        // Customer messaged the Page → route to fleet tasks so the
+        // Customer messaged the Page → route to Assistants tasks so the
         // CS agent can draft a response. We don't have a Messenger
         // OAuth flow yet (would need pages_messaging permission) but
         // logging the inbound is the right call so operators see
@@ -312,7 +312,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
             payload: { sender_id: senderId, message: msg, page_id: pageId },
             targetChannel: "manual",
           });
-          log.info("Meta inbound message routed to fleet tasks", {
+          log.info("Meta inbound message routed to Assistants tasks", {
             userId: tenant.userId,
             senderId,
           });
@@ -346,7 +346,7 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
         }
 
         // Comment on a Page post or @mention. Quick log for the
-        // operator's awareness — full triage is a future feature.
+        // Account Holder's awareness — full triage is a future feature.
         if (field === "feed" || field === "mention") {
           const item = v.item || field;
           const verb = v.verb || "update";

@@ -123,7 +123,7 @@ export async function addCredit(
 
 /**
  * Reverse a prior credit — e.g. a refunded or disputed web top-up. Idempotent
- * per `ref`. The resulting balance may go negative (the operator spent credit
+ * per `ref`. The resulting balance may go negative (the Account Holder spent credit
  * that's now been clawed back); that simply means future overage isn't covered
  * until they top up again. Returns the new balance.
  */

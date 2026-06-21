@@ -120,7 +120,7 @@ interface MessageProposals {
 
 interface WorkspaceMessage {
   id: string;
-  role: "operator" | "agent";
+  role: "Account Holder" | "agent";
   content: string;
   createdAt: string;
   proposals?: MessageProposals;
@@ -495,7 +495,7 @@ export default function AgentWorkspace({
       if (!text || isSending) return;
       const optimisticOperator: WorkspaceMessage = {
         id: `tmp-${Date.now()}`,
-        role: "operator",
+        role: "Account Holder",
         content: text,
         createdAt: new Date().toISOString(),
       };
@@ -831,7 +831,7 @@ export default function AgentWorkspace({
                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                     className={cn(
                       "flex flex-col",
-                      m.role === "operator" ? "items-end" : "items-start",
+                      m.role === "Account Holder" ? "items-end" : "items-start",
                     )}
                   >
                     {/* Agent avatar */}
@@ -850,7 +850,7 @@ export default function AgentWorkspace({
                     <div
                       className={cn(
                         "max-w-[78%] min-w-[180px] rounded-md px-5 py-4 whitespace-pre-wrap break-words relative",
-                        m.role === "operator"
+                        m.role === "Account Holder"
                           ? "bg-gradient-to-br from-brand to-brand-deep text-white rounded-br-sm shadow-lg shadow-brand/25"
                           : "bg-card/95 dark:bg-black/40 backdrop-blur-sm border border-brand/10 text-foreground dark:text-foreground rounded-bl-sm shadow-sm",
                       )}

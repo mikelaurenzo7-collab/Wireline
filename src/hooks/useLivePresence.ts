@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 /**
  * useLivePresence — single source of truth for "how many calls are live on
- * the floor right now." Polls /api/fleet/presence on a steady cadence and
+ * the floor right now." Polls /api/Assistants/presence on a steady cadence and
  * returns the live count. Used by both the Sidebar Rail foot-pulse and the
  * desktop context-bar mission-control pulse so the two never disagree and
  * we never double-instrument the same endpoint with divergent intervals.
@@ -21,7 +21,7 @@ export function useLivePresence(intervalMs = 10_000): number {
     let cancelled = false;
     const fetchLive = async () => {
       try {
-        const r = await authFetch("/api/fleet/presence");
+        const r = await authFetch("/api/Assistants/presence");
         if (!r.ok || cancelled) return;
         const d = (await r.json()) as { signals?: unknown[] };
         if (!cancelled) setLiveCalls(Array.isArray(d.signals) ? d.signals.length : 0);

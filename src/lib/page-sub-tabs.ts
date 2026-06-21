@@ -58,10 +58,10 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
   {
     pathname: "/ops",
     defaultTab: "floor",
-    ariaLabel: "Live Ops sections",
+    ariaLabel: "Recaps sections",
     layoutIdPrefix: "ops-section",
     tabs: [
-      { id: "floor", label: "Live floor", icon: Radio },
+      { id: "floor", label: "Active calls", icon: Radio },
       { id: "intel", label: "Actions", icon: ListTodo },
       { id: "triage", label: "Triage", icon: Inbox },
       { id: "analytics", label: "Analytics", icon: Globe },

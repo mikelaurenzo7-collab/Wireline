@@ -20,7 +20,7 @@ const router = express.Router();
 //  Yahoo Mailbox OAuth — mail-r/mail-w scopes
 //
 //  Distinct from /api/auth/yahoo/* (sign-in, openid+email+profile only).
-//  This flow is auth-gated: the operator must already be signed in
+//  This flow is auth-gated: the Account Holder must already be signed in
 //  before they can connect their Yahoo Mail account. We store the
 //  tokens in wireline_email_accounts with provider='yahoo'. Actual
 //  IMAP/SMTP polling + sending lands in a future phase — having the

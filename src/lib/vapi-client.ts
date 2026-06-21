@@ -123,7 +123,7 @@ export type PlaceCallResult = {
   callId?: string;
 };
 
-/** Turn raw Vapi error JSON into a short operator-facing message. */
+/** Turn raw Vapi error JSON into a short Account Holder-facing message. */
 export function formatVapiCallError(errBody: string): string {
   const trimmed = errBody.trim();
   if (!trimmed) return "Voice carrier rejected the call. Try again in a moment.";
@@ -450,7 +450,7 @@ Never end an outbound call without:
 ## HONESTY GUARDRAILS
 Never invent prices, availability, dates, or product specs. If you don't know: "Great question — let me have someone with the exact details reach out to you. What's the best email?"
 
-## ABSOLUTE OPERATOR RULES
+## ABSOLUTE Account Holder RULES
 ${(directivesRes || []).map((d: any) => `[PRIORITY ${d.priority}] ${d.content}`).join("\n") || "Follow all standard professional and ethical guidelines."}
 
 ## KNOWLEDGE BASE
@@ -536,7 +536,7 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
       // ignores them and Vapi would reject the request if we sent
       // them. Speed is omitted when at the neutral default to keep
       // the payload tidy; fine-tuning params are always attached so
-      // the operator's slider value is authoritative.
+      // the Account Holder's slider value is authoritative.
       //
       // Docs:
       //   speed:        https://elevenlabs.io/docs/eleven-agents/customization/voice/speed-control
@@ -675,8 +675,8 @@ ${(knowledgeRes || []).map((k: any) => `- ${k.content}`).join("\n") || "No speci
 
 /**
  * Transfer an in-progress call to a phone number via Vapi's live call-control
- * URL (monitor.controlUrl). This is how the operator "takes" a call from the
- * Wireline app: the agent warm-transfers the live caller to the operator's
+ * URL (monitor.controlUrl). This is how the Account Holder "takes" a call from the
+ * Wireline app: the agent warm-transfers the live caller to the Account Holder's
  * number. Uses Vapi only — no Twilio. The control URL is pre-authenticated by
  * Vapi (token embedded), so no Bearer is attached.
  *

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
- * Pronunciation Dictionary — operator-side jargon management surface.
+ * Pronunciation Dictionary — Account Holder-side jargon management surface.
  *
  * Lives under Admin → Pronunciation. Lets operators in regulated
  * verticals (medical, legal, real estate) drive how the AI receptionist
@@ -65,7 +65,7 @@ export default function PronunciationDictionaryPanel() {
   const [newEntries, setNewEntries] = useState<DictEntry[]>([blankEntry()]);
   const [creating, setCreating] = useState(false);
 
-  // Local drafts: keyed by dict id, lets the operator edit a row
+  // Local drafts: keyed by dict id, lets the Account Holder edit a row
   // without an immediate save round-trip.
   const [drafts, setDrafts] = useState<Record<string, DictEntry[]>>({});
 

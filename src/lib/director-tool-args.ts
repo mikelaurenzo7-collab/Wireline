@@ -1,5 +1,5 @@
 import type { AgentToolName } from "./agent-capabilities";
-import type { DirectorIntegrationJob } from "./director-fleet-plan";
+import type { DirectorIntegrationJob } from "./director-Assistants-plan";
 
 /** Map Director integration job text into Vapi-style tool arguments. */
 export function buildDirectorToolArgs(

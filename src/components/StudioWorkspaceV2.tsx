@@ -32,6 +32,7 @@ import { AGENT_TOOL_CATALOG, type AgentToolName } from "../lib/agent-capabilitie
 import OpenRouterModelPicker from "./OpenRouterModelPicker";
 import WorkspaceShell from "./WorkspaceShell";
 import { VoiceFieldSelect, type VoiceOption } from "./fleet-settings/VoiceSelector";
+import { AgentGrid } from "./fleet/helpers";
 import { PREMIUM_VOICES } from "./fleet/helpers";
 
 type ChatMessage = { id: string; role: "assistant" | "user"; content: string };
@@ -935,7 +936,7 @@ export default function StudioWorkspaceV2() {
               </div>
             </div>
             <form className="relative z-10 shrink-0 px-1 pb-1 sm:px-2" onSubmit={sendTraining}>
-              <div className="mx-auto flex max-w-2xl items-end gap-2 rounded-xl border border-border bg-card/95 px-2 py-2 shadow-[0_4px_24px_color-mix(in_srgb,var(--wl-ink)_4%,transparent)] backdrop-blur-sm">
+              <div className="mx-auto flex max-w-2xl items-end gap-2 rounded-xl border border-border bg-card/95 px-2 py-2 shadow-[0_4px_24px_color-mix(in_srgb,var(--wl-ink)_4%,transparent)]">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -1050,7 +1051,7 @@ export default function StudioWorkspaceV2() {
           onChange={handleFiles}
         />
         {showCreate ? (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 grid place-items-center bg-[color-mix(in_srgb,var(--wl-ink)_20%,transparent)] p-4">
             <form onSubmit={createAgent} className="wl-stitch-auth-card w-full max-w-md shadow-2xl">
               <div className="flex items-start justify-between gap-3">
                 <div>

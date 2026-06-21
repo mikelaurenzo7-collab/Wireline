@@ -34,7 +34,7 @@
 export interface ObjectionEntry {
   /** Stable identifier — referenced in tests + analytics. */
   id: string;
-  /** Human-readable label for operator dashboards. */
+  /** Human-readable label for Account Holder dashboards. */
   label: string;
   /** Lowercased substrings/phrases that signal this objection. */
   objection_pattern: readonly string[];

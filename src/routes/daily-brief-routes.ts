@@ -95,7 +95,7 @@ router.put(
   },
 );
 
-// Send-now — operator-triggered preview email.
+// Send-now — Account Holder-triggered preview email.
 router.post(
   "/api/daily-brief/send-now",
   authenticateUser,

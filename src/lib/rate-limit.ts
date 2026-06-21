@@ -6,7 +6,7 @@
 // in-memory fallback is per-invocation only and gives near-zero
 // protection. Operators should set UPSTASH_REDIS_REST_URL +
 // UPSTASH_REDIS_REST_TOKEN in production for the limit to be global
-// across the fleet.
+// across the Assistants.
 //
 // Algorithm: fixed window with key suffix `:{floor(now / windowMs)}`.
 // One INCR + one EXPIRE per request — both are O(1) on Redis.

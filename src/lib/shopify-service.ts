@@ -19,7 +19,7 @@ import { getErrorMessage } from "./server-utils";
  * Shopify access tokens DO NOT EXPIRE, so there is no refresh logic —
  * simpler than HubSpot/Salesforce.
  *
- * If no connection exists for the operator (they haven't completed the
+ * If no connection exists for the Account Holder (they haven't completed the
  * per-store OAuth), every function logs a warning and returns a
  * graceful empty/no-op result — never throws.
  */

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
- * Owner-only endpoints for marketing/demo showcase data and founder fleet seed.
+ * Owner-only endpoints for marketing/demo showcase data and founder Assistants seed.
  */
 
 import { Router, Response } from "express";
@@ -10,7 +10,7 @@ import { eq, and, inArray, like } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { invalidateDashboard } from "../lib/dashboard-cache";
-import { seedFounderFleet, resolveFounderUserId } from "../lib/founder-fleet-seed";
+import { seedFounderFleet, resolveFounderUserId } from "../lib/founder-Assistants-seed";
 import {
   DEFAULT_DEMO_EMAIL,
   DEMO_SMS_NUMBERS,
@@ -67,7 +67,7 @@ router.post(
 );
 
 router.post(
-  "/api/admin/seed-founder-fleet",
+  "/api/admin/seed-founder-Assistants",
   authenticateUser,
   requirePlatformAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -86,8 +86,8 @@ router.post(
       invalidateDashboard(userId);
       return res.json({ ok: true, userId, email: targetEmail || process.env.OWNER_EMAIL, report });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Founder fleet seed failed";
-      log.error("Founder fleet seed failed", { error: msg });
+      const msg = e instanceof Error ? e.message : "Founder Assistants seed failed";
+      log.error("Founder Assistants seed failed", { error: msg });
       throw AppError.fromHttpStatus(500, String(msg));
     }
   },

@@ -219,7 +219,7 @@ export const createAgentSchema = z.object({
   role: z.string().min(1, "Role is required").max(200),
   vibe: z.enum(["warm", "playful", "authoritative"]).default("warm"),
   firstMessage: z.string().max(500).optional(),
-  // Operator-authored prompt that replaces the auto-composed base
+  // Account Holder-authored prompt that replaces the auto-composed base
   // identity. Capped well under the runtime prompt clamp so the dynamic
   // blocks + guardrails appended at call time still fit.
   systemPromptOverride: z.string().max(8000).optional(),
@@ -417,7 +417,7 @@ export const pronunciationEntrySchema = z.object({
 });
 
 // ============================================================================
-// Fleet Task Schemas
+// Assistants Task Schemas
 // ============================================================================
 
 export const updateFleetTaskSchema = z.object({

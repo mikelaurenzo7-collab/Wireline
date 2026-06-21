@@ -236,7 +236,7 @@ export const dialRateLimiter = createRateLimiter({
  * `/api/user-preferences` is called from the React shell on every page
  * mount (AuthContext + several settings consumers re-read it for fresh
  * state). A typical authenticated session can easily issue 40+ reads in
- * the first minute as the operator navigates between pages — way past
+ * the first minute as the Account Holder navigates between pages — way past
  * the `jobsRateLimit` ceiling of 20 / 15 min that CodeQL Autofix applied.
  *
  * Bucket is sized for an interactive UI: 240 reads/min per user, with a
@@ -261,12 +261,12 @@ export const insightsRateLimit = createRateLimiter({
 });
 
 /**
- * Fleet endpoints rate limiter.
+ * Assistants endpoints rate limiter.
  * 120 requests/min per user. The presence SSE stream opens one long-lived
  * connection per page mount; the limit primarily throttles reconnect storms.
  */
 export const fleetRateLimit = createRateLimiter({
-  bucket: "api:fleet",
+  bucket: "api:Assistants",
   windowMs: 60 * 1000,
   max: 120,
 });

@@ -82,7 +82,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
         </div>
         <p className="wl-micro-meta leading-relaxed">
           Inherit uses the tenant-wide setting. Full Auto executes actions immediately. Supervised
-          queues for approval on high-risk actions. Draft Only always requires operator sign-off.
+          queues for approval on high-risk actions. Draft Only always requires Account Holder sign-off.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/8 dark:border-white/8">
@@ -94,7 +94,7 @@ export default function ToolTogglePanel({ selectedAgent, updateAgentMeta }: Tool
               type="text"
               value={selectedAgent.slack_channel_id || ""}
               onChange={(e) => updateAgentMeta({ slack_channel_id: e.target.value.trim() || null })}
-              placeholder="#fleet-alerts"
+              placeholder="#Assistants-alerts"
               className="w-full text-xs bg-black/5 border border-white/10 rounded-md px-3 py-2 text-foreground font-mono"
             />
           </div>

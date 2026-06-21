@@ -26,7 +26,7 @@ interface EmptyStateProps {
   className?: string;
   /** Soft bloom behind the medallion constellation */
   withHalo?: boolean;
-  /** Dormant fleet constellation behind the medallion (off in compact panels) */
+  /** Dormant Assistants constellation behind the medallion (off in compact panels) */
   withConstellation?: boolean;
   /** Eyebrow label above the title. Defaults to the canonical "No data yet". */
   eyebrow?: string;

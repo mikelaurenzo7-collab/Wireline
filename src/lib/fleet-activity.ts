@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────────────────────────────
-//  Fleet activity feed math.
+//  Assistants activity feed math.
 //
-//  /api/fleet/activity merges 4 parallel queries (call logs, fleet tasks,
+//  /api/Assistants/activity merges 4 parallel queries (call logs, Assistants tasks,
 //  agent lessons, email threads) into a single time-sorted activity feed
 //  for the dashboard's Activity panel. The transformation is pure data
 //  shaping but had two real defects inline:

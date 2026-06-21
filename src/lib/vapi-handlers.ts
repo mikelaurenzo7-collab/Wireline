@@ -151,7 +151,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       vapiCallId: call?.id || "unknown",
     });
 
-    // Ping the operator's Wireline devices with a tap-to-open recap. Best-effort
+    // Ping the Account Holder's Wireline devices with a tap-to-open recap. Best-effort
     // and env-gated (no-op without APNs creds); never blocks the webhook.
     void notifyCallRecap(userId, {
       callId: vapiCallId,
@@ -160,7 +160,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       summary: analysis?.summary || null,
     });
 
-    // Post-call digest — classify outcome, log to CRM, email the operator.
+    // Post-call digest — classify outcome, log to CRM, email the Account Holder.
     // Fire-and-forget; never blocks the webhook response.
     if (insertedCallLogId !== null) {
       void runPostCallDigest({
@@ -321,7 +321,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
       lead_score: score,
       customer_number: baseOutcome.customer_number,
     });
-    // Operator SMS alert — hot lead detected. Same opt-in plumbing
+    // Account Holder SMS alert — hot lead detected. Same opt-in plumbing
     // as the escalation alerts. We only alert ≥80 (vs the webhook
     // ≥70 threshold) so the SMS pager doesn't fire on borderline
     // warm leads; the webhook is fine-grained, the SMS should be
@@ -411,7 +411,7 @@ export async function handleEndOfCallReport({ message, agent }: CallReportPayloa
 
     // A two-party-state call that completed without a detectable disclosure
     // is a genuine compliance exposure ($500–$5,000/call). Surface it loudly
-    // so the operator can act, rather than burying it as a silent ledger row.
+    // so the Account Holder can act, rather than burying it as a silent ledger row.
     if (disclosureEvent === "disclosure_not_detected" && rule === "two_party") {
       log.warn("TCPA: recording disclosure not detected on two-party-state call", {
         userId,

@@ -26,7 +26,7 @@ export const CONTACT_AGENT_TINTS = {
  * Employee lines can escalate via `escalate_to_human`. Demo lines cannot.
  *
  * Voice design: every agent gets a unique ElevenLabs voice + tuned settings
- * so prospects hear a varied, role-authentic fleet — not the same Rachel on
+ * so prospects hear a varied, role-authentic Assistants — not the same Rachel on
  * every line. Sync via POST /api/admin/sync-vapi-knowledge after edits.
  */
 
@@ -257,7 +257,7 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   },
 ];
 
-/** Real employee line for /support and operator-facing help — not landing CTAs. */
+/** Real employee line for /support and Account Holder-facing help — not landing CTAs. */
 export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
 
 /** Primary public demos on the landing page — no owner escalation. */

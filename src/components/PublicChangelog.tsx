@@ -54,7 +54,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jun 4, 2026",
     tag: "polish",
     title: "Every console page fills the screen, top to bottom",
-    body: "On larger monitors several authenticated pages — Insights, Live Ops and others — left content stranded in the upper half with dead space below. The page shell now stretches content to the full viewport height: empty states center, dashboards fill, and chat anchors its composer to the bottom. No more “cut off in the middle” on big screens.",
+    body: "On larger monitors several authenticated pages — Insights, Recaps and others — left content stranded in the upper half with dead space below. The page shell now stretches content to the full viewport height: empty states center, dashboards fill, and chat anchors its composer to the bottom. No more “cut off in the middle” on big screens.",
   },
   {
     date: "Jun 4, 2026",
@@ -102,7 +102,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "polish",
     title: "Sidebar rail — desktop chrome rebuild",
-    body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs (Live Ops · Triage · Activity · Cockpit · More).",
+    body: "The horizontal top bar gave way to a vertical sidebar rail on desktop. Collapses to 56 px when not in focus; expands to 224 px on hover or toggle. Carries logo, search, every nav destination, tier-usage badge, live phone pulse, and the avatar block. Mobile keeps its iOS-style bottom tabs (Recaps · Triage · Activity · Cockpit · More).",
   },
   {
     date: "Jan 27, 2026",

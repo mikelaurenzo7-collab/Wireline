@@ -17,14 +17,14 @@
  *     become recoverable revenue (some callers truly didn't need help).
  *   - $22/hr median US admin-assistant wage (BLS 2025 mean).
  *   - 52 weeks/year.
- *   - Wireline Operator tier ($59/mo) used as the baseline for payback math.
+ *   - Wireline Account Holder tier ($59/mo) used as the baseline for payback math.
  *     Everyday tier ($7) would shrink payback further; Custom (Custom)
  *     scales with more agents/minutes.
  *
  * Honest output:
  *   - Annual revenue recovered
  *   - Annual labor cost saved
- *   - Net annual savings AFTER Wireline Operator tier ($708)
+ *   - Net annual savings AFTER Wireline Account Holder tier ($708)
  *   - Payback days (when net first crosses zero)
  *   - A single line of plain-English summary for skim readers
  *
@@ -308,7 +308,7 @@ export default function RoiCalculator({ compact = false }: { compact?: boolean }
         <p className="mt-3 text-[8.5px] uppercase tracking-[0.22em] text-muted/45 leading-relaxed">
           Assumes Wireline recovers 82% of missed calls (the rest were wrong-numbers or
           window-shoppers). Labor saved uses $22/hr (US BLS 2025 admin-assistant median). Wireline
-          Operator tier billed at $59/mo. Switch tiers anytime.
+          Account Holder tier billed at $59/mo. Switch tiers anytime.
         </p>
       </div>
     </motion.section>

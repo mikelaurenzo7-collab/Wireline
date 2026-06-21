@@ -1,7 +1,7 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
- * Agent Workspace — per-agent operator chat (legacy surface).
+ * Agent Workspace — per-agent Account Holder chat (legacy surface).
  *
  * @deprecated Merchants use `/chat` + Director Coach mode. Routes kept for
  * PDF → agent knowledge ingest, founder broadcast, and API compatibility.
@@ -100,11 +100,11 @@ router.get(
   },
 );
 
-// POST /api/agents/:id/workspace/messages — operator sends, agent replies.
+// POST /api/agents/:id/workspace/messages — Account Holder sends, agent replies.
 router.post(
   "/api/agents/:id/workspace/messages",
   authenticateUser,
-  // Per-user throttle (60/min) so a spammy operator can't run up model
+  // Per-user throttle (60/min) so a spammy Account Holder can't run up model
   // cost — cheaper + safer than downgrading the model's intelligence.
   claudeRateLimiter,
   validateBody(workspaceMessageSchema),
@@ -161,15 +161,15 @@ router.post(
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
-        role: m.role === "operator" ? ("operator" as const) : ("agent" as const),
+        role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
         content: m.content,
       }));
 
-      // Persist the operator's message immediately so it survives any LLM failure downstream.
+      // Persist the Account Holder's message immediately so it survives any LLM failure downstream.
       await drizzle.insert(schema.agentConversationMessages).values({
         userId: req.user.id,
         agentId,
-        role: "operator",
+        role: "Account Holder",
         content: operatorMessage,
       });
 
@@ -268,15 +268,15 @@ router.post(
         .limit(CLAUDE_CONTEXT_WINDOW);
 
       const history = priorMessages.reverse().map((m) => ({
-        role: m.role === "operator" ? ("operator" as const) : ("agent" as const),
+        role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
         content: m.content,
       }));
 
-      // Persist operator message
+      // Persist Account Holder message
       await drizzle.insert(schema.agentConversationMessages).values({
         userId: req.user.id,
         agentId,
-        role: "operator",
+        role: "Account Holder",
         content: operatorMessage,
       });
 
@@ -284,7 +284,7 @@ router.post(
 
       const DIRECT_AGENT_TOOL_SCHEMA = {
         name: "direct_agent",
-        description: "Reply to the operator and propose changes.",
+        description: "Reply to the Account Holder and propose changes.",
         input_schema: {
           type: "object" as const,
           properties: {
@@ -302,9 +302,9 @@ router.post(
       const system = `You are ${name}, a Wireline AI ${role}. Reply in first person, warm and concise.`;
       const transcript = history
         .slice(-12)
-        .map((m) => `${m.role === "operator" ? "Operator" : "You"}: ${m.content}`)
+        .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You"}: ${m.content}`)
         .join("\n");
-      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${operatorMessage}`;
+      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${operatorMessage}`;
 
       try {
         const { result, thinking, thinkingDurationMs } = await runStructuredStream(
@@ -428,7 +428,7 @@ router.post(
       }
 
       // Append an "agent" message to the workspace thread acknowledging
-      // the file. Operator sees this immediately as if the agent
+      // the file. Account Holder sees this immediately as if the agent
       // reviewed the upload. Keeps the chat surface coherent.
       const ack = `Got it — I read **${fileName || "the file"}** and pulled out ${inserted} knowledge ${inserted === 1 ? "item" : "items"} I'll reference on future calls. Want me to summarize what stood out?`;
       await drizzle.insert(schema.agentConversationMessages).values({
@@ -480,7 +480,7 @@ router.delete(
 );
 
 // POST /api/agents/:id/workspace/apply-change — apply a single allowlisted
-// config change the operator approved from a chat proposal card. Only the
+// config change the Account Holder approved from a chat proposal card. Only the
 // fields in WORKSPACE_FIELDS can be written this way; values are validated
 // the same way the planner validates them before proposing.
 router.post(
@@ -614,7 +614,7 @@ router.post(
           type: kind,
           priority: "high",
           payload,
-          reasoning: "Operator-approved action from agent chat",
+          reasoning: "Account Holder-approved action from agent chat",
           agentId,
         },
         { sourceId: agentId, sourceType: "workspace_chat" },

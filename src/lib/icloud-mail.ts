@@ -44,7 +44,7 @@ function formatAddressList(
 }
 
 /**
- * Prove the operator's iCloud Mail app-specific password works before we store it.
+ * Prove the Account Holder's iCloud Mail app-specific password works before we store it.
  */
 export async function verifyIcloudMailCredentials(
   email: string,

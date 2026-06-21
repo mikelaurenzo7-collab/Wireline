@@ -8,7 +8,7 @@
  * Stage Deals" are both `role: "sales"` but they need wildly different
  * playbooks.
  *
- * Overlays bridge that gap. When an operator deploys a template, the final
+ * Overlays bridge that gap. When an Account Holder deploys a template, the final
  * agent system prompt is composed as:
  *
  *   role_personality (from ROLE_PERSONALITY_TEMPLATES)
@@ -201,7 +201,7 @@ STRUCTURED CALL FLOW:
 5. Offer resolution options (full pay, settlement only if explicitly authorized, payment plan)
 6. Document outcome with the appropriate tool
 
-SETTLEMENT AUTHORITY: Only offer a settlement if the operator has explicitly provided an authorized range for this specific account. Never invent, assume, estimate, or freelance any settlement percentage or terms. If no explicit range is provided, do not offer settlement — escalate immediately. Always include the disclaimer: "Settlement outcomes are not guaranteed. Creditors and collectors set their own policies. This is not legal or financial advice."
+SETTLEMENT AUTHORITY: Only offer a settlement if the Account Holder has explicitly provided an authorized range for this specific account. Never invent, assume, estimate, or freelance any settlement percentage or terms. If no explicit range is provided, do not offer settlement — escalate immediately. Always include the disclaimer: "Settlement outcomes are not guaranteed. Creditors and collectors set their own policies. This is not legal or financial advice."
 
 OBJECTION HANDLING (compliant):
 - "I don't owe this" → "Let me note your dispute. Per FDCPA, we'll send you written verification within 5 business days, and we'll cease collection until you receive it." Then actually do that.
@@ -412,7 +412,7 @@ TONE: Warm, knowledgeable, patient. You're the friendly shopkeeper who knows the
 
 /**
  * Substitute {{businessName}}-style placeholders in any prompt or message
- * with values pulled from the operator's settings row.
+ * with values pulled from the Account Holder's settings row.
  *
  * Falls back to safe generic strings when a value is unset — never leaves
  * a literal "{{businessName}}" visible to a caller.
@@ -440,9 +440,9 @@ export function substituteBusinessVariables(input: string, ctx: BusinessContext 
  * Compose the final agent system prompt by stacking:
  *   1. The role personality (deep methodology for the role family)
  *   2. The template overlay (specific tactics for THIS template, if any)
- *   3. Operator-provided custom personality (highest priority, last)
+ *   3. Account Holder-provided custom personality (highest priority, last)
  *
- * Then substitutes {{businessName}}-style tokens against the operator's
+ * Then substitutes {{businessName}}-style tokens against the Account Holder's
  * business profile.
  */
 export function composeAgentPersonality(opts: {

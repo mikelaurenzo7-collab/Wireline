@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Phone, X } from "lucide-react";
 import { authFetch } from "../lib/api";
-import { fetchFleetSetupProgress } from "../lib/fleet-setup-progress";
+import { fetchFleetSetupProgress } from "../lib/Assistants-setup-progress";
 import {
   fetchActivationStatusFull,
   isActivationCelebrated,
@@ -85,7 +85,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
     <div
       className={cn(
         WL_OPS_CLASSES.setupNudge,
-        // Compact footprint — reduces vertical chrome on dense boards (Pipeline, Live Ops)
+        // Compact footprint — reduces vertical chrome on dense boards (Pipeline, Recaps)
         "flex flex-col sm:flex-row sm:items-center gap-2 mx-4 mt-2 mb-0.5 py-2 px-3 text-[12px]",
         className,
       )}

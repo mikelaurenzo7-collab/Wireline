@@ -4,9 +4,9 @@
  * A Wireline account is one of two shapes:
  *   - "personal"  — one agent on your own line. You shape it in the Studio and
  *                   reach people over your Channels (phone, email, text). No
- *                   fleet, no supervisor cockpit, no SDR pipeline.
- *   - "business"  — the full platform: a fleet of agents plus the Command run
- *                   surface (Live Ops, Insights, Pipeline).
+ *                   Assistants, no supervisor cockpit, no SDR pipeline.
+ *   - "business"  — the full platform: a Assistants of agents plus the Command run
+ *                   surface (Recaps, Insights, Pipeline).
  *
  * The mode is a lens over the same app, not a different app. It filters which
  * navigation surfaces are offered; it is NOT a security boundary — routes are
@@ -18,8 +18,8 @@ import { NAV_GROUPS, SIDEBAR_NAV_ITEMS, type NavItem } from "../constants/naviga
 export type AccountType = "personal" | "business";
 
 /**
- * Nav groups that only make sense for a business. The "Run" group is the fleet
- * run surface — supervisor cockpit (Live Ops), cross-agent intelligence
+ * Nav groups that only make sense for a business. The "Run" group is the Assistants
+ * run surface — supervisor cockpit (Recaps), cross-agent intelligence
  * (Insights), and the SDR pipeline — none of which a personal, single-agent
  * Wireline needs. Build (Studio), Channels, and Admin are shared by both modes.
  *

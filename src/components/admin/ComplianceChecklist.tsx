@@ -82,7 +82,7 @@ export default function ComplianceChecklist() {
             Compliance checklist
           </p>
           <p className="text-[12px] text-muted leading-relaxed max-w-xl">
-            Operator-facing controls for regulated buyers. {doneCount}/{items.length} complete
+            Account Holder-facing controls for regulated buyers. {doneCount}/{items.length} complete
             {dncCount != null ? ` · ${dncCount} DNC entries` : ""}.
           </p>
         </div>

@@ -1,5 +1,5 @@
 /**
- * Founder account bootstrap — enterprise entitlements + full agent fleet.
+ * Founder account bootstrap — enterprise entitlements + full agent Assistants.
  * Invoked from auth bootstrap (not hot read paths like GET /api/agents).
  */
 import { eq, sql } from "drizzle-orm";
@@ -91,11 +91,11 @@ export async function bootstrapFounderFleetIfEmpty(
       }
 
       await seedFounderFleet(userId);
-      log.info("founder fleet bootstrap completed", { userId, priorAgentCount: count });
+      log.info("founder Assistants bootstrap completed", { userId, priorAgentCount: count });
       return { seeded: true, skipped: false, subscriptionEnsured: true };
     });
   } catch (e) {
-    log.warn("founder fleet bootstrap failed", { userId, error: getErrorMessage(e) });
+    log.warn("founder Assistants bootstrap failed", { userId, error: getErrorMessage(e) });
     return { seeded: false, skipped: false };
   } finally {
     bootstrapInFlight.delete(userId);

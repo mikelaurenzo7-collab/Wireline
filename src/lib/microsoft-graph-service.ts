@@ -14,7 +14,7 @@ import { getErrorMessage } from "./server-utils";
  * Deliberately separate from the Outlook mail/calendar connection
  * (which lives in emailAccounts / calendarAccounts). These live in
  * crmConnections and never touch the Outlook flow, so connecting
- * Teams or Excel can never disturb an operator's existing email sync.
+ * Teams or Excel can never disturb an Account Holder's existing email sync.
  *
  * Microsoft access tokens last ~1 hour; tokens are stored encrypted
  * and auto-refreshed when within 5 minutes of expiry.
@@ -246,7 +246,7 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** List teams + channels the operator can post to (for Admin channel picker). */
+/** List teams + channels the Account Holder can post to (for Admin channel picker). */
 export async function listTeamsNotifyTargets(userId: string): Promise<TeamsChannelOption[]> {
   const token = await getAccessToken(userId, "microsoft_teams");
   if (!token) return [];
@@ -323,7 +323,7 @@ export async function bootstrapTeamsNotifyTarget(userId: string): Promise<boolea
   return true;
 }
 
-/** Resolve (and cache) the operator's default team + channel. */
+/** Resolve (and cache) the Account Holder's default team + channel. */
 async function resolveTeamsTarget(
   token: string,
   conn: GraphConnection,

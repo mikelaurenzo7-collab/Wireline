@@ -316,7 +316,7 @@ const CATEGORIES = [
   "Personal & Lifestyle",
 ] as const;
 
-// Recommended default voice gender per template. Operator can override in
+// Recommended default voice gender per template. Account Holder can override in
 // the deploy modal — this is just a smart starting point so the toggle
 // lands on a sensible default for the use case (e.g. assertive collections
 // reads better as male, salon receptionist as female).
@@ -391,12 +391,12 @@ function TemplateCard({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {/* Deployed-in-fleet badge */}
+            {/* Deployed-in-Assistants badge */}
             {alreadyDeployed && (
               <span
                 className="px-1.5 py-0.5 rounded-full border wl-label leading-none flex items-center gap-1 wl-status-success border wl-text-success"
                 title={
-                  deployedCount === 1 ? "Already in your fleet" : `${deployedCount} in your fleet`
+                  deployedCount === 1 ? "Already in your Assistants" : `${deployedCount} in your Assistants`
                 }
               >
                 <Check className="w-2.5 h-2.5" />
@@ -506,7 +506,7 @@ export default function AgentTemplates() {
   const [deployedNames, setDeployedNames] = useState<string[]>([]);
   const [modalTemplate, setModalTemplate] = useState<Template | null>(null);
 
-  // Pull the current fleet so each template card can render a 'Deployed'
+  // Pull the current Assistants so each template card can render a 'Deployed'
   // badge + 'Deploy Another' button when an agent with the matching name
   // already exists. Refetches after every successful deploy below.
   const refetchAgents = async () => {
@@ -553,10 +553,10 @@ export default function AgentTemplates() {
     return matchesCategory && matchesSearch;
   });
 
-  // Step 1: clicking "Deploy" opens the modal so the operator can name
+  // Step 1: clicking "Deploy" opens the modal so the Account Holder can name
   // the agent and pick a voice (male / female + specific voice). Step 2
   // (handleConfirmedDeploy) actually POSTs to /api/agents with the
-  // values the operator chose.
+  // values the Account Holder chose.
   const handleOpenDeploy = (template: Template) => {
     if (deploying) return;
     setModalTemplate(template);
@@ -572,16 +572,16 @@ export default function AgentTemplates() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: uniqueId,
-          // Operator-chosen name (defaults to template.name, fully editable)
+          // Account Holder-chosen name (defaults to template.name, fully editable)
           name: values.name,
           channel: modalTemplate.channel,
           role: modalTemplate.role,
-          // Operator-chosen voice — 11labs/OpenAI id selected by gender
+          // Account Holder-chosen voice — 11labs/OpenAI id selected by gender
           // toggle + optional specific voice picker in the modal.
           voice_id: values.voiceId,
           // templateId drives the server-side personality overlay; firstMessage
           // is the opener with {{businessName}}-style placeholders substituted
-          // server-side from the operator's settings row.
+          // server-side from the Account Holder's settings row.
           templateId: modalTemplate.id,
           firstMessage: modalTemplate.firstMessage,
         }),
@@ -696,7 +696,7 @@ export default function AgentTemplates() {
                 role: modalTemplate.role,
                 channel: modalTemplate.channel,
                 firstMessage: modalTemplate.firstMessage,
-                // Recommend a default gender per template — operator can override
+                // Recommend a default gender per template — Account Holder can override
                 defaultGender: DEFAULT_GENDER_BY_TEMPLATE[modalTemplate.id] ?? "female",
               }
             : null

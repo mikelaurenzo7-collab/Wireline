@@ -420,7 +420,7 @@ router.get(
 
 /**
  * 1.7 LEAD DOSSIERS — Fetch dossiers for a list of customer numbers.
- * Used by the Command Center to populate caller intelligence cards.
+ * Used by the Recaps to populate caller intelligence cards.
  */
 router.get(
   "/api/dashboard/dossiers",

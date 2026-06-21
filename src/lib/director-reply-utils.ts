@@ -90,11 +90,11 @@ export function operatorTurnHasDirectorReply(
   operatorContent: string,
 ): boolean {
   const needle = operatorContent.trim();
-  const index = messages.findIndex((message) => message.role === "operator" && message.content.trim() === needle);
+  const index = messages.findIndex((message) => message.role === "Account Holder" && message.content.trim() === needle);
   if (index < 0) return false;
 
   for (const message of messages.slice(index + 1)) {
-    if (message.role === "operator") break;
+    if (message.role === "Account Holder") break;
     if (messageHasRecoverableContent(message)) return true;
   }
   return false;
@@ -105,7 +105,7 @@ export function collapseDirectorThreadDuplicates<T extends { role: string; conte
 ): T[] {
   let lastOperatorIndex = -1;
   return messagesAsc.filter((message, index) => {
-    if (message.role === "operator") {
+    if (message.role === "Account Holder") {
       lastOperatorIndex = index;
       return true;
     }

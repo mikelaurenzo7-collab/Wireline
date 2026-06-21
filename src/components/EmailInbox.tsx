@@ -310,7 +310,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   const handlePhoneHandoff = async (thread: any) => {
     try {
-      await authFetch("/api/fleet/tasks", {
+      await authFetch("/api/Assistants/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -613,7 +613,7 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
                           disableAnimations
                           onClick={() => handlePhoneHandoff(selectedThread)}
                           className="rounded-full border-brand/40 bg-brand/[0.06] text-brand text-[11px] uppercase tracking-[0.22em] hover:bg-brand/12 hover:border-brand/60"
-                          title="Route this thread to a voice fleet agent"
+                          title="Route this thread to a voice Assistants agent"
                         >
                           <Phone className="w-3 h-3 text-brand" />
                           Voice handoff

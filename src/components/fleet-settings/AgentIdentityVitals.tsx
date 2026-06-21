@@ -4,11 +4,11 @@
  *
  * A calm, inline summary (not a grid of boxes) of the focused agent's essence:
  * who answers, in what voice, on what brain, at what number. It anchors the
- * single-focus Studio canvas so the operator always sees the agent's identity
+ * single-focus Studio canvas so the Account Holder always sees the agent's identity
  * while they tune the sections below.
  */
 import { Phone, AudioLines, Cpu, Radio } from "lucide-react";
-import { PREMIUM_VOICES } from "../fleet/helpers";
+import { PREMIUM_VOICES } from "../Assistants/helpers";
 
 function voiceLabel(agent: any): string {
   const id = agent?.voice_id;

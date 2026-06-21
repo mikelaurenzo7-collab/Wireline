@@ -982,7 +982,7 @@ router.post(
         return res.status(503).json({
           error:
             "Stripe Customer Portal is not configured. " +
-            "An operator must save the default portal configuration in the Stripe Dashboard.",
+            "An Account Holder must save the default portal configuration in the Stripe Dashboard.",
           code: "PORTAL_NOT_CONFIGURED",
         });
       }
@@ -1016,7 +1016,7 @@ router.post(
  * POST adjusts the count up or down. Adjusts the Stripe subscription item
  * quantity in lockstep with the DB column.
  *
- * Operator flow:
+ * Account Holder flow:
  *   1. Pricing page promises "add extra agents at $X/each"
  *   2. Admin → Billing surfaces the current count + price + add/remove buttons
  *   3. Posting here updates `extra_agents` column + Stripe subscription item

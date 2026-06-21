@@ -26,7 +26,7 @@ import { relations, sql } from "drizzle-orm";
 
 /**
  * A user can own one or two accounts — a personal account (single agent,
- * streamlined UI) and/or a business account (fleet, command centre, SDR
+ * streamlined UI) and/or a business account (Assistants, command centre, SDR
  * pipeline). The first account type created at signup becomes the
  * "primary" account. Agents, settings, and billing scope to an account,
  * not directly to a user.
@@ -131,7 +131,7 @@ export const settings = pgTable("wireline_settings", {
   trialOutboundCount: integer("trial_outbound_count").default(0),
   maxAgents: integer("max_agents").default(3),
   // Additional agents purchased à la carte beyond the plan's included
-  // max_agents. When this is N, the operator can deploy
+  // max_agents. When this is N, the Account Holder can deploy
   // (plan.max_agents + N) agents. Mutated only via the
   // /api/billing/extra-agents endpoint which also adjusts the Stripe
   // subscription item quantity for billing. Defaults to 0.
@@ -150,7 +150,7 @@ export const settings = pgTable("wireline_settings", {
   businessName: text("business_name"),
   /** Industry / vertical label for template overlays and Director context. */
   businessType: text("business_type"),
-  /** Primary offer or product line — surfaced in Director fleet planning. */
+  /** Primary offer or product line — surfaced in Director Assistants planning. */
   primaryProduct: text("primary_product"),
   /** Tenant-wide operating hours (JSON) for template {{operatingHours}} substitution. */
   businessHours: jsonb("business_hours"),
@@ -163,7 +163,7 @@ export const settings = pgTable("wireline_settings", {
   twilioWhatsappFromNumber: text("twilio_whatsapp_from_number"),
   twilioManagerAlertNumber: text("twilio_manager_alert_number"),
   vapiPhoneInboundAgentId: text("vapi_phone_inbound_agent_id"),
-  // Operator's personal callback number (E.164). When they "take" a live call
+  // Account Holder's personal callback number (E.164). When they "take" a live call
   // from the Wireline app, the agent warm-transfers the caller here. iOS can't
   // read the device's own number, so the user sets this once.
   handoffPhone: text("handoff_phone"),
@@ -260,7 +260,7 @@ export const deletionQueue = pgTable(
   }),
 );
 
-// 2. FLEET INVENTORY (AGENTS)
+// 2. Assistants INVENTORY (AGENTS)
 export const agents = pgTable(
   "wireline_agents",
   {
@@ -326,7 +326,7 @@ export const agents = pgTable(
      */
     personalityVibe: text("personality_vibe").default("warm"),
     /**
-     * Operator-authored system prompt that fully REPLACES the
+     * Account Holder-authored system prompt that fully REPLACES the
      * auto-composed base identity prompt at call time. When set and
      * non-empty, the Vapi assistant factory uses this text as the base
      * identity block instead of the generated "## IDENTITY & MISSION"
@@ -513,7 +513,7 @@ export const agentLessons = pgTable(
 );
 
 // Per-tenant cloned voices — voice_id is the ElevenLabs UUID, name
-// is the operator-given label, preview_url is the ElevenLabs-hosted
+// is the Account Holder-given label, preview_url is the ElevenLabs-hosted
 // MP3 sample. Pluggable directly into Vapi assistant configs (Vapi
 // accepts any ElevenLabs voice_id when the API key on file has
 // access to it).
@@ -549,7 +549,7 @@ export const clonedVoices = pgTable(
 //
 // `active` lets operators toggle a dictionary off without deleting it
 // (e.g. seasonal vocabularies, A/B testing legal vs medical jargon
-// across the same fleet).
+// across the same Assistants).
 export const pronunciationDictionaries = pgTable(
   "wireline_pronunciation_dictionaries",
   {
@@ -574,15 +574,15 @@ export const pronunciationDictionaries = pgTable(
   }),
 );
 
-// Per-agent operator chat thread. Persistent, ongoing — distinct from
+// Per-agent Account Holder chat thread. Persistent, ongoing — distinct from
 // /train which is structural agent configuration. Think of this as the
-// private DM channel the operator has with each AI agent: ongoing
+// private DM channel the Account Holder has with each AI agent: ongoing
 // direction, coaching, "how did the calls go this week?", file-attached
 // context. Memory is the thread itself plus the agent's flow + recent
 // call summaries injected as context at LLM time.
 //
-// One thread per (userId, agentId). When the operator sends, we store
-// a row with role="operator". Claude reads thread history + agent
+// One thread per (userId, agentId). When the Account Holder sends, we store
+// a row with role="Account Holder". Claude reads thread history + agent
 // config + recent calls, replies, and we store the reply with
 // role="agent". Soft-delete on agent delete via cascade.
 export const agentConversationMessages = pgTable(
@@ -593,7 +593,7 @@ export const agentConversationMessages = pgTable(
     agentId: text("agent_id")
       .references(() => agents.id, { onDelete: "cascade" })
       .notNull(),
-    // role is one of "operator" | "agent" — DB-level CHECK constraint
+    // role is one of "Account Holder" | "agent" — DB-level CHECK constraint
     // lives in the migration (this Drizzle version doesn't expose .$type()).
     role: text("role").notNull(),
     content: text("content").notNull(),
@@ -609,18 +609,18 @@ export const agentConversationMessages = pgTable(
 // Director chat — the account-level strategist thread.
 //
 // Unlike agentConversationMessages (one thread per agent), the Director is a
-// single per-USER thread. It's always available — even before the operator
+// single per-USER thread. It's always available — even before the Account Holder
 // owns any agents — and acts as the manager that helps plan, set up, and
-// coach the fleet. role is "operator" | "director". No agent FK: the Director
+// coach the Assistants. role is "Account Holder" | "director". No agent FK: the Director
 // exists at the account level, so its history survives agent deletions.
 export const directorConversationMessages = pgTable(
   "wireline_director_conversation_messages",
   {
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
-    /** director = fleet chat; painter = Wireline Design studio (/design). */
+    /** director = Assistants chat; painter = Wireline Design studio (/design). */
     threadKey: text("thread_key").notNull().default("director"),
-    // role is one of "operator" | "director" — DB-level CHECK constraint
+    // role is one of "Account Holder" | "director" — DB-level CHECK constraint
     // lives in the migration (this Drizzle version doesn't expose .$type()).
     role: text("role").notNull(),
     content: text("content").notNull(),
@@ -965,7 +965,7 @@ export const smsMessages = pgTable(
     direction: text("direction").notNull(), // 'in' or 'out'
     body: text("body").notNull(),
     twilioSid: text("twilio_sid"),
-    /** Optional agent that authored an outbound message. Null for inbound + operator replies. */
+    /** Optional agent that authored an outbound message. Null for inbound + Account Holder replies. */
     agentId: text("agent_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
@@ -1123,7 +1123,7 @@ export const supervisorSubscriptions = pgTable(
   }),
 );
 
-// 3.2 FLEET HANDOFF (TASKS)
+// 3.2 Assistants HANDOFF (TASKS)
 export const fleetTasks = pgTable(
   "wireline_fleet_tasks",
   {
@@ -1230,7 +1230,7 @@ export const outboundLeads = pgTable(
     callId: text("call_id"),
     lastCalledAt: timestamp("last_called_at", { withTimezone: true }),
     /**
-     * When the agent or operator scheduled the next outreach attempt. Drives
+     * When the agent or Account Holder scheduled the next outreach attempt. Drives
      * `/api/callbacks` and the "Upcoming Callbacks" pane in OutboundDialer.
      */
     callbackScheduledAt: timestamp("callback_scheduled_at", { withTimezone: true }),
@@ -1287,7 +1287,7 @@ export const signalPresence = pgTable(
     label: text("label").default("Live · Active"),
     type: text("type").default("voice"),
     // Vapi live-call control URL (monitor.controlUrl) captured from the
-    // webhook. Lets the operator transfer/take an in-progress call from the
+    // webhook. Lets the Account Holder transfer/take an in-progress call from the
     // mobile app without raw Twilio access. NULL until Vapi reports it.
     controlUrl: text("control_url"),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
@@ -1645,7 +1645,7 @@ export const crmConnections = pgTable(
      * Human-readable account label written by the OAuth callbacks: the
      * Salesforce/HubSpot owner email, the Slack workspace name, or the
      * Zoom account type. Surfaced by GET /api/oauth/crm/status so the
-     * operator can confirm which workspace/account is connected without
+     * Account Holder can confirm which workspace/account is connected without
      * re-running the OAuth flow.
      */
     connectedEmail: text("connected_email"),
@@ -1728,7 +1728,7 @@ export const leadDossiers = pgTable(
 
 // 4.9 PERFORMANCE GOALS
 //
-// Operator-set monthly fleet targets — e.g. "book 40 appointments this
+// Account Holder-set monthly Assistants targets — e.g. "book 40 appointments this
 // month". One row per (user_id, metric); POST /api/goals upserts on that
 // pair. Nothing about progress is stored here: the /api/goals route
 // computes the live actual from call logs + appointments scoped to the
@@ -1743,7 +1743,7 @@ export const goals = pgTable(
     metric: text("metric").notNull(),
     // Monthly target — always a positive integer (validated route-side).
     target: integer("target").notNull(),
-    // Optional operator label shown above the goal card.
+    // Optional Account Holder label shown above the goal card.
     label: text("label"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

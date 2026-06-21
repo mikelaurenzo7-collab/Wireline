@@ -33,7 +33,7 @@ function warnNoRedisOnce(): void {
   if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
     log.warn(
       "[daily-spend] UPSTASH_REDIS_REST_URL not set — 24h Claude cap is per-instance only. " +
-        "Configure Upstash Redis for fleet-wide protection.",
+        "Configure Upstash Redis for Assistants-wide protection.",
     );
   }
 }

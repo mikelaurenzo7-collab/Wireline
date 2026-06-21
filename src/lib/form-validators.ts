@@ -372,12 +372,12 @@ export const GeminiAgentExtractionSchema = z.object({
 });
 export type GeminiAgentExtraction = z.infer<typeof GeminiAgentExtractionSchema>;
 
-// ─── Fleet Task Schema ───────────────────────────────────────────────────────
+// ─── Assistants Task Schema ───────────────────────────────────────────────────────
 
 const FLEET_TASK_PRIORITIES_VALUES = ["low", "medium", "high"] as const;
 const FLEET_TASK_TARGET_CHANNELS = ["email", "manual", "phone", "sms"] as const;
 
-/** POST /api/fleet/tasks — validated body for creating a fleet task. */
+/** POST /api/Assistants/tasks — validated body for creating a Assistants task. */
 export const FleetTaskCreateSchema = z.object({
   description: z
     .string()

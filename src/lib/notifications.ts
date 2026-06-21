@@ -39,7 +39,7 @@ export class NotificationService {
   ) {}
 
   /**
-   * Positive call outcome — Slack (normal) only; no urgent SMS unless operator opted in elsewhere.
+   * Positive call outcome — Slack (normal) only; no urgent SMS unless Account Holder opted in elsewhere.
    */
   async sendWinAlert(params: {
     title: string;

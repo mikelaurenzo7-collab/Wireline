@@ -37,11 +37,11 @@ const PACKS: Record<
   },
   insurance: {
     title: "Insurance agencies",
-    subtitle: "Carrier-grade logging with operator oversight.",
+    subtitle: "Carrier-grade logging with Account Holder oversight.",
     bullets: [
       "Call transcripts and outcome classification",
       "CRM auto-log for HubSpot/Salesforce paths",
-      "Supervisor live floor and approvals",
+      "Supervisor Active calls and approvals",
       "Encryption in transit and at rest",
     ],
     disclaimer:

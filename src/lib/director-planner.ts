@@ -3,10 +3,10 @@
  * Director chat.
  *
  * The Director is distinct from the per-agent workspace planner:
- *   - It's account-level (one thread per operator), not bound to a single agent.
+ *   - It's account-level (one thread per Account Holder), not bound to a single agent.
  *   - It's available from the very first login, BEFORE any agents exist, so it
  *     doubles as the guided-setup concierge ("what should my first agent do?").
- *   - It coaches agents when the operator selects one in the Coach menu.
+ *   - It coaches agents when the Account Holder selects one in the Coach menu.
  *     Config / capability / action proposals flow through approval cards in
  *     this same thread — no separate per-agent chat surface.
  *
@@ -14,7 +14,7 @@
  *   - Normal turns run on Sonnet — high-frequency, latency-sensitive, cheap.
  *   - Heavy deliverables (business plan, competitor research) may auto-escalate
  *     to Opus without adaptive thinking.
- *   - Adaptive thinking (Deep analysis) runs only when the operator toggles Deep.
+ *   - Adaptive thinking (Deep analysis) runs only when the Account Holder toggles Deep.
  */
 import { runStructuredWithThinking } from "./claude-structured";
 import { CLAUDE_DIRECTOR_MODEL, CLAUDE_MODELS } from "./claude-models";
@@ -25,7 +25,7 @@ import {
   type DirectorBusinessContext,
   type DirectorFleetAgent,
   type DirectorFleetPlan,
-} from "./director-fleet-plan";
+} from "./director-Assistants-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import {
@@ -52,14 +52,14 @@ export type {
   DirectorBusinessContext,
   DirectorIntegrationJob,
   DirectorProposedAction,
-} from "./director-fleet-plan";
+} from "./director-Assistants-plan";
 
 export {
   DIRECTOR_SUGGESTION_KINDS,
   type DirectorSuggestionKind,
   type DirectorSuggestion,
   type DirectorFleetAgent,
-} from "./director-fleet-plan";
+} from "./director-Assistants-plan";
 
 export interface DirectorPlan extends DirectorFleetPlan {
   /** Which model tier handled this turn (for UI/telemetry). */
@@ -78,9 +78,9 @@ export interface PlanDirectorInput {
   shallowOnly?: boolean;
   userId: string;
   operatorMessage: string;
-  history: Array<{ role: "operator" | "director"; content: string }>;
-  fleet: DirectorFleetAgent[];
-  /** Aggregate activity context across the whole fleet (last 7d). */
+  history: Array<{ role: "Account Holder" | "director"; content: string }>;
+  Assistants: DirectorFleetAgent[];
+  /** Aggregate activity context across the whole Assistants (last 7d). */
   stats?: {
     calls7d?: number;
     bookings7d?: number;
@@ -98,7 +98,7 @@ function buildSystemPrompt(
 ): string {
   const fleetAudit = wantsFleetAudit(input.operatorMessage);
   return buildDirectorFleetSystemPrompt({
-    fleet: input.fleet,
+    Assistants: input.Assistants,
     stats: input.stats,
     business: input.business,
     deep,
@@ -113,10 +113,10 @@ function buildSystemPrompt(
 function buildUserContent(input: PlanDirectorInput, researchBlock?: string): string {
   const transcript = input.history
     .slice(-12)
-    .map((m) => `${m.role === "operator" ? "Operator" : "You (Director)"}: ${m.content}`)
+    .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You (Director)"}: ${m.content}`)
     .join("\n");
   const prefix = transcript ? `Conversation so far:\n${transcript}\n\n` : "";
-  const base = `${prefix}Operator's new message:\n${input.operatorMessage}`;
+  const base = `${prefix}Account Holder's new message:\n${input.operatorMessage}`;
   return appendResearchToUserPrompt(base, researchBlock);
 }
 
@@ -132,17 +132,17 @@ interface RawDirectorReply extends Record<string, unknown> {
  */
 export function normalizeDirectorPlan(
   raw: RawDirectorReply,
-  fleet: DirectorFleetAgent[],
+  Assistants: DirectorFleetAgent[],
   model: "sonnet" | "opus",
   operatorMessage?: string,
 ): DirectorPlan {
-  const fleetPlan = normalizeDirectorFleetPlan(raw, fleet, operatorMessage);
+  const fleetPlan = normalizeDirectorFleetPlan(raw, Assistants, operatorMessage);
   return { ...fleetPlan, model };
 }
 
 /**
  * Plan one Director turn. Sonnet by default; escalates to Opus + adaptive
- * thinking when the operator toggles Deep analysis (`forceDeep`). Throws if the
+ * thinking when the Account Holder toggles Deep analysis (`forceDeep`). Throws if the
  * model layer is unavailable — the caller decides the fallback copy.
  */
 export async function planDirector(input: PlanDirectorInput): Promise<DirectorPlan> {
@@ -181,7 +181,7 @@ export async function planDirector(input: PlanDirectorInput): Promise<DirectorPl
   });
   const plan = normalizeDirectorPlan(
     raw,
-    input.fleet,
+    input.Assistants,
     useOpus ? "opus" : "sonnet",
     input.operatorMessage,
   );

@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { Plus, Loader2, Sparkles, Briefcase } from "lucide-react";
 import { motion } from "motion/react";
-import { AGENT_ROLES, type RoleValue } from "../fleet/helpers";
+import { AGENT_ROLES, type RoleValue } from "../Assistants/helpers";
 import { ClaudeRecipeButton } from "../ClaudeRecipes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -17,7 +17,7 @@ interface Props {
   isCreating: boolean;
   agents: any[];
   subscription: { status: string; max_agents: number | null };
-  /** Personal accounts create a single assistant — no fleet/seed language. */
+  /** Personal accounts create a single assistant — no Assistants/seed language. */
   isPersonal?: boolean;
   onCreate: (data: { id: string; name: string; channel: string; role: RoleValue }) => void;
   onSeedFleet: () => void;

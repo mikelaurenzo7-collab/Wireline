@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
- * AgentListPanel — Fleet sidebar showing all agents + create form.
+ * AgentListPanel — Assistants sidebar showing all agents + create form.
  * Extracted from the monolithic FleetSettings.tsx during the 2026 audit.
  */
 import { Bot, Mail, Loader2, Shield, Trash2, ChevronRight, PanelLeftClose } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
-import { RoleBadge } from "../fleet/helpers";
+import { RoleBadge } from "../Assistants/helpers";
 import CreateAgentSection from "./CreateAgentSection";
-import type { RoleValue } from "../fleet/helpers";
+import type { RoleValue } from "../Assistants/helpers";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -22,7 +22,7 @@ interface Props {
   isDeletingAgent: string | null;
   agentStats: Record<string, any>;
   subscription: { status: string; max_agents: number | null };
-  /** Personal accounts get a single-assistant framing (no fleet/seed language). */
+  /** Personal accounts get a single-assistant framing (no Assistants/seed language). */
   isPersonal?: boolean;
   onSelectAgent: (agent: any) => void;
   onDeleteAgent: (agent: { id: string; name: string }) => void;
@@ -112,7 +112,7 @@ export default function AgentListPanel({
       <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-3 shrink-0">
         <div className="min-w-0">
           <p className="app-section-title mb-0.5">
-            {isPersonal ? "Personal · Assistant" : "Fleet · Agents"}
+            {isPersonal ? "Personal · Assistant" : "Assistants · Agents"}
           </p>
           <h2 className="font-display italic text-2xl text-foreground leading-none mt-0.5 flex items-center gap-2">
             <Shield className="w-4 h-4 text-brand" />
@@ -143,7 +143,7 @@ export default function AgentListPanel({
           {isLoading ? (
             <ClientRouteLoading
               icon={<Bot className="w-6 h-6" />}
-              label="Loading fleet"
+              label="Loading Assistants"
               className="py-12"
             />
           ) : agents.length === 0 ? (

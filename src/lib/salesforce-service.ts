@@ -10,7 +10,7 @@ import { getErrorMessage } from "./server-utils";
  *
  * Tokens are stored encrypted in wireline_crm_connections and
  * refreshed automatically when expired. If no connection exists
- * (operator hasn't completed OAuth), every function returns no-op.
+ * (Account Holder hasn't completed OAuth), every function returns no-op.
  */
 
 export interface SalesforceContact {

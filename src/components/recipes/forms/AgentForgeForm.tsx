@@ -100,7 +100,7 @@ export function AgentForgeForm({ initial, disabled }: { initial?: any; disabled:
           {createdAgentId && (
             <div className="rounded-md wl-status-success border p-4 wl-text-success text-sm flex items-center gap-3">
               <Check className="w-4 h-4" />
-              Agent created. Open Fleet Topology to assign a phone number and voice.
+              Agent created. Open Assistants Topology to assign a phone number and voice.
             </div>
           )}
           <div className="rounded-md wl-panel-elevated border border-white/12 p-6 space-y-3">

@@ -3,7 +3,7 @@ import type { StructuredToolSchema } from "./ai-structured";
 export const AI_TOOLS = {
   trainingExtraction: {
     name: "extract_training_data",
-    description: "Extract operational directives, knowledge facts, and personality updates from operator input.",
+    description: "Extract operational directives, knowledge facts, and personality updates from Account Holder input.",
     input_schema: {
       type: "object",
       properties: {
@@ -29,7 +29,7 @@ export const AI_TOOLS = {
   } as StructuredToolSchema,
   workspaceTurn: {
     name: "plan_agent_workspace_turn",
-    description: "Reply to an operator and propose agent configuration changes, tool toggles, and actions.",
+    description: "Reply to an Account Holder and propose agent configuration changes, tool toggles, and actions.",
     input_schema: {
       type: "object",
       properties: { reply: { type: "string" }, config_changes: { type: "array", items: { type: "object" } }, tool_toggles: { type: "array", items: { type: "object" } }, actions: { type: "array", items: { type: "object" } } },

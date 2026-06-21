@@ -12,9 +12,9 @@ import { getErrorMessage } from "./server-utils";
  * fewer than 7 days remain. Tokens are stored encrypted in
  * wireline_crm_connections with provider='square'.
  *
- * Per-tenant: each Wireline operator connects their own Square merchant
+ * Per-tenant: each Wireline Account Holder connects their own Square merchant
  * account. The APPLICATION_ID/SECRET are Wireline's platform credentials;
- * the resulting access_token scopes to the operator's merchant account.
+ * the resulting access_token scopes to the Account Holder's merchant account.
  */
 
 const SQUARE_API_BASE = "https://connect.squareup.com";

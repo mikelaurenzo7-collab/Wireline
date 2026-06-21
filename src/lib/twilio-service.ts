@@ -428,7 +428,7 @@ export async function sendManagerAlert(
 /**
  * Send an SMS alert to an EXPLICITLY supplied destination phone — used
  * by the per-agent escalation override path. Bypasses
- * `managerAlertsEnabled` (the per-agent override IS the operator's
+ * `managerAlertsEnabled` (the per-agent override IS the Account Holder's
  * opt-in) but still respects all carrier guardrails (DNC, business
  * hours, etc.) via buildMessagePayload's `ignoreMessagingToggle: true`
  * flag, mirroring sendManagerAlert.

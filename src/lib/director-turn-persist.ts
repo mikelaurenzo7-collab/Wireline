@@ -42,10 +42,10 @@ function findDirectorReplyForOperator(
   if (!probe) return null;
 
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i].role !== "operator" || rows[i].content.trim() !== probe) continue;
+    if (rows[i].role !== "Account Holder" || rows[i].content.trim() !== probe) continue;
     for (let j = i - 1; j >= 0; j--) {
       if (rows[j].role === "director") return rows[j];
-      if (rows[j].role === "operator") break;
+      if (rows[j].role === "Account Holder") break;
     }
     return null;
   }

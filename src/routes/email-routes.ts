@@ -86,7 +86,7 @@ router.patch(
 );
 
 /**
- * POST /api/emails/sync — operator-initiated inbox refresh.
+ * POST /api/emails/sync — Account Holder-initiated inbox refresh.
  *
  * The EmailInbox "Sync inbox" button + the Integrations page both call this
  * endpoint. Previously it returned 404 (the route was never declared), so the
@@ -94,10 +94,10 @@ router.patch(
  *
  * Behaviour:
  * - Returns 400 with a clear error when no Gmail/Outlook account is linked,
- *   so the UI can prompt the operator to connect one.
+ *   so the UI can prompt the Account Holder to connect one.
  * - Returns 200 with the connected account count when one or more accounts
  *   exist. Background workers handle the actual Gmail/Graph fetch on a
- *   schedule; this endpoint is the operator-visible kickoff for a refresh.
+ *   schedule; this endpoint is the Account Holder-visible kickoff for a refresh.
  *   The shape is kept stable for future expansion (queued jobs counter).
  */
 router.post(
@@ -124,7 +124,7 @@ router.post(
       }
 
       // Background sync workers consume new threads from Gmail/Graph on a
-      // schedule. This endpoint reports the connection state so the operator
+      // schedule. This endpoint reports the connection state so the Account Holder
       // gets honest feedback when they hit "Sync inbox" — even though we
       // don't fire a worker job here yet (the queue handler doesn't exist
       // for `email_sync` type, so enqueueing would just be cruft).

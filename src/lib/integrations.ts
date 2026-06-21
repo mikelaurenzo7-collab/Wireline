@@ -196,7 +196,7 @@ export class IntegrationService {
       return this.fetchMicrosoftInbox(account, opts);
     }
     if (account.provider === "yahoo") {
-      // Phase 2 — XOAUTH2 over IMAP. For now, log so the operator can
+      // Phase 2 — XOAUTH2 over IMAP. For now, log so the Account Holder can
       // see we received the call and know it's not silently broken.
       log.info("Yahoo inbox fetch skipped — XOAUTH2 IMAP not yet wired", {
         accountId: account.id,

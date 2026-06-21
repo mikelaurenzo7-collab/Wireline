@@ -40,26 +40,26 @@ export function FleetConstellation({
       viewBox="0 0 200 200"
       className={cn(
         WL_SIGNAL_CLASSES.fleetConstellation,
-        `wl-fleet-constellation--${size}`,
+        `wl-Assistants-constellation--${size}`,
         refined && WL_SIGNAL_CLASSES.fleetConstellationRefined,
         className,
       )}
       fill="none"
     >
-      <circle className="wl-fleet-constellation-ring" cx="100" cy="100" r="72" strokeWidth="0.75" />
+      <circle className="wl-Assistants-constellation-ring" cx="100" cy="100" r="72" strokeWidth="0.75" />
       {ARCS.map((d, i) => (
         <path
           key={i}
-          className="wl-fleet-constellation-arc"
+          className="wl-Assistants-constellation-arc"
           d={d}
           strokeWidth="0.65"
           strokeLinecap="round"
         />
       ))}
       {NODES.map((node, i) => (
-        <g key={i} className="wl-fleet-constellation-node" data-delay={`${node.delay}s`}>
-          <circle className="wl-fleet-constellation-node-halo" cx={node.cx} cy={node.cy} r="5" />
-          <circle className="wl-fleet-constellation-node-core" cx={node.cx} cy={node.cy} r="2.25" />
+        <g key={i} className="wl-Assistants-constellation-node" data-delay={`${node.delay}s`}>
+          <circle className="wl-Assistants-constellation-node-halo" cx={node.cx} cy={node.cy} r="5" />
+          <circle className="wl-Assistants-constellation-node-core" cx={node.cx} cy={node.cy} r="2.25" />
         </g>
       ))}
     </svg>

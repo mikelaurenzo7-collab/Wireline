@@ -1,4 +1,4 @@
-// src/lib/director-fleet-plan.ts
+// src/lib/director-Assistants-plan.ts
 // Updated to use the perfect Grok 4.3 Director prompt + dynamic context
 // This keeps your existing wired calls working while upgrading to the all-encompassing boss prompt.
 
@@ -37,7 +37,7 @@ export interface DirectorSuggestion {
  * Your existing calls to buildDirectorFleetSystemPrompt will now get the perfect upgraded prompt.
  */
 export function buildDirectorFleetSystemPrompt(input: {
-  fleet: DirectorFleetAgent[];
+  Assistants: DirectorFleetAgent[];
   stats?: DirectorStats;
   business?: DirectorBusinessContext;
   recentActivitySummary?: string;
@@ -49,7 +49,7 @@ export function buildDirectorFleetSystemPrompt(input: {
   // Note: buildDirectorPrompt is sync (no network)
   return buildDirectorPrompt({
     clientId: typeof input.clientId === "string" ? input.clientId : "unknown",
-    fleet: input.fleet || [],
+    Assistants: input.Assistants || [],
     stats: input.stats,
     business: input.business,
     recentActivitySummary:
@@ -62,20 +62,20 @@ export function buildDirectorFleetSystemPrompt(input: {
 export { BASE_DIRECTOR_SYSTEM_PROMPT };
 
 // ============================================
-// Director Fleet Tool Schema + Normalizer (restored for Grok 4.3 compatibility)
+// Director Assistants Tool Schema + Normalizer (restored for Grok 4.3 compatibility)
 // These power the structured output contract for Director turns.
 // ============================================
 
 export const DIRECTOR_FLEET_TOOL: ToolSchema = {
   name: "plan_director_fleet_turn",
   description:
-    "Plan the Director's response: natural reply, optional suggestions, agent actions (text/call/etc), and integration jobs (CRM, web research, etc). Ground everything in the live fleet + business context.",
+    "Plan the Director's response: natural reply, optional suggestions, agent actions (text/call/etc), and integration jobs (CRM, web research, etc). Ground everything in the live Assistants + business context.",
   input_schema: {
     type: "object",
     properties: {
       reply: {
         type: "string",
-        description: "Director's conversational reply to the operator. Always present and helpful.",
+        description: "Director's conversational reply to the Account Holder. Always present and helpful.",
       },
       suggestions: {
         type: "array",
@@ -88,7 +88,7 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
           required: ["kind", "label"],
           additionalProperties: false,
         },
-        description: "Quick-action chips the operator can tap (e.g. create agent, run audit).",
+        description: "Quick-action chips the Account Holder can tap (e.g. create agent, run audit).",
       },
       actions: {
         type: "array",
@@ -99,7 +99,7 @@ export const DIRECTOR_FLEET_TOOL: ToolSchema = {
             label: { type: "string" },
             agent_id: {
               type: "string",
-              description: "Target agent ID from fleet (falls back to first agent if omitted).",
+              description: "Target agent ID from Assistants (falls back to first agent if omitted).",
             },
             to: { type: "string" },
             body: { type: "string" },
@@ -182,7 +182,7 @@ function objectValue(value: unknown): Record<string, unknown> {
  */
 export function normalizeDirectorFleetPlan(
   raw: Record<string, unknown>,
-  fleet: DirectorFleetAgent[],
+  Assistants: DirectorFleetAgent[],
   operatorMessage?: string,
 ): DirectorFleetPlan {
   const reply = typeof raw.reply === "string" ? raw.reply.trim() : "";
@@ -193,11 +193,11 @@ export function normalizeDirectorFleetPlan(
     throw new DirectorEmptyPlanError();
   }
 
-  // Normalize actions: ensure every action has an agentId (fallback to first fleet member)
+  // Normalize actions: ensure every action has an agentId (fallback to first Assistants member)
   const rawActions = Array.isArray(raw.actions) ? raw.actions : [];
   const actions: DirectorProposedAction[] = rawActions.map((value, index: number) => {
     const a = objectValue(value);
-    const rawAgentId = a.agent_id || a.agentId || (fleet.length > 0 ? fleet[0]?.id : undefined);
+    const rawAgentId = a.agent_id || a.agentId || (Assistants.length > 0 ? Assistants[0]?.id : undefined);
     const agentId = rawAgentId ? String(rawAgentId) : undefined;
     return {
       ...a,
@@ -232,7 +232,7 @@ export function normalizeDirectorFleetPlan(
     });
   });
 
-  const fleetAgentIds = new Set(fleet.map((agent) => agent.id));
+  const fleetAgentIds = new Set(Assistants.map((agent) => agent.id));
   const seenSuggestions = new Set<string>();
   const suggestions: DirectorSuggestion[] = (Array.isArray(raw.suggestions) ? raw.suggestions : [])
     .map((value): DirectorSuggestion | null => {
@@ -258,7 +258,7 @@ export function normalizeDirectorFleetPlan(
   return {
     reply:
       reply ||
-      "I can orchestrate your fleet from here — tell me the outcome you want and I’ll turn it into the next best action.",
+      "I can orchestrate your Assistants from here — tell me the outcome you want and I’ll turn it into the next best action.",
     suggestions,
     actions,
     integrationJobs,

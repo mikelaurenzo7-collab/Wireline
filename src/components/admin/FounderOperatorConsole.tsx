@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- operator telemetry payloads are loosely typed. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Account Holder telemetry payloads are loosely typed. */
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { Activity, CreditCard, ShieldCheck } from "lucide-react";
@@ -10,7 +10,7 @@ import { cn } from "../../lib/utils";
 import LaunchReadinessPanel from "./LaunchReadinessPanel";
 
 /**
- * Platform-operator tools — env integration matrix, SLO telemetry, and
+ * Platform-Account Holder tools — env integration matrix, SLO telemetry, and
  * billing simulators. Rendered on the Founder dashboard only, never in
  * customer Settings.
  */
@@ -60,7 +60,7 @@ export default function FounderOperatorConsole() {
       <div>
         <p className="app-section-title mb-1 flex items-center gap-2">
           <ShieldCheck className="w-3.5 h-3.5 text-brand" />
-          Platform · operator
+          Platform · Account Holder
         </p>
         <p className="text-[12px] text-muted/80 max-w-2xl leading-relaxed mb-4">
           Internal health, integration env matrix, and billing simulators — not shown to customer

@@ -67,7 +67,7 @@ async function resolveIntakeKey(provided: string | undefined): Promise<IntakeKey
 }
 
 // Per-key distributed rate limit. Public endpoint, so a single noisy
-// caller can't drain the operator's Vapi spend or hammer Supabase.
+// caller can't drain the Account Holder's Vapi spend or hammer Supabase.
 // Rolling window: ≤ 60 requests per 60s per intake key.
 const INTAKE_RATE_WINDOW_MS = 60_000;
 const INTAKE_RATE_MAX = 60;

@@ -103,7 +103,7 @@ router.get(
       const pageIds = pages.map((p) => p.id);
 
       // Best-effort: subscribe every managed page to leadgen events.
-      // Failures don't block the OAuth flow — operator can re-trigger
+      // Failures don't block the OAuth flow — Account Holder can re-trigger
       // later via a reconnect.
       await Promise.all(
         pages.map((p) =>

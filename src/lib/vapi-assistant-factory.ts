@@ -107,7 +107,7 @@ export async function buildVapiAssistant({
     // with qa_score >= 70 (4-star equivalent) and a positive
     // outcome intent (booked / qualified > info > escalated).
     //
-    // Lessons with no source call attached (e.g. operator-injected
+    // Lessons with no source call attached (e.g. Account Holder-injected
     // playbook lessons or adaptive_tuning syntheses) pass through
     // unfiltered — we trust those by default since they didn't come
     // from a regrettable call.
@@ -119,7 +119,7 @@ export async function buildVapiAssistant({
         and(
           eq(schema.agentLessons.agentId, webhookAgentId),
           sql`(${schema.agentLessons.lessonStatus} IS NULL OR ${schema.agentLessons.lessonStatus} = 'approved')`,
-          // Either no source call (synthetic / operator lesson),
+          // Either no source call (synthetic / Account Holder lesson),
           // OR a source call with qa_score >= 70.
           sql`(${schema.agentLessons.sourceCallId} IS NULL OR ${schema.callLogs.qaScore} >= 70)`,
         ),
@@ -197,7 +197,7 @@ export async function buildVapiAssistant({
     // 11labs voice config below so industry jargon (HVAC, ACL,
     // deposition) is pronounced correctly. Only dictionaries that
     // have been successfully synced to ElevenLabs (non-null IDs) and
-    // are flagged active by the operator are included.
+    // are flagged active by the Account Holder are included.
     //
     // Failure-tolerant: if the table is missing on this environment
     // (migrate-pronunciation-dicts hasn't been run yet) or the query
@@ -277,7 +277,7 @@ export async function buildVapiAssistant({
       .map((d: { content?: string | null }) => truncateRuntimeSnippet(d.content || ""))
       .filter(Boolean);
     if (lines.length === 0) return "";
-    return `\n## OPERATOR DIRECTIVES (priority order)\n${lines.map((t) => `- ${t}`).join("\n")}\n`;
+    return `\n## Account Holder DIRECTIVES (priority order)\n${lines.map((t) => `- ${t}`).join("\n")}\n`;
   })();
 
   const knowledgeBlock = (() => {
@@ -302,7 +302,7 @@ export async function buildVapiAssistant({
    * no playfulness, acknowledge the prior issue, lead with
    * "I see we spoke before — how can I make this right?"
    *
-   * Doesn't override the operator's chosen vibe entirely — it
+   * Doesn't override the Account Holder's chosen vibe entirely — it
    * sits as a one-call override layer. On the call AFTER this
    * one (assuming sentiment recovers), the agent returns to
    * the configured vibe.
@@ -440,7 +440,7 @@ Today is ${currentDateTime}.
   // append the dynamic blocks (caller profile, customer intel, sentiment
   // shift, lead context, current time) so personalization survives.
   //
-  // An operator-set `system_prompt_override` takes precedence over both
+  // An Account Holder-set `system_prompt_override` takes precedence over both
   // the auto-composed prompt and the persona overlay — it replaces the
   // base identity in the same additive way (override text leads, the
   // call-specific dynamic blocks follow). The runtime guardrails are
@@ -480,10 +480,10 @@ Today is ${currentDateTime}.
   const runtime = buildAgentRuntimeContext(systemPrompt, runtimeProfile);
   // First-message resolution order:
   //   1. Out-of-hours override (always wins — caller hears the OOH msg)
-  //   2. Operator-set firstMessage on the agent row
+  //   2. Account Holder-set firstMessage on the agent row
   //   3. Wireline persona overlay's first_message (if persona attached)
   //   4. Bare "Hello!" fallback
-  // This means an operator who overrides firstMessage on an internal
+  // This means an Account Holder who overrides firstMessage on an internal
   // agent ALSO wins over the persona default — useful for seasonal
   // greetings ("Happy holidays from Wireline!") without rewriting the
   // persona definition.
@@ -492,8 +492,8 @@ Today is ${currentDateTime}.
       ? runtime.outOfHoursMessage
       : agentConfigRow?.firstMessage || wirelinePersona?.firstMessage || "Hello!";
 
-  // Honor the operator's configured voice. Before this fix, every customer
-  // assistant got Liam's default voice regardless of what they set in Fleet
+  // Honor the Account Holder's configured voice. Before this fix, every customer
+  // assistant got Liam's default voice regardless of what they set in Assistants
   // Settings — silent override of their config. Direction-specific override:
   // voiceIdOutbound for outbound dial, voiceIdInbound for inbound, voiceId as
   // the shared fallback, and the platform default only if nothing is set.
@@ -508,8 +508,8 @@ Today is ${currentDateTime}.
     ? agentConfigRow?.voiceIdOutbound
     : agentConfigRow?.voiceIdInbound;
   // Voice resolution order (mirrors firstMessage logic above):
-  //   1. Directional override (operator set inbound/outbound voice)
-  //   2. Operator's agent-row voiceId
+  //   1. Directional override (Account Holder set inbound/outbound voice)
+  //   2. Account Holder's agent-row voiceId
   //   3. Wireline persona overlay's voice_id (if persona attached)
   //   4. Platform default (Adam · Deep)
   const resolvedVoiceId =
@@ -521,7 +521,7 @@ Today is ${currentDateTime}.
 
   // Per-archetype silence timeout. Outbound SDRs need short patience (caller
   // dodging); CS agents need slightly longer (caller thinking). Tier-independent
-  // — every tenant gets the same snappy turn-taking. Operator can override
+  // — every tenant gets the same snappy turn-taking. Account Holder can override
   // per-agent via FleetSettings → Advanced.
   const voiceLatency = getVoiceLatencyProfile({
     archetype,
@@ -531,7 +531,7 @@ Today is ${currentDateTime}.
   const silenceTimeoutSeconds =
     (agentConfigRow as any)?.silenceTimeoutSeconds ?? voiceLatency.silenceTimeoutSeconds;
 
-  // ElevenLabs speed control — operator-set per-agent multiplier in
+  // ElevenLabs speed control — Account Holder-set per-agent multiplier in
   // FleetSettings → Voice. The DB column is `numeric(3,2)` which Postgres
   // returns as a string via pg; coerce to Number and clamp to the
   // documented ElevenLabs range (0.7 – 1.2) so a corrupted row can't
@@ -544,12 +544,12 @@ Today is ${currentDateTime}.
     outbound: isOutbound,
   });
 
-  // ElevenLabs voice fine-tuning quality params. Operator-set per-agent
+  // ElevenLabs voice fine-tuning quality params. Account Holder-set per-agent
   // in FleetSettings → Voice fine-tuning. Mirrors the four knobs in EL's
   // `voice_settings`: stability, similarity_boost, style, use_speaker_boost.
   // Stored as numeric(3,2) in PG (pg returns as string) so we coerce +
   // clamp to [0,1] before passing to Vapi. NULL is treated as "use EL
-  // defaults" — we still pass them through so the operator's UI value
+  // defaults" — we still pass them through so the Account Holder's UI value
   // is authoritative.
   //
   // Only attached when provider is 11labs; OpenAI's voice block ignores
@@ -591,11 +591,11 @@ Today is ${currentDateTime}.
   // when the assistant terminates the call (e.g. caller says goodbye, or
   // the assistant's flow hits an end node). We can't inject the brand
   // sting MP3 here directly — Vapi's `endCallMessage` field is a string,
-  // not a media URL — so the operator's chosen TTS voice speaks this
+  // not a media URL — so the Account Holder's chosen TTS voice speaks this
   // phrase. The matching audio file (public/sounds/wireline-end-sting.mp3)
   // is available for any non-Vapi path that CAN play media (e.g. the
   // post-call digest player in the dashboard, the marketing demo, etc.).
-  // Operator override lives in agentConfigRow.endCallMessage when set.
+  // Account Holder override lives in agentConfigRow.endCallMessage when set.
   const endCallMessage =
     (agentConfigRow as any)?.endCallMessage ||
     wirelinePersona?.endCallMessage ||
@@ -694,7 +694,7 @@ Today is ${currentDateTime}.
       // caller hears "the agent's voice shifted halfway through" even
       // though voiceId never changed. Pinning eleven_flash_v2_5 keeps
       // every utterance on the same TTS engine for the full call.
-      // Reverted from turbo_v2_5 — operator preferred the ~50ms TTFA
+      // Reverted from turbo_v2_5 — Account Holder preferred the ~50ms TTFA
       // savings over the slight prosody bump; with the Claude Haiku
       // LLM already adding ~400ms to TTFT, every TTS millisecond
       // counts toward perceived snappiness.
@@ -703,7 +703,7 @@ Today is ${currentDateTime}.
       // quality trade for fastest first-audio-out. Most call quality
       // differences are imperceptible vs the latency win.
       optimizeStreamingLatency: voiceLatency.optimizeStreamingLatency,
-      // ElevenLabs speed control (operator-set, 0.7–1.2). Vapi forwards
+      // ElevenLabs speed control (Account Holder-set, 0.7–1.2). Vapi forwards
       // this to ElevenLabs as `voice.eleven_labs.speed`. Only attach
       // when the resolved provider is 11labs and the value differs from
       // the neutral default so we don't bloat every assistant payload
@@ -712,11 +712,11 @@ Today is ${currentDateTime}.
       ...(resolvedVoiceProvider === "11labs" && parsedVoiceSpeed !== 1.0
         ? { speed: parsedVoiceSpeed }
         : {}),
-      // ElevenLabs voice fine-tuning quality params. Operator-set per-
+      // ElevenLabs voice fine-tuning quality params. Account Holder-set per-
       // agent — most impactful on cloned voices where the source
       // recording quality dictates how much room there is to tune.
       // Always passed when provider is 11labs (even at defaults) so
-      // the operator's UI value is authoritative — otherwise EL would
+      // the Account Holder's UI value is authoritative — otherwise EL would
       // apply ITS defaults and diverge from what the slider shows.
       // Map our snake_case schema → Vapi's camelCase voice schema:
       //   stability             → stability
@@ -772,7 +772,7 @@ Today is ${currentDateTime}.
     // business ("Acme Plumbing"), not the agent's first name.
     // Saves LLM cost vs. having the model improvise.
     voicemailMessage: `Hi, this is ${(bizVars.business_name as string) || agentConfigRow?.name || "your assistant"} calling. Sorry we missed you — feel free to call us back at any time and we'll be happy to help. Thanks!`,
-    // Always record so we can replay + retrain. Operator can disable per-
+    // Always record so we can replay + retrain. Account Holder can disable per-
     // agent if HIPAA mode is on.
     recordingEnabled: true,
     // Post-call analysis — Vapi runs these prompts against the

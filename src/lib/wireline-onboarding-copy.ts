@@ -1,5 +1,5 @@
 /**
- * Post-signup onboarding copy — operator-facing, Wireline-native.
+ * Post-signup onboarding copy — Account Holder-facing, Wireline-native.
  */
 
 import { getSignupWedgeRecommendation } from "./signup-intent";
@@ -41,8 +41,8 @@ export const CONSOLE_MAP = {
     },
     {
       id: "ops",
-      label: "Live Ops",
-      detail: "Live callers, approvals, and fleet pulse",
+      label: "Recaps",
+      detail: "Live callers, approvals, and Assistants pulse",
       path: "/ops",
     },
     {
@@ -60,11 +60,11 @@ export const CONSOLE_MAP = {
   ],
 } as const;
 
-/** Editorial panel on auth — first impression before the operator console. */
+/** Editorial panel on auth — first impression before the Account Holder console. */
 export const AUTH_PORTAL_SHOWCASE = {
-  eyebrow: "Operator console",
+  eyebrow: "Account Holder console",
   title: "Mission control for your",
-  titleAccent: "AI fleet",
+  titleAccent: "AI Assistants",
   subtitle:
     "Wireline runs phone, email, and SMS agents on real numbers — trained on your playbook, supervised from one calm cockpit.",
   features: [
@@ -81,23 +81,23 @@ export const AUTH_PORTAL_SHOWCASE = {
     },
     {
       id: "live-ops",
-      label: "Live Ops floor",
-      detail: "Listen in, whisper-coach, approve CRM writes, and watch fleet pulse in real time.",
+      label: "Recaps floor",
+      detail: "Listen in, whisper-coach, approve CRM writes, and watch Assistants pulse in real time.",
     },
   ],
 } as const;
 
 export const YOURE_LIVE_COPY = {
-  eyebrow: "Fleet live",
+  eyebrow: "Assistants live",
   title: "You're live",
   subtitle: (agentName: string) => `${agentName} is ready to take calls.`,
   nextLabel: "What to do next",
   testCallTitle: "Run a browser test call",
   testCallDetail: "Hear your agent without dialing — tune tone and script in Chat.",
   testCallAction: "Open Chat",
-  opsTitle: "Watch Live Ops",
-  opsDetail: "See active callers, approve actions, and monitor fleet pulse.",
-  opsAction: "Open Live Ops",
+  opsTitle: "Watch Recaps",
+  opsDetail: "See active callers, approve actions, and monitor Assistants pulse.",
+  opsAction: "Open Recaps",
 } as const;
 
 /** Shown after Fast Start — agent exists but activation (first useful call) pending. */
@@ -113,9 +113,9 @@ export const ACTIVATION_PENDING_COPY = {
   browserTestDetail:
     "Preview voice and script in Chat — simulator calls do not count toward activation.",
   browserTestAction: "Open Chat",
-  opsTitle: "Watch Live Ops",
+  opsTitle: "Watch Recaps",
   opsDetail: "See the call land in real time once you dial in.",
-  opsAction: "Open Live Ops",
+  opsAction: "Open Recaps",
 } as const;
 
 /** Full celebration after first useful production call. */

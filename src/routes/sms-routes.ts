@@ -75,7 +75,7 @@ router.get(
 );
 
 /**
- * POST /api/sms/threads/:id/reply — operator manual reply.
+ * POST /api/sms/threads/:id/reply — Account Holder manual reply.
  * Body: { body: string }
  */
 router.post(

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-// AgentBusinessProfile — operator-facing editor for the business-context
+// AgentBusinessProfile — Account Holder-facing editor for the business-context
 // fields that gate every call: hours, compliance mode, guardrails,
 // variables, KPI focus. Pure presentation; the parent owns persistence.
 //
@@ -57,7 +57,7 @@ export interface BusinessProfile {
    * Warm-transfer toggle. When true AND escalation_phone is set, the
    * `escalate_to_human` tool transfers the LIVE caller to the configured
    * phone in real time (via Vapi destination) instead of just queueing
-   * an async alert. Opt-in: the operator must explicitly enable.
+   * an async alert. Opt-in: the Account Holder must explicitly enable.
    */
   escalation_handoff_enabled?: boolean;
   business_variables?: Record<string, string | number>;
@@ -230,9 +230,9 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
     [variables],
   );
 
-  // "+ Variable" gives the operator an empty row to fill in. We track
+  // "+ Variable" gives the Account Holder an empty row to fill in. We track
   // it as a draft pair so an empty key doesn't pollute the saved object
-  // until the operator types something.
+  // until the Account Holder types something.
   const [draftVarKey, setDraftVarKey] = useState("");
   const [draftVarVal, setDraftVarVal] = useState("");
   const commitDraftVar = () => {

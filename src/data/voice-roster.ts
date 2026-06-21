@@ -1,19 +1,19 @@
 /**
  * Voice rotation pool for templated agent deployment.
  *
- * When an operator deploys an agent from a template (or via the bulk
- * fleet-deploy endpoint) without an explicit voice picker, the prior
+ * When an Account Holder deploys an agent from a template (or via the bulk
+ * Assistants-deploy endpoint) without an explicit voice picker, the prior
  * behavior assigned a single hardcoded voice id to every agent — three
  * seeded agents ended up sharing one voice, which undercuts the entire
  * voice-picker selling point.
  *
  * Now: round-robin across this short curated roster keyed by the
- * tenant's current agent count, so the first three agents an operator
+ * tenant's current agent count, so the first three agents an Account Holder
  * deploys always get three distinct voices. The roster only contains
  * ElevenLabs "starter" voice IDs that every 11labs account has access
  * to by default — no licensing surprises.
  *
- * The operator can override any of these in FleetSettings → Voice; the
+ * The Account Holder can override any of these in FleetSettings → Voice; the
  * factory already honors `agent.voiceIdInbound` / `voiceIdOutbound` /
  * `voiceId` when set, so this is purely a smarter default.
  */
@@ -29,12 +29,12 @@ type VoiceRosterEntry = {
 
 /**
  * Curated ElevenLabs starter roster. These IDs are documented public
- * voices available to every 11labs account, so any operator can hear
+ * voices available to every 11labs account, so any Account Holder can hear
  * them without paying for cloning credits.
  *
  * Order matters: the round-robin assigns by index, so a fresh tenant's
  * first three agents land on Rachel / Adam / Bella by default — three
- * distinctly different timbres that read as "polished, varied fleet"
+ * distinctly different timbres that read as "polished, varied Assistants"
  * on the first dashboard load.
  */
 const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
@@ -43,7 +43,7 @@ const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
   { voiceId: "pNInz6obpgDQGcFmaJgB", label: "Adam · Deep (Wireline Default)", vibe: "warm-male" },
   // ElevenLabs documented starter voices — verified against the public
   // voice library. Labels match ElevenLabs' canonical display names so
-  // FleetSettings + analytics show the operator the same name the
+  // FleetSettings + analytics show the Account Holder the same name the
   // ElevenLabs dashboard does.
   { voiceId: "VR6AewLTigWG4xSOukaG", label: "Arnold · Crisp", vibe: "crisp-male" },
   { voiceId: "21m00Tcm4TlvDq8ikWAM", label: "Rachel · Warm", vibe: "warm-female" },
@@ -56,8 +56,8 @@ const VOICE_ROSTER: ReadonlyArray<VoiceRosterEntry> = [
 
 /**
  * Pick a default voice id for a new agent given how many agents this
- * tenant already has. The seed/fleet-deploy paths call this when the
- * operator hasn't specified a voice; the operator can override later
+ * tenant already has. The seed/Assistants-deploy paths call this when the
+ * Account Holder hasn't specified a voice; the Account Holder can override later
  * in FleetSettings.
  *
  * Stable & deterministic — useful for tests + so repeating the same

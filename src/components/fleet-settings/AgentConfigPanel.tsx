@@ -22,7 +22,7 @@ import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import AgentModelSelector from "../AgentModelSelector";
-import { AGENT_ROLES, PREMIUM_VOICES, RoleBadge } from "../fleet/helpers";
+import { AGENT_ROLES, PREMIUM_VOICES, RoleBadge } from "../Assistants/helpers";
 import { Input } from "../ui/shadcn/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { ShadButton } from "../ui/shadcn/ShadButton";
@@ -176,7 +176,7 @@ export default function AgentConfigPanel({
   const trainingHref = `/training?agent=${encodeURIComponent(selectedAgent.id)}`;
 
   return (
-    <main className="flex-1 wl-fleet-config-drawer md:overflow-visible md:h-auto md:min-h-0 px-3 py-3">
+    <main className="flex-1 wl-Assistants-config-drawer md:overflow-visible md:h-auto md:min-h-0 px-3 py-3">
       <ShadButton
         type="button"
         variant="outline"
@@ -186,7 +186,7 @@ export default function AgentConfigPanel({
         aria-label="Back to agent list"
         className="mb-3 h-10 rounded-full wl-label text-foreground/80 md:hidden"
       >
-        <ChevronLeft className="h-3.5 w-3.5" /> Back to fleet
+        <ChevronLeft className="h-3.5 w-3.5" /> Back to Assistants
       </ShadButton>
 
       <div className="mx-auto max-w-[720px] space-y-3">

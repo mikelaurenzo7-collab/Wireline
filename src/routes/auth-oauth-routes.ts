@@ -522,7 +522,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
 /* ─────────────────────────  Yahoo  ─────────────────────── */
 /**
  * Yahoo OAuth 2.0 / OpenID Connect sign-in. Yahoo's developer console
- * issues a CLIENT_ID + CLIENT_SECRET; operator registers
+ * issues a CLIENT_ID + CLIENT_SECRET; Account Holder registers
  * https://trywireline.com/api/auth/yahoo/callback as the redirect URI.
  * Auth endpoint:  https://api.login.yahoo.com/oauth2/request_auth
  * Token endpoint: https://api.login.yahoo.com/oauth2/get_token

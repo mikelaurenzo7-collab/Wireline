@@ -226,7 +226,7 @@ export function recordDailySpend(usd: number): void {
     });
 }
 
-/** Legacy mount point — fleet-wide daily cap removed; usage bills per tenant. */
+/** Legacy mount point — Assistants-wide daily cap removed; usage bills per tenant. */
 export async function enforce24hSpendCap(_req: Request, _res: Response, next: NextFunction) {
   next();
 }

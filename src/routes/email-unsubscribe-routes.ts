@@ -2,7 +2,7 @@ import { AppError } from "../lib/api-error";
 /**
  * Public email unsubscribe endpoints (CAN-SPAM + RFC 8058 one-click).
  *
- * Kept separate from the authenticated operator inbox routes in
+ * Kept separate from the authenticated Account Holder inbox routes in
  * email-routes.ts: these are PUBLIC by design — no auth. The signed token IS
  * the credential (it encodes the recipient address and is HMAC-verified), so
  * only someone who received the email can unsubscribe it. Two entry points:

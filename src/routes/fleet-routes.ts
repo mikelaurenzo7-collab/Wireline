@@ -12,7 +12,7 @@ import { validateBody, updateFleetTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { parseFormData, FleetTaskCreateSchema } from "../lib/form-validators";
-import { compileActivityFeed } from "../lib/fleet-activity";
+import { compileActivityFeed } from "../lib/Assistants-activity";
 import { ROLE_PERSONALITY_TEMPLATES } from "../lib/agent-constants";
 import { executeAction } from "../lib/action-engine";
 import { claudeErr } from "../lib/claude-response-helpers";
@@ -26,7 +26,7 @@ const FLEET_TASK_STATUSES = ["pending", "open", "in_progress", "completed", "can
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
 
 router.post(
-  "/api/fleet/seed",
+  "/api/Assistants/seed",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
@@ -140,14 +140,14 @@ router.post(
       });
       res.json({ success: true, count: specializedAgents.length });
     } catch (error: any) {
-      log.error("Fleet seeding failed", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to seed fleet");
+      log.error("Assistants seeding failed", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(500, "Failed to seed Assistants");
     }
   },
 );
 
 router.get(
-  "/api/fleet/presence",
+  "/api/Assistants/presence",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -165,7 +165,7 @@ router.get(
 );
 
 router.get(
-  "/api/fleet/presence/stream",
+  "/api/Assistants/presence/stream",
   authenticateEventStream,
   fleetRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -188,7 +188,7 @@ router.get(
     }
 
     // Vercel serverless cannot hold long-lived SSE (no LISTEN/NOTIFY + maxDuration).
-    // Send the snapshot and close — Command Center falls back to /api/fleet/presence polling.
+    // Send the snapshot and close — Recaps falls back to /api/Assistants/presence polling.
     if (process.env.VERCEL === "1") {
       res.end();
       return;
@@ -202,7 +202,7 @@ router.get(
 );
 
 router.get(
-  "/api/fleet/tasks",
+  "/api/Assistants/tasks",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -230,7 +230,7 @@ router.get(
           targetChannel: schema.fleetTasks.targetChannel,
           agentId: schema.fleetTasks.agentId,
           customerInfo: schema.fleetTasks.customerInfo,
-          // `payload` is the action body that the operator reviews/approves —
+          // `payload` is the action body that the Account Holder reviews/approves —
           // proposed email body, contract envelope, prospect search args.
           // The ActionFeed UI reads `payload.to`, `payload.body`, etc.
           payload: schema.fleetTasks.payload,
@@ -271,7 +271,7 @@ router.get(
 );
 
 router.post(
-  "/api/fleet/tasks",
+  "/api/Assistants/tasks",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -311,14 +311,14 @@ router.post(
       touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
-      log.error("Failed to create fleet task", { error: error.message });
-      throw AppError.fromHttpStatus(500, "Failed to create fleet task");
+      log.error("Failed to create Assistants task", { error: error.message });
+      throw AppError.fromHttpStatus(500, "Failed to create Assistants task");
     }
   },
 );
 
 router.patch(
-  "/api/fleet/tasks/:id",
+  "/api/Assistants/tasks/:id",
   authenticateUser,
   validateBody(updateFleetTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
@@ -354,14 +354,14 @@ router.patch(
       if (status !== undefined) touchNavCounts(req.user.id);
       res.json({ success: true });
     } catch (error: any) {
-      log.error("Failed to update fleet task", { error: error.message });
-      throw AppError.fromHttpStatus(500, "Failed to update fleet task");
+      log.error("Failed to update Assistants task", { error: error.message });
+      throw AppError.fromHttpStatus(500, "Failed to update Assistants task");
     }
   },
 );
 
 router.post(
-  "/api/fleet/tasks/:id/approve",
+  "/api/Assistants/tasks/:id/approve",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -405,7 +405,7 @@ router.post(
       if (result.success) {
         await drizzle
           .update(schema.fleetTasks)
-          .set({ status: "completed", resolutionNotes: "Approved and executed by operator" })
+          .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
           .where(eq(schema.fleetTasks.id, taskId));
         touchNavCounts(userId);
         res.json({ success: true });
@@ -423,7 +423,7 @@ router.post(
 );
 
 router.get(
-  "/api/fleet/activity",
+  "/api/Assistants/activity",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {

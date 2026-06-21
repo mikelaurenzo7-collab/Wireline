@@ -12,7 +12,7 @@ const router = Router();
  * Generate a fresh multi-speaker dialogue MP3 via ElevenLabs's
  * Text-to-Dialogue API and persist it to `public/sounds/<name>.mp3`
  * so the marketing landing page can embed it as a demo sample. The
- * route returns the public URL the operator can paste into the
+ * route returns the public URL the Account Holder can paste into the
  * marketing component.
  *
  * Owner-gated via the same `authorizeMigration` helper used by the
@@ -109,7 +109,7 @@ router.post(
  *
  * Vercel's serverless filesystem is ephemeral — the MP3 written
  * here survives until the deploy is rebuilt. For a permanent fix
- * the operator should ALSO run `node scripts/generate-jingle.mjs`
+ * the Account Holder should ALSO run `node scripts/generate-jingle.mjs`
  * locally + commit the resulting file. This endpoint exists so
  * Mike can refresh the jingle on prod without redeploying, and
  * so people without the ELEVENLABS_API_KEY locally can still
@@ -185,7 +185,7 @@ router.post(
  *
  * Idempotent: existing files are skipped unless `?force=true` is
  * passed. Failures on individual sounds don't abort the batch — the
- * response lists per-file status so the operator can retry only
+ * response lists per-file status so the Account Holder can retry only
  * what didn't land.
  *
  * Auth: same `optionalAuth` + `authorizeMigration` pair the DDL
@@ -285,7 +285,7 @@ router.post(
             bytes: audio.byteLength,
           });
         } catch (e: any) {
-          // Don't abort the batch — the operator may want partial success
+          // Don't abort the batch — the Account Holder may want partial success
           // and retry the failed ones independently. Failed files log as
           // warnings; the response status code reflects the partial result.
           log.warn("brand sound generation failed for one file", {

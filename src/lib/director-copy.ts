@@ -1,5 +1,5 @@
 /**
- * Director / fleet coach copy and capability catalog.
+ * Director / Assistants coach copy and capability catalog.
  * Visual styling: wireline-design-system.ts + design-system.css (Figma tokens).
  */
 
@@ -27,18 +27,18 @@ export interface DirectorCapabilityItem {
   label: string;
   description: string;
   category: DirectorCapabilityCategory;
-  /** Example operator utterance — sent when picked from catalog */
+  /** Example Account Holder utterance — sent when picked from catalog */
   example: string;
 }
 
 /** Full capability matrix — what clients can ask Director to do */
 export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
   {
-    id: "fleet-audit",
-    label: "Fleet audit",
+    id: "Assistants-audit",
+    label: "Assistants audit",
     description: "Cross-agent review with prioritized fixes",
     category: "strategy",
-    example: "Audit my fleet — what should I fix first?",
+    example: "Audit my Assistants — what should I fix first?",
   },
   {
     id: "weekly-priorities",
@@ -189,10 +189,10 @@ export const DIRECTOR_CAPABILITY_CATALOG: readonly DirectorCapabilityItem[] = [
   },
   {
     id: "deep-dive",
-    label: "Deep fleet dive",
-    description: "Opus-level cross-fleet analysis (slower, sharper)",
+    label: "Deep Assistants dive",
+    description: "Opus-level cross-Assistants analysis (slower, sharper)",
     category: "strategy",
-    example: "Do a deep dive on my fleet performance over the last 30 days",
+    example: "Do a deep dive on my Assistants performance over the last 30 days",
   },
   {
     id: "book-meeting",
@@ -256,11 +256,11 @@ export type ComposerAccessoryKind =
   | "attach";
 
 export const DIRECTOR_COMPOSER_ACCESSORY_HINTS: Record<ComposerAccessoryKind, string> = {
-  connectors: "Connector lanes your fleet can orchestrate through Assistant",
+  connectors: "Connector lanes your Assistants can orchestrate through Assistant",
   capabilities: "Tap a skill — example prompt lands in the composer",
   coach: "Route this thread through one agent's memory and tools",
   tools: "Abilities currently armed for the coached agent",
-  attach: "Documents, fleet context rules, or playbook instructions",
+  attach: "Documents, Assistants context rules, or playbook instructions",
 };
 
 
@@ -268,16 +268,16 @@ export type DirectorStreamPhase = "connecting" | "preparing" | "thinking" | "rep
 
 export const DIRECTOR_PHASE_COPY: Record<DirectorStreamPhase, { headline: string; sub: string }> = {
   connecting: {
-    headline: "Opening fleet coach",
-    sub: "Secure channel to your fleet co-pilot",
+    headline: "Opening Assistants coach",
+    sub: "Secure channel to your Assistants co-pilot",
   },
   preparing: {
-    headline: "Loading fleet context",
-    sub: "Thread history · integrations · operator intent",
+    headline: "Loading Assistants context",
+    sub: "Thread history · integrations · Account Holder intent",
   },
   thinking: {
     headline: "Working the problem",
-    sub: "Fleet context · integrations · operator intent",
+    sub: "Assistants context · integrations · Account Holder intent",
   },
   replying: {
     headline: "Packaging your co-pilot reply",
@@ -297,7 +297,7 @@ export function directorPhaseCopy(input: {
   const base = DIRECTOR_PHASE_COPY[input.phase];
   if (input.phase === "thinking" && input.isDeep) {
     return {
-      headline: "Deep fleet analysis",
+      headline: "Deep Assistants analysis",
       sub: "Cross-agent strategy · Opus reasoning",
     };
   }
@@ -322,7 +322,7 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
     id: "first-agent",
     label: "What agent should I hire first?",
-    intent: "Fleet planning for new operators",
+    intent: "Assistants planning for new operators",
   },
   {
     id: "sales-setup",
@@ -330,9 +330,9 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
     intent: "Guided deploy + GTM",
   },
   {
-    id: "fleet-audit",
-    label: "Audit my fleet — what should I fix first?",
-    intent: "Deep fleet review",
+    id: "Assistants-audit",
+    label: "Audit my Assistants — what should I fix first?",
+    intent: "Deep Assistants review",
   },
   {
     id: "business-plan",
@@ -362,7 +362,7 @@ export const DIRECTOR_STARTER_PROMPTS: readonly DirectorStarterPrompt[] = [
   {
     id: "post-call-coach",
     label: "Review recent calls and coach my agents",
-    intent: "Fleet coaching from call history",
+    intent: "Assistants coaching from call history",
   },
   {
     id: "collections",
@@ -387,18 +387,18 @@ export const DIRECTOR_CAPABILITY_PILLS = [
 ] as const;
 
 export const DIRECTOR_LOADING_COPY = {
-  headline: "Opening fleet coach",
-  sub: "Thread history · fleet context · integrations",
+  headline: "Opening Assistants coach",
+  sub: "Thread history · Assistants context · integrations",
 } as const;
 
 export const DIRECTOR_EMPTY_HERO = {
-  eyebrow: "Fleet coach",
-  title: "Orchestrate your fleet from",
+  eyebrow: "Assistants coach",
+  title: "Orchestrate your Assistants from",
   titleAccent: "one console",
   subtitleWithFleet: (n: number) =>
     `${n} agent${n === 1 ? "" : "s"} on deck — orchestrate calls, comms, and integrations from one thread.`,
   subtitleNoFleet:
-    "Plan your fleet, research your market, coach agents, and run CRM work — before agent #1 goes live.",
+    "Plan your Assistants, research your market, coach agents, and run CRM work — before agent #1 goes live.",
   capabilityEyebrow: "One console for",
   starterEyebrow: "Start here",
   discoverEyebrow: "Explore capabilities",
@@ -428,7 +428,7 @@ export const AGENT_WORKSPACE_STARTER_PROMPTS: readonly DirectorStarterPrompt[] =
 export const DIRECTOR_LIVE_STEP_COPY = {
   contextCoach: (name: string) => `Loading ${name} coaching context`,
   contextFleet: (n: number) =>
-    n > 0 ? `Scanning ${n} agent${n === 1 ? "" : "s"} in fleet` : "Reading your business setup",
+    n > 0 ? `Scanning ${n} agent${n === 1 ? "" : "s"} in Assistants` : "Reading your business setup",
   contextSub: "Thread history · settings · recent calls",
   integrationsOn: "Arming connected integrations",
   integrationsOnSub: "Shopify · CRM · Slack · calendar paths",
@@ -491,9 +491,9 @@ export const DIRECTOR_SESSION_COPY = {
   degradedRetryLabel: "Retry",
 } as const;
 
-/** Copy for DirectorLiveOrchestra — fleet channel / runway / spotlight */
+/** Copy for DirectorLiveOrchestra — Assistants channel / runway / spotlight */
 export const LIVE_ORCHESTRA_COPY = {
-  eyebrow: "Fleet channel",
+  eyebrow: "Assistants channel",
   armSequence: "Arming integration sequence…",
   armNext: "Next on the runway",
   queuedPrefix: "Queued:",

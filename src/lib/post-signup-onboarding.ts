@@ -55,7 +55,7 @@ export async function markOnboardingCompleted(): Promise<void> {
   }
 }
 
-/** Skip auto product tour without finishing fleet setup (explore-first path). */
+/** Skip auto product tour without finishing Assistants setup (explore-first path). */
 export async function markTourCompleted(): Promise<void> {
   try {
     await authFetch("/api/user-preferences", {

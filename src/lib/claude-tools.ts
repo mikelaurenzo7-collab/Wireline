@@ -479,12 +479,12 @@ export const TOOLS = {
           type: "array",
           items: { type: "string" },
           description:
-            "5–10 atomic knowledge entries the agent needs to do its job. If specific facts aren't known, write them as TODO placeholders the operator can fill in.",
+            "5–10 atomic knowledge entries the agent needs to do its job. If specific facts aren't known, write them as TODO placeholders the Account Holder can fill in.",
         },
         success_metrics: {
           type: "array",
           items: { type: "string" },
-          description: "How the operator will know this agent is working.",
+          description: "How the Account Holder will know this agent is working.",
         },
         reasoning: { type: "string" },
       },
@@ -535,7 +535,7 @@ export const TOOLS = {
             required: ["description", "urgency"],
             additionalProperties: false,
           },
-          description: "Concrete things the operator should do today (1–4 items).",
+          description: "Concrete things the Account Holder should do today (1–4 items).",
         },
       },
       required: [
@@ -656,7 +656,7 @@ export const TOOLS = {
               suggested_canonical_content: {
                 type: "string",
                 description:
-                  "Optional improved version that consolidates the cluster. Operator can choose to apply this as an edit to the kept fact.",
+                  "Optional improved version that consolidates the cluster. Account Holder can choose to apply this as an edit to the kept fact.",
               },
               members: {
                 type: "array",
@@ -905,7 +905,7 @@ export const TOOLS = {
         coaching_note: {
           type: "string",
           description:
-            "One sentence the operator should act on — the single highest-leverage improvement for this agent.",
+            "One sentence the Account Holder should act on — the single highest-leverage improvement for this agent.",
         },
         strengths: {
           type: "array",
@@ -1033,11 +1033,11 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
-  /** CRM: search contacts in the operator's connected CRM (Salesforce or HubSpot). */
+  /** CRM: search contacts in the Account Holder's connected CRM (Salesforce or HubSpot). */
   crmSearchContacts: {
     name: "crm_search_contacts",
     description:
-      "Search the operator's connected CRM for contacts matching a name, phone number, or email. Returns up to 10 results with CRM IDs for follow-up actions. No-ops gracefully when no CRM is configured.",
+      "Search the Account Holder's connected CRM for contacts matching a name, phone number, or email. Returns up to 10 results with CRM IDs for follow-up actions. No-ops gracefully when no CRM is configured.",
     input_schema: {
       type: "object",
       properties: {
@@ -1053,11 +1053,11 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
-  /** CRM: log a completed call to the operator's CRM. */
+  /** CRM: log a completed call to the Account Holder's CRM. */
   crmLogCall: {
     name: "crm_log_call",
     description:
-      "Log a completed voice call to the operator's CRM (Salesforce Task or HubSpot Call object). Attaches summary, duration, outcome, and optionally links to an existing contact. No-ops when no CRM is configured.",
+      "Log a completed voice call to the Account Holder's CRM (Salesforce Task or HubSpot Call object). Attaches summary, duration, outcome, and optionally links to an existing contact. No-ops when no CRM is configured.",
     input_schema: {
       type: "object",
       properties: {
@@ -1082,7 +1082,7 @@ export const TOOLS = {
   crmCreateOpportunity: {
     name: "crm_create_opportunity",
     description:
-      "Create a new Salesforce Opportunity or HubSpot Deal from a qualified lead. Use after a high-intent call to push the outcome into the operator's pipeline. No-ops when no CRM is configured.",
+      "Create a new Salesforce Opportunity or HubSpot Deal from a qualified lead. Use after a high-intent call to push the outcome into the Account Holder's pipeline. No-ops when no CRM is configured.",
     input_schema: {
       type: "object",
       properties: {
@@ -1104,11 +1104,11 @@ export const TOOLS = {
     },
   } as ToolSchema,
 
-  /** Slack: post a notification to the operator's team channel. */
+  /** Slack: post a notification to the Account Holder's team channel. */
   notifySlack: {
     name: "notify_slack",
     description:
-      "Post a notification to the operator's connected Slack workspace. Use to alert the team about important outcomes: hot leads, booked meetings, escalations, or key deal milestones. No-ops when Slack is not connected.",
+      "Post a notification to the Account Holder's connected Slack workspace. Use to alert the team about important outcomes: hot leads, booked meetings, escalations, or key deal milestones. No-ops when Slack is not connected.",
     input_schema: {
       type: "object",
       properties: {
@@ -1116,7 +1116,7 @@ export const TOOLS = {
         channel: {
           type: "string",
           description:
-            "Optional Slack channel ID to post to. Defaults to the operator's configured default channel.",
+            "Optional Slack channel ID to post to. Defaults to the Account Holder's configured default channel.",
         },
       },
       required: ["message"],

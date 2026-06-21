@@ -1,7 +1,7 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- API route handlers process heterogeneous request/response payloads and Postgres jsonb columns. */
 /**
- * /api/pronunciation-dicts — operator-managed pronunciation dictionaries.
+ * /api/pronunciation-dicts — Account Holder-managed pronunciation dictionaries.
  *
  *   GET    /api/pronunciation-dicts        — list this tenant's dictionaries
  *   POST   /api/pronunciation-dicts        — create + sync to ElevenLabs
@@ -17,7 +17,7 @@ import { AppError } from "../lib/api-error";
  *
  * Active dictionaries are read by the Vapi assistant factory at call
  * time and injected into the assistant config so playback applies
- * the operator's vocabulary.
+ * the Account Holder's vocabulary.
  *
  * Tenant isolation: every row is scoped to req.user.id. The mutation
  * routes always check ownership before touching ElevenLabs so a
@@ -148,7 +148,7 @@ router.post(
       if ("error" in norm) throw AppError.fromHttpStatus(400, String(norm.error));
 
       // Insert locally first so we have a stable row id even if the
-      // EL sync fails — operator can retry the sync from the UI later.
+      // EL sync fails — Account Holder can retry the sync from the UI later.
       const [inserted] = await drizzle
         .insert(schema.pronunciationDictionaries)
         .values({
@@ -160,7 +160,7 @@ router.post(
         .returning();
 
       // Sync to ElevenLabs only if there are rules + the API key is set.
-      // Empty dictionaries are valid drafts; we sync once the operator
+      // Empty dictionaries are valid drafts; we sync once the Account Holder
       // adds entries via PATCH.
       let synced: { id: string; version_id: string } | null = null;
       if (elevenLabsConfigured() && norm.entries.length > 0) {

@@ -167,7 +167,7 @@ export async function executeAction(
 
     // Default: draft/manual handling — mirror the send_email/schedule_calendar
     // pattern. We queue every action type into `wireline_fleet_tasks` (or
-    // `wireline_outbound_leads` for prospect runs) for operator approval
+    // `wireline_outbound_leads` for prospect runs) for Account Holder approval
     // instead of touching DocuSign / Apollo directly. Operators flip
     // autonomy_level to "auto" to bypass this gate.
     switch (action.type) {

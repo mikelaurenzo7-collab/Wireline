@@ -1,14 +1,14 @@
 /**
- * Workspace Planner — turns a plain-language operator message in the
+ * Workspace Planner — turns a plain-language Account Holder message in the
  * agent chat into (a) an in-character reply, (b) concrete CONFIG changes
  * the agent proposes for itself, (c) capability (tool) toggles, and
  * (d) external action proposals (email / text / call).
  *
  * The product idea: the chat is the control surface. Instead of digging
- * through sidebars to find the right tab, the operator just says what
+ * through sidebars to find the right tab, the Account Holder just says what
  * they want ("be warmer on price objections", "turn on SMS", "update my
  * greeting to…", "text the last caller our address") and the agent
- * fills out the exact change for them. The operator reviews a one-click
+ * fills out the exact change for them. The Account Holder reviews a one-click
  * card and approves — nothing mutates without confirmation.
  *
  * This module is the pure planning brain. It calls Claude once with a
@@ -31,7 +31,7 @@ import {
   type AgentToolName,
 } from "./agent-capabilities";
 import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
-import type { DirectorIntegrationJob } from "./director-fleet-plan";
+import type { DirectorIntegrationJob } from "./director-Assistants-plan";
 
 /** Personality vibes the chat may set — mirrors the Vapi factory. */
 export const WORKSPACE_VIBE_OPTIONS = ["warm", "playful", "authoritative"] as const;
@@ -228,7 +228,7 @@ export interface WorkspacePlan {
 
 export interface PlanWorkspaceInput {
   operatorMessage: string;
-  history: Array<{ role: "operator" | "agent"; content: string }>;
+  history: Array<{ role: "Account Holder" | "agent"; content: string }>;
   agent: {
     name?: string | null;
     role?: string | null;
@@ -259,7 +259,7 @@ export interface PlanWorkspaceInput {
 const DIRECT_AGENT_TOOL: ToolSchema = {
   name: "direct_agent",
   description:
-    "Reply to the operator AND, when their message implies a change or task, fill out the exact " +
+    "Reply to the Account Holder AND, when their message implies a change or task, fill out the exact " +
     "configuration changes, capability toggles, or external actions so they can approve with one click.",
   input_schema: {
     type: "object",
@@ -267,13 +267,13 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
       reply: {
         type: "string",
         description:
-          "Your in-character conversational reply to the operator (≤120 words). Confirm what you " +
+          "Your in-character conversational reply to the Account Holder (≤120 words). Confirm what you " +
           "understood and what you've prepared for them to approve. Never ask them to go find a tab.",
       },
       config_changes: {
         type: "array",
         description:
-          "Concrete settings changes you propose. ONLY include when the operator clearly asked to " +
+          "Concrete settings changes you propose. ONLY include when the Account Holder clearly asked to " +
           "change behaviour/config. Fill `value` with the exact final text/value — do the work for them.",
         items: {
           type: "object",
@@ -296,7 +296,7 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
       tool_toggles: {
         type: "array",
         description:
-          "Capabilities to turn on/off for this agent when the operator asks (e.g. 'turn on SMS').",
+          "Capabilities to turn on/off for this agent when the Account Holder asks (e.g. 'turn on SMS').",
         items: {
           type: "object",
           properties: {
@@ -311,8 +311,8 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
       actions: {
         type: "array",
         description:
-          "External actions to run on the operator's behalf (send an email/text, place a call). " +
-          "Only propose when the operator explicitly asks to contact someone.",
+          "External actions to run on the Account Holder's behalf (send an email/text, place a call). " +
+          "Only propose when the Account Holder explicitly asks to contact someone.",
         items: {
           type: "object",
           properties: {
@@ -348,7 +348,7 @@ const COACH_DIRECTOR_WORKSPACE_TOOL: ToolSchema = {
   ...DIRECT_AGENT_TOOL,
   description:
     "Reply as the Director coaching this agent. Propose config changes, capability toggles, " +
-    "comms actions, and integration jobs for one-click operator approval.",
+    "comms actions, and integration jobs for one-click Account Holder approval.",
   input_schema: {
     ...DIRECT_AGENT_TOOL.input_schema,
     properties: {
@@ -405,8 +405,8 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
           .join("\n");
 
   const persona = coachAsDirector
-    ? `You are the Director — the operator's AI manager inside Wireline. The operator selected **${name}** (${role}, archetype: ${archetype}) in the Coach menu. You're coaching them on how to improve this agent — speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
-    : `You are ${name}, a Wireline AI ${role} (archetype: ${archetype}). You're in a private chat with your operator — the person who owns and manages you.`;
+    ? `You are the Director — the Account Holder's AI manager inside Wireline. The Account Holder selected **${name}** (${role}, archetype: ${archetype}) in the Coach menu. You're coaching them on how to improve this agent — speak as the Director ("I'll update ${name}'s greeting…"), not in ${name}'s first person voice.`
+    : `You are ${name}, a Wireline AI ${role} (archetype: ${archetype}). You're in a private chat with your Account Holder — the person who owns and manages you.`;
 
   return `${persona} This chat is their PRIMARY control surface: instead of hunting through settings tabs, they direct you in plain language and you do the work for them.
 
@@ -420,17 +420,17 @@ Your job each turn:
 
 Creative collaborator mode (chat-only, no extra tools required):
 - You CAN draft full deliverables in your reply: business plans, GTM one-pagers, marketing copy, email sequences, SOPs, objection playbooks, meeting agendas, and logo/brand briefs.
-- Tailor to the operator's vertical when known: home services (booking + dispatch), healthcare (appointments, no medical advice), collections (FDCPA-aware tone), SaaS sales (discovery + trial nurture), e-commerce (order status + returns), support (escalation + de-escalation).
-- Structure long outputs with clear headings. Be specific to the operator's business when context exists.
-- Live web research may appear above the operator message — use it for market/competitor/regulatory answers; cite sources when present.
+- Tailor to the Account Holder's vertical when known: home services (booking + dispatch), healthcare (appointments, no medical advice), collections (FDCPA-aware tone), SaaS sales (discovery + trial nurture), e-commerce (order status + returns), support (escalation + de-escalation).
+- Structure long outputs with clear headings. Be specific to the Account Holder's business when context exists.
+- Live web research may appear above the Account Holder message — use it for market/competitor/regulatory answers; cite sources when present.
 - For production logo SVGs or downloadable brand ZIPs, outline concepts here; the Director can export artifacts when no agent is selected.
-- When a deliverable implies config changes (new greeting, tone, tools), also populate config_changes / tool_toggles so the operator can approve in one click.
+- When a deliverable implies config changes (new greeting, tone, tools), also populate config_changes / tool_toggles so the Account Holder can approve in one click.
 
 Rules:
 - Never invent fields, tools, or recipients. Use only the allowlisted fields and listed capabilities.
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
-- Everything you propose is a PROPOSAL the operator approves — say so naturally ("I've drafted… approve it when ready").
-- Be decisive: if the operator's intent is clear, prepare the change rather than asking clarifying questions.
+- Everything you propose is a PROPOSAL the Account Holder approves — say so naturally ("I've drafted… approve it when ready").
+- Be decisive: if the Account Holder's intent is clear, prepare the change rather than asking clarifying questions.
 
 Allowlisted config fields (current values):
 ${currentConfig}
@@ -446,10 +446,10 @@ ${coachAsDirector && input.integrationPrompt ? `\nConnected integrations (via in
 function buildUserContent(input: PlanWorkspaceInput): string {
   const transcript = input.history
     .slice(-12)
-    .map((m) => `${m.role === "operator" ? "Operator" : "You"}: ${m.content}`)
+    .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "You"}: ${m.content}`)
     .join("\n");
   const prefix = transcript ? `Conversation so far:\n${transcript}\n\n` : "";
-  const base = `${prefix}Operator's new message:\n${input.operatorMessage}`;
+  const base = `${prefix}Account Holder's new message:\n${input.operatorMessage}`;
   return input.researchBlock ? `${input.researchBlock}\n\n${base}` : base;
 }
 
@@ -620,7 +620,7 @@ export async function planWorkspace(input: PlanWorkspaceInput): Promise<Workspac
     system: buildSystemPrompt(input),
     user: buildUserContent(input),
     tool: DIRECT_AGENT_TOOL,
-    // Sonnet 4.6: capable enough to read nuanced operator intent and pick
+    // Sonnet 4.6: capable enough to read nuanced Account Holder intent and pick
     // the right field/capability reliably, while staying affordable. The
     // workspace chat is high-frequency, so spam cost is bounded by a
     // per-user rate limiter on the route rather than a model downgrade.

@@ -56,7 +56,7 @@ router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, 
   }
 });
 
-// Returns upcoming scheduled callbacks for the operator dashboard.
+// Returns upcoming scheduled callbacks for the Account Holder dashboard.
 // Sorted by soonest first, capped at 50 for display purposes.
 // Rate-limited to 30 req/min per user to prevent scraping.
 router.get(

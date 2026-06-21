@@ -183,7 +183,7 @@ export async function sendMetaConversion(params: {
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
   if (!pixelId || !accessToken) {
     // Not an error — CAPI is opt-in via env. Log at debug so the
-    // operator sees we noticed but didn't fire.
+    // Account Holder sees we noticed but didn't fire.
     return { ok: false, error: "CAPI not configured (META_PIXEL_ID / META_CAPI_ACCESS_TOKEN)" };
   }
 

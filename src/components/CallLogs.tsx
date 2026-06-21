@@ -799,7 +799,7 @@ function CallDetail({
                       "prospect",
                       "lead",
                     ];
-                    const systemWords = ["system", "operator"];
+                    const systemWords = ["system", "Account Holder"];
                     const isUser = callerWords.includes(speaker);
                     const isSystem = systemWords.includes(speaker);
                     // Anything left with a name prefix is the AGENT side

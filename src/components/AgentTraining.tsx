@@ -43,7 +43,7 @@ import {
 } from "../lib/wireline-ops-design";
 import RoleplaySandbox from "./RoleplaySandbox";
 import IntegrationDirectivePresets from "./IntegrationDirectivePresets";
-import BehavioralRegressionTests from "./BehavioralRegressionTests";
+
 
 type TrainingTab = "database" | "voices" | "pronunciation" | "simulator" | "flow";
 
@@ -895,12 +895,7 @@ export default function AgentTraining({
                 </motion.div>
               )}
 
-              {/* Behavioral Regression Tests */}
-              <BehavioralRegressionTests
-                agentId={selectedAgentId}
-                agentRole={agentRole}
-                onAddDirective={(dir) => saveManualEntry("directive", dir)}
-              />
+
             </motion.div>
           )}
 

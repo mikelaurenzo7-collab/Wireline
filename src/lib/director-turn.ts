@@ -1,8 +1,8 @@
 /**
- * Director turn orchestration — one chat surface for fleet strategy AND
- * per-agent coaching. When the operator selects an agent in the Director
+ * Director turn orchestration — one chat surface for Assistants strategy AND
+ * per-agent coaching. When the Account Holder selects an agent in the Director
  * UI, turns route through the workspace planner (config / tools / actions).
- * Otherwise the fleet-level Director planner handles strategy + creative work.
+ * Otherwise the Assistants-level Director planner handles strategy + creative work.
  */
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
@@ -13,13 +13,13 @@ import {
   type DirectorSuggestion,
   type DirectorBusinessContext,
 } from "./director-planner";
-import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-fleet-plan";
+import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-Assistants-plan";
 import {
   buildDirectorFleetSystemPrompt,
   DirectorEmptyPlanError,
   DIRECTOR_FLEET_TOOL,
   normalizeDirectorFleetPlan,
-} from "./director-fleet-plan";
+} from "./director-Assistants-plan";
 import { formatDirectorIntegrationPrompt } from "./director-integration-prompt";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
 import {
@@ -58,7 +58,7 @@ import {
 } from "./director-web-research";
 
 export interface DirectorTurnResult {
-  mode: "fleet" | "coach";
+  mode: "Assistants" | "coach";
   reply: string;
   focusAgentId?: string;
   focusAgentName?: string;
@@ -78,13 +78,13 @@ export interface DirectorTurnResult {
 
 export interface DirectorTurnInput {
   operatorMessage: string;
-  history: Array<{ role: "operator" | "director"; content: string }>;
-  fleet: DirectorFleetAgent[];
+  history: Array<{ role: "Account Holder" | "director"; content: string }>;
+  Assistants: DirectorFleetAgent[];
   stats?: { calls7d?: number; bookings7d?: number; openTasks?: number };
   focusAgentId?: string;
   userId: string;
   business?: DirectorBusinessContext;
-  /** Fleet mode only — forces Opus + extended thinking (also auto-detected from phrasing). */
+  /** Assistants mode only — forces Opus + extended thinking (also auto-detected from phrasing). */
   forceDeep?: boolean;
   /** Skip Opus/deep heuristics (retry path after stream/deep failures). */
   shallowOnly?: boolean;
@@ -162,9 +162,9 @@ async function loadCoachContext(userId: string, agentId: string) {
 
 function mapDirectorHistoryToWorkspace(
   history: DirectorTurnInput["history"],
-): Array<{ role: "operator" | "agent"; content: string }> {
+): Array<{ role: "Account Holder" | "agent"; content: string }> {
   return history.map((m) => ({
-    role: m.role === "operator" ? ("operator" as const) : ("agent" as const),
+    role: m.role === "Account Holder" ? ("Account Holder" as const) : ("agent" as const),
     content: m.content,
   }));
 }
@@ -229,16 +229,16 @@ export async function planDirectorTurn(input: DirectorTurnInput): Promise<Direct
         userId: input.userId,
         operatorMessage: input.operatorMessage,
         history: input.history,
-        fleet: input.fleet,
+        Assistants: input.Assistants,
         stats: input.stats,
         business,
         forceDeep: input.forceDeep,
         shallowOnly: input.shallowOnly,
       });
       return {
-        mode: "fleet",
+        mode: "Assistants",
         reply:
-          "That agent wasn't found — it may have been removed. Pick another agent from the coach menu, or ask me about your fleet.",
+          "That agent wasn't found — it may have been removed. Pick another agent from the coach menu, or ask me about your Assistants.",
         suggestions: [{ kind: "create_agent", label: "Manage agents" }],
         changes: [],
         toolToggles: [],
@@ -325,7 +325,7 @@ export async function planDirectorTurnResilient(
 }
 
 export interface DirectorStreamContext {
-  mode: "fleet" | "coach";
+  mode: "Assistants" | "coach";
   system: string;
   user: string;
   tool: ToolSchema;
@@ -345,7 +345,7 @@ export interface DirectorStreamContext {
 }
 
 export interface DirectorStreamRoutingPreview {
-  mode: "fleet" | "coach";
+  mode: "Assistants" | "coach";
   model: "sonnet" | "opus" | "custom";
   modelLabel: string;
   modelProvider: "wireline" | "openrouter";
@@ -357,7 +357,7 @@ export interface DirectorStreamRoutingPreview {
 
 /**
  * Lightweight model routing for SSE — emitted before slow prompt assembly so the
- * UI can leave the "Loading fleet context" phase while DB + integrations load.
+ * UI can leave the "Loading Assistants context" phase while DB + integrations load.
  */
 export function previewDirectorStreamRouting(
   input: DirectorTurnInput & { focusAgentName?: string },
@@ -421,7 +421,7 @@ export function previewDirectorStreamRouting(
     deepThink: effectiveDeepThink,
   });
   return {
-    mode: "fleet",
+    mode: "Assistants",
     model: streamMeta.model,
     modelLabel: llm.modelLabel,
     modelProvider: llm.provider,
@@ -550,7 +550,7 @@ export async function buildDirectorStreamContext(
   const integrationPrompt = formatDirectorIntegrationPrompt(connections);
 
   const system = buildDirectorFleetSystemPrompt({
-    fleet: input.fleet,
+    Assistants: input.Assistants,
     stats: input.stats,
     business,
     deep: effectiveDeepThink,
@@ -564,17 +564,17 @@ export async function buildDirectorStreamContext(
 
   const transcript = input.history
     .slice(-12)
-    .map((m) => `${m.role === "operator" ? "Operator" : "Director"}: ${m.content}`)
+    .map((m) => `${m.role === "Account Holder" ? "Account Holder" : "Director"}: ${m.content}`)
     .join("\n");
   const user = appendResearchToUserPrompt(
-    `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${input.operatorMessage}`,
+    `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Account Holder: ${input.operatorMessage}`,
     research?.block,
   );
 
   const tool = DIRECTOR_FLEET_TOOL;
 
   return {
-    mode: "fleet",
+    mode: "Assistants",
     system,
     user,
     tool,
@@ -587,10 +587,10 @@ export async function buildDirectorStreamContext(
     modelId: llm.openRouterModelId,
     researchSources: research?.sources,
     normalize: (raw) => {
-      const plan = normalizeDirectorFleetPlan(raw, input.fleet, input.operatorMessage);
+      const plan = normalizeDirectorFleetPlan(raw, input.Assistants, input.operatorMessage);
       const modelMeta = llm.modelKind === "custom" ? ("sonnet" as const) : llm.modelKind;
       return {
-        mode: "fleet",
+        mode: "Assistants",
         reply: plan.reply,
         suggestions: plan.suggestions,
         changes: [],

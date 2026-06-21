@@ -25,7 +25,7 @@ export function extractFromDomain(from: string): string {
 }
 
 /**
- * Normalize operator input:
+ * Normalize Account Holder input:
  *   - `user@domain.com` → `Wireline <user@domain.com>`
  *   - `Wireline <user@domain.com>` → unchanged
  */
@@ -80,7 +80,7 @@ export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
   };
 }
 
-/** Parse Resend error JSON into a short operator-facing string. */
+/** Parse Resend error JSON into a short Account Holder-facing string. */
 export function formatResendApiError(status: number, body: string): string {
   let detail = body.slice(0, 300);
   try {

@@ -35,7 +35,7 @@ export function resolveHubTabFocusIndex(
 /**
  * Sub-navigation strip for grouped pages. Each tab is a Link to its own
  * route, so existing deep-links keep working — the strip just gives the
- * operator one-click access to siblings within the same hub (Training,
+ * Account Holder one-click access to siblings within the same hub (Training,
  * Channels, System). Active-state matches by current pathname so the
  * strip stays correct on direct navigation.
  *

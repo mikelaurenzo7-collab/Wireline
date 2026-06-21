@@ -180,7 +180,7 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
       return [
         "## COMPLIANCE — GDPR",
         "Personal data handling:",
-        "- Disclose at the start of the call that the conversation is recorded for service quality, retained for the operator-specified period, and that the caller has rights of access, rectification, and erasure.",
+        "- Disclose at the start of the call that the conversation is recorded for service quality, retained for the Account Holder-specified period, and that the caller has rights of access, rectification, and erasure.",
         '- Honor opt-out, deletion, and "speak to a human" requests immediately.',
       ].join("\n");
     case "financial":
@@ -247,7 +247,7 @@ export function escalationKeywordsBlock(keywords: string[] | null | undefined): 
 
 /**
  * Replace `{variable}` placeholders in `text` with values from `vars`.
- * Unknown variables are left intact (so the operator can spot them in
+ * Unknown variables are left intact (so the Account Holder can spot them in
  * test calls). Values are coerced to strings; very long values are
  * truncated at 500 chars to keep the prompt budget bounded.
  */
@@ -267,7 +267,7 @@ export function applyBusinessVariables(
 
 /**
  * KPI focus → a single line appended to the system prompt that nudges
- * the agent toward the operator-selected outcome. Subtle — the actual
+ * the agent toward the Account Holder-selected outcome. Subtle — the actual
  * scoring happens server-side post-call, but a focused agent
  * out-performs an unfocused one on its target metric.
  */
@@ -299,7 +299,7 @@ export function kpiFocusLine(focus: string | null | undefined): string {
  *   prompt          — the augmented system prompt
  *   inHours         — boolean; false means the caller should run the
  *                     out-of-hours flow (voicemail / message playback).
- *   outOfHoursMessage — the operator's custom message, if set.
+ *   outOfHoursMessage — the Account Holder's custom message, if set.
  */
 export interface RuntimeBuildResult {
   prompt: string;
@@ -317,7 +317,7 @@ export function buildAgentRuntimeContext(
   const sections: string[] = [];
 
   // Sections only get appended if they have content — keeps the prompt
-  // tight when the operator hasn't configured anything.
+  // tight when the Account Holder hasn't configured anything.
   const compliance = complianceDisclosure(profile?.compliance_mode ?? "none");
   if (compliance) sections.push(compliance);
 
@@ -372,9 +372,9 @@ export function buildAgentRuntimeContext(
 /**
  * Resolve the base identity prompt for a Vapi assistant.
  *
- * Priority: operator override → Wireline persona overlay → auto-composed.
+ * Priority: Account Holder override → Wireline persona overlay → auto-composed.
  *
- * When an operator override is present (non-empty after trimming) it
+ * When an Account Holder override is present (non-empty after trimming) it
  * REPLACES the base identity, exactly the way the persona overlay does:
  * the override text leads and the call-specific dynamic context blocks
  * (caller profile, intel, sentiment, lead, flow, personality,

@@ -18,7 +18,7 @@ export const WIRELINE_URL = "https://trywireline.com";
 export const WIRELINE_SUPPORT_EMAIL = "support@trywireline.com";
 
 export const WIRELINE_ONE_LINER =
-  "Wireline runs your inbound support, outbound sales, and email follow-ups across one fleet of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
+  "Wireline runs your inbound support, outbound sales, and email follow-ups across one Assistants of AI agents — trained on your playbook, available 24/7, and improving with every interaction.";
 
 export const WIRELINE_VOICE_STACK =
   "Live calls run through our voice bridge with low-latency speech-to-text and ElevenLabs voice synthesis. Wireline uses fast voice models for the phone runtime, while Claude powers coaching, written review, and higher-reasoning workflows.";
@@ -69,9 +69,9 @@ export const WIRELINE_FEATURES = [
       "Agents text customers and reply in-thread when customers text back. TCPA-clean with STOP/UNSUBSCRIBE handling.",
   },
   {
-    title: "Live Ops",
+    title: "Recaps",
     blurb:
-      "Unified command center — live callers on the floor, supervisor listen-in & whisper-coach, action queue, and fleet analytics in one place.",
+      "Unified Recaps — live callers on the floor, supervisor listen-in & whisper-coach, action queue, and Assistants analytics in one place.",
   },
 ] as const;
 
@@ -85,7 +85,7 @@ export const WIRELINE_FEATURES = [
  * high-scoring calls).
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "Wireline's autonomous growth engine works your leads for you: upload a list or sync your CRM, and the fleet dials out, qualifies with BANT, runs multi-touch cadences across calls, texts, and email, and books meetings straight onto your calendar — 24/7, no SDR headcount. Every call sharpens the next through the self-improvement loop, so the agents get better at booking the more they run.";
+  "Wireline's autonomous growth engine works your leads for you: upload a list or sync your CRM, and the Assistants dials out, qualifies with BANT, runs multi-touch cadences across calls, texts, and email, and books meetings straight onto your calendar — 24/7, no SDR headcount. Every call sharpens the next through the self-improvement loop, so the agents get better at booking the more they run.";
 
 /**
  * Pain → capability map. When a caller names a problem, the agent should
@@ -118,7 +118,7 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Can't justify or afford more staff",
     solution:
-      "one fleet covering inbound, outbound, and email for a fraction of a single hire — and it scales instantly",
+      "one Assistants covering inbound, outbound, and email for a fraction of a single hire — and it scales instantly",
   },
   {
     pain: "Worried quality will slip or agents will go off-script",

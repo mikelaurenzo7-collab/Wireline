@@ -170,7 +170,7 @@ export default function CrmConnectionCard() {
     { team_id: string; team_name: string; channel_id: string; channel_name: string }[]
   >([]);
   const [teamsTargetsLoading, setTeamsTargetsLoading] = useState(false);
-  // Shopify OAuth is per-store, so the operator must supply their
+  // Shopify OAuth is per-store, so the Account Holder must supply their
   // myshopify domain before the Connect button can build the install
   // URL. Held here until they click Connect.
   const [shopDomain, setShopDomain] = useState("");

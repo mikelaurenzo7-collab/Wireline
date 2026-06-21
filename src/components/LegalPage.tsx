@@ -100,7 +100,7 @@ export function PrivacyPolicy() {
       <Section title="1. Who We Are">
         <p>
           <strong>Wireline</strong> ("we", "our", or "us") operates the Wireline platform — an
-          AI-powered omnichannel agent fleet for businesses. Questions about this policy can be sent
+          AI-powered omnichannel agent Assistants for businesses. Questions about this policy can be sent
           to <strong>support@trywireline.com</strong>. This policy explains what data we collect,
           why, and your rights over it.
         </p>
@@ -521,7 +521,7 @@ export function ZoomDocs() {
 
       <Section title="Overview">
         <p>
-          Wireline is a 24/7 AI calling fleet. When a caller asks to schedule a meeting, your
+          Wireline is a 24/7 AI calling Assistants. When a caller asks to schedule a meeting, your
           Wireline agent creates a Zoom meeting on your connected Zoom account in real time,
           confirms the date and time with the caller verbally, and sends the meeting invite via
           email or SMS before the call ends.

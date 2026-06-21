@@ -1,5 +1,5 @@
 // Structured logger + prod flag with no Node-only dependencies.
-// Imported by browser code (e.g. Command Center) as well as the API bundle.
+// Imported by browser code (e.g. Recaps) as well as the API bundle.
 
 export const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 

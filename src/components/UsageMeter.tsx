@@ -197,7 +197,7 @@ export default function UsageMeter({
         </ShadButton>
       )}
 
-      {/* Prepaid credits — relevant when the operator holds a balance or is in
+      {/* Prepaid credits — relevant when the Account Holder holds a balance or is in
           overage, where credits absorb the cost before Stripe meters it. */}
       {(credit > 0 || isOver) && (
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">

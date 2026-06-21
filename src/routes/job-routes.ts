@@ -62,7 +62,7 @@ router.get(
  *
  * When the tenant has `settings.prospecting_enabled = false`, the job is
  * still queued but the worker will short-circuit with a log line. The
- * response surfaces `prospectingEnabled` so the UI can prompt the operator
+ * response surfaces `prospectingEnabled` so the UI can prompt the Account Holder
  * to flip the flag in Admin → Growth before retrying.
  */
 router.post(

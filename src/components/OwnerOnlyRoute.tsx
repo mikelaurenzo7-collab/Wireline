@@ -5,7 +5,7 @@ import { isWirelineOperator } from "../lib/admin-access";
 
 /**
  * Gates owner-only surfaces (Founder's Dashboard). Waits for session hydration
- * before rendering children so non-owners never flash platform-operator UI.
+ * before rendering children so non-owners never flash platform-Account Holder UI.
  */
 export default function OwnerOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

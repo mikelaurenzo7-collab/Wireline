@@ -8,7 +8,7 @@ type SignalOrbFrameProps = {
   className?: string;
   /** Constellation diameter preset */
   size?: FleetConstellationSize;
-  /** Dormant fleet nodes behind the focal orb */
+  /** Dormant Assistants nodes behind the focal orb */
   withConstellation?: boolean;
   /** Soft brand bloom behind content (Director hero) */
   withBloom?: boolean;
@@ -18,7 +18,7 @@ type SignalOrbFrameProps = {
 
 /**
  * SignalOrbFrame — centers focal UI (Medallion, compass, loading dots) inside
- * the shared fleet constellation motif.
+ * the shared Assistants constellation motif.
  */
 export function SignalOrbFrame({
   children,

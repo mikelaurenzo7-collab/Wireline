@@ -485,7 +485,7 @@ export default function IntakeKeysManager() {
         <div className="wl-micro-meta opacity-90 leading-relaxed font-sans space-y-1.5">
           <div>
             <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>{" "}
-            — optional, any string ≤ 255 chars. Same key + same operator returns the original{" "}
+            — optional, any string ≤ 255 chars. Same key + same Account Holder returns the original{" "}
             <code className="text-foreground/80">lead_id</code> with{" "}
             <code className="text-foreground/80">idempotent_replay: true</code>. Safe for
             form-submission retries.

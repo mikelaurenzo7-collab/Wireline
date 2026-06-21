@@ -6,7 +6,7 @@
 //
 // For two-party states, a recorded compliance disclosure must be played
 // at call start before any substantive conversation. Outbound dialers
-// that omit this expose the operator to TCPA + state-recording statute
+// that omit this expose the Account Holder to TCPA + state-recording statute
 // liability ($500–$5,000 per call).
 //
 // This module is the authoritative jurisdiction map + disclosure-text
@@ -458,7 +458,7 @@ export function buildConsentDisclosure(opts: {
  * the dialer must take before connecting (or whether it must abort).
  *
  * @param phone     The customer's phone number (E.164 or NANP-formatted).
- * @param flags     Operator + per-call compliance flags.
+ * @param flags     Account Holder + per-call compliance flags.
  */
 export interface ConsentDecision {
   /** Allowed to dial? `false` means abort — caller is on a do-not-call list. */
@@ -479,7 +479,7 @@ export interface ConsentDecision {
 
 export interface ConsentInputs {
   phone: string;
-  /** Set when this number appears on the operator's per-tenant DNC list. */
+  /** Set when this number appears on the Account Holder's per-tenant DNC list. */
   is_internal_dnc?: boolean;
   /** Set when this number appears on the federal DNC registry. */
   is_federal_dnc?: boolean;
@@ -491,7 +491,7 @@ export interface ConsentInputs {
   has_express_written_consent?: boolean;
   /** Treat call as marketing/auto-dial (true) or as servicing/relationship (false). */
   is_marketing_call?: boolean;
-  /** Operator's business name to weave into the disclosure. */
+  /** Account Holder's business name to weave into the disclosure. */
   business_name?: string;
   /** Override the default-when-unknown jurisdiction rule. */
   default_rule?: ConsentRule;

@@ -24,7 +24,7 @@ const SHORTCUTS = [
   {
     category: "Run",
     items: [
-      { keys: ["G", "O"], description: "Go to Live Ops" },
+      { keys: ["G", "O"], description: "Go to Recaps" },
       { keys: ["G", "L"], description: "Go to Pipeline" },
       { keys: ["G", "I"], description: "Go to Insights" },
       { keys: ["G", "P"], description: "Go to Phone" },

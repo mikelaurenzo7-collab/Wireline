@@ -128,7 +128,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
             <NotFoundCard
               to="/ops"
               icon={LayoutGrid}
-              label="Live Ops"
+              label="Recaps"
               hint="Mission control"
               accent={BRAND.purple}
             />

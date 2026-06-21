@@ -268,7 +268,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does it work for a single agent or full brokerage?",
-        a: "Both. Solo agents get one Wireline number + one agent on the Everyday tier ($7/mo). Brokerages on Operator or Custom packages assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
+        a: "Both. Solo agents get one Wireline number + one agent on the Everyday tier ($7/mo). Brokerages on Account Holder or Custom packages assign different numbers to different listing agents, with a brokerage-level fallback when the listing agent is in a showing.",
       },
       {
         q: "How does it qualify the buyer?",

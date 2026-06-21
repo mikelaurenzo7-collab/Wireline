@@ -8,7 +8,7 @@
  * enough to actually move the call forward.
  *
  * Three vibes, one voice. The voice (Adam · Deep by default) stays
- * consistent for brand recognition. The operator picks ONE vibe per
+ * consistent for brand recognition. The Account Holder picks ONE vibe per
  * agent and it is LOCKED for the life of every call — the agent never
  * switches personality, tone, or cadence mid-conversation. The vibe
  * sets a fixed personality; it does not flex to the caller's mood:
@@ -20,7 +20,7 @@
  *   authoritative  - formal + crisp; for medical, legal, financial
  *                    intake where the caller needs gravity.
  *
- * Operator picks per agent in FleetSettings. Vibe defaults to warm
+ * Account Holder picks per agent in FleetSettings. Vibe defaults to warm
  * for any agent that doesn't pick.
  *
  * The directive is injected into the system prompt under the
@@ -59,7 +59,7 @@ export const VIBES: Record<PersonalityVibe, { label: string; tagline: string; di
  * "Adaptive" here means CONVERSATIONALLY versatile — the agent can
  * field any topic, request, interruption, or curveball and still move
  * the call forward — NOT tonally chameleonic. The agent's personality,
- * voice, and cadence are FIXED for the entire call (set by the operator's
+ * voice, and cadence are FIXED for the entire call (set by the Account Holder's
  * chosen vibe above). It never shifts register to match the caller's
  * mood. A sudden swing from playful to authoritative mid-call is the
  * single most uncomfortable "this is a bot" tell, and we forbid it.
@@ -74,7 +74,7 @@ NEVER FABRICATE AN ACTION. You can only DO things you have explicit tools for. I
 
 /**
  * Build the personality-vibe block injected into the system prompt.
- * Combines the always-on adaptive core with the operator-selected vibe
+ * Combines the always-on adaptive core with the Account Holder-selected vibe
  * directive. Returns the adaptive core alone if vibe is unset/unknown
  * — agents always get the moat even without an explicit vibe pick.
  */

@@ -99,7 +99,7 @@ export interface HotLead {
   score?: number;
 }
 
-/* ── Fleet tasks ─────────────────────────────────────────────────── */
+/* ── Assistants tasks ─────────────────────────────────────────────────── */
 
 export type TaskPriority = "high" | "medium" | "low";
 export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
@@ -132,19 +132,19 @@ export interface SignalPresence {
   created_at: string;
 }
 
-/* ── Fleet presence response ─────────────────────────────────────── */
+/* ── Assistants presence response ─────────────────────────────────────── */
 
 export interface FleetPresenceResponse {
   signals: SignalPresence[];
 }
 
-/* ── Fleet tasks response ────────────────────────────────────────── */
+/* ── Assistants tasks response ────────────────────────────────────────── */
 
 export interface FleetTasksResponse {
   tasks: FleetTask[];
 }
 
-/* ── Fleet activity ──────────────────────────────────────────────── */
+/* ── Assistants activity ──────────────────────────────────────────────── */
 
 export interface ActivityItem {
   id: string;

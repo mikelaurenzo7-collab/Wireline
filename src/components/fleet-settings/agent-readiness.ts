@@ -21,7 +21,7 @@ export interface ReadinessCheck {
   done: boolean;
   /** What's left to do, phrased as a next action (used by the readiness stage). */
   todo: string;
-  /** A natural-language line the operator could say to the co-pilot to do it. */
+  /** A natural-language line the Account Holder could say to the co-pilot to do it. */
   copilotHint: string;
 }
 
@@ -40,7 +40,7 @@ export interface AgentReadiness {
     hasRules: boolean;
     connectedIntegrations: number;
   };
-  /** The first incomplete, operator-actionable check — the "do this next". */
+  /** The first incomplete, Account Holder-actionable check — the "do this next". */
   nextStep: ReadinessCheck | null;
   /** True once every check passes. */
   ready: boolean;

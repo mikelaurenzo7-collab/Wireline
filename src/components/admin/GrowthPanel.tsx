@@ -52,7 +52,7 @@ function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
   } else if (settings.prospecting_enabled && states.length === 0) {
     advice = "Geographic filters reduce wasted dials — start with your primary state or region.";
   } else if (settings.prospecting_enabled) {
-    advice = `ICP targets ${industryLabel} — queue a prospecting run from Live Ops when you're ready to ingest leads.`;
+    advice = `ICP targets ${industryLabel} — queue a prospecting run from Recaps when you're ready to ingest leads.`;
   }
 
   return { completeness, industryLabel, advice };

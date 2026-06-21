@@ -148,7 +148,7 @@ export function buildDirectorApproveAllConfigConfirm(
       `${skippedMissingCoach} update${skippedMissingCoach === 1 ? "" : "s"} skipped on messages without a coached agent.`,
     );
   }
-  lines.push("", "This cannot be undone from Director — you can edit agents later in Fleet.");
+  lines.push("", "This cannot be undone from Director — you can edit agents later in Assistants.");
   return lines.join("\n");
 }
 

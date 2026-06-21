@@ -221,7 +221,7 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
   // response to the most recent post-call satisfaction SMS we sent.
   // processCsatReply finds the caller's latest call log and writes
   // the score. Best-effort — never blocks or throws. We still fall
-  // through to thread storage below so the operator can see the
+  // through to thread storage below so the Account Holder can see the
   // reply in /inbox.
   if (/^\s*[1-5]\s*$/.test(body)) {
     try {
@@ -292,7 +292,7 @@ router.post("/api/twilio-webhook/sms", twilioRateLimiter, async (req: Request, r
     log.warn("SMS thread persist skipped (migration may be pending)", { error: e?.message });
   }
 
-  // No auto-reply for non-keyword messages — operator answers via /inbox.
+  // No auto-reply for non-keyword messages — Account Holder answers via /inbox.
   return res.status(200).send(twimlEmpty());
 });
 

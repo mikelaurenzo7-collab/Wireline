@@ -14,7 +14,7 @@
  *      logging in. Best-effort — never throws back into the webhook queue.
  *
  * The point of this file: turn "the call ended" into "I know exactly what
- * happened and what I should do about it" — without making the operator
+ * happened and what I should do about it" — without making the Account Holder
  * open the dashboard.
  */
 
@@ -230,7 +230,7 @@ export async function runPostCallDigest(ctx: CallContext): Promise<{
       campaignSource,
       crmLogged,
     });
-    // Send to the operator's own connected mailbox address (first one we find).
+    // Send to the Account Holder's own connected mailbox address (first one we find).
     // If they have no mailbox connected we skip — log only.
     const operatorEmail = await pickOperatorEmail(ctx.userId);
     if (operatorEmail) {

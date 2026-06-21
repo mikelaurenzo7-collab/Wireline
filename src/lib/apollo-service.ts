@@ -17,7 +17,7 @@ import { getErrorMessage } from "./server-utils";
  *     expiry.
  *   - **Platform fallback:** when no tenant has connected (or when an
  *     internal job calls without a userId), we fall back to the
- *     `APOLLO_API_KEY` env var so demo accounts and operator-side ops
+ *     `APOLLO_API_KEY` env var so demo accounts and Account Holder-side ops
  *     still work without forcing every tenant to connect.
  *
  * Apollo OAuth flow (authorization_code):

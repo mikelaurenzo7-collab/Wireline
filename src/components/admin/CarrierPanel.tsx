@@ -338,7 +338,7 @@ export function CarrierPanel({
                         });
                         pt.campaign_label = next;
                       } catch {
-                        /* silent — operator will see no save indicator */
+                        /* silent — Account Holder will see no save indicator */
                       }
                     }}
                     className="text-[11px] bg-black/5 border border-input rounded-md px-2.5 py-1.5 outline-none focus-visible:ring-brand/40 text-foreground min-w-[200px] placeholder:text-foreground/55 h-auto"
@@ -565,10 +565,10 @@ export function CarrierPanel({
             fullWidth
           />
 
-          {/* ─── Operator alert routing ─────────────────────────────
+          {/* ─── Account Holder alert routing ─────────────────────────────
               Surfaces the existing settings columns that have been in
               the DB + the NotificationService backend the whole time
-              but had no UI. When ON, Wireline texts the operator's
+              but had no UI. When ON, Wireline texts the Account Holder's
               phone when an agent does something interesting:
                 - Caller asked to escalate to a human
                 - Agent booked an appointment (positive signal)
@@ -589,7 +589,7 @@ export function CarrierPanel({
 
             <div className="flex items-center justify-between rounded-md border border-input bg-white/[0.02] p-3">
               <div className="min-w-0">
-                <p className="text-sm text-foreground leading-none">Operator alerts</p>
+                <p className="text-sm text-foreground leading-none">Account Holder alerts</p>
                 <p className="wl-micro-meta mt-1 leading-relaxed">
                   We'll text the number below when notable events happen.
                 </p>

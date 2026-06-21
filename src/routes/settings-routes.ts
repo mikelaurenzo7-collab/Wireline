@@ -64,8 +64,8 @@ router.post(
       // generic endpoint. It has a dedicated route with proper encryption.
       delete update.vapiPrivateKey;
 
-      const operator = await isPlatformAdmin(req.user);
-      if (!operator) {
+      const isAccountHolder = await isPlatformAdmin(req.user);
+      if (!isAccountHolder) {
         delete update.subscriptionStatus;
         delete update.maxAgents;
         delete update.extraAgents;

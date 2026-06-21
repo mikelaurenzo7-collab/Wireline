@@ -12,7 +12,7 @@ import { executeAction } from "./action-engine";
 
 import type { ActionItem } from "./action-types";
 
-import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-fleet-plan";
+import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-Assistants-plan";
 
 import type { WorkspaceActionKind } from "./workspace-planner";
 
@@ -38,7 +38,7 @@ export interface DirectorExecutionResult {
 
   error?: string;
 
-  /** Research / integration output surfaced back to the operator. */
+  /** Research / integration output surfaced back to the Account Holder. */
 
   output?: string;
 
@@ -165,7 +165,7 @@ export async function executeDirectorCommsAction(
 
     agentId: action.agentId,
 
-    reasoning: "Director chat — operator approved",
+    reasoning: "Director chat — Account Holder approved",
 
     payload:
       type === "send_email"

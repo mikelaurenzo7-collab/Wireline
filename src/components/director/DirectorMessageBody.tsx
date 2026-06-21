@@ -10,7 +10,7 @@ import { cn } from "../../lib/utils";
 import { safeExternalHref } from "../../lib/safe-external-url";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
-/** Strip traffic-light emoji from headings — operator UI uses tone chips instead. */
+/** Strip traffic-light emoji from headings — Account Holder UI uses tone chips instead. */
 function stripOperatorStatusEmoji(text: string): string {
   return text
     .replace(/^[\s\u{1F534}\u{1F7E1}\u{1F7E2}\u{1F7E0}\u26AA\u2705\u274C]+/u, "")

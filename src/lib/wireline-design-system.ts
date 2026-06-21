@@ -4,7 +4,7 @@
  */
 import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
-/** Forest accent — Stitch operator palette (#1A3C34) */
+/** Forest accent — Stitch Account Holder palette (#1A3C34) */
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */
@@ -65,7 +65,7 @@ export const WL_APP_CLASSES = {
   bannerCta: "app-micro-cta",
 } as const;
 
-/** Fleet coach / composer streaming UI */
+/** Assistants coach / composer streaming UI */
 export const WL_COMPOSER_CLASSES = {
   missionPanel: "wl-mission-panel director-live-panel transition-all duration-300 ease-in-out",
   composerDock:
@@ -85,7 +85,7 @@ export const WL_COMPOSER_CLASSES = {
   threadColumn: "wl-director-thread",
   messageStack: "wl-director-message-stack",
   messageBubble: "wl-director-message transition-all duration-200",
-  operatorMessageStack: "wl-director-message-stack wl-director-message-stack--operator",
+  operatorMessageStack: "wl-director-message-stack wl-director-message-stack--Account Holder",
   emptyHero: "wl-director-empty-hero",
   composerToolbar: "wl-director-composer-toolbar border-b border-border/40 pb-1.5",
   composerAccessory: "wl-composer-accessory-panel transition-all duration-200 ease-in-out",

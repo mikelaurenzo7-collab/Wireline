@@ -1,6 +1,6 @@
 /**
  * Integration playbooks — how callers trigger agent work per connected system.
- * Single source for Fleet canvas, Integration Hub cards, and tool labels.
+ * Single source for Assistants canvas, Integration Hub cards, and tool labels.
  */
 import type { AgentToolCatalogEntry, AgentToolName, ToolIntegration } from "./agent-capabilities";
 import { AGENT_TOOL_CATALOG } from "./agent-capabilities";
@@ -77,7 +77,7 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     tasks: [
       {
         id: "x-post",
-        callerMoment: "Operator or Director requests a public brand post",
+        callerMoment: "Account Holder or Director requests a public brand post",
         agentAction: "Publishes a tweet to the connected X account (max 280 characters).",
         tools: ["post_x_tweet"],
       },
@@ -89,13 +89,13 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       },
       {
         id: "x-dm",
-        callerMoment: "Operator wants to DM a prospect or partner on X",
+        callerMoment: "Account Holder wants to DM a prospect or partner on X",
         agentAction: "Sends a direct message by @username or user ID.",
         tools: ["send_x_dm"],
       },
       {
         id: "x-ads",
-        callerMoment: "Operator asks how paid campaigns are performing",
+        callerMoment: "Account Holder asks how paid campaigns are performing",
         agentAction: "Lists X Ads campaigns and pulls impressions/clicks/spend for a campaign ID.",
         tools: ["list_x_ad_campaigns", "get_x_ad_campaign_stats"],
       },

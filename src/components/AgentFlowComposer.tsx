@@ -46,7 +46,7 @@ interface AgentFlowComposerProps {
  * editor saves, so picking a template just seeds the steps array.
  */
 /**
- * Reusable snippets the operator can paste into a stage's instructions.
+ * Reusable snippets the Account Holder can paste into a stage's instructions.
  * Smaller-grained than FLOW_TEMPLATES (which seed an entire flow) —
  * these are individual building blocks: an objection handler, a
  * discovery question, a soft close. Click → append to active step.
@@ -265,13 +265,13 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   // Dirty-tracking lets us warn on navigation + drive the autosave
   // debounce. `lastSavedSnapshot` is the JSON the server has on file.
   // Comparing the current `steps` JSON against this snapshot tells us
-  // whether the operator has unsaved work. Cleaner than a boolean
-  // because it correctly handles "operator edited then reverted" —
+  // whether the Account Holder has unsaved work. Cleaner than a boolean
+  // because it correctly handles "Account Holder edited then reverted" —
   // those don't count as dirty.
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>("");
   const [autosaving, setAutosaving] = useState(false);
   // Mobile-only panel toggle. On <xl viewports the steps list +
-  // editor panels would otherwise stack vertically — operator has
+  // editor panels would otherwise stack vertically — Account Holder has
   // to scroll past the full step list every time they click a row.
   // We hide the inactive panel and surface a small tab toggle so
   // mobile feels like a real two-pane app. Desktop ignores this
@@ -324,7 +324,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
           setActiveStepId(initialSteps[0].id);
           // Starter content is not "the server's view" — it's an
           // unsaved local default. Snapshot stays empty so the
-          // operator's first edit (or just letting autosave fire)
+          // Account Holder's first edit (or just letting autosave fire)
           // counts as dirty and gets pushed up.
           setLastSavedSnapshot("");
         }
@@ -440,14 +440,14 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
   // Blocking validation: empty stage name, missing instructions on any
   // step, or a non-terminal step with no transition condition. These
   // make the saved flow useless at runtime because the LLM won't know
-  // when to advance — operator MUST fix before save lands.
+  // when to advance — Account Holder MUST fix before save lands.
   const blockingIssues = useMemo(() => validationIssues.filter(() => true), [validationIssues]);
 
   /**
    * Persist the current step list. Pulled out as a callback so the
    * autosave effect below can fire it without duplicating the POST.
    * `silent` mode suppresses success toasts (used by autosave so the
-   * operator doesn't see a toast every 3 seconds of editing).
+   * Account Holder doesn't see a toast every 3 seconds of editing).
    */
   const saveFlow = useCallback(
     async (silent = false): Promise<boolean> => {
@@ -515,7 +515,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
     return () => clearTimeout(t);
   }, [currentSnapshot, isDirty, isLoading, blockingIssues.length, isSaving, autosaving, saveFlow]);
 
-  // beforeunload warning when the operator tries to leave with
+  // beforeunload warning when the Account Holder tries to leave with
   // unsaved edits. Browser-native dialog; chrome owns the copy.
   // No-op when clean so we don't false-warn on every tab close.
   useEffect(() => {
@@ -731,7 +731,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                         setActiveStepId(step.id);
                         // On mobile, clicking a step should jump
                         // straight into the editor pane instead of
-                        // leaving the operator stuck on the list.
+                        // leaving the Account Holder stuck on the list.
                         // Desktop ignores this (both panes visible).
                         setMobilePanel("editor");
                       }}
@@ -868,7 +868,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                   </label>
 
                   {/* Dirty / autosave indicator — sits to the left of
-                      the Save button so the operator sees state at a
+                      the Save button so the Account Holder sees state at a
                       glance. Three states:
                         autosaving   → "Saving…" with spinner
                         dirty        → "Unsaved" amber chip
@@ -958,7 +958,7 @@ export default function AgentFlowComposer({ agentId }: AgentFlowComposerProps) {
                       </div>
                     );
                   })()}
-                  {/* Per-step Claude critique — operator clicks the
+                  {/* Per-step Claude critique — Account Holder clicks the
                       button, we POST the stage to /api/claude/coach-step,
                       Claude returns 4-5 bullets covering clarity / edge
                       cases / transition / tone / suggested rewrite.

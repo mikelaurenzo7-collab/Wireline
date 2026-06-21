@@ -38,7 +38,7 @@ export type JobType =
   | "post_call_enrichment" // Async Claude post-call analysis replacing inline call
   | "webhook_delivery" // Re-use / extend existing webhook retry mechanism
   | "vapi_webhook" // Async Vapi webhook processing (end-of-call, status updates)
-  | "daily_brief" // Pre-compute operator daily brief
+  | "daily_brief" // Pre-compute Account Holder daily brief
   | "campaign_dial" // One outbound dial within a campaign
   | "consent_check" // Pre-call TCPA gateway check
   | "purge_old_data" // GDPR data-retention TTL purge (nightly, per-tenant)

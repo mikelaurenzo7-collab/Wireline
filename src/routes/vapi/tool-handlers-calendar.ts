@@ -63,9 +63,9 @@ export async function handleCalendarToolCall(
             new Date(endTime).toLocaleString(),
           { agentName: agentVoiceName, caller: customer_name, outcome: "booked" },
         );
-        // Operator SMS alert — positive event. Fires only when the
-        // operator opted in (twilio_manager_alerts_enabled = true
-        // + twilio_manager_alert_number set). Keeps the operator
+        // Account Holder SMS alert — positive event. Fires only when the
+        // Account Holder opted in (twilio_manager_alerts_enabled = true
+        // + twilio_manager_alert_number set). Keeps the Account Holder
         // in the loop on wins, not just escalations.
         try {
           const { NotificationService } = await import("../../lib/notifications");

@@ -18,7 +18,7 @@ interface State {
 /**
  * Catches render errors anywhere in the React tree below it. Without this,
  * a single broken component (e.g. malformed API response) blanks the whole
- * app. With this, the operator sees a friendly recovery panel and the rest
+ * app. With this, the Account Holder sees a friendly recovery panel and the rest
  * of the shell — sidebar, command bar, navigation — keeps working.
  */
 export default class ErrorBoundary extends Component<Props, State> {

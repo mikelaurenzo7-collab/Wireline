@@ -2,7 +2,7 @@
  * TrustSignals.tsx
  * ----------------------------------------------------------------------
  * Landing-page trust strip: industry tags + security/compliance badges
- * + the operator-facing reassurance line. Sits on the unauthenticated
+ * + the Account Holder-facing reassurance line. Sits on the unauthenticated
  * marketing surface (AuthPortal) between the demo directory and the
  * sign-in form so every visitor crosses it before deciding.
  *

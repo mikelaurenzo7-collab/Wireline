@@ -320,7 +320,7 @@ export default function AdminSettings() {
       open: true,
       title: "Remove number",
       message:
-        "Remove this phone number from your fleet? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
+        "Remove this phone number from your Assistants? The number stays in your Wireline voice network, but it will stop routing calls to agents.",
       onConfirm: async () => {
         setIsDeletingNumber(id);
         try {

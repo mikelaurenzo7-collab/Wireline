@@ -279,7 +279,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
       (payload.call as { status?: string } | undefined)?.status;
     const customerNumber = (payload.call as { customer?: { number?: string } } | undefined)
       ?.customer?.number;
-    // Vapi live-call control URL — lets the operator "take" the call from the
+    // Vapi live-call control URL — lets the Account Holder "take" the call from the
     // mobile app by transferring it (see POST /api/mobile/calls/:id/handoff).
     const controlUrl = (payload.call as { monitor?: { controlUrl?: string } } | undefined)?.monitor
       ?.controlUrl;
@@ -307,7 +307,7 @@ router.post("/api/vapi-webhook", async (req: express.Request, res: express.Respo
         // is just starting to ring, so the iOS app can report a CallKit
         // incoming call. Best-effort and env-gated (no-op without APNs creds);
         // it must never block or fail the webhook. Outbound calls are skipped —
-        // the operator placed those, so there's nothing to "answer".
+        // the Account Holder placed those, so there's nothing to "answer".
         const callType = (payload.call as { type?: string } | undefined)?.type;
         const isInbound = callType ? callType.toLowerCase().includes("inbound") : false;
         if (isInbound && ["ringing", "queued"].includes(status || "") && agent?.user_id) {

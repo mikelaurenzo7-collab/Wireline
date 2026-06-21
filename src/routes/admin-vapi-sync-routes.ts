@@ -16,7 +16,7 @@
  *
  * Safe to re-run — last write wins and the operation is idempotent. The
  * endpoint returns a per-number report (skipped / patched / failed) so
- * the operator can see exactly what changed.
+ * the Account Holder can see exactly what changed.
  *
  * Auth: requesting user's email must match OWNER_EMAIL env var.
  */
@@ -154,7 +154,7 @@ async function syncOneAgent(
 
     // Vapi's system prompt cap is ~32k chars. Reject above 30k so we
     // never silent-fail a sync; the caller sees a clear error per agent
-    // and the operator knows to trim the knowledge file.
+    // and the Account Holder knows to trim the knowledge file.
     const MAX_PROMPT_CHARS = 30_000;
     if (systemPrompt.length > MAX_PROMPT_CHARS) {
       return {

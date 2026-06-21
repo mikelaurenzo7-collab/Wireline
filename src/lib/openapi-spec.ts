@@ -986,7 +986,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
     info: {
       title: "Wireline API",
       version: "1.0.0",
-      summary: "Carrier-grade omnichannel agent fleet — voice + email autonomous agents.",
+      summary: "Carrier-grade omnichannel agent Assistants — voice + email autonomous agents.",
       description: [
         "Wireline's public API. Designed for three audiences:",
         "",

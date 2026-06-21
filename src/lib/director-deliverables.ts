@@ -1,6 +1,6 @@
 /**
  * Director universal deliverables — client-safe intent detection and prompt
- * guidance for code, websites, and open-ended operator requests.
+ * guidance for code, websites, and open-ended Account Holder requests.
  */
 const WEBSITE_SIGNAL =
   /\b(website|web\s*site|landing\s*page|homepage|home\s*page|site\s*map|sitemap|wireframe|web\s*design|design\s+(?:a|my|our|the)\s+(?:website|site|landing)|redesign\s+(?:the\s+)?(?:website|site)|new\s+site|multi-?page\s+site|e-?commerce\s+site|booking\s+page|service\s+area\s+page)\b/i;
@@ -18,12 +18,12 @@ const LOGO_CREATIVE_SIGNAL =
 const WEBSITE_EXCLUDES_LOGO_PATH =
   /\b(website|web\s*site|landing\s*page|homepage|sitemap|wireframe|web\s*design)\b/i;
 
-/** Operator asked for a site / landing experience (LLM deliverable, not logo tool). */
+/** Account Holder asked for a site / landing experience (LLM deliverable, not logo tool). */
 export function wantsWebsiteDeliverable(message: string): boolean {
   return WEBSITE_SIGNAL.test(message.trim());
 }
 
-/** Operator asked for code or technical artifacts in chat. */
+/** Account Holder asked for code or technical artifacts in chat. */
 export function wantsCodeDeliverable(message: string): boolean {
   const trimmed = message.trim();
   if (!trimmed) return false;
@@ -35,7 +35,7 @@ export function wantsCodeDeliverable(message: string): boolean {
   );
 }
 
-/** Route to logo/brand-pack creative approvals (not fleet LLM). */
+/** Route to logo/brand-pack creative approvals (not Assistants LLM). */
 export function wantsLogoCreativePath(message: string): boolean {
   const trimmed = message.trim();
   if (!trimmed) return false;
@@ -54,7 +54,7 @@ export function wantsLongDeliverable(message: string): boolean {
 }
 
 const UNIVERSAL_BLOCK = `## Universal deliverables (always in scope)
-You can answer ANY reasonable operator request inside \`reply\`. Deliverables live in this thread as markdown — the operator copies from chat; large plans, code, and website prototypes may also be saved as a downloadable .md file automatically.
+You can answer ANY reasonable Account Holder request inside \`reply\`. Deliverables live in this thread as markdown — the Account Holder copies from chat; large plans, code, and website prototypes may also be saved as a downloadable .md file automatically.
 
 **Default:** Ship a complete, usable artifact in one turn. Do not refuse technical, creative, or strategic work. If scope is huge, deliver a strong v1 plus a short "phase 2" list. Long replies may also appear as a downloadable markdown file in the artifacts panel.
 
@@ -65,14 +65,14 @@ You can answer ANY reasonable operator request inside \`reply\`. Deliverables li
 **Refusals:** Only refuse illegal content, impersonation of real brands/trademarks in logo generation, or medical/legal advice framed as professional counsel — not "I can't write code."`;
 
 const WEBSITE_BLOCK = `## Website / product design mode (this turn)
-**Industry:** Match the business vertical in THIS message only (HVAC vs plumbing vs dental, etc.). Do not recycle copy from earlier turns unless the operator asks.
+**Industry:** Match the business vertical in THIS message only (HVAC vs plumbing vs dental, etc.). Do not recycle copy from earlier turns unless the Account Holder asks.
 
 Structure \`reply\` as:
 1. **Goals & audience** (2–4 bullets)
 2. **Sitemap** — pages and primary CTA per page
 3. **Page sections** — hero, proof, services, FAQ, footer (per key page)
 4. **Visual direction** — typography, color, spacing (words only; no emoji)
-5. **Starter prototype** — you MUST include exactly one \`\`\`html\`\`\` fenced block (mobile-first, semantic landmarks, accessible labels, inline CSS or a single \`<style>\` block). Keep it under ~120 lines so the operator gets a paste-ready v1 fast.
+5. **Starter prototype** — you MUST include exactly one \`\`\`html\`\`\` fenced block (mobile-first, semantic landmarks, accessible labels, inline CSS or a single \`<style>\` block). Keep it under ~120 lines so the Account Holder gets a paste-ready v1 fast.
 6. **Optional** — \`\`\`tsx\`\`\` component sketch if they will implement in React
 7. **Handoff** — hosting, forms, analytics, SEO meta, performance checklist
 
@@ -84,7 +84,7 @@ const CODE_BLOCK = `## Code mode (this turn)
 - If the ask is Wireline-specific, align with existing patterns (auth cookie, \`validateBody\`, rate limits).
 - Add a short "How to use" section after the blocks.`;
 
-/** Extra system-prompt sections for the current operator message. */
+/** Extra system-prompt sections for the current Account Holder message. */
 export function buildDirectorDeliverableGuidance(operatorMessage: string): string {
   const parts: string[] = [];
   const needsUniversal =

@@ -117,7 +117,7 @@ export default function ResetPassword() {
                 Reset password
               </h1>
               <p className="text-caption mt-1.5">
-                Choose a new password for your operator account.
+                Choose a new password for your Account Holder account.
               </p>
             </div>
           </div>

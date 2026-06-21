@@ -57,7 +57,7 @@ export default function DailyBrief() {
   const [err, setErr] = useState<string | null>(null);
   const [needsKey, setNeedsKey] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
-  // Mounted guard: load() runs both on mount and on the operator's
+  // Mounted guard: load() runs both on mount and on the Account Holder's
   // "Refresh" click. The latter is always in-mount, but the mount path
   // can resolve after navigation away — without this, late responses
   // would call setState on an unmounted DailyBrief.

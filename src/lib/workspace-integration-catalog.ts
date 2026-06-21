@@ -21,7 +21,7 @@ export const WORKSPACE_INTEGRATION_CATALOG: WorkspaceIntegration[] = [
   { id: "square", label: "Square", family: "Commerce", detail: "Customer, order, invoice, and inventory assistance.", capabilities: ["Orders", "Customers", "Invoices", "Inventory"], connection: "workspace" },
   { id: "x", label: "X", family: "Social", detail: "Handle approved social engagement and campaign awareness.", capabilities: ["Mentions", "DMs", "Posts", "Campaign reporting"], connection: "workspace" },
   { id: "yahoo", label: "Yahoo Mail", family: "Email", detail: "Mailbox option outside Google or Microsoft.", capabilities: ["Mailbox connection", "Follow-up"], connection: "workspace" },
-  { id: "icloud", label: "iCloud Mail", family: "Email", detail: "Personal mailbox context where iCloud is the operator system of record.", capabilities: ["Mailbox connection", "Follow-up"], connection: "workspace" },
+  { id: "icloud", label: "iCloud Mail", family: "Email", detail: "Personal mailbox context where iCloud is the Account Holder system of record.", capabilities: ["Mailbox connection", "Follow-up"], connection: "workspace" },
 ];
 
 export const CASEY_SALES_AGENT_TOOLS = [

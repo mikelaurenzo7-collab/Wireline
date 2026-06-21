@@ -1,4 +1,4 @@
-/** Account-level Director chat thread (fleet, coach, logos). */
+/** Account-level Director chat thread (Assistants, coach, logos). */
 export const DIRECTOR_THREAD_KEY = "director";
 
 /** Painter design studio thread — Wireline Design renders and iterations. */

@@ -52,7 +52,7 @@ export const AGENT_TOOL_NAME_VALUES = [
   "shopify_apply_discount",
   "square_send_invoice",
   // Device actions (Wireline personal-assistant tools — dispatched to the
-  // operator's phone via push; opt-in per agent, never in a customer-facing
+  // Account Holder's phone via push; opt-in per agent, never in a customer-facing
   // default role set).
   "navigate_to",
   "add_reminder",
@@ -101,7 +101,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   },
   {
     name: "create_fleet_task",
-    label: "Create fleet task",
+    label: "Create Assistants task",
     description: "Queues a follow-up task for a human teammate.",
     group: "core",
   },
@@ -223,7 +223,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "post_x_tweet",
     label: "Post on X",
-    description: "Publishes a tweet to the operator's connected X account (max 280 characters).",
+    description: "Publishes a tweet to the Account Holder's connected X account (max 280 characters).",
     group: "messaging",
     integration: "x",
   },
@@ -403,7 +403,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "send_teams_message",
     label: "Notify team via Microsoft Teams",
     description:
-      "Posts a message to the operator's Microsoft Teams channel when something important happens on a call.",
+      "Posts a message to the Account Holder's Microsoft Teams channel when something important happens on a call.",
     group: "team",
     integration: "microsoft_teams",
   },
@@ -411,7 +411,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "log_to_excel",
     label: "Log call to Excel",
     description:
-      "Appends a row — caller, outcome, and details — to the operator's Wireline Call Log spreadsheet in OneDrive.",
+      "Appends a row — caller, outcome, and details — to the Account Holder's Wireline Call Log spreadsheet in OneDrive.",
     group: "core",
     integration: "microsoft_excel",
   },
@@ -419,7 +419,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "log_to_google_sheets",
     label: "Log call to Google Sheets",
     description:
-      "Appends a row — caller, outcome, and details — to the operator's Wireline Call Log spreadsheet in Google Drive.",
+      "Appends a row — caller, outcome, and details — to the Account Holder's Wireline Call Log spreadsheet in Google Drive.",
     group: "core",
     integration: "google_sheets",
   },
@@ -468,24 +468,24 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     integration: "square",
   },
   // Device actions — Wireline personal-assistant tools. No integration; they
-  // dispatch a push to the operator's phone, which deep-links Maps / writes a
+  // dispatch a push to the Account Holder's phone, which deep-links Maps / writes a
   // calendar event / opens music. Opt-in per agent via enabledTools.
   {
     name: "navigate_to",
     label: "Navigate to a place",
-    description: "Sends turn-by-turn directions to a destination to the operator's phone.",
+    description: "Sends turn-by-turn directions to a destination to the Account Holder's phone.",
     group: "device",
   },
   {
     name: "add_reminder",
     label: "Add a reminder",
-    description: "Creates a calendar reminder on the operator's phone.",
+    description: "Creates a calendar reminder on the Account Holder's phone.",
     group: "device",
   },
   {
     name: "play_music",
     label: "Play music",
-    description: "Opens music playback for a song, artist, or playlist on the operator's phone.",
+    description: "Opens music playback for a song, artist, or playlist on the Account Holder's phone.",
     group: "device",
   },
 ] as const;
@@ -850,7 +850,7 @@ export function getDefaultAgentTools(): AgentToolName[] {
 }
 
 /**
- * Resolve which tools an agent may use. When the operator has not narrowed
+ * Resolve which tools an agent may use. When the Account Holder has not narrowed
  * enabled_tools, every agent gets the full product catalog — plans differ on
  * headroom (agent count, minutes), not which integrations exist in chat/voice.
  * Role-based subsets remain available via getRoleToolSet for explicit UI resets.

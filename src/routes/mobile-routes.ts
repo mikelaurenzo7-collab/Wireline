@@ -126,7 +126,7 @@ router.get(
             !!plan?.extraAgentPriceIdEnv && !!process.env[plan.extraAgentPriceIdEnv as string],
         },
         settings: {
-          // The operator's callback number for "take this call" handoffs.
+          // The Account Holder's callback number for "take this call" handoffs.
           handoff_phone: row?.handoffPhone || null,
         },
       });
@@ -440,7 +440,7 @@ router.get(
 
 const e164 = z.string().regex(/^\+?[1-9]\d{6,14}$/, "Expected E.164 (e.g. +15551234567)");
 
-// ── PUT /api/mobile/settings — operator's mobile-app preferences ───────────
+// ── PUT /api/mobile/settings — Account Holder's mobile-app preferences ───────────
 // Currently just the callback number used for "take this call" handoffs.
 const mobileSettingsSchema = z.object({
   handoffPhone: e164.nullable().optional(),
@@ -469,7 +469,7 @@ router.put(
 );
 
 // ── POST /api/mobile/calls/:callId/handoff — "take this call" ──────────────
-// Warm-transfers an in-progress call to the operator's number via Vapi live
+// Warm-transfers an in-progress call to the Account Holder's number via Vapi live
 // control (no Twilio). Destination is the request's `to` or the saved
 // handoff_phone. Ownership is enforced by scoping the presence row to user.
 const handoffSchema = z.object({ to: e164.optional() });

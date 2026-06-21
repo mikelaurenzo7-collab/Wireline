@@ -24,7 +24,7 @@ const TARGET_MODEL = "claude-sonnet-4-6";
  *
  * Backlog item 3 from AUDIT_WINS.md. The 2026-Q1 tiering pass changed
  * the schema *default* only, which affects new signups; existing
- * tenants keep running Gemini on the live voice path until an operator
+ * tenants keep running Gemini on the live voice path until an Account Holder
  * updates them. This endpoint performs the wholesale migration the
  * audit note called for: gated, dry-run-first, and audited.
  *

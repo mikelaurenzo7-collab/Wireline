@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 /**
- * Voice Library — operator-side clone management surface.
+ * Voice Library — Account Holder-side clone management surface.
  *
  * Lives under Admin → Voices. Lets operators:
  *   1. Browse their cloned voices (with playable previews)

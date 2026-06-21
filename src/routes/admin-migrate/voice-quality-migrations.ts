@@ -24,7 +24,7 @@ const router = Router();
 //
 // Defaults match ElevenLabs's documented defaults exactly so a
 // freshly-migrated row sounds identical to "no fine-tuning at all"
-// and the operator is free to leave the sliders untouched.
+// and the Account Holder is free to leave the sliders untouched.
 //
 // Docs: https://elevenlabs.io/docs/api-reference/text-to-speech/convert#request.body.voice_settings
 router.post(

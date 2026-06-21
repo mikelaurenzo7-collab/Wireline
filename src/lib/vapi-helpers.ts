@@ -603,7 +603,7 @@ export const VAPI_TOOL_DEFS = {
   post_x_tweet: {
     name: "post_x_tweet",
     description:
-      "Publish a tweet to the operator's connected X account. Use only when explicitly asked to post on X/Twitter or share a public brand update.",
+      "Publish a tweet to the Account Holder's connected X account. Use only when explicitly asked to post on X/Twitter or share a public brand update.",
     parameters: {
       type: "object",
       properties: {
@@ -700,7 +700,7 @@ export const VAPI_TOOL_DEFS = {
   generate_zoom_link: {
     name: "generate_zoom_link",
     description:
-      "Generate a Zoom meeting link for a scheduled appointment. Typically used alongside book_appointment when the operator has Zoom connected.",
+      "Generate a Zoom meeting link for a scheduled appointment. Typically used alongside book_appointment when the Account Holder has Zoom connected.",
     parameters: {
       type: "object",
       properties: {
@@ -1026,7 +1026,7 @@ export const VAPI_TOOL_DEFS = {
   log_to_excel: {
     name: "log_to_excel",
     description:
-      "Append a row to the operator's Wireline Call Log spreadsheet in OneDrive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the operator can review in Excel.",
+      "Append a row to the Account Holder's Wireline Call Log spreadsheet in OneDrive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Excel.",
     parameters: {
       type: "object",
       properties: {
@@ -1050,7 +1050,7 @@ export const VAPI_TOOL_DEFS = {
   log_to_google_sheets: {
     name: "log_to_google_sheets",
     description:
-      "Append a row to the operator's Wireline Call Log spreadsheet in Google Drive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the operator can review in Google Sheets.",
+      "Append a row to the Account Holder's Wireline Call Log spreadsheet in Google Drive — records the caller, the outcome, and a short detail. Use at the end of a call to keep a running log the Account Holder can review in Google Sheets.",
     parameters: {
       type: "object",
       properties: {
@@ -1074,7 +1074,7 @@ export const VAPI_TOOL_DEFS = {
   navigate_to: {
     name: "navigate_to",
     description:
-      "Send turn-by-turn directions to a destination to the operator's phone. Use when the operator asks you to navigate somewhere (e.g. 'take me to the airport').",
+      "Send turn-by-turn directions to a destination to the Account Holder's phone. Use when the Account Holder asks you to navigate somewhere (e.g. 'take me to the airport').",
     parameters: {
       type: "object",
       properties: {
@@ -1089,7 +1089,7 @@ export const VAPI_TOOL_DEFS = {
   add_reminder: {
     name: "add_reminder",
     description:
-      "Create a calendar reminder on the operator's phone. Use when the operator asks to be reminded of something.",
+      "Create a calendar reminder on the Account Holder's phone. Use when the Account Holder asks to be reminded of something.",
     parameters: {
       type: "object",
       properties: {
@@ -1105,7 +1105,7 @@ export const VAPI_TOOL_DEFS = {
   play_music: {
     name: "play_music",
     description:
-      "Open music playback for a song, artist, or playlist on the operator's phone. Use when the operator asks to play music.",
+      "Open music playback for a song, artist, or playlist on the Account Holder's phone. Use when the Account Holder asks to play music.",
     parameters: {
       type: "object",
       properties: {

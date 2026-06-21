@@ -2,7 +2,7 @@
  * Structured Director reply metadata — persisted alongside message content
  * so proposals, suggestions, and creative approvals survive reload.
  */
-import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-fleet-plan";
+import type { DirectorIntegrationJob, DirectorProposedAction } from "./director-Assistants-plan";
 import type { ProposedAction, ProposedChange, ProposedToolToggle } from "./workspace-planner";
 
 export type DirectorSuggestionKind =
@@ -108,7 +108,7 @@ export interface DirectorMessageMetadata {
   thinkingDurationMs?: number;
   coachAgentId?: string;
   coachAgentName?: string;
-  mode?: "fleet" | "coach";
+  mode?: "Assistants" | "coach";
   resolved?: Record<string, "done" | "dismissed">;
 }
 
@@ -205,7 +205,7 @@ export function buildDirectorMetadataFromTurn(
     thinkingDurationMs: (data.thinkingDurationMs as number) || undefined,
     coachAgentId: (data.focusAgentId as string) || (data.coachAgentId as string) || undefined,
     coachAgentName: (data.focusAgentName as string) || (data.coachAgentName as string) || undefined,
-    mode: (data.mode as "fleet" | "coach") || undefined,
+    mode: (data.mode as "Assistants" | "coach") || undefined,
   };
 }
 

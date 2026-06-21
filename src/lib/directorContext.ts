@@ -43,7 +43,7 @@ export interface DirectorStats {
 
 export interface BuildDirectorPromptInput {
   clientId: string;
-  fleet: DirectorFleetAgent[];
+  Assistants: DirectorFleetAgent[];
   stats?: DirectorStats;
   business?: DirectorBusinessContext;
   recentActivitySummary?: string;
@@ -56,13 +56,13 @@ export interface BuildDirectorPromptInput {
  * (Made sync for compatibility with existing Director planner calls.)
  */
 export function buildDirectorPrompt(input: BuildDirectorPromptInput): string {
-  const { fleet, stats, business, recentActivitySummary } = input;
+  const { Assistants, stats, business, recentActivitySummary } = input;
 
-  // Fleet snapshot
+  // Assistants snapshot
   const fleetSummary =
-    fleet.length === 0
+    Assistants.length === 0
       ? "(No agents deployed yet — prioritize helping them launch their first high-impact agent. Ask what their #1 pain point is right now.)"
-      : fleet
+      : Assistants
           .map((agent) => {
             const name = agent.name || "Unnamed agent";
             const role = agent.role || "generalist";
@@ -113,14 +113,14 @@ ${recentActivitySummary}
   const fullPrompt = `${BASE_DIRECTOR_SYSTEM_PROMPT}
 
 ## LIVE OPERATIONAL CONTEXT (This is ground truth — use it for every decision)
-### Fleet Snapshot
+### Assistants Snapshot
 ${fleetSummary}
 
 ${statsBlock}
 ${businessBlock}
 ${activityBlock}
 
-Operator's latest message follows. Respond as The Director — their all-encompassing boss who knows their business inside out.`;
+Account Holder's latest message follows. Respond as The Director — their all-encompassing boss who knows their business inside out.`;
 
   return fullPrompt;
 }

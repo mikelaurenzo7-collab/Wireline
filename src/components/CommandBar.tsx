@@ -119,8 +119,8 @@ export default function CommandBar() {
     },
     {
       id: "dash",
-      label: "Live Ops",
-      description: "Live callers, listen-in, actions & fleet analytics",
+      label: "Recaps",
+      description: "Live callers, listen-in, actions & Assistants analytics",
       icon: Activity,
       category: "Navigation",
       shortcut: "D",

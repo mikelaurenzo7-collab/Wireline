@@ -53,7 +53,7 @@ router.get("/plans", quotaRateLimit, (_req: Request, res: Response) => {
  * PUT /api/quotas/override — set a per-tenant override.
  *
  * Authorization: requires `quotas.override` permission (owner or admin
- * roles). A regular operator/viewer/auditor cannot raise their own
+ * roles). A regular Account Holder/viewer/auditor cannot raise their own
  * caps. The accept/deny audit trail lives in `wireline_audit_log` via
  * `auditLogger.logSecurity` (deny path) and a dedicated `quota.override_set`
  * event on the accept path.

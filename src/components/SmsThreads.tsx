@@ -57,7 +57,7 @@ interface SmsMessage {
 
 /**
  * Two-way SMS inbox. Lists threads on the left, opens a chat-style
- * detail on the right. Operator can type + send replies which go out
+ * detail on the right. Account Holder can type + send replies which go out
  * via the tenant's Twilio sender. Reuses the same send path as the
  * agent action engine, so opt-out enforcement applies automatically.
  *

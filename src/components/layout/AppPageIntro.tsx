@@ -14,7 +14,7 @@ interface AppPageIntroProps {
 }
 
 /**
- * In-app page header when a route does not use PageShell (e.g. Command Center).
+ * In-app page header when a route does not use PageShell (e.g. Recaps).
  * Matches PageShell editorial hierarchy; mobile uses a bottom sheet for actions.
  */
 export default function AppPageIntro({

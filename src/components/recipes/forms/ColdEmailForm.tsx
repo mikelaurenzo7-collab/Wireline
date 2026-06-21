@@ -110,7 +110,7 @@ export function ColdEmailForm({
           value={form.valueProp}
           onChange={(v: string) => set("valueProp", v)}
           rows={2}
-          placeholder="Carrier-grade voice automation that scales with your fleet."
+          placeholder="Carrier-grade voice automation that scales with your Assistants."
         />
       </Field>
       <Field label="Call to Action">

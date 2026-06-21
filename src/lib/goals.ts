@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────────────────────────────
 //  Performance goals — metric catalog + pure progress math.
 //
-//  A "goal" is a monthly fleet target an operator sets, e.g. "book 40
+//  A "goal" is a monthly Assistants target an Account Holder sets, e.g. "book 40
 //  appointments this month". The /api/goals route pulls live activity for
 //  the current calendar month and this module turns (goal, actual) pairs
 //  into progress: percent complete, pace against an even daily run-rate, a
@@ -25,7 +25,7 @@ export const QUALIFIED_LEAD_SCORE = 50;
 /** Upper bound on a goal target — guards route + UI against absurd input. */
 export const MAX_GOAL_TARGET = 10_000_000;
 
-/** Max length of the optional operator-supplied goal label. */
+/** Max length of the optional Account Holder-supplied goal label. */
 export const MAX_GOAL_LABEL_LENGTH = 80;
 
 const DAY_MS = 86_400_000;
@@ -58,7 +58,7 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     id: "calls_handled",
     label: "Calls handled",
     unit: "calls",
-    description: "Total inbound and outbound calls your fleet completes this month.",
+    description: "Total inbound and outbound calls your Assistants completes this month.",
     accent: BRAND.purple,
   },
   {
@@ -79,7 +79,7 @@ export const GOAL_METRICS: readonly GoalMetricDef[] = [
     id: "voice_minutes",
     label: "Voice minutes",
     unit: "minutes",
-    description: "Total connected talk time across the fleet this month.",
+    description: "Total connected talk time across the Assistants this month.",
     accent: BRAND.purpleMuted,
   },
 ];
@@ -99,7 +99,7 @@ export function goalMetricDef(metric: GoalMetric): GoalMetricDef {
 }
 
 /**
- * Coerce + validate an operator-supplied goal target. Accepts a number or a
+ * Coerce + validate an Account Holder-supplied goal target. Accepts a number or a
  * numeric string. Returns a positive integer in [1, MAX_GOAL_TARGET], or
  * null when the input cannot be a valid target.
  */
@@ -112,7 +112,7 @@ export function normalizeTarget(input: unknown): number | null {
 }
 
 /**
- * Normalize an optional operator label: trims whitespace, truncates to
+ * Normalize an optional Account Holder label: trims whitespace, truncates to
  * MAX_GOAL_LABEL_LENGTH, and collapses empty strings to null.
  */
 export function normalizeLabel(input: unknown): string | null {
@@ -153,7 +153,7 @@ export type GoalStatus = "achieved" | "ahead" | "on_track" | "behind";
 export interface GoalProgress {
   /** Live count/sum for the metric this month. */
   actual: number;
-  /** The operator's target. */
+  /** The Account Holder's target. */
   target: number;
   /** actual / target, clamped to [0, 1] — for ring rendering. */
   fraction: number;

@@ -40,7 +40,7 @@ export function initSupervisorWebSocketServer(server: any) {
     //   2. `Sec-WebSocket-Protocol: bearer, <jwt>` — what browsers use,
     //      since the WebSocket constructor cannot set arbitrary headers but
     //      it CAN advertise subprotocols.
-    //   3. httpOnly session cookie — same-origin browser clients (Live Ops).
+    //   3. httpOnly session cookie — same-origin browser clients (Recaps).
     //   4. `?token=<jwt>` — dev-only fallback; rejected in production.
     const authHeader =
       typeof request.headers.authorization === "string" ? request.headers.authorization : "";

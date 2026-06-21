@@ -2,7 +2,7 @@ import { AppError } from "../lib/api-error";
 /**
  * Performance goals API — mounted at /api/goals.
  *
- * A goal is an operator-set monthly fleet target. Progress is never
+ * A goal is an Account Holder-set monthly Assistants target. Progress is never
  * stored: every read recomputes the live actual from the tenant's call
  * logs + appointments scoped to the current calendar month, so the Goals
  * tab always reflects fresh data.

@@ -123,7 +123,7 @@ router.post(
               voiceProvider: "11labs",
               firstMessage: persona.firstMessage,
               businessVariables,
-              // We deliberately do NOT touch operator-tuned fields here
+              // We deliberately do NOT touch Account Holder-tuned fields here
               // (voiceSpeed, voiceStability, etc.) — re-running the
               // endpoint shouldn't trample those if Mike has tuned them.
             })
@@ -493,7 +493,7 @@ router.post(
  * When both are NULL the handler falls back to the tenant-level
  * twilio_manager_alert_number (existing behaviour), so this migration
  * is fully backward-compatible — no agent's behaviour changes until
- * the operator sets a value.
+ * the Account Holder sets a value.
  *
  * Idempotent: ADD COLUMN IF NOT EXISTS. Safe to re-run on every deploy.
  */
