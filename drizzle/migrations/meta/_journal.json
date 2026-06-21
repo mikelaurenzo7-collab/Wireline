@@ -15,6 +15,13 @@
       "when": 1782084196170,
       "tag": "0063_rename_fleet_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782084196180,
+      "tag": "0064_update_purge_old_data_function",
+      "breakpoints": true
     }
   ]
 }
