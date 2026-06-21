@@ -36,6 +36,7 @@ const nativeFiles = [
   "ios/WirelineWidgets/WidgetColors.swift",
   "android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt",
   "android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt",
+  "android/app/src/main/java/com/wireline/app/ui/components/BrandComponents.kt",
   "android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt",
 ];
 
@@ -172,10 +173,18 @@ requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineThe
   [/Border\s*=\s*Color\(0xFFDADAD8\)/, "must use #DADAD8 Android borders"],
   [/RadiusMd\s*=\s*8\.dp/, "must retain 8dp Android card geometry"],
   [/surfaceVariant\s*=\s*Brand\.Panel2/, "must keep layered off-white input surfaces"],
+  [/headlineLarge\s*=\s*Typography\(\)\.headlineLarge\.copy\([\s\S]*?letterSpacing\s*=\s*\(-0\.48\)\.sp/, "must retain Professional Heritage headline tracking"],
 ]);
 if (/Brush\.(linearGradient|radialGradient)|Color\(0xFF(?:7C3AED|8B5CF6|A855F7)/i.test(androidTheme)) {
   report("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", "must not restore gradients or purple tokens to Android theme");
 }
+
+const androidComponents = read("android/app/src/main/java/com/wireline/app/ui/components/BrandComponents.kt");
+requirePatterns("android/app/src/main/java/com/wireline/app/ui/components/BrandComponents.kt", androidComponents, [
+  [/targetValue\s*=\s*if\s*\(pressed\)\s*0\.98f\s*else\s*1f/, "must retain 0.98 Compose tactile press feedback"],
+  [/durationMillis\s*=\s*200/, "must retain 200ms Compose tactile press timing"],
+  [/RoundedCornerShape\(Brand\.RadiusMd\)/, "must use shared 8dp card geometry"],
+]);
 
 const androidShell = read("android/app/src/main/java/com/wireline/app/ui/WirelineAndroidApp.kt");
 for (const tab of ["Studio", "Assistants", "Knowledge", "Actions", "Recaps"]) {
