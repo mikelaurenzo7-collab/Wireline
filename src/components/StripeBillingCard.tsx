@@ -203,9 +203,9 @@ export default function StripeBillingCard() {
 
   if (loading) {
     return (
-      <div className="rounded-md wl-panel border border-white/10 p-10 flex items-center gap-4">
-        <Loader2 className="w-5 h-5 animate-spin text-brand" />
-        <span className="app-section-title/70">Loading billing state…</span>
+      <div className="wl-panel flex items-center gap-4 p-10">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <span className="text-[14px] text-muted-foreground">Loading billing state…</span>
       </div>
     );
   }
@@ -217,7 +217,7 @@ export default function StripeBillingCard() {
           <div className="w-10 h-10 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
           </div>
-          <h3 className="font-display italic text-2xl text-foreground">
+          <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
             Billing is finishing setup
           </h3>
         </div>
@@ -260,10 +260,12 @@ export default function StripeBillingCard() {
         </div>
       )}
       {hasActive ? (
-        <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
-          <div className="border-b border-white/8 pb-5">
-            <h3 className="font-display italic text-2xl text-foreground">Manage plan</h3>
-            <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+        <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
+          <div className="border-b border-border pb-5">
+            <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
+              Manage plan
+            </h3>
+            <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
               Upgrade, downgrade, update payment method, or cancel through the secure Stripe
               customer portal. Changes apply to your next billing cycle unless noted otherwise.
             </p>
@@ -284,7 +286,7 @@ export default function StripeBillingCard() {
               )}
               Open billing portal
             </ShadButton>
-            <span className="app-section-title/65 flex items-center gap-2">
+            <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
               <Shield className="w-3 h-3" />
               Upgrade · cancel · invoices
             </span>
@@ -298,17 +300,17 @@ export default function StripeBillingCard() {
           onSelectPlan={startCheckout}
         />
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/6 pt-4 wl-micro-meta--muted uppercase tracking-[0.2em]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Stripe · PCI DSS Level 1 · Cancel anytime
         </div>
         <div className="flex items-center gap-3">
-          <a href="/privacy" className="hover:text-muted/70 transition-colors">
+          <a href="/privacy" className="hover:text-foreground transition-colors">
             Privacy
           </a>
           <span>·</span>
-          <a href="/terms" className="hover:text-muted/70 transition-colors">
+          <a href="/terms" className="hover:text-foreground transition-colors">
             Terms
           </a>
         </div>
@@ -325,10 +327,12 @@ function CreditTopUpCard({
   onBuy: (amountUsd: number) => void;
 }) {
   return (
-    <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-5">
-      <div className="border-b border-white/8 pb-5">
-        <h3 className="font-display italic text-2xl text-foreground">Add call credits</h3>
-        <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+    <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-5">
+      <div className="border-b border-border pb-5">
+        <h3 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
+          Add call credits
+        </h3>
+        <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           Most months your plan's minutes are plenty — credits are an optional safety net for the
           occasional spike. They cover overage at your plan rate before it's invoiced; if you're
           regularly over, upgrading your plan is the more economical move.
@@ -353,7 +357,7 @@ function CreditTopUpCard({
             ${a}
           </ShadButton>
         ))}
-        <span className="app-section-title/65 flex items-center gap-2">
+        <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground flex items-center gap-2">
           <Shield className="w-3 h-3" />
           Applied to overage automatically
         </span>
@@ -374,10 +378,10 @@ function PlanPicker({
   onSelectPlan: (planId: string) => void;
 }) {
   return (
-    <div className="rounded-md wl-panel border border-white/10 p-8 md:p-10 space-y-8">
-      <div className="border-b border-white/8 pb-6">
-        <h3 className="font-display italic text-3xl text-foreground">Choose a plan</h3>
-        <p className="text-[12px] text-muted/70 mt-1.5 leading-relaxed max-w-lg">
+    <div className="rounded-md wl-panel border border-border p-8 md:p-10 space-y-8">
+      <div className="border-b border-border pb-6">
+        <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Choose a plan</h3>
+        <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
           Start small, prove the channel, then scale into more agents and minutes. No setup fees.
           Cancel anytime.
         </p>
@@ -397,7 +401,7 @@ function PlanPicker({
                 "relative rounded-md wl-panel border p-7 flex flex-col gap-5 transition-all group overflow-hidden",
                 isSignupMatch
                   ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
-                  : "border-white/10 hover:border-white/20",
+                  : "border-border hover:border-[color:var(--wl-line-strong)]",
               )}
               data-accent={accent}
             >
@@ -420,17 +424,21 @@ function PlanPicker({
                 <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
                   <Icon className="w-6 h-6 wl-accent-text" />
                 </div>
-                <span className="wl-label-muted/70">
+                <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
                   {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
                 </span>
               </div>
               <div>
-                <h4 className="font-display italic text-2xl text-foreground">{plan.name}</h4>
+                <h4 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
+                  {plan.name}
+                </h4>
                 <div className="mt-1.5 flex items-baseline gap-1">
-                  <span className="font-display italic text-4xl text-foreground">
+                  <span className="font-semibold tracking-[-.02em] text-4xl text-foreground">
                     ${plan.price_usd_monthly.toLocaleString()}
                   </span>
-                  <span className="wl-label-muted/70">/mo</span>
+                  <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                    /mo
+                  </span>
                 </div>
               </div>
               <ul className="space-y-2 flex-1">
@@ -451,7 +459,7 @@ function PlanPicker({
                 onClick={() => onSelectPlan(plan.id)}
                 disabled={isBusy || !plan.configured}
                 className={cn(
-                  "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-white/20 hover:border-white/40 text-foreground bg-white/5 hover:bg-white/10 hover-premium-glow",
+                  "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wl-line-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
                   !isBusy && plan.configured && "wl-accent-subscribe",
                 )}
               >
@@ -466,7 +474,7 @@ function PlanPicker({
                 )}
               </ShadButton>
               {!plan.configured && (
-                <p className="wl-label text-muted/70 text-center leading-relaxed">
+                <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
                   Stripe price pending — contact us to start on this tier
                 </p>
               )}
@@ -510,11 +518,11 @@ function ActiveSubCard({
             ? { label: "Canceled", cls: "bg-rose-500/15 border-rose-500/30 text-rose-500" }
             : {
                 label: (sub.status || "Unknown").toLowerCase(),
-                cls: "bg-white/10 border-white/20 text-muted",
+                cls: "bg-white/10 border-border text-muted",
               };
   return (
     <div
-      className="rounded-md wl-panel border border-white/12 p-8 md:p-10 relative overflow-hidden"
+      className="rounded-md wl-panel border border-border p-8 md:p-10 relative overflow-hidden"
       data-accent={accent}
     >
       <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
@@ -540,10 +548,10 @@ function ActiveSubCard({
                 </span>
               )}
             </div>
-            <h3 className="font-display italic text-3xl md:text-4xl text-foreground">
+            <h3 className="font-semibold tracking-[-.02em] text-3xl md:text-4xl text-foreground">
               {sub.plan_name || sub.plan || "—"}
             </h3>
-            <p className="app-section-title/60">
+            <p className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
                 <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
                   {agentCount} / {sub.max_agents} agents
