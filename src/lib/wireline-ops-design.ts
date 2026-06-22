@@ -1,7 +1,7 @@
 /**
- * Wireline Recaps � instrument-grade design contract.
+ * Wireline Recaps – instrument-grade design contract.
  * Copy + class hooks for Recaps, floor, and setup nudges.
- * Palette: Wireline Precision blue (see foundation.css).
+ * Palette: Ametrine Precision (see foundation.css).
  */
 
 import { WL_BRAND } from "./wireline-design-system";
@@ -32,7 +32,7 @@ export const WL_OPS_CLASSES = {
   insightLabel: "wl-insight-label",
 } as const;
 
-/** Sentiment chart � active green positive; signalBlue neutral; rose negative */
+/** Sentiment chart – active green positive; Ametrine primary neutral; rose negative */
 export const OPS_SENTIMENT_COLORS = {
   positive: WL_BRAND.accentHex,
   neutral: BRAND.teal,
@@ -42,76 +42,76 @@ export const OPS_SENTIMENT_COLORS = {
 export const OPS_PULSE_METRICS = {
   live: { label: "Live callers", mono: true },
   pending: { label: "Pending actions", mono: true },
-  Assistants: { label: "Assistants agents", mono: true },
+  Assistants: { label: "Assistants", mono: true },
   escalations: { label: "Escalations", mono: true },
 } as const;
 
 export const OPS_COPY = {
-  floorQuiet: "Floor is quiet � active conversations appear here.",
+  floorQuiet: "Floor is quiet – active conversations appear here.",
   floorLoading: "Loading Active calls",
   floorTitle: (n: number) => (n === 0 ? "Active calls" : `${n} live caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
-  intelEmpty: "All clear � no Account Holder approvals waiting.",
-  telemetryTitle: "Assistants pulse",
+  intelEmpty: "All clear – no Account Holder approvals waiting.",
+  telemetryTitle: "Assistant activity",
   telemetryActive: "Streaming",
-  growthTitle: "Autonomous prospecting",
-  growthBody: "Queue a prospecting run when your Assistants is deployed.",
-  growthCta: "Queue prospecting",
-  growthCtaBusy: "QueuingGǪ",
-  growthDeployFirst: "Deploy an agent first",
-  analyticsSection: "Assistants analytics",
+  growthTitle: "Autonomous outreach",
+  growthBody: "Queue an outreach run when your assistant is deployed.",
+  growthCta: "Queue outreach",
+  growthCtaBusy: "Queuing…",
+  growthDeployFirst: "Deploy an assistant first",
+  analyticsSection: "Assistant analytics",
   sentimentEmptyTitle: "No conversations yet",
   sentimentEmptyHint: "Run a test call to populate sentiment.",
-  roiLabel: "Assistants efficiency",
-  setupEyebrow: "Assistants setup",
+  roiLabel: "Assistant efficiency",
+  setupEyebrow: "Assistant setup",
   setupBody: (done: number, total: number) =>
-    `${done} of ${total} complete � agent, knowledge, number, and first useful call.`,
+    `${done} of ${total} complete – assistant, knowledge, number, and first useful call.`,
   setupHint: "Activation = one real phone conversation, not browser test alone.",
   testCallNumber: "(630) 642-5661",
   testCallHref: "tel:+16306425661",
 } as const;
 
-/** Channel & ops empty states � one copy source for route-level CTAs */
+/** Channel & ops empty states – one copy source for route-level CTAs */
 export const OPS_CHANNEL_EMPTY = {
   floor: {
     eyebrow: "Active calls",
     title: "No active callers",
-    description: "Active conversations stream here in real time � listen in, coach, or escalate.",
+    description: "Active conversations stream here in real time – listen in, get callbacks, or take over.",
     actions: [
       { label: "View call history", to: "/phone" },
-      { label: "Coach in chat", to: "/agents", primary: true },
+      { label: "Chat with assistant", to: "/agents", primary: true },
     ],
   },
   fleetRail: {
     eyebrow: "Assistants",
-    title: "No agents deployed",
-    description: "Deploy an agent to see availability and assignments on the Active calls.",
-    actions: [{ label: "Deploy agent", to: "/agents", primary: true }],
+    title: "No assistants deployed",
+    description: "Deploy an assistant to see availability and assignments.",
+    actions: [{ label: "Deploy assistant", to: "/agents", primary: true }],
   },
   fleetAgents: {
     eyebrow: "Assistants",
-    title: "No agents yet",
+    title: "No assistants yet",
     description:
-      "Create your first AI agent below � it will answer calls, book appointments, and follow up for you.",
+      "Create your first AI assistant below – it will answer calls, book appointments, and follow up for you.",
   },
   agentRecall: {
     eyebrow: "Recall",
     title: "No calls yet",
     description:
-      "Once this agent takes calls, conversation summaries appear here as recall context.",
+      "Once this assistant takes calls, conversation summaries appear here as follow-up context.",
   },
   agentDockCalls: {
     eyebrow: "Latest calls",
     title: "No calls yet",
-    description: "When this agent starts taking calls, the latest outcomes show here.",
+    description: "When this assistant starts taking calls, the latest outcomes show here.",
   },
   phone: {
     eyebrow: "Call history",
     title: "No calls yet",
     description:
-      "When your agents handle calls, transcripts and analytics appear here. Wire a number in Settings to go live.",
+      "When your assistants handle calls, recaps and analytics appear here. Configure a number in Settings to go live.",
     actions: [
-      { label: "Wire a number", to: "/admin", primary: true },
+      { label: "Configure a number", to: "/settings", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -124,9 +124,9 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "SMS",
     title: "No SMS yet",
     description:
-      "Conversations land here when an agent sends a text or a customer replies. Configure your sender in Settings, then run outbound.",
+      "Conversations land here when an assistant sends a text or a customer replies. Configure your sender in Settings, then run outbound.",
     actions: [
-      { label: "Configure SMS sender", to: "/admin?tab=carrier", primary: true },
+      { label: "Configure SMS sender", to: "/settings?tab=carrier", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -134,10 +134,10 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Email",
     title: "No threads yet",
     description:
-      "Connect Gmail, Outlook, or Yahoo in Integrations so agents can triage and reply from caller moments.",
+      "Connect Gmail, Outlook, or Yahoo in Actions so assistants can triage and reply.",
     actions: [
       { label: "Connect email", to: "/actions", primary: true },
-      { label: "Ask Assistant", to: "/chat" },
+      { label: "Ask Assistant", to: "/agents" },
     ],
   },
   inboxDetail: {
@@ -149,7 +149,7 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Pipeline",
     title: "No leads in the pipeline",
     description:
-      "Track outbound leads from Cold ? Won. Upload a CSV in Outbound or capture leads from inbound calls.",
+      "Track outbound leads. Upload a CSV in Outbound or capture leads from inbound calls.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Connect actions", to: "/actions" },
@@ -157,28 +157,27 @@ export const OPS_CHANNEL_EMPTY = {
   },
   training: {
     eyebrow: "Training",
-    title: "No agents to train yet",
+    title: "No assistants to train yet",
     description:
-      "Create your first agent in Chat or Assistants, then return here for knowledge, voice, and flow.",
+      "Create your first assistant in Assistants, then return here for knowledge, voice, and flow.",
     actions: [
-      { label: "Go to chat", to: "/chat", primary: true },
-      { label: "Open Assistants", to: "/agents" },
+      { label: "Open Assistants", to: "/agents", primary: true },
     ],
   },
   integrations: {
     eyebrow: "Email carriers",
     title: "No carriers linked",
     description:
-      "Connect Gmail, Outlook, or Yahoo � agents triage and reply from caller moments below.",
+      "Connect Gmail, Outlook, or Yahoo – assistants triage and reply from there.",
   },
   audit: {
     eyebrow: "Audit",
     title: "Audit trail is quiet",
     description:
-      "Every agent action, escalation, and policy check writes here. Deploy an agent to start the feed.",
+      "Every assistant action, callback, and policy check writes here. Deploy an assistant to start the feed.",
     actions: [
-      { label: "Deploy an agent", to: "/agents", primary: true },
-      { label: "Open Recaps", to: "/ops" },
+      { label: "Deploy an assistant", to: "/agents", primary: true },
+      { label: "Open Recaps", to: "/overview" },
     ],
   },
   auditNoMatch: {
@@ -190,14 +189,14 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Action queue",
     title: "All clear",
     description:
-      "No Account Holder approvals waiting. Autonomous actions land here when agents need your sign-off.",
+      "No Account Holder approvals waiting. Autonomous actions land here when assistants need your sign-off.",
     actions: [
-      { label: "Open Active calls", to: "/ops?tab=floor", primary: true },
-      { label: "Coach in chat", to: "/chat" },
+      { label: "Open Recaps", to: "/overview", primary: true },
+      { label: "Coach in chat", to: "/agents" },
     ],
   },
   sentiment: {
-    eyebrow: "Assistants analytics",
+    eyebrow: "Assistant analytics",
     title: "No conversations yet",
     description: "Run a test call to populate sentiment and unit economics.",
     actions: [{ label: "Call test line", to: "tel:+16306425661", primary: true }],
@@ -206,7 +205,7 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Campaigns",
     title: "No campaigns yet",
     description:
-      "Group outbound lists into campaigns � track dials, connects, and outcomes in one place.",
+      "Group outbound lists into campaigns – track dials, connects, and outcomes in one place.",
     actions: [
       { label: "Create campaign", to: "/phone?tab=outbound", primary: true },
       { label: "Import leads", to: "/pipeline" },
@@ -216,30 +215,30 @@ export const OPS_CHANNEL_EMPTY = {
     eyebrow: "Outbound queue",
     title: "Queue is idle",
     description:
-      "Upload a CSV of contacts and your agent will dial through them with full call notes saved to the CRM.",
+      "Upload a CSV of contacts and your assistant will dial through them with full call notes saved to the CRM.",
   },
   campaignLeads: {
     eyebrow: "Campaign leads",
     title: "No leads in campaign",
     description:
-      "Upload a CSV from Dispatch (Bulk mode) and assign this campaign � leads land here.",
+      "Upload a CSV from Dispatch (Bulk mode) and assign this campaign – leads land here.",
   },
   callbacks: {
     eyebrow: "Callbacks",
     title: "No scheduled callbacks",
     description:
-      "When agents use the schedule_callback tool during a call, those contacts appear here and are auto-dialed at the promised time.",
+      "When assistants schedule callbacks during a call, those contacts appear here and are auto-dialed.",
   },
   cadences: {
     eyebrow: "Sequences",
     title: "No sequences yet",
     description:
-      "Define call ? SMS ? email steps with delays. Enroll leads from Pipeline or the API � the job worker runs each step automatically.",
+      "Define call – SMS – email steps with delays. Enroll leads from Pipeline or the API – the job worker runs each step automatically.",
   },
   appointmentsUpcoming: {
     eyebrow: "Appointments",
     title: "No active commitments",
-    description: "Book manually or let agents schedule during calls.",
+    description: "Book manually or let assistants schedule during calls.",
   },
   appointmentsHistory: {
     eyebrow: "History",
@@ -249,13 +248,13 @@ export const OPS_CHANNEL_EMPTY = {
   contactNotFound: {
     eyebrow: "Contact",
     title: "Contact not found",
-    description: "This number may have been merged, removed, or never synced to your Assistants.",
+    description: "This number may have been merged, removed, or never synced to your assistant.",
     actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
   },
   contactTimeline: {
     eyebrow: "Timeline",
     title: "No interactions yet",
-    description: "Calls and appointments with this contact appear here once agents engage.",
+    description: "Calls and appointments with this contact appear here once assistants engage.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "View call history", to: "/phone" },
@@ -265,19 +264,19 @@ export const OPS_CHANNEL_EMPTY = {
 
 /** Dense training / Assistants editor panel empties (nested sections, not route-level) */
 export const OPS_TRAINING_PANEL = {
-  rules: "No rules yet � add one below to set hard limits your agent always respects.",
-  directives: "No directives yet � add tactical constraints below.",
-  facts: "No facts yet � add knowledge entries below.",
+  rules: "No rules yet – add one below to set hard limits your assistant always respects.",
+  directives: "No directives yet – add tactical constraints below.",
+  facts: "No facts yet – add knowledge entries below.",
   pronunciation: "No rules yet. Add a row below.",
   knowledge: {
     eyebrow: "Knowledge base",
     title: "No entries yet",
     description:
-      "Upload a PDF, paste a policy, or add a FAQ below so this agent answers consistently.",
+      "Upload a PDF, paste a policy, or add a FAQ below so this assistant answers consistently.",
   },
 } as const;
 
-/** Triage panel accent rails � Signal Blue + status tokens */
+/** Triage panel accent rails – Ametrine Purple + status tokens */
 export const OPS_TRIAGE_ACCENTS = {
   hotLeads: WL_BRAND.accentHex,
   openTasks: BRAND.tealBright,
@@ -286,7 +285,7 @@ export const OPS_TRIAGE_ACCENTS = {
   knowledgeGaps: BRAND.teal,
 } as const;
 
-/** Triage panel empty states � Recaps `?tab=triage` widget columns */
+/** Triage panel empty states – Recaps `?tab=triage` widget columns */
 export const OPS_TRIAGE_EMPTY = {
   hotLeads: {
     eyebrow: "Hot leads",
@@ -294,7 +293,7 @@ export const OPS_TRIAGE_EMPTY = {
     description: "High-intent callers surface here after outbound dials or inbound conversations.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Monitor floor", to: "/ops?tab=floor" },
+      { label: "Monitor floor", to: "/overview?tab=floor" },
     ],
   },
   compliance: {
@@ -306,71 +305,71 @@ export const OPS_TRIAGE_EMPTY = {
     eyebrow: "Open tasks",
     title: "Inbox zero",
     description: "No Account Holder approvals waiting in the queue.",
-    actions: [{ label: "View action queue", to: "/ops?tab=intel" }],
+    actions: [{ label: "View action queue", to: "/overview?tab=intel" }],
   },
   knowledgeGaps: {
     eyebrow: "Knowledge gaps",
     title: "Coverage looks solid",
-    description: "Repeated stump questions will appear here so you can teach agents fast.",
-    actions: [{ label: "Open training", to: "/training" }],
+    description: "Repeated stump questions will appear here so you can teach assistants fast.",
+    actions: [{ label: "Open training", to: "/studio" }],
   },
   escalations: {
     eyebrow: "Escalations",
     title: "No escalations",
     description: "Supervisor handoffs and urgent calls will land here.",
-    actions: [{ label: "Active calls", to: "/ops?tab=floor" }],
+    actions: [{ label: "Active calls", to: "/overview?tab=floor" }],
   },
 } as const;
 
-/** Triage page-level copy � toolbar + all-clear banner */
+/** Triage page-level copy – toolbar + all-clear banner */
 export const OPS_TRIAGE_COPY = {
   allClearStat: "All clear",
   allClearBannerTitle: "Nothing needs attention",
   allClearBannerBody:
-    "Tasks, compliance flags, and escalations will surface here as your Assistants runs. Hot leads are worked autonomously by your agents.",
+    "Tasks, compliance flags, and escalations will surface here as your assistants run. Hot leads are worked autonomously by your assistants.",
   allClearBannerCta: "Monitor Active calls",
-  /** Slim hot-lead signal strip � replaces the old full-height Hot Leads panel. */
+  /** Slim hot-lead signal strip – replaces the old full-height Hot Leads panel. */
   hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
-  hotStripHint: "Agents are following up autonomously",
+  hotStripHint: "Assistants are following up autonomously",
   hotStripCta: "Brief Assistant",
   hotStripPrompt: (n: number) =>
-    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now � who they are, why they're hot, and what the Assistants is doing to close them.`,
+    `Brief me on my ${n} hottest lead${n === 1 ? "" : "s"} right now – who they are, why they're hot, and what the assistant is doing to close them.`,
   escalationCoachPrompt: (number: string, summary: string) =>
     `Coach me through the escalated call from ${number}. Context: ${summary.slice(0, 400)}`,
 } as const;
 
 /**
- * Training "Assistant assists" � replaces the old recipe pop-out modals with
+ * Training "Assistant assists" – replaces the old recipe pop-out modals with
  * deep-links that prefill Director chat (mobile-safe, no modal to fail).
  */
 export const OPS_TRAINING_ASSISTS = [
   {
     label: "Performance review",
     prompt:
-      "Review this agent's recent calls and give me a performance read: wins, misses, and the top 3 coaching directives to add.",
+      "Review this assistant's recent calls and give me a performance read: wins, misses, and the top 3 coaching directives to add.",
   },
   {
     label: "Clone persona",
     prompt:
-      "Clone this agent's persona into a new agent � keep the voice and tone, and summarize what carries over.",
+      "Clone this assistant's persona into a new assistant – keep the voice and tone, and summarize what carries over.",
   },
   {
     label: "Ingest a URL",
-    prompt: "Ingest this URL into the agent's knowledge base: ",
+    prompt: "Ingest this URL into the assistant's knowledge base: ",
   },
   {
     label: "Objection drills",
     prompt:
-      "Run objection drills against this agent: throw the 5 most common objections for its vertical and grade the responses.",
+      "Run objection drills against this assistant: throw the 5 most common objections for its vertical and grade the responses.",
   },
   {
     label: "Call playbook",
     prompt:
-      "Draft a call playbook for this agent: opening, discovery, objection handling, and close.",
+      "Draft a call playbook for this assistant: opening, discovery, objection handling, and close.",
   },
   {
     label: "Pre-call brief",
-    prompt: "Prepare a pre-call brief for this agent's next outbound call.",
+    prompt: "Prepare a pre-call brief for this assistant's next outbound call.",
   },
 ] as const;
 
@@ -380,46 +379,46 @@ export const OPS_TRAINING_ASSISTS_COPY = {
 } as const;
 
 /**
- * Studio co-pilot assists � setup-oriented prompts on the agent canvas.
- * Where Training assists review performance, these help BUILD the agent:
- * each deep-links into Director coach mode scoped to the focused agent,
+ * Studio co-pilot assists – setup-oriented prompts on the assistant canvas.
+ * Where Training assists review performance, these help BUILD the assistant:
+ * each deep-links into Director coach mode scoped to the focused assistant,
  * where the Director proposes config changes the Account Holder approves.
  */
 export const OPS_STUDIO_ASSISTS = [
   {
     label: "Write the greeting",
     prompt:
-      "Write a warm, on-brand opening greeting for this agent and propose it as the first message.",
+      "Write a warm, on-brand opening greeting for this assistant and propose it as the first message.",
   },
   {
     label: "Sharpen the persona",
     prompt:
-      "Rewrite this agent's personality block � keep the role, make it sharper, warmer, and more specific to my business.",
+      "Rewrite this assistant's personality block – keep the role, make it sharper, warmer, and more specific to my business.",
   },
   {
     label: "Set the schedule",
-    prompt: "Help me set this agent's business hours and an out-of-hours message for my timezone.",
+    prompt: "Help me set this assistant's business hours and an out-of-hours message for my timezone.",
   },
   {
     label: "Pick the right tools",
     prompt:
-      "Review this agent's enabled tools for its role and propose which to turn on or off, with one-line reasons.",
+      "Review this assistant's enabled tools for its role and propose which to turn on or off, with one-line reasons.",
   },
   {
     label: "Prep a test call",
     prompt:
-      "Give me a 60-second test-call script to verify this agent's greeting, knowledge, and escalation handling.",
+      "Give me a 60-second test-call script to verify this assistant's greeting, knowledge, and escalation handling.",
   },
-] as const;
+ ] as const;
 
 export const OPS_STUDIO_ASSISTS_COPY = {
   eyebrow: "Assistant co-pilot",
-  hint: "Opens Assistant scoped to this agent",
+  hint: "Opens Assistant scoped to this assistant",
 } as const;
 
-/** Deep-link into Director chat with an agent focused and the composer prefilled. */
-export function directorAssistHref(agentId: string, prompt: string): string {
-  return `/agents?agent=${encodeURIComponent(agentId)}&prompt=${encodeURIComponent(prompt)}`;
+/** Deep-link into Director chat with an assistant focused and the composer prefilled. */
+export function directorAssistHref(assistantId: string, prompt: string): string {
+  return `/agents?agent=${encodeURIComponent(assistantId)}&prompt=${encodeURIComponent(prompt)}`;
 }
 
 /** Deep-link into Director chat with only a prefilled prompt. */
@@ -427,7 +426,7 @@ export function directorPromptHref(prompt: string): string {
   return `/agents?prompt=${encodeURIComponent(prompt)}`;
 }
 
-/** In-app help route � quick paths + page chrome */
+/** In-app help route – quick paths + page chrome */
 export const OPS_HELP = {
   title: "Help & demos",
   eyebrow: "Support",
@@ -435,19 +434,19 @@ export const OPS_HELP = {
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Assistant Chat", to: "/agents", hint: "Deploy agents & ask questions" },
+    { label: "Assistant Chat", to: "/agents", hint: "Deploy assistants & ask questions" },
     { label: "Actions", to: "/actions", hint: "Gmail, Outlook, Yahoo" },
-    { label: "Training", to: "/training", hint: "Knowledge, voice, flows" },
+    { label: "Studio", to: "/studio", hint: "Knowledge, voice, flows" },
     { label: "System status", to: "/status", hint: "Public uptime feed" },
   ],
 } as const;
 
-/** Channel toolbar copy � ClientToolbar left labels + loading states */
+/** Channel toolbar copy – ClientToolbar left labels + loading states */
 export const OPS_CHANNEL_TOOLBAR = {
   phone: {
     loading: "Loading call history",
     stat: (n: number) => `${n} call${n === 1 ? "" : "s"}`,
-    searchPlaceholder: "Search signalsGǪ",
+    searchPlaceholder: "Search signals…",
   },
   email: {
     loading: "Loading inbox",
@@ -477,7 +476,7 @@ export const OPS_CHANNEL_TOOLBAR = {
     loading: "Syncing Recaps",
     floor: (n: number) => `${n} live caller${n === 1 ? "" : "s"}`,
     intel: (n: number) => `${n} pending action${n === 1 ? "" : "s"}`,
-    analytics: "Assistants analytics",
+    analytics: "Assistant analytics",
     triage: (n: number) => OPS_CHANNEL_TOOLBAR.triage.stat(n),
   },
   insights: {
@@ -485,8 +484,8 @@ export const OPS_CHANNEL_TOOLBAR = {
     export: "Export CSV",
   },
   training: {
-    loading: "Loading training",
-    stat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
+    loading: "Loading Studio",
+    stat: (n: number) => `${n} assistant${n === 1 ? "" : "s"}`,
   },
   appointments: {
     loading: "Loading appointments",
@@ -508,7 +507,7 @@ export const OPS_CHANNEL_TOOLBAR = {
   },
   Assistants: {
     templatesStat: (n: number) => `${n} template${n === 1 ? "" : "s"}`,
-    agentsStat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
+    agentsStat: (n: number) => `${n} assistant${n === 1 ? "" : "s"}`,
   },
   integrations: {
     loading: "Loading integrations",
@@ -536,10 +535,10 @@ export const WL_INTEGRATION_CLASSES = {
   liveCard: "wl-integration-live-card",
 } as const;
 
-/** Admin hub � settings tabs, panel padding, save footers */
+/** Settings hub – settings tabs, panel padding, save footers */
 export const OPS_ADMIN = {
   loading: "Loading settings",
-  saving: "SavingGǪ",
+  saving: "Saving…",
   tabLabels: {
     accounts: "Accounts",
     branding: "Branding",
@@ -564,18 +563,18 @@ export type OpsAdminTab = keyof typeof OPS_ADMIN.tabLabels;
 export const WL_ADMIN_CLASSES = {
   panel: "wl-admin-panel",
   saveBar: "wl-admin-save-bar",
-  helpCard: "wl-help-agent-card",
+  helpCard: "wl-help-assistant-card",
 } as const;
 
 /** Founder command surface copy */
 export const OPS_FOUNDER = {
   loading: "Loading staff",
-  stat: (n: number) => `${n} staff agent${n === 1 ? "" : "s"}`,
+  stat: (n: number) => `${n} staff assistant${n === 1 ? "" : "s"}`,
   broadcastPlaceholder: "e.g. From today, always confirm the caller's email by spelling it back.",
   broadcastSend: "Send to all 6",
 } as const;
 
-/** KPI / metric tiles � founder dashboard, ops summaries */
+/** KPI / metric tiles – founder dashboard, recaps summaries */
 export const WL_STAT_CLASSES = {
   tile: "wl-stat-tile",
   tileBrand: "wl-stat-tile wl-stat-tile--brand",
@@ -590,7 +589,7 @@ export const WL_STAT_CLASSES = {
   label: "wl-stat-tile__label wl-label-muted",
 } as const;
 
-/** Assistants / founder roster row class hooks (shared with AgentListPanel) */
+/** Assistants roster row class hooks (shared with AgentListPanel) */
 export const WL_FLEET_CLASSES = {
   agentRow: "wl-Assistants-agent-row touch-press",
   agentRowActive: "wl-Assistants-agent-row--active",
@@ -600,7 +599,7 @@ export const WL_FLEET_CLASSES = {
 } as const;
 
 /** Mobile drawer section labels */
-/** Dense list / channel metadata � 10px floor (see index.css wl-micro-*) */
+/** Dense list / channel metadata – 10px floor (see index.css wl-micro-*) */
 export const WL_MICRO_CLASSES = {
   label: "wl-label",
   labelMuted: "wl-label-muted",
@@ -635,7 +634,7 @@ export const WL_CHANNEL_CLASSES = {
   threadRowActive: "bg-brand/8 border-brand/30",
 } as const;
 
-/** Insights tab groups � Performance / Quality / Revenue */
+/** Insights tab groups – Performance / Quality / Revenue */
 export const OPS_INSIGHTS_GROUPS = [
   {
     id: "performance",
@@ -659,13 +658,13 @@ export const OPS_INSIGHTS_GROUPS = [
   },
 ] as const;
 
-/** Compliance & admin empty states */
+/** Compliance & settings empty states */
 export const OPS_SUPPORT_EMPTY = {
   dnc: {
     eyebrow: "Do-Not-Call",
     title: "No numbers blocked",
     description:
-      "Add numbers manually or import a CSV to prevent them from being dialed by any agent.",
+      "Add numbers manually or import a CSV to prevent them from being dialed by any assistant.",
   },
   dncNoMatch: {
     eyebrow: "Do-Not-Call",
@@ -676,7 +675,7 @@ export const OPS_SUPPORT_EMPTY = {
     "Audit events are retained for compliance review. Export CSV for external archival or regulator requests.",
 } as const;
 
-/** Audit severity legend � mirrors DNC compliance chip vocabulary */
+/** Audit severity legend – mirrors DNC compliance chip vocabulary */
 export const OPS_AUDIT_SEVERITY = {
   info: { label: "Info", hint: "Routine operations" },
   warning: { label: "Warning", hint: "Review recommended" },
@@ -684,23 +683,23 @@ export const OPS_AUDIT_SEVERITY = {
   critical: { label: "Critical", hint: "Immediate attention" },
 } as const;
 
-/** Insights tab empty states � data-driven panels with route CTAs */
+/** Insights tab empty states – data-driven panels with route CTAs */
 export const OPS_INSIGHTS_EMPTY = {
   funnel: {
     eyebrow: "Conversion",
     title: "No funnel data yet",
-    description: "Your funnel populates as agents handle calls � try a test call or outbound dial.",
+    description: "Your funnel populates as assistants handle calls – try a test call or outbound dial.",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Recaps", to: "/ops" },
+      { label: "Recaps", to: "/overview" },
     ],
   },
   leaderboard: {
     eyebrow: "Leaderboard",
-    title: "No ranked agents yet",
-    description: "Agents appear here once they run calls in the selected window.",
+    title: "No ranked assistants yet",
+    description: "Assistants appear here once they run calls in the selected window.",
     actions: [
-      { label: "Deploy agent", to: "/agents", primary: true },
+      { label: "Deploy assistant", to: "/agents", primary: true },
       { label: "View call history", to: "/phone" },
     ],
   },
@@ -709,7 +708,7 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No latency samples yet",
     description: "Run live calls to populate TTFT, tool timing, and voice health metrics.",
     actions: [
-      { label: "Recaps", to: "/ops", primary: true },
+      { label: "Recaps", to: "/overview", primary: true },
       { label: "Call history", to: "/phone" },
     ],
   },
@@ -719,7 +718,7 @@ export const OPS_INSIGHTS_EMPTY = {
     description:
       "Run production calls to populate latency, hangups, tool-call success, escalations, webhook health, and COGS/min.",
     actions: [
-      { label: "Recaps", to: "/ops", primary: true },
+      { label: "Recaps", to: "/overview", primary: true },
       { label: "Call history", to: "/phone" },
     ],
   },
@@ -729,17 +728,17 @@ export const OPS_INSIGHTS_EMPTY = {
     description:
       "Try a longer date range, or run Assistant recipes and live calls to accumulate usage.",
     actions: [
-      { label: "Ask Assistant", to: "/chat", primary: true },
-      { label: "Recaps", to: "/ops" },
+      { label: "Ask Assistant", to: "/agents", primary: true },
+      { label: "Recaps", to: "/overview" },
     ],
   },
   attribution: {
     eyebrow: "Campaign attribution",
     title: "No tagged calls yet",
     description:
-      "Tag phone numbers with a campaign label in Admin ? Carrier. Every call to that number gets the tag and shows up here.",
+      "Tag phone numbers with a campaign label in Settings – Carrier. Every call to that number gets the tag and shows up here.",
     actions: [
-      { label: "Open Admin ? Carrier", to: "/admin?tab=carrier", primary: true },
+      { label: "Open Settings – Carrier", to: "/settings?tab=carrier", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -750,7 +749,7 @@ export const OPS_INSIGHTS_EMPTY = {
       "Score an individual call in Call Logs, or batch-evaluate up to 20 unscored calls at once.",
     actions: [
       { label: "View call history", to: "/phone" },
-      { label: "Recaps", to: "/ops" },
+      { label: "Recaps", to: "/overview" },
     ],
   },
   topics: {
@@ -759,13 +758,13 @@ export const OPS_INSIGHTS_EMPTY = {
     description: "Topic clusters need analyzed conversations. Run calls, then refresh this tab.",
     actions: [
       { label: "View call history", to: "/phone", primary: true },
-      { label: "Open training", to: "/training" },
+      { label: "Open training", to: "/studio" },
     ],
   },
   failureModesOk: {
     eyebrow: "Failure modes",
     title: "No failure clusters",
-    description: "When agents stumble, patterns cluster here with recommended fixes.",
-    actions: [{ label: "Monitor floor", to: "/ops", primary: true }],
+    description: "When assistants stumble, patterns cluster here with recommended fixes.",
+    actions: [{ label: "Monitor floor", to: "/overview", primary: true }],
   },
 } as const;

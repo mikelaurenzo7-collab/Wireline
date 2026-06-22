@@ -25,10 +25,10 @@ The Google Stitch project contains two implementation tracks:
 
 Android follows the Stitch Precision language while remaining Material-native:
 
-- pale slate-blue canvas `#F9F9FF`, white grouped cards, and quiet borders
-- signalBlue primary action `#003EC7`, deep pressed state `#0038B6`
+- pale slate-purple canvas `#F8F9FF`, white grouped cards `#FFFFFF`, secondary surfaces `#EFF4FF`, and dark navy primary text `#0B1C30`
+- Ametrine Purple primary action `#5D3FD3`, deep pressed state `#451EBB`
 - compact 4dp controls and 8dp cards, with a 4dp/8dp spacing rhythm
-- no violet, lavender, mesh, gradient, or ornamental console treatment
+- no retired forest heritage, legacy signal blue, cyan, mesh, or decorative gradients
 - consumer language: assistants, calls, recaps, and follow-ups—not Live Ops or operator dashboards
 - retain Material 3, TalkBack labels, dynamic font scaling, Android system insets, notification permission, and Telecom behavior
 

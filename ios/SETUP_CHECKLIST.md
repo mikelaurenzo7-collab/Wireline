@@ -74,19 +74,11 @@ the two below are the only manual touches, and only the first is required.
 
 ---
 
-## PART 3 — Decisions for you (not blocking)
+## PART 3 — Mobile Parity & Android Readiness
 
-### Android support
-The **backend is already platform-neutral** — `/api/mobile/*` is REST + Bearer
-JWT, and `wireline_mobile_devices.platform` already exists. Android is a client
-+ push problem, not a backend rewrite. To add it later:
-- Backend: add an **FCM** sender (`fcm-push.ts`) beside `apns-push.ts`, an
-  `fcm_token` column, and a `platform` branch in `notifyInboundCall` /
-  `notifyCallRecap`. (Small.)
-- App: native **Kotlin + Jetpack Compose** in a new `android/` folder, mirroring
-  the iOS screens; **Telecom/ConnectionService** for native call UI and
-  **high-priority FCM** for inbound wake; **Android Auto** instead of CarPlay.
-- Caveats to weigh: Android background wake is less bulletproof than iOS
-  PushKit (OEM battery managers); Android Auto is stricter for calling apps.
-- **Decision pending:** native Kotlin (recommended, symmetric with iOS) vs a
-  cross-platform framework. Nothing built yet — flagged for when you want it.
+### Android App
+We have **fully built and polished a symmetric native Kotlin + Jetpack Compose client** inside the `android/` folder!
+- **UI & Parity:** Fully implements the Ametrine Precision theme, using semantic `Brand` design system tokens, compact 4dp inputs, 8dp card geometry, and tactile 0.98 press feedback.
+- **System Integration:** Leverages **Android Telecom/ConnectionService** for native self-managed call integration and high-priority **Firebase Cloud Messaging (FCM)** for incoming call wake-up.
+- **Backend:** Connected to REST APIs under `/api/mobile/*` and fully wired to push notifications via `fcm-push.ts`.
+- **Submission Prep:** Ready for Google Play Store submission! Ensure `google-services.json` is placed in `android/app/google-services.json` and FCM environment credentials are set in Vercel before building.

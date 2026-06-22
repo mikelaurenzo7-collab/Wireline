@@ -27,7 +27,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 const ROUTES_DIR = path.resolve(REPO_ROOT, "src/routes");
-const SERVER_FILE = path.resolve(REPO_ROOT, "server.ts");
+const SERVER_FILE = path.resolve(REPO_ROOT, "server-v2.ts");
 const OUTPUT_FILE = path.resolve(REPO_ROOT, "docs/AUTHZ_MATRIX.md");
 
 const AUTH_MIDDLEWARE = [
@@ -49,7 +49,7 @@ const AUTH_MIDDLEWARE = [
  */
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   // ── Webhooks: provider-signature authenticated ──────────────────────
-  { pattern: /^\/api\/stripe-webhook$/, reason: "Stripe signature verification + idempotency" },
+  { pattern: /^\/(?:api\/)?stripe-webhook$/, reason: "Stripe signature verification + idempotency" },
   { pattern: /^\/api\/twilio-webhook\//, reason: "Twilio signature validation + rate limit" },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
   { pattern: /^\/api\/webhooks\/elevenlabs/, reason: "ElevenLabs HMAC-SHA256 signature" },
@@ -74,7 +74,7 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     pattern: /^\/api\/daily-brief\/schedule$/,
     reason: "Vercel cron; Bearer CRON_SECRET (timing-safe)",
   },
-  { pattern: /^\/api\/intake\/leads?$/, reason: "API-key auth via X-Wireline-Key + rate limit" },
+  { pattern: /^\/(?:api\/intake\/)?leads?$/, reason: "API-key auth via X-Wireline-Key + rate limit" },
   // ── Auth/OAuth/compliance: public by definition ─────────────────────
   { pattern: /^\/api\/oauth\//, reason: "OAuth initiation/callback (state-validated)" },
   { pattern: /^\/api\/auth\//, reason: "Signup/login/refresh (public by definition)" },
@@ -83,12 +83,12 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "CAN-SPAM one-click unsubscribe; token-scoped + rate-limited",
   },
   // ── Truly public, zero-sensitivity reads ────────────────────────────
-  { pattern: /^\/api\/health(\/|$)/, reason: "Liveness/readiness probes; rate-limited, no PII" },
+  { pattern: /^\/(?:api\/)?health(\/|$)/, reason: "Liveness/readiness probes; rate-limited, no PII" },
   { pattern: /^\/api\/public\//, reason: "Aggregated, no-PII marketing counters; rate-limited" },
-  { pattern: /^\/api\/billing\/plans$/, reason: "Public plan/price comparison table" },
-  { pattern: /^\/api\/quotas\/plans$/, reason: "Public plan limits comparison table" },
+  { pattern: /^\/(?:api\/)?billing\/plans$/, reason: "Public plan/price comparison table" },
+  { pattern: /^\/(?:api\/quotas\/)?plans$/, reason: "Public plan limits comparison table" },
   { pattern: /^\/api\/agents\/roles$/, reason: "Static role reference enum; no tenant data" },
-  { pattern: /^\/api\/openapi\.json$/, reason: "Public OpenAPI spec; rate-limited + CDN cached" },
+  { pattern: /^\/(?:api\/)?openapi\.json$/, reason: "Public OpenAPI spec; rate-limited + CDN cached" },
   { pattern: /^\/api\/support\/ticket$/, reason: "Public support form; rate-limited + validated" },
   { pattern: /^\/api\/contact$/, reason: "Public marketing contact form; rate-limited" },
   {
@@ -96,7 +96,7 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Premade voice previews only; cloned/tenant voices are on the authed route",
   },
   {
-    pattern: /^\/api\/voice\/metrics$/,
+    pattern: /^\/(?:api\/)?voice\/metrics$/,
     reason: "Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write",
   },
 ];

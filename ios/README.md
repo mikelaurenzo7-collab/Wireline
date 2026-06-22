@@ -142,9 +142,9 @@ Wireline launches those apps; it does not pilot them.
 
 **Direction: native first, Stitch brand second.** Wireline keeps SF Pro, system
 materials, standard controls, CallKit surfaces, and App Intent behavior, then
-layers the Stitch Noir identity on top: near-black canvas (`#0A0A0C`), charcoal
-panels (`#131315` / `#1B1B1D`), violet primary (`#5D5CFF`), and lavender accent
-text (`#C1C1FF`).
+layers the Ametrine Precision identity on top: pale slate-purple canvas (`#F8F9FF`),
+white panels (`#FFFFFF`), secondary surfaces (`#EFF4FF`), Ametrine Purple primary action (`#5D3FD3`),
+and dark navy primary text (`#0B1C30`).
 
 ## Build
 
