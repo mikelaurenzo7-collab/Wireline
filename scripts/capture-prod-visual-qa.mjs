@@ -81,7 +81,7 @@ async function settle(page) {
 }
 
 async function assertStudioComposer(page, viewportName, issues) {
-  const composer = page.locator('textarea[placeholder*="Tell"]').first();
+  const composer = page.locator('textarea#studio-training-composer').first();
   if (!(await composer.isVisible().catch(() => false))) {
     issues.push({ viewport: viewportName, route: "/studio", mode: "authenticated", kind: "layout", detail: "Studio composer is not visible." });
     return;
