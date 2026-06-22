@@ -82,7 +82,7 @@ router.post(
           body: `
           <h1>You've been invited!</h1>
           <p>${safeInvitedBy} has invited you to join their team on Wireline Business OS.</p>
-          <p>Wireline is the autonomous operating system for modern enterprises.</p>
+          <p>Wireline helps people and teams hand off calls, messages, and follow-ups while keeping human review close.</p>
           <p><a href="${safeInviteUrl}" style="padding: 10px 20px; background: #000; color: #fff; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>
           <p>If you don't have an account, you'll be prompted to create one.</p>
         `,

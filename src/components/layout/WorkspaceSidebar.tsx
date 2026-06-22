@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
- * WorkspaceSidebar.tsx — Wide labeled sidebar for enterprise workspace parity (Stitch North Star).
+ * WorkspaceSidebar.tsx — Wide labeled sidebar for workspace parity (Stitch North Star).
  *
  * Matches the attached screenshots exactly:
  * - 256px fixed width

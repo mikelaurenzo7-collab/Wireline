@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline AI - Unleash the Power of Edge AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#e2e2e9",
+                        "secondary": "#5d5e65",
+                        "outline": "#797586",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dfdfe7",
+                        "inverse-primary": "#cabeff",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#5c5b5b",
+                        "on-surface-variant": "#484554",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#d6d3d3",
+                        "on-secondary-container": "#616269",
+                        "surface-variant": "#d3e4fe",
+                        "outline-variant": "#c9c4d7",
+                        "surface-dim": "#cbdbf5",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "inverse-surface": "#213145",
+                        "tertiary": "#444443",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-container": "#d8ceff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#0b1c30",
+                        "error-container": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#45464d",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4723be",
+                        "secondary-fixed-dim": "#c6c6cd",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-secondary-fixed": "#1a1b21",
+                        "primary-fixed-dim": "#cabeff",
+                        "primary-fixed": "#e6deff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary-fixed": "#e5e2e1",
+                        "surface": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary": "#451ebb",
+                        "on-primary-fixed": "#1c0062",
+                        "surface-tint": "#6042d6",
+                        "primary-container": "#5d3fd3",
+                        "surface-container-highest": "#d3e4fe",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "base": "4px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .parallax-layer {
+            transition: transform 0.1s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen w-screen flex items-center justify-center m-0 p-0">
+<main class="relative w-full h-full max-w-[1920px] mx-auto overflow-hidden bg-inverse-surface text-inverse-on-surface flex flex-col md:flex-row">
+<!-- Left Side: Content & Shader Background -->
+<section class="relative w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-center px-margin-mobile md:px-margin-desktop z-10">
+<!-- Shader Background -->
+<div class="absolute inset-0 w-full h-full z-0 overflow-hidden opacity-80 mix-blend-screen">
+<!-- STITCH_SHADER_START:ANIMATION_91 class="absolute inset-0 w-full h-full" -->
+<div class="absolute inset-0 w-full h-full" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_91" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_91');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+float network(vec2 uv, float t) {
+    float d = 0.0;
+    for(float i=0.0; i<8.0; i++) {
+        vec2 p = vec2(sin(i * 1.5 + t), cos(i * 2.1 + t * 0.7));
+        d += 0.002 / distance(uv, p * 0.5 + 0.5);
+    }
+    return d;
+}
+
+void main() {
+    vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+    float t = u_time * 0.8;
+    
+    float pulse = network(uv, t);
+    pulse += network(uv * 1.2, t * 0.5) * 0.5;
+    
+    vec3 baseColor = vec3(0.365, 0.247, 0.827); // #5d3fd3
+    vec3 color = baseColor * pulse;
+    color += baseColor * 0.1; // Ambient glow
+    
+    gl_FragColor = vec4(color, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_91 -->
+<!-- Fallback gradient if shader fails -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/20 to-transparent pointer-events-none"></div>
+</div>
+<div class="relative z-10 flex flex-col gap-8 max-w-xl">
+<!-- Logo -->
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-4xl text-inverse-primary" style="font-variation-settings: 'FILL' 1;">
+                        polyline
+                    </span>
+<span class="font-headline-md text-headline-md font-bold tracking-tight text-white">WIRELINE AI</span>
+</div>
+<!-- Headline & CTA -->
+<div class="flex flex-col gap-6">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-white font-extrabold leading-tight">
+                        UNLEASH THE POWER OF EDGE AI.
+                    </h1>
+<p class="font-body-md text-body-md text-surface-container-high/80 max-w-md">
+                        Deploy, manage, and scale intelligent agents across your enterprise with precision. Experience the next generation of localized computing.
+                    </p>
+<div>
+<button class="group inline-flex items-center gap-2 bg-primary hover:bg-primary-container text-on-primary font-label-caps text-label-caps px-6 py-3 rounded uppercase transition-colors duration-200">
+                            EXPLORE WORKSPACE
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform duration-200 text-sm">
+                                arrow_forward
+                            </span>
+</button>
+</div>
+</div>
+</div>
+<!-- Subtle Tech Accents -->
+<div class="absolute bottom-margin-desktop left-margin-desktop z-10 hidden md:flex items-center gap-4 text-surface-container-high/40 font-label-caps text-label-caps uppercase">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> SYS.ONLINE</span>
+<span class="h-px w-8 bg-surface-container-high/20"></span>
+<span>V 2.4.1</span>
+</div>
+</section>
+<!-- Right Side: Parallax Image -->
+<section class="relative w-full md:w-1/2 h-1/2 md:h-full flex items-center justify-center p-8 z-20 bg-gradient-to-l from-inverse-surface via-inverse-surface/90 to-transparent">
+<!-- Parallax Container -->
+<div class="relative w-full max-w-[800px] aspect-square md:aspect-auto md:h-[80%] perspective-[1000px] flex items-center justify-center" id="parallax-container">
+<!-- Floating Laptop Image -->
+<img alt="Wireline Workspace interface displayed on a premium floating laptop against a high-tech glowing background." class="parallax-layer relative z-20 w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(93,63,211,0.3)]" id="laptop-image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOFF1IBDIqdpANFT5FJ8ABej70qXy-wv7Me_AOURoVVs4MJLFGtxHkzLCua5cfwug_oXLSVHk3olcZZSrH1vpm1uJue489w25aj3xWXCTxD3OUSInX89chBEuzm9STD0sytro2eQz8dRWQUMAYRoxRokAObGgQRC10Byf7bw_z8nKwFMp0vE0jgcFvw9fiAC__Y2y1cZvh2M4zekP0w7BgNmltD1cTgEYmrRTLxUlkJAeEpNn-zZcOl6NxYqqZOJUIMPdo3JngcLWz" style="transform-style: preserve-3d;"/>
+<!-- Decorative Orbit Lines -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-30">
+<div class="w-[120%] aspect-square rounded-full border border-primary-fixed/20 parallax-layer" data-speed="0.02"></div>
+<div class="absolute w-[90%] aspect-square rounded-full border border-primary-fixed/10 parallax-layer" data-speed="0.04" style="transform: rotateX(60deg) rotateY(20deg);"></div>
+</div>
+</div>
+</section>
+</main>
+<script>
+        // Simple Vanilla JS Parallax Effect
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('parallax-container');
+            const laptop = document.getElementById('laptop-image');
+            const layers = document.querySelectorAll('.parallax-layer');
+
+            if (!container || !laptop) return;
+
+            // Only activate on desktop where mouse movement makes sense
+            if (window.matchMedia("(min-width: 768px)").matches) {
+                
+                // Add floating animation baseline
+                laptop.style.animation = 'float 6s ease-in-out infinite';
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes float {
+                        0% { transform: translateY(0px) rotateX(5deg) rotateY(-5deg); }
+                        50% { transform: translateY(-20px) rotateX(2deg) rotateY(-2deg); }
+                        100% { transform: translateY(0px) rotateX(5deg) rotateY(-5deg); }
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // Mouse move parallax override
+                document.addEventListener('mousemove', (e) => {
+                    const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+                    const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+
+                    // Pause default float animation slightly when interacting
+                    laptop.style.animationPlayState = 'paused';
+                    
+                    laptop.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg) translateZ(50px)`;
+                    
+                    layers.forEach(layer => {
+                        if(layer !== laptop) {
+                            const speed = layer.getAttribute('data-speed') || 0.05;
+                            const x = (window.innerWidth - e.pageX * speed) / 100;
+                            const y = (window.innerHeight - e.pageY * speed) / 100;
+                            
+                            // Keep existing rotations if present
+                            const currentTransform = layer.style.transform;
+                            const rotateMatches = currentTransform.match(/rotate[XY]\([^)]+\)/g) || [];
+                            const rotations = rotateMatches.join(' ');
+                            
+                            layer.style.transform = `translateX(${x}px) translateY(${y}px) ${rotations}`;
+                        }
+                    });
+                });
+
+                document.addEventListener('mouseleave', () => {
+                    laptop.style.animationPlayState = 'running';
+                    laptop.style.transform = `rotateY(-5deg) rotateX(5deg) translateZ(0px)`;
+                    
+                     layers.forEach(layer => {
+                        if(layer !== laptop) {
+                             const currentTransform = layer.style.transform;
+                             const rotateMatches = currentTransform.match(/rotate[XY]\([^)]+\)/g) || [];
+                             const rotations = rotateMatches.join(' ');
+                             layer.style.transform = `translateX(0px) translateY(0px) ${rotations}`;
+                        }
+                     });
+                });
+            }
+        });
+    </script>
+</body></html>

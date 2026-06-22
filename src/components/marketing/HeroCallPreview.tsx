@@ -5,7 +5,7 @@ import { Calendar, Check, MessageSquare, PhoneCall } from "lucide-react";
  * HeroCallPreview — crisp, static-first product artifact for the landing hero.
  *
  * The previous version relied on blue glow halos that bled into the cream
- * surface. This version treats the preview like an enterprise product screenshot:
+ * surface. This version treats the preview like an product screenshot:
  * hard edges, restrained depth, readable transcript, and minimal motion.
  */
 

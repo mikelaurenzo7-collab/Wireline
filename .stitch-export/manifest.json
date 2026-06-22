@@ -2,8 +2,17 @@
   "projectId": "15760444676241659793",
   "projectUrl": "https://stitch.withgoogle.com/projects/15760444676241659793",
   "title": "Wireline: AI Communications Operating System",
-  "exportedAt": "2026-06-22T03:49:57Z",
+  "exportedAt": "2026-06-22T04:24:30Z",
   "screens": [
+    {
+      "id": "074f9bd4a05d49859d36450afc5c0b54",
+      "title": "High-impact social media card for Wireline AI. A cinematic 1:1 composition featuring the Titanium iPhone 15 Pro displaying the 'Agent Controls' interface with the Ametrine Purple readiness ring. The background is a luxurious radial gradient of #5d3fd3 with soft glassmorphism accents. Bold 'Hanken Grotesk' typography: 'Intelligence with Precision.' Premium, professional tech aesthetic.",
+      "width": "1024",
+      "height": "1024",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtUyB74ZshR91mWPXZZOpgXFILXPqWbo44ZMg7gVQs76Rbfd6PsxxcfyeWRq2Cx6MlXJyp-v9VcnPsb4b1GcJNReTBp6YGKwwYu9A5aawitTxZfTx9v2komLTcWAsM6MsaH8AWffSgPE8Q_HR5vTmpZXZwxC_ziTcz7yKkJBuwqQO0y1Tjmw_IO_AJ7A7UkEI60TPGtCy4tHvUnC7Jlkp-cDQ-C-XHcX9efJXGQDT53gDXMITY3w5WYUYiO"
+    },
     {
       "id": "098b89c614614d08ba47a96094e17b68",
       "title": "Knowledge Base",
@@ -75,6 +84,16 @@
       "htmlFile": "deep-dive-migration-manifest.html"
     },
     {
+      "id": "236802af5f50495fb4eabc9ff2e0d236",
+      "title": "Wireline Landing Page - Production Unified",
+      "width": "2560",
+      "height": "6082",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzQ0NmQ5YzJmOWFlODRjZGFiYWE3NDkyMTY2NWM2NmYyEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLunh_2g2Kl4p020-cJTUgYorxk_r5YulUf-DDQgrVtICEbBz6ipjxif6D70vniRSxnBjnxWVJvvI9P96Di7p0aXRIQnlLbdfmJJukNsl6k7WMTEyXHVkfCWibXUa5gdJUwFstWaJEDCx0t04WfNVzr2g0vXhQ-HV9v7fD2shBFgVm3WOlfTZ3z24jex4l8-brPcloULhCH3p_f_EGhfuSpiTmvAIWvVvCFq6_tRYDRUQCyaRKgYKFDS8u6Q",
+      "htmlFile": "wireline-landing-page-production-unified.html"
+    },
+    {
       "id": "24310c8414d34cd59711384f478856b8",
       "title": "Welcome to Wireline",
       "width": "2560",
@@ -83,6 +102,16 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzNkMmQxY2IzZGZhNzRiZWZiMjVmNmVlNzMzMWM2MTE5EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuG_xhbO8zEbLKtmptdRa25cythSRlbuXuSpZDsAyf1Wmx7Bzx8NxOeFFqvmwASXNzk00zP6BXgRTcs4G_3HAmP_m5TyYarrDIhyUeaD-HKc3KJAIi81eHOZKgiSalZHHu7WcRnOwbkmDFEqCFw1Nf33gTyj2atl3Xt0bf6y-o9BrKBuqsuyhsR2XUfsyVwAqj4g98p0kc6P2j_RBvU9YceodNCXq2d2_cGDxxcTlx3LzGjr15ylhYhmn36",
       "htmlFile": "welcome-to-wireline.html"
+    },
+    {
+      "id": "257c534c3e9d4f6ea9def27e3170e3bb",
+      "title": "Shader",
+      "width": "512",
+      "height": "512",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2JkNjkwMjEzMTAzNTQwZGE4ZDExMTA2OGEwY2MwNDQ2EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "shader.html"
     },
     {
       "id": "29a8c64473a34235b54381ab61f1a64b",
@@ -104,6 +133,16 @@
       "htmlFile": "agent-studio-safety-fallbacks.html"
     },
     {
+      "id": "2ca821b6cc0f4f4fa0ca902a824aeb5c",
+      "title": "Wireline Perfection Audit & Strategic Roadmap",
+      "width": "0",
+      "height": "0",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2ZlMDE5MTBhMzg1ZjQ3NjFiOTgyZmRlODUwYThhM2M0EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "wireline-perfection-audit-strategic-roadmap.html"
+    },
+    {
       "id": "2e7d75f15e9a49e2be6b510804bf5ba0",
       "title": "Choose Your Path",
       "width": "2560",
@@ -122,6 +161,16 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2NhN2I2Njg4Zjk3ZTQwN2RiYjYyNDEyZWYwMDk5NjhiEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLveHO5d7acb-kyuveXjd_y26-6mTa9KGX3l6k_bXuc3GkkjOGP4mm5kzuoHyNotvESJe6r1A6kBWzAMDmNk_BRVNhNPaSBg438MwlNKVv-SPPNMPFriNEXb3m93fSG5JvIiVvI5aNsVlBSHjN_pJBuyHyuSQUCI4rXR3btSyihFr8W0d78Xv6MYg3H5nFCySEbCmwQWN78cQO-dED_qwCKP_gfSHaasC6OKFbd-fa8gsPpdsMJg9dBhu2Ia",
       "htmlFile": "agent-controls-mobile.html"
+    },
+    {
+      "id": "3754b2406503453194c2f8346d55fdf4",
+      "title": "Shader",
+      "width": "512",
+      "height": "512",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2UxYzQ3YzBlYWU3NDRjYTU5YmVlZGRjZjExZjg2MzY2EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "shader.html"
     },
     {
       "id": "3d46ea2f3f554c91a187c6efa69b9c72",
@@ -224,6 +273,15 @@
       "htmlFile": "agent-controls-mobile.html"
     },
     {
+      "id": "4e93bd554f694096a7f689d610c4045a",
+      "title": "A high-fidelity technical product diagram for Wireline AI. The diagram shows the 'Intelligence Lifecycle' flow: BUILD (neural node architecture) -> TRAIN (knowledge ingestion from document icons) -> RUN (edge deployment to phone/laptop icons) -> REVIEW (lineage audit/checkmarks). Style: Clean, professional, white background, Ametrine Purple (#5d3fd3) accents, 2px stroke weights, Hanken Grotesk typography. Minimalist and architecturally precise.",
+      "width": "1376",
+      "height": "768",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtQnKSdDJA33eYO-d6UeQwi9eH-vHkUHYavTDATXS_PsXkY9S4txE8-Z3zAM58yB3xtalk-47J98FGkUdCTvePEnZAJnGrEUfyfgOsYEZrkjhoeeU4QMVbT4c9YTXcClv6x5odAM56ndN1Ayo9rFl77tv8aWnlmyniXG0SVuC1fAousLkjSn8fgkEvds1gLD-X5ukw4dJiamJW3iun0RPOENU6sjgWG8PTymWOz_SWid9laEfmXLNnIzz0"
+    },
+    {
       "id": "56f4f5feda0f4173bb2187ac96f837a5",
       "title": "Wireline Landing Page",
       "width": "2560",
@@ -323,6 +381,16 @@
       "htmlFile": "agent-studio-identity-role-polished.html"
     },
     {
+      "id": "86182fde76814177b2abf971a04de099",
+      "title": "Animated Banner Ad",
+      "width": "100%",
+      "height": "100%",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2UwZGNkYzVhN2JiZDRiNDk5NGUyOThkZmVmZDJhMTQ1EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "animated-banner-ad.html"
+    },
+    {
       "id": "865b2582e6464d7684b8d52d36307f6e",
       "title": "Business Profile - Ametrine Polished",
       "width": "2560",
@@ -341,6 +409,15 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzJjNzFkMzRjZDFkMDQ2ZGY4N2M3OGFkOGQ1Yzg1MTNlEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLszYam2Be9jlel8ottj3TiDtoWVRlh6dHQJrrtjiTpkAM0prD2m0pvosx2SC3ErjKTVuhTnl_CGez8WCR5Ix1YlXShc7Uu4cxMhrheD68tqWJhBMupU8JeBKSI_qZvNiPCwalORuv2uuaf50cyaKrWTvuLaRHKtDcUkdN3GLQwnswyNfQgB1kQ8n36ah6tOwLWdLCZjB8HafQY5kDVb_m1VTPgltikKU6R6bLc7UduEZQA4LY1_-cDGqNR8",
       "htmlFile": "workspace-overview-ametrine-polished.html"
+    },
+    {
+      "id": "894a790f487e4d3881a0746cee1ba9a2",
+      "title": "Premium marketing banner ad for Wireline AI. 16:9 aspect ratio. A sleek, floating laptop showing the 'Workspace Overview' dashboard in Ametrine Purple. The background features abstract interconnected nodes and data streams, symbolizing the Wireline edge network. Brand colors: #5d3fd3 and #f8f9ff. Minimalist, spacious, and professional.",
+      "width": "1376",
+      "height": "768",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt8EqJzJPao100HWtUv4BHqHgBbqGmVjraJB0E3fchh9ljCL3YyUbcksVE75zmALHDYc81CjrP2iyDPY3ykx1Y3avvqXYR3csMwGnpeLp8PSmkzcfIhRELUSDUGs6z6VZweclrGKM05ejxFTYmV1JEVUjhHkDYUsJ66MHIX2lrwq9UnV3bMF8iEL4AnaJTWLEXnChMgdoe25dYuvr9YZYCEp3QzDaxc9SHqcn1lBU0vnTUUoQ29m26HMb1Z"
     },
     {
       "id": "89e819fd5fb043cfb7b7352154ad7c94",
@@ -373,6 +450,16 @@
       "htmlFile": "welcome-to-wireline-refined-auth.html"
     },
     {
+      "id": "9264dffa57db48208e94b3c2f6b2d718",
+      "title": "Web Manifest (manifest.json)",
+      "width": "0",
+      "height": "0",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2ZlNGI1ZWVhMzE0MzRjNWI5NjU1YTlhZDYwMjhjNjViEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "web-manifest-manifest-json.html"
+    },
+    {
       "id": "971ab10f026c4c8bb1526ccdf9e88223",
       "title": "Inbox & Activity",
       "width": "2560",
@@ -391,6 +478,15 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzA4ZGRkNDkwZmMzZTQ5NmQ5YzgxZDZlZTQ0ZGE4ZGM2EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLt1Et6C-JreB7ZdHU572OChd11ZiNntuMbba-OlefkHSABrIiHvgA8Iw1K-qAWMv5ogOsLJ1EhoB-x6QDTGVCs6brP17ouOew8urZxT_lvTTZjyWnsWGmlJu9dJWEStFzYZ0a5RPxHw7R2mxtN3IRR4nv34vbJUDOkHZb9L0LT3DSHBGLAXZ-vRHMsEJL-fwc_fRIF1FahsE1VDAsAUSK_JUNSiYAZ8mELx1g5fU39wY0fwk4IxCsr-wHtF",
       "htmlFile": "workspace-overview-production-polished.html"
+    },
+    {
+      "id": "9b835bfc8cf846e29696b2f980c1ea8e",
+      "title": "App Store Marketing Screenshot 1: Title Card. Ultra-tall portrait (9:16). A realistic iPhone 15 Pro Titanium chassis with subtle rim lighting is centered on a luxurious Ametrine Purple (#5d3fd3) radial gradient background with soft abstract glassmorphism layers. The headline 'Never wait on hold again.' is placed at the top 20% in bold Hanken Grotesk. The device screen precisely replicates the Wireline Mobile Home dashboard ({{DATA:SCREEN:SCREEN_49}}). No hands or lifestyle elements. Premium marketing aesthetic.",
+      "width": "768",
+      "height": "1344",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvt8h2oDocYOGwtSZHfWK4BQUAlLQweAQFrcfalIWyMf9khqDFwexWhoIVLJHGpXM1H2CtSblAghnIFR3M0Q_YCUPMhxnEhUCbj7u39fLtx-nts2gh1auIuMeXuoKcgn8EJ-bFajEWE120OLMfx742_vj6YuhCf6pNsSd0TuGHvEOVA9nk5fY2CICXo2uS77ppFLpbl907IkhY-gQjDrprGZK1QCjB_CvoqqC-3Z-l0U3Wu9w_ML_EClHU"
     },
     {
       "id": "9ef0b2f8247a463da2530148d86625a7",
@@ -423,6 +519,35 @@
       "htmlFile": "agent-studio-safety-fallbacks-polished.html"
     },
     {
+      "id": "a5bbe2654f6842378cada6713a4ed1b4",
+      "title": "Wireline Mobile Home - Production Unified",
+      "width": "780",
+      "height": "1800",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzBlMGQ4ZWJiNDg5YTQ5M2Q5M2VjYzVmMjYxN2MwNjFhEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLs9evAHbHsSMguvo2SBOOhY0gUZ0XrpKc9nDpK56oi_H4u_MqqmokvLya9mDOrGpvdKPX3eo-VH30WsvQZcSHpxvsck13b0u3HugzwdVK5yNGVg4x7GCnygQm8TLP_dz6H8AJmMh1oOIy12TrDx_1Ph-SnAi0NrO0csQa5HQHTIHiaDO6tYCJ2yxjfeII7clcpHFRm3Os2lGljH1ZZ9k-t7smmfzn50G2AUNfyW7b_PqU7clrhBWkV_NmhY",
+      "htmlFile": "wireline-mobile-home-production-unified.html"
+    },
+    {
+      "id": "a5e5065481014e34a5ac4a233167bd48",
+      "title": "Wireline ASO Metadata Report",
+      "width": "0",
+      "height": "0",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2Q4ZWRlNjQ1Yzg0NTRkODg5OWM5MjRhYzYxZDUyYTNlEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "wireline-aso-metadata-report.html"
+    },
+    {
+      "id": "a782b14c97734b4c964768dc39a830f6",
+      "title": "High-impact 1024x1024 app icon for Wireline. The design features a minimalist geometric node symbol (from the brand logo) centered on a full-bleed Ametrine Purple (#5d3fd3) background with a sophisticated radial gradient shifting from vibrant purple to deep indigo. Modern 'Skeuomorphic-Minimalism' style with subtle physical depth, soft top-down specular highlights, and premium material texture. Orthographic 2D centered composition. No rounded corners on the image itself. Full-bleed, edge-to-edge background. No text.",
+      "width": "1024",
+      "height": "1024",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvndQu8K79gnitcDukZcyvPmGFEFBZkl4bXmyxbd6t8fwIh9ScAav_1M49A0Hs441ATWxMrKH_G6cWgsWFIJFiG0ofL5wWGXGEheG-wcFYaWkMaCOtTS3P_wrjGW7iC11uEzupo6JqFIiFzuKmOgOJIaMxYwyxSGnc5c4FDX5W5x7dDcRMQ0NgzeUeWSvCaIKIQWMiZF0AQuXYneGENGQ3fXpHZv8P16rgynnTgcj_Q2MZT2s-yZyrCtBgf"
+    },
+    {
       "id": "aa4922d1a4154b70b686c2a6792ab5e7",
       "title": "Extracted text from https://github.com/mikelaurenzo7-collab/Wireline",
       "width": "0",
@@ -451,6 +576,16 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzQ4Mjk1ZjE4YTFhNzQ4NWU4NjI0MjI3ZTdhZDRjNWVhEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": null,
       "htmlFile": "developer-handoff-guide.html"
+    },
+    {
+      "id": "ab1512a93a384c6d8a7a91f5aa176be6",
+      "title": "Agent Studio - Production Unified",
+      "width": "2560",
+      "height": "2048",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzg5YWE0OGFmMmU3ZDQ4NTNhMGM0NTk5ZWFjZGMyMWZiEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvoZymLHqY3JHPE-VaPPiDdlGUlRVs9emKEjRk-XBw7sER8NVU7eK3jzYRfhcdnGyihHTxdJUp3cFyPKvfOKRemnk6SYPOsBRzjpopJUmYu0D5x55J9nO4oVrkuTEHl2kg_sCjomlOrx_gvolZIeHMT_QTdADkEWNdDq-96f3YejGJ07oUsd8UuCSyG_MlleFpCEvYeISTQw6w_MiVzhrJHFwc4Hhp_tf12Y3Rr3TA3TBCttEXPhItQSeE",
+      "htmlFile": "agent-studio-production-unified.html"
     },
     {
       "id": "ae644df5a28e4d398f0d0748b5b690db",
@@ -542,6 +677,15 @@
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvsFJgjvdes0svEDT-KYL87-FquGe_3vqyYlCIhgUHFv-3QP2DJhqtcRTzcp666QoK2u_OfNpjfySp9Nwdisj65wm8VQH2-LN5dSDsazfJ-WU0HIoQWDa6Now_SuhsUxAWdGNKL5UllhJdAimWBnyHixAWi4P2-GzZACt8C779NsNWn-TiK5t6Bzyqo3lkqNJDur14mhQZEdz6AxDGBYTXYtM2RAg9YizfRN2Fjn05x2cBOU2RgBuwTEu8"
     },
     {
+      "id": "c8bec9fed54c4f6688d12c8574f9f393",
+      "title": "Polished email header for Wireline. 16:9 aspect ratio. A clean, minimalist composition with the Wireline logo and the headline 'The Intelligence Lifecycle' in Ametrine Purple. Subtle geometric patterns in the background. Professional, high-trust SaaS aesthetic.",
+      "width": "1376",
+      "height": "768",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLsEuLKLrGnmHgBR1ehHx8LLPDFQ6ifRoeFKKf4BlhjxWsrtJNj2CD8dypf6OAT9NsG9ebdTdz_Vy_NwTYE8T83wquhvFS3FdyvIlkugjlM-Bav0lyjisHT4BGEExmvC_Ym4_ObMOQsZoJI0zvXgQ0fItgeH2MZnSH4HdBdlDMOGN0DiSJsKLG8LzWmWi5i8v-QTDBq2oW3QsHmcVIFISgydqBGXN6g4c8GVwXD35yRn1TwShkFwmESwQEbw"
+    },
+    {
       "id": "ca7af223041144a9a00010951d27c0c9",
       "title": "Assistants Directory",
       "width": "2560",
@@ -552,6 +696,16 @@
       "htmlFile": "assistants-directory.html"
     },
     {
+      "id": "caaf8f47b01f4c66b147322f81f692e3",
+      "title": "Workspace Overview - Production Unified",
+      "width": "2560",
+      "height": "2048",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzJmNDVlNDQ5ZWVkODQxOTc5ZmVmNzlmYTYyNGQ5NDYyEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvk4GlGgMW3EC0srkxXxNTcJndzffo-mYnZE3m2SAzkrtnm_D0MziOxd0b7QC9-8rQJGE-FrATQJrYUNyvtGwfavoGb9bKSYSwF6qSEmSn_0FfzxubMEff7jDG2sniy76E3Oq5KHybvtYk7YIEaEIEryQTc6GVcPxEmagy9n-QbuBO2JoEBb8RLd8EXefU2dP4FO7y4hM0ROngqcJjptpJjkMm2Dosz4H0xFpJue-BQ172zvIrQHVh63Q_-",
+      "htmlFile": "workspace-overview-production-unified.html"
+    },
+    {
       "id": "cb0d62490c334c69adbd19d4ca1fa7d0",
       "title": "Final Monorepo Migration Guide",
       "width": "0",
@@ -560,6 +714,33 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzkzNDEzY2JkODRlNTRiNDRiOWRkNDYwMWQ2YmYyYTlkEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": null,
       "htmlFile": "final-monorepo-migration-guide.html"
+    },
+    {
+      "id": "cb8feccb3ef74a79bbaafd451f496913",
+      "title": "A premium Apple touch icon for Wireline. The icon features a polished, white minimalist symbol based on the brand logo centered on a full-bleed Ametrine Purple (#5d3fd3) background with a very subtle, sophisticated gradient. Designed to look native on an iOS home screen. No framing shapes or rounded corners in the source image; the entire square canvas is filled edge-to-edge.",
+      "width": "1024",
+      "height": "1024",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuirA8fh9cqXggFnORtnJvnPvOedECUTn0lBDfVmXGpOl-o2kkKpWueBICktM7gYcK8ePYI1N_6gI3rtgJWrTb41dxhHHDFL_8aNMLTq2FlqQTILo21Wwnh2kxn-CyYrbcpMwvSBLwx8lYke7lm7QvTdOIqS6XQbwT-khXUADOh0Q2LCZXCPMohPWpqQtgVktGAzMa38BSDfEWjXw7j0j3jvFew2dP23B-ucD5GfC1ntzzLgdGAaBOcVaWT"
+    },
+    {
+      "id": "cc172784fd7f4c7a945e258e1f8205ed",
+      "title": "App Store Marketing Screenshot 2: Key Feature. Ultra-tall portrait (9:16). A realistic iPhone 15 Pro Titanium chassis is centered on a tonal variation of the Ametrine Purple background with subtle geometric motifs for series continuity. The headline 'Real-time Agent Controls' is in the top 20%, matching the previous screenshot's font and alignment. The device screen precisely replicates the Agent Controls Mobile interface ({{DATA:SCREEN:SCREEN_34}}) featuring the circular readiness gauge. High-fidelity UI clarity.",
+      "width": "768",
+      "height": "1344",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtHZE2WXMjspzPRnjW6Kcv-eRc3Q9-K5UQ-1X5d12MEGGJu_MW7Q8Z4jVUJoGz_o5ER6EJ8uG_kw12GtmxLcJ95oqzoayisOMJY3m-01F1BWR2wb5OAoTyCaMS6BP0eyg9tihFn6G7P5dWFFvlcQIRpLH9_1B1ph4j81tbYcoVZmqSPoJ3yKiMiZ7mdz-Ww2eHhsePu2m__D6SlmqZ_YM1YEXupsTfC4oGtX0ckH3SVBM5TItd7uB4V3wbo"
+    },
+    {
+      "id": "cd2d632173b34e0a9b6e45dade0b7dbe",
+      "title": "A high-fidelity favicon for Wireline. The icon features a minimalist geometric symbol derived from the Wireline logo\u2014a sleek, white abstract 'W' or node structure\u2014centered on a solid, full-bleed Ametrine Purple (#5d3fd3) background. The design is clean, professional, and optimized for small-scale visibility. No borders or rounded corners in the source image.",
+      "width": "1024",
+      "height": "1024",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvrtyZ3hrRHOm7uRtdKazzu5gTBTMnSKupMzbnQ6brFM_RzxPnnQqgevG_gLaCeSALVYmlDxZ7rvEBXfL_Vz_ZRy2MqETyVVqdjAd5pdcYHs5q8bBadu61Wq8V98TGbZ7V0oT-5FXQSmg0n9Z005sNwdyyRr9g8QGShGIR9eL3bzBJf_4FLF2MQt7xXgsX6RW_gSS1AJ1sgewOq3K89jZ_dHhMf12_GtdBxxr30Ktsu8iXLSZx5jyf6ErOV"
     },
     {
       "id": "ce22bdbc69224d0291ab42e6301b94b1",
@@ -582,6 +763,25 @@
       "htmlFile": "knowledge-base-ametrine-polished.html"
     },
     {
+      "id": "ce7e2fc13d5842d5a50ed3e5469cbe52",
+      "title": "Premium marketing banner for Wireline AI. A sleek, floating MacBook Pro showing the 'Workspace Overview' dashboard in Ametrine Purple. The background is a luxurious deep indigo to purple gradient with soft, abstract glowing data streams. Bold typography 'Intelligence with Precision.' High-tech, sophisticated SaaS aesthetic. 16:9 aspect ratio.",
+      "width": "1344",
+      "height": "768",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvrbWqIGO2l_zldJiV_d5e4cMZ-7AJP3wS_BbaufIDxJW9aHp-vMe-huZDfYy0UqXRyUjUkhqC2yobxLfKCqT5V68-TBYUaItrndSRiCdu8cewB9tvaO4hGv9mFnhe8da-6Bf8w8vKQ8-RvjNqKTxcnd82XkRnstXl0SbC2PAk6iQrVs_txZskqsBzi6iauc6z7ZjKg2v7RQfjeT2tz9xvjdmXYWE0CrvR4PcNRchDuSB5hVy72-b_RjHzR"
+    },
+    {
+      "id": "cecbaf3faa494b8c97593367d20908ed",
+      "title": "Animated Social Media Card",
+      "width": "100%",
+      "height": "100%",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2YzMjFkOTY4NDNlYjRlOTk5NGEwMWNmNTMxYjIxZDg5EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "animated-social-media-card.html"
+    },
+    {
       "id": "d4590637853e49f8b58aeaf56f1e557d",
       "title": "iOS Native Experience (Widgets & Dynamic Island)",
       "width": "2560",
@@ -590,6 +790,16 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzdhZGM5YzE5NDUxYzQxMmE4YjhlMzkyNWExZWUyOWQ2EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLuZftHKkzwKHoo_l7GWD4TI152nZO0BhjJQ2CpYo4jKqF_VQvMbCxGdKM3HAZDOFiEm2Y_VdNJp8zfREKs2E9DFif3hJcJW4dlNiniKrOYnh2_0-UGEKrw3R3gSCVYdbwe8gtO_iDGTQ9IZrNsC5vPuZTglqSeHrhuK6NS5E2rS24I9iMmN_lQNvWn3u8w1dcIQ0yH7EXQmnMRtnAAF5oZIYp2WFJibOJKClNT-RzWS_XnpD1X0Es98b7u5",
       "htmlFile": "ios-native-experience-widgets-dynamic-island.html"
+    },
+    {
+      "id": "d84bea3ea2264b88a04130f45cd60f98",
+      "title": "Shader",
+      "width": "512",
+      "height": "512",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2ZjMGY1NjllMDFmMzQ4ODU4MzJlYzkxZmIxMDFhMzY4EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "shader.html"
     },
     {
       "id": "da25fe52353547ea9d35579a9749795e",
@@ -610,6 +820,16 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzRhYzY5MWM5YzIxNjRmNjNiN2FkMDI3OWZlZjhiZDZhEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLssLyptmUNdz3niBmTNBvJggAuJdxhHQyZQz4xiPTOOZckoo0w8IvoaSDS2zOTiL2N56i_LESzbaNjOxa4ifiWMr-klYkQpB8zlaioHMqEMJhwBAiHSVIScx9s3ImTCrihlXZfcEYk4hhSrJ4bpmVpKX0oBFrkpTadC7WFLY3ly0JWyXRuP9BN99HyPykJQMFXNbwC7z17BeW2-DHPNhAml0xMWFJ9LGoRBaqTyQEDm1REcgZJMnAm6Owvu",
       "htmlFile": "connections-actions.html"
+    },
+    {
+      "id": "db6e8e5abbed4958b97c660414c82610",
+      "title": "Wireline Marketing Copy",
+      "width": "2560",
+      "height": "2048",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2JmYTFlNjc2MmJmNDQxN2Y5OTJjMmI3ZGIwMDljZmUzEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvC3udrEIulUY3CR6vkqpQ0bxzZZIto_w7dUx_OJIKmbGYjpbZM2i_285tqUzohXBfmAb2KnJSAWNnX6rGL_ahopoP1UbPEt3mf1VndDFiapPjsSjYfBNvg79THCrwFE73RjMf_cNEqR8e5TIsiGGcz7ceiU3XgdwVQQ3E6qVybFye0n34xFUPVYiebpybFMpJH_csTRLJYi8yAZE4MfujaDhc6igoI27wosBSIAxnkPSDWZIDNA8DV2lhJ",
+      "htmlFile": "wireline-marketing-copy.html"
     },
     {
       "id": "e174dc8ab7a24744916a3d3add24086c",
@@ -682,6 +902,15 @@
       "htmlFile": "connections-actions-production-polished.html"
     },
     {
+      "id": "f191df612de04d5cacf6a1f8f8220a82",
+      "title": "Technical product diagram for the Wireline Intelligence Lifecycle. A structured flow from BUILD (neural architecture) to TRAIN (knowledge ingestion) to RUN (edge deployment) and REVIEW (lineage audit). Uses Ametrine Precision tokens: #5d3fd3 primary accents, #f8f9ff surfaces, and 2px stroke weights. Professional, clean, and architecturally precise. model-pro style.",
+      "width": "1376",
+      "height": "768",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLv1sd7zipUqllNV20mKFheSjOnoBJAaiJXKASX3m7Uvn9MvtJk_hO6zauPjGOxHiGS7O78p3M8IA_D-lq9su3p3lBVsHUtOJ-YbaZvkTBqEmbKP1qEOZuQiZ0uITiaONXx70kBTIlK1EYr7dxuS65c16mD_B0_wNzQ39IvZvjVOLhw404Ly1TqcFmSjTmBIrcpYzAE8zKfzxVOFw715p8wFo2Efj5aaHY69QaxR6EPWUI71aaPwd_48qpUd"
+    },
+    {
       "id": "f2cf9c52a399415e860f06b376ac8fd7",
       "title": "Welcome to Wireline - Ametrine Polished",
       "width": "2560",
@@ -711,6 +940,16 @@
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLu8IhF8CPys9N_aZo_BBdk1rPGbTU3qDhJEVj6tNrD4B5plh-X8OnTyH776VhzXBLLJlTXPhk9iXKK9PIPaTwEMXZ_hgIxRI0Yon3aqSOnTMUjF-fYgsIKW-JVCk5QgvUSTMK7SHqRXDTYPI8UdElmmPDEjKgLLQ_Hv2oHiaKV5lEz0vSIPfAOe2hkYQHtet6TJmyG7Wb0fof1ApCBG32tO6S5CnD4MKDFSYO5HaoM8jh65Jqx9ikYWoyCR"
     },
     {
+      "id": "f850254269a34a969428dc7edf599cdd",
+      "title": "Three.js",
+      "width": "512",
+      "height": "512",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzdmZDEwZjgzOTc5ZDQxNTVhNjYxNTU2ZmRkNTAwZGUwEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": null,
+      "htmlFile": "three-js.html"
+    },
+    {
       "id": "f8b0fac3b18240ba98998fc425e3e37b",
       "title": "Marketing Material: Wireline Platform Overview. An abstract, high-tech visualization of interconnected nodes and data streams in shades of Ametrine Purple and Deep Graphite. Professional, corporate-tech style, minimalist and spacious.",
       "width": "1376",
@@ -728,6 +967,35 @@
       "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzczYTZlOWYxZDk2OTQyMDBiZTdmMWIyODNlZTMyYzNjEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
       "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLudJw7JZEX2ECFUnxnA78WU9VV3VpIql2wR5scU-bw-f_GOjussMatMBuQsq1njY8pDxFAi9kqzpmZr-a3reUE06dqPUWSqQ4bKE3k0dBX4TN8_qbSpfJjgGYmvrSj9uHfVydqKTNgpcKHEy6s01IRgKF8JTApf1SHyLI7yPNtWUkzZqtlIisiV8FKRl904bopMAbHm1YRkH1e8g_2OkFDYWDvRxzII6mnkityB1sv2cUQ8ykAEiorm388J",
       "htmlFile": "wireline-brand-mark-svg.html"
+    },
+    {
+      "id": "fd1552f2635945578e7125ab4b24a58e",
+      "title": "Wireline Geometric Logo",
+      "width": "512",
+      "height": "512",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzBjN2YzOTQ2NDM0NTQ1YjNiYTEwZjRkMTliMmI3YTE2EgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLufWOR0a74jEAqA_qDxJHT_xY_l0W6X43L2y09JFmyi4Tu4YBARyUH9Hrp-WHZft42Wcp0-QusWu22Obx4t0yGpzaOTdRf9I8v0EocnO85O5huoY1hB5ySD6kC5U9ZS73Hc2G1A72t7v8Clu6B1tIFJMckWGffeZGuFJYN6wajb2iIUwrhHS0LN1BhcKbdd133Lokq1MLqvxnAIin6BRgxJKTm1k3YOMGVNGFQQzQL2VNb0MSIW1Prt8HD4",
+      "htmlFile": "wireline-geometric-logo.html"
+    },
+    {
+      "id": "fe07b91b01ce40bfa4477c39485e6718",
+      "title": "Animated Technical Diagram",
+      "width": "2560",
+      "height": "2048",
+      "hidden": false,
+      "htmlUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2UwZGVjOTY0NGFlYzQzM2JiZTQyM2FjNWJiZjJlNDIxEgsSBxDKps2YgQYYAZIBJAoKcHJvamVjdF9pZBIWQhQxNTc2MDQ0NDY3NjI0MTY1OTc5Mw&filename=&opi=89354086",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLtOrDTDRv09_34I3iDjODfPevSupEl32TTUZHPeYEiXkue2joK9qOASyqPDWVRnMf8jzaPIYpu7d0JdtUBe_IoASCjVeXAwa71C6Q4ieMZaWUKnq37KTzUXNUk9mhv4am6aZ48wzBShno9Su1lsDZt7OuHAqZwTW5PSA3HetiA_LvntAO5Hp_wZyOl3-3WmoPX7aMHZ71-k_9ZM95Nvt-YMuke7OSEIcdRL6J2roYx9kDfzLijiURHVFRo",
+      "htmlFile": "animated-technical-diagram.html"
+    },
+    {
+      "id": "fe7f16031017430689b690138c0c7c85",
+      "title": "App Store Marketing Screenshot 3: Visual Polish. Ultra-tall portrait (9:16). A realistic iPhone 15 Pro Midnight chassis with metallic rim lighting is centered on a luxurious deep gradient background shifting from charcoal to saturated brand purple. The headline 'Qualified Lead Notifications' is in high-contrast white at the top 20%. The device screen replicates the mobile notification and widget previews ({{DATA:SCREEN:SCREEN_73}}). Atmospheric and premium finish.",
+      "width": "768",
+      "height": "1344",
+      "hidden": false,
+      "htmlUrl": null,
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AP1WRLvF_EL1iXejbnrYDkaLQoA1ktEhq4cWMgnN8H1UjCVSE_FsjUkt-sbJj-q-gBhYfddwOq2Rxup6yIEzAO1QmLc-ELAsHZ57buJrxJE1RXI-nDF0IC217ny1Gucm21ES1WASjYpjVcX1onQMvsuYhFolAeSirmzbN9rOmJK_JkIGN7y1Ih0xJhDFtTqAmVzJO-ydcIhf0yI-HahSaAsb0PgxlXdt2IqYQgA8GPb_qGnjXkomabfBMx-cGKSJ"
     }
   ]
 }

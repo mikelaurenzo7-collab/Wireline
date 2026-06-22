@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline Intelligence Lifecycle</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;800;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed": "#e2e2e9",
+                        "secondary": "#5d5e65",
+                        "outline": "#797586",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dfdfe7",
+                        "inverse-primary": "#cabeff",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#5c5b5b",
+                        "on-surface-variant": "#484554",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#d6d3d3",
+                        "on-secondary-container": "#616269",
+                        "surface-variant": "#d3e4fe",
+                        "outline-variant": "#c9c4d7",
+                        "surface-dim": "#cbdbf5",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "inverse-surface": "#213145",
+                        "tertiary": "#444443",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-container": "#d8ceff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#0b1c30",
+                        "error-container": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#45464d",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4723be",
+                        "secondary-fixed-dim": "#c6c6cd",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-secondary-fixed": "#1a1b21",
+                        "primary-fixed-dim": "#cabeff",
+                        "primary-fixed": "#e6deff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary-fixed": "#e5e2e1",
+                        "surface": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary": "#451ebb",
+                        "on-primary-fixed": "#1c0062",
+                        "surface-tint": "#6042d6",
+                        "primary-container": "#5d3fd3",
+                        "surface-container-highest": "#d3e4fe",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "base": "4px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    fontFamily: {
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "500" }],
+                        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "500" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .flow-path {
+            stroke-dasharray: 10 10;
+            animation: flowDash 20s linear infinite;
+        }
+        @keyframes flowDash {
+            to { stroke-dashoffset: -1000; }
+        }
+        .pulse-glow {
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(93, 63, 211, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(93, 63, 211, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(93, 63, 211, 0); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden selection:bg-primary-container selection:text-white">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-64 z-50 flex justify-between items-center px-8 h-16 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-md border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-black text-on-surface dark:text-inverse-on-surface tracking-tight">Wireline</span>
+<div class="w-px h-6 bg-outline-variant mx-2"></div>
+<span class="font-body-md text-on-surface-variant">Intelligence Lifecycle</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-icon="help_outline">help_outline</span>
+</div>
+<button class="px-4 py-1.5 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-surface-container-low transition-colors">
+                Switch Workspace
+            </button>
+<div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold shadow-sm">
+                U
+            </div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full flex flex-col py-6 px-4 bg-surface dark:bg-inverse-surface border-r border-outline-variant dark:border-outline docked left-0 h-full w-64 z-50">
+<div class="flex flex-col mb-8 px-2">
+<span class="text-title-md font-title-md font-bold text-primary dark:text-inverse-primary tracking-tight mb-1">Personal Workspace</span>
+<span class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Individual Mode</span>
+</div>
+<button class="mb-8 bg-primary text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+            New Agent
+        </button>
+<div class="flex flex-col gap-1 flex-grow">
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-3 py-2 text-primary dark:text-inverse-primary font-bold bg-primary-fixed dark:bg-on-primary-fixed-variant rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Overview
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+                Assistants
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+                Agent Studio
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">database</span>
+                Knowledge
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">hub</span>
+                Connections
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">inbox</span>
+                Inbox
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</div>
+<div class="flex flex-col gap-1 mt-4 pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant dark:text-surface-variant hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-variant transition-colors rounded-lg scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 p-margin-desktop min-h-screen flex items-center justify-center bg-surface-bright relative">
+<!-- Diagram Container -->
+<div class="relative w-[1000px] h-[700px] bg-white rounded-xl border border-outline-variant shadow-[0_10px_25px_-5px_rgba(93,63,211,0.05)] p-8">
+<!-- Headline -->
+<h1 class="text-center font-headline-lg text-headline-lg text-on-surface uppercase tracking-wide mb-12">Wireline Intelligence Lifecycle</h1>
+<!-- Center Core: ThreeJS Scene -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] z-20 flex items-center justify-center">
+<!-- Decorative concentric rings -->
+<div class="absolute inset-0 rounded-full border border-primary-container/20 animate-[spin_30s_linear_infinite]"></div>
+<div class="absolute inset-4 rounded-full border-2 border-dashed border-primary-container/40 animate-[spin_20s_linear_reverse_infinite]"></div>
+<div class="absolute inset-8 rounded-full bg-surface-container-low shadow-[0_0_40px_rgba(93,63,211,0.1)] pulse-glow"></div>
+<!-- The 3D Component -->
+<!-- STITCH_THREEJS_START:ANIMATION_93 class="w-[280px] h-[280px] rounded-full z-30 bg-transparent" -->
+<div class="w-[280px] h-[280px] rounded-full z-30 bg-transparent" style="display:block;">
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<div id="threejs-container-ANIMATION_93" style="width:100%;height:100%"></div>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_93');
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  
+const scene = new THREE.Scene();
+const width = container.clientWidth || window.innerWidth;
+const height = container.clientHeight || window.innerHeight;
+const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+renderer.setSize(width, height);
+container.appendChild(renderer.domElement);
+
+const geometry = new THREE.IcosahedronGeometry(1, 1);
+const wireframe = new THREE.WireframeGeometry(geometry);
+const lineMaterial = new THREE.LineBasicMaterial({ color: 0x5d3fd3, transparent: true, opacity: 0.6 });
+const line = new THREE.LineSegments(wireframe, lineMaterial);
+scene.add(line);
+
+const coreGeometry = new THREE.IcosahedronGeometry(0.4, 0);
+const coreMaterial = new THREE.MeshPhongMaterial({ color: 0x5d3fd3, emissive: 0x5d3fd3, emissiveIntensity: 0.5 });
+const core = new THREE.Mesh(coreGeometry, coreMaterial);
+scene.add(core);
+
+const light = new THREE.PointLight(0xffffff, 1, 100);
+light.position.set(5, 5, 5);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0x404040));
+
+camera.position.z = 3;
+
+function animate() {
+    requestAnimationFrame(animate);
+    line.rotation.x += 0.005;
+    line.rotation.y += 0.005;
+    core.rotation.x -= 0.002;
+    core.rotation.y -= 0.002;
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+});
+
+animate();
+
+})();
+</script>
+</div>
+<!-- STITCH_THREEJS_END:ANIMATION_93 -->
+<div class="absolute -bottom-8 text-center w-full z-30">
+<span class="font-label-caps text-label-caps text-primary-container font-bold bg-surface px-4 py-1 rounded-full border border-primary-container/30">Ametrine Precision Core</span>
+</div>
+</div>
+<!-- SVG Connecting Arrows -->
+<svg class="absolute top-0 left-0 w-full h-full pointer-events-none z-10" viewbox="0 0 1000 700">
+<defs>
+<marker id="arrowhead" markerheight="7" markerwidth="10" orient="auto" refx="9" refy="3.5">
+<polygon fill="#5d3fd3" points="0 0, 10 3.5, 0 7"></polygon>
+</marker>
+</defs>
+<!-- Build to Train -->
+<path class="flow-path opacity-80" d="M 320 180 Q 500 180 680 180" fill="none" marker-end="url(#arrowhead)" stroke="#5d3fd3" stroke-width="4"></path>
+<!-- Train to Run -->
+<path class="flow-path opacity-80" d="M 850 280 Q 900 400 850 520" fill="none" marker-end="url(#arrowhead)" stroke="#5d3fd3" stroke-width="4"></path>
+<!-- Run to Review -->
+<path class="flow-path opacity-80" d="M 680 600 Q 500 600 320 600" fill="none" marker-end="url(#arrowhead)" stroke="#5d3fd3" stroke-width="4"></path>
+<!-- Review to Build -->
+<path class="flow-path opacity-80" d="M 150 520 Q 100 400 150 280" fill="none" marker-end="url(#arrowhead)" stroke="#5d3fd3" stroke-width="4"></path>
+</svg>
+<!-- Top Left: BUILD -->
+<div class="absolute top-[120px] left-[80px] w-64 z-20 flex flex-col items-center">
+<div class="w-full bg-surface-container-lowest border-2 border-primary-container rounded-full py-2 px-6 text-center shadow-[0_4px_0_0_#e6deff]">
+<span class="font-headline-md text-primary-container font-bold uppercase tracking-wider">Build</span>
+</div>
+<div class="mt-6 flex flex-col items-center gap-3">
+<span class="material-symbols-outlined text-[64px] text-primary" style="font-variation-settings: 'wght' 200;">schema</span>
+<span class="font-body-sm text-on-surface-variant text-center">Neural Architecture</span>
+</div>
+</div>
+<!-- Top Right: TRAIN -->
+<div class="absolute top-[120px] right-[80px] w-64 z-20 flex flex-col items-center">
+<div class="w-full bg-surface-container-lowest border-2 border-primary-container rounded-full py-2 px-6 text-center shadow-[0_4px_0_0_#e6deff]">
+<span class="font-headline-md text-primary-container font-bold uppercase tracking-wider">Train</span>
+</div>
+<div class="mt-6 flex flex-col items-center gap-3">
+<div class="flex items-center justify-center gap-4">
+<span class="material-symbols-outlined text-[48px] text-secondary" style="font-variation-settings: 'wght' 200;">filter_alt</span>
+<span class="material-symbols-outlined text-primary">arrow_forward</span>
+<span class="material-symbols-outlined text-[48px] text-primary-container" style="font-variation-settings: 'wght' 200;">memory</span>
+</div>
+<span class="font-body-sm text-on-surface-variant text-center mt-2">Knowledge Ingestion<br/>&amp; Model Tuning</span>
+</div>
+</div>
+<!-- Bottom Right: RUN -->
+<div class="absolute bottom-[50px] right-[80px] w-64 z-20 flex flex-col items-center">
+<div class="w-full bg-surface-container-lowest border-2 border-primary-container rounded-full py-2 px-6 text-center shadow-[0_4px_0_0_#e6deff]">
+<span class="font-headline-md text-primary-container font-bold uppercase tracking-wider">Run</span>
+</div>
+<div class="mt-6 flex flex-col items-center gap-3">
+<div class="flex items-center justify-center gap-4">
+<span class="material-symbols-outlined text-[48px] text-primary" style="font-variation-settings: 'wght' 200;">router</span>
+<span class="material-symbols-outlined text-[48px] text-secondary" style="font-variation-settings: 'wght' 200;">cell_tower</span>
+</div>
+<span class="font-body-sm text-on-surface-variant text-center mt-2">Edge Deployment<br/>Real-time Inference</span>
+</div>
+</div>
+<!-- Bottom Left: REVIEW -->
+<div class="absolute bottom-[50px] left-[80px] w-64 z-20 flex flex-col items-center">
+<div class="w-full bg-surface-container-lowest border-2 border-primary-container rounded-full py-2 px-6 text-center shadow-[0_4px_0_0_#e6deff]">
+<span class="font-headline-md text-primary-container font-bold uppercase tracking-wider">Review</span>
+</div>
+<div class="mt-6 flex flex-col items-center gap-3">
+<div class="flex items-center justify-center gap-2 text-sm text-secondary">
+<div class="flex flex-col gap-1 items-start">
+<span class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-primary-container"></div> v1.1 <span class="text-outline text-xs">2023</span></span>
+<span class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-primary"></div> v2.2 <span class="text-outline text-xs">2024</span></span>
+</div>
+<span class="material-symbols-outlined text-[48px] text-primary-container" style="font-variation-settings: 'wght' 200;">fact_check</span>
+</div>
+<span class="font-body-sm text-on-surface-variant text-center mt-2">Lineage Audit<br/>&amp; Governance</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -3,7 +3,7 @@
 ## Current sources
 
 - Google Stitch project: `https://stitch.withgoogle.com/projects/15760444676241659793`
-- **Current production handoff:** `stitch_wireline_ai_communications_operating_system (3).zip` — Wireline Precision source screens, cross-platform blueprint, native state references, and brand/store assets.
+- **Current production handoff:** `stitch_wireline_ai_communications_operating_system (4).zip` — Wireline Precision source screens, cross-platform blueprint, native state references, and brand/store assets.
 - `wireline_unified_execution_plan.md` in that handoff establishes the personal-assistant IA and platform mapping. It does not override real product contracts or platform eligibility requirements.
 - Desktop handoff maps to React web at desktop/laptop widths only.
 - Mobile handoff maps to native SwiftUI iOS and Jetpack Compose Android only; it must not be recreated as mobile browser UI.

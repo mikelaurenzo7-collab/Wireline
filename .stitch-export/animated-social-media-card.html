@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline AI - Intelligence with Precision</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed": "#e2e2e9",
+                        "secondary": "#5d5e65",
+                        "outline": "#797586",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#dfdfe7",
+                        "inverse-primary": "#cabeff",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#5c5b5b",
+                        "on-surface-variant": "#484554",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#d6d3d3",
+                        "on-secondary-container": "#616269",
+                        "surface-variant": "#d3e4fe",
+                        "outline-variant": "#c9c4d7",
+                        "surface-dim": "#cbdbf5",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "inverse-surface": "#213145",
+                        "tertiary": "#444443",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-container": "#d8ceff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#0b1c30",
+                        "error-container": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#45464d",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#4723be",
+                        "secondary-fixed-dim": "#c6c6cd",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-secondary-fixed": "#1a1b21",
+                        "primary-fixed-dim": "#cabeff",
+                        "primary-fixed": "#e6deff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary-fixed": "#e5e2e1",
+                        "surface": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary": "#451ebb",
+                        "on-primary-fixed": "#1c0062",
+                        "surface-tint": "#6042d6",
+                        "primary-container": "#5d3fd3",
+                        "surface-container-highest": "#d3e4fe",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "base": "4px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    fontFamily: {
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-sm": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(-5deg); }
+            50% { transform: translateY(-20px) rotate(-3deg); }
+            100% { transform: translateY(0px) rotate(-5deg); }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-hidden w-screen h-screen flex items-center justify-center relative">
+<!-- Background Shader -->
+<!-- STITCH_SHADER_START:ANIMATION_92 class="absolute inset-0 w-full h-full z-0" -->
+<div class="absolute inset-0 w-full h-full z-0" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_92" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_92');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+    float time = u_time * 0.5;
+    
+    vec3 color1 = vec3(0.365, 0.247, 0.827); // #5d3fd3
+    vec3 color2 = vec3(0.2, 0.1, 0.5);      // Deep Purple
+    vec3 color3 = vec3(0.973, 0.976, 1.0);  // #f8f9ff
+    
+    float noise = sin(uv.x * 10.0 + time) * cos(uv.y * 8.0 - time * 0.5);
+    noise += sin(uv.y * 12.0 + time * 0.7) * cos(uv.x * 5.0 + time * 0.3);
+    
+    vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
+    color = mix(color, color3, pow(max(0.0, sin(uv.y * 3.0 + time)), 5.0) * 0.2);
+    
+    gl_FragColor = vec4(color, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_92 -->
+<!-- Foreground Content Container -->
+<main class="relative z-10 w-full max-w-container-max mx-auto h-full flex flex-col items-center justify-center p-margin-desktop">
+<!-- Header Text -->
+<div class="absolute top-16 md:top-24 w-full text-center px-4">
+<h1 class="font-headline-lg text-headline-lg text-white drop-shadow-lg max-w-3xl mx-auto leading-tight uppercase tracking-wide">
+                Intelligence<br/>With Precision.
+            </h1>
+</div>
+<!-- Center Stage: Floating Device -->
+<div class="relative w-full max-w-md aspect-[9/16] flex items-center justify-center mt-20">
+<!-- Decorative Glass Elements (Background Depth) -->
+<div class="absolute -left-32 top-1/4 w-48 h-64 glass-panel rounded-xl transform -rotate-12 opacity-60 pointer-events-none"></div>
+<div class="absolute -right-24 bottom-1/4 w-56 h-72 glass-panel rounded-xl transform rotate-6 opacity-60 pointer-events-none"></div>
+<!-- Main Device Image -->
+<img alt="Wireline AI on iPhone" class="w-full h-auto object-contain floating-animation drop-shadow-2xl relative z-20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCWTlgro-7kAevA_qmSO0uFRgsCEBw2dIUAkgCXkWNENoaJZvZKcABFR2d7RNWIooSo7ORvo9Ix8nIABqnkTIAtOj091AdlODVUZEykuI7sP4Uk5UlJsWcRATOB6VX-rNYKVyTPgzSVQvrGWle_cNfvcWdOfYgB_Bq3u7-bAOiapC7u2tdyMO-bI-RUGiGyxWQD_gPYSfxuOslsdu0CllLa2A4naeV_oaglRyUmZBo6wHeM-2Gn2sDOCzfIT-8P6gpEiqnCE8lW3PJ"/>
+</div>
+<!-- Bottom Brand Lockup -->
+<div class="absolute bottom-12 w-full flex flex-col items-center justify-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white text-3xl opacity-90" style="font-variation-settings: 'FILL' 1;">
+                    memory
+                </span>
+<span class="font-headline-md text-headline-md text-white font-bold tracking-widest uppercase">
+                    Wireline AI
+                </span>
+</div>
+</div>
+</main>
+</body></html>
