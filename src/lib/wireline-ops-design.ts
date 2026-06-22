@@ -1,7 +1,7 @@
 /**
  * Wireline Recaps � instrument-grade design contract.
  * Copy + class hooks for Recaps, floor, and setup nudges.
- * Palette: Ametrine Precision purple (see foundation.css).
+ * Palette: Wireline Precision blue (see foundation.css).
  */
 
 import { WL_BRAND } from "./wireline-design-system";
@@ -32,7 +32,7 @@ export const WL_OPS_CLASSES = {
   insightLabel: "wl-insight-label",
 } as const;
 
-/** Sentiment chart � active green positive; ametrine neutral; rose negative */
+/** Sentiment chart � active green positive; signalBlue neutral; rose negative */
 export const OPS_SENTIMENT_COLORS = {
   positive: WL_BRAND.accentHex,
   neutral: BRAND.teal,
@@ -277,7 +277,7 @@ export const OPS_TRAINING_PANEL = {
   },
 } as const;
 
-/** Triage panel accent rails � Ametrine + status tokens */
+/** Triage panel accent rails � Signal Blue + status tokens */
 export const OPS_TRIAGE_ACCENTS = {
   hotLeads: WL_BRAND.accentHex,
   openTasks: BRAND.tealBright,

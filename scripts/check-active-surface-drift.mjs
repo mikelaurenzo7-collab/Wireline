@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Ametrine Precision contract.
+ * Wireline Precision contract.
  * This intentionally guards the shared foundations and actual application shells,
  * not speculative screenshots or one-off design artifacts.
  */
@@ -26,7 +26,7 @@ const read = (file) => readFileSync(filePath(file), "utf8");
 const report = (file, message) => failures.push(`${file}: ${message}`);
 const requireFile = (file) => {
   if (!existsSync(filePath(file))) {
-    report(file, "required Ametrine Precision surface is missing");
+    report(file, "required Wireline Precision surface is missing");
     return false;
   }
   return true;
@@ -41,14 +41,14 @@ for (const file of coreFiles) requireFile(file);
 
 const foundation = read("src/styles/foundation.css");
 requirePatterns("src/styles/foundation.css", foundation, [
-  [/--wl-page:\s*#f8f9ff/i, "must use Ametrine root surface #f8f9ff"],
-  [/--wl-accent:\s*#5d3fd3/i, "must use Ametrine primary #5d3fd3"],
-  [/--wl-on-surface:\s*#0b1c30/i, "must use #0b1c30 as primary readable text"],
-  [/--wl-surface-subtle:\s*#eff4ff/i, "must use #eff4ff secondary surfaces"],
-  [/--wl-line:\s*#c9c4d7/i, "must use #c9c4d7 precision dividers"],
-  [/--radius:\s*0\.25rem/i, "must retain 4px default geometry"],
-  [/--radius-lg:\s*0\.5rem/i, "must retain 8px large-container geometry"],
-  [/border-radius:\s*var\(--radius\)/i, "must use 4px default geometry for standard controls and cards"],
+  [/--wl-page:\s*#f9f9ff/i, "must use Wireline Precision root surface #f9f9ff"],
+  [/--wl-accent:\s*#003ec7/i, "must use Wireline Precision Signal Blue primary #003ec7"],
+  [/--wl-on-surface:\s*#111c2d/i, "must use #111c2d as primary readable text"],
+  [/--wl-surface-subtle:\s*#f0f3ff/i, "must use #f0f3ff secondary surfaces"],
+  [/--wl-line:\s*#c3c5d9/i, "must use #c3c5d9 precision dividers"],
+  [/--radius:\s*0\.5rem/i, "must retain 8px default geometry"],
+  [/--radius-lg:\s*1rem/i, "must retain 16px large-container geometry"],
+  [/border-radius:\s*var\(--radius\)/i, "must use 8px default geometry for standard controls and cards"],
   [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
   [/focus-visible[\s\S]*outline:\s*2px solid var\(--wl-accent\)/i, "must retain a 2px keyboard focus indicator"],
 ]);
@@ -58,10 +58,9 @@ if (/#f9f9f7|#1a3c34|#01261f|Professional Heritage/i.test(foundation)) {
 
 const indexCss = read("src/index.css");
 requirePatterns("src/index.css", indexCss, [
-  [/family=Hanken\+Grotesk/i, "must load Hanken Grotesk for Ametrine hierarchy"],
-  [/family=Inter/i, "must load Inter for readable dense content"],
+  [/family=Inter/i, "must load Inter for Wireline Precision hierarchy and dense content"],
   [/family=JetBrains\+Mono/i, "must load JetBrains Mono for metadata"],
-  [/--wl-font-display:\s*"Hanken Grotesk"/i, "must map display typography to Hanken Grotesk"],
+  [/--wl-font-display:\s*Inter/i, "must map display typography to Inter"],
   [/--wl-font-sans:\s*Inter/i, "must map body typography to Inter"],
 ]);
 if (/Professional Heritage|#1A3C34|#F9F9F7/i.test(indexCss)) {
@@ -70,7 +69,7 @@ if (/Professional Heritage|#1A3C34|#F9F9F7/i.test(indexCss)) {
 
 const shell = read("src/components/WorkspaceShell.tsx");
 requirePatterns("src/components/WorkspaceShell.tsx", shell, [
-  [/w-\[256px\]/, "must use the 256px Ametrine workspace shell"],
+  [/w-\[256px\]/, "must use the 256px Wireline Precision workspace shell"],
   [/lg:grid-cols-\[256px_minmax\(0,1fr\)\]/, "must use the 256px desktop workspace grid"],
   [/label: "Overview"/, "must expose Overview in primary navigation"],
   [/label: "Inbox"/, "must expose Inbox in primary navigation"],
@@ -93,37 +92,37 @@ requirePatterns("src/pages/OverviewPage.tsx", overview, [
 
 const iosTheme = read("ios/Wireline/Theme/WirelineTheme.swift");
 requirePatterns("ios/Wireline/Theme/WirelineTheme.swift", iosTheme, [
-  [/canvas\s*=\s*Color\(hex:\s*0xF8F9FF\)/, "must use #F8F9FF native root canvas"],
-  [/text\s*=\s*Color\(hex:\s*0x0B1C30\)/, "must use #0B1C30 primary text"],
-  [/accent\s*=\s*Color\(hex:\s*0x5D3FD3\)/, "must use #5D3FD3 native action color"],
-  [/border\s*=\s*Color\(hex:\s*0xC9C4D7\)/, "must use #C9C4D7 native borders"],
+  [/canvas\s*=\s*Color\(hex:\s*0xF9F9FF\)/, "must use #F9F9FF native root canvas"],
+  [/text\s*=\s*Color\(hex:\s*0x111C2D\)/, "must use #111C2D primary text"],
+  [/accent\s*=\s*Color\(hex:\s*0x003EC7\)/, "must use #003EC7 native action color"],
+  [/border\s*=\s*Color\(hex:\s*0xC3C5D9\)/, "must use #C3C5D9 native borders"],
   [/scaleEffect\(configuration\.isPressed\s*\?\s*0\.98\s*:\s*1\)/, "must retain 0.98 tactile press feedback"],
 ]);
 
 const iosWidget = read("ios/WirelineShared/WirelineWidgetSnapshot.swift");
 requirePatterns("ios/WirelineShared/WirelineWidgetSnapshot.swift", iosWidget, [
-  [/accent = "5D3FD3"/, "must use the Ametrine widget accent"],
-  [/canvas = "F8F9FF"/, "must use the Ametrine widget canvas"],
+  [/accent = "003EC7"/, "must use the Wireline Precision widget accent"],
+  [/canvas = "F9F9FF"/, "must use the Wireline Precision widget canvas"],
 ]);
 
 const androidTheme = read("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", androidTheme, [
-  [/Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF Android root canvas"],
-  [/Text\s*=\s*Color\(0xFF0B1C30\)/, "must use #0B1C30 Android primary text"],
-  [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 Android action color"],
-  [/Border\s*=\s*Color\(0xFFC9C4D7\)/, "must use #C9C4D7 Android borders"],
-  [/RadiusLg\s*=\s*8\.dp/, "must retain 8dp large-container geometry"],
+  [/Canvas\s*=\s*Color\(0xFFF9F9FF\)/, "must use #F9F9FF Android root canvas"],
+  [/Text\s*=\s*Color\(0xFF111C2D\)/, "must use #111C2D Android primary text"],
+  [/Accent\s*=\s*Color\(0xFF003EC7\)/, "must use #003EC7 Android action color"],
+  [/Border\s*=\s*Color\(0xFFC3C5D9\)/, "must use #C3C5D9 Android borders"],
+  [/RadiusLg\s*=\s*16\.dp/, "must retain 16dp large-container geometry"],
 ]);
 
 const androidWidget = read("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt");
 requirePatterns("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt", androidWidget, [
-  [/Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF widget canvas"],
-  [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 widget action color"],
+  [/Canvas\s*=\s*Color\(0xFFF9F9FF\)/, "must use #F9F9FF widget canvas"],
+  [/Accent\s*=\s*Color\(0xFF003EC7\)/, "must use #003EC7 widget action color"],
 ]);
 
 if (failures.length) {
-  console.error("Ametrine Precision contract check failed:\n- " + failures.join("\n- "));
+  console.error("Wireline Precision contract check failed:\n- " + failures.join("\n- "));
   process.exitCode = 1;
 } else {
-  console.log("Ametrine Precision contract check passed");
+  console.log("Wireline Precision contract check passed");
 }

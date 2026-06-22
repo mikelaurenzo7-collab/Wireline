@@ -8,20 +8,20 @@ public enum WirelineWidgetShared {
     public static let appGroupId = "group.com.wireline.assistant"
 }
 
-/// Small immutable mirror of the Ametrine Precision palette. Widgets cannot
+/// Small immutable mirror of the Wireline Precision palette. Widgets cannot
 /// import the app target's Brand type, so visual drift is prevented here.
 public enum WirelinePalette {
-    public static let accent = "5D3FD3"
-    public static let accentDeep = "451EBB"
-    public static let accentSoft = "E6DEFF"
-    public static let canvas = "F8F9FF"
+    public static let accent = "003EC7"
+    public static let accentDeep = "001452"
+    public static let accentSoft = "DDE1FF"
+    public static let canvas = "F9F9FF"
     public static let panel = "FFFFFF"
-    public static let panel2 = "EFF4FF"
-    public static let text = "0B1C30"
-    public static let text2 = "484554"
-    public static let text3 = "484554"
-    public static let border = "C9C4D7"
-    public static let destructive = "D32F2F"
+    public static let panel2 = "F0F3FF"
+    public static let text = "111C2D"
+    public static let text2 = "434656"
+    public static let text3 = "434656"
+    public static let border = "C3C5D9"
+    public static let destructive = "BA1A1A"
 }
 
 public struct WirelineWidgetCall: Codable, Identifiable, Hashable {

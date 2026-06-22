@@ -40,13 +40,13 @@ const INTENSITY_OPACITY: Record<NebulaIntensity, number> = {
   vivid: 0.45,
 };
 
-/** Wireline plasma palette — Forest green, soft sage, warm paper, active container, secondary surface. */
+/** Wireline Precision plasma palette — signal blue, slate-blue surfaces, and active containers. */
 const PLASMA_COLORS = [
-  "rgba(93, 63, 211, VAR)", // ametrine purple (#5D3FD3)
-  "rgba(74, 95, 89, VAR)", // soft sage (#4A5F59)
-  "rgba(225, 233, 230, VAR)", // active container (#E1E9E6)
-  "rgba(244, 244, 242, VAR)", // secondary surface (#F4F4F2)
-  "rgba(248, 249, 255, VAR)", // ametrine canvas (#F8F9FF)
+  "rgba(0, 62, 199, VAR)", // Signal Blue (#003EC7)
+  "rgba(67, 70, 86, VAR)", // on-surface variant (#434656)
+  "rgba(221, 225, 255, VAR)", // active container (#DDE1FF)
+  "rgba(240, 243, 255, VAR)", // secondary surface (#F0F3FF)
+  "rgba(249, 249, 255, VAR)", // Wireline Precision canvas (#F9F9FF)
 ];
 
 function seededRng(seed: number): () => number {

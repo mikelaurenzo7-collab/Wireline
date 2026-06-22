@@ -22,34 +22,34 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
- * Native Android translation of the current Ametrine Precision source system.
- * Material remains native; Wireline supplies pale blue-lavender surfaces,
- * precise outlines, compact geometry, and a single purple action language.
+ * Native Android translation of the current Wireline Precision source system.
+ * Material remains native; Wireline supplies pale slate-blue surfaces,
+ * precise outlines, compact geometry, and a single signal-blue action language.
  */
 object Brand {
-    val Canvas = Color(0xFFF8F9FF)
+    val Canvas = Color(0xFFF9F9FF)
     val Panel = Color(0xFFFFFFFF)
-    val Panel2 = Color(0xFFEFF4FF)
-    val Raised = Color(0xFFE5EEFF)
-    val Border = Color(0xFFC9C4D7)
-    val BorderStrong = Color(0xFF797586)
+    val Panel2 = Color(0xFFF0F3FF)
+    val Raised = Color(0xFFE7EEFF)
+    val Border = Color(0xFFC3C5D9)
+    val BorderStrong = Color(0xFF737688)
 
-    val Text = Color(0xFF0B1C30)
-    val Text2 = Color(0xFF484554)
-    val Text3 = Color(0xB8484554)
+    val Text = Color(0xFF111C2D)
+    val Text2 = Color(0xFF434656)
+    val Text3 = Color(0xB8434656)
 
-    val Accent = Color(0xFF5D3FD3)
-    val AccentSoft = Color(0xFFE6DEFF)
-    val AccentDeep = Color(0xFF451EBB)
-    val AccentTint = Color(0x1A5D3FD3)
+    val Accent = Color(0xFF003EC7)
+    val AccentSoft = Color(0xFFDDE1FF)
+    val AccentDeep = Color(0xFF001452)
+    val AccentTint = Color(0x1A003EC7)
 
-    val Destructive = Color(0xFFD32F2F)
+    val Destructive = Color(0xFFBA1A1A)
     val Success = Color(0xFF2E7D32)
     val Signal = Success
 
-    val RadiusSm = 2.dp
-    val RadiusMd = 6.dp
-    val RadiusLg = 8.dp
+    val RadiusSm = 4.dp
+    val RadiusMd = 8.dp
+    val RadiusLg = 16.dp
 }
 
 private val LightColors: ColorScheme = lightColorScheme(
@@ -75,7 +75,7 @@ private val LightColors: ColorScheme = lightColorScheme(
     onError = Color.White,
 )
 
-/** Native platform typography mirrors Ametrine hierarchy through weight and tracking. */
+/** Native platform typography mirrors Signal Blue hierarchy through weight and tracking. */
 private val AppTypography = Typography(
     displayLarge = Typography().displayLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.64).sp),
     displayMedium = Typography().displayMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.56).sp),
@@ -117,7 +117,7 @@ fun WirelineTheme(content: @Composable () -> Unit) {
                 small = RoundedCornerShape(Brand.RadiusMd),
                 medium = RoundedCornerShape(Brand.RadiusLg),
                 large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(12.dp),
+                extraLarge = RoundedCornerShape(24.dp),
             ),
             typography = AppTypography,
             content = content,

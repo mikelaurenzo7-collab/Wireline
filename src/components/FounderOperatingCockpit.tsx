@@ -75,7 +75,7 @@ function QuestionCard({
           <h3 className="text-sm font-display italic text-foreground">{title}</h3>
         </div>
         {ok ? (
-          <CheckCircle2 className="w-4 h-4 text-[color:var(--wl-signal,#5D3FD3)] shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-[color:var(--wl-signal,#003EC7)] shrink-0" />
         ) : (
           <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
         )}

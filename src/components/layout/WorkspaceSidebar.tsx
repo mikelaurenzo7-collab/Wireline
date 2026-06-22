@@ -5,9 +5,9 @@
  * Matches the attached screenshots exactly:
  * - 256px fixed width
  * - Icons + full text labels
- * - Purple (#5d3fd3) active left accent bar + active styling
+ * - Signal Blue (#003ec7) active styling
  * - Clean section clustering
- * - Ametrine Precision tokens (surface, primary, 4px radius, Hanken Grotesk hooks)
+ * - Wireline Precision tokens (surface, primary, 8px standard radius, Inter typography)
  * - Reuses the exact same navigation data as the compact rail (no duplication)
  *
  * Usage:
@@ -18,9 +18,17 @@
  */
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, Users, Bot, BookOpen, Plug, Inbox, Settings, 
-  LifeBuoy, LogOut, Crown 
+import {
+  LayoutDashboard,
+  Users,
+  Bot,
+  BookOpen,
+  Plug,
+  Inbox,
+  Settings,
+  LifeBuoy,
+  LogOut,
+  Crown,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
@@ -41,10 +49,10 @@ interface WorkspaceSidebarProps {
   variant?: "wide" | "rail";
 }
 
-export default function WorkspaceSidebar({ 
-  navBadges = {}, 
+export default function WorkspaceSidebar({
+  navBadges = {},
   className,
-  variant = "wide" 
+  variant = "wide",
 }: WorkspaceSidebarProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -54,20 +62,25 @@ export default function WorkspaceSidebar({
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;
     if (!item.matches) return false;
-    return item.matches.some(m => location.pathname === m || location.pathname.startsWith(`${m}/`));
+    return item.matches.some(
+      (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
+    );
   };
 
   const items = accountSidebarItems(accountType).filter(
-    (item) => !item.ownerOnly || user?.is_owner === true
+    (item) => !item.ownerOnly || user?.is_owner === true,
   );
 
   // Group by section for clean clustering (matches North Star visual rhythm)
-  const grouped = items.reduce((acc, item) => {
-    const section = item.section || "General";
-    if (!acc[section]) acc[section] = [];
-    acc[section].push(item);
-    return acc;
-  }, {} as Record<string, NavItem[]>);
+  const grouped = items.reduce(
+    (acc, item) => {
+      const section = item.section || "General";
+      if (!acc[section]) acc[section] = [];
+      acc[section].push(item);
+      return acc;
+    },
+    {} as Record<string, NavItem[]>,
+  );
 
   if (variant === "rail") {
     // Future: delegate to compact rail or render minimal version
@@ -81,10 +94,10 @@ export default function WorkspaceSidebar({
         className={cn(
           "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-outline-variant bg-surface",
           "w-[256px]", // Exact North Star width
-          className
+          className,
         )}
         data-testid="workspace-sidebar-wide"
-        data-ametrine-sidebar="true"
+        data-wireline-precision-sidebar="true"
       >
         {/* Top Logo Lockup — matches screenshots */}
         <div className="flex items-center gap-3 px-6 h-16 border-b border-outline-variant">
@@ -92,7 +105,9 @@ export default function WorkspaceSidebar({
             <span className="text-white font-bold text-lg tracking-[-1px]">W</span>
           </div>
           <div>
-            <div className="font-semibold text-[17px] tracking-[-0.3px] text-on-surface">Wireline</div>
+            <div className="font-semibold text-[17px] tracking-[-0.3px] text-on-surface">
+              Wireline
+            </div>
             <div className="text-[10px] text-on-surface-variant -mt-0.5">Enterprise Workspace</div>
           </div>
         </div>
@@ -108,7 +123,8 @@ export default function WorkspaceSidebar({
                 {sectionItems.map((item) => {
                   const Icon = item.icon || LayoutDashboard;
                   const active = isActive(item);
-                  const badge = (navBadges[item.path] ?? 0) + 
+                  const badge =
+                    (navBadges[item.path] ?? 0) +
                     (item.matches?.reduce((s, m) => s + (navBadges[m] ?? 0), 0) ?? 0);
 
                   return (
@@ -118,18 +134,20 @@ export default function WorkspaceSidebar({
                       className={cn(
                         "group flex items-center gap-3 px-3 py-[9px] rounded-base transition-all",
                         "hover:bg-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-                        active 
-                          ? "bg-primary/10 text-primary font-medium border-l-3 border-primary -ml-[1px] pl-[11px]" 
-                          : "text-on-surface hover:text-on-surface"
+                        active
+                          ? "bg-primary/10 text-primary font-medium border-l-3 border-primary -ml-[1px] pl-[11px]"
+                          : "text-on-surface hover:text-on-surface",
                       )}
                       aria-current={active ? "page" : undefined}
                     >
-                      <Icon 
+                      <Icon
                         className={cn(
                           "w-4 h-4 shrink-0 transition-colors",
-                          active ? "text-primary" : "text-on-surface-variant group-hover:text-on-surface"
-                        )} 
-                        strokeWidth={active ? 2.5 : 2} 
+                          active
+                            ? "text-primary"
+                            : "text-on-surface-variant group-hover:text-on-surface",
+                        )}
+                        strokeWidth={active ? 2.5 : 2}
                       />
                       <span className="truncate text-[13.5px] tracking-[-0.1px]">{item.label}</span>
 

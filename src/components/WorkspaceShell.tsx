@@ -16,7 +16,7 @@ import WirelineMark from "./brand/WirelineMark";
 const primaryNavigation = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/agents", label: "Assistants", icon: Bot },
-  { href: "/studio", label: "Agent Studio", icon: PenLine },
+  { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/knowledge", label: "Knowledge", icon: Database },
   { href: "/actions", label: "Connections", icon: Workflow },
   { href: "/inbox", label: "Inbox", icon: Inbox },
@@ -93,7 +93,7 @@ export default function WorkspaceShell({
                   Wireline
                 </span>
                 <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
-                  communications, clarified
+                  transparent intelligence
                 </span>
               </span>
             </Link>
