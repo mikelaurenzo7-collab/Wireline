@@ -33,6 +33,7 @@ import OpenRouterModelPicker from "./OpenRouterModelPicker";
 import WorkspaceShell from "./WorkspaceShell";
 import { VoiceFieldSelect, type VoiceOption } from "./fleet-settings/VoiceSelector";
 import { PREMIUM_VOICES } from "./fleet/helpers";
+import RoleplaySandbox from "./RoleplaySandbox";
 
 type ChatMessage = { id: string; role: "assistant" | "user"; content: string };
 type RuntimeConfig = {
@@ -117,6 +118,7 @@ export default function StudioWorkspaceV2() {
   const [brief, setBrief] = useState("");
   const [creating, setCreating] = useState(false);
   const [inspector, setInspector] = useState<Inspector>("overview");
+  const [mode, setMode] = useState<"train" | "simulate">("train");
   const [panelEntry, setPanelEntry] = useState("");
   const [savingPanel, setSavingPanel] = useState(false);
   const [runtimeSaving, setRuntimeSaving] = useState(false);
@@ -880,8 +882,33 @@ export default function StudioWorkspaceV2() {
             </div>
           </aside>
           <section className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="wl-stitch-studio-glow" aria-hidden />
-            <div className="wl-scroll relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2 sm:px-2">
+            <div className="flex items-center justify-center p-2 border-b border-border bg-card z-20 shrink-0">
+              <div className="flex bg-muted rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("train")}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${mode === "train" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Train
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("simulate")}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${mode === "simulate" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Test &amp; Simulate
+                </button>
+              </div>
+            </div>
+            
+            {mode === "simulate" && active ? (
+              <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                <RoleplaySandbox agentId={active.id} />
+              </div>
+            ) : (
+              <>
+                <div className="wl-stitch-studio-glow" aria-hidden />
+                <div className="wl-scroll relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2 sm:px-2">
               <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 py-3 sm:py-6">
                 {messages.length <= 1 ? (
                   <div>
@@ -991,6 +1018,8 @@ export default function StudioWorkspaceV2() {
                 </div>
               ) : null}
             </form>
+            </>
+            )}
           </section>
           <aside className="wl-stitch-card hidden min-h-0 flex-col p-3 xl:flex">
             <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border px-1 pb-3">

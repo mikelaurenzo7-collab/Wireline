@@ -41,6 +41,25 @@ export default function AttributionView({ days }: { days: number }) {
 
   return (
     <div className="p-1 space-y-3">
+      {/* Screen Reader Twin-View for Attribution Table */}
+      <div className="sr-only">
+        <h2>Campaign Attribution Details</h2>
+        <dl>
+          {rows.map((r, i) => {
+            const calls = Number(r.calls) || 0;
+            const booked = Number(r.booked) || 0;
+            const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
+            return (
+              <div key={`sr-attr-${r.source}-${i}`}>
+                <dt>Campaign: {r.source}</dt>
+                <dd>
+                  Calls: {calls}, Minutes: {Math.round((Number(r.total_seconds) || 0) / 60)}, Booked: {booked}, Qualified: {Number(r.qualified) || 0}, Conversion: {conv}%
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-1">
         <Stat label="Tagged sources" value={rows.filter((r) => r.source !== "(untagged)").length} />
         <Stat label="Total calls" value={totalCalls} />
@@ -50,7 +69,7 @@ export default function AttributionView({ days }: { days: number }) {
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
         />
       </div>
-      <div className="rounded-md wl-panel overflow-hidden app-table-scroll">
+      <div className="rounded-md wl-panel overflow-hidden app-table-scroll" aria-hidden="true">
         <table className="w-full text-sm">
           <thead className="bg-black/[0.03] dark:bg-white/[0.02]">
             <tr className="text-left wl-insight-label">

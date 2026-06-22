@@ -10,6 +10,7 @@ const EmailPage = lazy(() => import("../pages/EmailPage"));
 const SettingsPage = lazy(() => import("../pages/SettingsPage"));
 const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
+const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 
 const loading = <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">Opening workspace…</div>;
 
@@ -24,6 +25,7 @@ export default function AppRoutes() {
         <Route path="/knowledge" element={<KnowledgePage />} />
         <Route path="/training" element={<Navigate to="/knowledge" replace />} />
         <Route path="/actions" element={<ActionsPage />} />
+        <Route path="/actions/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<Navigate to="/inbox" replace />} />
         <Route path="/ops" element={<Navigate to="/overview" replace />} />

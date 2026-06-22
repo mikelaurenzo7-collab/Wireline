@@ -59,11 +59,11 @@ class AgentStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Live calls: ",
+                    text = "• Coverage: ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
-                    text = "Active",
+                    text = "100%",
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Success),
                         fontSize = 12.sp,
@@ -74,11 +74,11 @@ class AgentStatusWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "• Roster: ",
+                    text = "• Screened: ",
                     style = TextStyle(color = ColorProvider(WidgetPalette.Text2), fontSize = 12.sp),
                 )
                 Text(
-                    text = "Connected",
+                    text = "All active calls",
                     style = TextStyle(
                         color = ColorProvider(WidgetPalette.Text),
                         fontSize = 12.sp,

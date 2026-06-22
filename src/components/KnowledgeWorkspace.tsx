@@ -9,7 +9,7 @@ type Config = {
   knowledge?: Array<{ content?: string }>;
   personality?: string;
 };
-type View = "facts" | "rules" | "tone";
+type View = "facts" | "rules" | "tone" | "sources";
 
 function Panel({
   title,
@@ -121,6 +121,69 @@ function TonePanel({ personality, loading }: { personality?: string; loading: bo
   );
 }
 
+function SourcesPanel({ loading }: { loading: boolean }) {
+  const sources = [
+    { id: 1, name: "Company Website", type: "Web", url: "https://wireline.com", lastSync: "2 hours ago", status: "Fresh" },
+    { id: 2, name: "Product Specs", type: "PDF", url: "product-v2.pdf", lastSync: "5 days ago", status: "Stale" },
+    { id: 3, name: "Support Playbook", type: "Notion", url: "notion.so/playbook", lastSync: "10 mins ago", status: "Fresh" },
+  ];
+
+  return (
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(26,60,52,0.05)]">
+      <header className="flex items-center justify-between border-b border-border px-4 py-4">
+        <div className="flex items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-sm bg-primary/10 text-primary">
+            <Database size={16} />
+          </span>
+          <h2 className="text-[18px] font-semibold leading-5 tracking-[-.02em] text-foreground">
+            Sources &amp; Freshness
+          </h2>
+        </div>
+        <button className="text-[12px] font-semibold text-primary hover:underline flex items-center gap-1">
+          <Plus size={14} /> Add Source
+        </button>
+      </header>
+      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((id) => (
+              <div key={id} className="h-16 animate-pulse rounded-sm bg-muted" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-[13px] text-muted-foreground leading-5 mb-2">
+              Keep your assistant up to date. Stale sources may contain outdated pricing or policies.
+            </p>
+            {sources.map((src) => (
+              <div key={src.id} className="border border-border rounded-lg p-3 flex items-center justify-between hover:border-[color:var(--wl-line-strong)] transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="bg-muted w-10 h-10 rounded flex items-center justify-center font-mono text-[10px] font-semibold text-muted-foreground">
+                    {src.type}
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-semibold text-foreground flex items-center gap-2">
+                      {src.name}
+                      {src.status === "Stale" && (
+                        <span className="bg-error/10 text-error text-[10px] px-1.5 py-0.5 rounded-sm uppercase tracking-wider font-bold">Stale</span>
+                      )}
+                    </div>
+                    <div className="text-[12px] text-muted-foreground mt-0.5 font-mono truncate max-w-[200px]">{src.url}</div>
+                  </div>
+                </div>
+                <div className="text-right flex flex-col items-end">
+                  <div className="text-[12px] font-medium text-foreground">Synced {src.lastSync}</div>
+                  <button className="text-[11px] font-semibold text-primary mt-1 hover:underline">Re-sync now</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default function KnowledgeWorkspace() {
   const { agents } = useAgents();
   const [params, setParams] = useSearchParams();
@@ -207,7 +270,9 @@ export default function KnowledgeWorkspace() {
     />
   );
   const tonePanel = <TonePanel personality={config.personality} loading={loading} />;
-  const selected = view === "facts" ? factsPanel : view === "rules" ? rulesPanel : tonePanel;
+  const sourcesPanel = <SourcesPanel loading={loading} />;
+  
+  const selected = view === "facts" ? factsPanel : view === "rules" ? rulesPanel : view === "tone" ? tonePanel : sourcesPanel;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -224,8 +289,8 @@ export default function KnowledgeWorkspace() {
           ))}
         </select>
       </div>
-      <div className="grid shrink-0 grid-cols-3 overflow-hidden rounded-md border border-border bg-muted lg:hidden">
-        {(["facts", "rules", "tone"] as View[]).map((item) => (
+      <div className="grid shrink-0 grid-cols-4 overflow-hidden rounded-md border border-border bg-muted lg:hidden">
+        {(["facts", "rules", "tone", "sources"] as View[]).map((item) => (
           <button
             key={item}
             type="button"
@@ -241,7 +306,12 @@ export default function KnowledgeWorkspace() {
       <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(170px,.85fr)_minmax(170px,.85fr)_minmax(180px,.9fr)_minmax(350px,1.65fr)] xl:gap-6">
         <div className="hidden min-h-0 xl:block">{factsPanel}</div>
         <div className="hidden min-h-0 xl:block">{rulesPanel}</div>
-        <div className="hidden min-h-0 xl:block">{tonePanel}</div>
+        <div className="hidden min-h-0 xl:block flex-col gap-4">
+          {tonePanel}
+          <div className="mt-4">
+            {sourcesPanel}
+          </div>
+        </div>
         <div className="min-h-0 xl:hidden">{selected}</div>
 
         <aside className="mt-4 flex min-h-[520px] flex-col rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(26,60,52,0.05)] xl:mt-0">

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Wireline Precision contract.
+ * Ametrine Precision contract.
  * This intentionally guards the shared foundations and actual application shells,
  * not speculative screenshots or one-off design artifacts.
  */
@@ -26,7 +26,7 @@ const read = (file) => readFileSync(filePath(file), "utf8");
 const report = (file, message) => failures.push(`${file}: ${message}`);
 const requireFile = (file) => {
   if (!existsSync(filePath(file))) {
-    report(file, "required Wireline Precision surface is missing");
+    report(file, "required Ametrine Precision surface is missing");
     return false;
   }
   return true;
@@ -52,8 +52,8 @@ requirePatterns("src/styles/foundation.css", foundation, [
   [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
   [/focus-visible[\s\S]*outline:\s*2px solid var\(--wl-accent\)/i, "must retain a 2px keyboard focus indicator"],
 ]);
-if (/#f9f9f7|#1a3c34|#01261f|Professional Heritage/i.test(foundation)) {
-  report("src/styles/foundation.css", "must not retain retired Professional Heritage tokens");
+if (/#f9f9f7|#1a3c34|#01261f|#003ec7|#0052ff|#f9f9ff|Professional Heritage|Wireline Precision|Signal Blue/i.test(foundation)) {
+  report("src/styles/foundation.css", "must not retain retired Professional Heritage or Signal Blue tokens");
 }
 
 const indexCss = read("src/index.css");
@@ -122,8 +122,8 @@ requirePatterns("android/app/src/main/java/com/wireline/app/widget/WidgetPalette
 ]);
 
 if (failures.length) {
-  console.error("Wireline Precision contract check failed:\n- " + failures.join("\n- "));
+  console.error("Ametrine Precision contract check failed:\n- " + failures.join("\n- "));
   process.exitCode = 1;
 } else {
-  console.log("Wireline Precision contract check passed");
+  console.log("Ametrine Precision contract check passed");
 }

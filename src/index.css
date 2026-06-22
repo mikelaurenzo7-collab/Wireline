@@ -51,7 +51,12 @@
 }
 
 * { box-sizing: border-box; }
-html { min-height: 100%; background: var(--background); }
+html { 
+  min-height: 100%; 
+  background: var(--background); 
+  /* WCAG 2.2 SC 2.4.11 Focus Not Obscured (Minimum) - ensures sticky headers don't obscure focused elements */
+  scroll-padding-top: 5rem;
+}
 body {
   min-height: 100dvh;
   margin: 0;
@@ -60,6 +65,11 @@ body {
   font-family: var(--wl-font-sans);
   font-synthesis: none;
   font-kerning: normal;
+}
+/* WCAG 2.2 Target Size (Minimum) - ensure all interactive elements have at least 24x24 hit area */
+button, a, [role="button"] { 
+  min-height: 24px;
+  min-width: 24px;
 }
 button, input, textarea, select { font: inherit; }
 button { cursor: pointer; }

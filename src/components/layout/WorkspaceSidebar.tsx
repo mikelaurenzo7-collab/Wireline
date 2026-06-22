@@ -92,8 +92,8 @@ export default function WorkspaceSidebar({
       <aside
         aria-label="Workspace navigation"
         className={cn(
-          "hidden lg:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-outline-variant bg-surface",
-          "w-[256px]", // Exact North Star width
+          "hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-outline-variant bg-surface transition-[width] duration-300",
+          "w-[200px] lg:w-[256px]", // Scales elegantly from tablet to desktop
           className,
         )}
         data-testid="workspace-sidebar-wide"

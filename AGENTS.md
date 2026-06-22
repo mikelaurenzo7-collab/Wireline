@@ -70,3 +70,10 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 4. Keep keyboard/focus states on web, focus-trap modals, and explicit accessible labels natively.
 5. Treat phone provisioning, voice, models, agent config, connections, billing, consent, and device behavior as production contracts to preserve.
 6. Run `npm run design:contract`, TypeScript/build validation, and native simulator/device validation before release.
+
+## Stitch Extraction Protocol (Zero-Blue Tolerance)
+When extracting HTML, CSS, or JSON from any Google Stitch project:
+1. **Never blindly copy colors:** Stitch projects may use legacy "Wireline Precision" (Signal Blue #003ec7 / #0052ff / #f9f9ff).
+2. **Active Mutation:** You must actively intercept and replace all legacy blue hex codes with Ametrine Precision tokens (#5D3FD3, #451EBB, #F8F9FF) before applying the code to React, iOS, or Android.
+3. **Typography Enforcement:** Always replace default Inter/Source Serif display fonts from Stitch with **Hanken Grotesk**.
+4. **Audit Guard:** If you see `#003ec7`, `#0052ff`, or `Signal Blue` in your generated code, you have failed the visual contract. Purge it immediately.

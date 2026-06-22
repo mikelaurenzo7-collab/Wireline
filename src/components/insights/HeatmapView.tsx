@@ -45,7 +45,23 @@ export default function HeatmapView({ days }: { days: number }) {
           Calls by Hour × Weekday
         </h3>
       </div>
-      <div className="app-table-scroll rounded-md border border-border">
+      {/* Screen Reader Twin-View for Heatmap */}
+      <div className="sr-only">
+        <h2>Heatmap Data</h2>
+        <dl>
+          {grid.map((cell: any, i: number) => {
+            if (cell.count === 0) return null;
+            return (
+              <div key={`sr-heat-${i}`}>
+                <dt>{weekdays[cell.weekday]} at {cell.hour}:00</dt>
+                <dd>{cell.count} calls{cell.avg_score ? `, average score ${cell.avg_score}` : ""}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      </div>
+
+      <div className="app-table-scroll rounded-md border border-border" aria-hidden="true">
         <table className="w-full md:min-w-[700px]">
           <thead>
             <tr>

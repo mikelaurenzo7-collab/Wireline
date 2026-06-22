@@ -1,4 +1,4 @@
-/* Wireline Precision — Full Stitch Source Parity
+/* Ametrine Precision — Full Stitch Source Parity
  * Primary: #451EBB | Surface: #F8F9FF | Radius: 4px base / 8px component / 12px modal | Hanken Grotesk
  * Merged from web_design_spec + deep_dive_manifest + current foundation tokens.
  * All interactive elements use --primary. 4px grid with 4px standard controls and 8px large containers enforced.
@@ -259,9 +259,9 @@ select {
   border-left: 1px solid var(--outline-variant);
 }
 
-/* Wireline Precision uses Inter for headlines */
+/* Ametrine Precision uses Hanken Grotesk for headlines */
 .wl-headline {
-  font-family: var(--font-sans);
+  font-family: var(--wl-font-display, "Hanken Grotesk", sans-serif);
   font-weight: 600;
   letter-spacing: -0.02em;
 }

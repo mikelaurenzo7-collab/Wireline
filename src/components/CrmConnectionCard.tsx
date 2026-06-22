@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Link2, Unlink, Loader2, ExternalLink, CheckCircle2, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
@@ -442,6 +443,15 @@ export default function CrmConnectionCard() {
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
                                 </a>
+                              )}
+                              {key === "salesforce" && (
+                                <Link
+                                  to="/actions/salesforce"
+                                  className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
+                                  title="Configure"
+                                >
+                                  <Settings className="w-3.5 h-3.5" />
+                                </Link>
                               )}
                               <ShadButton
                                 type="button"

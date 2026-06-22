@@ -60,6 +60,29 @@ router.post("/api/vapi-webhook", async (req, res) => {
     }
   }
 
+  // Real-time Handoff Logic Engine
+  if (message.type === "transcript" || message.type === "conversation-update") {
+    const transcriptText = (message.transcript || "").toLowerCase();
+    const confidence = message.confidence ?? 1.0; // Fallback to 1.0 if not provided
+    
+    const triggerWords = ["urgent", "cancel", "human", "supervisor", "escalate"];
+    const hasTriggerWord = triggerWords.some(word => transcriptText.includes(word));
+    const lowConfidence = confidence < 0.75;
+    
+    if (hasTriggerWord || lowConfidence) {
+      log.warn("Handoff Logic Engine Triggered", {
+        agentId: agent.id,
+        callId: callId(payload, message),
+        reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+        transcript: transcriptText
+      });
+      
+      // In a real system, we would broadcast via WebSocket or push notification to the Live Ops / Supervisor panel
+      // Example: broadcastToSupervisors(callId, "handoff_requested", { reason, transcript });
+    }
+    return res.json({ received: true });
+  }
+
   if (message.type === "tool-calls") {
     const calls = normalizeVapiToolCalls(message);
     const results = await Promise.all(

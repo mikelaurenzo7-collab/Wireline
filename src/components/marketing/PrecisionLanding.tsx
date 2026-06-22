@@ -139,13 +139,10 @@ export default function PrecisionLanding() {
           <div className="mx-auto max-w-[1120px] text-center">
             <p className="wl-stitch-label">Wireline AI</p>
             <h1 className="mx-auto mt-4 max-w-[820px] text-balance text-[clamp(42px,6vw,68px)] font-semibold leading-[1.05] tracking-[-.045em] text-primary">
-              Never wait on hold again.
-              <br />
-              Wireline will.
+              Reclaim 98% of your time spent on hold and phone calls.
             </h1>
             <p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">
-              Give Wireline the calls and messages you do not have time for. It handles the waiting,
-              asks the questions, and sends you the answer.
+              Give Wireline the calls and messages you do not have time for. Resolve appointments, support lines, and follow-ups instantly without the wait.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
@@ -161,6 +158,10 @@ export default function PrecisionLanding() {
                 <Play size={14} />
                 Watch demo
               </Link>
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> SOC2 Type II Certified</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> Privacy First</span>
             </div>
             <div className="mx-auto mt-16 max-w-[920px] text-left">
               <ProductFrame />
@@ -260,6 +261,10 @@ export default function PrecisionLanding() {
             >
               See how it works <ArrowRight size={14} />
             </Link>
+          </div>
+          <div className="mt-6 flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> SOC2 Type II Certified</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> Privacy First</span>
           </div>
         </section>
       </main>

@@ -10,6 +10,20 @@ export default function LandingPage() {
     captureDemoSourceFromLocation();
   }, []);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Wireline",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "description": "A personal AI communications assistant that handles phone calls, messaging, scheduling, and hold times for you.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  };
+
   return (
     <>
       <PageMeta
@@ -17,6 +31,7 @@ export default function LandingPage() {
         description="Wireline handles the calls, messages, follow-ups, and hold music that interrupt your life and work."
         image="/og-image.jpg"
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PrecisionLanding />
     </>
   );

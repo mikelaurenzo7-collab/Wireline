@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Native Wireline Precision foundation. Keep platform-native behavior while
-/// mirroring the current Stitch source: slate-blue surfaces, precise outlines,
-/// compact geometry, and a single signalBlue action color.
+/// Native Ametrine Precision foundation. Keep platform-native behavior while
+/// mirroring the current Stitch source: lavender-tinted surfaces, precise outlines,
+/// compact geometry, and a single ametrine action color.
 enum Brand {
     // ── Surfaces ─────────────────────────────────────────────────────────────
     static let canvas = Color(hex: 0xF8F9FF)
@@ -74,7 +74,7 @@ struct TouchPressStyle: ButtonStyle {
     }
 }
 
-/// Shared elevated surface. Signal Blue uses precise borders and restrained depth.
+/// Shared elevated surface. Ametrine Precision uses precise borders and restrained depth.
 struct OperatorCard<Content: View>: View {
     private let content: Content
     private let radius: CGFloat
@@ -121,7 +121,7 @@ extension View {
     }
 
     /// Backward-compatible name for existing views while they migrate to the
-    /// semantic Signal Blue card helpers.
+    /// semantic Ametrine Precision card helpers.
     func brandGlowCard(radius: CGFloat = Brand.radiusLg, borderOpacity: Double = 1) -> some View {
         operatorCardSurface(radius: radius, borderOpacity: borderOpacity)
     }

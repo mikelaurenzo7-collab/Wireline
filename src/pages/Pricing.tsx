@@ -89,10 +89,33 @@ function PlanCard({
 function ComparisonTable({ plans }: { plans: StripePlan[] }) {
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card">
-      <h2 className="border-b border-border px-5 py-5 text-[20px] font-semibold tracking-[-.01em]">
+      <h2 id="compare-plans-heading" className="border-b border-border px-5 py-5 text-[20px] font-semibold tracking-[-.01em]">
         Compare plans
       </h2>
-      <div className="overflow-x-auto">
+      
+      {/* Screen Reader Twin-View */}
+      <div className="sr-only">
+        {plans.map((plan) => (
+          <div key={`sr-plan-${plan.id}`}>
+            <h3>{plan.name} Plan</h3>
+            <dl>
+              <dt>Assistants</dt>
+              <dd>{plan.max_agents === 999 ? "Unlimited" : `Up to ${plan.max_agents}`}</dd>
+              
+              <dt>Voice minutes</dt>
+              <dd>{plan.voice_minutes_monthly.toLocaleString("en-US")}</dd>
+              
+              <dt>Phone numbers</dt>
+              <dd>{String(plan.included_phone_numbers)}</dd>
+              
+              <dt>Channels</dt>
+              <dd>{plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice"}</dd>
+            </dl>
+          </div>
+        ))}
+      </div>
+
+      <div className="overflow-x-auto" aria-hidden="true">
         <table className="w-full min-w-[620px] border-collapse text-left text-[14px]">
           <thead className="border-b border-border font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">
             <tr>

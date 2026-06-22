@@ -11,8 +11,8 @@ struct AssistantWidget: Widget {
                 .widgetURL(URL(string: "assistant://route"))
                 .containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Assistant")
-        .description("Route an active call to your Assistant from the Home or Lock Screen.")
+        .configurationDisplayName("Assistant Coverage")
+        .description("View current call coverage rates and active screening status.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
 
@@ -58,12 +58,12 @@ private struct AssistantWidgetView: View {
                     .font(.title.weight(.semibold))
                     .foregroundStyle(WidgetColors.accent)
                 Spacer()
-                Text("Send call to Assistant")
+                Text("100% Coverage")
                     .font(Font.system(.headline, design: .serif).weight(.bold))
-                    .foregroundStyle(WidgetColors.text)
+                    .foregroundStyle(WidgetColors.accent)
                     .minimumScaleFactor(0.8)
                     .lineLimit(2)
-                Text("Tap to route")
+                Text("All active calls screened")
                     .font(.caption)
                     .foregroundStyle(WidgetColors.text2)
             }

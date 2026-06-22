@@ -22,9 +22,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
- * Native Android translation of the current Wireline Precision source system.
- * Material remains native; Wireline supplies pale slate-blue surfaces,
- * precise outlines, compact geometry, and a single signal-blue action language.
+ * Native Android translation of the current Ametrine Precision source system.
+ * Material remains native; Wireline supplies pale lavender-tinted surfaces,
+ * precise outlines, compact geometry, and a single ametrine action language.
  */
 object Brand {
     val Canvas = Color(0xFFF8F9FF)
@@ -75,7 +75,7 @@ private val LightColors: ColorScheme = lightColorScheme(
     onError = Color.White,
 )
 
-/** Native platform typography mirrors Signal Blue hierarchy through weight and tracking. */
+/** Native platform typography mirrors Ametrine Precision hierarchy through weight and tracking. */
 private val AppTypography = Typography(
     displayLarge = Typography().displayLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.64).sp),
     displayMedium = Typography().displayMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.56).sp),
