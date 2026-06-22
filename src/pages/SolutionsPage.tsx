@@ -5,32 +5,32 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "Outbound calls that keep moving",
+    title: "AI Sales Agents that qualify and close",
     description:
-      "Wireline can follow up, wait on hold, and book time on your calendar — whether you are closing a lead or calling the pharmacy back.",
-    eyebrow: "Outbound",
+      "Deploy fully customizable AI sales agents to automatically qualify inbound leads over phone, SMS, and email, schedule client meetings on your calendar, and write all logs directly to your CRM.",
+    eyebrow: "Outbound & Inbound Sales",
     icon: PhoneOutgoing,
     bullets: [
-      "Follow up without sitting on hold yourself",
-      "Capture answers and next steps in a text",
-      "Train each assistant on what it may promise",
+      "Engage and qualify leads instantly, 24/7",
+      "Sync records directly to Salesforce, HubSpot, or custom APIs",
+      "Customize campaign scripts, discount logic, and brand tone",
     ],
-    cta: { href: "/pricing", label: "See personal & business plans" },
-    secondary: { href: "/showcase", label: "Hear a sample call" },
+    cta: { href: "/pricing", label: "See customized pricing & plans" },
+    secondary: { href: "/showcase", label: "Hear an interactive demo" },
   },
   support: {
-    title: "Inbound help with a human handoff",
+    title: "Inbound Front Desk & Automated Receptionist",
     description:
-      "For business teams, Wireline answers routine questions from your knowledge base and routes anything sensitive back to you.",
-    eyebrow: "Inbound",
+      "Answer business lines instantly without wait times. Train your customizable receptionist agent on your company knowledge, products, and calendars to handle bookings and transfer warm transfers seamlessly.",
+    eyebrow: "Inbound Reception",
     icon: Headphones,
     bullets: [
-      "Ground answers in facts, rules, and tone you approve",
-      "Escalate unclear or high-stakes conversations",
-      "Scope actions per assistant — not blanket access",
+      "Answer FAQs, book appointments, and look up details in real-time",
+      "Route urgent inquiries or high-value clients directly to live reps",
+      "Deploy custom AI rules & guardrails for 100% brand-safe calls",
     ],
-    cta: { href: "/solutions/sales", label: "See outbound use cases" },
-    secondary: { href: "/features", label: "How personal calls work" },
+    cta: { href: "/solutions/sales", label: "See sales agent solutions" },
+    secondary: { href: "/features", label: "Explore customizable features" },
   },
 } as const;
 

@@ -6,16 +6,16 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const PRINCIPLES = [
   {
-    title: "Respect for your time.",
-    copy: "Routine calls should not take over your workday, your lunch break, or the hour after you get home.",
+    title: "Respect for your operations.",
+    copy: "Routine inquiries, booking requests, and outbound follow-ups should never halt your team's day or result in missed revenue.",
   },
   {
-    title: "Clear boundaries.",
-    copy: "You decide what an assistant can handle, what it should never do, and when it needs to hand a conversation back to you.",
+    title: "Clear operational boundaries.",
+    copy: "You define the exact guidelines, calendar permissions, CRM sync behaviors, and when to transfer a live call to your representatives.",
   },
   {
-    title: "Plain language over product theater.",
-    copy: "Wireline is built to make a call, wait through the friction, and return a useful answer. That is the point.",
+    title: "Intelligent customizability.",
+    copy: "Deploy highly specialized front-desk and sales agents trained on your specific business knowledge, documents, and rules.",
   },
 ] as const;
 
@@ -23,8 +23,8 @@ export default function About() {
   return (
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
-        title="About Wireline"
-        description="Wireline is a personal AI call assistant built to give people time back from routine phone work."
+        title="About Wireline | AI Business Front Desk & Sales Agents"
+        description="Wireline is a customizable AI Front Desk & Sales Agent platform built to automate business reception, qualify leads, and sync with your CRM."
         path="/about"
       />
 
@@ -32,12 +32,13 @@ export default function About() {
         <div className="max-w-3xl">
           <p className="wl-stitch-eyebrow">About Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            A better way to deal with routine calls.
+            The AI Front Desk & Sales platform for business.
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Phone lines still run too much of everyday life. Wireline was built to help with the
-            calls that interrupt your day: the pharmacy, doctor, school, airline, landlord,
-            restaurant, or support line.
+            Phone lines, text messaging, and inbox responses are critical business pipelines.
+            Wireline empowers businesses to deploy fully customizable AI agents that handle inbound
+            front-desk reception, inbound and outbound sales qualification, and calendar scheduling,
+            seamlessly integrating with existing CRM databases.
           </p>
         </div>
       </section>
@@ -56,12 +57,13 @@ export default function About() {
           <div className="bg-card px-5 py-9 sm:px-8 sm:py-12 lg:px-10">
             <p className="max-w-xl text-base leading-7 text-muted-foreground">
               Wireline is independently built and supported. Product feedback does not disappear
-              into a generic queue; it reaches the people responsible for deciding what changes
+              into a generic queue; it reaches the developers responsible for deciding what changes
               next.
             </p>
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-              The goal is simple: give people a calm, private way to hand off the phone work that
-              keeps piling up.
+              The goal is simple: empower businesses to automate customer interactions, capture hot
+              opportunities instantly, and scale front-desk reception and sales qualification
+              seamlessly.
             </p>
             <a
               href="mailto:support@trywireline.com"
@@ -79,12 +81,13 @@ export default function About() {
           <div>
             <p className="wl-stitch-eyebrow">What guides the product</p>
             <h2 className="wl-stitch-display mt-3 text-balance">
-              An assistant should feel useful, not overwhelming.
+              A business agent should be completely predictable, custom-trained, and brand-safe.
             </h2>
           </div>
           <p className="max-w-xl text-base leading-7 text-muted-foreground">
-            Wireline is intentionally designed around a small number of real moments: make the call,
-            follow the rules you set, and bring back the useful part.
+            Wireline is designed around enterprise-grade execution: answer inbound queries, qualify
+            sales opportunities, book CRM-synced calendar invites, and follow custom rules
+            perfectly.
           </p>
         </div>
         <div className="mt-10 grid gap-3 md:grid-cols-3">
@@ -107,17 +110,17 @@ export default function About() {
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              Your assistant begins as a private draft.
+              Your custom agent begins as a private draft.
             </p>
             <h2 className="wl-stitch-display mt-4 max-w-2xl text-balance">
-              Start with the call you keep putting off.
+              Deploy your first custom front-desk or sales agent.
             </h2>
           </div>
           <Link
             to="/pricing"
             className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
           >
-            Start at $9 <ArrowRight className="h-4 w-4" />
+            Get started now <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

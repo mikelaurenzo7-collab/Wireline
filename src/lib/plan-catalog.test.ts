@@ -4,7 +4,7 @@ import { STRIPE_PLANS, planById, VOICE_VARIABLE_COST_PER_MIN_USD } from "./plan-
 describe("plan-catalog", () => {
   it("keeps Everyday personal-first and affordable", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("Everyday");
+    expect(personal?.name).toBe("Solo Agent");
     expect(personal?.price_usd_monthly).toBe(7);
     expect(personal?.voice_minutes_monthly).toBe(60);
     expect(personal?.extra_agent_price_usd).toBe(7);
@@ -12,7 +12,7 @@ describe("plan-catalog", () => {
 
   it("makes Household the practical multi-assistant tier", () => {
     const household = planById("business-starter");
-    expect(household?.name).toBe("Household");
+    expect(household?.name).toBe("Front Desk");
     expect(household?.price_usd_monthly).toBe(29);
     expect(household?.max_agents).toBe(4);
     expect(household?.voice_minutes_monthly).toBe(500);
@@ -22,7 +22,7 @@ describe("plan-catalog", () => {
 
   it("keeps Concierge as the expanded personal or work tier", () => {
     const concierge = planById("starter");
-    expect(concierge?.name).toBe("Concierge");
+    expect(concierge?.name).toBe("Sales & Reception");
     expect(concierge?.price_usd_monthly).toBe(59);
     expect(concierge?.max_agents).toBe(8);
   });
@@ -40,7 +40,7 @@ describe("plan-catalog", () => {
 
   it("keeps Custom as a contact-sales plan", () => {
     const scale = planById("scale");
-    expect(scale?.name).toBe("Custom");
+    expect(scale?.name).toBe("Custom Enterprise");
     expect(scale?.price_usd_monthly).toBe(0);
     expect(scale?.max_agents).toBe(999);
   });

@@ -8,12 +8,13 @@ import { STRIPE_PLANS, type StripePlan } from "../lib/plan-catalog";
 type Interval = "month" | "year";
 
 const descriptions: Record<string, string> = {
-  personal: "Hand off the waits, follow-ups, and life admin you want back.",
-  "personal-plus": "More room for the calls, messages, and tasks you want handled.",
+  personal: "Deploy a dedicated, fully customizable front desk receptionist or outreach agent.",
+  "personal-plus": "More room and multi-turn channels for your customizable sales & support lines.",
   "business-starter":
-    "Room for a household, personal projects, or a small business without changing products.",
-  starter: "More assistants and more call time when life or work gets busy.",
-  scale: "A tailored setup for a larger household, practice, team, or portfolio.",
+    "Perfect for small teams and offices looking to automate front desk calls & follow-ups.",
+  starter:
+    "Comprehensive sales lead qualification, inbound receptionist routing, and larger limits.",
+  scale: "Custom integrations, dedicated SLA support, and limitless customizable agents.",
 };
 
 function currency(amount: number) {
@@ -178,18 +179,18 @@ export default function Pricing() {
       <PrecisionPublicHeader />
       <main className="pt-16">
         <PageMeta
-          title="Wireline Pricing | Your AI call assistant"
-          description="Clear Wireline pricing for the calls, follow-ups, and everyday tasks you want handled."
+          title="AI Business Front Desk & Sales Agents — Pricing | Wireline"
+          description="Clear Wireline pricing for customizable front desk receptionist, sales qualification, and outbound business agents."
           path="/pricing"
         />
         <section className="border-b border-border px-5 pb-10 pt-16 text-center sm:px-8 sm:pt-20">
           <div className="mx-auto max-w-3xl">
             <h1 className="text-[clamp(34px,4vw,48px)] font-semibold tracking-[-.03em] text-foreground">
-              Plans that give you time back
+              Predictable pricing for customizable business agents
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-6 text-muted-foreground">
-              Start with the calls and follow-ups you want off your plate. Add more help only when
-              you need it.
+              Deploy front-desk receptionists, outbound sales reps, or custom AI workflows. Start
+              small and add more capacity as your business grows.
             </p>
             <div
               className="mt-7 inline-flex rounded border border-border bg-card p-1"
@@ -228,11 +229,11 @@ export default function Pricing() {
           {expanded.length ? (
             <details className="mx-auto mt-8 max-w-[1120px] rounded-xl border border-border bg-card p-6 shadow-[0_4px_12px_rgba(93,63,211,0.04)]">
               <summary className="cursor-pointer text-[16px] font-semibold text-foreground">
-                Need more help at home or work?
+                Need enterprise-grade capacity or multiple departments?
               </summary>
               <p className="mt-3 max-w-2xl text-[14px] leading-5 text-muted-foreground">
-                Bring more calls, people, and projects under Wireline without giving up the simple
-                personal experience.
+                Scale your operations with dedicated phone numbers, multi-channel campaign
+                workflows, CRM deep-syncs, and high-volume limits.
               </p>
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {expanded.map((plan) => (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Building, ArrowRight, Loader2 } from "lucide-react";
+import { Bot, SlidersHorizontal, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAccount } from "../../contexts/AccountContext";
 import { PageMeta } from "../../lib/page-meta";
@@ -38,11 +38,11 @@ export default function OnboardingSelection() {
               <span className="font-display text-2xl font-bold">W</span>
             </div>
             <h1 className="font-display text-4xl md:text-5xl text-foreground tracking-tight mb-4">
-              How will you use Wireline?
+              Choose your customizable agent profile
             </h1>
             <p className="text-foreground/70 text-lg max-w-xl mx-auto leading-relaxed">
-              Same console either way. Pick the mode that fits your day — you can change it in
-              Settings whenever.
+              Select an initial focus for your digital workspace. Both settings are driven by fully
+              customizable agents that you can configure to any workflow.
             </p>
           </div>
 
@@ -57,14 +57,14 @@ export default function OnboardingSelection() {
               <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <div>
                 <div className="w-12 h-12 bg-brand/[0.03] group-hover:bg-brand/10 text-charcoal/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
-                  <User className="w-6 h-6" />
+                  <SlidersHorizontal className="w-6 h-6" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
-                  Personal
+                  Inbound Front Desk & Reception
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  One assistant for the calls you avoid — pharmacy, doctor, school, landlord,
-                  airline, support lines. Siri, widgets, and the mobile app come with it.
+                  Answer calls instantly, answer company FAQs, book and coordinate calendars, and
+                  run custom reception workflows tailored to your office.
                 </p>
               </div>
               <div className="mt-8 flex items-center text-brand font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
@@ -72,7 +72,7 @@ export default function OnboardingSelection() {
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
                   <>
-                    Use it for me <ArrowRight className="w-4 h-4 ml-2" />
+                    Select Front Desk <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </div>
@@ -88,14 +88,14 @@ export default function OnboardingSelection() {
               <div className="absolute inset-0 bg-gradient-to-bl from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <div>
                 <div className="w-12 h-12 bg-brand/[0.03] group-hover:bg-brand/10 text-charcoal/60 group-hover:text-brand flex items-center justify-center mb-6 transition-colors">
-                  <Building className="w-6 h-6" />
+                  <Bot className="w-6 h-6" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold mb-3 group-hover:text-brand transition-colors">
-                  Business
+                  Outbound Outreach & Campaigns
                 </h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  Multiple assistants, active-call Recaps, routing, analytics, outbound, and
-                  integrations. Same Studio for setup — more power on the rail.
+                  Run targeted voice & text outreach campaigns, qualify incoming leads
+                  automatically, and synchronize contact states directly with your CRM.
                 </p>
               </div>
               <div className="mt-8 flex items-center text-brand font-semibold text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
@@ -103,7 +103,7 @@ export default function OnboardingSelection() {
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
                   <>
-                    Use it for my business <ArrowRight className="w-4 h-4 ml-2" />
+                    Select Outbound & Sales <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
               </div>
@@ -111,7 +111,8 @@ export default function OnboardingSelection() {
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Same assistant, same Studio. The choice just trims the sidebar.
+            Both profiles run on our high-performance, fully customizable AI Agent engine. You can
+            change configurations anytime in Settings.
           </p>
         </motion.div>
       </div>
