@@ -151,7 +151,7 @@ fun AskWirelineHeroCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FleetStatCard(
+fun MetricStatCard(
     value: String,
     label: String,
     highlighted: Boolean,

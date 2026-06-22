@@ -40,7 +40,7 @@ import com.wireline.app.data.WalletEntry
 import com.wireline.app.ui.ask.AskWirelineScreen
 import com.wireline.app.ui.components.AskWirelineHeroCard
 import com.wireline.app.ui.components.CallbackNumberPromptCard
-import com.wireline.app.ui.components.FleetStatCard
+import com.wireline.app.ui.components.MetricStatCard
 import com.wireline.app.ui.components.AssistantCard
 import com.wireline.app.ui.components.Medallion
 import com.wireline.app.ui.setup.ActionsScreen
@@ -260,9 +260,9 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
             AssistantCard {
                 Text("YOUR DAY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    FleetStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
-                    FleetStatCard(value = "$followUps", label = "FOLLOW-UPS", highlighted = followUps > 0, modifier = Modifier.weight(1f))
-                    FleetStatCard(value = "${state.agents.size}", label = "ASSISTANTS", highlighted = false, modifier = Modifier.weight(1f))
+                    MetricStatCard(value = "${state.activeCalls.size}", label = "CALLS NOW", highlighted = state.activeCalls.isNotEmpty(), modifier = Modifier.weight(1f))
+                    MetricStatCard(value = "$followUps", label = "FOLLOW-UPS", highlighted = followUps > 0, modifier = Modifier.weight(1f))
+                    MetricStatCard(value = "${state.agents.size}", label = "ASSISTANTS", highlighted = false, modifier = Modifier.weight(1f))
                 }
             }
         }

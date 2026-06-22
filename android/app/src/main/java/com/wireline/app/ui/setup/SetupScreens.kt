@@ -45,7 +45,7 @@ private data class PersonalAction(val id: String, val title: String, val detail:
 private val personalActions = listOf(
     PersonalAction("view_recent_interactions", "Use recent context", "Keeps a request connected to what already happened."),
     PersonalAction("escalate_to_human", "Ask me first", "Brings anything sensitive or unclear back to you."),
-    PersonalAction("create_fleet_task", "Create a follow-up", "Saves a reminder when something needs your attention."),
+    PersonalAction("create_followup_task", "Create a follow-up", "Saves a reminder when something needs your attention."),
     PersonalAction("send_email", "Send an email", "Sends confirmations and approved follow-ups."),
     PersonalAction("send_text_message", "Send a text", "Sends a text update when messaging is appropriate."),
     PersonalAction("check_calendar_availability", "Check your calendar", "Looks for a time before proposing it."),

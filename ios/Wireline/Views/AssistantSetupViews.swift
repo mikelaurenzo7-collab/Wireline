@@ -142,7 +142,7 @@ struct ActionsView: View {
     private let personalActions = [
         Action(id: "view_recent_interactions", title: "Use recent context", detail: "Keeps a call or follow-up connected to what already happened."),
         Action(id: "escalate_to_human", title: "Ask me first", detail: "Brings anything sensitive, unclear, or high-stakes back to you."),
-        Action(id: "create_fleet_task", title: "Create a follow-up", detail: "Saves a reminder when something needs your attention."),
+        Action(id: "create_followup_task", title: "Create a follow-up", detail: "Saves a reminder when something needs your attention."),
         Action(id: "send_email", title: "Send an email", detail: "Sends confirmations and approved follow-ups."),
         Action(id: "send_text_message", title: "Send a text", detail: "Sends a text update when messaging is appropriate."),
         Action(id: "check_calendar_availability", title: "Check your calendar", detail: "Looks for a time before proposing it."),

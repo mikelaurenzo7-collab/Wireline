@@ -5,7 +5,7 @@ Native iOS + CarPlay client for the Wireline AI call concierge. Wireline is
 Wireline agents, is woken by VoIP push when a call arrives, and is driven by
 "Hey Siri, tell Wireline to…" App Intents. It is a thin client over the existing
 Wireline backend — no business logic, prompts, model selection, or billing lives
-here. The phone is a remote control for the fleet.
+here. The phone is a remote control for the assistants.
 
 > This folder is the iOS half of the Wireline monorepo. The backend it talks to
 > is the same Express/Supabase app in the repo root; the mobile contract is
