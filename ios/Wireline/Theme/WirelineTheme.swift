@@ -17,7 +17,11 @@ enum Brand {
     static let text3 = Color(hex: 0x484554, opacity: 0.72)
 
     // ── Accent ───────────────────────────────────────────────────────────────
-    static let accent = Color(hex: 0x5D3FD3)
+    static let primary = Color(hex: 0x451EBB)
+    static let primaryContainer = Color(hex: 0x5D3FD3)
+    static let primaryFixed = Color(hex: 0xE6DEFF)
+    static let primaryFixedDim = Color(hex: 0xCABEFF)
+    static let accent = primaryContainer
     static let accentSoft = Color(hex: 0xD8CEFF)
     static let accentDeep = Color(hex: 0x1C0062)
     static let accentTint = Color(hex: 0x5D3FD3, opacity: 0.10)

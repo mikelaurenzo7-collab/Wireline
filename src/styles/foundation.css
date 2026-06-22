@@ -17,9 +17,14 @@
   --wl-line-strong: #797586;
   --wl-line-subtle: rgba(11, 28, 48, 0.06);
   --wl-line-weak: rgba(11, 28, 48, 0.09);
-  --wl-accent: #5d3fd3;
-  --wl-accent-hover: #451ebb;
-  --wl-accent-deep: #1c0062;
+  --wl-primary: #451ebb;
+  --wl-primary-container: #5d3fd3;
+  --wl-primary-fixed: #e6deff;
+  --wl-primary-fixed-dim: #cabeff;
+  --wl-on-primary-fixed: #1c0062;
+  --wl-accent: var(--wl-primary-container);
+  --wl-accent-hover: var(--wl-primary);
+  --wl-accent-deep: var(--wl-on-primary-fixed);
   --wl-accent-foreground: #ffffff;
   --wl-accent-container: #e6deff;
   --wl-status-active: #2e7d32;
@@ -37,13 +42,14 @@
   --card-foreground: var(--wl-on-surface);
   --popover: var(--wl-surface);
   --popover-foreground: var(--wl-on-surface);
-  --primary: var(--wl-accent);
+  --primary: var(--wl-primary);
+  --primary-container: var(--wl-primary-container);
   --primary-foreground: var(--wl-accent-foreground);
   --secondary: var(--wl-surface-subtle);
   --secondary-foreground: var(--wl-on-surface);
   --muted: var(--wl-surface-subtle);
   --muted-foreground: var(--wl-muted);
-  --accent: var(--wl-accent-container);
+  --accent: var(--wl-primary-fixed);
   --accent-foreground: var(--wl-on-surface);
   --border: var(--wl-line);
   --input: var(--wl-line);
@@ -138,9 +144,9 @@ a { color: inherit; }
 .studio-card {
   padding: 24px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--card);
-  box-shadow: 0 4px 12px rgba(93, 63, 211, 0.04);
+  box-shadow: 0 1px 3px rgba(93, 63, 211, 0.08);
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
 }
 .studio-card:active { transform: scale(0.98); }
