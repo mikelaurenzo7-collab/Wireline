@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "./styles/design-system.css";
 @import "./styles/stitch-patterns.css";
@@ -9,8 +9,8 @@
 @import "./styles/precision-auth.css";
 
 :root {
-  /* Wireline Precision uses a sharp display face, neutral body copy, and mono metadata. */
-  --wl-font-display: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Ametrine Precision uses Hanken Grotesk as a sharp display face, neutral body copy, and mono metadata. */
+  --wl-font-display: "Hanken Grotesk", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --wl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }

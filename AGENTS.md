@@ -10,7 +10,7 @@
 - Active shared tokens: `src/styles/foundation.css`, `ios/Wireline/Theme/WirelineTheme.swift`, and `android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt`.
 - The automated source guard lives in `scripts/check-active-surface-drift.mjs`; keep it synchronized with the handoff instead of preserving a legacy design test.
 
-Do not restore a Figma source, source bridge, preview route, design OAuth hook, no-code design authority, gray placeholder-only marketing panels, or the retired violet/lavender visual system.
+Do not restore a Figma source, source bridge, preview route, design OAuth hook, no-code design authority, gray placeholder-only marketing panels.
 
 ## Product posture
 
@@ -26,15 +26,15 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 | Integrations | Actions (with connected accounts inside) |
 | Handoff | Take this call / callback |
 
-## Shared visual system — Wireline Precision
+## Shared visual system — Ametrine Precision
 
-- Signal-blue workspace canvas `#F9F9FF`; elevated card `#FFFFFF`; input/secondary surface `#F0F3FF`; raised well `#E7EEFF`.
-- Signal Blue action `#003EC7`; pressed state `#0038B6`; active container `#DDE1FF`; primary text `#111C2D`.
-- Borders `#C3C5D9`; secondary text `#434656`; destructive `#BA1A1A`.
-- Inter for web display and dense body copy; platform system typography natively; JetBrains Mono only for compact metadata.
+- Signal-purple workspace canvas `#F8F9FF`; elevated card `#FFFFFF`; input/secondary surface `#EFF4FF` (surface-container-low); raised well `#E5EEFF` (surface-container).
+- Ametrine Purple action `#5D3FD3` (primary-container) or `#451EBB` (primary); pressed state `#451EBB`; active container `#E6DEFF` (primary-fixed); primary text `#0B1C30`.
+- Borders/outlines `#C9C4D7` (outline-variant); secondary text `#484554`; destructive `#BA1A1A`.
+- Hanken Grotesk for web display headings; Inter for body copy; platform system typography natively; JetBrains Mono for compact metadata and code-like labels.
 - `-0.02em` on display/headline hierarchy; `cv05`, `cv08`, and `ss01` for web headings.
-- 8px default buttons, cards, and input fields; 16px for larger grouped containers. Pills only for status and avatars.
-- Tonal layering before shadows. No forest-heritage palette, violet/lavender drift, cyan, mesh, glass, decorative gradients, or mascot treatment.
+- 4px (`0.25rem`) default input/control corners; 8px (`0.5rem`) for standard cards and buttons; 12px (`0.75rem`) for larger modals or panels. Pills only for status and avatars.
+- Tonal layering before shadows. No forest-heritage palette, legacy signal blue, cyan, mesh, glass, decorative gradients, or mascot treatment.
 - Base-4 spacing rhythm. Deliberate interactive controls use 200ms `0.98` press feedback.
 
 ## Web rules

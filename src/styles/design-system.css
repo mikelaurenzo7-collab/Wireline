@@ -1,29 +1,29 @@
 /* Wireline Precision — Full Stitch Source Parity
- * Primary: #003EC7 | Surface: #F9F9FF | Radius: 8px standard / 16px large | Inter
+ * Primary: #451EBB | Surface: #F8F9FF | Radius: 4px base / 8px component / 12px modal | Hanken Grotesk
  * Merged from web_design_spec + deep_dive_manifest + current foundation tokens.
- * All interactive elements use --primary. 4px grid with 8px standard controls and 16px large containers enforced.
+ * All interactive elements use --primary. 4px grid with 4px standard controls and 8px large containers enforced.
  */
 
 :root {
-  /* Core Wireline Precision Palette (exact from spec) */
-  --primary: #003ec7;
-  --primary-variant: #0038b6;
-  --primary-container: #dde1ff;
+  /* Core Ametrine Precision Palette (exact from spec) */
+  --primary: #451ebb;
+  --primary-variant: #5d3fd3;
+  --primary-container: #5d3fd3;
   --on-primary: #ffffff;
 
-  --surface: #f9f9ff;
-  --surface-dim: #cfdaf2;
-  --surface-bright: #f9f9ff;
+  --surface: #f8f9ff;
+  --surface-dim: #cbdbf5;
+  --surface-bright: #f8f9ff;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f0f3ff;
-  --surface-container: #e7eeff;
-  --surface-container-high: #dee8ff;
-  --surface-container-highest: #d8e3fb;
-  --on-surface: #111c2d;
-  --on-surface-variant: #434656;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --on-surface: #0b1c30;
+  --on-surface-variant: #484554;
 
-  --outline: #737688;
-  --outline-variant: #c3c5d9;
+  --outline: #797586;
+  --outline-variant: #c9c4d7;
 
   --success: #2e7d32;
   --error: #ba1a1a;
@@ -32,23 +32,23 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  /* Wireline Precision geometry */
-  --radius: 8px;
-  --radius-sm: 4px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* Ametrine Precision geometry */
+  --radius: 4px;
+  --radius-sm: 2px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 
   /* Spacing (4px grid) */
   --spacing-base: 4px;
   --card-padding: 12px;
-  --gutter: 16px;
+  --gutter: 24px;
 }
 
 /* ============================================
-   COMPONENT TOKENS — Exact from Wireline Precision spec
+   COMPONENT TOKENS — Exact from Ametrine Precision spec
    ============================================ */
 
-/* Cards: bg-white rounded-base border border-outline-variant shadow-sm */
+/* Cards: bg-white rounded-lg border border-outline-variant shadow-sm */
 .wl-card,
 .wl-panel,
 .wl-panel-elevated,
@@ -57,22 +57,22 @@
 .wl-director-artifacts-panel {
   background: var(--surface-container-lowest);
   border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   padding: var(--card-padding);
 }
 
 .wl-panel-elevated { 
-  box-shadow: 0 2px 8px rgba(0, 62, 199, 0.06); 
+  box-shadow: 0 2px 8px rgba(93, 63, 211, 0.06); 
 }
 
-/* Primary Buttons: bg-primary text-white px-4 py-2 rounded-base font-medium hover:bg-primary-variant */
+/* Primary Buttons: bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-variant */
 .wl-button-primary,
 .studio-primary-button {
-  background: var(--primary);
+  background: var(--primary-container);
   color: var(--on-primary);
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 8px 16px;
   font-weight: 500;
   font-size: 14px;
@@ -81,7 +81,7 @@
 
 .wl-button-primary:hover,
 .studio-primary-button:hover {
-  background: var(--primary-variant);
+  background: var(--primary);
 }
 
 .wl-button-primary:active {
@@ -106,18 +106,18 @@ textarea,
 .wl-input:focus,
 input:focus,
 textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(0, 62, 199, 0.2);
+  border-color: var(--primary-container);
+  box-shadow: 0 0 0 2px rgba(93, 63, 211, 0.2);
   outline: none;
 }
 
-/* Modals: Center-aligned, bg-white rounded-base shadow-xl border border-outline-variant. Backdrop: bg-black/40 backdrop-blur-sm */
+/* Modals: Center-aligned, bg-white rounded-xl shadow-xl border border-outline-variant. Backdrop: bg-black/40 backdrop-blur-sm */
 .wl-modal,
 [role="dialog"] {
   background: var(--surface-container-lowest);
   border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  box-shadow: 0 10px 25px -5px rgba(0, 62, 199, 0.05);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 25px -5px rgba(93, 63, 211, 0.05);
 }
 
 /* Tooltips: bg-inverse-surface text-inverse-on-surface rounded-base text-xs p-2 */

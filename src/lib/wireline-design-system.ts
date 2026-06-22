@@ -4,11 +4,11 @@
  */
 import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
-/** Signal Blue accent — current Stitch palette (#003EC7) */
+/** Ametrine Purple accent — current Stitch palette (#5D3FD3) */
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */
-  accentHex: "#1a3c34",
+  accentHex: "#5D3FD3",
 } as const;
 
 /** Workspace surfaces, settings, insights, ops panels */

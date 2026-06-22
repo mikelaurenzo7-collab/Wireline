@@ -5,22 +5,22 @@ import SwiftUI
 /// compact geometry, and a single signalBlue action color.
 enum Brand {
     // ── Surfaces ─────────────────────────────────────────────────────────────
-    static let canvas = Color(hex: 0xF9F9FF)
+    static let canvas = Color(hex: 0xF8F9FF)
     static let panel = Color.white
-    static let panel2 = Color(hex: 0xF0F3FF)
-    static let raised = Color(hex: 0xE7EEFF)
-    static let border = Color(hex: 0xC3C5D9)
+    static let panel2 = Color(hex: 0xEFF4FF)
+    static let raised = Color(hex: 0xE5EEFF)
+    static let border = Color(hex: 0xC9C4D7)
 
     // ── Text ─────────────────────────────────────────────────────────────────
-    static let text = Color(hex: 0x111C2D)
-    static let text2 = Color(hex: 0x434656)
-    static let text3 = Color(hex: 0x434656, opacity: 0.72)
+    static let text = Color(hex: 0x0B1C30)
+    static let text2 = Color(hex: 0x484554)
+    static let text3 = Color(hex: 0x484554, opacity: 0.72)
 
     // ── Accent ───────────────────────────────────────────────────────────────
-    static let accent = Color(hex: 0x003EC7)
-    static let accentSoft = Color(hex: 0xDDE1FF)
-    static let accentDeep = Color(hex: 0x001452)
-    static let accentTint = Color(hex: 0x003EC7, opacity: 0.10)
+    static let accent = Color(hex: 0x5D3FD3)
+    static let accentSoft = Color(hex: 0xD8CEFF)
+    static let accentDeep = Color(hex: 0x1C0062)
+    static let accentTint = Color(hex: 0x5D3FD3, opacity: 0.10)
 
     // ── Semantic ─────────────────────────────────────────────────────────────
     static let destructive = Color(hex: 0xBA1A1A)
@@ -33,9 +33,10 @@ enum Brand {
     static let ink = text
 
     // ── Geometry ─────────────────────────────────────────────────────────────
-    static let radiusSm: CGFloat = 4
-    static let radiusMd: CGFloat = 8
-    static let radiusLg: CGFloat = 16
+    static let radiusSm: CGFloat = 2
+    static let radiusMd: CGFloat = 4
+    static let radiusLg: CGFloat = 8
+    static let radiusXl: CGFloat = 12
 }
 
 extension Color {
