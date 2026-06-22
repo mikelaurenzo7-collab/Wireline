@@ -154,6 +154,18 @@ function attachDiagnostics(page, viewportName, mode, issues) {
   page.on("pageerror", (error) => {
     issues.push({ viewport: viewportName, route: page.url(), mode, kind: "pageerror", detail: error.message });
   });
+  page.on("response", (response) => {
+    const status = response.status();
+    if (status >= 400 && !isBenignConsoleError(response.url())) {
+      issues.push({
+        viewport: viewportName,
+        route: page.url(),
+        mode,
+        kind: "network",
+        detail: `Failed to load resource: ${response.url()} returned status ${status}`
+      });
+    }
+  });
 }
 
 async function captureMarketing(browser, viewport, issues) {
