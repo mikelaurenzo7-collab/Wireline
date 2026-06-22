@@ -48,10 +48,10 @@ const ENDPOINTS = [
 
 export default function Developers() {
   const [logs, setLogs] = useState<string[]>([
-    "[INFO] Initializing peering handshake with AS2914...",
-    "[INFO] BGP session established via eth0.102",
-    "[DATA] Propagating 14,021 prefixes to global mesh...",
-    "[INFO] Direct carrier route verification: latency sub-30ms.",
+    "[INFO] Initializing assistant connection...",
+    "[INFO] Voice session established with high-fidelity provider...",
+    "[DATA] Syncing knowledge base: 42 facts and preferences...",
+    "[INFO] Route verification complete: assistant ready to handle calls.",
   ]);
   const [copied, setCopied] = useState(false);
 
@@ -101,12 +101,12 @@ export default function Developers() {
                 </span>
               </div>
               <h1 className="font-display italic text-4xl sm:text-5xl text-foreground mb-4 leading-tight">
-                Peering Gateways
+                Programmatic Assistants
               </h1>
               <p className="text-foreground/75 text-sm sm:text-base leading-relaxed">
-                Establish low-latency interconnects between private peering points and the Wireline
-                global backbone. Our editorial-grade API allows for programmatic route management
-                and real-time egress optimization.
+                Establish programmatic controls for your Wireline assistants. Our world-class API
+                allows for real-time assistant provisioning, scheduling, custom routing triggers,
+                and automated call-activity retrieval.
               </p>
             </div>
 
@@ -275,7 +275,7 @@ export default function Developers() {
             {/* Console Log output */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-white/55 text-[10px] uppercase tracking-wider font-semibold">
-                <span>Console Egress / Carrier Logs</span>
+                <span>Real-time Activity Logs</span>
                 <span>Real-time</span>
               </div>
               <div className="bg-black/40 p-4 border border-white/5 rounded-md space-y-2 min-h-[140px]">
@@ -298,7 +298,7 @@ export default function Developers() {
           {/* Terminal Footer Status */}
           <div className="px-4 py-2 bg-black/60 border-t border-white/5 text-[10px] text-white/55 flex justify-between items-center z-10 font-mono">
             <div className="flex gap-4">
-              <span>PATH: /networks/peering</span>
+              <span>PATH: /api/agents</span>
               <span>LATENCY: 14ms</span>
             </div>
             <div>UTF-8 | JAVASCRIPT</div>
