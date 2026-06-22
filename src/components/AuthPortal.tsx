@@ -524,9 +524,9 @@ export default function AuthPortal() {
           />
         )}
 
-        <div className="rounded-lg border border-border bg-card">
+        <div>
           {!isReset && (
-            <div className="grid grid-cols-2 border-b border-ink/10 p-1">
+            <div className="grid grid-cols-2 border-b border-ink/10 p-1 mb-4">
               <button
                 type="button"
                 onClick={() => setIsSignUp(false)}
@@ -552,7 +552,7 @@ export default function AuthPortal() {
             </div>
           )}
 
-          <div className="p-6 sm:p-7">
+          <div className="pt-2">
             {!isReset && (
               <OAuthSignInButtons
                 disabled={loading}
