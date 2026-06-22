@@ -25,7 +25,7 @@ export async function fetchWithTimeout(
 }
 
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: process.env.DATABASE_POOL_URL || process.env.POSTGRES_URL,
   // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
   max: 5,
   min: 0,

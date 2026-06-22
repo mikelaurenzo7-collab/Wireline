@@ -33,6 +33,7 @@ import icloudMailRouter from "./src/routes/icloud-mail-routes";
 import emailUnsubscribeRouter from "./src/routes/email-unsubscribe-routes";
 import marketingRuntimeRouter from "./src/routes/marketing-runtime-routes";
 import metaWebhookRouter from "./src/routes/meta-webhook-routes";
+import { sseBroadcaster } from "./src/services/sse-broadcaster";
 
 if (typeof (BigInt.prototype as unknown as { toJSON?: () => string }).toJSON !== "function") Object.defineProperty(BigInt.prototype, "toJSON", { value: function toJSON(this: bigint) { return this.toString(); }, configurable: true });
 validateStartupEnv();
@@ -71,6 +72,14 @@ app.use(icloudMailRouter);
 app.use(emailUnsubscribeRouter);
 app.use(metaWebhookRouter);
 app.use(marketingRuntimeRouter);
+
+app.get("/api/live-ops/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  const tenantId = req.query.tenantId as string | undefined;
+  sseBroadcaster.addClient((res.locals?.requestId as string) || randomUUID(), res, tenantId);
+});
 
 app.use("/api", (req, res) => { const { status, body } = formatErrorResponse(AppError.notFound(`No API route matches ${req.method} ${req.path}`), res.locals.requestId as string | undefined); res.status(status).json(body); });
 app.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => { log.error("API error", { requestId: res.locals.requestId, method: req.method, path: req.path, error: getErrorMessage(error) }); const { status, body } = formatErrorResponse(error, res.locals.requestId as string | undefined); res.status(status).json(body); });

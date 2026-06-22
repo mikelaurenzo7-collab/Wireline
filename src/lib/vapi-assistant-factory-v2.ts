@@ -136,9 +136,11 @@ export async function buildVapiAssistant({
     model: {
       provider: modelSelection.provider,
       model: modelSelection.model,
-      ...(modelSelection.fallbackModels?.length
-        ? { fallbackModels: modelSelection.fallbackModels }
-        : {}),
+      fallbackModels: [
+        "google/gemini-1.5-flash",
+        "google/gemini-1.5-pro",
+        ...(modelSelection.fallbackModels || []),
+      ],
       systemPrompt,
       temperature: clampVoiceTemperature(configured.llmTemperature, 0.3),
     },

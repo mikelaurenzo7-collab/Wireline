@@ -8,6 +8,7 @@ import { resolveVapiWebhookAgent } from "../lib/vapi-webhook-agent";
 import { buildVapiAssistant } from "../lib/vapi-assistant-factory-v2";
 import { normalizeVapiToolCalls } from "../lib/vapi-tool-call-utils";
 import { dispatchScopedToolCall } from "../lib/agent-tool-dispatch-v2";
+import { sseBroadcaster } from "../services/sse-broadcaster";
 
 const router = express.Router();
 const callId = (payload: any, message: any) => payload?.call?.id || message?.call?.id || "";
@@ -77,8 +78,12 @@ router.post("/api/vapi-webhook", async (req, res) => {
         transcript: transcriptText
       });
       
-      // In a real system, we would broadcast via WebSocket or push notification to the Live Ops / Supervisor panel
-      // Example: broadcastToSupervisors(callId, "handoff_requested", { reason, transcript });
+      sseBroadcaster.broadcast("handoff_requested", {
+        agentId: agent.id,
+        callId: callId(payload, message),
+        reason: lowConfidence ? "Low Confidence (< 75%)" : "Keyword Trigger",
+        transcript: transcriptText
+      }, agent.user_id);
     }
     return res.json({ received: true });
   }
