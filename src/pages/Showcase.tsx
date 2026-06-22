@@ -121,22 +121,36 @@ export default function Showcase() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-        <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:flex sm:items-center sm:justify-between sm:gap-10 sm:p-10">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
-              <Check className="h-4 w-4" />
-              Your assistant starts as a private draft.
+        <div className="wl-stitch-card border-primary bg-primary p-7 text-primary-foreground sm:p-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 text-sm font-medium text-primary-foreground/75">
+                <Check className="h-4 w-4" />
+                Your assistant starts as a private draft.
+              </div>
+              <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
+                Ready to make the routine call disappear?
+              </h2>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-primary-foreground/75 sm:text-base">
+                Start with a browser preview, or go straight to setup and make your own assistant in
+                a few minutes.
+              </p>
             </div>
-            <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-              Ready to make the routine call disappear?
-            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-none">
+              <Link
+                to="/pricing"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary"
+              >
+                See plans <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                to="/signin"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded border border-white/35 bg-transparent px-5 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Create account <MessageSquare className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-          <Link
-            to="/pricing"
-            className="mt-7 inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary sm:mt-0 sm:flex-none"
-          >
-            Start at $9 <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
     </MarketingPageFrame>
