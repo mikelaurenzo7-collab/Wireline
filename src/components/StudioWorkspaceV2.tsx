@@ -570,15 +570,13 @@ export default function StudioWorkspaceV2() {
     {
       key: "business",
       label: "Business",
-      done: Boolean(
-        config.businessProfile?.compliance_mode &&
-        config.businessProfile?.compliance_mode !== "none",
-      ),
-      detail:
-        config.businessProfile?.compliance_mode &&
-        config.businessProfile?.compliance_mode !== "none"
-          ? "Active"
-          : "Optional hours & compliance",
+      done: Boolean(config.businessProfile?.is_business_agent),
+      detail: config.businessProfile?.is_business_agent
+        ? config.businessProfile?.compliance_mode &&
+          config.businessProfile?.compliance_mode !== "none"
+          ? `Active (${config.businessProfile.compliance_mode.toUpperCase()})`
+          : "Active (Business)"
+        : "Personal (default)",
     },
   ];
   const actionTools = AGENT_TOOL_CATALOG.filter((item) =>

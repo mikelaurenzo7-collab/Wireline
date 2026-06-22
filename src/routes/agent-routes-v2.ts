@@ -302,6 +302,7 @@ router.get(
           businessVariables: schema.agents.businessVariables,
           outOfHoursMessage: schema.agents.outOfHoursMessage,
           kpiFocus: schema.agents.kpiFocus,
+          isBusinessAgent: schema.agents.isBusinessAgent,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
@@ -365,6 +366,7 @@ router.get(
             business_variables: record.businessVariables || null,
             out_of_hours_message: record.outOfHoursMessage || null,
             kpi_focus: record.kpiFocus || null,
+            is_business_agent: record.isBusinessAgent ?? false,
           }
         : null,
     });
@@ -528,6 +530,7 @@ router.patch(
         businessVariables: parsed.business_variables || null,
         outOfHoursMessage: parsed.out_of_hours_message || null,
         kpiFocus: parsed.kpi_focus || null,
+        isBusinessAgent: parsed.is_business_agent ?? false,
       })
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
 
@@ -545,6 +548,7 @@ router.patch(
         business_variables: parsed.business_variables || null,
         out_of_hours_message: parsed.out_of_hours_message || null,
         kpi_focus: parsed.kpi_focus || null,
+        is_business_agent: parsed.is_business_agent ?? false,
       },
     });
   },

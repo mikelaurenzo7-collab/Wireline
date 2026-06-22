@@ -376,6 +376,7 @@ export const agents = pgTable(
     flowConfig: jsonb("flow_config"),
     outOfHoursMessage: text("out_of_hours_message"),
     kpiFocus: text("kpi_focus"),
+    isBusinessAgent: boolean("is_business_agent").default(false).notNull(),
     // Per-archetype silence tolerance for Vapi calls. NULL → factory uses
     // archetype default (Receptionist 5s, SDR 2s, etc.).
     silenceTimeoutSeconds: integer("silence_timeout_seconds"),

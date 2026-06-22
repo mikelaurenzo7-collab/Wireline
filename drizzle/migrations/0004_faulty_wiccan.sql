@@ -1,0 +1,1 @@
+ALTER TABLE "wireline_agents" ADD COLUMN "is_business_agent" boolean DEFAULT false NOT NULL;

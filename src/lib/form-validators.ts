@@ -130,6 +130,7 @@ export const AgentBusinessProfileSchema = z
       .optional()
       .nullable(),
     kpi_focus: KpiFocusSchema.optional(),
+    is_business_agent: z.boolean().optional(),
   })
   .strict();
 
