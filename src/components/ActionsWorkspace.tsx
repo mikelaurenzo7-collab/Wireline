@@ -104,7 +104,7 @@ function ToolGroup({
         <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
           <CircleDot size={16} />
         </span>
-        <h3 className="font-serif text-[20px] font-semibold tracking-[-.01em] text-primary">
+        <h3 className="font-display text-[20px] font-semibold tracking-[-.01em] text-primary">
           {title}
         </h3>
       </header>
@@ -218,7 +218,7 @@ export default function ActionsWorkspace() {
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-5 flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-serif text-[24px] font-semibold tracking-[-.02em] text-primary">
+          <h2 className="font-display text-[24px] font-semibold tracking-[-.02em] text-primary">
             Ways your assistant can help
           </h2>
           <p className="mt-1 text-[14px] text-muted-foreground">
@@ -288,7 +288,7 @@ export default function ActionsWorkspace() {
         </section>
 
         <aside className="mt-6 min-h-0 lg:mt-0">
-          <h2 className="font-serif text-[24px] font-semibold tracking-[-.02em] text-primary">
+          <h2 className="font-display text-[24px] font-semibold tracking-[-.02em] text-primary">
             Connected apps
           </h2>
           <p className="mt-1 text-[14px] leading-5 text-muted-foreground">

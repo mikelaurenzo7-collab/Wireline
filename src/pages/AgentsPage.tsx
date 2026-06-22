@@ -27,7 +27,7 @@ function EmptyAssistants() {
         <span className="mx-auto grid h-20 w-20 place-items-center rounded-lg bg-muted text-muted-foreground">
           <Bot size={34} strokeWidth={1.7} />
         </span>
-        <h2 className="mt-7 font-serif text-[24px] font-semibold tracking-[-.02em] text-primary">
+        <h2 className="mt-7 font-display text-[24px] font-semibold tracking-[-.02em] text-primary">
           Meet your first assistant
         </h2>
         <p className="mx-auto mt-3 max-w-md text-[16px] leading-6 text-muted-foreground">
@@ -91,7 +91,7 @@ function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
           Ready
         </span>
       </div>
-      <h2 className="mt-5 font-serif text-[20px] font-semibold leading-6 tracking-[-.02em] text-primary">
+      <h2 className="mt-5 font-display text-[20px] font-semibold leading-6 tracking-[-.02em] text-primary">
         {agent.name}
       </h2>
       <p className="mt-1 inline-flex items-center gap-2 font-mono text-[12px] capitalize tracking-[.02em] text-muted-foreground">
@@ -127,7 +127,7 @@ function SetupNote({ label, value, detail }: { label: string; value: string; det
       <p className="font-mono text-[12px] uppercase tracking-[.02em] text-muted-foreground">
         {label}
       </p>
-      <strong className="mt-2 block font-serif text-[20px] font-semibold leading-6 tracking-[-.02em] text-primary">
+      <strong className="mt-2 block font-display text-[20px] font-semibold leading-6 tracking-[-.02em] text-primary">
         {value}
       </strong>
       <p className="mt-1 text-[13px] text-muted-foreground">{detail}</p>
