@@ -569,14 +569,14 @@ export default function StudioWorkspaceV2() {
     },
     {
       key: "business",
-      label: "Business",
+      label: "Posture",
       done: Boolean(config.businessProfile?.is_business_agent),
       detail: config.businessProfile?.is_business_agent
         ? config.businessProfile?.compliance_mode &&
           config.businessProfile?.compliance_mode !== "none"
-          ? `Active (${config.businessProfile.compliance_mode.toUpperCase()})`
-          : "Active (Business)"
-        : "Personal (default)",
+          ? `Business (${config.businessProfile.compliance_mode.toUpperCase()})`
+          : "Business posture"
+        : "Personal posture",
     },
   ];
   const actionTools = AGENT_TOOL_CATALOG.filter((item) =>

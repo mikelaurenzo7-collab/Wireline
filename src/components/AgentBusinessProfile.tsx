@@ -111,7 +111,7 @@ const COMPLIANCE_OPTIONS: { value: ComplianceMode; label: string; hint: string }
 ];
 
 const KPI_OPTIONS: { value: KpiFocus; label: string; hint: string }[] = [
-  { value: "general", label: "General", hint: "No specific outcome focus — balanced agent" },
+  { value: "general", label: "General", hint: "No specific outcome focus — balanced assistant" },
   {
     value: "conversions",
     label: "Conversions",
@@ -293,10 +293,10 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-[#C9C4D7] bg-[#FFFFFF] shadow-sm">
         <div className="min-w-0">
           <h3 className="font-display italic text-base text-[#0B1C30] leading-tight">
-            Agent Posture
+            Assistant Posture
           </h3>
           <p className="text-[11px] text-[#484554] leading-relaxed mt-0.5">
-            Configure this agent as a personal helper or a professional business representative.
+            Configure this assistant as a personal helper or a professional business representative.
           </p>
         </div>
 
@@ -409,7 +409,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               className="h-8 px-4 rounded-md inline-flex items-center gap-2 bg-[#E6DEFF] border-[#C9C4D7] text-[#0B1C30] text-[11px] font-semibold hover:bg-[#5D3FD3] hover:text-[#FFFFFF] transition-all touch-press hover:scale-[1.02]"
             >
               <Briefcase className="w-3.5 h-3.5 text-[#5D3FD3] group-hover:text-[#FFFFFF]" />
-              Configure as Business Agent
+              Configure as Business Assistant
             </ShadButton>
           </div>
         </motion.div>
@@ -419,7 +419,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={Clock}
             title="Business hours"
-            hint="When this agent should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
+            hint="When this assistant should engage. Outbound dials outside these hours are refused; inbound calls hear the out-of-hours message."
           >
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <PresetButton onClick={() => presetCopy("mf-9-5")} label="Mon–Fri 9–5" />
@@ -512,7 +512,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={ShieldCheck}
             title="Compliance preset"
-            hint="Auto-injects required disclosures into the agent's system prompt. Pick the regime your business is regulated under."
+            hint="Auto-injects required disclosures into the assistant's system prompt. Pick the regime your business is regulated under."
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {COMPLIANCE_OPTIONS.map((opt) => {
@@ -546,7 +546,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={Target}
             title="Optimization target"
-            hint="Subtle nudge to bias the agent toward the outcome that matters for this surface."
+            hint="Subtle nudge to bias the assistant toward the outcome that matters for this surface."
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {KPI_OPTIONS.map((opt) => {
@@ -580,7 +580,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
           <Section
             icon={MessageSquareWarning}
             title="Do-not-discuss topics"
-            hint="The agent refuses or redirects when these come up. Up to 24."
+            hint="The assistant refuses or redirects when these come up. Up to 24."
           >
             <ChipList chips={value.disallowed_topics ?? []} onRemove={removeTopic} tone="rose" />
             <ChipDraftInput
@@ -612,15 +612,15 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             />
 
             {/* ── Escalation routing — per-agent override ──────────────────
-                When this agent fires the escalate_to_human tool, where does
+                When this assistant fires the escalate_to_human tool, where does
                 the alert go? Both fields are optional. If empty, the handler
                 falls back to the tenant-wide Manager Alert Number set in
                 Settings → Carrier. Setting these lets one tenant route a
-                sales agent's escalations to the sales manager and a support
-                agent's to the support lead. */}
+                sales assistant's escalations to the sales manager and a support
+                assistant's to the support lead. */}
             <div className="mt-4 pt-4 border-t border-border">
               <p className="text-eyebrow/65 font-semibold mb-1">
-                Route alerts to (this agent only)
+                Route alerts to (this assistant only)
               </p>
               <p className="wl-micro-meta mb-3 leading-relaxed">
                 Both optional. Leave blank to use the tenant-wide Manager Alert Number from{" "}
@@ -669,7 +669,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
               </div>
 
               {/* ── Warm-transfer toggle ─────────────────────────────────
-                  When ON + an escalation_phone is set, the agent's
+                  When ON + an escalation_phone is set, the assistant's
                   escalate_to_human tool will TRANSFER the live caller to
                   that number mid-call. Off (default) = async alert only.
                   This is the product-defining "AI receptionist that warm-
@@ -700,7 +700,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   </p>
                   <p className="text-[10.5px] text-foreground/55 leading-relaxed mt-0.5">
                     {value.escalation_phone
-                      ? "When this agent escalates, the live call transfers to the phone above instead of just sending an alert. The agent will say a brief handoff line before transferring."
+                      ? "When this assistant escalates, the live call transfers to the phone above instead of just sending an alert. The assistant will say a brief handoff line before transferring."
                       : "Set an escalation phone above to enable warm-transfer. Without one, the caller has nowhere to be routed."}
                   </p>
                   {value.escalation_handoff_enabled && value.escalation_phone && (
@@ -727,8 +727,8 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
                   <code className="text-foreground/80">business_name</code>,{" "}
                   <code className="text-foreground/80">website</code>,{" "}
                   <code className="text-foreground/80">support_email</code>, then reference them as{" "}
-                  <code className="text-foreground/80">{"{business_name}"}</code> in your agent's
-                  content.
+                  <code className="text-foreground/80">{"{business_name}"}</code> in your
+                  assistant's content.
                 </div>
               )}
               {variableEntries.map(([k, v]) => (
