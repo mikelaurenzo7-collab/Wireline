@@ -4,6 +4,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { BrandingProvider } from "./contexts/BrandingContext";
+import { AccountProvider } from "./contexts/AccountContext";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Features = lazy(() => import("./pages/Features"));
@@ -84,9 +86,13 @@ export default function App() {
         <AuthProvider>
           <ThemeProvider>
             <ToastProvider>
-              <AgentsProvider>
-                <AppRouter />
-              </AgentsProvider>
+              <BrandingProvider>
+                <AccountProvider>
+                  <AgentsProvider>
+                    <AppRouter />
+                  </AgentsProvider>
+                </AccountProvider>
+              </BrandingProvider>
             </ToastProvider>
           </ThemeProvider>
         </AuthProvider>

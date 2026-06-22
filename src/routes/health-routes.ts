@@ -68,7 +68,9 @@ async function probeOpenAI(
       fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, input: "ping", max_output_tokens: 1 }),
+        // Responses API requires max_output_tokens >= 16; a smaller probe value
+        // returns HTTP 400 and falsely marks production as an outage.
+        body: JSON.stringify({ model, input: "ping", max_output_tokens: 16 }),
       }),
       new Promise<never>((_resolve, reject) =>
         setTimeout(() => reject(new Error("model probe timed out")), timeoutMs),

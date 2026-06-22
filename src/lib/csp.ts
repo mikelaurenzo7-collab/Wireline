@@ -7,7 +7,7 @@
 import { randomBytes } from "node:crypto";
 
 /**
- * SHA-256 hashes of the three static inline <script> blocks in index.html.
+ * SHA-256 hashes of the static inline <script> blocks in index.html.
  * Production CSP is nonce-less for the static SPA shell (Vercel serves a
  * static index.html — there is no per-request SSR to inject a nonce), so the
  * inline boot scripts are allowlisted by content hash instead. If you edit any
@@ -17,12 +17,10 @@ import { randomBytes } from "node:crypto";
  *
  *   1. Plausible custom-event helper (`window.plausible` queue shim)
  *   2. Meta Pixel + Google Tag Manager production loader
- *   3. Theme anti-flash checker (adds `.dark` before first paint → no FOUC)
  */
 export const INLINE_SCRIPT_HASHES = [
-  "'sha256-rikP6O8OvZlYRMZkxJ9ZM9m/LxculWr4DxAXvwZAF7c='",
-  "'sha256-kL8ItXVCZUMxClmT83CWl7fbMgHsJ50yiZrOHmp/ys8='",
-  "'sha256-SX5Oce7MqKqZrv+KX1uSJDriRWzqlnlmu11LcJ5U8aM='",
+  "'sha256-LTkUOuO/95lht1SHJYGSEJ8IcO6rX2Pf7vdiXrzQWq4='",
+  "'sha256-Vcsf9wxY50I2SDxzI15Jg/dr+K5+UQ99CH+PegNnoCo='",
 ] as const;
 
 /**
@@ -114,7 +112,9 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
   // style-src-elem blocks injected <style> tags (XSS). style-src-attr allows
   // library-generated style="" attributes (Framer Motion, Recharts) without
   // permitting arbitrary inline <style> blocks in HTML.
-  const styleSrcElem = isDev ? "'self' 'unsafe-inline'" : "'self'";
+  const styleSrcElem = isDev
+    ? "'self' 'unsafe-inline' https://fonts.googleapis.com"
+    : "'self' https://fonts.googleapis.com";
   const styleSrcAttr = "'unsafe-inline'";
 
   return [
@@ -123,7 +123,7 @@ export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'")
     `style-src-elem ${styleSrcElem}`,
     `style-src-attr ${styleSrcAttr}`,
     `img-src 'self' data: blob: https:`,
-    `font-src 'self' data:`,
+    `font-src 'self' data: https://fonts.gstatic.com`,
     `connect-src ${connectSrcs}`,
     `media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io`,
     `worker-src 'self' blob:`,

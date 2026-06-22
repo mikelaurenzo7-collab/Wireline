@@ -143,7 +143,9 @@ export const authService = {
       .limit(1);
 
     const { resolveAccountType } = await import("./account-type");
-    const account_type = resolveAccountType(sub?.plan);
+    const { ensureDefaultAccount } = await import("./account-service");
+    const fallbackAccountType = resolveAccountType(sub?.plan);
+    const account_type = (await ensureDefaultAccount(user.id, fallbackAccountType)).type;
 
     return {
       user: {
@@ -199,6 +201,12 @@ export const authService = {
 
         const { resolveAccountType } = await import("./account-type");
         const account_type = resolveAccountType(signupAttribution?.preferredPlanId);
+        await tx.insert(schema.accounts).values({
+          userId: user.id,
+          type: account_type,
+          label: account_type === "personal" ? "Personal" : "My Business",
+          isPrimary: true,
+        });
 
         return {
           user: {
@@ -366,7 +374,9 @@ export const authService = {
       .limit(1);
 
     const { resolveAccountType } = await import("./account-type");
-    const account_type = resolveAccountType(sub?.plan);
+    const { ensureDefaultAccount } = await import("./account-service");
+    const fallbackAccountType = resolveAccountType(sub?.plan);
+    const account_type = (await ensureDefaultAccount(user.id, fallbackAccountType)).type;
 
     return {
       user: {

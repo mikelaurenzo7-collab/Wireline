@@ -646,7 +646,9 @@ router.post("/api/auth/oauth/exchange", oauthRateLimiter, async (req: Request, r
     .limit(1);
 
   const { resolveAccountType } = await import("../lib/account-type");
-  const account_type = resolveAccountType(sub?.plan);
+  const { ensureDefaultAccount } = await import("../lib/account-service");
+  const fallbackAccountType = resolveAccountType(sub?.plan);
+  const account_type = (await ensureDefaultAccount(entry.user.id, fallbackAccountType)).type;
 
   return res.json({
     ...authSuccessBody({

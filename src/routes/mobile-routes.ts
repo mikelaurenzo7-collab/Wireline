@@ -27,6 +27,7 @@ import { resolveAgentEntitlement, agentCapHit } from "../lib/agent-entitlements"
 import { isOwnerEmail } from "../lib/auth-service";
 import { planById } from "../lib/plan-catalog";
 import { resolveAccountType } from "../lib/account-type";
+import { ensureDefaultAccount } from "../lib/account-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { isDncBlocked } from "../lib/compliance";
 import { evaluateOutboundConsent } from "../lib/tcpa-consent";
@@ -97,7 +98,8 @@ router.get(
 
       const planId = row?.planId || "personal";
       const plan = planById(planId);
-      const accountMode = resolveAccountType(planId);
+      const fallbackAccountMode = resolveAccountType(planId);
+      const accountMode = (await ensureDefaultAccount(userId, fallbackAccountMode)).type;
 
       res.json({
         user: {

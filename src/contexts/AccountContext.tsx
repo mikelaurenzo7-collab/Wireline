@@ -21,6 +21,7 @@ import {
 } from "react";
 import { authFetch } from "../lib/api";
 import type { AccountType } from "../lib/account-type";
+import { useAuth } from "./AuthContext";
 
 const STORAGE_KEY = "wl_active_account";
 
@@ -55,13 +56,21 @@ function readStoredAccountId(): string | null {
 }
 
 export function AccountProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeId, setActiveId] = useState<string | null>(readStoredAccountId);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      setAccounts([]);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     (async () => {
+      setLoading(true);
       try {
         const r = await authFetch("/api/accounts");
         if (!r.ok || cancelled) return;
@@ -88,7 +97,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeAccount = useMemo(
     () => accounts.find((a) => a.id === activeId) ?? accounts[0] ?? null,

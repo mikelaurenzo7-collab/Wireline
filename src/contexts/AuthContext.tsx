@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { AUTH_SESSION_EXPIRED_EVENT } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
+import { isSessionOptionalPublicPath } from "../lib/public-routes";
 
 export interface User {
   id: string;
@@ -101,6 +103,7 @@ async function migrateLegacyLocalStorage(): Promise<void> {
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,15 +111,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const sessionOptional = isSessionOptionalPublicPath(location.pathname);
+      if (sessionOptional || (user && session)) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      if (!cancelled) setLoading(true);
       try {
         const pathname =
           typeof window === "undefined" ? "/" : window.location.pathname || "/";
         if (shouldSkipSessionBootstrap(pathname)) return;
         await migrateLegacyLocalStorage();
         const hydrated = await fetchSessionUser();
-        if (!cancelled && hydrated) {
-          setUser(hydrated);
-          setSession({ user: hydrated });
+        if (!cancelled) {
+          if (hydrated) {
+            setUser(hydrated);
+            setSession({ user: hydrated });
+          } else {
+            setUser(null);
+            setSession(null);
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -125,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [location.pathname, session, user]);
 
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {

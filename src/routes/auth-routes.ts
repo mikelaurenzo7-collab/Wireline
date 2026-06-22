@@ -38,6 +38,7 @@ import { authSuccessBody, clearSessionCookie, setSessionCookie } from "../lib/se
 import { verifyInternalJwt } from "../lib/auth-utils";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
+import { ensureDefaultAccount } from "../lib/account-service";
 const router = Router();
 
 function sendAuthSuccess(
@@ -353,7 +354,8 @@ router.get(
         .limit(1),
     ]);
     const { resolveAccountType } = await import("../lib/account-type");
-    const account_type = resolveAccountType(sub?.plan);
+    const fallbackAccountType = resolveAccountType(sub?.plan);
+    const account_type = (await ensureDefaultAccount(req.user.id, fallbackAccountType)).type;
 
     return res.json({
       user: {

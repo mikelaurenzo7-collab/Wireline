@@ -106,8 +106,15 @@ export async function createAccount(
  * Ensure the user has at least their primary account. Called during
  * sign-in bridge to lazily migrate pre-account-separation users.
  */
-export async function ensureDefaultAccount(userId: string): Promise<WirelineAccount> {
+export async function ensureDefaultAccount(
+  userId: string,
+  preferredType: AccountType = "business",
+): Promise<WirelineAccount> {
   const existing = await getAccountsForUser(userId);
   if (existing.length > 0) return existing.find((a) => a.isPrimary) ?? existing[0];
-  return createAccount(userId, "business", "My Business");
+  return createAccount(
+    userId,
+    preferredType,
+    preferredType === "personal" ? "Personal" : "My Business",
+  );
 }

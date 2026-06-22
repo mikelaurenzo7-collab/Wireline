@@ -40,6 +40,13 @@
     {
       "idx": 5,
       "version": "7",
+      "when": 1782153600000,
+      "tag": "0066_restore_authenticated_rls_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
       "when": 1782165000000,
       "tag": "0067_harden_auxiliary_rls",
       "breakpoints": true
