@@ -1,21 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#01261F"/>
-      <stop offset="55%" stop-color="#003EC7"/>
-      <stop offset="100%" stop-color="#00201A"/>
-    </linearGradient>
-    <radialGradient id="glowA" cx="0.15" cy="0.15" r="0.6">
-      <stop offset="0%" stop-color="#AACEC3" stop-opacity="0.42"/>
-      <stop offset="60%" stop-color="#AACEC3" stop-opacity="0.06"/>
-      <stop offset="100%" stop-color="#AACEC3" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowB" cx="0.92" cy="0.88" r="0.55">
-      <stop offset="0%" stop-color="#F7F7F5" stop-opacity="0.16"/>
-      <stop offset="60%" stop-color="#F7F7F5" stop-opacity="0.04"/>
-      <stop offset="100%" stop-color="#F7F7F5" stop-opacity="0"/>
-    </radialGradient>
     <linearGradient id="hairline" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
       <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.55"/>
@@ -23,9 +8,7 @@
     </linearGradient>
   </defs>
 
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glowA)"/>
-  <rect width="1200" height="630" fill="url(#glowB)"/>
+  <rect width="1200" height="630" fill="#0B1C30"/>
 
   <g stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1">
     <line x1="0" y1="120" x2="1200" y2="120"/>
@@ -65,7 +48,7 @@
 
   <text x="80" y="378" font-family="Inter, system-ui, sans-serif"
         font-size="40" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">
-    AI voice &amp; email agents on real phone numbers.
+    AI voice &amp; email assistants on real phone numbers.
   </text>
   <text x="80" y="428" font-family="Inter, system-ui, sans-serif"
         font-size="40" font-weight="700" fill="#FFFFFF" fill-opacity="0.78" letter-spacing="-0.5">

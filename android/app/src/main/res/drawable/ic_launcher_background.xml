@@ -4,8 +4,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Wireline Precision adaptive-icon field: stable signal-blue action surface. -->
+    <!-- Ametrine Precision adaptive-icon field: stable Ametrine purple action surface. -->
     <path
-        android:fillColor="#003EC7"
+        android:fillColor="#5D3FD3"
         android:pathData="M0,0h108v108h-108z" />
 </vector>
