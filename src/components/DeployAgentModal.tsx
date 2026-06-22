@@ -238,7 +238,7 @@ export default function DeployAgentModal({
           />
           <motion.div
             role="dialog"
-            aria-label="Deploy agent"
+            aria-label="Deploy assistant"
             aria-modal="true"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -281,11 +281,11 @@ export default function DeployAgentModal({
               <div className="relative z-10 px-7 py-6 space-y-6">
                 {/* Name */}
                 <div className="space-y-2">
-                  <label htmlFor="agent-name" className="wl-label-muted opacity-80">
-                    Agent name
+                  <label htmlFor="assistant-name" className="wl-label-muted opacity-80">
+                    Assistant name
                   </label>
                   <Input
-                    id="agent-name"
+                    id="assistant-name"
                     ref={nameInputRef}
                     type="text"
                     value={name}
@@ -400,7 +400,7 @@ export default function DeployAgentModal({
                   </div>
                 ) : (
                   <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[12px] text-foreground/65">
-                    Email agent — no voice picker. The agent's writing tone is configured in{" "}
+                    Email assistant — no voice picker. The assistant's writing tone is configured in{" "}
                     <span className="text-foreground/80">/agents → Personality</span> after deploy.
                   </div>
                 )}
@@ -433,7 +433,7 @@ export default function DeployAgentModal({
                     </>
                   ) : (
                     <>
-                      Deploy {trimmedName || "Agent"}
+                      Deploy {trimmedName || "Assistant"}
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}

@@ -461,7 +461,7 @@ function TemplateCard({
           className="w-full !py-2 !text-[11px] !tracking-[0.22em] flex items-center justify-center gap-2 shadow-sm"
         >
           {deploying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-          {alreadyDeployed ? "Deploy Another" : "Deploy Agent"}
+          {alreadyDeployed ? "Deploy Another" : "Deploy Assistant"}
         </ShadButton>
       </div>
     </motion.div>
@@ -469,10 +469,10 @@ function TemplateCard({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Custom Agent card
+// Custom Assistant card
 // ────────────────────────────────────────────────────────────────────────────
 
-function CustomAgentCard() {
+function CustomAssistantCard() {
   return (
     <motion.div
       layout
@@ -484,12 +484,12 @@ function CustomAgentCard() {
         <Sparkles className="w-5 h-5 text-brand" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Agent</h3>
+        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Assistant</h3>
         <p className="text-xs text-foreground/70 leading-relaxed max-w-[200px]">
-          Let Wireline Forge design a bespoke agent for your exact use case.
+          Let Wireline Forge design a bespoke assistant for your exact use case.
         </p>
       </div>
-      <ClaudeRecipeButton recipe="agent-forge" label="Open Agent Forge" variant="ghost" />
+      <ClaudeRecipeButton recipe="agent-forge" label="Open Assistant Forge" variant="ghost" />
     </motion.div>
   );
 }
@@ -595,7 +595,7 @@ export default function AgentTemplates() {
         setDeploying(null);
         return;
       }
-      toastSuccess("Agent deployed", values.name);
+      toastSuccess("Assistant deployed", values.name);
       setModalTemplate(null);
       setDeploying(null);
       await refetchAgents();
@@ -681,8 +681,8 @@ export default function AgentTemplates() {
             ))}
           </AnimatePresence>
 
-          {/* Custom agent card always at the end */}
-          <CustomAgentCard />
+          {/* Custom assistant card always at the end */}
+          <CustomAssistantCard />
         </div>
       </div>
 

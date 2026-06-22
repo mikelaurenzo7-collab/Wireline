@@ -68,7 +68,7 @@ export default function ActivationCheckpoint() {
 
         const detail: TrialGateBlockDetail = {
           code: "ACTIVATION_REQUIRED",
-          error: "Choose a plan before creating or deploying an agent.",
+          error: "Choose a plan before creating or deploying an assistant.",
         };
         window.dispatchEvent(new CustomEvent<TrialGateBlockDetail>(TRIAL_GATE_EVENT, { detail }));
       } catch {

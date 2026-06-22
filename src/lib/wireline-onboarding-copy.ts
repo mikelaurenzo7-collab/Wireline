@@ -9,9 +9,9 @@ export const ONBOARDING_WELCOME = {
   title: "Get to your first",
   titleAccent: "real call",
   subtitle:
-    "Wireline wins when a customer talks to your agent on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
+    "Wireline wins when a customer talks to your assistant on a live line. Fast Setup gets you provisioned — then we help you land that first useful conversation.",
   bullets: [
-    { label: "Agent", detail: "Name, role, and script generated from your description" },
+    { label: "Assistant", detail: "Name, role, and script generated from your description" },
     { label: "Knowledge", detail: "Optional website scrape for services and policies" },
     {
       label: "Activate",
@@ -36,7 +36,7 @@ export const CONSOLE_MAP = {
     {
       id: "agents",
       label: "Studio",
-      detail: "Build, voice & tune your agents",
+      detail: "Build, voice & tune your assistants",
       path: "/agents",
     },
     {
@@ -48,7 +48,7 @@ export const CONSOLE_MAP = {
     {
       id: "chat",
       label: "Chat",
-      detail: "Director + per-agent coaching",
+      detail: "Director + per-assistant coaching",
       path: "/chat",
     },
     {
@@ -66,18 +66,18 @@ export const AUTH_PORTAL_SHOWCASE = {
   title: "Mission control for your",
   titleAccent: "AI Assistants",
   subtitle:
-    "Wireline runs phone, email, and SMS agents on real numbers — trained on your playbook, supervised from one calm cockpit.",
+    "Wireline runs phone, email, and SMS assistants on real numbers — trained on your playbook, supervised from one calm cockpit.",
   features: [
     {
       id: "studio",
       label: "The Studio",
       detail:
-        "Shape each agent's voice character, pick its brain — Claude, Gemini, GPT, or Grok — and put it on a real number.",
+        "Shape each assistant's voice character, pick its brain — Claude, Gemini, GPT, or Grok — and put it on a real number.",
     },
     {
       id: "director",
       label: "Director co-pilot",
-      detail: "Plan hires, coach agents, draft deliverables, and approve actions in one thread.",
+      detail: "Plan hires, coach assistants, draft deliverables, and approve actions in one thread.",
     },
     {
       id: "live-ops",
@@ -94,7 +94,7 @@ export const YOURE_LIVE_COPY = {
   subtitle: (agentName: string) => `${agentName} is ready to take calls.`,
   nextLabel: "What to do next",
   testCallTitle: "Run a browser test call",
-  testCallDetail: "Hear your agent without dialing — tune tone and script in Chat.",
+  testCallDetail: "Hear your assistant without dialing — tune tone and script in Chat.",
   testCallAction: "Open Chat",
   opsTitle: "Watch Recaps",
   opsDetail: "See active callers, approve actions, and monitor Assistants pulse.",
