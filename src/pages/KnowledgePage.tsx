@@ -35,8 +35,8 @@ export default function KnowledgePage() {
 
   return (
     <WorkspaceShell
-      eyebrow="What your assistant knows"
-      title={populated ? "Facts & Rules" : "Knowledge"}
+      eyebrow="Agent intelligence"
+      title={populated ? "Knowledge Base" : "Knowledge Base"}
       contentClassName={populated ? "pt-5" : "pt-0"}
       action={
         populated ? (
