@@ -58,7 +58,7 @@ export default function OverviewPage() {
               </div>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 {degraded
-                  ? "Some workspace data could not be refreshed. Check connections before depending on an agent."
+                  ? "Some workspace data could not be refreshed. Check connections before depending on an assistant."
                   : agents.length
                     ? "Your active configuration is ready to review, improve, and run."
                     : "Start with one useful use case. You can keep it personal or represent a business."}

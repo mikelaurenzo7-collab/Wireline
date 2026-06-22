@@ -36,7 +36,10 @@ const GETTING_STARTED = [
 ];
 
 const ENDPOINTS = [
-  { path: "/api/agents", description: "List voice agents or create a new agent configuration." },
+  {
+    path: "/api/agents",
+    description: "List voice assistants or create a new assistant configuration.",
+  },
   { path: "/api/calls", description: "Queue outbound calls and retrieve call activity." },
   { path: "/api/campaigns", description: "Manage campaign definitions for outreach programs." },
   { path: "/api/billing/plans", description: "Retrieve available pricing plans." },
@@ -69,7 +72,7 @@ export default function Developers() {
     const newLogs = [
       ...logs,
       `[DATA] Inbound request received at ${new Date().toLocaleTimeString()} · Status 200 OK`,
-      `[INFO] Agent state synchronized successfully.`,
+      `[INFO] Assistant state synchronized successfully.`,
     ];
     if (newLogs.length > 8) {
       newLogs.shift();

@@ -210,7 +210,7 @@ export default function StudioWorkspaceV2() {
         : typeof body?.reply === "string"
           ? body.reply
           : response.ok
-            ? "Saved. What else should this agent know?"
+            ? "Saved. What else should this assistant know?"
             : "I could not save that yet. Please try again.";
     return { ok: response.ok, reply };
   }
@@ -244,7 +244,7 @@ export default function StudioWorkspaceV2() {
         summaries.push(
           typeof body?.summary === "string"
             ? body.summary
-            : `Added ${asset.name} to the agent profile.`,
+            : `Added ${asset.name} to the assistant profile.`,
         );
         setAttachments((items) =>
           items.map((item) => (item.id === asset.id ? { ...item, status: "uploaded" } : item)),
@@ -567,7 +567,7 @@ export default function StudioWorkspaceV2() {
     if (!active)
       return (
         <p className="text-sm leading-6 text-muted-foreground">
-          Choose or create an agent to begin.
+          Choose or create an assistant to begin.
         </p>
       );
     if (inspector === "identity")
@@ -900,7 +900,7 @@ export default function StudioWorkspaceV2() {
                 </button>
               </div>
             </div>
-            
+
             {mode === "simulate" && active ? (
               <div className="flex-1 min-h-0 overflow-y-auto p-4">
                 <RoleplaySandbox agentId={active.id} />
@@ -909,116 +909,122 @@ export default function StudioWorkspaceV2() {
               <>
                 <div className="wl-stitch-studio-glow" aria-hidden />
                 <div className="wl-scroll relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2 sm:px-2">
-              <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 py-3 sm:py-6">
-                {messages.length <= 1 ? (
-                  <div>
-                    <h2 className="text-[clamp(1.25rem,1.8vw,1.5rem)] font-semibold tracking-[-.04em] text-foreground">
-                      What should {active?.name || "your assistant"} help with?
-                    </h2>
-                    <p className="mt-1.5 max-w-md text-[13px] leading-5 text-muted-foreground">
-                      Describe the job in plain English. We'll handle the setup.
-                    </p>
-                    <div className="mt-3 flex max-w-md flex-col gap-1">
-                      {[
-                        "Book meetings with interested people and follow up afterward.",
-                        "Answer questions based on our info, and hand off anything tricky.",
-                        "Make calls for me, wait on hold, and text me the answer.",
-                      ].map((prompt) => (
-                        <button
-                          key={prompt}
-                          type="button"
-                          onClick={() => setComposer(prompt)}
-                          className="rounded-lg border border-border/60 bg-card/50 px-3 py-2 text-left text-[11px] leading-[1.45] text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground/80"
+                  <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 py-3 sm:py-6">
+                    {messages.length <= 1 ? (
+                      <div>
+                        <h2 className="text-[clamp(1.25rem,1.8vw,1.5rem)] font-semibold tracking-[-.04em] text-foreground">
+                          What should {active?.name || "your assistant"} help with?
+                        </h2>
+                        <p className="mt-1.5 max-w-md text-[13px] leading-5 text-muted-foreground">
+                          Describe the job in plain English. We'll handle the setup.
+                        </p>
+                        <div className="mt-3 flex max-w-md flex-col gap-1">
+                          {[
+                            "Book meetings with interested people and follow up afterward.",
+                            "Answer questions based on our info, and hand off anything tricky.",
+                            "Make calls for me, wait on hold, and text me the answer.",
+                          ].map((prompt) => (
+                            <button
+                              key={prompt}
+                              type="button"
+                              onClick={() => setComposer(prompt)}
+                              className="rounded-lg border border-border/60 bg-card/50 px-3 py-2 text-left text-[11px] leading-[1.45] text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground/80"
+                            >
+                              {prompt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {messages.map((message) => (
+                      <article
+                        key={message.id}
+                        className={`flex gap-2 ${message.role === "user" ? "justify-end" : ""}`}
+                      >
+                        {message.role === "assistant" ? (
+                          <span className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent">
+                            <Sparkles size={12} />
+                          </span>
+                        ) : null}
+                        <p
+                          className={`max-w-[min(88%,32rem)] whitespace-pre-wrap text-[13px] leading-6 ${message.role === "user" ? "rounded-2xl bg-primary px-3.5 py-2.5 text-white" : "text-foreground/90"}`}
                         >
-                          {prompt}
-                        </button>
+                          {message.content}
+                        </p>
+                      </article>
+                    ))}
+                    {sending ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="animate-spin" size={14} />
+                        Updating the assistant profile…
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+                <form className="relative z-10 shrink-0 px-1 pb-1 sm:px-2" onSubmit={sendTraining}>
+                  <div className="mx-auto flex max-w-2xl items-end gap-2 rounded-xl border border-border bg-card/95 px-2 py-2 shadow-[0_4px_24px_color-mix(in_srgb,var(--wl-ink)_4%,transparent)]">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-foreground/70 hover:bg-muted"
+                      aria-label="Attach files"
+                    >
+                      <Paperclip size={16} />
+                    </button>
+                    <textarea
+                      value={composer}
+                      onChange={(event) => setComposer(event.target.value)}
+                      rows={1}
+                      placeholder={
+                        active
+                          ? `Tell ${active.name} what to do, avoid, or know…`
+                          : "Create an assistant first…"
+                      }
+                      className="max-h-28 min-h-[2.25rem] flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-6 outline-none placeholder:text-muted-foreground/70"
+                    />
+                    <button
+                      type="submit"
+                      disabled={
+                        !active ||
+                        sending ||
+                        (!composer.trim() && !attachments.some((asset) => asset.status === "ready"))
+                      }
+                      className="workspace-btn-primary grid h-9 w-9 shrink-0 place-items-center rounded-full p-0 disabled:opacity-40"
+                      aria-label="Save instruction"
+                    >
+                      <ArrowUp size={15} />
+                    </button>
+                  </div>
+                  {attachments.length ? (
+                    <div className="mx-auto mt-2 flex max-w-2xl flex-wrap gap-1.5">
+                      {attachments.map((asset) => (
+                        <span
+                          key={asset.id}
+                          className={`inline-flex max-w-full items-center gap-1 rounded-lg border px-2 py-1 text-[10px] ${asset.status === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-border bg-muted/70 text-foreground/60"}`}
+                        >
+                          {asset.kind === "image" ? (
+                            <FileImage size={11} />
+                          ) : (
+                            <FileText size={11} />
+                          )}
+                          <span className="max-w-[150px] truncate">{asset.name}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAttachments((items) =>
+                                items.filter((item) => item.id !== asset.id),
+                              )
+                            }
+                            aria-label={`Remove ${asset.name}`}
+                          >
+                            <X size={11} />
+                          </button>
+                        </span>
                       ))}
                     </div>
-                  </div>
-                ) : null}
-                {messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={`flex gap-2 ${message.role === "user" ? "justify-end" : ""}`}
-                  >
-                    {message.role === "assistant" ? (
-                      <span className="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-md bg-accent">
-                        <Sparkles size={12} />
-                      </span>
-                    ) : null}
-                    <p
-                      className={`max-w-[min(88%,32rem)] whitespace-pre-wrap text-[13px] leading-6 ${message.role === "user" ? "rounded-2xl bg-primary px-3.5 py-2.5 text-white" : "text-foreground/90"}`}
-                    >
-                      {message.content}
-                    </p>
-                  </article>
-                ))}
-                {sending ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="animate-spin" size={14} />
-                    Updating the agent profile…
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            <form className="relative z-10 shrink-0 px-1 pb-1 sm:px-2" onSubmit={sendTraining}>
-              <div className="mx-auto flex max-w-2xl items-end gap-2 rounded-xl border border-border bg-card/95 px-2 py-2 shadow-[0_4px_24px_color-mix(in_srgb,var(--wl-ink)_4%,transparent)]">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-foreground/70 hover:bg-muted"
-                  aria-label="Attach files"
-                >
-                  <Paperclip size={16} />
-                </button>
-                <textarea
-                  value={composer}
-                  onChange={(event) => setComposer(event.target.value)}
-                  rows={1}
-                  placeholder={
-                    active
-                      ? `Tell ${active.name} what to do, avoid, or know…`
-                      : "Create an agent first…"
-                  }
-                  className="max-h-28 min-h-[2.25rem] flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-6 outline-none placeholder:text-muted-foreground/70"
-                />
-                <button
-                  type="submit"
-                  disabled={
-                    !active ||
-                    sending ||
-                    (!composer.trim() && !attachments.some((asset) => asset.status === "ready"))
-                  }
-                  className="workspace-btn-primary grid h-9 w-9 shrink-0 place-items-center rounded-full p-0 disabled:opacity-40"
-                  aria-label="Save instruction"
-                >
-                  <ArrowUp size={15} />
-                </button>
-              </div>
-              {attachments.length ? (
-                <div className="mx-auto mt-2 flex max-w-2xl flex-wrap gap-1.5">
-                  {attachments.map((asset) => (
-                    <span
-                      key={asset.id}
-                      className={`inline-flex max-w-full items-center gap-1 rounded-lg border px-2 py-1 text-[10px] ${asset.status === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-border bg-muted/70 text-foreground/60"}`}
-                    >
-                      {asset.kind === "image" ? <FileImage size={11} /> : <FileText size={11} />}
-                      <span className="max-w-[150px] truncate">{asset.name}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAttachments((items) => items.filter((item) => item.id !== asset.id))
-                        }
-                        aria-label={`Remove ${asset.name}`}
-                      >
-                        <X size={11} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </form>
-            </>
+                  ) : null}
+                </form>
+              </>
             )}
           </section>
           <aside className="wl-stitch-card hidden min-h-0 flex-col p-3 xl:flex">
