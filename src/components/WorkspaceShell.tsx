@@ -1,13 +1,25 @@
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Database, Menu, PenLine, Settings, X, Zap } from "lucide-react";
+import {
+  Bot,
+  Database,
+  Inbox,
+  LayoutDashboard,
+  Menu,
+  PenLine,
+  Settings,
+  Workflow,
+  X,
+} from "lucide-react";
 import WirelineMark from "./brand/WirelineMark";
 
 const primaryNavigation = [
-  { href: "/studio", label: "Studio", icon: PenLine },
+  { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/agents", label: "Assistants", icon: Bot },
+  { href: "/studio", label: "Agent Studio", icon: PenLine },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Actions", icon: Zap },
+  { href: "/actions", label: "Connections", icon: Workflow },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
 function NavItem({
@@ -28,10 +40,10 @@ function NavItem({
       to={href}
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
-      className="wl-stitch-sidebar-link gap-4 px-3 py-2"
+      className="wl-stitch-sidebar-link gap-3 px-3 py-2.5"
     >
       <Icon size={18} strokeWidth={active ? 2.1 : 1.75} />
-      <span className="truncate">{label}</span>
+      <span className="truncate normal-case tracking-normal">{label}</span>
     </Link>
   );
 }
@@ -64,24 +76,24 @@ export default function WorkspaceShell({
           onClick={closeDrawer}
         />
       ) : null}
-      <div className="mx-auto grid min-h-[100dvh] max-w-[1680px] lg:grid-cols-[212px_minmax(0,1fr)]">
+      <div className="mx-auto grid min-h-[100dvh] max-w-[1440px] lg:grid-cols-[256px_minmax(0,1fr)]">
         <aside
-          className={`wl-stitch-sidebar fixed inset-y-0 left-0 z-50 flex w-[212px] flex-col px-4 py-10 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+          className={`wl-stitch-sidebar fixed inset-y-0 left-0 z-50 flex w-[256px] flex-col px-4 py-6 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="flex shrink-0 items-center justify-between px-2">
             <Link
-              to="/studio"
+              to="/overview"
               onClick={closeDrawer}
               className="flex items-center gap-2.5"
-              aria-label="Wireline Studio"
+              aria-label="Wireline overview"
             >
               <WirelineMark className="h-7 w-7 text-[24px] leading-none text-primary" />
               <span>
-                <span className="block text-[24px] font-semibold leading-7 tracking-[-.02em] text-foreground">
+                <span className="block font-[var(--wl-font-display)] text-[22px] font-semibold leading-6 tracking-[-.02em] text-foreground">
                   Wireline
                 </span>
                 <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
-                  calls + messages, handled
+                  communications, clarified
                 </span>
               </span>
             </Link>
@@ -94,7 +106,7 @@ export default function WorkspaceShell({
             </button>
           </div>
 
-          <nav className="mt-10 flex flex-col gap-1" aria-label="Workspace">
+          <nav className="mt-8 flex flex-col gap-1" aria-label="Workspace">
             {primaryNavigation.map((item) => (
               <NavItem
                 key={item.href}
@@ -105,7 +117,7 @@ export default function WorkspaceShell({
             ))}
           </nav>
 
-          <nav className="mt-auto border-t border-transparent pt-6" aria-label="Account settings">
+          <nav className="mt-auto border-t border-border pt-5" aria-label="Account settings">
             <NavItem
               href="/settings"
               label="Settings"
