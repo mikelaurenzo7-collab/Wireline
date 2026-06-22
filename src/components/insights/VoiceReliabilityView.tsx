@@ -337,7 +337,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
           <p className="wl-insight-label text-brand/70 mb-4">Recent calls</p>
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {recent.length === 0 ? (
-              <p className="text-sm text-muted">No recent calls with telemetry.</p>
+              <p className="text-sm text-muted">No recent calls with metrics.</p>
             ) : (
               recent.map((call) => (
                 <div

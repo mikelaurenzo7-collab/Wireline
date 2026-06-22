@@ -92,7 +92,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         <div className="rounded-md wl-panel border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-4 h-4 text-brand" />
-            <p className="wl-insight-label text-brand/70">Voice Pipeline Telemetry</p>
+            <p className="wl-insight-label text-brand/70">Voice Pipeline Metrics</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">

@@ -47,7 +47,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
   return (
     <div className="h-full min-h-0 scroll-viewport pb-6">
       <div className="space-y-3">
-        <Panel title="Platform Health" hint="SYSTEM TELEMETRY" icon={Activity} scroll>
+        <Panel title="Platform Health" hint="SYSTEM METRICS" icon={Activity} scroll>
           <div className="space-y-8">
             {/* Real-time Status Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -205,7 +205,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                     </div>
                     <div>
                       <p className="text-[11px] font-bold text-foreground leading-tight">
-                        Obs-Latency Telemetry (Vapi)
+                        Obs-Latency Metrics (Vapi)
                       </p>
                       <p className="wl-micro-meta--muted">
                         WebRTC audio streaming buffer optimized (p99 latency &lt; 120ms).
@@ -313,7 +313,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                         )}
                         <p className="wl-micro-meta opacity-70 leading-relaxed italic">
                           {health === "ok"
-                            ? "Current telemetry within nominal performance bounds."
+                            ? "Current metrics within nominal performance bounds."
                             : "Threshold breach detected. Investigating upstream dependencies."}
                         </p>
                       </div>
@@ -323,7 +323,7 @@ export function SystemPanel({ operationalSlos }: SystemPanelProps) {
                   <div className="col-span-2 py-20 text-center space-y-4">
                     <Loader2 className="w-8 h-8 text-brand/20 animate-spin mx-auto" />
                     <p className="wl-micro-meta--muted uppercase tracking-[0.3em]">
-                      Synching Telemetry Stream...
+                      Synching Metrics Stream...
                     </p>
                   </div>
                 )}

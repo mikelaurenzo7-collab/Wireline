@@ -111,7 +111,7 @@ export default function ObservabilityDashboard() {
       <div className="flex h-64 items-center justify-center">
         <div className="animate-pulse flex items-center space-x-2 text-brand">
           <Activity className="h-5 w-5 animate-spin" />
-          <span className="text-sm font-medium">Gathering telemetry...</span>
+          <span className="text-sm font-medium">Gathering metrics...</span>
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ export default function ObservabilityDashboard() {
         {metrics?.isDemoMock && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-            Demo Telemetry
+            Demo Metrics
           </div>
         )}
         {metrics?.noData && (
@@ -143,9 +143,9 @@ export default function ObservabilityDashboard() {
       {metrics?.noData && (
         <div className="rounded-md border border-border bg-background/50 p-6 text-center space-y-2">
           <Activity className="h-8 w-8 text-brand mx-auto animate-pulse" />
-          <h4 className="text-sm font-semibold text-foreground">Waiting for Telemetry</h4>
+          <h4 className="text-sm font-semibold text-foreground">Waiting for Metrics</h4>
           <p className="text-xs text-muted max-w-md mx-auto">
-            Your telemetry pipelines are active. Metrics like voice TTFT, STT precision, and
+            Your metrics pipelines are active. Metrics like voice TTFT, STT precision, and
             connection success rates will populate dynamically the moment your first call is
             connected.
           </p>
