@@ -119,7 +119,7 @@ export default function BrowserCallWidget({
         variant={callActive ? "destructive" : "outline"}
         onClick={handleToggleCall}
         disabled={connecting || !vapi}
-        aria-label={callActive ? "End conversation" : "Talk to agent"}
+        aria-label={callActive ? "End conversation" : "Talk to assistant"}
         className={cn(
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
           callActive

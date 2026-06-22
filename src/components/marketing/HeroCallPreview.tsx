@@ -23,7 +23,7 @@ export default function HeroCallPreview() {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.65, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
       className="relative mx-auto w-full max-w-xl text-left"
-      aria-label="Live call preview: a Wireline agent answering an inbound call and booking an appointment"
+      aria-label="Live call preview: a Wireline assistant answering an inbound call and booking an appointment"
     >
       <div className="relative border border-ink/[0.14] bg-[#FAF8FF] shadow-[0_24px_70px_-42px_rgba(30,27,46,0.55),0_1px_0_rgba(255,255,255,0.8)_inset]">
         <div className="flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-ink/[0.1] bg-white/[0.42]">
