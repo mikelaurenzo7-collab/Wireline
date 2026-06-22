@@ -22,42 +22,41 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
- * Native Android translation of the current Stitch Professional Heritage system.
- * It stays Material-native while sharing warm paper surfaces, compact geometry,
- * quiet borders, and the forest action color used by web and iOS.
+ * Native Android translation of the current Ametrine Precision source system.
+ * Material remains native; Wireline supplies pale blue-lavender surfaces,
+ * precise outlines, compact geometry, and a single purple action language.
  */
 object Brand {
-    val Canvas = Color(0xFFF9F9F7)
+    val Canvas = Color(0xFFF8F9FF)
     val Panel = Color(0xFFFFFFFF)
-    val Panel2 = Color(0xFFF4F4F2)
-    val Raised = Color(0xFFEEEEEC)
-    val Border = Color(0xFFDADAD8)
-    val BorderStrong = Color(0xFFAEB8B4)
+    val Panel2 = Color(0xFFEFF4FF)
+    val Raised = Color(0xFFE5EEFF)
+    val Border = Color(0xFFC9C4D7)
+    val BorderStrong = Color(0xFF797586)
 
-    // V7 uses forest ink for primary hierarchy, with a quiet green-gray second line.
-    val Text = Color(0xFF1A3C34)
-    val Text2 = Color(0xFF4A5F59)
-    val Text3 = Color(0xB84A5F59)
+    val Text = Color(0xFF0B1C30)
+    val Text2 = Color(0xFF484554)
+    val Text3 = Color(0xB8484554)
 
-    val Accent = Color(0xFF1A3C34)
-    val AccentSoft = Color(0xFFE1E9E6)
-    val AccentDeep = Color(0xFF01261F)
-    val AccentTint = Color(0x1A1A3C34)
+    val Accent = Color(0xFF5D3FD3)
+    val AccentSoft = Color(0xFFE6DEFF)
+    val AccentDeep = Color(0xFF451EBB)
+    val AccentTint = Color(0x1A5D3FD3)
 
-    val Destructive = Color(0xFFBA1A1A)
-    val Success = Color(0xFF2D5A27)
+    val Destructive = Color(0xFFD32F2F)
+    val Success = Color(0xFF2E7D32)
     val Signal = Success
 
-    val RadiusSm = 4.dp
-    val RadiusMd = 8.dp
-    val RadiusLg = 12.dp
+    val RadiusSm = 2.dp
+    val RadiusMd = 6.dp
+    val RadiusLg = 8.dp
 }
 
 private val LightColors: ColorScheme = lightColorScheme(
     primary = Brand.Accent,
     onPrimary = Color.White,
     primaryContainer = Brand.AccentSoft,
-    onPrimaryContainer = Brand.Accent,
+    onPrimaryContainer = Brand.AccentDeep,
     secondary = Brand.Panel2,
     onSecondary = Brand.Text,
     secondaryContainer = Brand.Raised,
@@ -76,16 +75,16 @@ private val LightColors: ColorScheme = lightColorScheme(
     onError = Color.White,
 )
 
-/** Native platform typography mirrors the source hierarchy through weight and tracking. */
+/** Native platform typography mirrors Ametrine hierarchy through weight and tracking. */
 private val AppTypography = Typography(
     displayLarge = Typography().displayLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.64).sp),
     displayMedium = Typography().displayMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.56).sp),
     displaySmall = Typography().displaySmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.48).sp),
     headlineLarge = Typography().headlineLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.48).sp),
-    headlineMedium = Typography().headlineMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.40).sp),
-    headlineSmall = Typography().headlineSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.36).sp),
-    titleLarge = Typography().titleLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.32).sp),
-    titleMedium = Typography().titleMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.28).sp),
+    headlineMedium = Typography().headlineMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, letterSpacing = (-0.40).sp),
+    headlineSmall = Typography().headlineSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, letterSpacing = (-0.36).sp),
+    titleLarge = Typography().titleLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, letterSpacing = (-0.32).sp),
+    titleMedium = Typography().titleMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, letterSpacing = (-0.28).sp),
     titleSmall = Typography().titleSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.20).sp),
     bodyLarge = Typography().bodyLarge.copy(fontFamily = FontFamily.SansSerif),
     bodyMedium = Typography().bodyMedium.copy(fontFamily = FontFamily.SansSerif),
@@ -116,9 +115,9 @@ fun WirelineTheme(content: @Composable () -> Unit) {
             shapes = Shapes(
                 extraSmall = RoundedCornerShape(Brand.RadiusSm),
                 small = RoundedCornerShape(Brand.RadiusMd),
-                medium = RoundedCornerShape(Brand.RadiusMd),
+                medium = RoundedCornerShape(Brand.RadiusLg),
                 large = RoundedCornerShape(Brand.RadiusLg),
-                extraLarge = RoundedCornerShape(16.dp),
+                extraLarge = RoundedCornerShape(12.dp),
             ),
             typography = AppTypography,
             content = content,
