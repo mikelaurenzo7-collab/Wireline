@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// App settings. Currently the callback number used for "take this call"
-/// handoffs — iOS can't read the device's own number, so the operator sets it.
+/// handoffs — iOS can't read the device's own number, so the user sets it.
 struct SettingsView: View {
     @State private var handoffPhone = ""
     @State private var loaded = false
@@ -34,7 +34,7 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .tint(Brand.purple)
+        .tint(Brand.accent)
         .task {
             guard !loaded else { return }
             loaded = true
