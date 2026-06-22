@@ -1,0 +1,70 @@
+---
+name: Ametrine Precision - iOS Implementation Spec
+platform: iOS (SwiftUI)
+version: 1.0
+---
+
+# iOS Design Specification
+
+## 1. Color System (Assets.xcassets)
+Define these colors in your asset catalog for consistent SwiftUI usage.
+
+- **Primary:** `#5D3FD3`
+- **Surface:** `#F8F9FF`
+- **SurfaceContainerLow:** `#EFF4FF`
+- **OnSurface:** `#1A1B23`
+- **Outline:** `#D1D5DB`
+
+## 2. Typography (Hanken Grotesk)
+Ensure the Hanken Grotesk font family is bundled in your `Info.plist`.
+
+```swift
+extension Font {
+    static let wirelineHeadline = Font.custom("HankenGrotesk-Bold", size: 24)
+    static let wirelineBody = Font.custom("HankenGrotesk-Regular", size: 16)
+    static let wirelineCaption = Font.custom("HankenGrotesk-Medium", size: 12)
+}
+```
+
+## 3. UI Components (SwiftUI)
+
+### Standard Card
+```swift
+struct WirelineCard<Content: View>: View {
+    let content: Content
+    var body: some View {
+        content
+            .padding(12)
+            .background(Color.white)
+            .cornerRadius(4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color("Outline"), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+    }
+}
+```
+
+### Primary Button
+```swift
+struct PrimaryButton: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color("Primary"))
+            .foregroundColor(.white)
+            .cornerRadius(4)
+            .font(.wirelineBody.weight(.medium))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+    }
+}
+```
+
+## 4. Platform Specifics
+- **Dynamic Island:** Use the compact state to show "Agent Active" and expanded for "Active Transcription".
+- **Haptics:** Use `.selection` for tab switching and `.impact(.medium)` for primary actions.
+
+---
+**Status:** PRODUCTION READY. Reference {{DATA:SCREEN:SCREEN_48}} for visual parity.

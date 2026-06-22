@@ -2,26 +2,26 @@
 
 Wireline is a personal AI call concierge that handles routine phone work first, then scales into side-project and business workflows. It gives users a powerful Assistant Studio to configure scripts, hours, routing, preferences, and callbacks.
 
-## Colors — Professional Heritage v2
+## Colors — Ametrine Precision v1
 
 | Token | Hex | Usage |
 | --- | --- | --- |
-| **Warm Canvas** | `#F9F9F7` | Primary root canvas background |
+| **Ametrine Canvas** | `#F8F9FF` | Primary root canvas background |
 | **Elevated Card** | `#FFFFFF` | Cards, buttons, and elevated content surfaces |
-| **Secondary Surface** | `#F4F4F2` | Input fields, sidebar backgrounds, and sub-wells |
-| **Raised Well** | `#EEEEEC` | Quiet structural backing wells |
-| **Forest Action** | `#1A3C34` | Primary brand presence, core buttons, and active items |
-| **Pressed State** | `#01261F` | Darker forest for pressed active state feedbacks |
-| **Active Container** | `#E1E9E6` | Soft forest tint for active list selections |
-| **Border** | `#DADAD8` | Flat geometric borders and thin rules |
-| **Secondary Text** | `#4A5F59` | Low-emphasis labels and supporting copy |
-| **Destructive** | `#BA1A1A` | Errors and warning controls |
+| **Secondary Surface** | `#EFF4FF` | Input fields, sidebar backgrounds, and sub-wells |
+| **Raised Well** | `#E0E7FF` | Quiet structural backing wells |
+| **Ametrine Action** | `#5D3FD3` | Primary brand presence, core buttons, and active items |
+| **Pressed State** | `#4B32B3` | Darker ametrine for pressed active state feedbacks |
+| **Active Container** | `#E6DEFF` | Soft ametrine tint for active list selections |
+| **Border** | `#C9C4D7` | Flat geometric borders and thin rules |
+| **Secondary Text** | `#484554` | Low-emphasis labels and supporting copy |
+| **Destructive** | `#D32F2F` | Errors and warning controls |
 
 ## Typography
 
 | Font Stack | Tracking & Attributes | Usage |
 | --- | --- | --- |
-| **Inter** | `-0.02em` on headings; OpenType `cv05`, `cv08`, `ss01` | Primary display, headings, buttons, and body copy |
+| **Hanken Grotesk + Inter** | `-0.02em` on headings; OpenType `cv05`, `cv08`, `ss01` | Hanken Grotesk for display/headings, Inter for dense body copy |
 | **Platform System** | Native layout sizing rules | Natively on iOS (SF Symbols/System) and Android (Material/System) |
 | **JetBrains Mono** | Tight monospaced labels | Metrics, status badges, and compact metadata |
 

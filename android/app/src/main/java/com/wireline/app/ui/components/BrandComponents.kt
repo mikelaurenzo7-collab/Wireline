@@ -70,7 +70,7 @@ fun StitchMeshSurface(modifier: Modifier = Modifier) {
 }
 
 /**
- * AssistantCard displays information inside a flat card matching the Professional Heritage design system:
+ * AssistantCard displays information inside a flat card matching the Ametrine Precision design system:
  * white, 8dp, 1dp warm border, 16dp internal spacing, and no ornamental gradient or heavy elevation.
  */
 @Composable
@@ -93,7 +93,7 @@ fun AssistantCard(
     }
 }
 
-/** 200ms 0.98 press response required by the Professional Heritage system. */
+/** 200ms 0.98 press response required by the Ametrine Precision system. */
 @Composable
 private fun Modifier.tactileScale(interactionSource: MutableInteractionSource): Modifier {
     val pressed = interactionSource.collectIsPressedAsState().value

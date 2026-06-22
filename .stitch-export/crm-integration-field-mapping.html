@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline - CRM Integration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;900&amp;family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-background": "#0b1c30",
+                        "on-secondary-fixed-variant": "#45464d",
+                        "tertiary-container": "#5c5b5b",
+                        "secondary": "#5d5e65",
+                        "outline-variant": "#c9c4d7",
+                        "on-surface-variant": "#484554",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#dce9ff",
+                        "primary-fixed": "#e6deff",
+                        "primary": "#451ebb",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#c6c6cd",
+                        "secondary-fixed": "#e2e2e9",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-container": "#d8ceff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "background": "#f8f9ff",
+                        "primary-container": "#5d3fd3",
+                        "surface-bright": "#f8f9ff",
+                        "secondary-container": "#dfdfe7",
+                        "surface-variant": "#d3e4fe",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#6042d6",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "tertiary": "#444443",
+                        "on-primary-fixed": "#1c0062",
+                        "outline": "#797586",
+                        "tertiary-fixed": "#e5e2e1",
+                        "on-tertiary-container": "#d6d3d3",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#cabeff",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed-variant": "#4723be",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "inverse-surface": "#213145",
+                        "on-secondary-container": "#616269",
+                        "on-surface": "#0b1c30",
+                        "primary-fixed-dim": "#cabeff",
+                        "on-secondary-fixed": "#1a1b21"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "1280px",
+                        "base": "4px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #f8f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="text-on-background bg-background min-h-screen flex font-body-md">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface border-r border-outline-variant flex-col py-6 px-4 docked left-0 h-full w-64 fixed top-0 z-40">
+<div class="mb-8 px-4">
+<span class="font-headline-md text-headline-md font-black text-on-surface">Wireline</span>
+<div class="mt-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold">PW</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface">Personal Workspace</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Individual Mode</p>
+</div>
+</div>
+</div>
+<button class="mb-8 w-full bg-primary text-on-primary py-2 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined icon-fill">add</span>
+            New Agent
+        </button>
+<ul class="flex-1 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md text-body-md">Overview</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-body-md text-body-md">Assistants</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-primary font-bold bg-primary-fixed transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined icon-fill">precision_manufacturing</span>
+<span class="font-body-md text-body-md">Agent Studio</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">database</span>
+<span class="font-body-md text-body-md">Knowledge</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-body-md text-body-md">Connections</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">inbox</span>
+<span class="font-body-md text-body-md">Inbox</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto pt-4 border-t border-outline-variant">
+<ul class="space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md text-body-md">Help</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 md:left-64 z-50 flex justify-between items-center px-8 h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-sm font-body-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all w-64 outline-none" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-4">
+<button class="text-primary font-title-md text-title-md hover:underline cursor-pointer">Switch Workspace</button>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A professional corporate headshot of a person looking confident, well-lit, neutral background, conveying trust and expertise. The lighting is soft and flattering, suitable for a business profile picture in a modern application interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAELFBxig-PE6S4WffJ1Mp5cxL9O164BzXhMuqcfahIZ4f5G3EKhh7vRu2NqJP7Lf_Cr6UNZyXKYIjvP3INrnJZ0AuASOVSZ6bJQsSsq-DaGffsz9wQym3kLK3kUdYw0sKMUR0QzGKlk5E-PHcVH3lq7gQajt5WNLWXlYMaCwM5wxyZbGFdXDiW8Jl3mbRek9V7XlC2JjrYZmVjfJPC6FB_iaw8Bjg0fuX-OvznIsgbOmOkdcIuQ7aQMWwLlQqX4FKMIQYvmN6kMncX"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 mt-16 p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto overflow-y-auto">
+<div class="mb-8 flex justify-between items-end border-b border-outline-variant pb-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Salesforce Integration</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Configure data mapping and interaction synchronization for your agent.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="px-3 py-1 bg-surface-container-high rounded-full border border-outline-variant flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-label-caps text-label-caps text-on-surface">Connected</span>
+</div>
+<button class="px-4 py-2 border border-outline-variant rounded-lg font-body-sm text-body-sm hover:bg-surface-container-lowest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+                    Sync Now
+                </button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Left Column: Settings -->
+<div class="lg:col-span-2 space-y-6">
+<!-- Field Mappings -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">data_object</span>
+                            Field Mappings
+                        </h2>
+<button class="text-primary font-body-sm text-body-sm hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">add</span> Add Mapping
+                        </button>
+</div>
+<div class="p-6">
+<div class="grid grid-cols-12 gap-4 mb-2 px-4 font-label-caps text-label-caps text-on-surface-variant">
+<div class="col-span-5">Wireline Agent Data</div>
+<div class="col-span-2 flex justify-center">Direction</div>
+<div class="col-span-5">Salesforce Field</div>
+</div>
+<div class="space-y-3">
+<!-- Mapping Row 1 -->
+<div class="grid grid-cols-12 gap-4 items-center bg-surface p-3 rounded-lg border border-outline-variant hover:bg-surface-container-low transition-colors">
+<div class="col-span-5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">person</span>
+<span class="font-body-sm text-body-sm font-medium">Lead Name</span>
+</div>
+</div>
+<div class="col-span-2 flex justify-center">
+<span class="material-symbols-outlined text-primary">arrow_right_alt</span>
+</div>
+<div class="col-span-5">
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+<option>Contact.Name</option>
+<option>Lead.Name</option>
+</select>
+</div>
+</div>
+<!-- Mapping Row 2 -->
+<div class="grid grid-cols-12 gap-4 items-center bg-surface p-3 rounded-lg border border-outline-variant hover:bg-surface-container-low transition-colors">
+<div class="col-span-5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">mail</span>
+<span class="font-body-sm text-body-sm font-medium">Email Address</span>
+</div>
+</div>
+<div class="col-span-2 flex justify-center">
+<span class="material-symbols-outlined text-primary">sync_alt</span>
+</div>
+<div class="col-span-5">
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+<option>Contact.Email</option>
+</select>
+</div>
+</div>
+<!-- Mapping Row 3 -->
+<div class="grid grid-cols-12 gap-4 items-center bg-surface p-3 rounded-lg border border-outline-variant hover:bg-surface-container-low transition-colors">
+<div class="col-span-5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[18px]">mood</span>
+<span class="font-body-sm text-body-sm font-medium">Sentiment Score</span>
+</div>
+</div>
+<div class="col-span-2 flex justify-center">
+<span class="material-symbols-outlined text-primary">arrow_right_alt</span>
+</div>
+<div class="col-span-5">
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+<option>Custom_Sentiment__c</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interaction Sync -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">sync</span>
+                            Interaction Sync
+                        </h2>
+</div>
+<div class="p-6 space-y-6">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5" type="checkbox"/>
+</div>
+<div>
+<h3 class="font-body-md text-body-md font-medium text-on-surface">Log Calls as Activities</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Automatically create a Task in Salesforce when a call completes, linking it to the matched Contact or Lead.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5" type="checkbox"/>
+</div>
+<div class="flex-1">
+<h3 class="font-body-md text-body-md font-medium text-on-surface">Attach Transcripts</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-3">Push the full conversation transcript to the CRM activity record.</p>
+<div class="bg-surface p-4 rounded border border-outline-variant text-body-sm font-body-sm font-mono text-tertiary-container">
+                                    [Agent] Hello, calling from Wireline...<br/>
+                                    [Customer] Yes, I was interested in...
+                                </div>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<input class="rounded border-outline-variant text-primary focus:ring-primary h-5 w-5" type="checkbox"/>
+</div>
+<div>
+<h3 class="font-body-md text-body-md font-medium text-on-surface">Attach Audio Recordings</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Include a secure link to the audio recording in the activity description.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Status & Info -->
+<div class="space-y-6">
+<!-- Connection Status Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 relative overflow-hidden">
+<!-- Subtle ambient glow -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
+<div class="flex items-center gap-4 mb-6 relative z-10">
+<div class="w-12 h-12 bg-[#00a1e0]/10 rounded-lg flex items-center justify-center border border-[#00a1e0]/20">
+<!-- Using a placeholder icon for Salesforce -->
+<span class="material-symbols-outlined text-[#00a1e0] text-3xl">cloud</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Salesforce</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Production Org</p>
+</div>
+</div>
+<div class="space-y-3 relative z-10">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Status</span>
+<span class="font-body-sm text-body-sm font-medium text-primary">Active</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Last Sync</span>
+<span class="font-body-sm text-body-sm font-medium">10 mins ago</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">API Usage</span>
+<span class="font-body-sm text-body-sm font-medium">1,204 / 15,000</span>
+</div>
+</div>
+<button class="mt-6 w-full py-2 border border-outline-variant text-on-surface font-body-sm text-body-sm rounded-lg hover:bg-surface transition-colors">
+                        Re-authenticate
+                    </button>
+</div>
+<!-- Sync Log Summary -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6">
+<h3 class="font-body-md text-body-md font-medium text-on-surface mb-4">Recent Activity</h3>
+<ul class="space-y-4">
+<li class="flex gap-3">
+<div class="mt-1">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface">Synced 45 Interactions</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">Today, 10:42 AM</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="mt-1">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface">Updated Lead Mappings</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">Yesterday, 4:15 PM</p>
+</div>
+</li>
+<li class="flex gap-3">
+<div class="mt-1">
+<span class="material-symbols-outlined text-[16px] text-error">error</span>
+</div>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface">Failed to sync 1 Interaction</p>
+<p class="font-body-sm text-body-sm text-error mt-1">Missing required field: Company</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant mt-1">Yesterday, 2:30 PM</p>
+</div>
+</li>
+</ul>
+<button class="mt-4 text-primary font-body-sm text-body-sm hover:underline w-full text-left">View full logs</button>
+</div>
+</div>
+</div>
+<!-- Bottom Actions -->
+<div class="mt-8 pt-6 border-t border-outline-variant flex justify-end gap-4">
+<button class="px-6 py-2 border border-outline-variant rounded-lg font-body-sm text-body-sm hover:bg-surface-container-lowest transition-colors">
+                Cancel
+            </button>
+<button class="px-6 py-2 bg-primary text-on-primary rounded-lg font-body-sm text-body-sm hover:bg-primary/90 transition-colors shadow-[0px_10px_25px_-5px_rgba(69,30,187,0.3)]">
+                Save Changes
+            </button>
+</div>
+</main>
+</body></html>

@@ -14,8 +14,8 @@ Approved marketing, social, sales, and partner copy for Wireline's consumer-firs
 | **Tagline** | Your personal AI call concierge. |
 | **Positioning** | A consumer-first AI assistant that handles everyday phone calls, then scales into side-project and business workflows. |
 | **Brand voice** | Direct, calm, useful, warm. No enterprise fog, no fake magic. |
-| **Primary color** | `#1A3C34` (Forest action/primary) |
-| **Canvas** | `#F9F9F7` (Warm canvas) |
+| **Primary color** | `#5D3FD3` (Ametrine primary) |
+| **Canvas** | `#F8F9FF` (Ametrine canvas) |
 | **Panel** | `#FFFFFF` (Elevated card) / `#F4F4F2` (Secondary surface) |
 | **Accent / secondary** | `#4A5F59` (Secondary text) / `#E1E9E6` (Active container) |
 | **Typeface** | Inter (UI/display, -0.02em tracking for headings), JetBrains Mono (labels/metadata) |

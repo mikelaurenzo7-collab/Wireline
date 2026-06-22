@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline - CarPlay Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;900&amp;family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#d8ceff",
+                        "background": "#f8f9ff",
+                        "on-tertiary-container": "#d6d3d3",
+                        "secondary-container": "#dfdfe7",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#c6c6cd",
+                        "inverse-on-surface": "#eaf1ff",
+                        "secondary": "#5d5e65",
+                        "on-surface": "#0b1c30",
+                        "on-surface-variant": "#484554",
+                        "inverse-surface": "#213145",
+                        "tertiary-fixed": "#e5e2e1",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#5c5b5b",
+                        "primary": "#451ebb",
+                        "outline": "#797586",
+                        "outline-variant": "#c9c4d7",
+                        "primary-container": "#5d3fd3",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "primary-fixed": "#e6deff",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-primary-fixed": "#1c0062",
+                        "inverse-primary": "#cabeff",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#d3e4fe",
+                        "on-secondary-container": "#616269",
+                        "surface-tint": "#6042d6",
+                        "secondary-fixed": "#e2e2e9",
+                        "primary-fixed-dim": "#cabeff",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "tertiary": "#444443",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-high": "#dce9ff",
+                        "on-background": "#0b1c30",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed-variant": "#4723be",
+                        "surface": "#f8f9ff",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-secondary-fixed-variant": "#45464d",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary-fixed": "#1a1b21"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "margin-desktop": "48px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            /* Force dark mode for CarPlay feel */
+            background-color: #0b1c30;
+            color: #ffffff;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* Simulating CarPlay Aspect Ratio typically 800x480 or wider */
+        .carplay-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            background: radial-gradient(circle at center, #112844 0%, #0b1c30 100%);
+        }
+
+        .carplay-nav {
+            width: 80px;
+            background-color: rgba(33, 49, 69, 0.9);
+            border-right: 1px solid rgba(121, 117, 134, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .carplay-content {
+            flex-grow: 1;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 24px;
+            height: 100%;
+        }
+
+        .touch-target {
+            min-height: 64px;
+            min-width: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pulse-ring {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(93, 63, 211, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(93, 63, 211, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(93, 63, 211, 0); }
+        }
+    </style>
+</head>
+<body class="dark font-body-md text-body-md antialiased h-screen w-screen overflow-hidden">
+<div class="carplay-container">
+<!-- CarPlay Vertical Nav / Dock -->
+<nav class="carplay-nav justify-between shrink-0">
+<div class="flex flex-col gap-6">
+<!-- App Icon -->
+<button class="touch-target rounded-xl bg-primary/20 text-inverse-primary border border-primary/30">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+</button>
+<!-- Time/Status -->
+<div class="font-label-caps text-label-caps text-inverse-primary text-center mt-2">
+<div class="text-lg font-bold">14:32</div>
+<div class="text-xs text-on-surface-variant">LTE</div>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<button class="touch-target rounded-full hover:bg-surface-variant/10 text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-3xl">map</span>
+</button>
+<button class="touch-target rounded-full hover:bg-surface-variant/10 text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-3xl">music_note</span>
+</button>
+<button class="touch-target rounded-full bg-surface-variant/20 text-inverse-primary border border-outline/30">
+<span class="material-symbols-outlined text-3xl">apps</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area (Split Screen) -->
+<main class="carplay-content">
+<!-- Left Column: Context & Widgets -->
+<div class="flex flex-col gap-6 h-full">
+<!-- Next Appointment Widget -->
+<div class="bg-inverse-surface/80 rounded-[24px] border border-outline-variant/20 p-6 flex-1 backdrop-blur-md flex flex-col justify-between shadow-lg">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Up Next</span>
+</div>
+<span class="text-inverse-primary font-headline-md text-headline-md">In 15m</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-secondary mb-1">Design Sync</h2>
+<p class="text-on-surface-variant text-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                            445 King St W, Floor 3
+                        </p>
+</div>
+<button class="w-full mt-4 touch-target bg-surface-variant/10 hover:bg-surface-variant/20 text-inverse-primary rounded-xl border border-outline/30 transition-colors flex items-center gap-3">
+<span class="material-symbols-outlined">directions_car</span>
+<span class="font-headline-md text-headline-md">Start Navigation</span>
+</button>
+</div>
+<!-- Recent Activity / Handoffs -->
+<div class="bg-inverse-surface/80 rounded-[24px] border border-outline-variant/20 p-6 flex-1 backdrop-blur-md flex flex-col shadow-lg overflow-hidden">
+<div class="flex items-center gap-2 text-on-surface-variant mb-4">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Recent Handoffs</span>
+</div>
+<div class="flex flex-col gap-3 overflow-y-auto pr-2">
+<!-- Item 1 -->
+<div class="flex items-center gap-4 p-3 rounded-xl bg-surface-variant/5 border border-outline/10">
+<div class="w-12 h-12 rounded-full bg-error-container/20 text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">priority_high</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-headline-md text-headline-md text-on-secondary truncate text-base">Acme Corp Billing</div>
+<div class="text-on-surface-variant text-sm truncate">Agent requested review</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-4 p-3 rounded-xl bg-surface-variant/5 border border-outline/10">
+<div class="w-12 h-12 rounded-full bg-surface-variant/20 text-inverse-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">voicemail</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-headline-md text-headline-md text-on-secondary truncate text-base">Sarah Jenkins</div>
+<div class="text-on-surface-variant text-sm truncate">Left a detailed message</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Active Agent Call (Focus) -->
+<div class="bg-inverse-surface rounded-[32px] border border-primary/30 p-8 h-full flex flex-col relative overflow-hidden shadow-[0_10px_40px_-10px_rgba(93,63,211,0.2)]">
+<!-- Background visual element for active call -->
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-colors-primary)_0%,_transparent_70%)] mix-blend-screen pointer-events-none pulse-ring"></div>
+<div class="relative z-10 flex flex-col h-full">
+<!-- Header -->
+<div class="flex justify-between items-center mb-8">
+<div class="flex items-center gap-3 bg-primary/20 text-inverse-primary px-4 py-2 rounded-full border border-primary/30">
+<div class="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></div>
+<span class="font-label-caps text-label-caps uppercase tracking-wider">Agent Screening</span>
+</div>
+<div class="text-on-surface-variant font-label-caps text-label-caps">00:42</div>
+</div>
+<!-- Caller Info -->
+<div class="flex flex-col items-center justify-center flex-1 text-center mb-8">
+<div class="w-24 h-24 rounded-full bg-surface-variant/20 flex items-center justify-center mb-4 border-2 border-outline/30 relative">
+<span class="material-symbols-outlined text-5xl text-on-secondary">person</span>
+<div class="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-inverse-surface">
+<span class="material-symbols-outlined text-on-primary text-sm" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+</div>
+<h1 class="font-headline-lg text-[40px] leading-tight text-on-secondary mb-2">Unknown Caller</h1>
+<p class="text-on-surface-variant text-xl">+1 (555) 019-8372</p>
+<!-- Real-time transcription snippet -->
+<div class="mt-8 bg-surface-variant/10 border border-outline/20 rounded-xl p-4 w-full max-w-sm">
+<p class="text-inverse-primary text-left text-lg italic opacity-80">
+                                "...calling regarding your extended warranty for the vehicle..."
+                            </p>
+</div>
+</div>
+<!-- Large Touch Controls -->
+<div class="grid grid-cols-3 gap-4 mt-auto">
+<!-- Mute -->
+<button class="touch-target flex flex-col gap-2 items-center justify-center bg-surface-variant/10 hover:bg-surface-variant/20 rounded-[20px] border border-outline/20 py-4 transition-colors">
+<span class="material-symbols-outlined text-3xl text-on-secondary">mic_off</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Mute</span>
+</button>
+<!-- Intervene (Primary Action) -->
+<button class="touch-target flex flex-col gap-2 items-center justify-center bg-primary hover:bg-primary-container rounded-[20px] shadow-lg py-4 transition-colors scale-105">
+<span class="material-symbols-outlined text-3xl text-on-primary" style="font-variation-settings: 'FILL' 1;">record_voice_over</span>
+<span class="font-body-sm text-body-sm font-bold text-on-primary">Take Over</span>
+</button>
+<!-- End Call (Destructive) -->
+<button class="touch-target flex flex-col gap-2 items-center justify-center bg-error/20 hover:bg-error/30 rounded-[20px] border border-error/30 py-4 transition-colors">
+<span class="material-symbols-outlined text-3xl text-[#ff5252]">call_end</span>
+<span class="font-body-sm text-body-sm text-[#ff5252]">Drop Call</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

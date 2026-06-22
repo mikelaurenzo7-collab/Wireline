@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline | Transparent Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#d3e4fe",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#4723be",
+                    "on-secondary-container": "#616269",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#e2e2e9",
+                    "primary": "#451ebb",
+                    "surface": "#f8f9ff",
+                    "on-error": "#ffffff",
+                    "surface-container": "#e5eeff",
+                    "tertiary-container": "#5c5b5b",
+                    "surface-tint": "#6042d6",
+                    "inverse-surface": "#213145",
+                    "surface-variant": "#d3e4fe",
+                    "tertiary-fixed-dim": "#c8c6c5",
+                    "on-surface-variant": "#484554",
+                    "on-surface": "#0b1c30",
+                    "secondary-container": "#dfdfe7",
+                    "on-background": "#0b1c30",
+                    "on-primary-fixed": "#1c0062",
+                    "background": "#f8f9ff",
+                    "outline": "#797586",
+                    "on-primary": "#ffffff",
+                    "secondary": "#5d5e65",
+                    "on-secondary-fixed-variant": "#45464d",
+                    "inverse-primary": "#cabeff",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed-dim": "#c6c6cd",
+                    "primary-container": "#5d3fd3",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "surface-container-low": "#eff4ff",
+                    "surface-dim": "#cbdbf5",
+                    "tertiary-fixed": "#e5e2e1",
+                    "outline-variant": "#c9c4d7",
+                    "on-secondary-fixed": "#1a1b21",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary": "#444443",
+                    "primary-fixed-dim": "#cabeff",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary-container": "#d8ceff",
+                    "surface-bright": "#f8f9ff",
+                    "primary-fixed": "#e6deff",
+                    "on-tertiary-container": "#d6d3d3",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "4px",
+                    "lg": "4px",
+                    "xl": "8px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "margin-desktop": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-caps": ["JetBrains Mono"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Hanken Grotesk', sans-serif; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 50%, rgba(93, 63, 211, 0.05) 0%, rgba(248, 249, 255, 1) 70%);
+        }
+
+        .wire-pattern {
+            background-image: radial-gradient(#451ebb 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+            opacity: 0.1;
+        }
+
+        /* Micro-interactions */
+        .tap-active:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Top Navigation (Mobile Optimized) -->
+<nav class="w-full top-0 sticky bg-surface/90 backdrop-blur-md z-50 border-b border-outline-variant" id="top-nav">
+<div class="max-w-container-max mx-auto px-margin-mobile flex justify-between items-center h-16">
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-bold text-primary tracking-tight">Wireline</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-on-primary px-4 py-2 font-body-sm rounded-lg tap-active">
+                    Get Started
+                </button>
+<button class="p-2 text-primary" id="menu-toggle">
+<span class="material-symbols-outlined text-2xl">menu</span>
+</button>
+</div>
+</div>
+<!-- Mobile Menu Overlay (Hidden by default) -->
+<div class="hidden absolute top-16 left-0 w-full bg-surface-container-lowest border-b border-outline-variant px-margin-mobile py-8 flex flex-col gap-6 shadow-xl" id="mobile-menu">
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Features</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Pricing</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Solutions</a>
+<a class="font-body-md text-on-surface-variant hover:text-primary transition-colors" href="#">Resources</a>
+<hr class="border-outline-variant"/>
+<a class="font-body-md text-primary font-semibold" href="#">Log In</a>
+</div>
+</nav>
+<main class="relative">
+<!-- Hero Section -->
+<section class="hero-gradient relative pt-12 pb-20 px-margin-mobile overflow-hidden">
+<div class="wire-pattern absolute inset-0 pointer-events-none"></div>
+<div class="relative z-10 text-center flex flex-col items-center">
+<div class="inline-flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-full px-3 py-1 mb-6">
+<span class="font-label-caps text-primary uppercase text-[10px]">v2.4 Release</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-4 max-w-sm">
+                    Transparent Intelligence
+                </h1>
+<p class="font-body-md text-on-surface-variant mb-8 max-w-xs leading-relaxed">
+                    Engineering-grade AI deployment with precision oversight and unmatched visibility into the neural lifecycle.
+                </p>
+<!-- Platform Visualization (Placeholder with complex prompt) -->
+<div class="w-full max-w-md relative mt-4 aspect-square rounded-xl overflow-hidden border border-outline-variant bg-surface-container-low shadow-sm">
+<div class="absolute inset-0 z-0">
+
+</div>
+<img class="relative z-10 w-full h-full object-cover" data-alt="A sophisticated UI visualization on a sleek mobile glass interface. The image shows a complex data mesh network with nodes connected by thin violet laser lines, representing neural pathways. The aesthetic is clean, professional, and corporate-modern with a color palette of deep amethyst purples, soft lavenders, and crisp whites. High-key studio lighting highlights the crystalline textures of the 3D data elements against a minimalist light-mode background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2v8NF6i-wDO304Ajq6pi7mxBHsf4wRFUO2_r4xCHMIX0gAK95Pyqwhn_oCNe1lv3SfWhjXY85So-EU5d6Omrx1fV79xA1iTFTO27sqtJ9wovSJLwKfKo6EXpchoX4cYp80ABxadjZpJW8RU9tOTa-xLrhdDdsvme80KNnSZI2U8-wpfFjNWK0ZXcr0eV2X_24TBs0cDedgmXlJTh4nMC-Iqo5mLQzQjoBcK9_zMjsBtEiXTDvT6DEWtI8VXrQes8cayyL8fzQ7vGR"/>
+<!-- Floating Data Points (Micro-interaction layer) -->
+<div class="absolute bottom-4 left-4 right-4 glass-card p-4 rounded-lg flex items-center justify-between border-primary/20">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label-caps text-primary text-[10px]">LIVE FEED: CORE_ENGINE_7</span>
+</div>
+<span class="font-label-caps text-on-surface-variant text-[10px]">99.8% ACCURACY</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Intelligence Lifecycle Section -->
+<section class="bg-surface-container-lowest py-20 px-margin-mobile">
+<div class="mb-12">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Intelligence Lifecycle</h2>
+<p class="font-body-sm text-on-surface-variant">Continuous refinement from ingestion to deployment.</p>
+</div>
+<!-- Vertical Stack of Cards -->
+<div class="flex flex-col gap-gutter">
+<!-- Build -->
+<div class="glass-card p-6 rounded-lg border-l-4 border-l-primary flex flex-col gap-4 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary text-3xl">architecture</span>
+<span class="font-label-caps text-outline text-[12px]">STAGE 01</span>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface mb-1">Build</h3>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+                            Architect custom neural schemas with a visual-first low-code environment optimized for scalability.
+                        </p>
+</div>
+<div class="bg-surface p-3 rounded border border-outline-variant/30">
+<div class="h-1 w-full bg-outline-variant rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+</div>
+</div>
+<!-- Train -->
+<div class="glass-card p-6 rounded-lg border-l-4 border-l-secondary flex flex-col gap-4 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary text-3xl">model_training</span>
+<span class="font-label-caps text-outline text-[12px]">STAGE 02</span>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface mb-1">Train</h3>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+                            Fine-tune parameters using high-fidelity datasets with real-time gradient descent visualization.
+                        </p>
+</div>
+<div class="flex gap-2">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] px-2 py-0.5 rounded uppercase font-label-caps">GPU Optimized</span>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] px-2 py-0.5 rounded uppercase font-label-caps">Parallel Dist</span>
+</div>
+</div>
+<!-- Run -->
+<div class="glass-card p-6 rounded-lg border-l-4 border-l-primary flex flex-col gap-4 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary text-3xl">play_circle</span>
+<span class="font-label-caps text-outline text-[12px]">STAGE 03</span>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface mb-1">Run</h3>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+                            Deploy globally with 12ms latency on the Wireline edge network. Seamless integration at any scale.
+                        </p>
+</div>
+<button class="text-primary font-body-sm font-semibold flex items-center gap-1 tap-active">
+                        Edge Locations <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Review -->
+<div class="glass-card p-6 rounded-lg border-l-4 border-l-secondary flex flex-col gap-4 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary text-3xl">visibility</span>
+<span class="font-label-caps text-outline text-[12px]">STAGE 04</span>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface mb-1">Review</h3>
+<p class="font-body-sm text-on-surface-variant leading-relaxed">
+                            Audit decision-making processes through a transparent lens of explainability and bias detection.
+                        </p>
+</div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-surface bg-primary/20"></div>
+<div class="w-6 h-6 rounded-full border border-surface bg-secondary/20"></div>
+<div class="w-6 h-6 rounded-full border border-surface bg-tertiary/20"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="bg-primary py-16 px-margin-mobile text-center">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-primary mb-6">Ready to wire in?</h2>
+<div class="flex flex-col gap-4">
+<button class="bg-on-primary text-primary px-8 py-3 rounded-lg font-body-md font-bold tap-active">
+                    Schedule a Demo
+                </button>
+<button class="border border-on-primary/30 text-on-primary px-8 py-3 rounded-lg font-body-md tap-active">
+                    View Pricing
+                </button>
+</div>
+</section>
+</main>
+<!-- Compact Footer -->
+<footer class="bg-surface-container pt-12 pb-8 border-t border-outline-variant">
+<div class="max-w-container-max mx-auto px-margin-mobile">
+<div class="flex flex-col gap-8">
+<div>
+<span class="text-headline-md font-bold text-on-surface block mb-4">Wireline</span>
+<p class="font-body-sm text-on-surface-variant max-w-xs">
+                        Advanced infrastructure for the intelligence era. Precisely engineered for global enterprise demands.
+                    </p>
+</div>
+<div class="grid grid-cols-2 gap-y-6 gap-x-gutter">
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-on-surface font-bold text-[10px] uppercase">Product</span>
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Features</a>
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Integrations</a>
+</div>
+<div class="flex flex-col gap-3">
+<span class="font-label-caps text-on-surface font-bold text-[10px] uppercase">Company</span>
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">About</a>
+<a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Careers</a>
+</div>
+</div>
+<div class="pt-8 border-t border-outline-variant/30 flex flex-col gap-4">
+<p class="font-body-sm text-on-surface-variant text-[12px]">
+                        © 2024 Wireline Inc. All rights reserved.
+                    </p>
+<div class="flex gap-4">
+<a class="font-body-sm text-on-surface-variant hover:underline decoration-primary" href="#">Privacy Policy</a>
+<a class="font-body-sm text-on-surface-variant hover:underline decoration-primary" href="#">Terms</a>
+</div>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Toggle Mobile Menu
+        const menuBtn = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIcon = menuBtn.querySelector('.material-symbols-outlined');
+
+        let menuOpen = false;
+
+        menuBtn.addEventListener('click', () => {
+            menuOpen = !menuOpen;
+            if (menuOpen) {
+                mobileMenu.classList.remove('hidden');
+                menuIcon.textContent = 'close';
+            } else {
+                mobileMenu.classList.add('hidden');
+                menuIcon.textContent = 'menu';
+            }
+        });
+
+        // Close menu on click outside
+        window.addEventListener('click', (e) => {
+            if (menuOpen && !mobileMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+                menuOpen = false;
+                mobileMenu.classList.add('hidden');
+                menuIcon.textContent = 'menu';
+            }
+        });
+    </script>
+</body></html>

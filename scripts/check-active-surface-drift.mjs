@@ -47,7 +47,8 @@ requirePatterns("src/styles/foundation.css", foundation, [
   [/--wl-surface-subtle:\s*#eff4ff/i, "must use #eff4ff secondary surfaces"],
   [/--wl-line:\s*#c9c4d7/i, "must use #c9c4d7 precision dividers"],
   [/--radius:\s*0\.25rem/i, "must retain 4px default geometry"],
-  [/--radius-lg:\s*0\.5rem/i, "must retain 8px card geometry"],
+  [/--radius-lg:\s*0\.5rem/i, "must retain 8px large-container geometry"],
+  [/border-radius:\s*var\(--radius\)/i, "must use 4px default geometry for standard controls and cards"],
   [/transform:\s*scale\(0\.98\)/i, "must retain tactile 0.98 press feedback"],
   [/focus-visible[\s\S]*outline:\s*2px solid var\(--wl-accent\)/i, "must retain a 2px keyboard focus indicator"],
 ]);
@@ -111,7 +112,7 @@ requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineThe
   [/Text\s*=\s*Color\(0xFF0B1C30\)/, "must use #0B1C30 Android primary text"],
   [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 Android action color"],
   [/Border\s*=\s*Color\(0xFFC9C4D7\)/, "must use #C9C4D7 Android borders"],
-  [/RadiusLg\s*=\s*8\.dp/, "must retain 8dp card geometry"],
+  [/RadiusLg\s*=\s*8\.dp/, "must retain 8dp large-container geometry"],
 ]);
 
 const androidWidget = read("android/app/src/main/java/com/wireline/app/widget/WidgetPalette.kt");

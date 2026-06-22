@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Knowledge Management - Wireline</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed": "#f3e8ff",
+                      "surface-container-low": "#f0f3ff",
+                      "surface-tint": "#5d3fd3",
+                      "primary": "#5d3fd3",
+                      "inverse-primary": "#d8b4fe",
+                      "tertiary-fixed": "#ffdcc3",
+                      "surface-dim": "#cfdaf2",
+                      "error-container": "#ffdad6",
+                      "surface-variant": "#d8e3fb",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-highest": "#d8e3fb",
+                      "tertiary": "#793f00",
+                      "surface-container-high": "#dee8ff",
+                      "on-secondary-container": "#006f66",
+                      "secondary-fixed-dim": "#6bd8cb",
+                      "on-primary-container": "#faf5ff",
+                      "background": "#f9f9ff",
+                      "on-surface": "#111c2d",
+                      "on-primary": "#ffffff",
+                      "on-surface-variant": "#434656",
+                      "surface": "#f9f9ff",
+                      "on-primary-fixed-variant": "#5d3fd3",
+                      "primary-container": "#5d3fd3",
+                      "primary-fixed-dim": "#e9d5ff",
+                      "on-secondary": "#ffffff",
+                      "on-background": "#111c2d",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-container": "#ffdfc8",
+                      "error": "#ba1a1a",
+                      "inverse-on-surface": "#ecf1ff",
+                      "on-error": "#ffffff",
+                      "on-primary-fixed": "#3b0764",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-fixed-variant": "#005049",
+                      "secondary-fixed": "#89f5e7",
+                      "on-secondary-fixed": "#00201d",
+                      "secondary": "#006a61",
+                      "surface-bright": "#f9f9ff",
+                      "on-tertiary-fixed": "#2f1500",
+                      "surface-container": "#e7eeff",
+                      "secondary-container": "#86f2e4",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "outline": "#737688",
+                      "tertiary-container": "#9c5300",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "outline-variant": "#c3c5d9",
+                      "inverse-surface": "#263143"
+              },
+              "borderRadius": {
+                      "DEFAULT": "4px",
+                      "lg": "4px",
+                      "xl": "4px",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "8px",
+                      "container-max": "1280px",
+                      "stack-lg": "32px",
+                      "unit": "4px",
+                      "stack-md": "16px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "32px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "sans": ["Hanken Grotesk", "Inter", "sans-serif"],
+                      "body-md": ["Hanken Grotesk"],
+                      "headline-lg": ["Hanken Grotesk"],
+                      "title-md": ["Hanken Grotesk"],
+                      "headline-lg-mobile": ["Hanken Grotesk"],
+                      "display-lg": ["Hanken Grotesk"],
+                      "headline-md": ["Hanken Grotesk"],
+                      "body-lg": ["Hanken Grotesk"],
+                      "code-sm": ["JetBrains Mono"],
+                      "label-md": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "title-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "26px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased overflow-hidden flex h-screen">
+<!-- SideNavBar (Shared Component) -->
+<nav class="fixed left-0 top-0 h-full w-64 flex flex-col py-6 px-4 bg-surface border-r border-outline-variant z-40">
+<!-- Brand/Header -->
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-bold">W</div>
+<div>
+<h1 class="text-title-md font-title-md font-bold text-primary">Personal Workspace</h1>
+<p class="text-label-md font-label-md text-on-surface-variant">Individual Mode</p>
+</div>
+</div>
+<!-- Primary CTA -->
+<div class="mb-6 px-2">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary rounded py-2.5 px-4 font-title-md text-title-md transition-all hover:opacity-90 scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined icon-fill">add</span>
+                New Agent
+            </button>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-1 flex-1">
+<!-- Overview -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Overview</span>
+</a>
+</li>
+<!-- Assistants -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-body-md text-body-md">Assistants</span>
+</a>
+</li>
+<!-- Agent Studio -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span class="font-body-md text-body-md">Agent Studio</span>
+</a>
+</li>
+<!-- Knowledge (Active) -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-primary font-bold bg-[#f3efff]" href="#">
+<span class="material-symbols-outlined icon-fill" data-icon="database">database</span>
+<span class="font-body-md text-body-md font-bold">Knowledge</span>
+</a>
+</li>
+<!-- Connections -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-body-md text-body-md">Connections</span>
+</a>
+</li>
+<!-- Inbox -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inbox">inbox</span>
+<span class="font-body-md text-body-md">Inbox</span>
+</a>
+</li>
+<!-- Settings -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</li>
+</ul>
+<!-- Footer Links -->
+<ul class="flex flex-col gap-1 mt-auto pt-4 border-t border-outline-variant">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-md text-body-md">Help</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="support_agent">support_agent</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col ml-64 relative w-[calc(100%-16rem)]">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-64 z-50 flex justify-between items-center px-8 h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<!-- Product Name -->
+<div class="font-headline-md text-headline-md font-black text-on-surface">
+                Wireline
+            </div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-all duration-200 p-2 rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-all duration-200 p-2 rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<!-- Primary Action -->
+<button class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-title-md px-4 py-1.5 rounded hover:bg-surface-container-low transition-colors shadow-sm">
+                    Switch Workspace
+                    <span class="material-symbols-outlined text-sm">unfold_more</span>
+</button>
+<!-- Profile Image -->
+<div class="w-8 h-8 rounded-full bg-primary-fixed border border-outline-variant overflow-hidden ml-2 cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A close-up, high-quality, professional corporate headshot of a person looking slightly off-camera. The lighting is soft and flattering, creating a bright, modern light-mode aesthetic. The background is a very subtle, light grey gradient, keeping the focus entirely on the subject. The mood is approachable and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBt5r5v9CLXDYUYP2B57O_TtKyPVqItVakzxpTlocDD42zvy8ROyTPQJEA5SzgfUDggSSfQqqMa9HPO8njGtnQaE3KqZ9LhV9FcMwoNM_ITcjJGkPQ8l-1f8D_x-W71Ixi716hi9ZCtPwWWjmRMWpXyYkhs_7HbSGFaogv7GAaKm5dRSzH2VcjqecYZAYGbZXikOL3LPduxCx-sY0iR7u88zMU482dC_6XT--QRd5Z_-h4ewYO26_WoguIQysH41Txf58p0vdVrH76b"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto mt-16 p-8 bg-background">
+<div class="max-w-container-max mx-auto flex flex-col gap-8">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mb-2">Knowledge Base</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Manage the information your agents use to formulate responses.</p>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary font-title-md text-title-md px-5 py-2.5 rounded hover:opacity-90 shadow-sm transition-all hover:shadow-md">
+<span class="material-symbols-outlined">add</span>
+                        Add Knowledge Source
+                    </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+<!-- Left Column: Knowledge Repositories (Takes up 2 cols on XL) -->
+<div class="xl:col-span-2 flex flex-col gap-6">
+<!-- Workspace Knowledge Card (Glassmorphism inspired, Level 1 Elevation) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-6 shadow-sm relative overflow-hidden group">
+<!-- Subtle abstract decoration -->
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary-fixed/20 rounded-full blur-3xl group-hover:bg-primary-fixed/30 transition-all duration-700"></div>
+<div class="flex justify-between items-center mb-6 relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">domain</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">Workspace Knowledge</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Global context available to all agents.</p>
+</div>
+</div>
+<button class="text-primary font-title-md text-title-md hover:underline">Manage All</button>
+</div>
+<div class="flex flex-col gap-3 relative z-10">
+<!-- Document Item 1 -->
+<div class="flex items-center justify-between p-4 rounded border border-outline-variant hover:border-outline hover:shadow-sm transition-all bg-surface">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline">description</span>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface">Company Handbook 2024</h4>
+<p class="font-label-md text-label-md text-on-surface-variant mt-0.5">Updated 3 days ago • PDF</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Reviewed Status Chip -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md">
+<span class="w-1.5 h-1.5 rounded-full bg-on-secondary-container"></span>
+                                            Reviewed
+                                        </span>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Document Item 2 -->
+<div class="flex items-center justify-between p-4 rounded border border-outline-variant hover:border-outline hover:shadow-sm transition-all bg-surface">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline">palette</span>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface">Brand Guide &amp; Tone of Voice</h4>
+<p class="font-label-md text-label-md text-on-surface-variant mt-0.5">Updated 2 weeks ago • Notion Sync</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Stale Status Chip -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-md text-label-md border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                                            Stale
+                                        </span>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Agent Specific Knowledge Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-6 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface font-semibold">Agent Knowledge</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Specific context mapped to designated agents.</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Filter by Agent:</span>
+<select class="form-select bg-surface border border-outline-variant rounded text-body-md font-body-md py-1 pl-3 pr-8 focus:border-primary focus:ring-primary shadow-sm">
+<option>Sales Qualifier</option>
+<option>Support Tier 1</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<!-- FAQ Item 1 -->
+<div class="flex items-start justify-between p-4 rounded border border-outline-variant hover:border-outline hover:shadow-sm transition-all bg-surface">
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-outline mt-1">quiz</span>
+<div>
+<h4 class="font-body-md text-body-md font-medium text-on-surface">Pricing Objections FAQ</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-2">"When a customer asks about enterprise pricing minimums, emphasize the ROI calculator before providing the base tier sheet. Do not quote custom implementation fees."</p>
+<p class="font-label-md text-label-md text-outline mt-3">Source: Manual Entry • Linked to: Sales Qualifier</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-3 shrink-0">
+<!-- Conflict Status Chip -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                            Conflict
+                                        </span>
+<button class="text-primary font-title-md text-title-md text-sm hover:underline mt-auto">Resolve</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Sources list (Takes up 1 col on XL) -->
+<div class="xl:col-span-1">
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-6 shadow-sm h-full">
+<h3 class="font-title-md text-title-md text-on-surface font-semibold mb-1">Active Sources</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mb-6">Manage connected data pipelines.</p>
+<ul class="flex flex-col gap-4">
+<!-- Source 1: Website -->
+<li class="flex items-center gap-4 p-3 rounded hover:bg-surface-container transition-colors cursor-pointer group border border-transparent hover:border-outline-variant">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">language</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md text-body-md font-medium text-on-surface truncate">docs.wireline.io</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Scraped 2h ago</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</li>
+<!-- Source 2: PDF Upload -->
+<li class="flex items-center gap-4 p-3 rounded hover:bg-surface-container transition-colors cursor-pointer group border border-transparent hover:border-outline-variant">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md text-body-md font-medium text-on-surface truncate">Q3_Product_Roadmap.pdf</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Static Upload</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</li>
+<!-- Source 3: Google Drive -->
+<li class="flex items-center gap-4 p-3 rounded hover:bg-surface-container transition-colors cursor-pointer group border border-transparent hover:border-outline-variant">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined">add_to_drive</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md text-body-md font-medium text-on-surface truncate">Marketing Shared Drive</h4>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<p class="font-label-md text-label-md text-on-surface-variant truncate">Syncing continuously</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</li>
+</ul>
+<div class="mt-6 pt-6 border-t border-outline-variant">
+<button class="w-full flex items-center justify-center gap-2 bg-surface-container border border-outline-variant text-on-surface font-title-md text-title-md py-2 px-4 rounded hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">cable</span>
+                                    New Integration
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

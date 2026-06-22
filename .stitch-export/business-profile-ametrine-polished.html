@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline - Business Profile Setup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#dde1ff",
+                        "surface-container-low": "#f0f3ff",
+                        "surface-tint": "#5d3fd3",
+                        "primary": "#5d3fd3",
+                        "inverse-primary": "#b7c4ff",
+                        "tertiary-fixed": "#ffdcc3",
+                        "surface-dim": "#cfdaf2",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#d8e3fb",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#d8e3fb",
+                        "tertiary": "#793f00",
+                        "surface-container-high": "#dee8ff",
+                        "on-secondary-container": "#006f66",
+                        "secondary-fixed-dim": "#6bd8cb",
+                        "on-primary-container": "#dfe3ff",
+                        "background": "#f9f9ff",
+                        "on-surface": "#111c2d",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#434656",
+                        "surface": "#f9f9ff",
+                        "on-primary-fixed-variant": "#0038b6",
+                        "primary-container": "#5d3fd3",
+                        "primary-fixed-dim": "#b7c4ff",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#111c2d",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ffdfc8",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed": "#001452",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#005049",
+                        "secondary-fixed": "#89f5e7",
+                        "on-secondary-fixed": "#00201d",
+                        "secondary": "#006a61",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-fixed": "#2f1500",
+                        "surface-container": "#e7eeff",
+                        "secondary-container": "#86f2e4",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "outline": "#737688",
+                        "tertiary-container": "#9c5300",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "outline-variant": "#c3c5d9",
+                        "inverse-surface": "#263143"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "4px",
+                        "lg": "4px",
+                        "xl": "4px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "container-max": "1280px",
+                        "stack-lg": "32px",
+                        "unit": "4px",
+                        "stack-md": "16px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Hanken Grotesk", "sans-serif"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "title-md": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "code-sm": ["JetBrains Mono"],
+                        "label-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
+                        "code-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(93, 63, 211, 0.15);
+            border-color: #5d3fd3;
+            outline: none;
+        }
+        
+        .card-hover {
+            transition: all 0.2s ease;
+        }
+        .card-hover:hover {
+            box-shadow: 0px 4px 12px rgba(15, 23, 42, 0.05);
+            transform: translateY(-1px);
+        }
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-sans min-h-screen antialiased flex">
+<!-- SideNavBar -->
+<aside class="hidden md:flex bg-surface text-primary font-sans border-r border-outline-variant fixed left-0 top-0 h-full w-64 flex-col py-6 px-4 z-40">
+<!-- Brand -->
+<div class="mb-stack-lg px-2 flex items-center gap-2">
+<span class="material-symbols-outlined icon-fill text-[#5d3fd3]" style="font-size: 28px;">all_inclusive</span>
+<span class="font-headline-md text-headline-md font-black text-on-surface">Wireline</span>
+</div>
+<!-- Workspace Switcher -->
+<div class="mb-stack-md flex items-center gap-3 p-3 rounded border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-[#5d3fd3] font-bold">
+                PW
+            </div>
+<div class="flex-1 overflow-hidden">
+<div class="font-title-md text-title-md text-on-surface truncate">Personal Workspace</div>
+<div class="font-label-md text-label-md text-on-surface-variant truncate">Individual Mode</div>
+</div>
+<span class="material-symbols-outlined text-outline">unfold_more</span>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 flex flex-col gap-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span>Assistants</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+<span>Agent Studio</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">database</span>
+<span>Knowledge</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span>Connections</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">inbox</span>
+<span>Inbox</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#5d3fd3] font-bold bg-[#5d3fd3]/10 scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined icon-fill">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<!-- CTA -->
+<div class="mt-stack-md pt-4 border-t border-outline-variant">
+<button class="w-full bg-[#5d3fd3] text-on-primary py-2 px-4 rounded font-title-md text-title-md hover:opacity-90 transition-colors shadow-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                New Agent
+            </button>
+</div>
+<!-- Footer Links -->
+<div class="mt-stack-sm flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm" href="#">
+<span class="material-symbols-outlined" style="font-size: 18px;">help</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm" href="#">
+<span class="material-symbols-outlined" style="font-size: 18px;">support_agent</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 w-full min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 md:left-64 z-50 flex justify-between items-center px-8 h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<!-- Mobile Brand -->
+<div class="md:hidden flex items-center gap-2">
+<span class="material-symbols-outlined icon-fill text-[#5d3fd3]" style="font-size: 24px;">all_inclusive</span>
+<span class="font-headline-md text-headline-md font-black text-on-surface">Wireline</span>
+</div>
+<!-- Header Context (Desktop) -->
+<div class="hidden md:flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Settings</h1>
+<span class="text-outline-variant">|</span>
+<span class="font-title-md text-title-md text-on-surface-variant">Business Profile</span>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-[#5d3fd3] transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-[#5d3fd3] transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<button class="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-on-surface-variant bg-surface-container hover:bg-surface-container-high rounded-full border border-outline-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">swap_horiz</span>
+                    Switch Workspace
+                </button>
+<div class="w-8 h-8 rounded-full bg-[#5d3fd3]/20 text-[#5d3fd3] flex items-center justify-center font-bold border border-outline-variant cursor-pointer">
+                    JD
+                </div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 pt-24 pb-12 px-4 md:px-8 max-w-[container-max] mx-auto w-full">
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Business Profile</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl">Establish the core identity and operational parameters for your firm. These details serve as the foundational truth for all your deployed intelligent agents.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Form -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Core Identity Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-6 card-hover">
+<div class="flex items-center gap-3 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-[#5d3fd3] bg-[#5d3fd3]/10 p-2 rounded">domain</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Core Identity</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">Official naming and web presence.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="legal-name">LEGAL NAME</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-md text-on-surface input-glow focus:ring-0" id="legal-name" type="text" value="Modern Law Firm Partners LLC"/>
+<p class="text-xs text-on-surface-variant opacity-75">As registered on official documents.</p>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="brand-name">PUBLIC BRAND NAME</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-md text-on-surface input-glow focus:ring-0" id="brand-name" type="text" value="Modern Law Partners"/>
+<p class="text-xs text-on-surface-variant opacity-75">How agents should refer to the firm.</p>
+</div>
+<div class="space-y-2 md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="website">WEBSITE URL</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">language</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-10 pr-4 py-2 font-body-md text-on-surface input-glow focus:ring-0" id="website" type="url" value="https://modernlawpartners.com"/>
+</div>
+</div>
+<div class="space-y-2 md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="industry">INDUSTRY SECTOR</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 font-body-md text-on-surface appearance-none input-glow focus:ring-0" id="industry">
+<option selected="" value="legal">Legal Services &amp; Representation</option>
+<option value="finance">Financial Services</option>
+<option value="consulting">Business Consulting</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Operational Profile Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-6 card-hover">
+<div class="flex items-center gap-3 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-[#5d3fd3] bg-[#5d3fd3]/10 p-2 rounded">description</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Firm Description &amp; Context</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">Provide context for agent semantic understanding.</p>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant block" for="description">COMPANY DESCRIPTION</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 font-body-md text-on-surface input-glow focus:ring-0 resize-none" id="description" rows="5">Modern Law Partners is a forward-thinking legal firm specializing in corporate law, intellectual property, and emerging technology compliance. We pride ourselves on transparent communication, aggressive representation, and leveraging modern tools to deliver superior outcomes for our clients.</textarea>
+<p class="text-xs text-on-surface-variant flex items-center justify-between mt-1">
+<span>Used by agents to contextualize responses.</span>
+<span>254 / 500 characters</span>
+</p>
+</div>
+</div>
+<!-- Operations & Escalation Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-6 card-hover">
+<div class="flex items-center gap-3 mb-6 border-b border-outline-variant pb-4">
+<span class="material-symbols-outlined text-[#5d3fd3] bg-[#5d3fd3]/10 p-2 rounded">schedule</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Operations &amp; Escalation</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mt-1">Define availability and human-in-the-loop protocols.</p>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Business Hours -->
+<div class="space-y-4">
+<h4 class="font-title-md text-title-md text-on-surface">Standard Business Hours</h4>
+<div class="grid grid-cols-[100px_1fr] items-center gap-4 bg-surface-container-low p-3 rounded border border-outline-variant/50">
+<span class="font-label-md text-label-md text-on-surface">Mon - Fri</span>
+<div class="flex items-center gap-2">
+<input class="bg-surface-container-lowest border border-outline-variant rounded text-sm px-2 py-1 input-glow focus:ring-0" type="time" value="09:00"/>
+<span class="text-on-surface-variant text-sm">to</span>
+<input class="bg-surface-container-lowest border border-outline-variant rounded text-sm px-2 py-1 input-glow focus:ring-0" type="time" value="18:00"/>
+<span class="ml-auto text-xs text-secondary bg-secondary-fixed px-2 py-1 rounded-full">EST</span>
+</div>
+</div>
+<div class="grid grid-cols-[100px_1fr] items-center gap-4 bg-surface-container-lowest p-3 rounded border border-outline-variant/50 opacity-60">
+<span class="font-label-md text-label-md text-on-surface">Sat - Sun</span>
+<div class="flex items-center gap-2">
+<span class="text-sm text-on-surface-variant italic">Closed (Agents operate in Intake Mode)</span>
+</div>
+</div>
+</div>
+<!-- Escalation Contacts -->
+<div class="space-y-4 pt-4 border-t border-outline-variant">
+<div class="flex items-center justify-between">
+<h4 class="font-title-md text-title-md text-on-surface">Escalation Contacts</h4>
+<button class="text-[#5d3fd3] hover:opacity-80 text-sm font-medium flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">add</span> Add Contact
+                                    </button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm mb-2">When an agent determines a query requires human intervention, it routes here.</p>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest hover:border-[#5d3fd3]/50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 18px;">person</span>
+</div>
+<div>
+<p class="font-title-md text-sm font-medium text-on-surface">Intake Desk</p>
+<p class="font-body-md text-xs text-on-surface-variant">intake@modernlawpartners.com</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="bg-[#5d3fd3]/10 text-[#5d3fd3] text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider">Primary</span>
+<button class="text-outline hover:text-error transition-colors"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 border border-outline-variant rounded bg-surface-container-lowest hover:border-[#5d3fd3]/50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" style="font-size: 18px;">person</span>
+</div>
+<div>
+<p class="font-title-md text-sm font-medium text-on-surface">Sarah Jenkins (Partner)</p>
+<p class="font-body-md text-xs text-on-surface-variant">s.jenkins@modernlawpartners.com</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="bg-surface-variant text-on-surface-variant text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider">Urgent Only</span>
+<button class="text-outline hover:text-error transition-colors"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Form Actions -->
+<div class="flex items-center justify-end gap-4 pt-4">
+<button class="px-6 py-2.5 rounded border border-outline-variant text-on-surface font-title-md text-sm hover:bg-surface-container-low transition-colors">
+                            Discard Changes
+                        </button>
+<button class="px-6 py-2.5 rounded bg-[#5d3fd3] text-on-primary font-title-md text-sm hover:opacity-90 transition-colors shadow-sm">
+                            Save Profile Settings
+                        </button>
+</div>
+</div>
+<!-- Right Column: Context & Status -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Profile Status Card -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-5">
+<h4 class="font-label-md text-label-md text-on-surface-variant mb-4 uppercase">Profile Status</h4>
+<div class="flex items-center gap-3 mb-4">
+<div class="relative">
+<div class="w-3 h-3 rounded-full bg-secondary"></div>
+<div class="absolute inset-0 w-3 h-3 rounded-full bg-secondary animate-ping opacity-75"></div>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Active &amp; Syncing</span>
+</div>
+<p class="text-sm text-on-surface-variant mb-4">Your business profile is currently providing context to 3 active agents.</p>
+<div class="space-y-2 border-t border-outline-variant/50 pt-4">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Last Updated</span>
+<span class="text-on-surface font-medium">Today, 09:41 AM</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Data Completeness</span>
+<span class="text-secondary font-medium">92%</span>
+</div>
+</div>
+</div>
+<!-- AI Assistant Help -->
+<div class="bg-[#5d3fd3]/10 border border-[#5d3fd3]/20 rounded p-5 relative overflow-hidden">
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[100px] text-[#5d3fd3] opacity-5 pointer-events-none">auto_awesome</span>
+<div class="flex items-start gap-3 relative z-10">
+<span class="material-symbols-outlined text-[#5d3fd3] mt-1">lightbulb</span>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface mb-1">Optimize Your Description</h4>
+<p class="text-sm text-on-surface-variant mb-3 leading-relaxed">The more specific you are in your company description, the better your agents will handle nuanced inquiries. Consider adding specific practice areas or distinct firm philosophies.</p>
+<button class="text-[#5d3fd3] text-sm font-medium hover:underline flex items-center gap-1">
+                                    Generate suggested description <span class="material-symbols-outlined" style="font-size: 14px;">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Verification Badge -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">verified_user</span>
+</div>
+<div>
+<p class="font-title-md text-sm text-on-surface">Domain Verified</p>
+<p class="text-xs text-on-surface-variant">modernlawpartners.com is linked.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,50 @@
+# Wireline Final Production Handoff: The definitive source of truth for the Wireline platform migration to Ametrine Precision.
+
+## 1. Project Vision
+Wireline is a premium AI communications workspace for personal and business agents. The platform empowers users to **Build, Train, Run, and Review** AI agents across voice, SMS, and email channels.
+
+## 2. Visual Identity: Ametrine Precision v1.0
+The platform uses the **Ametrine Precision** design system, characterized by a sophisticated purple palette, geometric precision, and high-fidelity layouts.
+
+### Core Tokens
+- **Brand Primary:** `#5d3fd3` (Ametrine Purple)
+- **Surface Base:** `#f8f9ff` (Warm Light)
+- **Typography:** Hanken Grotesk (Sans-serif)
+- **Corner Radius:** 4px (Strictly applied to all cards, buttons, and inputs)
+- **Base Grid:** 4px (All spacing should be multiples of 4)
+
+## 3. Monorepo Structure & Migration Path
+The codebase is a monorepo containing Web, iOS, and Android applications.
+
+### /packages/design-system
+- Use `{{DATA:DOCUMENT:DOCUMENT_5}}` (JSON Tokens) as the programmatic source of truth.
+- Map all `blue-600` or `#0052ff` references to the new `primary` variable.
+
+### /apps/web-app (React + Tailwind)
+- Update `tailwind.config.js` with the tokens found in `{{DATA:DOCUMENT:DOCUMENT_10}}`.
+- Ensure all components use the 4px (`rounded-base`) radius.
+- Implement the "Intelligence Lifecycle" landing page sections as seen in `{{DATA:SCREEN:SCREEN_4}}`.
+
+### /apps/ios (SwiftUI)
+- Map `AmetrineTheme.primary` to `#5d3fd3`.
+- Implement Dynamic Island screening states as documented in `{{DATA:SCREEN:SCREEN_48}}`.
+- Refer to `{{DATA:SCREEN:SCREEN_31}}` for the agent readiness ring logic.
+
+### /apps/android (Kotlin Compose)
+- Update `Color.kt` and `Theme.kt` using the snippets in `{{DATA:DOCUMENT:DOCUMENT_10}}`.
+- Utilize Material 3 'Material You' logic where appropriate for system integration.
+
+## 4. Production Asset Manifest
+- **Brand Logo (SVG):** `{{DATA:IMAGE:IMAGE_70}}`
+- **Marketing Hero Graphic:** `{{DATA:IMAGE:IMAGE_69}}`
+- **App Store Banner:** `{{DATA:IMAGE:IMAGE_52}}`
+- **iOS Control Spec:** `{{DATA:IMAGE:IMAGE_68}}`
+
+## 5. Core Flows & Interaction Logic
+- **Handoffs:** Trigger urgent handoff notifications when agent confidence falls below 75%.
+- **Safety Fallbacks:** Always default to the fallback LLM protocol during low-confidence events.
+- **CRM Sync:** Field mapping must follow the strict character parity shown in `{{DATA:SCREEN:SCREEN_37}}`.
+
+---
+**Status:** READY FOR IMPLEMENTATION.
+All screens published on the canvas are synchronized to this specification.

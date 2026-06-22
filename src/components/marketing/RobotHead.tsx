@@ -50,7 +50,7 @@ export default function RobotHead({
     >
       <defs>
         <linearGradient id={`wireline-signal-${uid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--wl-accent, #1A3C34)" />
+          <stop offset="0%" stopColor="var(--wl-accent, #5D3FD3)" />
           <stop offset="100%" stopColor="var(--wl-accent-deep, #01261F)" />
         </linearGradient>
       </defs>
@@ -78,7 +78,7 @@ export default function RobotHead({
         <path
           d="M66 35C72 39 75 44 75 48C75 52 72 57 66 61"
           fill="none"
-          stroke="var(--wl-accent, #1A3C34)"
+          stroke="var(--wl-accent, #5D3FD3)"
           strokeWidth="3"
           strokeLinecap="round"
         />

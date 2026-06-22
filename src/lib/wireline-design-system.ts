@@ -4,7 +4,7 @@
  */
 import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
-/** Forest accent — Stitch Account Holder palette (#1A3C34) */
+/** Ametrine accent — current Stitch palette (#5D3FD3) */
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */

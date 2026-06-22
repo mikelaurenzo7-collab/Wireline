@@ -153,7 +153,7 @@ export default function HeroCallPreview() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.42, delay: 1.24, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-brand/22 bg-[#F9F9F7]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(30,27,46,0.5)] backdrop-blur-sm"
+        className="absolute -bottom-4 left-6 inline-flex items-center gap-1.5 border border-brand/22 bg-[#F8F9FF]/95 px-3 py-1.5 shadow-[0_12px_30px_-24px_rgba(30,27,46,0.5)] backdrop-blur-sm"
       >
         <PhoneCall className="h-3 w-3 text-brand" aria-hidden="true" />
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand/90">

@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-/// Deep-link launcher for Assistant handoff — Professional Heritage v2 styling.
+/// Deep-link launcher for Assistant handoff — Ametrine Precision styling.
 struct AssistantWidget: Widget {
     let kind = "AssistantWidget"
 

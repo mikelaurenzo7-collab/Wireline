@@ -2,8 +2,8 @@
 
 ## Current sources
 
-- Google Stitch project: `https://stitch.withgoogle.com/projects/15464421841872665077`
-- **Current production handoff:** `stitch_wireline_operator_system (7).zip` — Professional Heritage v2 source screens, cross-platform blueprint, native state references, and brand/store assets.
+- Google Stitch project: `https://stitch.withgoogle.com/projects/15760444676241659793`
+- **Current production handoff:** `stitch_wireline_ai_communications_operating_system (3).zip` — Ametrine Precision source screens, cross-platform blueprint, native state references, and brand/store assets.
 - `wireline_unified_execution_plan.md` in that handoff establishes the personal-assistant IA and platform mapping. It does not override real product contracts or platform eligibility requirements.
 - Desktop handoff maps to React web at desktop/laptop widths only.
 - Mobile handoff maps to native SwiftUI iOS and Jetpack Compose Android only; it must not be recreated as mobile browser UI.
@@ -26,21 +26,21 @@ Use **assistant**, **your day**, **recap**, **follow-up**, **request**, **knowle
 | Integrations | Actions (with connected accounts inside) |
 | Handoff | Take this call / callback |
 
-## Shared visual system — Professional Heritage v2
+## Shared visual system — Ametrine Precision v1
 
-- Warm canvas `#F9F9F7`; elevated card `#FFFFFF`; input/secondary surface `#F4F4F2`; raised well `#EEEEEC`.
-- Forest action and primary text `#1A3C34`; pressed state `#01261F`; active container `#E1E9E6`.
-- Borders `#DADAD8`; secondary text `#4A5F59`; destructive `#BA1A1A`.
-- Inter on web; platform system typography natively; JetBrains Mono only for compact metadata.
+- Pale blue-lavender canvas `#F8F9FF`; elevated card `#FFFFFF`; input/secondary surface `#EFF4FF`; raised well `#E0E7FF`.
+- Ametrine action `#5D3FD3`; pressed state `#4B32B3`; active container `#E6DEFF`; primary text `#0B1C30`.
+- Borders `#C9C4D7`; secondary text `#484554`; destructive `#D32F2F`.
+- Hanken Grotesk for web display, Inter for dense body copy; platform system typography natively; JetBrains Mono only for compact metadata.
 - `-0.02em` on display/headline hierarchy; `cv05`, `cv08`, and `ss01` for web headings.
-- 8px default cards, inputs, and standard buttons; 4px micro-controls; 12px sheets/modals. Pills only for status and avatars.
-- Tonal layering before shadows. No violet, lavender, cyan, mesh, glass, decorative gradients, or mascot treatment.
+- 4px default buttons, cards, and input fields; 8px only for larger grouped containers; 12px sheets/modals. Pills only for status and avatars.
+- Tonal layering before shadows. No forest-heritage palette, cyan, mesh, glass, decorative gradients, or mascot treatment.
 - Base-4 spacing rhythm. Deliberate interactive controls use 200ms `0.98` press feedback.
 
 ## Web rules
 
 - Web is desktop/laptop-first. Standard QA: 1280×800 and 1440×900.
-- Use the fixed 212px left navigation, `#F4F4F2` sidebar surface, fluid main stage, and optional 320px inspector.
+- Use the fixed 256px left navigation, `#EFF4FF` sidebar surface, fluid main stage, and optional 320px inspector.
 - `/studio`, `/agents`, `/knowledge`, `/actions`, and `/settings` are canonical workspace destinations.
 - `/ops` is only a backward-compatible redirect to Studio; never restore a primary real-time operations destination.
 - Keep Studio above the fold: roster, training, and inspector must remain useful on laptop viewports.

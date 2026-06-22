@@ -268,7 +268,7 @@ struct LiveCallView: View {
 }
 
 /// Expanding, low-contrast pulse for an active call. It deliberately uses the
-/// semantic forest action token rather than the retired purple live treatment.
+/// semantic ametrine action token rather than the retired purple live treatment.
 private struct CallRing: View {
     let scale: CGFloat
     let delay: Double

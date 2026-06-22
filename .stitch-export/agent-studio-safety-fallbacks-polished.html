@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wireline - Agent Studio</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Design System Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#f5f3ff", // Lighter variant for active backgrounds
+                    "surface-container-low": "#f0f3ff",
+                    "surface-tint": "#5d3fd3",
+                    "primary": "#5d3fd3", // Ametrine Purple
+                    "inverse-primary": "#b7a4ff",
+                    "tertiary-fixed": "#ffdcc3",
+                    "surface-dim": "#cfdaf2",
+                    "error-container": "#ffdad6",
+                    "surface-variant": "#d8e3fb",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#d8e3fb",
+                    "tertiary": "#793f00",
+                    "surface-container-high": "#dee8ff",
+                    "on-secondary-container": "#006f66",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "on-primary-container": "#5d3fd3",
+                    "background": "#f9f9ff",
+                    "on-surface": "#111c2d",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#434656",
+                    "surface": "#f9f9ff",
+                    "on-primary-fixed-variant": "#4438ca",
+                    "primary-container": "#f5f3ff",
+                    "primary-fixed-dim": "#c4b5fd",
+                    "on-secondary": "#ffffff",
+                    "on-background": "#111c2d",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#ffdfc8",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#ecf1ff",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#1e1b4b",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#005049",
+                    "secondary-fixed": "#89f5e7",
+                    "on-secondary-fixed": "#00201d",
+                    "secondary": "#006a61",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed": "#2f1500",
+                    "surface-container": "#e7eeff",
+                    "secondary-container": "#86f2e4",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "outline": "#737688",
+                    "tertiary-container": "#9c5300",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "outline-variant": "#e2e8f0",
+                    "inverse-surface": "#263143"
+            },
+            "borderRadius": {
+                    "DEFAULT": "4px",
+                    "lg": "4px",
+                    "xl": "4px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "8px",
+                    "container-max": "1280px",
+                    "stack-lg": "32px",
+                    "unit": "4px",
+                    "stack-md": "16px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "32px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "sans": ["Hanken Grotesk", "Inter", "sans-serif"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "title-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "code-sm": ["JetBrains Mono"],
+                    "label-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "code-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: theme('colors.outline-variant');
+            border-radius: 10px;
+        }
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-sans antialiased overflow-hidden h-screen flex">
+<!-- SideNavBar: Fixed 256px width -->
+<nav class="fixed left-0 top-0 h-full flex flex-col py-6 px-4 w-[256px] bg-surface border-r border-outline-variant z-40 hidden md:flex">
+<!-- Header / Brand -->
+<div class="flex items-center gap-3 px-2 mb-8">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]">diamond</span>
+</div>
+<div>
+<h2 class="text-title-md font-bold text-primary">Personal Workspace</h2>
+<p class="text-label-md text-on-surface-variant">Individual Mode</p>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="mb-6 w-full py-2.5 px-4 bg-primary text-on-primary rounded font-title-md flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[20px]">add</span>
+        New Agent
+    </button>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    Overview
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                    Assistants
+                </a>
+</li>
+<!-- ACTIVE STATE: Primary Color background & text -->
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-primary font-bold bg-primary/10 rounded transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px] icon-fill">precision_manufacturing</span>
+                    Agent Studio
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">database</span>
+                    Knowledge
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+                    Connections
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">inbox</span>
+                    Inbox
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                    Settings
+                </a>
+</li>
+</ul>
+</div>
+<!-- Footer Links -->
+<div class="pt-4 border-t border-outline-variant mt-auto">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+                    Help
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors rounded" href="#">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+                    Support
+                </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-[256px] relative min-w-0">
+<!-- TopAppBar: Fixed 64px height -->
+<header class="fixed top-0 right-0 left-0 md:left-[256px] z-30 flex justify-between items-center px-8 h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant transition-all duration-200">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-sans text-headline-md font-black text-on-surface tracking-tight">Wireline</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<button class="flex items-center gap-2 text-body-md font-medium text-on-surface hover:text-primary transition-colors">
+                Switch Workspace
+                <span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-2 cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6E2qik58m2ZVuwAF-T46t6fAidMzxwMxRFvsYpP3fKuYr-T5H69ctmtdKu-_06By82LxvGyWKOV-xta1KzRidkfFUFHI5_dZ7hjFx3uvypS-wGJzYdGxdFax68nMw4ZDTQBWe6KZ34R9Q18haIiTPw0rO4Fp-3NtRP2lXB9x88-0CC3YOsfigqPtra3FFZlBPPYcan7ZA2XYHiGkmIPOUhc84_JI73TtprzsftA2QQ6Kc0Qy2lheGXpW1fm3mKDTovxxJNPFkvXiw"/>
+</div>
+</div>
+</header>
+<!-- Canvas Body -->
+<main class="flex-1 pt-16 flex overflow-hidden">
+<!-- Left Config Area -->
+<div class="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-background">
+<!-- Page Header -->
+<div class="px-10 pt-10 pb-6">
+<div class="flex items-center gap-2 text-on-surface-variant mb-4">
+<a class="hover:text-primary text-body-md" href="#">Agent Studio</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-medium text-body-md">Sales Qualifier</span>
+</div>
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h2 class="font-sans text-headline-lg text-on-surface">Sales Qualifier</h2>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-primary font-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                Draft
+                            </span>
+</div>
+<p class="text-body-lg text-on-surface-variant max-w-2xl">Configure the core identity, knowledge base, and behavioral boundaries for your inbound sales agent.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 bg-surface border border-outline-variant rounded text-on-surface font-title-md hover:bg-surface-container-high transition-colors">Discard Draft</button>
+<button class="px-4 py-2 bg-primary text-on-primary rounded font-title-md hover:opacity-90 transition-colors shadow-sm">Save Changes</button>
+</div>
+</div>
+</div>
+<!-- Secondary Navigation (Tabs) -->
+<div class="px-10 border-b border-outline-variant">
+<nav class="flex gap-8">
+<a class="py-4 text-primary font-bold border-b-2 border-primary" href="#">Identity</a>
+<a class="py-4 text-on-surface-variant font-title-md hover:text-on-surface transition-colors" href="#">Business Context</a>
+<a class="py-4 text-on-surface-variant font-title-md hover:text-on-surface transition-colors" href="#">Channels</a>
+<a class="py-4 text-on-surface-variant font-title-md hover:text-on-surface transition-colors" href="#">Knowledge</a>
+<a class="py-4 text-on-surface-variant font-title-md hover:text-on-surface transition-colors" href="#">Actions</a>
+<a class="py-4 text-on-surface-variant font-title-md hover:text-on-surface transition-colors" href="#">
+<div class="flex items-center gap-1.5">
+                            Safety
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+</div>
+</a>
+</nav>
+</div>
+<!-- Identity Configuration Form -->
+<div class="p-10 max-w-4xl">
+<div class="bg-surface border border-outline-variant rounded p-8 shadow-sm">
+<h3 class="font-sans text-headline-md mb-6 text-on-surface">Agent Identity</h3>
+<div class="space-y-stack-lg">
+<!-- Avatar & Basic Info -->
+<div class="flex gap-8">
+<div class="flex flex-col items-center gap-3">
+<div class="w-24 h-24 rounded bg-surface-container border border-outline-variant flex items-center justify-center overflow-hidden relative group cursor-pointer hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary transition-colors">smart_toy</span>
+<div class="absolute inset-0 bg-on-surface/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface">upload</span>
+</div>
+</div>
+<button class="text-label-md text-primary font-medium hover:underline">Upload Avatar</button>
+</div>
+<div class="flex-1 space-y-6">
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-on-surface-variant uppercase tracking-wider" for="agent_name">Agent Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all" id="agent_name" type="text" value="Sales Qualifier"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-on-surface-variant uppercase tracking-wider" for="agent_role">System Role</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-2.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer" id="agent_role">
+<option selected="" value="sales_qualifier">Sales Qualifier</option>
+<option value="support_triage">Support Triage</option>
+<option value="account_manager">Account Manager</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Divider -->
+<hr class="border-outline-variant"/>
+<!-- Purpose -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-on-surface-variant uppercase tracking-wider" for="agent_purpose">Core Purpose</label>
+<p class="text-body-sm text-on-surface-variant mb-1">Define the primary objective this agent is trying to achieve in interactions.</p>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all resize-none" id="agent_purpose" rows="3">Qualify inbound web leads and book discovery calls.</textarea>
+</div>
+<!-- Advanced Parameters -->
+<div class="flex flex-col gap-4 p-5 border border-primary/20 bg-primary/5 rounded mb-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div>
+<h4 class="font-title-md font-bold text-on-surface">Safety &amp; Fallbacks</h4>
+<p class="text-label-md text-on-surface-variant">Automatic recovery logic for low-confidence responses</p>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-container-highest rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+<span class="text-label-md text-primary font-bold uppercase tracking-wider">Active</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface border border-outline-variant rounded">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">swap_calls</span>
+<div>
+<p class="text-body-md font-medium text-on-surface">Gemini Fallback</p>
+<p class="text-label-md text-on-surface-variant">Automatically switch to Gemini when OpenAI confidence is &lt; 85%</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="border border-outline-variant rounded overflow-hidden">
+<button class="w-full flex items-center justify-between px-5 py-4 bg-surface hover:bg-surface-container-low transition-colors text-left" onclick="document.getElementById('advanced_params').classList.toggle('hidden'); document.getElementById('adv_icon').innerText = document.getElementById('adv_icon').innerText === 'expand_more' ? 'expand_less' : 'expand_more';">
+<span class="font-title-md font-medium text-on-surface">Advanced Persona Settings</span>
+<span class="material-symbols-outlined text-on-surface-variant" id="adv_icon">expand_more</span>
+</button>
+<div class="hidden px-5 py-5 border-t border-outline-variant bg-surface-container-lowest space-y-6" id="advanced_params">
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-on-surface-variant uppercase tracking-wider">Tone &amp; Voice</label>
+<div class="grid grid-cols-3 gap-3">
+<label class="flex items-center gap-2 p-3 border border-outline-variant rounded cursor-pointer hover:bg-surface transition-colors bg-surface-container-high border-primary">
+<input checked="" class="text-primary focus:ring-primary h-4 w-4" name="tone" type="radio"/>
+<span class="text-body-md">Professional &amp; Direct</span>
+</label>
+<label class="flex items-center gap-2 p-3 border border-outline-variant rounded cursor-pointer hover:bg-surface transition-colors">
+<input class="text-primary focus:ring-primary h-4 w-4" name="tone" type="radio"/>
+<span class="text-body-md">Warm &amp; Empathetic</span>
+</label>
+<label class="flex items-center gap-2 p-3 border border-outline-variant rounded cursor-pointer hover:bg-surface transition-colors">
+<input class="text-primary focus:ring-primary h-4 w-4" name="tone" type="radio"/>
+<span class="text-body-md">Enthusiastic</span>
+</label>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-on-surface-variant uppercase tracking-wider" for="custom_instructions">Custom Prompt Instructions</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded px-4 py-3 text-code-sm font-code-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all resize-none text-slate-600" id="custom_instructions" rows="4">Always ask about company size before suggesting a demo. Do not mention pricing details unless explicitly asked. End the conversation gracefully if the lead is not a fit.</textarea>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 text-center">
+<p class="text-label-md text-outline">Configuration auto-saves every 30 seconds</p>
+</div>
+</div>
+</div>
+<!-- Right Panel: Test & Simulation -->
+<div class="w-96 border-l border-outline-variant bg-surface flex flex-col shadow-[-4px_0_12px_rgba(15,23,42,0.02)] z-10">
+<!-- Panel Header -->
+<div class="h-16 px-6 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest shrink-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">science</span>
+<h3 class="font-title-md font-semibold text-on-surface">Test &amp; Simulation</h3>
+</div>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Reset Simulation">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+<!-- Chat History Area -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 bg-background/50">
+<!-- System Message -->
+<div class="flex justify-center">
+<span class="text-label-md text-outline bg-surface px-3 py-1 rounded-full border border-outline-variant">Simulation started with current draft config</span>
+</div>
+<!-- Agent Message -->
+<div class="flex gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1 max-w-[85%]">
+<span class="text-label-md text-on-surface-variant ml-1">Sales Qualifier</span>
+<div class="bg-surface border border-outline-variant rounded rounded-tl-sm px-4 py-3 text-body-md text-on-surface shadow-sm">
+                            Hello! Thanks for your interest. I'm here to help determine if our platform is a good fit for your team. To start, could you tell me a bit about what you're looking to achieve?
+                        </div>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex gap-3 flex-row-reverse">
+<div class="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+<img alt="User" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsQOG7V6gopuXQMaEdySkPJFLtiExusliUYCqDyNEYOl8_x-WQx7WP2bF4zvRRNhTa1ov2KDimhbfyb8o0mEDg2qCyYnJbzSYJKs7vOUYjzn3VLvKFpDcfRZknk9zmIbMCvmGeu2v8xEi75gBYzews0ATm7Y7sKX64U_q4cndRW5fbKRNyrI4WlyfiuT5FEdJdLzZNuPTISg2DgkIE-HU4Ybt8DGTCjjFgoNRlVXJGJE7qYiV7hKI5eRvhHZPUjcT5eAKAwG1M3AxF"/>
+</div>
+<div class="flex flex-col gap-1 max-w-[85%] items-end">
+<span class="text-label-md text-on-surface-variant mr-1">You</span>
+<div class="bg-primary text-on-primary rounded rounded-tr-sm px-4 py-3 text-body-md shadow-sm">
+                            We need a better way to handle inbound queries on our pricing page. Right now it's just a generic contact form.
+                        </div>
+</div>
+</div>
+<!-- Agent Message -->
+<div class="flex gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest border border-outline-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1 max-w-[85%]">
+<span class="text-label-md text-on-surface-variant ml-1">Sales Qualifier</span>
+<div class="bg-surface border border-outline-variant rounded rounded-tl-sm px-4 py-3 text-body-md text-on-surface shadow-sm">
+                            I understand, replacing a static form with conversational AI can definitely improve conversion rates. Before we dive into specifics, roughly how many employees are currently at your company?
+                        </div>
+</div>
+</div>
+</div>
+<!-- Chat Input Area -->
+<div class="p-4 border-t border-outline-variant bg-surface shrink-0">
+<div class="relative flex items-center">
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded pl-4 pr-12 py-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none shadow-sm" placeholder="Type a message to test..." rows="1"></textarea>
+<button class="absolute right-2 p-2 bg-primary text-on-primary rounded hover:opacity-90 transition-colors shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+<div class="flex justify-between items-center mt-3 px-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-label-md text-on-surface-variant">Agent is listening</span>
+</div>
+<button class="text-label-md text-primary hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+                        Debug View
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
