@@ -41,7 +41,7 @@ function PlanCard({
   const price = amount(plan, interval);
   return (
     <article
-      className={`relative flex min-h-[420px] flex-col rounded-lg border bg-card p-7 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${featured ? "border-2 border-primary" : "border-border"}`}
+      className={`relative flex min-h-[420px] flex-col rounded-lg border bg-card p-7 shadow-[0_1px_3px_rgba(93,63,211,0.04)] ${featured ? "border-2 border-primary" : "border-border"}`}
     >
       {featured ? (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-black bg-primary px-4 py-1 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-primary-foreground">
@@ -89,10 +89,13 @@ function PlanCard({
 function ComparisonTable({ plans }: { plans: StripePlan[] }) {
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card">
-      <h2 id="compare-plans-heading" className="border-b border-border px-5 py-5 text-[20px] font-semibold tracking-[-.01em]">
+      <h2
+        id="compare-plans-heading"
+        className="border-b border-border px-5 py-5 text-[20px] font-semibold tracking-[-.01em]"
+      >
         Compare plans
       </h2>
-      
+
       {/* Screen Reader Twin-View */}
       <div className="sr-only">
         {plans.map((plan) => (
@@ -101,15 +104,17 @@ function ComparisonTable({ plans }: { plans: StripePlan[] }) {
             <dl>
               <dt>Assistants</dt>
               <dd>{plan.max_agents === 999 ? "Unlimited" : `Up to ${plan.max_agents}`}</dd>
-              
+
               <dt>Voice minutes</dt>
               <dd>{plan.voice_minutes_monthly.toLocaleString("en-US")}</dd>
-              
+
               <dt>Phone numbers</dt>
               <dd>{String(plan.included_phone_numbers)}</dd>
-              
+
               <dt>Channels</dt>
-              <dd>{plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice"}</dd>
+              <dd>
+                {plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice"}
+              </dd>
             </dl>
           </div>
         ))}

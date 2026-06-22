@@ -40,7 +40,7 @@ const INTENSITY_OPACITY: Record<NebulaIntensity, number> = {
   vivid: 0.45,
 };
 
-/** Wireline Precision plasma palette — signal blue, slate-blue surfaces, and active containers. */
+/** Wireline Precision plasma palette — ametrine purple, slate-blue surfaces, and active containers. */
 const PLASMA_COLORS = [
   "rgba(93, 63, 211, VAR)", // Ametrine Purple (#5D3FD3)
   "rgba(72, 69, 84, VAR)", // Secondary text color (#484554)
