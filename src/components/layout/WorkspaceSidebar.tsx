@@ -5,7 +5,7 @@
  * Matches the attached screenshots exactly:
  * - 256px fixed width
  * - Icons + full text labels
- * - Signal Blue (#003ec7) active styling
+ * - Ametrine Purple (#5D3FD3) active styling
  * - Clean section clustering
  * - Wireline Precision tokens (surface, primary, 8px standard radius, Inter typography)
  * - Reuses the exact same navigation data as the compact rail (no duplication)

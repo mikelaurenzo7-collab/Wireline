@@ -42,11 +42,11 @@ const INTENSITY_OPACITY: Record<NebulaIntensity, number> = {
 
 /** Wireline Precision plasma palette — signal blue, slate-blue surfaces, and active containers. */
 const PLASMA_COLORS = [
-  "rgba(0, 62, 199, VAR)", // Signal Blue (#003EC7)
-  "rgba(67, 70, 86, VAR)", // on-surface variant (#434656)
-  "rgba(221, 225, 255, VAR)", // active container (#DDE1FF)
-  "rgba(240, 243, 255, VAR)", // secondary surface (#F0F3FF)
-  "rgba(249, 249, 255, VAR)", // Wireline Precision canvas (#F9F9FF)
+  "rgba(93, 63, 211, VAR)", // Ametrine Purple (#5D3FD3)
+  "rgba(72, 69, 84, VAR)", // Secondary text color (#484554)
+  "rgba(230, 222, 255, VAR)", // Active container (#E6DEFF)
+  "rgba(239, 244, 255, VAR)", // Secondary surface (#EFF4FF)
+  "rgba(248, 249, 255, VAR)", // Ametrine Precision canvas (#F8F9FF)
 ];
 
 function seededRng(seed: number): () => number {
