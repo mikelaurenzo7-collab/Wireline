@@ -44,7 +44,13 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   if (byId.get("elevenlabs")?.status !== "configured") voiceBlockers.push("ELEVENLABS_API_KEY");
 
   const billingBlockers: string[] = [];
-  if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
+  if (byId.get("stripe")?.status !== "configured") {
+    billingBlockers.push("STRIPE_SECRET_KEY");
+  } else if (!envPresent("STRIPE_WEBHOOK_SECRET")) {
+    // Checkout can create a subscription without a webhook secret, but the
+    // application cannot safely reconcile or revoke entitlement changes.
+    billingBlockers.push("STRIPE_WEBHOOK_SECRET");
+  }
   if (
     process.env.BILLING_ENFORCE_METER === "true" &&
     !envPresent("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME")
@@ -92,10 +98,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
   ];
 
-  const launch_blockers = [
-    ...voiceBlockers,
-    ...(process.env.BILLING_ENFORCE_METER === "true" ? billingBlockers : []),
-  ];
+  const launch_blockers = [...voiceBlockers, ...billingBlockers];
 
   const readyCount = capabilities.filter((c) => c.level === "ready").length;
   const overall_score = Math.round((readyCount / capabilities.length) * 100);
