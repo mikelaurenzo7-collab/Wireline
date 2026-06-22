@@ -259,18 +259,89 @@ async function callGemini(body: RuntimeRequest): Promise<RuntimeMessage> {
         outputTokens,
       });
 }
+class OpenAICircuitBreaker {
+  private state: "CLOSED" | "OPEN" | "HALF_OPEN" = "CLOSED";
+  private failureCount = 0;
+  private lastStateChange = Date.now();
+  private readonly failureThreshold = 3;
+  private readonly cooldownPeriodMs = 30000; // 30 seconds
+
+  constructor() {
+    log.info("[ai-circuit-breaker] Initialized in CLOSED state");
+  }
+
+  public isOpen(): boolean {
+    const now = Date.now();
+    if (this.state === "OPEN") {
+      if (now - this.lastStateChange > this.cooldownPeriodMs) {
+        this.transitionTo("HALF_OPEN");
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public recordSuccess() {
+    this.failureCount = 0;
+    if (this.state !== "CLOSED") {
+      this.transitionTo("CLOSED");
+    }
+  }
+
+  public recordFailure(error: unknown) {
+    this.failureCount++;
+    log.warn(
+      `[ai-circuit-breaker] Failure recorded (#${this.failureCount}): ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    if (this.state === "HALF_OPEN" || this.failureCount >= this.failureThreshold) {
+      this.transitionTo("OPEN");
+    }
+  }
+
+  private transitionTo(newState: "CLOSED" | "OPEN" | "HALF_OPEN") {
+    log.info(`[ai-circuit-breaker] Transitioning state: ${this.state} -> ${newState}`);
+    this.state = newState;
+    this.lastStateChange = Date.now();
+    if (newState === "CLOSED") {
+      this.failureCount = 0;
+    }
+  }
+
+  public getState() {
+    return this.state;
+  }
+}
+
+const circuitBreaker = new OpenAICircuitBreaker();
+
 async function createWithFallbacks(
   body: RuntimeRequest,
   options?: RuntimeRequestOptions,
 ): Promise<RuntimeMessage> {
-  try {
-    return await callOpenAI(body, options);
-  } catch (openAiError) {
-    log.warn("[ai-runtime] OpenAI request failed; trying Gemini fallback", {
-      error: errorMessage(openAiError),
-    });
-    return callGemini(body);
+  const skipOpenAI = circuitBreaker.isOpen();
+
+  if (!skipOpenAI) {
+    try {
+      const response = await callOpenAI(body, options);
+      circuitBreaker.recordSuccess();
+      return response;
+    } catch (openAiError) {
+      circuitBreaker.recordFailure(openAiError);
+      log.warn("[ai-runtime] OpenAI request failed; trying Gemini fallback", {
+        error: errorMessage(openAiError),
+        breakerState: circuitBreaker.getState(),
+      });
+    }
+  } else {
+    log.info(
+      `[ai-runtime] Circuit breaker is ${circuitBreaker.getState()}. Bypassing OpenAI directly to Gemini fallback.`
+    );
   }
+
+  return callGemini(body);
 }
 function fallbackStream(promise: Promise<RuntimeMessage>) {
   return {

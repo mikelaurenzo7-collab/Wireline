@@ -77,3 +77,9 @@ When extracting HTML, CSS, or JSON from any Google Stitch project:
 2. **Active Mutation:** You must actively intercept and replace all legacy blue hex codes with Ametrine Precision tokens (#5D3FD3, #451EBB, #F8F9FF) before applying the code to React, iOS, or Android.
 3. **Typography Enforcement:** Always replace default Inter/Source Serif display fonts from Stitch with **Hanken Grotesk**.
 4. **Audit Guard:** If you see `#003ec7`, `#0052ff`, or `Signal Blue` in your generated code, you have failed the visual contract. Purge it immediately.
+
+## Developer Execution & Environment Rules
+1. **Windows PowerShell Command Syntax:** When executing chained commands in terminal sandboxes on Windows (PowerShell), never use `&&` or `||` as operators, as they are invalid separators in default PowerShell. Instead, use a semicolon `;` (e.g., `git add .; git commit -m 'message'`) or split them into separate sequential statements.
+2. **Framework Architecture & Native Preservation:** Do not migrate native iOS (SwiftUI) or Android (Jetpack Compose) codebases to cross-platform frameworks like Flutter or React Native when the application requires deep, mission-critical OS integrations (e.g., CallKit, Telecom Manager, Live Activities, Dynamic Island, Home Screen Widgets). Preserve native stacks for maximum reliability and system fidelity.
+3. **Native Design System Enforcement:** In Jetpack Compose or SwiftUI, never hardcode layout dimensions such as `RoundedCornerShape(12.dp)` or arbitrary colors like `Color.White` on light panels. Always map through the semantic `Brand` design system (e.g., `Brand.RadiusLg` for 8dp cards, `Brand.RadiusMd` for 4dp inputs) and verify that text colors contrast perfectly against background panels.
+4. **No Decorative Gradients/Blurs:** The Ametrine visual system relies strictly on flat, precise, tonal layering. Do not introduce glow halos or ambient blurs.
