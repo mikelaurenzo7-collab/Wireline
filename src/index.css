@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 @import "./styles/design-system.css";
 @import "./styles/stitch-patterns.css";
@@ -9,11 +9,10 @@
 @import "./styles/precision-auth.css";
 
 :root {
-  --wl-font-display:
-    "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --wl-font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --wl-font-mono:
-    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  /* Ametrine Precision uses a sharp display face, neutral body copy, and mono metadata. */
+  --wl-font-display: "Hanken Grotesk", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @theme inline {
@@ -51,13 +50,8 @@
   --color-text-3: var(--muted-foreground);
 }
 
-* {
-  box-sizing: border-box;
-}
-html {
-  min-height: 100%;
-  background: var(--background);
-}
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--background); }
 body {
   min-height: 100dvh;
   margin: 0;
@@ -67,23 +61,10 @@ body {
   font-synthesis: none;
   font-kerning: normal;
 }
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-button {
-  cursor: pointer;
-}
-:focus-visible {
-  outline: 2px solid var(--wl-accent);
-  outline-offset: 2px;
-}
-::selection {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--wl-accent); outline-offset: 2px; }
+::selection { background: var(--primary); color: var(--primary-foreground); }
 
 .studio-route-loading {
   display: grid;
@@ -99,7 +80,7 @@ button {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: var(--wl-accent);
+  color: var(--foreground);
 }
 .wl-text-headline {
   font-family: var(--wl-font-display);
@@ -107,7 +88,7 @@ button {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.2;
-  color: var(--wl-accent);
+  color: var(--foreground);
 }
 .wl-text-title {
   font-family: var(--wl-font-display);
@@ -115,60 +96,27 @@ button {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.3;
-  color: var(--wl-accent);
+  color: var(--foreground);
 }
-.wl-text-body {
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.5;
-}
-.wl-text-caption {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--muted-foreground);
-  line-height: 1.5;
-}
+.wl-text-body { font-size: 16px; font-weight: 400; line-height: 1.5; }
+.wl-text-caption { font-size: 14px; font-weight: 400; color: var(--muted-foreground); line-height: 1.5; }
 .wl-text-micro {
   font-family: var(--wl-font-mono);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
-.wl-numeric {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
+.wl-numeric { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 
-@keyframes skeleton-shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(300%);
-  }
-}
-.skeleton-shimmer {
-  animation: skeleton-shimmer 1.8s ease-in-out infinite;
-}
+@keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+.skeleton-shimmer { animation: skeleton-shimmer 1.8s ease-in-out infinite; }
 @media (max-width: 639px) {
-  .wl-text-display {
-    font-size: 32px;
-  }
-  .wl-text-headline {
-    font-size: 24px;
-  }
+  .wl-text-display { font-size: 32px; }
+  .wl-text-headline { font-size: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-shimmer {
-    animation: none;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  .skeleton-shimmer { animation: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
