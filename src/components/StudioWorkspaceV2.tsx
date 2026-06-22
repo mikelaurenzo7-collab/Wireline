@@ -758,7 +758,7 @@ export default function StudioWorkspaceV2() {
                   key={asset.id}
                   className="flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2"
                 >
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-muted">
+                  <span className="grid h-7 w-7 place-items-center rounded-xl bg-muted">
                     {asset.kind === "image" ? <FileImage size={14} /> : <FileText size={14} />}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -771,7 +771,7 @@ export default function StudioWorkspaceV2() {
                     onClick={() =>
                       setAttachments((items) => items.filter((item) => item.id !== asset.id))
                     }
-                    className="grid h-7 w-7 place-items-center rounded-lg hover:bg-muted"
+                    className="grid h-7 w-7 place-items-center rounded-xl hover:bg-muted"
                     aria-label={`Remove ${asset.name}`}
                   >
                     <X size={14} />
@@ -866,7 +866,7 @@ export default function StudioWorkspaceV2() {
       <div className="flex h-full min-h-0 flex-col">
         <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-2 px-0.5">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary">
               {active?.name.slice(0, 1).toUpperCase() || "W"}
             </span>
             <div className="min-w-0">
@@ -933,7 +933,7 @@ export default function StudioWorkspaceV2() {
           </aside>
           <section className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="flex items-center justify-center p-2 border-b border-border bg-card z-20 shrink-0">
-              <div className="flex bg-muted rounded-lg p-1">
+              <div className="flex bg-muted rounded-xl p-1">
                 <button
                   type="button"
                   onClick={() => setMode("train")}
@@ -978,7 +978,7 @@ export default function StudioWorkspaceV2() {
                               key={prompt}
                               type="button"
                               onClick={() => setComposer(prompt)}
-                              className="rounded-lg border border-border/60 bg-card/50 px-3 py-2 text-left text-[11px] leading-[1.45] text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground/80"
+                              className="rounded-xl border border-border/60 bg-card/50 px-3 py-2 text-left text-[11px] leading-[1.45] text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground/80"
                             >
                               {prompt}
                             </button>
@@ -1050,7 +1050,7 @@ export default function StudioWorkspaceV2() {
                       {attachments.map((asset) => (
                         <span
                           key={asset.id}
-                          className={`inline-flex max-w-full items-center gap-1 rounded-lg border px-2 py-1 text-[10px] ${asset.status === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-border bg-muted/70 text-foreground/60"}`}
+                          className={`inline-flex max-w-full items-center gap-1 rounded-xl border px-2 py-1 text-[10px] ${asset.status === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-border bg-muted/70 text-foreground/60"}`}
                         >
                           {asset.kind === "image" ? (
                             <FileImage size={11} />
@@ -1105,7 +1105,7 @@ export default function StudioWorkspaceV2() {
                   key={step.key}
                   type="button"
                   onClick={() => setInspector(step.key)}
-                  className={`flex w-full items-start gap-2 rounded-lg p-2 text-left transition ${inspector === step.key ? "bg-muted" : "hover:bg-muted/70"}`}
+                  className={`flex w-full items-start gap-2 rounded-xl p-2 text-left transition ${inspector === step.key ? "bg-muted" : "hover:bg-muted/70"}`}
                 >
                   <span
                     className={`mt-0.5 grid h-4 w-4 place-items-center rounded-full border ${step.done ? "border-primary bg-primary text-white" : "border-border text-transparent"}`}
@@ -1147,7 +1147,7 @@ export default function StudioWorkspaceV2() {
                 <button
                   type="button"
                   onClick={() => setShowCreate(false)}
-                  className="grid h-8 w-8 place-items-center rounded-lg hover:bg-muted"
+                  className="grid h-8 w-8 place-items-center rounded-xl hover:bg-muted"
                   aria-label="Close"
                 >
                   <X size={16} />

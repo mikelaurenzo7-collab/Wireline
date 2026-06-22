@@ -530,7 +530,7 @@ export default function AuthPortal() {
               <button
                 type="button"
                 onClick={() => setIsSignUp(false)}
-                className={`min-h-[44px] rounded text-sm font-semibold transition ${
+                className={`min-h-[44px] rounded-xl text-sm font-semibold transition ${
                   !isSignUp
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted"
@@ -541,7 +541,7 @@ export default function AuthPortal() {
               <button
                 type="button"
                 onClick={() => setIsSignUp(true)}
-                className={`min-h-[44px] rounded text-sm font-semibold transition ${
+                className={`min-h-[44px] rounded-xl text-sm font-semibold transition ${
                   isSignUp
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted"
@@ -652,7 +652,7 @@ export default function AuthPortal() {
               )}
 
               {error && (
-                <div className="flex items-start gap-2 rounded-md border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-600">
+                <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-600">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>{error}</div>
                 </div>
@@ -696,7 +696,7 @@ export default function AuthPortal() {
                 type="submit"
                 disabled={loading || (isSignUp && !agreedToTerms)}
                 aria-disabled={loading || (isSignUp && !agreedToTerms)}
-                className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wl-accent-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-primary-foreground transition hover:bg-[color:var(--wl-accent-deep)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <>
