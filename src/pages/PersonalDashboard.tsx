@@ -41,7 +41,7 @@ export default function PersonalDashboard() {
             <motion.section
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="wl-panel bg-card border border-border rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-border rounded-xl overflow-hidden shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]"
             >
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -92,7 +92,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="wl-panel bg-card border border-border rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-border rounded-xl overflow-hidden shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]"
             >
               <div className="p-6 border-b border-border flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-muted text-foreground">
@@ -152,7 +152,7 @@ export default function PersonalDashboard() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15 }}
-              className="wl-panel bg-card border border-border rounded-xl overflow-hidden shadow-sm"
+              className="wl-panel bg-card border border-border rounded-xl overflow-hidden shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]"
             >
               <div className="p-5 border-b border-border flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-muted text-foreground">
@@ -203,7 +203,7 @@ export default function PersonalDashboard() {
                     <span className="font-semibold text-foreground wl-numeric">1m 12s</span>
                   </div>
                   <Link
-                    to="/ops"
+                    to="/inbox"
                     className="block text-center w-full py-2.5 mt-3 bg-card text-foreground border border-border hover:border-foreground/20 hover:bg-muted rounded-xl text-sm font-semibold transition-colors"
                   >
                     View Activity
