@@ -8,6 +8,8 @@ import { resolve } from "node:path";
  */
 const root = process.cwd();
 const coreFiles = [
+  "index.html",
+  "public/site.webmanifest",
   "src/index.css",
   "src/styles/foundation.css",
   "src/styles/design-system.css",
@@ -61,17 +63,35 @@ requirePatterns("src/index.css", indexCss, [
   [/family=Inter/i, "must load Inter for Ametrine Precision hierarchy and dense content"],
   [/family=Hanken\+Grotesk/i, "must load Hanken Grotesk for display headings"],
   [/family=JetBrains\+Mono/i, "must load JetBrains Mono for metadata"],
-  [/--wl-font-display:\s*"?Hanken Grotesk"?/i, "must map display typography to Hanken Grotesk"],
+  [/--wl-font-display:\s*\"?Hanken Grotesk\"?/i, "must map display typography to Hanken Grotesk"],
   [/--wl-font-sans:\s*Inter/i, "must map body typography to Inter"],
 ]);
 if (/Professional Heritage|#1A3C34|#F9F9F7/i.test(indexCss)) {
   report("src/index.css", "must not retain retired typography or forest palette declarations");
 }
 
+const html = read("index.html");
+requirePatterns("index.html", html, [
+  [/<meta name="theme-color" content="#F8F9FF"/i, "must expose Ametrine #F8F9FF browser theme color"],
+  [/<meta name="msapplication-TileColor" content="#F8F9FF"/i, "must expose Ametrine #F8F9FF tile color"],
+  [/<link rel="mask-icon" href="\/favicon\.svg" color="#5D3FD3"/i, "must use Ametrine #5D3FD3 mask icon tint"],
+]);
+if (/#F9F9F7|#1A3C34|Your AI Call Assistant/i.test(html)) {
+  report("index.html", "must not retain retired browser chrome or narrow personal-only brand metadata");
+}
+
+const manifest = read("public/site.webmanifest");
+requirePatterns("public/site.webmanifest", manifest, [
+  [/"theme_color"\s*:\s*"#5D3FD3"/i, "must use #5D3FD3 install-surface accent"],
+  [/"background_color"\s*:\s*"#F8F9FF"/i, "must use #F8F9FF install-surface canvas"],
+]);
+
 const shell = read("src/components/WorkspaceShell.tsx");
 requirePatterns("src/components/WorkspaceShell.tsx", shell, [
   [/w-\[256px\]/, "must use the 256px Ametrine Precision workspace shell"],
   [/lg:grid-cols-\[256px_minmax\(0,1fr\)\]/, "must use the 256px desktop workspace grid"],
+  [/h-16/, "must retain the 64px Ametrine global top bar"],
+  [/New Agent/, "must preserve source New Agent entry point"],
   [/label: "Overview"/, "must expose Overview in primary navigation"],
   [/label: "Inbox"/, "must expose Inbox in primary navigation"],
   [/label: "Connections"/, "must expose Connections in primary navigation"],
