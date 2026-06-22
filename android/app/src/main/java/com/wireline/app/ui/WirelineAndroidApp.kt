@@ -116,35 +116,35 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Studio.route
 
-            NavigationBar(containerColor = Brand.Panel) {
+            NavigationBar(containerColor = Brand.Canvas) {
                 NavigationBarItem(
                     selected = currentRoute == Screen.Studio.route,
                     onClick = { navActions.navigateTo(Screen.Studio) },
-                    icon = { Icon(Icons.Default.Home, null) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Studio") },
                     label = { Text("Studio") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Assistants.route,
                     onClick = { navActions.navigateTo(Screen.Assistants) },
-                    icon = { Icon(Icons.Default.PhoneInTalk, null) },
+                    icon = { Icon(Icons.Default.PhoneInTalk, contentDescription = "Assistants") },
                     label = { Text("Assistants") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Knowledge.route,
                     onClick = { navActions.navigateTo(Screen.Knowledge) },
-                    icon = { Icon(Icons.Default.Home, null) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Knowledge") },
                     label = { Text("Knowledge") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Actions.route,
                     onClick = { navActions.navigateTo(Screen.Actions) },
-                    icon = { Icon(Icons.Default.Settings, null) },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Actions") },
                     label = { Text("Actions") },
                 )
                 NavigationBarItem(
                     selected = currentRoute == Screen.Recaps.route,
                     onClick = { navActions.navigateTo(Screen.Recaps) },
-                    icon = { Icon(Icons.Default.Call, null) },
+                    icon = { Icon(Icons.Default.Call, contentDescription = "Recaps") },
                     label = { Text("Recaps") },
                 )
             }

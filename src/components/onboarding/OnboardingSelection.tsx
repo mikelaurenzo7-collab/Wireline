@@ -47,9 +47,11 @@ export default function OnboardingSelection() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <button
+            <motion.button
               onClick={() => handleSelect("personal")}
               disabled={creating !== null}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
               className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-brand/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5 disabled:opacity-60"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -74,11 +76,13 @@ export default function OnboardingSelection() {
                   </>
                 )}
               </div>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
               onClick={() => handleSelect("business")}
               disabled={creating !== null}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: 0.2 }}
               className="text-left group relative p-8 md:p-10 border border-border bg-card hover:border-brand/40 transition-all flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand/5 disabled:opacity-60"
             >
               <div className="absolute inset-0 bg-gradient-to-bl from-brand/0 to-brand/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -103,7 +107,7 @@ export default function OnboardingSelection() {
                   </>
                 )}
               </div>
-            </button>
+            </motion.button>
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
