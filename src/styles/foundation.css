@@ -1,35 +1,36 @@
 :root {
-  --wl-page: #f9f9f7;
-  --wl-surface-base: #f9f9f7;
-  --wl-surface: #fff;
-  --wl-surface-subtle: #f4f4f2;
-  --wl-surface-container: #eeeeec;
-  --wl-surface-hover: #e8e8e6;
-  --wl-surface-variant: #e2e3e1;
-  --wl-surface-dim: #dadad8;
-  --wl-ink: #1a3c34;
-  --wl-on-surface: #1a3c34;
-  --wl-ink-soft: #4a5f59;
-  --wl-muted: #4a5f59;
-  --wl-outline: #4a5f59;
-  --wl-line: #dadad8;
-  --wl-line-strong: #aeb8b4;
-  --wl-line-subtle: rgba(26, 60, 52, 0.06);
-  --wl-line-weak: rgba(26, 60, 52, 0.08);
-  --wl-accent: #1a3c34;
-  --wl-accent-hover: #01261f;
-  --wl-accent-deep: #01261f;
-  --wl-accent-foreground: #fff;
-  --wl-accent-container: #e1e9e6;
-  --wl-status-active: #2d5a27;
-  --wl-status-warning: #b45309;
-  --wl-status-error: #ba1a1a;
-  --radius: 0.5rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  /* Ametrine Precision — source-of-truth tokens from the current Stitch export. */
+  --wl-page: #f8f9ff;
+  --wl-surface-base: #f8f9ff;
+  --wl-surface: #ffffff;
+  --wl-surface-subtle: #eff4ff;
+  --wl-surface-container: #e5eeff;
+  --wl-surface-hover: #dce9ff;
+  --wl-surface-variant: #d3e4fe;
+  --wl-surface-dim: #cbdbf5;
+  --wl-ink: #0b1c30;
+  --wl-on-surface: #0b1c30;
+  --wl-ink-soft: #484554;
+  --wl-muted: #484554;
+  --wl-outline: #797586;
+  --wl-line: #c9c4d7;
+  --wl-line-strong: #797586;
+  --wl-line-subtle: rgba(11, 28, 48, 0.06);
+  --wl-line-weak: rgba(11, 28, 48, 0.09);
+  --wl-accent: #5d3fd3;
+  --wl-accent-hover: #4b32b3;
+  --wl-accent-deep: #451ebb;
+  --wl-accent-foreground: #ffffff;
+  --wl-accent-container: #e6deff;
+  --wl-status-active: #2e7d32;
+  --wl-status-warning: #ed6c02;
+  --wl-status-error: #d32f2f;
+  --radius: 0.25rem;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  --wl-focus: rgba(26, 60, 52, 0.22);
+  --wl-focus: rgba(93, 63, 211, 0.28);
   --background: var(--wl-page);
   --foreground: var(--wl-on-surface);
   --card: var(--wl-surface);
@@ -49,12 +50,10 @@
   --input-background: var(--wl-surface);
   --ring: var(--wl-accent);
   --destructive: var(--wl-status-error);
-  --destructive-foreground: #fff;
+  --destructive-foreground: #ffffff;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html {
   min-height: 100%;
@@ -67,50 +66,21 @@ body {
   min-height: 100dvh;
   background: var(--wl-page);
   color: var(--wl-on-surface);
-  font-family: var(
-    --wl-font-sans,
-    Inter,
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif
-  );
+  font-family: var(--wl-font-sans, Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   font-synthesis: none;
   font-kerning: normal;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(
-    --wl-font-display,
-    Inter,
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif
-  );
-  font-feature-settings: "cv05", "cv08", "ss01";
+h1, h2, h3, h4 {
+  font-family: var(--wl-font-display, "Hanken Grotesk", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: var(--wl-on-surface);
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-a {
-  color: inherit;
-}
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
 
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--wl-accent);
@@ -125,27 +95,23 @@ a {
   justify-content: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: transparent;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
-  transition:
-    transform 0.2s ease-out,
-    background-color 0.2s ease-out,
-    border-color 0.2s ease-out;
+  transition: transform 0.2s ease-out, background-color 0.2s ease-out, border-color 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
 .studio-primary-button:active,
-.studio-secondary-button:active {
-  transform: scale(0.98);
-}
+.studio-secondary-button:active { transform: scale(0.98); }
 
 .studio-primary-button {
   border: 1px solid var(--wl-accent);
   background: var(--wl-accent);
-  color: #fff;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(93, 63, 211, 0.16);
 }
 .studio-primary-button:hover {
   border-color: var(--wl-accent-hover);
@@ -156,51 +122,43 @@ a {
   background: var(--card);
   color: var(--foreground);
 }
-.studio-secondary-button:hover {
-  background: var(--secondary);
-}
+.studio-secondary-button:hover { background: var(--secondary); }
 
 .studio-kicker {
   display: block;
   color: var(--wl-muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-family: var(--wl-font-mono, "JetBrains Mono", monospace);
+  font-size: 12px;
+  font-weight: 500;
   line-height: 16px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+
 .studio-card {
   padding: 16px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--card);
-  box-shadow: 0 1px 2px rgba(26, 60, 52, 0.05);
-  transition:
-    transform 0.2s ease-out,
-    box-shadow 0.2s ease-out;
+  box-shadow: 0 1px 2px rgba(93, 63, 211, 0.05);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
 }
-.studio-card:active {
-  transform: scale(0.98);
-}
+.studio-card:active { transform: scale(0.98); }
 .studio-card-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
-.studio-card h2 {
-  margin-top: 4px;
-  font-size: 18px;
-  line-height: 24px;
-}
+.studio-card h2 { margin-top: 4px; font-size: 18px; line-height: 24px; }
 .studio-count {
   display: grid;
   min-width: 24px;
   height: 24px;
   place-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
-  color: var(--wl-ink);
+  color: var(--wl-accent-deep);
   font-size: 11px;
   font-weight: 600;
 }
