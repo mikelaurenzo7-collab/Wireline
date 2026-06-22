@@ -56,7 +56,7 @@
         </receiver>
 
         <receiver
-            android:name=".widget.AgentWidgetProvider"
+            android:name=".widget.AssistantWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

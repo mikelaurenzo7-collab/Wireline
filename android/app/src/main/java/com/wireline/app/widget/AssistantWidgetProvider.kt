@@ -24,11 +24,11 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.wireline.app.MainActivity
 
-class AgentWidgetProvider : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = AgentStatusWidget()
+class AssistantWidgetProvider : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = AssistantStatusWidget()
 }
 
-class AgentStatusWidget : GlanceAppWidget() {
+class AssistantStatusWidget : GlanceAppWidget() {
     override suspend fun provideContent(context: Context, id: GlanceId) {
         provideContent {
             WidgetContent()

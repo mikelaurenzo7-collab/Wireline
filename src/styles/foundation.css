@@ -72,7 +72,7 @@ body {
 }
 
 h1, h2, h3, h4 {
-  font-family: var(--wl-font-display, "Inter", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  font-family: var(--wl-font-display, "Hanken Grotesk", "Inter", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--wl-on-surface);
