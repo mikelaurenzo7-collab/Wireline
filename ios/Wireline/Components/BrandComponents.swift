@@ -26,7 +26,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     }
 }
 
-struct AgentRow: View {
+struct AssistantRow: View {
     let agent: Agent
 
     var body: some View {
@@ -114,7 +114,7 @@ struct BrandEmptyState: View {
 
 #Preview("Components") {
     List {
-        AgentRow(agent: Agent(id: "1", name: "Ava", role: "personal_assistant", archetype: "Personal Assistant", channels: ["voice", "email"], voiceId: nil))
+        AssistantRow(agent: Agent(id: "1", name: "Ava", role: "personal_assistant", archetype: "Personal Assistant", channels: ["voice", "email"], voiceId: nil))
         CallCard(call: ActiveCall(callId: "c1", agentId: "1", customerNumber: "+1 555 123 4567", status: "in-progress", label: nil, type: "inbound"))
         Button("Place a call") {}.buttonStyle(PrimaryButtonStyle())
         BrandEmptyState(title: "No assistants yet", message: "Set up your first call assistant on the web to get started.")

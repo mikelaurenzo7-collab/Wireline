@@ -26,7 +26,7 @@ struct AssistantLibraryView: View {
                     )
                 } else {
                     List(agents) { agent in
-                        AgentRow(agent: agent)
+                        AssistantRow(agent: agent)
                     }
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)

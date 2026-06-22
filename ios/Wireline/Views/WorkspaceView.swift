@@ -124,7 +124,7 @@ struct WorkspaceView: View {
                     )
                 } else {
                     ForEach(agents) { agent in
-                        AgentRow(agent: agent).padding(.horizontal, 16).padding(.vertical, 8)
+                        AssistantRow(agent: agent).padding(.horizontal, 16).padding(.vertical, 8)
                         if agent.id != agents.last?.id { Divider().padding(.leading, 68) }
                     }
                 }
