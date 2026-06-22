@@ -148,18 +148,10 @@ fun AskWirelineScreen(
                         modifier = Modifier.size(68.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Ambient purple shadow/glow halo
                         Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .scale(1.2f)
-                                .blur(16.dp)
-                                .background(Brand.Purple.copy(alpha = 0.4f), CircleShape)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .background(Brand.PurpleDeep, CircleShape),
+                                .background(Brand.Accent, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -177,7 +169,7 @@ fun AskWirelineScreen(
                         text = "What can Wireline do?",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = Brand.Text
                     )
                 }
 
@@ -187,8 +179,8 @@ fun AskWirelineScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Brand.Panel2),
-                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Brand.Panel),
+                        shape = RoundedCornerShape(Brand.RadiusLg),
                         border = BorderStroke(1.dp, Brand.Border)
                     ) {
                         Column(
@@ -218,7 +210,7 @@ fun AskWirelineScreen(
                             Text(
                                 text = answer,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White
+                                color = Brand.Text
                             )
                         }
                     }
@@ -244,9 +236,9 @@ fun AskWirelineScreen(
                     // Action 1: Place a call (Expandable)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Brand.Panel2),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Brand.AccentTint)
+                        colors = CardDefaults.cardColors(containerColor = Brand.Panel),
+                        shape = RoundedCornerShape(Brand.RadiusLg),
+                        border = BorderStroke(1.dp, Brand.Border)
                     ) {
                         Column {
                             Row(
@@ -259,13 +251,13 @@ fun AskWirelineScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(Brand.Purple.copy(alpha = 0.15f), CircleShape),
+                                        .background(Brand.AccentSoft, CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Phone,
                                         contentDescription = null,
-                                        tint = Brand.Purple,
+                                        tint = Brand.Accent,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -274,7 +266,7 @@ fun AskWirelineScreen(
                                     "Place a call",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = Color.White
+                                    color = Brand.Text
                                 )
                                 Spacer(Modifier.weight(1f))
                                 Icon(
@@ -291,16 +283,16 @@ fun AskWirelineScreen(
                                         .padding(bottom = 16.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Divider(color = Brand.AccentTint)
+                                    Divider(color = Brand.Border)
                                     
-                                    Text("Select Agent:", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
+                                    Text("Select Agent:", style = MaterialTheme.typography.labelSmall, color = Brand.Text2)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         state.agents.take(3).forEach { agent ->
-                                            val containerColor = if (isSelected) Brand.Accent else Brand.Canvas
-                                            val contentColor = if (isSelected) Color.White else Color.LightGray
+                                            val containerColor = if (isSelected) Brand.Accent else Brand.Raised
+                                            val contentColor = if (isSelected) Color.White else Brand.Text
                                             
                                             AssistChip(
                                                 onClick = { selectedAgentId = agent.id },
@@ -350,7 +342,8 @@ fun AskWirelineScreen(
                                         },
                                         enabled = selectedAgent != null && outboundNumber.isNotBlank() && !state.isWorking,
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Brand.Purple)
+                                        colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
+                                        shape = RoundedCornerShape(Brand.RadiusMd)
                                     ) {
                                         Text("Place Call", fontWeight = FontWeight.SemiBold)
                                     }
@@ -380,7 +373,7 @@ fun AskWirelineScreen(
                 Text(
                     text = "Or ask a custom question:",
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color.LightGray,
+                    color = Brand.Text2,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
@@ -388,15 +381,6 @@ fun AskWirelineScreen(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Ambient halo glow behind input
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .scale(1.02f)
-                            .blur(8.dp)
-                            .background(Brand.Purple.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
-                    )
                     
                     OutlinedTextField(
                         value = inputText,
@@ -417,13 +401,13 @@ fun AskWirelineScreen(
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            containerColor = Brand.Panel2,
+                            focusedTextColor = Brand.Text,
+                            unfocusedTextColor = Brand.Text,
+                            containerColor = Brand.Panel,
                             focusedBorderColor = Brand.Accent,
                             unfocusedBorderColor = Brand.Border
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(Brand.RadiusMd)
                     )
                 }
 
@@ -455,9 +439,9 @@ private fun ActionRowCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Brand.Panel2),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Brand.AccentTint)
+        colors = CardDefaults.cardColors(containerColor = Brand.Panel),
+        shape = RoundedCornerShape(Brand.RadiusLg),
+        border = BorderStroke(1.dp, Brand.Border)
     ) {
         Row(
             modifier = Modifier
@@ -469,13 +453,13 @@ private fun ActionRowCard(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(Brand.Accent.copy(alpha = 0.15f), CircleShape),
+                    .background(Brand.AccentSoft, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Brand.Purple,
+                    tint = Brand.Accent,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -484,7 +468,7 @@ private fun ActionRowCard(
                 title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = Brand.Text
             )
             Spacer(Modifier.weight(1f))
             Icon(

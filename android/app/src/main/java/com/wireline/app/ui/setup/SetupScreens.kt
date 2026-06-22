@@ -134,6 +134,7 @@ fun KnowledgeScreen(padding: PaddingValues) {
                             label = { Text(if (kind == "knowledge") "A fact, preference, routine, or policy" else "What the assistant should do or avoid") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 3,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(Brand.RadiusMd),
                         )
                         Button(
                             onClick = {
@@ -149,6 +150,8 @@ fun KnowledgeScreen(padding: PaddingValues) {
                             },
                             enabled = draft.isNotBlank() && !saving,
                             modifier = Modifier.fillMaxWidth(),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(Brand.RadiusMd),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Brand.Accent)
                         ) { Text(if (saving) "Saving…" else if (kind == "knowledge") "Save detail" else "Save rule") }
                     }
                 }
