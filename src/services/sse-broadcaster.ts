@@ -3,13 +3,14 @@ import type { Response } from "express";
 type ClientIdentifier = {
   id: string;
   res: Response;
-  tenantId?: string; // Broadcasts can be scoped to specific tenants
+  /** Always derived from the authenticated request. */
+  tenantId: string;
 };
 
 class SSEBroadcaster {
   private clients: ClientIdentifier[] = [];
 
-  addClient(clientId: string, res: Response, tenantId?: string) {
+  addClient(clientId: string, res: Response, tenantId: string) {
     const newClient: ClientIdentifier = { id: clientId, res, tenantId };
     this.clients.push(newClient);
 
@@ -22,14 +23,13 @@ class SSEBroadcaster {
     this.clients = this.clients.filter((client) => client.id !== clientId);
   }
 
-  broadcast(event: string, data: any, tenantId?: string) {
+  broadcast(event: string, data: unknown, tenantId?: string) {
     const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-    
+
     this.clients.forEach((client) => {
-      // If a tenantId is provided for the broadcast, only send to clients matching that tenant.
-      if (tenantId && client.tenantId && client.tenantId !== tenantId) {
-        return; 
-      }
+      // Tenant-scoped events may only reach the exact authenticated tenant.
+      // Unscoped events intentionally remain available to authenticated clients.
+      if (tenantId && client.tenantId !== tenantId) return;
       try {
         client.res.write(payload);
       } catch (err) {

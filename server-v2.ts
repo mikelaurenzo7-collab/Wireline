@@ -14,6 +14,7 @@ import { buildCSP, buildConnectSrcs, generateCspNonce } from "./src/lib/csp";
 import { getErrorMessage } from "./src/lib/server-utils";
 import { validateStartupEnv } from "./src/lib/startup";
 import { startMemoryCleanup } from "./src/lib/rate-limit";
+import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import authRouter from "./src/routes/auth-routes";
 import authOAuthRouter from "./src/routes/auth-oauth-routes";
 import oauthRouter from "./src/routes/oauth";
@@ -73,11 +74,12 @@ app.use(emailUnsubscribeRouter);
 app.use(metaWebhookRouter);
 app.use(marketingRuntimeRouter);
 
-app.get("/api/live-ops/stream", (req, res) => {
+app.get("/api/live-ops/stream", authenticateLiveOpsStream, (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  const tenantId = req.query.tenantId as string | undefined;
+  const tenantId = req.tenantId || req.user?.id;
+  if (!tenantId) return res.status(401).json({ error: "Authentication required", code: "AUTH_REQUIRED" });
   sseBroadcaster.addClient((res.locals?.requestId as string) || randomUUID(), res, tenantId);
 });
 
