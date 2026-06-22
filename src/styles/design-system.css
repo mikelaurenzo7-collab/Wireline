@@ -1,82 +1,267 @@
-/* Ametrine Precision semantic aliases for retained product components. */
+/* Ametrine Precision v1.0 — Full North Star Parity (Stitch Migration)
+ * Primary: #5D3FD3 | Surface: #F8F9FF | Radius: strict 4px base | Hanken Grotesk + Inter
+ * Merged from web_design_spec + deep_dive_manifest + current foundation tokens.
+ * All interactive elements use --primary. 4px grid + 12px card padding enforced.
+ */
+
+:root {
+  /* Core Ametrine Palette (exact from spec) */
+  --primary: #5d3fd3;
+  --primary-variant: #4b32b3;
+  --primary-container: #e0e7ff;
+  --on-primary: #ffffff;
+
+  --surface: #f8f9ff;
+  --surface-dim: #cbdbf5;
+  --surface-bright: #f8f9ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --on-surface: #0b1c30;
+  --on-surface-variant: #484554;
+
+  --outline: #797586;
+  --outline-variant: #d1d5db;
+
+  --success: #2e7d32;
+  --error: #d32f2f;
+
+  /* Typography */
+  --font-sans: 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Strict 4px radius base (enforced everywhere per spec) */
+  --radius: 4px;
+  --radius-sm: 2px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Spacing (4px grid) */
+  --spacing-base: 4px;
+  --card-padding: 12px;
+  --gutter: 16px;
+}
+
+/* ============================================
+   COMPONENT TOKENS — Exact from Ametrine Precision spec
+   ============================================ */
+
+/* Cards: bg-white rounded-base border border-outline-variant shadow-sm */
+.wl-card,
 .wl-panel,
 .wl-panel-elevated,
-.wl-panel-editorial,
-.wl-mission-panel,
-.director-live-panel,
-.wl-composer-accessory-panel,
+.studio-card,
 .wl-proposal-card,
 .wl-director-artifacts-panel {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--card);
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: var(--card-padding);
 }
-.wl-panel-elevated { box-shadow: 0 2px 8px rgba(93, 63, 211, 0.06); }
 
+.wl-panel-elevated { 
+  box-shadow: 0 2px 8px rgba(93, 63, 211, 0.06); 
+}
+
+/* Primary Buttons: bg-primary text-white px-4 py-2 rounded-base font-medium hover:bg-primary-variant */
+.wl-button-primary,
+.studio-primary-button {
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.wl-button-primary:hover,
+.studio-primary-button:hover {
+  background: var(--primary-variant);
+}
+
+.wl-button-primary:active {
+  transform: scale(0.985);
+}
+
+/* Inputs: bg-white border border-outline-variant rounded-base px-3 py-2 focus:ring-2 focus:ring-primary/20 */
+.wl-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+.studio-input {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.wl-input:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(93, 63, 211, 0.2);
+  outline: none;
+}
+
+/* Modals: Center-aligned, bg-white rounded-base shadow-xl border border-outline-variant. Backdrop: bg-black/40 backdrop-blur-sm */
+.wl-modal,
+[role="dialog"] {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 25px -5px rgba(93, 63, 211, 0.05);
+}
+
+/* Tooltips: bg-inverse-surface text-inverse-on-surface rounded-base text-xs p-2 */
+.wl-tooltip {
+  background: var(--on-surface);
+  color: var(--surface);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Status / Active States (from North Star) */
+.wl-active-accent {
+  border-left: 3px solid var(--primary);
+}
+
+.wl-status-pill {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Existing component classes preserved and enhanced for parity */
 .wl-label,
 .wl-pro-eyebrow,
-.wl-workspace-eyebrow,
-.app-section-title,
-.wl-director-micro {
-  font-family: var(--wl-font-mono);
+.wl-workspace-eyebrow {
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.05em;
-  line-height: 16px;
   text-transform: uppercase;
-  color: var(--muted-foreground);
+  color: var(--on-surface-variant);
 }
-.wl-label-muted,
-.wl-micro-meta,
-.wl-micro-meta--muted,
-.wl-body-caption,
-.wl-director-meta {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
-  color: var(--muted-foreground);
-}
-.wl-micro-badge,
-.wl-director-cap-pill,
-.wl-director-opus-badge,
-.app-micro-cta { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
-.wl-pro-title { font-family: var(--wl-font-display); font-size: 24px; font-weight: 600; letter-spacing: -0.01em; line-height: 32px; color: var(--foreground); }
-.wl-page-context { font-size: 14px; color: var(--muted-foreground); }
-.wl-workspace-title { font-family: var(--wl-font-display); font-size: 32px; font-weight: 600; letter-spacing: -0.02em; line-height: 40px; color: var(--foreground); }
-.wl-inline-empty { display: flex; align-items: center; gap: 8px; border: 1px dashed var(--border); border-radius: var(--radius-lg); background: var(--card); padding: 8px 12px; }
-.wl-inline-empty__label { font-size: 14px; color: var(--muted-foreground); }
-.wl-status-success, .wl-text-success { color: var(--wl-status-active); }
-.wl-pulse-live { animation: wl-pulse-live 2s ease-in-out infinite; }
-@keyframes wl-pulse-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-.wl-composer-dock { border-radius: var(--radius-lg); }
-.wl-director-cap-pill { border-radius: var(--radius); border: 1px solid var(--border); background: var(--secondary); padding: 2px 8px; }
-.wl-director-cap-pill--active { border-color: var(--primary); background: var(--accent); color: var(--wl-accent-deep); }
-.wl-director-opus-badge { border-radius: var(--radius); background: var(--primary); color: var(--primary-foreground); padding: 2px 8px; }
-.wl-live-output { font-family: var(--wl-font-mono); font-size: 12px; }
-.wl-proposal-rail { border-left: 2px solid var(--primary); }
-.wl-director-doc { font-size: 14px; line-height: 20px; color: var(--foreground); }
-.wl-director-research-sources, .wl-turn-action-log .wl-turn-stratum { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--secondary); padding: 12px; }
-.app-segment-strip { display: inline-flex; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--secondary); padding: 2px; }
-.wl-signal-orb-frame, .wl-signal-orb-frame--refined { border-radius: 999px; border: 1px solid var(--border); background: var(--secondary); }
-.wl-fleet-constellation, .wl-fleet-constellation--refined { opacity: 0.35; }
-.wl-empty-state--signal { position: relative; }
 
-/* Studio stays structured and flat: Ametrine uses outlines, not decorative glow. */
-.wl-stitch-studio-glow { display: none; }
-.wl-stitch-studio-glow ~ * { position: relative; }
-.wl-stitch-studio-glow ~ .wl-scroll { background: var(--wl-page); }
-section:has(.wl-stitch-studio-glow) form > div {
-  border-radius: var(--radius-lg) !important;
-  background: var(--wl-surface) !important;
-  box-shadow: 0 2px 8px rgba(93, 63, 211, 0.06) !important;
-  backdrop-filter: none !important;
+.wl-pro-title {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 32px;
+  color: var(--on-surface);
 }
-section:has(.wl-stitch-studio-glow) form button[aria-label="Attach files"],
-section:has(.wl-stitch-studio-glow) form button[aria-label="Save instruction"] { border-radius: var(--radius) !important; }
-section:has(.wl-stitch-studio-glow) article p.rounded-2xl {
-  border: 1px solid var(--border);
+
+.wl-workspace-title {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 40px;
+  color: var(--on-surface);
+}
+
+/* Enforce 4px radius globally for all buttons, cards, inputs (no exceptions for pills except status) */
+button,
+.studio-primary-button,
+.studio-secondary-button,
+.wl-button-primary,
+.wl-card,
+.wl-panel,
+input,
+textarea,
+select {
   border-radius: var(--radius) !important;
-  background: var(--wl-surface-subtle) !important;
-  color: var(--foreground) !important;
 }
-section:has(.wl-stitch-studio-glow) article:has(p.rounded-2xl) p { max-width: min(88%, 32rem); }
+
+/* Sidebar wide variant support for North Star parity (256px labeled) */
+.wl-sidebar-wide {
+  width: 256px;
+  background: var(--surface);
+  border-right: 1px solid var(--outline-variant);
+}
+
+.wl-sidebar-wide .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  color: var(--on-surface-variant);
+  transition: all 0.1s ease;
+}
+
+.wl-sidebar-wide .nav-item.active {
+  background: var(--primary-container);
+  color: var(--primary);
+  font-weight: 600;
+  border-left: 3px solid var(--primary);
+}
+
+/* Business Outcomes card (purple metric from North Star screenshots) */
+.wl-metric-card-purple {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.wl-metric-card-purple .metric-value {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Active Assistants grid cards */
+.wl-assistant-card {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.wl-assistant-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* Priority Handoffs list item */
+.wl-handoff-item {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+}
+
+/* Agent Studio form fields */
+.wl-agent-form-field {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+/* Test & Simulation chat panel alignment */
+.wl-simulation-panel {
+  background: var(--surface);
+  border-left: 1px solid var(--outline-variant);
+}
+
+/* Ensure Hanken Grotesk loads for headlines (add to index.html or layout if not present) */
+.wl-headline {
+  font-family: 'Hanken Grotesk', var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
