@@ -5,11 +5,11 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
-            WorkspaceView().tabItem { Label("Studio", systemImage: "slider.horizontal.3") }
+            WorkspaceView().tabItem { Label("Overview", systemImage: "square.grid.2x2") }
             AssistantLibraryView().tabItem { Label("Assistants", systemImage: "person.2") }
+            CallsView().tabItem { Label("Inbox", systemImage: "tray.full") }
             KnowledgeView().tabItem { Label("Knowledge", systemImage: "book.closed") }
-            ActionsView().tabItem { Label("Actions", systemImage: "bolt") }
-            CallsView().tabItem { Label("Recaps", systemImage: "phone.arrow.down.left") }
+            SettingsView().tabItem { Label("Settings", systemImage: "gearshape") }
         }
         .tint(Brand.accent)
         .toolbarBackground(Brand.panel, for: .tabBar)
