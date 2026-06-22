@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PhoneInTalk
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -170,5 +171,53 @@ fun FleetStatCard(
     ) {
         Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = valueColor)
         Text(label, style = MaterialTheme.typography.labelSmall, color = labelColor)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CallbackNumberPromptCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth().tactileScale(interactionSource),
+        colors = CardDefaults.cardColors(containerColor = Brand.Panel),
+        shape = RoundedCornerShape(Brand.RadiusMd),
+        border = BorderStroke(1.dp, Brand.Border),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Brand.AccentSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhoneInTalk,
+                    contentDescription = null,
+                    tint = Brand.Accent
+                )
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Set callback number",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Brand.Text,
+                )
+                Text(
+                    text = "Required for live call transfers to your device.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Brand.Text2,
+                )
+            }
+        }
     }
 }

@@ -39,6 +39,7 @@ import com.wireline.app.data.RecentCall
 import com.wireline.app.data.WalletEntry
 import com.wireline.app.ui.ask.AskWirelineScreen
 import com.wireline.app.ui.components.AskWirelineHeroCard
+import com.wireline.app.ui.components.CallbackNumberPromptCard
 import com.wireline.app.ui.components.FleetStatCard
 import com.wireline.app.ui.components.AssistantCard
 import com.wireline.app.ui.components.Medallion
@@ -155,7 +156,7 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
             modifier = Modifier.padding(padding)
         ) {
             composable(Screen.Studio.route) {
-                StudioScreen(PaddingValues(0.dp), state, model)
+                StudioScreen(PaddingValues(0.dp), state, model, onNavigateToSettings = { navActions.navigateTo(Screen.Settings) })
             }
             composable(Screen.Assistants.route) {
                 AssistantsScreen(PaddingValues(0.dp), state.agents, onCreate = { showCreateAssistant = true })
@@ -238,7 +239,7 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel) {
+private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel, onNavigateToSettings: () -> Unit) {
     var number by rememberSaveable { mutableStateOf("") }
     var context by rememberSaveable { mutableStateOf("") }
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
@@ -252,6 +253,9 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { AskWirelineHeroCard(onClick = { showAsk = true }) }
+        if (state.handoffPhone.isBlank()) {
+            item { CallbackNumberPromptCard(onClick = onNavigateToSettings) }
+        }
         item {
             AssistantCard {
                 Text("YOUR DAY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)

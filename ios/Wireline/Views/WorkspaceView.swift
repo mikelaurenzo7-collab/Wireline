@@ -20,6 +20,9 @@ struct WorkspaceView: View {
                     ScrollView {
                         VStack(spacing: 16) {
                             askCard
+                            if me.settings?.handoffPhone?.isEmpty ?? true {
+                                callbackNumberPromptCard
+                            }
                             metrics
                             account(me)
                             assistants(me)
@@ -78,6 +81,28 @@ struct WorkspaceView: View {
         }
         .buttonStyle(TouchPressStyle())
         .accessibilityHint("Opens a request for Wireline to handle")
+    }
+
+    private var callbackNumberPromptCard: some View {
+        Button { showSettings = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "phone.badge.plus")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Brand.accent)
+                    .frame(width: 48, height: 48)
+                    .background(Brand.accentSoft, in: Circle())
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Set callback number").font(.subheadline.weight(.semibold)).foregroundStyle(Brand.text)
+                    Text("Enable live call transfers to your device.").font(.caption).foregroundStyle(Brand.text2)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(Brand.text3)
+            }
+            .padding(16)
+            .brandGlowCard()
+        }
+        .buttonStyle(TouchPressStyle())
+        .accessibilityHint("Opens settings to set your callback phone number")
     }
 
     private var metrics: some View {
