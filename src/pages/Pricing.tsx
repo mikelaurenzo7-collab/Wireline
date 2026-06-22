@@ -41,7 +41,7 @@ function PlanCard({
   const price = amount(plan, interval);
   return (
     <article
-      className={`relative flex min-h-[420px] flex-col rounded-lg border bg-card p-7 shadow-[0_1px_3px_rgba(93,63,211,0.04)] ${featured ? "border-2 border-primary" : "border-border"}`}
+      className={`relative flex min-h-[420px] flex-col rounded-xl border bg-card p-7 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)] ${featured ? "border-2 border-primary" : "border-border"}`}
     >
       {featured ? (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-black bg-primary px-4 py-1 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-primary-foreground">
@@ -88,7 +88,7 @@ function PlanCard({
 
 function ComparisonTable({ plans }: { plans: StripePlan[] }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card">
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_4px_12px_rgba(93,63,211,0.04)]">
       <h2
         id="compare-plans-heading"
         className="border-b border-border px-5 py-5 text-[20px] font-semibold tracking-[-.01em]"
@@ -226,7 +226,7 @@ export default function Pricing() {
           </div>
 
           {expanded.length ? (
-            <details className="mx-auto mt-8 max-w-[1120px] rounded-lg border border-border bg-card p-6">
+            <details className="mx-auto mt-8 max-w-[1120px] rounded-xl border border-border bg-card p-6 shadow-[0_4px_12px_rgba(93,63,211,0.04)]">
               <summary className="cursor-pointer text-[16px] font-semibold text-foreground">
                 Need more help at home or work?
               </summary>
