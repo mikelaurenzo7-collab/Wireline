@@ -76,7 +76,7 @@ export default function WorkspaceShell({
           onClick={closeDrawer}
         />
       ) : null}
-      <div className="mx-auto grid min-h-[100dvh] max-w-[1440px] lg:grid-cols-[256px_minmax(0,1fr)]">
+      <div className="mx-auto grid min-h-[100dvh] w-full max-w-[1760px] lg:grid-cols-[256px_minmax(0,1fr)]">
         <aside
           className={`wl-stitch-sidebar fixed inset-y-0 left-0 z-50 flex w-[256px] flex-col px-4 py-6 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
@@ -93,7 +93,7 @@ export default function WorkspaceShell({
                   Wireline
                 </span>
                 <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
-                  transparent intelligence
+                  personal + business call intelligence
                 </span>
               </span>
             </Link>
@@ -128,7 +128,7 @@ export default function WorkspaceShell({
           </nav>
         </aside>
 
-        <main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 pt-0 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8">
+        <main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 pt-0 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8 xl:px-12">
           <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-border">
             <div className="flex min-w-0 items-center gap-3">
               <button
