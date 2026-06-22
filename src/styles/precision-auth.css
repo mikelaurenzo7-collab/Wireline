@@ -1,28 +1,37 @@
-/* Precision Account Holder auth screen. Scoped to the existing AuthPortal structure. */
+/* Ametrine Precision access surface. Scoped to the existing AuthPortal behavior. */
 .wl-stitch-auth-shell {
   min-height: 100dvh;
   background: var(--wl-page);
 }
+
 .wl-stitch-auth-shell main {
+  position: relative;
+  min-height: 100dvh;
   padding: 48px 24px;
 }
+
 .wl-stitch-auth-shell main > div {
   max-width: 448px;
 }
+
 .wl-stitch-auth-shell main > div > .mb-6 > a:first-child {
   display: none;
 }
+
 .wl-stitch-auth-shell main > div > .mb-6 {
   margin-bottom: 32px;
 }
+
 .wl-stitch-auth-shell main > div > .mb-6 .wl-stitch-headline {
   font-size: 32px;
   line-height: 40px;
   letter-spacing: -0.02em;
 }
+
 .wl-stitch-auth-shell footer {
   display: none;
 }
+
 .wl-stitch-auth-card {
   padding: 40px;
   border-radius: var(--radius-xl);
@@ -30,19 +39,69 @@
   border: 1px solid var(--border);
   box-shadow: 0 12px 32px -4px rgba(93, 63, 211, 0.08), 0 4px 12px rgba(93, 63, 211, 0.04);
 }
+
 .wl-stitch-oauth-btn {
   min-height: 42px;
   border-radius: var(--radius);
   font-size: 16px;
 }
+
 .wl-stitch-auth-divider {
   font-family: var(--wl-font-mono);
   font-size: 12px;
   letter-spacing: 0.02em;
 }
+
 .wl-stitch-auth-shell .wl-stitch-auth-card + div {
   margin-top: 24px;
 }
+
+@media (min-width: 1024px) {
+  .wl-stitch-auth-shell main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    justify-items: center;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .wl-stitch-auth-shell main::before {
+    content: "Wireline\A\ATransparent\AIntelligence.\A\AEnterprise-grade toolsets designed for high-stakes workflows.\A Predictable, explainable, and built for precision.";
+    white-space: pre-line;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
+    padding: clamp(40px, 6vw, 80px);
+    border-right: 1px solid var(--border);
+    background-color: var(--wl-surface-container-low);
+    background-image: radial-gradient(circle at 1px 1px, rgba(93, 63, 211, 0.16) 1px, transparent 0);
+    background-size: 20px 20px;
+    color: var(--wl-ink);
+    font-family: var(--wl-font-display);
+    font-size: clamp(18px, 1.5vw, 22px);
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+
+  .wl-stitch-auth-shell main::first-line {
+    color: var(--wl-accent);
+  }
+
+  .wl-stitch-auth-shell main > div {
+    grid-column: 2;
+    width: min(100%, 440px);
+    padding: 48px 0;
+  }
+
+  .wl-stitch-auth-shell main > div > .mb-6 {
+    text-align: left;
+  }
+}
+
 @media (max-width: 639px) {
   .wl-stitch-auth-shell main {
     padding: 32px 16px;
