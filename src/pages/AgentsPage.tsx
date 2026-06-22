@@ -153,11 +153,13 @@ export default function AgentsPage() {
     >
       <div className="flex h-full min-h-0 flex-col gap-5">
         {degraded ? (
-          <div className="flex shrink-0 items-start gap-3 rounded-md border border-red-300 bg-red-50 px-4 py-4 text-red-800">
-            <CircleAlert size={18} className="mt-0.5 shrink-0" />
+          <div className="flex shrink-0 items-start gap-3 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wl-status-error)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-error)_8%,var(--card))] px-4 py-4 text-foreground">
+            <CircleAlert size={18} className="mt-0.5 shrink-0 text-[var(--wl-status-error)]" />
             <div>
-              <p className="font-semibold">We cannot load your assistants right now</p>
-              <p className="mt-1 text-[14px] leading-5">
+              <p className="font-semibold text-[var(--wl-status-error)]">
+                We cannot load your assistants right now
+              </p>
+              <p className="mt-1 text-[14px] leading-5 text-muted-foreground">
                 Your saved setup is safe. Please try again in a moment.
               </p>
             </div>

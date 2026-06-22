@@ -23,7 +23,7 @@ export default function OverviewPage() {
     >
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 overflow-y-auto pb-8">
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.75fr)]">
-          <div className="studio-card flex min-h-[220px] flex-col justify-between border-primary/25 bg-[linear-gradient(135deg,var(--card),var(--secondary))]">
+          <div className="studio-card flex min-h-[220px] flex-col justify-between border-primary/25 bg-secondary">
             <div>
               <p className="studio-kicker">Communications, covered</p>
               <h2 className="mt-3 max-w-[18ch] font-[var(--wl-font-display)] text-3xl font-semibold tracking-[-.03em] text-foreground sm:text-4xl">
