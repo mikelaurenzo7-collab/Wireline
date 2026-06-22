@@ -65,10 +65,20 @@ export default function WorkspaceShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isActive = (href: string) =>
     location.pathname === href || (href === "/studio" && location.pathname.startsWith("/studio"));
+  const isStudioRoute = location.pathname === "/studio" || location.pathname.startsWith("/studio/");
   const closeDrawer = () => setDrawerOpen(false);
 
+  /*
+   * WorkspaceShell is only used by authenticated product routes. Wireline
+   * behaves like an application everywhere: the dynamic browser viewport is
+   * the boundary, navigation and header are stable, and the active page owns
+   * the one scroll region it needs. Marketing never uses this shell and stays
+   * a conventional, naturally scrolling document.
+   */
+  const appViewportClass = "h-[100dvh] min-h-0 overflow-hidden";
+
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
+    <div className={`bg-background text-foreground ${appViewportClass}`}>
       {drawerOpen ? (
         <button
           aria-label="Close navigation"
@@ -76,7 +86,9 @@ export default function WorkspaceShell({
           onClick={closeDrawer}
         />
       ) : null}
-      <div className="mx-auto grid min-h-[100dvh] max-w-[1440px] lg:grid-cols-[256px_minmax(0,1fr)]">
+      <div
+        className={`mx-auto grid h-full min-h-0 w-full max-w-[1760px] overflow-hidden lg:grid-cols-[256px_minmax(0,1fr)]`}
+      >
         <aside
           className={`wl-stitch-sidebar fixed inset-y-0 left-0 z-50 flex w-[256px] flex-col px-4 py-6 transition-transform duration-200 lg:sticky lg:top-0 lg:z-10 lg:h-[100dvh] lg:translate-x-0 ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
@@ -93,7 +105,7 @@ export default function WorkspaceShell({
                   Wireline
                 </span>
                 <span className="mt-1 block font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted-foreground">
-                  transparent intelligence
+                  personal + business call intelligence
                 </span>
               </span>
             </Link>
@@ -128,7 +140,7 @@ export default function WorkspaceShell({
           </nav>
         </aside>
 
-        <main className="flex min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 pt-0 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8">
+        <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 pt-0 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8 xl:px-12">
           <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-border">
             <div className="flex min-w-0 items-center gap-3">
               <button
@@ -145,7 +157,13 @@ export default function WorkspaceShell({
             </div>
             {action ? <div className="shrink-0">{action}</div> : null}
           </header>
-          <div className={`min-h-0 flex-1 overflow-hidden ${contentClassName}`}>{children}</div>
+          <div
+            className={`min-h-0 flex-1 ${
+              isStudioRoute ? "overflow-hidden" : "overflow-y-auto overscroll-contain"
+            } ${contentClassName}`}
+          >
+            {children}
+          </div>
         </main>
       </div>
     </div>

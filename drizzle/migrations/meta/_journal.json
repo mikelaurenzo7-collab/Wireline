@@ -36,6 +36,13 @@
       "when": 1782121745762,
       "tag": "0004_faulty_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782165000000,
+      "tag": "0067_harden_auxiliary_rls",
+      "breakpoints": true
     }
   ]
 }

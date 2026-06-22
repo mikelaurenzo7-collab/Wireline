@@ -10,3 +10,39 @@
 .backdrop-blur-sm {
   backdrop-filter: none !important;
 }
+
+/*
+ * Knowledge originally entered its four-column composition at xl (1280px).
+ * Once the persistent workspace rail and content padding are included, that
+ * leaves the fact/rule panels below a readable measure on common laptops.
+ * Keep the all-at-once view for genuinely wide displays and collapse the
+ * intermediate range to one selected training panel plus the editor.
+ */
+@media (min-width: 1280px) and (max-width: 1535px) {
+  main [class*="xl:grid-cols-[minmax(170px"] {
+    grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.92fr) !important;
+  }
+
+  main [class*="xl:grid-cols-[minmax(170px"] > .xl\:block,
+  main [class*="xl:grid-cols-[minmax(170px"] > .xl\:flex {
+    display: none !important;
+  }
+
+  main [class*="xl:grid-cols-[minmax(170px"] > .xl\:hidden {
+    display: block !important;
+  }
+
+  /*
+   * Studio follows the same principle: the roster is useful on a large
+   * desktop, but it should not steal the working canvas on a 13–15in laptop.
+   * The assistant is still identified in the Studio header; wide screens keep
+   * the fast-switch roster intact.
+   */
+  main [class*="xl:grid-cols-[240px"] {
+    grid-template-columns: minmax(0, 1fr) minmax(288px, 0.72fr) !important;
+  }
+
+  main [class*="xl:grid-cols-[240px"] > aside:first-child {
+    display: none !important;
+  }
+}

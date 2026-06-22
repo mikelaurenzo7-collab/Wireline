@@ -167,12 +167,13 @@ router.get("/public", healthRateLimiter, async (_req, res) => {
     probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
     probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
-  const level = (probe: { ok: boolean; error?: string }) =>
-    probe.ok
-      ? "operational"
-      : /not configured|missing/i.test(probe.error || "")
-        ? "degraded"
-        : "outage";
+  const level = (probe: { ok: boolean; error?: string }) => {
+    if (probe.ok) return "operational";
+    if (/not configured|missing|timed out|429|500|502|503|504/i.test(probe.error || "")) {
+      return "degraded";
+    }
+    return "outage";
+  };
   const components = {
     voice_runtime: level(voice),
     voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",

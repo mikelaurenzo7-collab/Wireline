@@ -88,7 +88,7 @@ function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
         </span>
         <span className="wl-stitch-status-pill">
           <span className="wl-stitch-status-dot" aria-hidden />
-          Ready
+          Configured
         </span>
       </div>
       <h2 className="mt-5 font-display text-[20px] font-semibold leading-6 tracking-[-.02em] text-primary">
@@ -114,7 +114,7 @@ function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
           className="inline-flex items-center gap-2 text-[14px] text-muted-foreground hover:text-foreground"
         >
           <Zap size={15} />
-          Actions
+          Connections
         </Link>
       </div>
     </article>
@@ -170,7 +170,7 @@ export default function AgentsPage() {
             <SetupNote
               label="Assistants"
               value={String(assistantCount)}
-              detail="Ready for the work you have given them"
+              detail="Configured in your workspace"
             />
             <SetupNote
               label="Teach them"
@@ -178,7 +178,7 @@ export default function AgentsPage() {
               detail="Add the details that make each assistant useful"
             />
             <SetupNote
-              label="Actions"
+              label="Connections"
               value="Your way"
               detail="Choose the accounts and actions they can use"
             />

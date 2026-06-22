@@ -1,0 +1,49 @@
+name: Production visual QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/capture-prod-visual-qa.mjs
+      - .github/workflows/production-visual-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture desktop and laptop production QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      WIRELINE_VISUAL_BASE_URL: https://trywireline.com
+      WIRELINE_VISUAL_OUTPUT_DIR: artifacts/visual-qa-prod
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture production routes
+        run: node scripts/capture-prod-visual-qa.mjs
+
+      - name: Upload visual QA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireline-production-visual-qa
+          path: artifacts/visual-qa-prod
+          if-no-files-found: warn
+          retention-days: 14

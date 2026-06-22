@@ -1,16 +1,10 @@
-/**
-
- * EmailPage — dedicated email inbox route.
-
- */
-
 import EmailInbox from "../components/EmailInbox";
-import ClientRouteViewport from "../components/layout/ClientRouteViewport";
+import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function EmailPage() {
   return (
-    <ClientRouteViewport>
+    <WorkspaceShell eyebrow="Conversations & email" title="Inbox" contentClassName="pt-0 pb-0">
       <EmailInbox embedded />
-    </ClientRouteViewport>
+    </WorkspaceShell>
   );
 }

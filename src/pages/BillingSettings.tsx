@@ -16,7 +16,7 @@ export default function BillingSettings() {
         </Link>
       }
     >
-      <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+      <div className="min-h-0 flex-1 pb-2">
         <div className="mx-auto max-w-[920px]">
           <StripeBillingCard />
         </div>

@@ -21,8 +21,8 @@ export default function OverviewPage() {
       }
       contentClassName="py-6"
     >
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 overflow-y-auto pb-8">
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.75fr)]">
+      <div className="flex w-full max-w-none flex-col gap-6 pb-8">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,.8fr)]">
           <div className="studio-card flex min-h-[220px] flex-col justify-between border-primary/25 bg-secondary">
             <div>
               <p className="studio-kicker">Communications, covered</p>
@@ -73,7 +73,7 @@ export default function OverviewPage() {
           </aside>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 xl:grid-cols-3">
           <Link to="/inbox" className="studio-card group block text-left">
             <Radio className="size-5 text-primary" />
             <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
@@ -136,8 +136,8 @@ export default function OverviewPage() {
           {loading ? (
             <p className="py-10 text-sm text-muted-foreground">Loading assistants…</p>
           ) : agents.length ? (
-            <div className="grid gap-3 pt-5 md:grid-cols-2 xl:grid-cols-3">
-              {agents.slice(0, 6).map((agent) => (
+            <div className="grid gap-3 pt-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {agents.slice(0, 8).map((agent) => (
                 <Link
                   key={agent.id}
                   to={`/studio?agent=${encodeURIComponent(agent.id)}`}
