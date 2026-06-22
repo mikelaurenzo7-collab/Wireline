@@ -103,7 +103,7 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   },
   {
     type: "function",
-    name: "create_fleet_task",
+    name: "create_followup_task",
     description: "Create a visible follow-up task for any promised human action.",
     parameters: {
       type: "object",

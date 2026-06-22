@@ -75,7 +75,7 @@ struct TouchPressStyle: ButtonStyle {
 }
 
 /// Shared elevated surface. Ametrine Precision uses precise borders and restrained depth.
-struct OperatorCard<Content: View>: View {
+struct AssistantCard<Content: View>: View {
     private let content: Content
     private let radius: CGFloat
 
@@ -111,7 +111,7 @@ extension View {
 
     func touchPress() -> some View { buttonStyle(TouchPressStyle()) }
 
-    func operatorCardSurface(radius: CGFloat = Brand.radiusLg, borderOpacity: Double = 1) -> some View {
+    func assistantCardSurface(radius: CGFloat = Brand.radiusLg, borderOpacity: Double = 1) -> some View {
         background(Brand.panel)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
@@ -123,11 +123,11 @@ extension View {
     /// Backward-compatible name for existing views while they migrate to the
     /// semantic Ametrine Precision card helpers.
     func brandGlowCard(radius: CGFloat = Brand.radiusLg, borderOpacity: Double = 1) -> some View {
-        operatorCardSurface(radius: radius, borderOpacity: borderOpacity)
+        assistantCardSurface(radius: radius, borderOpacity: borderOpacity)
     }
 }
 
-public struct OperatorCardModifier: ViewModifier {
+public struct AssistantCardModifier: ViewModifier {
     public var isHoverable: Bool = true
 
     public init(isHoverable: Bool = true) {
@@ -147,7 +147,7 @@ public struct OperatorCardModifier: ViewModifier {
     }
 }
 
-public struct OperatorTextModifier: ViewModifier {
+public struct AssistantTextModifier: ViewModifier {
     public enum Style {
         case display, headline, body, labelCaps
     }
@@ -185,11 +185,11 @@ public struct OperatorTextModifier: ViewModifier {
 }
 
 public extension View {
-    func asOperatorCard(isHoverable: Bool = true) -> some View {
-        modifier(OperatorCardModifier(isHoverable: isHoverable))
+    func asAssistantCard(isHoverable: Bool = true) -> some View {
+        modifier(AssistantCardModifier(isHoverable: isHoverable))
     }
 
-    func operatorTextStyle(_ style: OperatorTextModifier.Style) -> some View {
-        modifier(OperatorTextModifier(style: style))
+    func assistantTextStyle(_ style: AssistantTextModifier.Style) -> some View {
+        modifier(AssistantTextModifier(style: style))
     }
 }

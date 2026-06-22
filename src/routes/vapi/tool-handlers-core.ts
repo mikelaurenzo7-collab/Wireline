@@ -23,7 +23,7 @@ export async function handleCoreToolCall(
 ): Promise<ToolCallResult | null> {
   const { agent, drizzle, log, message, payload, toolCallId, webhookAgentId } = context;
 
-  if (fn === "create_fleet_task") {
+  if (fn === "create_followup_task") {
     try {
       const { description, priority } = args || {};
       const [task] = await drizzle

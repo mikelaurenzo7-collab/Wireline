@@ -18,23 +18,21 @@ const result = (toolCallId: string, text: string) => ({ toolCallId, result: text
 
 export async function dispatchScopedToolCall(name: string, args: any, context: ScopedToolContext) {
   const callerNumber = context.callerNumber || "";
-  if (name === "create_fleet_task" || name === "escalate_to_human") {
+  if (name === "create_followup_task" || name === "escalate_to_human") {
     const description = String(
       args?.description || args?.reason || "Caller requested follow-up",
     ).slice(0, 2000);
-    await context.drizzle
-      .insert(schema.followUpTasks)
-      .values({
-        userId: context.userId,
-        agentId: context.agentId,
-        taskType: name === "escalate_to_human" ? "escalation" : "follow_up",
-        description,
-        priority: args?.priority || "high",
-        status: "pending",
-        sourceType: "phone_call",
-        sourceId: args?.callId || "live-call",
-        targetChannel: "manual",
-      });
+    await context.drizzle.insert(schema.followUpTasks).values({
+      userId: context.userId,
+      agentId: context.agentId,
+      taskType: name === "escalate_to_human" ? "escalation" : "follow_up",
+      description,
+      priority: args?.priority || "high",
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: args?.callId || "live-call",
+      targetChannel: "manual",
+    });
     return result(
       context.toolCallId,
       name === "escalate_to_human"
@@ -62,19 +60,17 @@ export async function dispatchScopedToolCall(name: string, args: any, context: S
       context: "Tenant email from a live phone call.",
     });
     if (!reviewed.approved) {
-      await context.drizzle
-        .insert(schema.followUpTasks)
-        .values({
-          userId: context.userId,
-          agentId: context.agentId,
-          taskType: "send_email",
-          description: `Review email to ${to}: ${reviewed.rationale}`.slice(0, 2000),
-          priority: "medium",
-          status: "pending",
-          sourceType: "phone_call",
-          sourceId: "live-call",
-          targetChannel: "email",
-        });
+      await context.drizzle.insert(schema.followUpTasks).values({
+        userId: context.userId,
+        agentId: context.agentId,
+        taskType: "send_email",
+        description: `Review email to ${to}: ${reviewed.rationale}`.slice(0, 2000),
+        priority: "medium",
+        status: "pending",
+        sourceType: "phone_call",
+        sourceId: "live-call",
+        targetChannel: "email",
+      });
       return result(
         context.toolCallId,
         "I queued that email for a human review before it is sent.",
@@ -189,19 +185,17 @@ export async function dispatchScopedToolCall(name: string, args: any, context: S
     name === "log_to_excel" ||
     name === "meta_submit_lead"
   ) {
-    await context.drizzle
-      .insert(schema.followUpTasks)
-      .values({
-        userId: context.userId,
-        agentId: context.agentId,
-        taskType: "integration_action",
-        description: `${name}: ${JSON.stringify(args || {}).slice(0, 1800)}`,
-        priority: "medium",
-        status: "pending",
-        sourceType: "phone_call",
-        sourceId: "live-call",
-        targetChannel: "integration",
-      });
+    await context.drizzle.insert(schema.followUpTasks).values({
+      userId: context.userId,
+      agentId: context.agentId,
+      taskType: "integration_action",
+      description: `${name}: ${JSON.stringify(args || {}).slice(0, 1800)}`,
+      priority: "medium",
+      status: "pending",
+      sourceType: "phone_call",
+      sourceId: "live-call",
+      targetChannel: "integration",
+    });
     return result(
       context.toolCallId,
       "That approved action has been queued for the connected workspace integration.",

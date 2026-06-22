@@ -60,7 +60,7 @@ const CONSUMER_COPY: Partial<Record<AgentToolName, { label: string; description:
     label: "Ask me first",
     description: "Brings anything sensitive, unclear, or high-stakes back to you.",
   },
-  create_fleet_task: {
+  create_followup_task: {
     label: "Create a follow-up",
     description: "Saves a reminder for you when something needs your attention.",
   },

@@ -90,7 +90,7 @@ const OWNER_ROUTING_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
  * so they must be blocked for demo agents.
  */
 const OWNER_ROUTING_EXTRA_TOOL_NAMES: ReadonlySet<string> = new Set([
-  "create_fleet_task",
+  "create_followup_task",
   "capture_customer_profile",
 ]);
 

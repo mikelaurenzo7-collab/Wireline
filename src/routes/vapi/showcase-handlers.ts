@@ -231,7 +231,7 @@ export async function handleShowcaseToolCalls(args: {
       continue;
     }
 
-    if (toolName === "create_fleet_task") {
+    if (toolName === "create_followup_task") {
       const description = String(toolArgs.description || "Public-line follow-up requested.").trim();
       const queued = await queueShowcaseTask({
         ownerUserId,

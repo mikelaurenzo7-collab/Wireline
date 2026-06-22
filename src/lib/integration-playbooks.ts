@@ -351,7 +351,7 @@ export const EMAIL_INBOUND_TASKS: readonly IntegrationTask[] = [
     callerMoment: "New thread in connected Gmail / Outlook",
     agentAction:
       "Classifies intent, drafts an on-brand reply, and escalates when confidence is low.",
-    tools: ["send_email", "create_fleet_task", "escalate_to_human"],
+    tools: ["send_email", "create_followup_task", "escalate_to_human"],
   },
   {
     id: "email-followup",

@@ -277,8 +277,8 @@ export const VAPI_TOOL_DEFS = {
       required: ["reason"],
     },
   },
-  create_fleet_task: {
-    name: "create_fleet_task",
+  create_followup_task: {
+    name: "create_followup_task",
     description:
       "Creates a follow-up task for a human team member. Use for complex issues you cannot resolve on the call.",
     parameters: {
@@ -1122,7 +1122,7 @@ export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
   sales:
     "Always assume the sale. If the caller is interested, book a follow-up demo or meeting immediately using book_appointment. Use capture_customer_profile to record budget and timeline before the call ends.",
   customer_service:
-    "Be helpful and empathetic. Use view_recent_interactions to see if they've called about this issue before. If the issue is complex, create_fleet_task for the back-office team. Only use send_text_message after the caller explicitly asks for a text or confirms that channel is okay.",
+    "Be helpful and empathetic. Use view_recent_interactions to see if they've called about this issue before. If the issue is complex, create_followup_task for the back-office team. Only use send_text_message after the caller explicitly asks for a text or confirms that channel is okay.",
   collections:
     "Remain professional and firm but compliant. You MUST verify the caller's identity before discussing debt details. Use log_payment_promise to record all commitments — this is a legal requirement. If the customer opts out of future contact, use add_to_dnc immediately.",
   technical_support:

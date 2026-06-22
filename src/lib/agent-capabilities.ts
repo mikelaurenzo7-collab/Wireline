@@ -1,7 +1,7 @@
 export const AGENT_TOOL_NAME_VALUES = [
   "view_recent_interactions",
   "escalate_to_human",
-  "create_fleet_task",
+  "create_followup_task",
   "send_email",
   "send_text_message",
   "lookup_phone_number",
@@ -100,7 +100,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     group: "core",
   },
   {
-    name: "create_fleet_task",
+    name: "create_followup_task",
     label: "Create Assistants task",
     description: "Queues a follow-up task for a human teammate.",
     group: "core",
@@ -518,7 +518,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   sales: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -548,7 +548,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   customer_service: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -586,7 +586,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   ecommerce: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -617,7 +617,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   scheduler: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -635,7 +635,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   collections: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -654,7 +654,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   technical_support: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -680,7 +680,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   lead_qualifier: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -709,7 +709,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   receptionist: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -729,7 +729,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   marketing: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
@@ -758,7 +758,7 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
   personal_assistant: [
     "view_recent_interactions",
     "escalate_to_human",
-    "create_fleet_task",
+    "create_followup_task",
     "send_email",
     "send_text_message",
     "lookup_phone_number",
