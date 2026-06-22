@@ -42,7 +42,9 @@ for (const file of coreFiles) requireFile(file);
 const foundation = read("src/styles/foundation.css");
 requirePatterns("src/styles/foundation.css", foundation, [
   [/--wl-page:\s*#f8f9ff/i, "must use Ametrine Precision root surface #f8f9ff"],
-  [/--wl-accent:\s*#5d3fd3/i, "must use Ametrine Precision primary #5d3fd3"],
+  [/--wl-primary:\s*#451ebb/i, "must use Ametrine Precision pressed primary #451ebb"],
+  [/--wl-primary-container:\s*#5d3fd3/i, "must use Ametrine Precision action container #5d3fd3"],
+  [/--wl-accent:\s*var\(--wl-primary-container\)/i, "must route web accent through the Ametrine primary-container token"],
   [/--wl-on-surface:\s*#0b1c30/i, "must use #0b1c30 as primary readable text"],
   [/--wl-surface-subtle:\s*#eff4ff/i, "must use #eff4ff secondary surfaces"],
   [/--wl-line:\s*#c9c4d7/i, "must use #c9c4d7 precision dividers"],
@@ -95,7 +97,9 @@ const iosTheme = read("ios/Wireline/Theme/WirelineTheme.swift");
 requirePatterns("ios/Wireline/Theme/WirelineTheme.swift", iosTheme, [
   [/canvas\s*=\s*Color\(hex:\s*0xF8F9FF\)/, "must use #F8F9FF native root canvas"],
   [/text\s*=\s*Color\(hex:\s*0x0B1C30\)/, "must use #0B1C30 primary text"],
-  [/accent\s*=\s*Color\(hex:\s*0x5D3FD3\)/, "must use #5D3FD3 native action color"],
+  [/primary\s*=\s*Color\(hex:\s*0x451EBB\)/, "must expose #451EBB native pressed primary"],
+  [/primaryContainer\s*=\s*Color\(hex:\s*0x5D3FD3\)/, "must expose #5D3FD3 native action container"],
+  [/accent\s*=\s*primaryContainer/, "must route native accent through the Ametrine primary-container token"],
   [/border\s*=\s*Color\(hex:\s*0xC9C4D7\)/, "must use #C9C4D7 native borders"],
   [/scaleEffect\(configuration\.isPressed\s*\?\s*0\.98\s*:\s*1\)/, "must retain 0.98 tactile press feedback"],
 ]);
@@ -110,7 +114,9 @@ const androidTheme = read("android/app/src/main/java/com/wireline/app/ui/theme/W
 requirePatterns("android/app/src/main/java/com/wireline/app/ui/theme/WirelineTheme.kt", androidTheme, [
   [/Canvas\s*=\s*Color\(0xFFF8F9FF\)/, "must use #F8F9FF Android root canvas"],
   [/Text\s*=\s*Color\(0xFF0B1C30\)/, "must use #0B1C30 Android primary text"],
-  [/Accent\s*=\s*Color\(0xFF5D3FD3\)/, "must use #5D3FD3 Android action color"],
+  [/Primary\s*=\s*Color\(0xFF451EBB\)/, "must expose #451EBB Android pressed primary"],
+  [/PrimaryContainer\s*=\s*Color\(0xFF5D3FD3\)/, "must expose #5D3FD3 Android action container"],
+  [/Accent\s*=\s*PrimaryContainer/, "must route Android accent through the Ametrine primary-container token"],
   [/Border\s*=\s*Color\(0xFFC9C4D7\)/, "must use #C9C4D7 Android borders"],
   [/RadiusLg\s*=\s*8\.dp/, "must retain 8dp large-container geometry"],
 ]);

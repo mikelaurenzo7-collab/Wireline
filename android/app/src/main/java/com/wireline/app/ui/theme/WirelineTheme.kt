@@ -38,7 +38,11 @@ object Brand {
     val Text2 = Color(0xFF484554)
     val Text3 = Color(0xB8484554)
 
-    val Accent = Color(0xFF5D3FD3)
+    val Primary = Color(0xFF451EBB)
+    val PrimaryContainer = Color(0xFF5D3FD3)
+    val PrimaryFixed = Color(0xFFE6DEFF)
+    val PrimaryFixedDim = Color(0xFFCABEFF)
+    val Accent = PrimaryContainer
     val AccentSoft = Color(0xFFD8CEFF)
     val AccentDeep = Color(0xFF1C0062)
     val AccentTint = Color(0x1A5D3FD3)
@@ -53,9 +57,9 @@ object Brand {
 }
 
 private val LightColors: ColorScheme = lightColorScheme(
-    primary = Brand.Accent,
+    primary = Brand.Primary,
     onPrimary = Color.White,
-    primaryContainer = Brand.AccentSoft,
+    primaryContainer = Brand.PrimaryContainer,
     onPrimaryContainer = Brand.AccentDeep,
     secondary = Brand.Panel2,
     onSecondary = Brand.Text,
