@@ -205,7 +205,7 @@ function renderBlock(block: string, bi: number): React.ReactNode {
   if (first.startsWith("## ")) {
     return (
       <h3 key={bi} className="font-display font-bold text-foreground tracking-[-0.02em] pt-0.5">
-        {renderInline(stripAccount HolderStatusEmoji(first.slice(3)))}
+        {renderInline(stripAccountHolderStatusEmoji(first.slice(3)))}
         {lines.slice(1).map((l, i) => (
           <span key={i} className="block font-normal text-foreground/90 mt-0.5">
             {renderInline(l)}

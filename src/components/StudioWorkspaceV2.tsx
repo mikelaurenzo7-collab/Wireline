@@ -395,7 +395,7 @@ export default function StudioWorkspaceV2() {
             error: "Keep uploads under 3 MB.",
           };
         try {
-          if (file.type.startsWith("image/"))
+          if (file.type.startsWith("image/")) {
             return {
               id,
               name: file.name,
@@ -404,5 +404,36 @@ export default function StudioWorkspaceV2() {
               dataUrl: await readFile(file, "data-url"),
               status: "ready",
             };
-          if (isTextAsset(file))
+          }
+          if (isTextAsset(file)) {
             return {
+              id,
+              name: file.name,
+              mimeType: file.type,
+              kind: "text",
+              textContent: await readFile(file, "text"),
+              status: "ready",
+            };
+          }
+          return {
+            id,
+            name: file.name,
+            mimeType: file.type,
+            kind: "text",
+            status: "error",
+            error: "Unsupported file type.",
+          };
+        } catch {
+          return {
+            id,
+            name: file.name,
+            mimeType: file.type,
+            kind: "text",
+            status: "error",
+            error: "Failed to read file.",
+          };
+        }
+      })
+    );
+    setAttachments((prev) => [...prev, ...prepared]);
+  }
