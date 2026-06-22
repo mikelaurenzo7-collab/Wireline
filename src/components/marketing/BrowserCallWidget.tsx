@@ -123,8 +123,8 @@ export default function BrowserCallWidget({
         className={cn(
           "relative z-10 h-12 select-none rounded-md border px-6 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] transition-transform duration-200 active:scale-[0.98]",
           callActive
-            ? "border-[color:var(--wl-status-error)] bg-[color:var(--wl-status-error)] text-white shadow-[0_1px_2px_rgba(26,60,52,0.12)]"
-            : "border-primary bg-primary text-white shadow-[0_1px_2px_rgba(26,60,52,0.12)] hover:border-[color:var(--wl-accent-hover)] hover:bg-[color:var(--wl-accent-hover)] hover:text-white",
+            ? "border-[color:var(--wl-status-error)] bg-[color:var(--wl-status-error)] text-white shadow-[0_1px_3px_rgba(186,26,26,0.12)]"
+            : "border-primary bg-primary text-white shadow-[0_1px_3px_rgba(93,63,211,0.12)] hover:border-[color:var(--wl-accent-hover)] hover:bg-[color:var(--wl-accent-hover)] hover:text-white",
         )}
       >
         {connecting ? (

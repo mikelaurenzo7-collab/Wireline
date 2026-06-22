@@ -99,7 +99,7 @@ function ToolGroup({
   onToggle: (tool: AgentToolName) => void;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-[0_1px_2px_rgba(26,60,52,0.05)]">
+    <section className="rounded-lg border border-border bg-card p-5 shadow-[0_1px_3px_rgba(93,63,211,0.04)]">
       <header className="flex items-center gap-3 border-b border-border pb-4">
         <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
           <CircleDot size={16} />
@@ -309,7 +309,7 @@ export default function ActionsWorkspace() {
                   : "Connect";
               return (
                 <article
-                  className="flex min-h-[78px] items-center justify-between gap-3 rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(26,60,52,0.05)]"
+                  className="flex min-h-[78px] items-center justify-between gap-3 rounded-lg border border-border bg-card p-4 shadow-[0_1px_3px_rgba(93,63,211,0.04)]"
                   key={integration.id}
                 >
                   <div className="min-w-0">

@@ -15,7 +15,7 @@ import PrecisionPublicHeader from "./PrecisionPublicHeader";
 
 function ProductFrame() {
   return (
-    <div className="rounded-md border border-border bg-card p-4 shadow-[0_1px_2px_rgba(26,60,52,0.05)] sm:p-6">
+    <div className="rounded-md border border-border bg-card p-4 shadow-[0_1px_3px_rgba(93,63,211,0.04)] sm:p-6">
       <div className="flex items-center gap-3 border-b border-border pb-4">
         <span className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--wl-accent-container)] text-primary">
           <PhoneCall size={15} strokeWidth={2} />
@@ -142,7 +142,8 @@ export default function PrecisionLanding() {
               Reclaim 98% of your time spent on hold and phone calls.
             </h1>
             <p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">
-              Give Wireline the calls and messages you do not have time for. Resolve appointments, support lines, and follow-ups instantly without the wait.
+              Give Wireline the calls and messages you do not have time for. Resolve appointments,
+              support lines, and follow-ups instantly without the wait.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
@@ -160,8 +161,12 @@ export default function PrecisionLanding() {
               </Link>
             </div>
             <div className="mt-4 flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
-              <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> SOC2 Type II Certified</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> Privacy First</span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 size={13} /> SOC2 Type II Certified
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 size={13} /> Privacy First
+              </span>
             </div>
             <div className="mx-auto mt-16 max-w-[920px] text-left">
               <ProductFrame />
@@ -263,8 +268,12 @@ export default function PrecisionLanding() {
             </Link>
           </div>
           <div className="mt-6 flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> SOC2 Type II Certified</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 size={13} /> Privacy First</span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={13} /> SOC2 Type II Certified
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={13} /> Privacy First
+            </span>
           </div>
         </section>
       </main>

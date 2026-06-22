@@ -57,7 +57,7 @@ function LoadingAssistants() {
       {Array.from({ length: 8 }, (_, index) => (
         <div
           key={index}
-          className="h-[270px] rounded-lg border border-border bg-card p-6 shadow-[0_1px_2px_rgba(26,60,52,0.05)]"
+          className="h-[270px] rounded-lg border border-border bg-card p-6 shadow-[0_1px_3px_rgba(93,63,211,0.04)]"
         >
           <div className="flex items-start justify-between">
             <div className="h-12 w-12 animate-pulse rounded-lg bg-muted" />
@@ -123,7 +123,7 @@ function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
 
 function SetupNote({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card px-4 py-4 shadow-[0_1px_2px_rgba(26,60,52,0.05)]">
+    <div className="rounded-lg border border-border bg-card px-4 py-4 shadow-[0_1px_3px_rgba(93,63,211,0.04)]">
       <p className="font-mono text-[12px] uppercase tracking-[.02em] text-muted-foreground">
         {label}
       </p>
