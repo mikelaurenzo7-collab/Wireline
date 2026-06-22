@@ -27,7 +27,7 @@ function Panel({
   countLabel?: string;
 }) {
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_3px_rgba(93,63,211,0.04)]">
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
       <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
@@ -79,7 +79,7 @@ function TonePanel({ personality, loading }: { personality?: string; loading: bo
     ? ["Professional", "Concise", "Helpful"]
     : ["Clear", "Direct", "Helpful"];
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_3px_rgba(93,63,211,0.04)]">
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
       <header className="flex items-center gap-2 border-b border-border px-4 py-4">
         <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
           <SlidersHorizontal size={16} />
@@ -150,7 +150,7 @@ function SourcesPanel({ loading }: { loading: boolean }) {
   ];
 
   return (
-    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_3px_rgba(93,63,211,0.04)]">
+    <article className="flex min-h-[520px] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
       <header className="flex items-center justify-between border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-sm bg-primary/10 text-primary">
@@ -352,7 +352,7 @@ export default function KnowledgeWorkspace() {
         </div>
         <div className="min-h-0 xl:hidden">{selected}</div>
 
-        <aside className="mt-4 flex min-h-[520px] flex-col rounded-lg border border-border bg-card p-4 shadow-[0_1px_3px_rgba(93,63,211,0.04)] xl:mt-0">
+        <aside className="mt-4 flex min-h-[520px] flex-col rounded-xl border border-border bg-card p-4 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)] xl:mt-0">
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <Plus size={19} className="text-foreground" />
             <h2 className="text-[20px] font-semibold tracking-[-.01em]">Add a detail</h2>
