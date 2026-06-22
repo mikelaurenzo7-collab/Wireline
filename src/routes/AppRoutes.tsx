@@ -12,7 +12,11 @@ const BillingSettings = lazy(() => import("../pages/BillingSettings"));
 const AdminSettings = lazy(() => import("../components/AdminSettings"));
 const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
 
-const loading = <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">Opening workspace…</div>;
+const loading = (
+  <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
+    Opening workspace…
+  </div>
+);
 
 export default function AppRoutes() {
   return (
@@ -28,8 +32,8 @@ export default function AppRoutes() {
         <Route path="/actions/salesforce" element={<SalesforceIntegrationPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<Navigate to="/inbox" replace />} />
-        <Route path="/ops" element={<Navigate to="/overview" replace />} />
-        <Route path="/ops/*" element={<Navigate to="/overview" replace />} />
+        <Route path="/ops" element={<Navigate to="/studio" replace />} />
+        <Route path="/ops/*" element={<Navigate to="/studio" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/billing" element={<BillingSettings />} />
         <Route path="/admin" element={<AdminSettings />} />
