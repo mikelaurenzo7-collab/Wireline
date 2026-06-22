@@ -27,6 +27,7 @@ import {
   VAPI_TENANT_DEFAULT_PROVIDER,
 } from "../lib/ai-models";
 import { listOpenRouterModelsForDirector } from "../lib/openrouter-models";
+import { AgentBusinessProfileSchema } from "../lib/form-validators";
 
 const router = Router();
 const roleArchetypes: Record<string, string> = {
@@ -289,6 +290,18 @@ router.get(
           llmTemperature: schema.agents.llmTemperature,
           voiceId: schema.agents.voiceId,
           voiceProvider: schema.agents.voiceProvider,
+          // business profile fields
+          businessHours: schema.agents.businessHours,
+          timezone: schema.agents.timezone,
+          complianceMode: schema.agents.complianceMode,
+          disallowedTopics: schema.agents.disallowedTopics,
+          escalationKeywords: schema.agents.escalationKeywords,
+          escalationPhone: schema.agents.escalationPhone,
+          escalationEmail: schema.agents.escalationEmail,
+          escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
+          businessVariables: schema.agents.businessVariables,
+          outOfHoursMessage: schema.agents.outOfHoursMessage,
+          kpiFocus: schema.agents.kpiFocus,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
@@ -339,6 +352,21 @@ router.get(
       personality: personalities[0]?.content || "",
       directives,
       knowledge,
+      businessProfile: record
+        ? {
+            business_hours: record.businessHours || null,
+            timezone: record.timezone || "UTC",
+            compliance_mode: record.complianceMode || "none",
+            disallowed_topics: record.disallowedTopics || [],
+            escalation_keywords: record.escalationKeywords || [],
+            escalation_phone: record.escalationPhone || null,
+            escalation_email: record.escalationEmail || null,
+            escalation_handoff_enabled: record.escalationHandoffEnabled ?? false,
+            business_variables: record.businessVariables || null,
+            out_of_hours_message: record.outOfHoursMessage || null,
+            kpi_focus: record.kpiFocus || null,
+          }
+        : null,
     });
   },
 );
@@ -473,6 +501,52 @@ router.patch(
       .set({ voiceId, voiceProvider: provider })
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
     res.json({ success: true, voice: { voiceId, provider } });
+  },
+);
+
+router.patch(
+  "/api/agent-config/:id/business",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await owned(req.params.id, req.user.id);
+    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+
+    const parsed = AgentBusinessProfileSchema.parse(req.body);
+
+    await drizzle
+      .update(schema.agents)
+      .set({
+        businessHours: parsed.business_hours || null,
+        timezone: parsed.timezone || "UTC",
+        complianceMode: parsed.compliance_mode || "none",
+        disallowedTopics: parsed.disallowed_topics || [],
+        escalationKeywords: parsed.escalation_keywords || [],
+        escalationPhone: parsed.escalation_phone || null,
+        escalationEmail: parsed.escalation_email || null,
+        escalationHandoffEnabled: parsed.escalation_handoff_enabled ?? false,
+        businessVariables: parsed.business_variables || null,
+        outOfHoursMessage: parsed.out_of_hours_message || null,
+        kpiFocus: parsed.kpi_focus || null,
+      })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+
+    res.json({
+      success: true,
+      businessProfile: {
+        business_hours: parsed.business_hours || null,
+        timezone: parsed.timezone || "UTC",
+        compliance_mode: parsed.compliance_mode || "none",
+        disallowed_topics: parsed.disallowed_topics || [],
+        escalation_keywords: parsed.escalation_keywords || [],
+        escalation_phone: parsed.escalation_phone || null,
+        escalation_email: parsed.escalation_email || null,
+        escalation_handoff_enabled: parsed.escalation_handoff_enabled ?? false,
+        business_variables: parsed.business_variables || null,
+        out_of_hours_message: parsed.out_of_hours_message || null,
+        kpi_focus: parsed.kpi_focus || null,
+      },
+    });
   },
 );
 

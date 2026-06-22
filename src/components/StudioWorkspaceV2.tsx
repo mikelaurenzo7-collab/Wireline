@@ -34,6 +34,7 @@ import WorkspaceShell from "./WorkspaceShell";
 import { VoiceFieldSelect, type VoiceOption } from "./fleet-settings/VoiceSelector";
 import { PREMIUM_VOICES } from "./fleet/helpers";
 import RoleplaySandbox from "./RoleplaySandbox";
+import AgentBusinessProfile, { type BusinessProfile } from "./AgentBusinessProfile";
 
 type ChatMessage = { id: string; role: "assistant" | "user"; content: string };
 type RuntimeConfig = {
@@ -50,6 +51,7 @@ type Config = {
   enabledTools?: AgentToolName[];
   runtime?: RuntimeConfig;
   voice?: VoiceConfig;
+  businessProfile?: BusinessProfile | null;
 };
 type Inspector =
   | "overview"
@@ -60,7 +62,8 @@ type Inspector =
   | "actions"
   | "model"
   | "voice"
-  | "assets";
+  | "assets"
+  | "business";
 type Attachment = {
   id: string;
   name: string;
@@ -447,6 +450,29 @@ export default function StudioWorkspaceV2() {
       setConfig((value) => ({ ...value, enabledTools: body.enabledTools }));
   }
 
+  async function updateBusinessProfile(next: BusinessProfile) {
+    if (!active) return;
+    setConfig((current) => ({ ...current, businessProfile: next }));
+    try {
+      const response = await authFetch(
+        `/api/agent-config/${encodeURIComponent(active.id)}/business`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(next),
+        },
+      );
+      const body = (await safeJson(response)) as { businessProfile?: BusinessProfile } | null;
+      if (response.ok && body?.businessProfile) {
+        setConfig((current) => ({ ...current, businessProfile: body.businessProfile }));
+      } else {
+        void loadConfig(active.id);
+      }
+    } catch {
+      void loadConfig(active.id);
+    }
+  }
+
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files || []);
     event.target.value = "";
@@ -540,6 +566,19 @@ export default function StudioWorkspaceV2() {
       label: "Actions",
       done: toolCount > 0,
       detail: toolCount ? `${toolCount} enabled` : "What it can do",
+    },
+    {
+      key: "business",
+      label: "Business",
+      done: Boolean(
+        config.businessProfile?.compliance_mode &&
+        config.businessProfile?.compliance_mode !== "none",
+      ),
+      detail:
+        config.businessProfile?.compliance_mode &&
+        config.businessProfile?.compliance_mode !== "none"
+          ? "Active"
+          : "Optional hours & compliance",
     },
   ];
   const actionTools = AGENT_TOOL_CATALOG.filter((item) =>
@@ -747,6 +786,19 @@ export default function StudioWorkspaceV2() {
               </p>
             )}
           </div>
+        </div>
+      );
+    if (inspector === "business")
+      return (
+        <div className="space-y-3">
+          <p className="text-xs leading-5 text-muted-foreground mb-1">
+            Configure optional business hours, compliance, escalation keywords, live transfers, and
+            variables.
+          </p>
+          <AgentBusinessProfile
+            value={config.businessProfile || {}}
+            onChange={(next) => void updateBusinessProfile(next)}
+          />
         </div>
       );
     return (
