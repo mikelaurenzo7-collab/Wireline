@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import WirelineMark from "../brand/WirelineMark";
 
@@ -14,16 +14,29 @@ export default function PrecisionPublicHeader() {
   const location = useLocation();
   const isActive = (match: readonly string[]) => match.includes(location.pathname);
 
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-[color:var(--wl-page)]">
-      <div className="wl-measure flex h-16 items-center justify-between px-5 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
+      <div className="wl-measure mx-auto flex h-16 items-center justify-between px-5 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-8">
           <Link
             to="/"
-            className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-.03em] text-foreground"
+            className="flex min-w-0 items-center gap-2.5 text-[20px] font-semibold tracking-[-.03em] text-foreground"
             aria-label="Wireline home"
           >
-            <WirelineMark className="h-6 w-6 text-primary" />
+            <WirelineMark className="h-6 w-6 shrink-0 text-primary" />
             <span>Wireline</span>
           </Link>
 
@@ -61,23 +74,28 @@ export default function PrecisionPublicHeader() {
 
         <button
           type="button"
-          className="grid h-9 w-9 place-items-center rounded-md border border-border bg-card md:hidden"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-border bg-card text-foreground md:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          aria-controls="wireline-mobile-menu"
           onClick={() => setOpen((current) => !current)}
         >
-          {open ? <X size={18} /> : <Menu size={18} />}
+          {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {open ? (
-        <div className="border-t border-border bg-card p-4 md:hidden">
-          <nav className="grid gap-1" aria-label="Mobile site">
+        <div
+          id="wireline-mobile-menu"
+          className="fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto border-t border-border bg-[color:var(--wl-page)] px-5 py-6 md:hidden"
+        >
+          <nav className="mx-auto grid max-w-lg gap-2" aria-label="Mobile site">
             {links.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={() => setOpen(false)}
-                className={`rounded-md px-3 py-3 text-[14px] font-medium ${
+                className={`flex min-h-12 items-center rounded-md px-4 text-[16px] font-semibold transition-colors ${
                   isActive(link.match)
                     ? "bg-[color:var(--wl-accent-container)] text-primary"
                     : "text-foreground hover:bg-muted"
@@ -86,17 +104,18 @@ export default function PrecisionPublicHeader() {
                 {link.label}
               </Link>
             ))}
+            <div className="my-3 border-t border-border" />
             <Link
               to="/signin"
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-md px-3 py-3 text-[14px] font-medium text-foreground"
+              className="flex min-h-12 items-center rounded-md px-4 text-[16px] font-semibold text-foreground hover:bg-muted"
             >
               Log in
             </Link>
             <Link
               to="/pricing"
               onClick={() => setOpen(false)}
-              className="marketing-btn-primary mt-1 py-3 text-[13px]"
+              className="marketing-btn-primary mt-1 min-h-12 text-[14px] font-semibold uppercase tracking-[.05em]"
             >
               See plans
             </Link>
