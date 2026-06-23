@@ -18,6 +18,7 @@ import {
 } from "../lib/ai-models";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
+import { createExpiringAsyncCache } from "../lib/expiring-async-cache";
 
 const router = express.Router();
 const healthRateLimiter = createIpRateLimiter({
@@ -26,6 +27,9 @@ const healthRateLimiter = createIpRateLimiter({
   max: 30,
   message: { error: "Too many health-check requests.", code: "RATE_LIMITED" },
 });
+const PUBLIC_STATUS_TTL_MS = 60_000;
+const PUBLIC_STATUS_CACHE_CONTROL = "public, max-age=0, s-maxage=60, stale-while-revalidate=30";
+
 function monitorTokenOk(req: Request): boolean {
   const expected = process.env.HEALTH_MONITOR_TOKEN || process.env.CRON_SECRET;
   const supplied =
@@ -35,11 +39,13 @@ function monitorTokenOk(req: Request): boolean {
     b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+
 function requireMonitorToken(req: Request, res: Response, next: NextFunction) {
   return monitorTokenOk(req)
     ? next()
     : res.status(401).json({ ok: false, code: "MONITOR_TOKEN_REQUIRED" });
 }
+
 async function probeDatabase(
   timeoutMs = 1500,
 ): Promise<{ ok: boolean; latency_ms: number; error?: string }> {
@@ -56,6 +62,7 @@ async function probeDatabase(
     return { ok: false, latency_ms: Date.now() - started, error: getErrorMessage(error) };
   }
 }
+
 async function probeOpenAI(
   model: string,
   timeoutMs = 8000,
@@ -87,10 +94,39 @@ async function probeOpenAI(
     };
   }
 }
+
+async function checkPublicStatus() {
+  const [voice, reasoning] = await Promise.all([
+    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
+    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
+  ]);
+  const level = (probe: { ok: boolean; error?: string }) => {
+    if (probe.ok) return "operational";
+    if (/not configured|missing|timed out|429|500|502|503|504/i.test(probe.error || "")) {
+      return "degraded";
+    }
+    return "outage";
+  };
+  const components = {
+    voice_runtime: level(voice),
+    voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",
+    reasoning: level(reasoning),
+  };
+  const order: Record<string, number> = { operational: 0, degraded: 1, outage: 2 };
+  const worst = Object.values(components).reduce(
+    (current, value) => (order[value] > order[current] ? value : current),
+    "operational",
+  );
+  return { overall: worst, components, last_checked: new Date().toISOString() };
+}
+
+const publicStatusCache = createExpiringAsyncCache(checkPublicStatus, PUBLIC_STATUS_TTL_MS);
+
 router.get("/", healthRateLimiter, async (_req, res) => {
   const db = await probeDatabase();
   res.status(db.ok ? 200 : 503).json({ ok: db.ok, timestamp: new Date().toISOString() });
 });
+
 router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, res) => {
   const report = evaluateLaunchReadiness();
   res.status(report.campaign_ready ? 200 : 503).json({
@@ -104,6 +140,7 @@ router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, r
     timestamp: report.generated_at,
   });
 });
+
 router.get("/ready", healthRateLimiter, requireMonitorToken, async (_req, res) => {
   const env = validateEnv(),
     db = await probeDatabase(),
@@ -117,6 +154,7 @@ router.get("/ready", healthRateLimiter, requireMonitorToken, async (_req, res) =
     timestamp: new Date().toISOString(),
   });
 });
+
 router.get(
   "/internal",
   healthRateLimiter,
@@ -157,34 +195,17 @@ router.get(
     });
   },
 );
+
 router.get("/actions", healthRateLimiter, authenticateUser, requirePlatformAdmin, (_req, res) =>
   res.json({ integrations: getIntegrationsStatus(), timestamp: new Date().toISOString() }),
 );
+
 router.get("/public", healthRateLimiter, async (_req, res) => {
-  const [voice, reasoning] = await Promise.all([
-    probeOpenAI(VAPI_TENANT_DEFAULT_MODEL),
-    probeOpenAI(OPENAI_STRUCTURED_PRIMARY_MODEL),
-  ]);
-  const level = (probe: { ok: boolean; error?: string }) => {
-    if (probe.ok) return "operational";
-    if (/not configured|missing|timed out|429|500|502|503|504/i.test(probe.error || "")) {
-      return "degraded";
-    }
-    return "outage";
-  };
-  const components = {
-    voice_runtime: level(voice),
-    voice_fallback: process.env.GEMINI_API_KEY ? "operational" : "degraded",
-    reasoning: level(reasoning),
-  };
-  const order: Record<string, number> = { operational: 0, degraded: 1, outage: 2 };
-  const worst = Object.values(components).reduce(
-    (current, value) => (order[value] > order[current] ? value : current),
-    "operational",
-  );
-  res.setHeader("Cache-Control", "public, max-age=60");
-  res.json({ overall: worst, components, last_checked: new Date().toISOString() });
+  const report = await publicStatusCache.get();
+  res.setHeader("Cache-Control", PUBLIC_STATUS_CACHE_CONTROL);
+  res.json(report);
 });
+
 router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => {
   const started = Date.now();
   const [voice, premium, reasoning] = await Promise.all([
@@ -211,4 +232,5 @@ router.get("/models", healthRateLimiter, authenticateUser, async (_req, res) => 
     },
   });
 });
+
 export default router;
