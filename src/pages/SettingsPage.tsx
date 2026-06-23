@@ -60,7 +60,7 @@ export default function SettingsPage() {
               <Link
                 key={section.title}
                 to={section.href}
-                className="group flex min-h-[224px] flex-col rounded-xl border border-border bg-card p-6 shadow-[0_10px_28px_-22px_rgba(11,28,48,0.42)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--primary)_38%,var(--border))] hover:shadow-[0_18px_34px_-24px_rgba(69,30,187,0.28)] active:scale-[0.98]"
+                className="group flex min-h-[224px] flex-col rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:scale-[0.98]"
               >
                 <span className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-muted text-primary">
                   <Icon size={19} />
