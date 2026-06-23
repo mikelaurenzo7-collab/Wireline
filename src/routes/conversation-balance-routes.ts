@@ -128,7 +128,7 @@ router.post(
 
       res.json({ url: session.url });
       void auditLogger
-        .logBilling("conversation_balance_checkout_started", {
+        .logBilling("checkout_started", {
           userId: req.user.id,
           customerId,
           amountCents: Math.round(amountUsd * 100),
