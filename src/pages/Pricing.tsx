@@ -8,13 +8,11 @@ import { STRIPE_PLANS, type StripePlan } from "../lib/plan-catalog";
 type Interval = "month" | "year";
 
 const descriptions: Record<string, string> = {
-  personal: "Deploy a dedicated, fully customizable front desk receptionist or outreach agent.",
-  "personal-plus": "More room and multi-turn channels for your customizable sales & support lines.",
-  "business-starter":
-    "Perfect for small teams and offices looking to automate front desk calls & follow-ups.",
-  starter:
-    "Comprehensive sales lead qualification, inbound receptionist routing, and larger limits.",
-  scale: "Custom integrations, dedicated SLA support, and limitless customizable agents.",
+  personal: "Start with one assistant for useful calls, messages, and follow-ups.",
+  "personal-plus": "More room for assistants that carry more of your day and customer conversations.",
+  "business-starter": "A focused front desk and follow-up setup for a small business or office.",
+  starter: "More capacity for lead qualification, routing, and multi-channel customer work.",
+  scale: "A tailored implementation for larger teams, integrations, and higher-volume work.",
 };
 
 function currency(amount: number) {
@@ -42,18 +40,18 @@ function PlanCard({
   const price = amount(plan, interval);
   return (
     <article
-      className={`relative flex min-h-[420px] flex-col rounded-xl border bg-card p-7 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)] ${featured ? "border-2 border-primary" : "border-border"}`}
+      className={`relative flex min-h-[426px] flex-col rounded-xl border bg-card p-7 shadow-sm ${featured ? "border-2 border-primary shadow-md" : "border-border"}`}
     >
       {featured ? (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-black bg-primary px-4 py-1 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-primary-foreground">
-          Most popular
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary bg-primary px-4 py-1 font-mono text-[10px] font-medium uppercase tracking-[.06em] text-primary-foreground">
+          Best place to start
         </span>
       ) : null}
-      <p className="font-mono text-[12px] font-medium uppercase tracking-[.12em] text-muted-foreground">
+      <p className="font-mono text-[11px] font-medium uppercase tracking-[.1em] text-muted-foreground">
         {plan.name}
       </p>
       <div className="mt-4 flex items-end gap-1">
-        <span className="text-[36px] font-semibold leading-none tracking-[-.04em] text-foreground">
+        <span className="text-[38px] font-semibold leading-none tracking-[-.05em] text-foreground">
           {price === 0 ? "Custom" : currency(price)}
         </span>
         {price > 0 ? (
@@ -78,7 +76,7 @@ function PlanCard({
         className={`mt-auto min-h-11 justify-center px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[.05em] ${featured ? "workspace-btn-primary" : "workspace-btn-secondary"}`}
       >
         {plan.id === "scale"
-          ? "Contact us"
+          ? "Talk to us"
           : plan.id === "personal" || plan.id === "personal-plus"
             ? "Get started"
             : "See plan"}
@@ -89,15 +87,14 @@ function PlanCard({
 
 function ComparisonTable({ plans }: { plans: StripePlan[] }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_4px_12px_rgba(93,63,211,0.04)]">
+    <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <h2
         id="compare-plans-heading"
         className="border-b border-border px-5 py-5 text-[20px] font-semibold tracking-[-.01em]"
       >
-        Compare plans
+        Compare what is included
       </h2>
 
-      {/* Screen Reader Twin-View */}
       <div className="sr-only">
         {plans.map((plan) => (
           <div key={`sr-plan-${plan.id}`}>
@@ -105,17 +102,12 @@ function ComparisonTable({ plans }: { plans: StripePlan[] }) {
             <dl>
               <dt>Assistants</dt>
               <dd>{plan.max_agents === 999 ? "Unlimited" : `Up to ${plan.max_agents}`}</dd>
-
               <dt>Voice minutes</dt>
               <dd>{plan.voice_minutes_monthly.toLocaleString("en-US")}</dd>
-
               <dt>Phone numbers</dt>
               <dd>{String(plan.included_phone_numbers)}</dd>
-
               <dt>Channels</dt>
-              <dd>
-                {plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice"}
-              </dd>
+              <dd>{plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice"}</dd>
             </dl>
           </div>
         ))}
@@ -135,21 +127,10 @@ function ComparisonTable({ plans }: { plans: StripePlan[] }) {
           </thead>
           <tbody>
             {[
-              [
-                "Assistants",
-                (plan: StripePlan) =>
-                  plan.max_agents === 999 ? "Unlimited" : `Up to ${plan.max_agents}`,
-              ],
-              [
-                "Voice minutes",
-                (plan: StripePlan) => plan.voice_minutes_monthly.toLocaleString("en-US"),
-              ],
+              ["Assistants", (plan: StripePlan) => (plan.max_agents === 999 ? "Unlimited" : `Up to ${plan.max_agents}`)],
+              ["Voice minutes", (plan: StripePlan) => plan.voice_minutes_monthly.toLocaleString("en-US")],
               ["Phone numbers", (plan: StripePlan) => String(plan.included_phone_numbers)],
-              [
-                "Channels",
-                (plan: StripePlan) =>
-                  plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice",
-              ],
+              ["Channels", (plan: StripePlan) => plan.features.find((feature) => /voice|text|email/i.test(feature)) || "Voice"],
             ].map(([label, value]) => (
               <tr className="border-b border-border last:border-0" key={String(label)}>
                 <td className="px-5 py-4 font-medium text-foreground">{String(label)}</td>
@@ -170,32 +151,28 @@ function ComparisonTable({ plans }: { plans: StripePlan[] }) {
 export default function Pricing() {
   const [interval, setInterval] = useState<Interval>("month");
   const personal = STRIPE_PLANS.filter((plan) => ["personal", "personal-plus"].includes(plan.id));
-  const expanded = STRIPE_PLANS.filter((plan) =>
-    ["business-starter", "starter", "scale"].includes(plan.id),
-  );
+  const expanded = STRIPE_PLANS.filter((plan) => ["business-starter", "starter", "scale"].includes(plan.id));
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PrecisionPublicHeader />
       <main className="pt-16">
         <PageMeta
-          title="AI Business Front Desk & Sales Agents — Pricing | Wireline"
-          description="Clear Wireline pricing for customizable front desk receptionist, sales qualification, and outbound business agents."
+          title="AI Call & Message Assistant Pricing | Wireline"
+          description="Clear Wireline pricing for personal call and message assistants, front desk support, and custom business workflows."
           path="/pricing"
         />
-        <section className="border-b border-border px-5 pb-10 pt-16 text-center sm:px-8 sm:pt-20">
+        <section className="border-b border-border px-5 pb-12 pt-14 text-center sm:px-8 sm:pt-18">
           <div className="mx-auto max-w-3xl">
-            <h1 className="text-[clamp(34px,4vw,48px)] font-semibold tracking-[-.03em] text-foreground">
-              Predictable pricing for customizable business agents
+            <p className="wl-stitch-label">Straightforward plans</p>
+            <h1 className="mt-3 text-[clamp(36px,4vw,52px)] font-semibold tracking-[-.04em] text-foreground">
+              Pricing for an assistant that does useful work.
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-[16px] leading-6 text-muted-foreground">
-              Deploy front-desk receptionists, outbound sales reps, or custom AI workflows. Start
-              small and add more capacity as your business grows.
+              Start with one assistant for calls and messages. Add capacity or business workflows only
+              when there is more work worth handing off.
             </p>
-            <div
-              className="mt-7 inline-flex rounded border border-border bg-card p-1"
-              aria-label="Billing interval"
-            >
+            <div className="mt-7 inline-flex rounded-lg border border-border bg-card p-1" aria-label="Billing interval">
               {(["month", "year"] as const).map((item) => (
                 <button
                   type="button"
@@ -211,38 +188,28 @@ export default function Pricing() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1120px] px-5 py-10 sm:px-8 lg:px-10">
-          <div className="mx-auto grid max-w-[780px] gap-4 md:grid-cols-2">
+        <section className="mx-auto max-w-[1180px] px-5 py-12 sm:px-8 lg:px-10">
+          <div className="mx-auto grid max-w-[960px] gap-4 md:grid-cols-2">
             {personal.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                interval={interval}
-                featured={plan.id === "personal-plus"}
-              />
+              <PlanCard key={plan.id} plan={plan} interval={interval} featured={plan.id === "personal-plus"} />
             ))}
           </div>
-          <div className="mx-auto mt-10 max-w-[920px]">
+          <div className="mx-auto mt-10 max-w-[960px]">
             <ComparisonTable plans={personal} />
           </div>
 
           {expanded.length ? (
-            <details className="mx-auto mt-8 max-w-[1120px] rounded-xl border border-border bg-card p-6 shadow-[0_4px_12px_rgba(93,63,211,0.04)]">
+            <details className="mx-auto mt-8 max-w-[1120px] rounded-xl border border-border bg-card p-6 shadow-sm">
               <summary className="cursor-pointer text-[16px] font-semibold text-foreground">
-                Need enterprise-grade capacity or multiple departments?
+                Need business capacity, multiple assistants, or custom systems?
               </summary>
               <p className="mt-3 max-w-2xl text-[14px] leading-5 text-muted-foreground">
-                Scale your operations with dedicated phone numbers, multi-channel campaign
-                workflows, CRM deep-syncs, and high-volume limits.
+                Expand into a front desk, lead follow-up, CRM workflow, or a higher-volume setup when
+                the work requires it.
               </p>
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {expanded.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    interval={interval}
-                    featured={plan.id === "business-starter"}
-                  />
+                  <PlanCard key={plan.id} plan={plan} interval={interval} featured={plan.id === "business-starter"} />
                 ))}
               </div>
             </details>
