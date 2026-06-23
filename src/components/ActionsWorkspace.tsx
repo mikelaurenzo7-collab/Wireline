@@ -138,21 +138,38 @@ function ToolGroup({
   );
 }
 
+function LoadingPermissions() {
+  return (
+    <div className="flex h-full min-h-0 flex-col" aria-busy="true" aria-label="Loading assistant permissions">
+      <div className="mb-5 flex items-end justify-between gap-3">
+        <div className="space-y-3"><div className="h-3 w-28 animate-pulse rounded bg-muted" /><div className="h-7 w-72 max-w-[65vw] animate-pulse rounded bg-muted" /></div>
+        <div className="h-10 w-44 animate-pulse rounded-[var(--radius-md)] bg-muted" />
+      </div>
+      <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,.75fr)] lg:gap-6">
+        <div className="space-y-5">{Array.from({ length: 3 }, (_, index) => <div key={index} className="studio-card h-[176px] animate-pulse bg-muted/50" />)}</div>
+        <div className="studio-card h-[320px] animate-pulse bg-muted/50" />
+      </div>
+    </div>
+  );
+}
+
 export default function ActionsWorkspace() {
-  const { agents } = useAgents();
+  const { agents, loading: agentsLoading } = useAgents();
   const [params, setParams] = useSearchParams();
   const [connections, setConnections] = useState<ConnectionStatus>({});
   const [enabledTools, setEnabledTools] = useState<AgentToolName[]>([]);
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [notice, setNotice] = useState<string | null>(null);
-  const agentId = params.get("agent") || agents[0]?.id || "";
+  const requestedAgentId = params.get("agent") || "";
+  const agentId = agents.some((agent) => agent.id === requestedAgentId) ? requestedAgentId : agents[0]?.id || "";
   const selectedAgent = agents.find((agent) => agent.id === agentId);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
+      setSaveState("idle");
       setNotice(null);
       try {
         const [status, agentResponse] = await Promise.all([
@@ -219,6 +236,8 @@ export default function ActionsWorkspace() {
 
   const toggle = (tool: AgentToolName) =>
     void persist(enabledTools.includes(tool) ? enabledTools.filter((item) => item !== tool) : [...enabledTools, tool]);
+
+  if (agentsLoading) return <LoadingPermissions />;
 
   if (!agents.length) {
     return (
