@@ -4,12 +4,27 @@ import { authFetch } from "../lib/api";
 
 type Session = { token: string; endpoint: string; session: Record<string, unknown>; greeting: string };
 type Line = { role: "You" | "Assistant"; text: string };
-const RATE = 24000;
+const RATE = 24_000;
 
-function encodePcm(input: Float32Array) {
-  const pcm = new Int16Array(input.length);
-  for (let i = 0; i < input.length; i += 1) {
-    const value = Math.max(-1, Math.min(1, input[i] || 0));
+function resample(input: Float32Array, inputRate: number) {
+  if (inputRate === RATE) return input;
+  const ratio = inputRate / RATE;
+  const output = new Float32Array(Math.max(1, Math.round(input.length / ratio)));
+  for (let i = 0; i < output.length; i += 1) {
+    const index = i * ratio;
+    const left = Math.floor(index);
+    const right = Math.min(left + 1, input.length - 1);
+    const fraction = index - left;
+    output[i] = (input[left] || 0) * (1 - fraction) + (input[right] || 0) * fraction;
+  }
+  return output;
+}
+
+function encodePcm(input: Float32Array, inputRate: number) {
+  const sampled = resample(input, inputRate);
+  const pcm = new Int16Array(sampled.length);
+  for (let i = 0; i < sampled.length; i += 1) {
+    const value = Math.max(-1, Math.min(1, sampled[i] || 0));
     pcm[i] = value < 0 ? value * 0x8000 : value * 0x7fff;
   }
   const bytes = new Uint8Array(pcm.buffer);
@@ -35,6 +50,8 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
   const source = useRef<MediaStreamAudioSourceNode | null>(null);
   const processor = useRef<ScriptProcessorNode | null>(null);
   const nextAudio = useRef(0);
+  const outputNodes = useRef(new Set<AudioBufferSourceNode>());
+  const earlyAudio = useRef<string[]>([]);
   const conversationId = useRef<string | null>(null);
   const closedByUser = useRef(false);
   const retry = useRef(0);
@@ -49,6 +66,14 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
     });
   };
 
+  const stopPlayback = () => {
+    for (const node of outputNodes.current) {
+      try { node.stop(); } catch { /* already stopped */ }
+    }
+    outputNodes.current.clear();
+    nextAudio.current = 0;
+  };
+
   const play = (encoded: string) => {
     const context = audio.current;
     if (!context) return;
@@ -61,6 +86,8 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
     node.connect(context.destination);
     const start = Math.max(context.currentTime + 0.02, nextAudio.current);
     nextAudio.current = start + buffer.duration;
+    outputNodes.current.add(node);
+    node.onended = () => outputNodes.current.delete(node);
     node.start(start);
   };
 
@@ -74,6 +101,7 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
     closedByUser.current = true;
     socket.current?.close();
     socket.current = null;
+    stopPlayback();
     processor.current?.disconnect();
     source.current?.disconnect();
     stream.current?.getTracks().forEach((track) => track.stop());
@@ -82,6 +110,7 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
     source.current = null;
     stream.current = null;
     audio.current = null;
+    earlyAudio.current = [];
     setState("idle");
   };
 
@@ -111,6 +140,9 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
     ws.onopen = () => {
       retry.current = 0;
       ws.send(JSON.stringify({ type: "session.update", session: session.session }));
+      for (const audioChunk of earlyAudio.current.splice(0)) {
+        ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: audioChunk }));
+      }
       if (!resume && session.greeting) {
         ws.send(JSON.stringify({ type: "conversation.item.create", item: { type: "force_message", role: "assistant", interruptible: true, content: [{ type: "output_text", text: session.greeting }] } }));
       }
@@ -127,6 +159,7 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
       if (type === "response.output_audio.delta" && typeof event.delta === "string") { play(event.delta); setState("speaking"); }
       if ((type === "response.output_audio_transcript.delta" || type === "response.output_text.delta") && typeof event.delta === "string") addDelta("Assistant", event.delta);
       if (type === "conversation.item.input_audio_transcription.updated" && typeof event.transcript === "string") addDelta("You", event.transcript);
+      if (type === "input_audio_buffer.speech_started") { stopPlayback(); setState("listening"); }
       if (type === "response.done" && pendingTools.current === 0) setState("listening");
       if (type === "response.function_call_arguments.done") {
         const name = typeof event.name === "string" ? event.name : "";
@@ -162,6 +195,7 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
     setError("");
     setLines([]);
     conversationId.current = null;
+    earlyAudio.current = [];
     setState("connecting");
     try {
       const mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
@@ -170,9 +204,13 @@ export default function LiveVoiceSandbox({ agentId, agentName }: { agentId: stri
       const input = context.createMediaStreamSource(mic);
       const process = context.createScriptProcessor(2048, 1, 1);
       process.onaudioprocess = (event) => {
+        const payload = encodePcm(event.inputBuffer.getChannelData(0), context.sampleRate);
         const ws = socket.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) return;
-        ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: encodePcm(event.inputBuffer.getChannelData(0)) }));
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: payload }));
+        } else if (earlyAudio.current.length < 30) {
+          earlyAudio.current.push(payload);
+        }
       };
       input.connect(process);
       process.connect(context.destination);
