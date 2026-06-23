@@ -3,6 +3,12 @@
  * Typography: Hanken Grotesk (display) + Inter (body) + JetBrains Mono (metadata)
  * All interactive elements use --primary tokens. Strict 4px rhythm enforced.
  * Phase 1 additions: Glassmorphism, robofuturistic glows/hovers, electric accent support.
+ *
+ * HEADING DISCIPLINE (enforced app-wide):
+ * - Use short, single-layer headings only. No title + subtitle stacks.
+ * - One clear heading per section. Keep them concise.
+ * - Prefer .wl-text-title, .wl-text-headline, or .wl-headline utilities.
+ * - Never create long multi-line headers or descriptive subtitles in UI.
  */
 
 :root {
