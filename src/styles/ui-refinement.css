@@ -1,1 +1,170 @@
-/* Shared UI refinement layer. */
+:root {
+  --wl-workspace-max: 1600px;
+  --wl-panel-shadow: 0 16px 36px -30px rgba(11, 28, 48, 0.42), 0 2px 5px rgba(11, 28, 48, 0.04);
+  --wl-panel-shadow-hover: 0 20px 44px -28px rgba(69, 30, 187, 0.22), 0 4px 10px rgba(11, 28, 48, 0.06);
+}
+
+.wl-stitch-eyebrow,
+.wl-stitch-label,
+.studio-kicker {
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.1em;
+}
+
+.wl-stitch-headline {
+  font-size: 27px;
+  line-height: 32px;
+}
+
+.wl-stitch-display {
+  font-size: clamp(30px, 2.4vw, 38px);
+  line-height: 1.08;
+}
+
+.wl-workspace-main {
+  background: var(--wl-page);
+}
+
+.wl-workspace-header {
+  min-height: 76px;
+}
+
+.wl-workspace-content {
+  width: min(100%, var(--wl-workspace-max));
+  margin-inline: auto;
+}
+
+.wl-workspace-sidebar {
+  background: var(--wl-surface-subtle);
+}
+
+.wl-workspace-sidebar .wl-stitch-sidebar-link {
+  min-height: 42px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+}
+
+.wl-workspace-sidebar .wl-stitch-sidebar-link[aria-current="page"] {
+  background: var(--wl-accent);
+  color: var(--wl-accent-foreground);
+  box-shadow: 0 6px 14px -12px rgba(69, 30, 187, 0.7);
+}
+
+.wl-stitch-card,
+.wl-stitch-agent-card,
+.wl-stitch-pricing-card,
+.wl-stitch-knowledge-panel,
+.wl-stitch-connection-card,
+.wl-stitch-auth-card,
+.studio-card {
+  border-color: var(--wl-line);
+  box-shadow: var(--wl-panel-shadow);
+}
+
+.wl-stitch-card-hover:hover,
+.wl-stitch-agent-card:hover,
+.wl-stitch-pricing-card:hover,
+.wl-stitch-knowledge-panel:hover,
+.wl-stitch-connection-card:hover {
+  border-color: color-mix(in srgb, var(--wl-accent) 42%, var(--wl-line));
+  box-shadow: var(--wl-panel-shadow-hover);
+}
+
+.wl-overview-hero,
+.wl-overview-status {
+  min-height: 252px;
+}
+
+.wl-overview-action,
+.wl-setting-card {
+  min-height: 224px;
+}
+
+.wl-settings-grid {
+  max-width: 1280px;
+}
+
+.wl-setting-card {
+  border-radius: var(--radius-xl);
+  padding: 24px;
+}
+
+.wl-assistants-grid {
+  align-content: start;
+}
+
+.wl-assistants-grid .wl-stitch-agent-card {
+  min-height: 232px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+}
+
+.wl-assistants-grid .wl-stitch-agent-card h2 {
+  color: var(--foreground);
+}
+
+.wl-studio-shell {
+  min-height: 0;
+}
+
+.wl-studio-canvas {
+  background: var(--wl-surface);
+  border: 1px solid var(--wl-line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--wl-panel-shadow);
+}
+
+.wl-studio-composer {
+  border-color: color-mix(in srgb, var(--wl-accent) 24%, var(--wl-line));
+  box-shadow: 0 12px 30px -24px rgba(11, 28, 48, 0.5);
+}
+
+.wl-studio-setup-panel {
+  box-shadow: 0 22px 50px -24px rgba(11, 28, 48, 0.36);
+}
+
+.wl-public-shell {
+  background: var(--wl-page);
+}
+
+.wl-public-hero {
+  padding-top: clamp(56px, 7vw, 92px);
+  padding-bottom: clamp(52px, 6vw, 84px);
+}
+
+.wl-public-hero h1 {
+  color: var(--foreground);
+}
+
+.wl-public-section {
+  padding-block: clamp(56px, 7vw, 96px);
+}
+
+.wl-public-proof {
+  color: var(--wl-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1279px) {
+  .wl-workspace-header {
+    min-height: 70px;
+  }
+}
+
+@media (max-width: 767px) {
+  .wl-workspace-header {
+    min-height: 64px;
+  }
+
+  .wl-stitch-headline {
+    font-size: 23px;
+    line-height: 29px;
+  }
+
+  .wl-setting-card,
+  .wl-assistants-grid .wl-stitch-agent-card {
+    min-height: auto;
+  }
+}
