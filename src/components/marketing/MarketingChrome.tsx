@@ -8,7 +8,7 @@ import { cn } from "../../lib/utils";
 type Props = {
   children: ReactNode;
   active?: PublicNavActive;
-  /** Reserve space for the mobile sticky CTA bar */
+  /** Opt-in mobile bottom conversion bar. In-flow CTAs are the default. */
   stickyCta?: boolean;
   footer?: boolean;
   /** Rich cream canvas (sign-in, reset password) — matches AuthPortal */
@@ -17,12 +17,12 @@ type Props = {
 };
 
 /**
- * Header + optional footer + mobile sticky CTA without the full page frame.
+ * Header + optional footer + optional mobile sticky CTA without the full page frame.
  * Use for legal, support, or nested layouts that bring their own content width.
  */
 export default function MarketingChrome({
   children,
-  stickyCta = true,
+  stickyCta = false,
   footer = true,
   authCanvas = false,
   className,

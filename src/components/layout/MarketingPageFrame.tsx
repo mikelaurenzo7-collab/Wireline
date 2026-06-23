@@ -17,7 +17,7 @@ interface MarketingPageFrameProps {
   active?: PublicNavActive;
   /** Fixed viewport (landing-style) vs scrollable long-form */
   scroll?: boolean;
-  /** Mobile bottom conversion bar */
+  /** Opt-in mobile bottom conversion bar. Public pages already carry in-flow CTAs. */
   stickyCta?: boolean;
   footer?: boolean;
   className?: string;
@@ -31,7 +31,7 @@ interface MarketingPageFrameProps {
 export default function MarketingPageFrame({
   children,
   scroll = true,
-  stickyCta = true,
+  stickyCta = false,
   footer = true,
   className,
   mainClassName,
