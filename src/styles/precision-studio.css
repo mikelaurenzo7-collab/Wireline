@@ -1,23 +1,36 @@
-/* Precision Account Holder Studio composition. These selectors target the current Studio module only. */
+/* Precision Account Holder Studio composition. */
 .wl-stitch-studio-glow {
   display: none;
 }
-/* The source uses a tonal overlay, never a frosted-glass treatment. */
-.studio-precision-surface {
-  backdrop-filter: none;
-}
-/* Tailwind's utility remains on a legacy Studio node; this prevents a rendered blur while that node is preserved for behavior compatibility. */
+
+/* The source uses tonal layering, never a frosted or glowing treatment. */
+.studio-precision-surface,
 .backdrop-blur-sm {
   backdrop-filter: none !important;
 }
 
-/*
- * Knowledge originally entered its four-column composition at xl (1280px).
- * Once the persistent workspace rail and content padding are included, that
- * leaves the fact/rule panels below a readable measure on common laptops.
- * Keep the all-at-once view for genuinely wide displays and collapse the
- * intermediate range to one selected training panel plus the editor.
- */
+main[data-wireline-route="/studio"] [class*="xl:grid-cols-[240px"] {
+  gap: 16px;
+}
+
+main[data-wireline-route="/studio"] [class*="xl:grid-cols-[240px"] > aside,
+main[data-wireline-route="/studio"] [class*="xl:grid-cols-[240px"] > section {
+  border-radius: var(--radius-xl);
+}
+
+main[data-wireline-route="/studio"] [class*="xl:grid-cols-[240px"] > section {
+  border: 1px solid var(--wl-line);
+  background: var(--wl-surface);
+  box-shadow: 0 16px 36px -30px color-mix(in srgb, var(--wl-ink) 48%, transparent), 0 2px 5px color-mix(in srgb, var(--wl-ink) 8%, transparent);
+}
+
+main[data-wireline-route="/studio"] form.wl-stitch-auth-card {
+  max-width: 32.5rem;
+  padding: 28px;
+  box-shadow: 0 24px 56px -28px color-mix(in srgb, var(--wl-ink) 54%, transparent);
+}
+
+/* Knowledge panels collapse before their text measure becomes unusable. */
 @media (min-width: 1280px) and (max-width: 1535px) {
   main [class*="xl:grid-cols-[minmax(170px"] {
     grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.92fr) !important;
@@ -32,17 +45,12 @@
     display: block !important;
   }
 
-  /*
-   * Studio follows the same principle: the roster is useful on a large
-   * desktop, but it should not steal the working canvas on a 13–15in laptop.
-   * The assistant is still identified in the Studio header; wide screens keep
-   * the fast-switch roster intact.
-   */
-  main [class*="xl:grid-cols-[240px"] {
-    grid-template-columns: minmax(0, 1fr) minmax(288px, 0.72fr) !important;
+  /* On common 13–15 inch laptops, preserve the working canvas and the setup map. */
+  main[data-wireline-route="/studio"] [class*="xl:grid-cols-[240px"] {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.68fr) !important;
   }
 
-  main [class*="xl:grid-cols-[240px"] > aside:first-child {
+  main[data-wireline-route="/studio"] [class*="xl:grid-cols-[240px"] > aside:first-child {
     display: none !important;
   }
 }
