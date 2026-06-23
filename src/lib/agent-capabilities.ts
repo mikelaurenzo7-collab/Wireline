@@ -57,6 +57,9 @@ export const AGENT_TOOL_NAME_VALUES = [
   "navigate_to",
   "add_reminder",
   "play_music",
+  // Enterprise/Business Agent exclusive actions
+  "route_to_business_unit",
+  "trigger_enterprise_webhook",
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
@@ -97,6 +100,20 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "escalate_to_human",
     label: "Escalate to human",
     description: "Transfers the conversation to a human when risk or complexity is too high.",
+    group: "core",
+  },
+  {
+    name: "route_to_business_unit",
+    label: "Route to business unit",
+    description:
+      "Enterprise routing: Transfers caller to a specific internal department or SLA queue.",
+    group: "core",
+  },
+  {
+    name: "trigger_enterprise_webhook",
+    label: "Trigger enterprise webhook",
+    description:
+      "Fires an authenticated webhook payload to your enterprise data lake or internal tools.",
     group: "core",
   },
   {
