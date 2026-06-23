@@ -122,10 +122,16 @@
   border: 1px solid var(--wl-line);
   border-radius: var(--radius-md);
   background: var(--wl-surface);
-  padding: 10px 12px;
   font-size: 14px;
   color: var(--wl-ink);
   outline: none;
+}
+/* Default padding at zero specificity so Tailwind pl-*/pr-*/px-* utilities
+   (e.g. leading-icon inputs that need pl-10) reliably override it. Without
+   this, the shorthand padding — loaded after Tailwind — won the cascade and
+   text rendered cramped behind leading/trailing icons (auth email/password). */
+:where(.wl-stitch-input) {
+  padding: 10px 12px;
 }
 .wl-stitch-input:focus { border: 1px solid var(--wl-accent); box-shadow: 0 0 0 3px var(--wl-focus); }
 .wl-stitch-input::placeholder { color: color-mix(in srgb, var(--wl-muted) 60%, transparent); }

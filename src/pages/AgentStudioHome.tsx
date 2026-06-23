@@ -110,7 +110,11 @@ export default function AgentStudioHome() {
 
   return (
     <>
-      <StudioWorkspaceV2 />
+      {/* Bind the studio to the dynamic viewport so the composer stays pinned
+          above the mobile browser chrome instead of falling below the fold. */}
+      <div className="h-[100dvh] min-h-0 overflow-hidden">
+        <StudioWorkspaceV2 />
+      </div>
       {showCreate ? (
         <div
           className="fixed inset-0 z-[70] grid place-items-center bg-[color:var(--wl-focus)] p-4"
