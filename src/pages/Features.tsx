@@ -31,7 +31,7 @@ const USE_CASES = [
   ["Personal calls", "Call a pharmacy, service desk, school, reservation line, or anyone you do not have time to wait for."],
   ["Appointment coordination", "Offer times, book the right slot, send text confirmations and reminders, and bring your team in when a decision is needed."],
   ["Business front desk", "Answer common questions, capture the reason for a call or text, and route urgent conversations to your team."],
-  ["SMS sales and reactivation", "Reply to new inquiries, follow up with opted-in contacts, revive stalled opportunities, and route interested prospects to the next step."],
+  ["SMS marketing + sales follow-up", "Reach opted-in contacts at the right moment, reply to new inquiries, keep sales conversations warm, and revive stalled opportunities."],
   ["Lead qualification", "Reply across call, email, or text, collect the details that matter, and book qualified opportunities for your team."],
   ["Custom workflows", "Build a focused assistant around your knowledge, rules, connected accounts, and approval process."],
 ] as const;
