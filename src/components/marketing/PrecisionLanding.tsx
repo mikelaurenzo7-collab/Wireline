@@ -19,7 +19,7 @@ const channels = [
   {
     label: "Text",
     title: "Text that turns interest into action",
-    body: "Reply to inbound leads, qualify interest, book and confirm appointments, re-engage customers, and keep your team in the loop.",
+    body: "Reply to inbound leads, run opt-in marketing and sales follow-up, book and confirm appointments, re-engage customers, and keep your team in the loop.",
     icon: MessageSquareText,
   },
 ];
