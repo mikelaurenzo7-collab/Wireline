@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, CreditCard, Receipt, ShieldCheck } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 import StripeBillingCard from "../components/StripeBillingCard";
+import ConversationBalanceCard from "../components/ConversationBalanceCard";
 import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 
 export default function BillingSettings() {
@@ -60,11 +61,13 @@ export default function BillingSettings() {
           </div>
         </section>
 
+        <ConversationBalanceCard />
+
         <section>
           <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
             <h2 className="flex items-center gap-2 font-[var(--wl-font-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
               <CreditCard className="size-5 text-primary" />
-              Subscription & balance
+              Business workspace plan
             </h2>
           </div>
           <StripeBillingCard />
