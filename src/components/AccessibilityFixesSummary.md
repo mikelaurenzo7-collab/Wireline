@@ -1,0 +1,1 @@
+Accessibility improvements applied: Color contrast fixed to WCAG AA, keyboard navigation improved, ARIA labels added to key interactive elements, focus management enhanced.
