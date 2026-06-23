@@ -51,30 +51,15 @@
   --color-text-3: var(--muted-foreground);
 }
 
-* { box-sizing: border-box; }
-html { 
-  min-height: 100%; 
-  background: var(--background); 
-  /* WCAG 2.2 SC 2.4.11 Focus Not Obscured (Minimum) - ensures sticky headers don't obscure focused elements */
-  scroll-padding-top: 5rem;
-}
-body {
-  min-height: 100dvh;
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--wl-font-sans);
-  font-synthesis: none;
-  font-kerning: normal;
-}
-/* WCAG 2.2 Target Size (Minimum) - ensure all interactive elements have at least 24x24 hit area */
-button, a, [role="button"] { 
+/* Base resets (box-sizing, html/body, focus, button typography) live in the
+   single source of truth: styles/foundation.css, loaded first. Only rules
+   unique to this layer remain here. */
+
+/* WCAG 2.2 Target Size (Minimum) — interactive elements keep a 24×24 hit area. */
+button, a, [role="button"] {
   min-height: 24px;
   min-width: 24px;
 }
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--wl-accent); outline-offset: 2px; }
 ::selection { background: var(--primary); color: var(--primary-foreground); }
 
 .studio-route-loading {
@@ -85,32 +70,34 @@ button { cursor: pointer; }
   color: var(--muted-foreground);
   font-size: 14px;
 }
+/* Display utilities are fluid: the clamp min preserves the prior mobile size
+   (32 / 24 / 22px) while the max lets headings breathe on large desktops. */
 .wl-text-display {
   font-family: var(--wl-font-display);
-  font-size: 40px;
+  font-size: clamp(2rem, 1.4rem + 3vw, 3.25rem); /* 32 → 52 */
   font-weight: 600;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.08;
   color: var(--foreground);
 }
 .wl-text-headline {
   font-family: var(--wl-font-display);
-  font-size: 30px;
+  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem); /* 24 → 40 */
   font-weight: 600;
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.18;
   color: var(--foreground);
 }
 .wl-text-title {
   font-family: var(--wl-font-display);
-  font-size: 22px;
+  font-size: clamp(1.375rem, 1.22rem + 0.8vw, 1.75rem); /* 22 → 28 */
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.3;
   color: var(--foreground);
 }
-.wl-text-body { font-size: 16px; font-weight: 400; line-height: 1.5; }
-.wl-text-caption { font-size: 14px; font-weight: 400; color: var(--muted-foreground); line-height: 1.5; }
+.wl-text-body { font-size: var(--wl-text-base); font-weight: 400; line-height: 1.5; }
+.wl-text-caption { font-size: var(--wl-text-sm); font-weight: 400; color: var(--muted-foreground); line-height: 1.5; }
 .wl-text-micro {
   font-family: var(--wl-font-mono);
   font-size: 12px;
@@ -123,10 +110,6 @@ button { cursor: pointer; }
 
 @keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
 .skeleton-shimmer { animation: skeleton-shimmer 1.8s ease-in-out infinite; }
-@media (max-width: 639px) {
-  .wl-text-display { font-size: 32px; }
-  .wl-text-headline { font-size: 24px; }
-}
 @media (prefers-reduced-motion: reduce) {
   .skeleton-shimmer { animation: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

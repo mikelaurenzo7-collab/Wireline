@@ -36,6 +36,38 @@
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --wl-focus: rgba(93, 63, 211, 0.28);
+
+  /* ── Responsive container system ──────────────────────────────────────
+     One ladder of widths frames the entire product so every surface lines
+     up — from a phone to a 5K display. Gutters scale fluidly with the
+     viewport; max-widths cap line length so ultrawide screens stay
+     composed instead of stretching edge to edge. box-sizing is border-box
+     globally, so padding is included in these caps (Tailwind-compatible). */
+  --wl-gutter: clamp(1rem, 4vw, 2.5rem);
+  --wl-container-narrow: 48rem; /* 768 — prose / focused forms */
+  --wl-container: 72rem; /* 1152 — default content column */
+  --wl-container-wide: 80rem; /* 1280 — marketing chrome / heroes */
+  --wl-container-full: 90rem; /* 1440 — dashboards / wide grids */
+  --wl-container-max: 96rem; /* 1536 — hard ceiling on the largest displays */
+
+  /* ── Fluid type scale ─────────────────────────────────────────────────
+     Each step interpolates with the viewport (clamp) so text breathes on
+     large desktops and stays legible on phones — no per-breakpoint
+     overrides needed. Min/max straddle the prior fixed sizes so existing
+     layouts read the same at ~1280px. */
+  --wl-text-xs: clamp(0.75rem, 0.73rem + 0.1vw, 0.8125rem); /* 12 → 13 */
+  --wl-text-sm: clamp(0.875rem, 0.85rem + 0.14vw, 0.9375rem); /* 14 → 15 */
+  --wl-text-base: clamp(1rem, 0.97rem + 0.18vw, 1.0625rem); /* 16 → 17 */
+  --wl-text-lg: clamp(1.125rem, 1.07rem + 0.28vw, 1.25rem); /* 18 → 20 */
+  --wl-text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem); /* 20 → 24 */
+  --wl-text-2xl: clamp(1.5rem, 1.32rem + 0.9vw, 2rem); /* 24 → 32 */
+  --wl-text-3xl: clamp(1.875rem, 1.55rem + 1.6vw, 2.75rem); /* 30 → 44 */
+  --wl-text-4xl: clamp(2.25rem, 1.78rem + 2.35vw, 3.5rem); /* 36 → 56 */
+  --wl-text-5xl: clamp(2.75rem, 1.95rem + 4vw, 4.5rem); /* 44 → 72 */
+
+  /* ── Fluid space scale (section rhythm) ───────────────────────────── */
+  --wl-space-section: clamp(3rem, 2rem + 5vw, 6rem);
+  --wl-space-block: clamp(1.5rem, 1.1rem + 2vw, 2.5rem);
   --background: var(--wl-page);
   --foreground: var(--wl-on-surface);
   --card: var(--wl-surface);
@@ -65,6 +97,12 @@ html {
   min-height: 100%;
   background: var(--wl-page);
   color-scheme: light;
+  /* Reserve the scrollbar track so content doesn't reflow when it appears —
+     keeps centered containers from shifting between pages on desktop. */
+  scrollbar-gutter: stable;
+  -webkit-text-size-adjust: 100%;
+  /* WCAG 2.2 SC 2.4.11 — keep focused elements clear of sticky headers. */
+  scroll-padding-top: 5rem;
 }
 
 body {
@@ -75,13 +113,20 @@ body {
   font-family: var(--wl-font-sans, Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   font-synthesis: none;
   font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* Long unbroken strings (URLs, tokens) must never force horizontal scroll. */
+p, li, dd, dt, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
 
 h1, h2, h3, h4 {
   font-family: var(--wl-font-display, "Hanken Grotesk", "Inter", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--wl-on-surface);
+  /* Avoid orphans/awkward breaks in headings at every width. */
+  text-wrap: balance;
 }
 
 button, input, textarea, select { font: inherit; }
@@ -180,3 +225,48 @@ a { color: inherit; }
   gap: 8px;
   margin-top: 24px;
 }
+
+/* ── Canonical responsive containers ──────────────────────────────────────
+   The single way to constrain and center a content column. Replaces the
+   ad-hoc spread of max-w-5xl / 6xl / 7xl / [1080px] / [1200px] / [1680px]
+   so every section aligns to the same grid at any viewport. Fluid gutters
+   guarantee comfortable edge padding on phones and breathing room on 5K. */
+.wl-container,
+.wl-container-wide,
+.wl-container-full,
+.wl-container-narrow {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--wl-gutter);
+}
+.wl-container-narrow { max-width: var(--wl-container-narrow); }
+.wl-container { max-width: var(--wl-container); }
+.wl-container-wide { max-width: var(--wl-container-wide); }
+.wl-container-full { max-width: var(--wl-container-full); }
+
+/* Vertical rhythm helper for stacked marketing sections. */
+.wl-section { padding-block: var(--wl-space-section); }
+
+/* Canonical content measure for the marketing frame, on-page nav, and footer.
+   These wrappers sit inside parents that already own horizontal padding, so
+   the measure adds only a centered max-width — capping line length and
+   keeping the whole site composed on ultrawide displays instead of sprawling
+   edge to edge. (Previously referenced app-wide but never defined.) */
+.wl-measure {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--wl-container-wide);
+}
+
+/* ── Fluid type utilities (token-backed) ──────────────────────────────────
+   Prefer these over fixed text-[..px] on display/marketing copy so type
+   scales with the viewport. */
+.wl-fluid-xs { font-size: var(--wl-text-xs); }
+.wl-fluid-sm { font-size: var(--wl-text-sm); }
+.wl-fluid-base { font-size: var(--wl-text-base); }
+.wl-fluid-lg { font-size: var(--wl-text-lg); }
+.wl-fluid-xl { font-size: var(--wl-text-xl); }
+.wl-fluid-2xl { font-size: var(--wl-text-2xl); line-height: 1.2; }
+.wl-fluid-3xl { font-size: var(--wl-text-3xl); line-height: 1.15; }
+.wl-fluid-4xl { font-size: var(--wl-text-4xl); line-height: 1.08; }
+.wl-fluid-5xl { font-size: var(--wl-text-5xl); line-height: 1.04; }

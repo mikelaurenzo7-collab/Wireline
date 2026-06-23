@@ -16,7 +16,7 @@ export default function PrecisionPublicHeader() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-[color:var(--wl-page)]">
-      <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-5 sm:px-6 lg:px-8">
+      <div className="wl-measure flex h-16 items-center justify-between px-5 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link
             to="/"
