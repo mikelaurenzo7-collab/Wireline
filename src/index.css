@@ -17,44 +17,26 @@
   /* Runtime token completion layer. foundation.css should own this long-term, but
      these aliases keep the design system coherent while the foundation layer is
      being rebuilt. */
-  --background: #f8fbff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #5d3fd3;
-  --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
-  --secondary-foreground: #1f2a44;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
-  --accent: #e9e7ff;
-  --accent-foreground: #312e81;
-  --destructive: #991b1b;
+  --background: var(--wl-page);
+  --foreground: var(--wl-on-surface);
+  --card: var(--wl-surface);
+  --card-foreground: var(--wl-on-surface);
+  --popover: var(--wl-surface);
+  --popover-foreground: var(--wl-on-surface);
+  --primary: var(--wl-primary-container);
+  --primary-foreground: var(--wl-on-primary);
+  --secondary: var(--wl-surface-subtle);
+  --secondary-foreground: var(--wl-on-surface);
+  --muted: var(--wl-surface-subtle);
+  --muted-foreground: var(--wl-muted);
+  --accent: #e6deff;
+  --accent-foreground: var(--wl-primary);
+  --destructive: var(--wl-error);
   --destructive-foreground: #ffffff;
-  --border: #cbd5e1;
-  --input: #cbd5e1;
+  --border: var(--wl-line);
+  --input: var(--wl-line);
   --ring: rgba(93, 63, 211, 0.28);
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --wl-page: linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
-  --wl-surface: #ffffff;
-  --wl-surface-subtle: #f6f8fc;
-  --wl-surface-2: #eef2ff;
-  --wl-ink: #0f172a;
-  --wl-muted: #475569;
-  --wl-line: #cbd5e1;
-  --wl-line-strong: #94a3b8;
-  --wl-accent-hover: #4f32c6;
-  --wl-success: #166534;
-  --wl-warning: #854d0e;
-  --wl-error: #991b1b;
-  --wl-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --wl-shadow-md: 0 10px 24px -12px rgba(93, 63, 211, 0.2);
-  --wl-shadow-lg: 0 24px 56px -28px rgba(93, 63, 211, 0.24);
+  --wl-surface-2: var(--wl-surface-container);
 }
 
 @theme inline {
@@ -112,9 +94,9 @@ body {
 }
 
 .wl-panel-elevated {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.98));
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-radius: var(--radius-xl);
+  background: var(--wl-surface);
+  border: 1px solid var(--wl-line);
+  border-radius: var(--radius-lg);
   box-shadow: var(--wl-shadow-md);
 }
 
@@ -173,8 +155,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(6px);
+  background: rgba(11, 28, 48, 0.56);
 }
 
 .wl-dialog {
@@ -211,7 +192,7 @@ body {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--primary), #7c5cff);
+  background: var(--primary);
   box-shadow: 0 0 0 4px rgba(93, 63, 211, 0.12);
 }
 
@@ -305,8 +286,7 @@ body {
   gap: 0.75rem;
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
+  background: var(--wl-surface);
   box-shadow: var(--wl-shadow-sm);
 }
 

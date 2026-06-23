@@ -1,9 +1,90 @@
-/* Precision Account Holder Studio — World-Class Agent Card Primitive (Tailored to Wireline Product)
- * Deep audit complete. Curious exploration of product needs led to this purposeful, clever primitive.
- * Uses all prior work: token manifest, interaction system, component primitives, AAA contrast, professional tone, container queries.
- * Clever: Responsive, status-aware, action-integrated, memory indicator, high reusability.
- * Merged to main.
- */
+/* Precision workspace primitives — shared studio card, kicker, and control aliases. */
+
+.studio-kicker {
+  font-family: var(--wl-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.studio-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  padding: 1.25rem;
+  box-shadow: var(--wl-shadow-sm);
+  transition:
+    border-color var(--transition-base),
+    background-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
+}
+
+.studio-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.studio-card:active {
+  transform: scale(0.98);
+}
+
+.studio-primary-button,
+.studio-secondary-button {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none !important;
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    transform var(--transition-fast);
+}
+
+.studio-primary-button {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground) !important;
+}
+
+.studio-primary-button:hover:not(:disabled) {
+  border-color: var(--wl-accent-hover);
+  background: var(--wl-accent-hover);
+}
+
+.studio-primary-button:active:not(:disabled),
+.studio-secondary-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.studio-primary-button:focus-visible,
+.studio-secondary-button:focus-visible {
+  outline: 2px solid var(--wl-accent);
+  outline-offset: 2px;
+}
+
+.studio-secondary-button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground) !important;
+}
+
+.studio-secondary-button:hover:not(:disabled) {
+  border-color: var(--wl-line-strong);
+  background: var(--secondary);
+}
+
+/* Precision Account Holder Studio — agent card primitive */
 
 .wl-agent-card {
   @extend .wl-card;

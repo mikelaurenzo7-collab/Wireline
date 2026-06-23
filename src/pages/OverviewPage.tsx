@@ -48,8 +48,8 @@ export default function OverviewPage() {
               <Link to="/studio?create=1" className="studio-primary-button text-sm">
                 Create an assistant <ArrowRight size={16} />
               </Link>
-              <Link to="/actions" className="studio-secondary-button text-sm">
-                Connect an account
+              <Link to="/connections" className="studio-secondary-button text-sm">
+                Connect your tools
               </Link>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function OverviewPage() {
               Open knowledge <ArrowRight size={15} />
             </span>
           </Link>
-          <Link to="/actions" className="wl-overview-action studio-card group block text-left">
+          <Link to="/connections" className="wl-overview-action studio-card group block text-left">
             <Cable className="size-5 text-primary" />
             <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
               Connect useful actions
