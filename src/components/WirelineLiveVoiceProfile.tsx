@@ -27,7 +27,10 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
     setLoading(true);
     authFetch(`/api/voice/live/profile?agentId=${encodeURIComponent(agentId)}`)
       .then(async (response) => {
-        const body = await response.json().catch(() => null) as { profile?: Profile["id"]; profiles?: Profile[] } | null;
+        const body = (await response.json().catch(() => null)) as {
+          profile?: Profile["id"];
+          profiles?: Profile[];
+        } | null;
         if (!response.ok || !body || !active) return;
         if (body.profile) setSelected(body.profile);
         if (Array.isArray(body.profiles) && body.profiles.length) setProfiles(body.profiles);
@@ -72,7 +75,9 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
             Pick the live voice character
           </h3>
           <p className="mt-1 max-w-2xl text-[13px] leading-5 text-muted-foreground">
-            This applies to live browser and mobile conversations. Phone routing keeps its current production voice until Direct SIP is deliberately provisioned.
+            Role-tuned profiles deliver distinctive, context-aware voices for live browser and
+            mobile Grok realtime sessions. Phone routing keeps its current production voice until
+            Direct SIP is deliberately provisioned.
           </p>
         </div>
       </div>
@@ -89,8 +94,12 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
               className={`relative rounded-lg border p-3 text-left transition disabled:cursor-wait disabled:opacity-65 ${active ? "border-primary bg-secondary shadow-sm" : "border-border bg-card hover:border-primary/45 hover:bg-secondary"}`}
             >
               {active ? <Check size={14} className="absolute right-3 top-3 text-primary" /> : null}
-              <strong className="block pr-5 text-[13px] font-semibold text-foreground">{profile.label}</strong>
-              <span className="mt-1 block text-[11px] leading-4 text-muted-foreground">{profile.description}</span>
+              <strong className="block pr-5 text-[13px] font-semibold text-foreground">
+                {profile.label}
+              </strong>
+              <span className="mt-1 block text-[11px] leading-4 text-muted-foreground">
+                {profile.description}
+              </span>
             </button>
           );
         })}

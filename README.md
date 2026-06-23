@@ -29,11 +29,11 @@ npm run verify:full  # lint + authz + csp + tests + build + smoke
 ```
 
 See:
-- `CLAUDE.md` — contributor guidance and rules
-- `ARCHITECTURE.md` — system design
-- `CODEBASE_HEALTH.md` — current guardrails and cleanup policy
-- `AGENTS.md` — design system rules (Ametrine Precision)
-- `docs/` — launch, SOC 2, SLAs, more
+- `AGENTS.md` — design system rules (Ametrine Precision), implementation guidance, and contributor rules
+- `CODEBASE_HEALTH.md` — guardrails, cleanup policy, deletion rules, and health standards
+- `ARCHITECTURE.md` — system design and runtime flows
+- `docs/` — launch plans, SOC 2, SLAs, and operational references
+- `src/constants/brand-colors.ts` and `src/styles/design-system.css` — single source of visual truth
 
 ## Project status (as of recent commits)
 Active development on Grok realtime voice, agent customizability (including voice cloning), Ametrine Precision design standardization, native mobile foundations, and ongoing codebase health / legacy removal.
