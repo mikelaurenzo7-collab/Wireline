@@ -1,4 +1,5 @@
 import { recommendedPlanFromIntent, type SignupIntent } from "./signup-intent";
+import { isFreshSignupSession } from "./post-signup-onboarding";
 
 export type WorkspaceMode = "personal" | "business";
 
@@ -53,5 +54,10 @@ export function resolvePostAuthDestination(
       return stored;
     }
   }
+
+  if (isFreshSignupSession()) {
+    return "/onboarding";
+  }
+
   return "/studio";
 }

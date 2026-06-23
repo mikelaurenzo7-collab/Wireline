@@ -223,7 +223,7 @@ async function handleSendEmail(
 async function handleSendTextMessage(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const sent = await sendTenantMessage(userId, {
     to: action.payload.to,
@@ -273,7 +273,7 @@ async function handleScheduleCalendar(
 async function handleUpdateCRM(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const crm = new CRMService(userId);
   const updated = await crm.updateLead(action.payload);
@@ -301,7 +301,7 @@ async function handleCreateInternalTask(
 async function handleSendContract(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const response = await sendContract(userId, action.payload);
   return { success: !!response };
@@ -309,7 +309,7 @@ async function handleSendContract(
 async function handleProspectLeads(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  _context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const leads = await searchLeads(userId, action.payload);
   return { success: Array.isArray(leads) };

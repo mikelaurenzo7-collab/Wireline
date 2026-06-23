@@ -33,6 +33,7 @@ const AuthPortalRoute = lazy(() => import("./AuthPortalRoute"));
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const SolutionsPage = lazy(() => import("./pages/SolutionsPage"));
 const VerticalLanding = lazy(() => import("./pages/VerticalLanding"));
+const OnboardingFlow = lazy(() => import("./pages/OnboardingFlow"));
 
 function AppRouter() {
   return (
@@ -72,7 +73,7 @@ function AppRouter() {
         <Route path="/reset" element={<Navigate to="/signin" replace />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
-        <Route path="/onboarding" element={<Navigate to="/studio" replace />} />
+        <Route path="/onboarding" element={<OnboardingFlow />} />
         <Route path="/*" element={<AppShell />} />
       </Routes>
     </Suspense>
