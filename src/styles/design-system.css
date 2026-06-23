@@ -26,3 +26,66 @@ PROFESSIONAL TONE & AAA ENFORCEMENT:
 This establishes a scalable, auditable, professional token management foundation while keeping overhead appropriate for current stage. Future pipeline additions will build on this structure without disruption.
 
 Last updated: Professional tone + AAA + management investigation pass. */
+
+.chrome-eyebrow,
+.text-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--wl-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--primary) 78%, white);
+}
+
+.wl-page-title {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.75rem, 1.2rem + 2.5vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  color: var(--foreground);
+}
+
+.text-muted-resolved {
+  color: var(--muted-foreground);
+}
+
+.hero-headline-glow {
+  text-shadow: 0 10px 30px rgba(93, 63, 211, 0.12);
+}
+
+.touch-press {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.touch-press:active {
+  transform: scale(0.98);
+}
+
+.wl-reveal {
+  animation: wl-reveal-in 220ms ease-out both;
+}
+
+@keyframes wl-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-reveal {
+    animation: none;
+  }
+}
