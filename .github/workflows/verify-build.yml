@@ -11,20 +11,44 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: verify-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    name: Client and server bundle
+    name: Verify client and server bundle
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Report runner toolchain
+        run: |
+          node --version
+          npm --version
+          git --version
+          echo "workflow=${GITHUB_WORKFLOW}"
+          echo "ref=${GITHUB_REF}"
+          echo "sha=${GITHUB_SHA}"
+
       # package-lock is retained for local installs but has historical root-entry
       # drift. Install from package.json until its full regeneration lands.
-      - run: npm install
-      - run: npm run active-surface:check
-      - run: npm run build
-      - run: node -e "process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')"
+      - name: Install dependencies from active manifest
+        run: npm install
+
+      - name: Professional Heritage contract
+        run: npm run active-surface:check
+
+      - name: Build client and server bundles
+        run: npm run build
+
+      - name: Smoke test bundled server
+        run: node -e "process.env.VERCEL='1'; require('./dist/server.cjs'); console.log('server bundle imports')"
