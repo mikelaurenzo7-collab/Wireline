@@ -6,20 +6,32 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-smoke:
+    name: Release gate build smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
+
+      - name: Print runner toolchain
+        run: |
+          node --version
+          npm --version
 
       # See verify-build.yml: resolve packages from the active manifest while
       # historical root entries in package-lock are being retired.
@@ -32,7 +44,7 @@ jobs:
       - name: Type check
         run: npm run lint
 
-      - name: Build
+      - name: Build client and server
         run: npm run build
 
       - name: Smoke test bundled server
