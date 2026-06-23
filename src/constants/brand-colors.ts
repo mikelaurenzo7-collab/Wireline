@@ -1,58 +1,56 @@
 export const BRAND = {
-  signal: "#1A1C1B",
-  signalBright: "#414846",
-  signalDeep: "#451EBB",
-  signalBlue: "#5D3FD3",
-  signalBlueDeep: "#451EBB",
-  signalBlueMuted: "#0B1C30",
-  teal: "#4A635D",
-  tealBright: "#5D3FD3",
-  amber: "#B45309",
+  // Ametrine Precision Core Palette (single source of truth)
+  primary: "#451EBB",
+  primaryDeep: "#451EBB",
+  primaryVariant: "#5D3FD3",
+  primaryContainer: "#5D3FD3",
+  onPrimary: "#FFFFFF",
 
-  /** @deprecated legacy route accent alias — use signalBlue */
-  purple: "#5D3FD3",
-  purpleDeep: "#451EBB",
-  purpleMid: "#5D3FD3",
-  purpleRim: "#451EBB",
-  purpleLight: "#0B1C30",
-  purpleMuted: "#484554",
-  purpleInk: "#0B1C30",
-  /** @deprecated Wireline Precision alias — use signalBlue */
-  blue: "#5D3FD3",
-  blueDeep: "#451EBB",
-  blueMid: "#5D3FD3",
-  blueRim: "#451EBB",
-  blueLight: "#0B1C30",
-  blueMuted: "#484554",
-  blueInk: "#0B1C30",
-  cream: "#F8F9FF",
-  paper: "#FFFFFF",
-  creamWarm: "#EFF4FF",
-  creamDeep: "#C9C4D7",
-  ink: "#0B1C30",
-  /** @deprecated use signalBlue */
-  velvet: "#5D3FD3",
-  chromeGlow: "#C9C4D7",
+  surface: "#F8F9FF",
+  surfaceDim: "#CBDBF5",
+  surfaceBright: "#F8F9FF",
+  surfaceContainerLowest: "#FFFFFF",
+  surfaceContainerLow: "#EFF4FF",
+  surfaceContainer: "#E5EEFF",
+  surfaceContainerHigh: "#DCE9FF",
+  surfaceContainerHighest: "#D3E4FE",
+  onSurface: "#0B1C30",
+  onSurfaceVariant: "#484554",
+
+  outline: "#797586",
+  outlineVariant: "#C9C4D7",
+
+  success: "#2E7D32",
+  warning: "#ED6C02",
+  error: "#BA1A1A",
+
+  // Minimal supporting accents for Ametrine Precision coherence
+  teal: "#4A635D",
+  amber: "#B45309",
   rose: "#BA1A1A",
 } as const;
 
 export type BrandAccentPair = readonly [string, string];
-export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.signalBlue, BRAND.signalBlueDeep];
+
+export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.primary, BRAND.primaryDeep];
+
 export const ROUTE_ACCENT_VARIANTS = {
-  primary: [BRAND.signalBlue, BRAND.signalBlueDeep] as BrandAccentPair,
-  soft: [BRAND.signalBlue, BRAND.teal] as BrandAccentPair,
-  warm: [BRAND.signalBlueDeep, BRAND.creamWarm] as BrandAccentPair,
-  light: [BRAND.signalBlueMuted, BRAND.signalBlue] as BrandAccentPair,
-  cream: [BRAND.signalBlue, BRAND.creamDeep] as BrandAccentPair,
-  critical: [BRAND.signalBlue, BRAND.rose] as BrandAccentPair,
+  primary: [BRAND.primary, BRAND.primaryDeep] as BrandAccentPair,
+  soft: [BRAND.primaryVariant, BRAND.teal] as BrandAccentPair,
+  warm: [BRAND.primaryDeep, BRAND.surfaceContainerLow] as BrandAccentPair,
+  light: [BRAND.onSurface, BRAND.primary] as BrandAccentPair,
+  cream: [BRAND.primary, BRAND.outlineVariant] as BrandAccentPair,
+  critical: [BRAND.primary, BRAND.rose] as BrandAccentPair,
 } as const;
+
 export const NAV_GROUP_ACCENTS: Record<string, string> = {
-  Command: BRAND.signalBlue,
-  Channels: BRAND.signalBlueMuted,
-  Agents: BRAND.signalBlueDeep,
-  Design: BRAND.signalBlue,
+  Command: BRAND.primary,
+  Channels: BRAND.onSurface,
+  Agents: BRAND.primaryDeep,
+  Design: BRAND.primary,
   Admin: BRAND.teal,
 };
+
 export const ROUTE_ACCENTS: Record<string, BrandAccentPair> = {
   "/ops": ROUTE_ACCENT_VARIANTS.primary,
   "/triage": ROUTE_ACCENT_VARIANTS.warm,
@@ -78,3 +76,7 @@ export const ROUTE_ACCENTS: Record<string, BrandAccentPair> = {
   "/founder": ROUTE_ACCENT_VARIANTS.cream,
   "/activity": ROUTE_ACCENT_VARIANTS.primary,
 };
+
+// All legacy 'signal*', 'Signal Blue', 'purple', and 'blue' aliases have been removed.
+// This file is now the single source of truth for Ametrine Precision branding.
+// Import BRAND.* directly in components and styles.
