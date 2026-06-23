@@ -28,6 +28,11 @@ npm run verify       # build + server smoke (fast)
 npm run verify:full  # lint + authz + csp + tests + build + smoke
 ```
 
+## Deployment safety
+
+Vercel deployments run `npm run vercel-build`, which delegates to `scripts/vercel-build.mjs`.
+Database migrations run automatically only when `VERCEL_ENV=production`. Preview deployments skip migrations so feature branches cannot mutate a shared production database during build. For an intentional one-off non-production migration deployment, set `WIRELINE_ALLOW_PREVIEW_MIGRATIONS=1` only for that deployment and remove it immediately afterward.
+
 See:
 - `AGENTS.md` — design system rules (Ametrine Precision), implementation guidance, and contributor rules
 - `CODEBASE_HEALTH.md` — guardrails, cleanup policy, deletion rules, and health standards
