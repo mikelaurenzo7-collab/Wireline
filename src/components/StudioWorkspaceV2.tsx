@@ -121,7 +121,7 @@ export default function StudioWorkspaceV2() {
   const [brief, setBrief] = useState("");
   const [creating, setCreating] = useState(false);
   const [inspector, setInspector] = useState<Inspector>("overview");
-  const [mode, setMode] = useState<"train" | "simulate">("train");
+  const [mode, setMode] = useState<"train" | "simulate" | "build">("train");
   const [panelEntry, setPanelEntry] = useState("");
   const [savingPanel, setSavingPanel] = useState(false);
   const [runtimeSaving, setRuntimeSaving] = useState(false);
@@ -880,7 +880,7 @@ export default function StudioWorkspaceV2() {
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="hidden xl:flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setInspector("assets")}
@@ -896,6 +896,22 @@ export default function StudioWorkspaceV2() {
               disabled={runtimeSaving || !active}
             />
           </div>
+        </div>
+        <div className="xl:hidden mb-2 px-0.5">
+          <select
+            value={active?.id || ""}
+            onChange={(event) => {
+              const agent = agents.find((a) => a.id === event.target.value);
+              if (agent) selectAgent(agent);
+            }}
+            className="h-10 w-full rounded-[var(--radius)] border border-border bg-card px-3 text-sm font-semibold"
+          >
+            {agents.map((agent) => (
+              <option value={agent.id} key={agent.id}>
+                {agent.name} — {roleLabel(agent.role)}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[240px_minmax(0,1fr)_320px]">
           <aside className="wl-stitch-card hidden min-h-0 flex-col p-3 xl:flex">
@@ -948,10 +964,64 @@ export default function StudioWorkspaceV2() {
                 >
                   Test &amp; Simulate
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("build")}
+                  className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors xl:hidden ${mode === "build" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  Build Map
+                </button>
               </div>
             </div>
 
-            {mode === "simulate" && active ? (
+            {mode === "build" ? (
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 xl:hidden">
+                <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border pb-3">
+                  <div>
+                    <p className="wl-stitch-label">Build map</p>
+                    <p className="mt-0.5 text-xs font-semibold tracking-[-.02em]">Path to live</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    {completion}/5
+                  </span>
+                </div>
+                <div className="mt-2 flex shrink-0 gap-3 overflow-x-auto border-b border-border pb-0">
+                  {readiness.slice(0, 3).map((step) => (
+                    <button
+                      key={step.key}
+                      type="button"
+                      onClick={() => setInspector(step.key)}
+                      className={`wl-stitch-build-map-tab whitespace-nowrap ${inspector === step.key ? "wl-stitch-build-map-tab--active" : ""}`}
+                    >
+                      {step.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 shrink-0 space-y-0.5">
+                  {readiness.map((step) => (
+                    <button
+                      key={step.key}
+                      type="button"
+                      onClick={() => setInspector(step.key)}
+                      className={`flex w-full items-start gap-2 rounded-xl p-2 text-left transition ${inspector === step.key ? "bg-muted" : "hover:bg-muted/70"}`}
+                    >
+                      <span
+                        className={`mt-0.5 grid h-4 w-4 place-items-center rounded-full border ${step.done ? "border-primary bg-primary text-white" : "border-border text-transparent"}`}
+                      >
+                        <Check size={10} strokeWidth={3} />
+                      </span>
+                      <span>
+                        <strong className="block text-[11px]">{step.label}</strong>
+                        <small className="mt-0.5 block text-[10px] text-muted-foreground">
+                          {step.detail}
+                        </small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-6 border-t border-border pt-4">{inspectorContent}</div>
+              </div>
+            ) : mode === "simulate" && active ? (
               <div className="flex-1 min-h-0 overflow-y-auto p-4">
                 <RoleplaySandbox agentId={active.id} />
               </div>
