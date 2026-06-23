@@ -10,7 +10,7 @@ export type NavItem = {
 };
 
 const STUDIO_NAV: NavItem[] = [
-  { label: "Agent Studio", path: "/agents", icon: Sparkles, matches: ["/agents", "/training"] },
+  { label: "Assistants & agents", path: "/agents", icon: Sparkles, matches: ["/agents", "/training"] },
   { label: "Actions", path: "/actions", icon: Plug, matches: ["/actions", "/actions"] },
   { label: "Settings", path: "/settings", icon: Settings2, matches: ["/settings", "/admin"] },
 ];
@@ -29,7 +29,7 @@ export function findNavItemForPath(pathname: string): NavItem | undefined {
 }
 
 export const PAGE_TITLES: Record<string, string> = {
-  "/agents": "Agent Studio",
+  "/agents": "Assistants & agents",
   "/actions": "Actions",
   "/settings": "Settings",
 };

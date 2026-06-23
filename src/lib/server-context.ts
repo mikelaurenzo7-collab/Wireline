@@ -66,7 +66,7 @@ async function scopeClientToTenant(userId: string) {
   const client = await _origConnect();
   try {
     await client.query("BEGIN");
-    await client.query("SET LOCAL ROLE authenticated");
+    await client.query("SET LOCAL ROLE wireline_server");
     await client.query("SELECT set_config('app.current_user_id', $1, true)", [userId]);
   } catch (e) {
     // Roll back any partial transaction and discard the (now poisoned) connection.

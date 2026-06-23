@@ -156,6 +156,7 @@ router.get(
           channel: schema.agents.channel,
           channels: schema.agents.channels,
           voiceId: schema.agents.voiceId,
+          isBusinessAgent: schema.agents.isBusinessAgent,
           createdAt: schema.agents.createdAt,
         })
         .from(schema.agents)

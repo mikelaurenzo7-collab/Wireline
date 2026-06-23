@@ -89,7 +89,12 @@ export default function AgentStudioHome() {
       const response = await authFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), role, deferPhoneProvision: true }),
+        body: JSON.stringify({
+          name: name.trim(),
+          role,
+          deferPhoneProvision: true,
+          is_business_agent: wantsBusinessAgent,
+        }),
       });
       const body = (await safeJson(response)) as { id?: string; error?: string } | null;
       if (!response.ok || !body?.id) {
@@ -103,13 +108,7 @@ export default function AgentStudioHome() {
           body: JSON.stringify({ agentId: body.id, message: brief.trim() }),
         });
       }
-      if (wantsBusinessAgent) {
-        await authFetch(`/api/agent-config/${body.id}/business`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ is_business_agent: true }),
-        });
-      }
+
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });

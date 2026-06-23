@@ -51,6 +51,7 @@ data class Agent(
     val archetype: String?,
     val channels: List<String>?,
     val voiceId: String?,
+    val isBusinessAgent: Boolean? = null,
 )
 
 data class ActiveCallList(val calls: List<ActiveCall>)

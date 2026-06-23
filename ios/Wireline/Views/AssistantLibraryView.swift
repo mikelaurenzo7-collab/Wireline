@@ -6,6 +6,7 @@ struct AssistantLibraryView: View {
     @State private var showCreate = false
     @State private var name = ""
     @State private var role = "scheduler"
+    @State private var isBusinessAgent = false
     @State private var isCreating = false
     @State private var creationError: String?
 
@@ -20,8 +21,8 @@ struct AssistantLibraryView: View {
                     )
                 } else if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Start with one assistant",
-                        message: "Give it a name and a clear job. You can teach the details in Studio afterward.",
+                        title: "Personal assistants and business agents",
+                        message: "Start with a personal assistant for everyday calls, or add a business agent when work needs a professional line.",
                         systemImage: "person.wave.2"
                     )
                 } else {
@@ -49,6 +50,16 @@ struct AssistantLibraryView: View {
     private var createSheet: some View {
         NavigationStack {
             Form {
+                Section("Full versatility") {
+                    Picker("Posture", selection: $isBusinessAgent) {
+                        Text("Personal assistant").tag(false)
+                        Text("Business agent").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: isBusinessAgent) { _, business in
+                        if business, role == "scheduler" { role = "receptionist" }
+                    }
+                }
                 Section("Start with one clear job") {
                     TextField("Name", text: $name)
                     Picker("Help with", selection: $role) {
@@ -77,7 +88,7 @@ struct AssistantLibraryView: View {
                     Section { Text(creationError).foregroundStyle(Brand.destructive) }
                 }
             }
-            .navigationTitle("New assistant")
+            .navigationTitle(isBusinessAgent ? "New business agent" : "New assistant")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -104,7 +115,11 @@ struct AssistantLibraryView: View {
         creationError = nil
         defer { isCreating = false }
         do {
-            let agent = try await MobileAssistantCreation.create(name: cleanName, role: role)
+            let agent = try await MobileAssistantCreation.create(
+                name: cleanName,
+                role: role,
+                isBusinessAgent: isBusinessAgent
+            )
             agents.insert(agent, at: 0)
             name = ""
             showCreate = false

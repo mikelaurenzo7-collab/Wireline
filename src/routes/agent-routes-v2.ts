@@ -248,6 +248,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const name = cleanText(req.body?.name, 100);
     const role = cleanText(req.body?.role, 80) || "scheduler";
+    const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     const [{ count }] = await drizzle
       .select({ count: sql`count(*)` })
@@ -267,8 +268,16 @@ router.post(
       voiceProvider: "11labs",
       enabledTools,
       firstMessage: `Hi, this is ${name}. How can I help?`,
+      isBusinessAgent,
     });
-    res.status(201).json({ id, name, role, channel: "voice", enabledTools });
+    res.status(201).json({
+      id,
+      name,
+      role,
+      channel: "voice",
+      enabledTools,
+      is_business_agent: isBusinessAgent,
+    });
   },
 );
 

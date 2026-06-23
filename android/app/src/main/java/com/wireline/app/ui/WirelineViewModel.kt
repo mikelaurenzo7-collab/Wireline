@@ -60,11 +60,16 @@ class WirelineViewModel(application: Application) : AndroidViewModel(application
             .onFailure { state = state.copy(isWorking = false, error = it.message) }
     }
 
-    fun createAssistant(name: String, role: String, onCreated: () -> Unit = {}) = viewModelScope.launch {
+    fun createAssistant(
+        name: String,
+        role: String,
+        isBusinessAgent: Boolean = false,
+        onCreated: () -> Unit = {},
+    ) = viewModelScope.launch {
         val cleanName = name.trim()
         if (cleanName.isEmpty()) return@launch
         state = state.copy(isWorking = true, error = null)
-        runCatching { api.createAssistant(cleanName, role) }
+        runCatching { api.createAssistant(cleanName, role, isBusinessAgent) }
             .onSuccess { assistant ->
                 state = state.copy(isWorking = false, agents = listOf(assistant) + state.agents)
                 onCreated()

@@ -143,8 +143,8 @@ struct WorkspaceView: View {
             VStack(spacing: 0) {
                 if agents.isEmpty {
                     BrandEmptyState(
-                        title: "Start with one assistant",
-                        message: "Open the Assistants tab to give your first helper a name and a clear job.",
+                        title: "Personal assistants and business agents",
+                        message: "Open the Assistants tab to create a personal assistant or business agent.",
                         systemImage: "person.wave.2"
                     )
                 } else {

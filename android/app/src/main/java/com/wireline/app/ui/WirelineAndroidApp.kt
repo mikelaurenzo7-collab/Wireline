@@ -189,8 +189,8 @@ fun WirelineAndroidApp(model: WirelineViewModel = viewModel()) {
         ModalBottomSheet(onDismissRequest = { if (!state.isWorking) showCreateAssistant = false }, containerColor = Brand.Canvas) {
             CreateAssistantSheet(
                 state = state,
-                onCreate = { name, role ->
-                    model.createAssistant(name, role) { showCreateAssistant = false }
+                onCreate = { name, role, isBusinessAgent ->
+                    model.createAssistant(name, role, isBusinessAgent) { showCreateAssistant = false }
                 },
             )
         }
@@ -304,7 +304,7 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Assistants", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                    Text("The callers you have set up for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+                    Text("Personal assistants and business agents for your day.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
                 }
                 TextButton(onClick = onCreate) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -316,8 +316,8 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
         if (agents.isEmpty()) {
             item {
                 AssistantCard {
-                    Text("Start with one assistant", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
-                    Text("Give your first helper a name and a clear job. You can teach it more in Studio afterward.", color = Brand.Text2)
+                    Text("Personal assistants and business agents", style = MaterialTheme.typography.titleMedium, color = Brand.Text)
+                    Text("Start with a personal assistant for everyday calls, or add a business agent when work needs a professional line.", color = Brand.Text2)
                     Button(onClick = onCreate, shape = RoundedCornerShape(Brand.RadiusSm)) { Text("Create assistant") }
                 }
             }
@@ -328,7 +328,12 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
                         Medallion(Icons.Default.PhoneInTalk, size = 40.dp)
                         Column(Modifier.weight(1f)) {
                             Text(agent.name, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-                            Text(agent.role?.replace("_", " ") ?: "Assistant", style = MaterialTheme.typography.bodySmall, color = Brand.Text2)
+                            Text(
+                                if (agent.isBusinessAgent == true) "Business agent"
+                                else agent.role?.replace("_", " ") ?: "Personal assistant",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Brand.Text2,
+                            )
                         }
                         Text("Ready", style = MaterialTheme.typography.labelSmall, color = Brand.Success)
                     }
@@ -339,9 +344,10 @@ private fun AssistantsScreen(padding: PaddingValues, agents: List<Agent>, onCrea
 }
 
 @Composable
-private fun CreateAssistantSheet(state: WirelineUiState, onCreate: (String, String) -> Unit) {
+private fun CreateAssistantSheet(state: WirelineUiState, onCreate: (String, String, Boolean) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var role by rememberSaveable { mutableStateOf("scheduler") }
+    var isBusinessAgent by rememberSaveable { mutableStateOf(false) }
     val choices = listOf(
         "scheduler" to "Personal assistant",
         "customer_service" to "Helpful caller",
@@ -353,9 +359,39 @@ private fun CreateAssistantSheet(state: WirelineUiState, onCreate: (String, Stri
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("New assistant", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-        Text("Start with one useful call.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text)
-        Text("Name the help you want. You can add its knowledge, actions, and voice in Studio next.", style = MaterialTheme.typography.bodyMedium, color = Brand.Text2)
+        Text("Full versatility", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            FilterChip(
+                selected = !isBusinessAgent,
+                onClick = { isBusinessAgent = false },
+                label = { Text("Personal assistant") },
+                modifier = Modifier.weight(1f),
+            )
+            FilterChip(
+                selected = isBusinessAgent,
+                onClick = {
+                    isBusinessAgent = true
+                    if (role == "scheduler") role = "receptionist"
+                },
+                label = { Text("Business agent") },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Text(
+            if (isBusinessAgent) "New business agent" else "New assistant",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = Brand.Text,
+        )
+        Text(
+            if (isBusinessAgent) {
+                "Name the agent and describe how it should represent your business. Refine policies in Studio next."
+            } else {
+                "Name the help you want. You can add its knowledge, actions, and voice in Studio next."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = Brand.Text2,
+        )
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -381,7 +417,7 @@ private fun CreateAssistantSheet(state: WirelineUiState, onCreate: (String, Stri
         }
         ErrorText(state.error)
         Button(
-            onClick = { onCreate(name, role) },
+            onClick = { onCreate(name, role, isBusinessAgent) },
             enabled = name.isNotBlank() && !state.isWorking,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(Brand.RadiusSm),
