@@ -21,6 +21,16 @@ const profileSchema = z.object({
   agentId: z.string().min(1).max(200),
   profile: z.enum(["bright", "warm", "clear", "balanced", "direct"]),
 });
+const customVoiceSchema = z.object({
+  agentId: z.string().min(1).max(200),
+  customVoiceId: z
+    .string()
+    .trim()
+    .min(3)
+    .max(160)
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .nullable(),
+});
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -77,6 +87,23 @@ router.patch("/api/voice/live/profile", authenticateUser, limiter, validateBody(
     })
     .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
   res.json({ profile, profiles: WIRELINE_LIVE_VOICE_PROFILES, customVoiceConfigured: false });
+});
+
+router.patch("/api/voice/live/custom", authenticateUser, limiter, validateBody(customVoiceSchema), async (req: AuthenticatedRequest, res) => {
+  const selected = await loadProfile(req.user.id, req.body.agentId);
+  if (!selected) return res.status(404).json({ error: "Assistant not found" });
+  const customVoiceId = req.body.customVoiceId;
+  await drizzle
+    .update(schema.agents)
+    .set({
+      businessVariables: {
+        ...asRecord(selected.agent.businessVariables),
+        wirelineLiveCustomVoice: Boolean(customVoiceId),
+        grokVoiceId: customVoiceId || resolveWirelineGrokVoice(selected.agent.role, selected.profile),
+      },
+    })
+    .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
+  res.json({ customVoiceConfigured: Boolean(customVoiceId) });
 });
 
 export default router;
