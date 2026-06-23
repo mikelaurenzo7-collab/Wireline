@@ -7,6 +7,7 @@
 @import "./styles/phone-agent-blueprint.css";
 @import "./styles/precision-studio.css";
 @import "./styles/precision-auth.css";
+@import "./styles/ui-refinement.css";
 
 :root {
   /* Ametrine Precision uses Hanken Grotesk as a sharp display face, neutral body copy, and mono metadata. */
