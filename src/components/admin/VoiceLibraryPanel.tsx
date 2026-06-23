@@ -1,19 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-/**
- * Voice Library — Account Holder-side clone management surface.
- *
- * Lives under Admin → Voices. Lets account holders:
- *   1. Browse their cloned voices (with playable previews)
- *   2. Clone a new voice from a 30-90s audio sample
- *   3. Delete clones they no longer need
- *
- * Clones flow through /api/voices/clone (ElevenLabs Instant Voice
- * Clone). Pricing surface clearly disclosed before the upload button
- * fires so account holders know the unit cost.
- */
-import React, { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
-import { Mic, Loader2, Trash2, Play, Pause, UploadCloud, AlertTriangle } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { AlertTriangle, Loader2, Mic, Pause, Play, Trash2, UploadCloud } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { cn } from "../../lib/utils";
@@ -21,161 +7,141 @@ import { Checkbox } from "../ui/shadcn/Checkbox";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
-interface ClonedVoice {
+type ClonedVoice = {
   voice_id: string;
   name: string;
   preview_url: string | null;
   owned_by_user: boolean;
-  category?: string;
+};
+
+function bufferToBase64(buffer: ArrayBuffer) {
+  return btoa(Array.from(new Uint8Array(buffer), (byte) => String.fromCharCode(byte)).join(""));
 }
 
 export default function VoiceLibraryPanel() {
   const { error: toastError, success: toastSuccess } = useToast();
   const [voices, setVoices] = useState<ClonedVoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [configured, setConfigured] = useState<boolean>(true);
+  const [configured, setConfigured] = useState(true);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Clone form state
   const [showCloneForm, setShowCloneForm] = useState(false);
   const [cloneName, setCloneName] = useState("");
   const [cloneFile, setCloneFile] = useState<File | null>(null);
   const [consent, setConsent] = useState(false);
   const [cloning, setCloning] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  async function loadVoices() {
+  const loadVoices = async () => {
     setLoading(true);
     try {
-      const r = await authFetch("/api/voices");
-      if (!r.ok) throw new Error("Failed to load voices");
-      const data = await r.json();
-      setVoices(data.voices || []);
-      setConfigured(!!data.configured);
+      const response = await authFetch("/api/voices");
+      const body = await response.json().catch(() => null) as { voices?: ClonedVoice[]; configured?: boolean } | null;
+      if (!response.ok) throw new Error("Voice library is unavailable.");
+      setVoices(body?.voices || []);
+      setConfigured(Boolean(body?.configured));
     } catch {
-      toastError("Couldn't load voice library");
+      toastError("Couldn't load Wireline voices");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadVoices();
-    return () => {
-      if (audioRef.current) audioRef.current.pause();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time fetch on mount
+    void loadVoices();
+    return () => audioRef.current?.pause();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once while the panel is mounted
   }, []);
 
-  function playPreview(voice: ClonedVoice) {
+  const playPreview = (voice: ClonedVoice) => {
     if (!voice.preview_url) {
-      toastError("No preview available", "This voice doesn't have a sample yet.");
+      toastError("No preview available", "This voice does not have a preview yet.");
       return;
     }
-    if (audioRef.current) audioRef.current.pause();
+    audioRef.current?.pause();
     if (playingVoiceId === voice.voice_id) {
       setPlayingVoiceId(null);
       return;
     }
     const audio = new Audio(voice.preview_url);
+    audioRef.current = audio;
     audio.onended = () => setPlayingVoiceId(null);
     audio.onerror = () => {
       setPlayingVoiceId(null);
       toastError("Preview failed", "Couldn't play the audio sample.");
     };
-    audioRef.current = audio;
     setPlayingVoiceId(voice.voice_id);
-    audio.play().catch(() => {
-      setPlayingVoiceId(null);
-      toastError("Preview failed");
-    });
-  }
+    audio.play().catch(() => setPlayingVoiceId(null));
+  };
 
-  async function startClone(e: React.FormEvent) {
-    e.preventDefault();
-    if (!cloneFile) {
-      toastError("Audio file required");
-      return;
-    }
-    if (cloneFile.size > 25 * 1024 * 1024) {
-      toastError("File too large", "Keep samples under 25MB");
-      return;
-    }
-    if (!consent) {
-      toastError("Consent required", "Confirm you have permission to clone this voice");
-      return;
-    }
+  const resetClone = () => {
+    setShowCloneForm(false);
+    setCloneName("");
+    setCloneFile(null);
+    setConsent(false);
+  };
 
+  const startClone = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!cloneFile) return toastError("Audio sample required");
+    if (cloneFile.size > 25 * 1024 * 1024) return toastError("File too large", "Keep samples under 25 MB.");
+    if (!consent) return toastError("Consent required", "Confirm you have the right to use this voice.");
     setCloning(true);
     try {
-      const buf = await cloneFile.arrayBuffer();
-      const base64 = btoa(new Uint8Array(buf).reduce((acc, b) => acc + String.fromCharCode(b), ""));
-      const r = await authFetch("/api/voices/clone", {
+      const response = await authFetch("/api/voices/clone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: cloneName.trim(),
-          audioBase64: base64,
+          audioBase64: bufferToBase64(await cloneFile.arrayBuffer()),
           audioMimeType: cloneFile.type,
-          consent_given: consent,
+          consent_given: true,
         }),
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Clone failed");
-
-      toastSuccess(`Cloned ${cloneName}`, "Available now in your voice picker");
-      setShowCloneForm(false);
-      setCloneName("");
-      setCloneFile(null);
-      setConsent(false);
+      const body = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Clone failed.");
+      toastSuccess("Voice ready", "You can select it for any assistant.");
+      resetClone();
       await loadVoices();
-    } catch (e: any) {
-      toastError("Clone failed", e?.message || "Try again");
+    } catch (error) {
+      toastError("Voice creation failed", error instanceof Error ? error.message : "Try again.");
     } finally {
       setCloning(false);
     }
-  }
+  };
 
-  async function deleteClone(voice: ClonedVoice) {
-    if (!confirm(`Delete "${voice.name}"? Agents using this voice will fall back to a default.`)) {
-      return;
-    }
+  const deleteClone = async (voice: ClonedVoice) => {
+    if (!confirm(`Delete "${voice.name}"? Assistants using it will return to an automatic voice.`)) return;
     try {
-      const r = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, {
-        method: "DELETE",
-      });
-      if (!r.ok) throw new Error("Delete failed");
+      const response = await authFetch(`/api/voices/${encodeURIComponent(voice.voice_id)}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Delete failed.");
       toastSuccess("Voice deleted");
       await loadVoices();
-    } catch (e: any) {
-      toastError("Delete failed", e?.message || "Try again");
+    } catch (error) {
+      toastError("Could not delete voice", error instanceof Error ? error.message : "Try again.");
     }
-  }
+  };
 
-  const ownedVoices = voices.filter((v) => v.owned_by_user);
+  const ownedVoices = voices.filter((voice) => voice.owned_by_user);
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto">
-      {/* Header */}
-      <div>
-        <h2 className="font-display italic text-2xl text-foreground mb-1">Voice library</h2>
-        <p className="text-[12px] text-muted leading-relaxed">
-          Clone your own voice — or anyone whose voice you have permission to use — and assign it to
-          any agent. Cloned voices appear in the voice picker on the agent deploy screen.
+    <div className="h-full max-w-3xl space-y-4 overflow-y-auto p-4">
+      <header>
+        <p className="wl-label text-brand">Wireline voice</p>
+        <h2 className="mt-1 font-display text-2xl font-semibold text-foreground">Voice library</h2>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted">
+          Create a recognizable sound for your assistants. Use only your own voice or a voice you have explicit permission to use.
         </p>
-      </div>
+      </header>
 
-      {!configured && (
-        <div className="rounded-md border border-brand/30 bg-brand/5 p-3 flex items-start gap-2.5">
-          <AlertTriangle className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-          <p className="text-[12px] text-brand/80 leading-relaxed">
-            Voice cloning isn't configured yet. The owner needs to set ELEVENLABS_API_KEY in
-            environment variables. Once set, you can clone voices here.
+      {!configured ? (
+        <div className="flex items-start gap-2.5 rounded-md border border-brand/30 bg-brand/5 p-3">
+          <AlertTriangle className="mt-0.5 w-4 h-4 shrink-0 text-brand" />
+          <p className="text-[12px] leading-relaxed text-brand/80">
+            Wireline voice creation is not configured for this workspace yet. Ask the workspace owner to finish voice setup, then return here to create voices.
           </p>
         </div>
-      )}
+      ) : null}
 
-      {/* Clone CTA / form */}
       {!showCloneForm ? (
         <ShadButton
           type="button"
@@ -183,170 +149,54 @@ export default function VoiceLibraryPanel() {
           disableAnimations
           onClick={() => setShowCloneForm(true)}
           disabled={!configured}
-          className="w-full h-auto rounded-md border-2 border-dashed border-brand/30 bg-brand/5 hover:bg-brand/8 hover:border-brand/50 py-6 flex-col gap-2 disabled:opacity-40"
+          className="flex h-auto w-full flex-col gap-2 rounded-md border-2 border-dashed border-brand/30 bg-brand/5 py-6 hover:border-brand/50 hover:bg-brand/8 disabled:opacity-40"
         >
           <Mic className="w-5 h-5 text-brand" />
-          <span className="text-[13px] text-brand font-medium">Clone a new voice</span>
+          <span className="text-[13px] font-medium text-brand">Create a Wireline voice</span>
         </ShadButton>
       ) : (
-        <form
-          onSubmit={startClone}
-          className="rounded-md border border-border bg-card p-5 space-y-4"
-        >
+        <form onSubmit={startClone} className="space-y-4 rounded-md border border-border bg-card p-5">
           <div>
-            <h3 className="font-display italic text-lg text-foreground">Clone a voice</h3>
-            <p className="text-[11px] text-muted leading-relaxed mt-1">
-              Upload a clear 30-90 second audio sample. Single speaker, no background noise. MP3,
-              WAV, M4A, or OGG. Under 25MB.
-            </p>
+            <h3 className="font-display text-lg font-semibold text-foreground">Create a voice</h3>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted">Upload a clean 30–90 second single-speaker sample. MP3, WAV, M4A, or OGG under 25 MB.</p>
           </div>
-
-          <div>
-            <label htmlFor="clone-name" className="block wl-label text-muted mb-1.5">
-              Voice name
-            </label>
-            <Input
-              id="clone-name"
-              type="text"
-              value={cloneName}
-              onChange={(e) => setCloneName(e.target.value)}
-              required
-              minLength={2}
-              maxLength={80}
-              placeholder="e.g. Mike L. — Founder voice"
-              className="w-full rounded-md border border-white/10 bg-card px-3 py-2.5 text-[13px] text-foreground outline-none focus:border-brand/40"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="clone-file" className="block wl-label text-muted mb-1.5">
-              Audio sample (30-90s)
-            </label>
-            <Input
-              id="clone-file"
-              type="file"
-              accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg"
-              onChange={(e) => setCloneFile(e.target.files?.[0] || null)}
-              required
-              className="w-full text-[12px] text-foreground file:mr-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-brand/10 file:text-brand file:text-[11px] file:cursor-pointer"
-            />
-            {cloneFile && (
-              <p className="wl-micro-meta--muted mt-1">
-                {cloneFile.name} · {(cloneFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            )}
-          </div>
-
-          <label className="flex items-start gap-2.5 text-[11px] text-foreground/80 cursor-pointer">
-            <Checkbox
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              className="mt-0.5 w-3.5 h-3.5 accent-brand"
-            />
-            <span>
-              I confirm I have permission to clone this voice. If it belongs to another person, I
-              have their explicit consent.
-            </span>
+          <label className="block">
+            <span className="wl-label text-muted">Voice name</span>
+            <Input value={cloneName} onChange={(event) => setCloneName(event.target.value)} minLength={2} maxLength={80} required placeholder="e.g. Founder voice" className="mt-1.5 w-full rounded-md border border-white/10 bg-card px-3 py-2.5 text-[13px]" />
           </label>
-
-          <div className="flex items-center gap-2">
-            <ShadButton
-              type="submit"
-              variant="editorial"
-              disableAnimations
-              disabled={cloning || !consent || !cloneFile || cloneName.trim().length < 2}
-              className="flex-1 rounded-full text-[11px] uppercase tracking-[0.28em] py-2.5"
-            >
-              {cloning ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <UploadCloud className="w-3.5 h-3.5" />
-              )}
-              {cloning ? "Cloning…" : "Clone voice"}
+          <label className="block">
+            <span className="wl-label text-muted">Audio sample</span>
+            <Input type="file" required accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/m4a,audio/ogg,.mp3,.wav,.m4a,.ogg" onChange={(event) => setCloneFile(event.target.files?.[0] || null)} className="mt-1.5 w-full text-[12px]" />
+            {cloneFile ? <p className="mt-1 wl-micro-meta--muted">{cloneFile.name} · {(cloneFile.size / 1024 / 1024).toFixed(2)} MB</p> : null}
+          </label>
+          <label className="flex cursor-pointer items-start gap-2.5 text-[11px] text-foreground/80">
+            <Checkbox checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-0.5 h-3.5 w-3.5 accent-brand" />
+            <span>I confirm I have permission to use this voice and, if it belongs to another person, I have their explicit consent.</span>
+          </label>
+          <div className="flex gap-2">
+            <ShadButton type="submit" variant="editorial" disableAnimations disabled={cloning || !cloneFile || !consent || cloneName.trim().length < 2} className="flex-1 rounded-full py-2.5 text-[11px] uppercase tracking-[0.22em]">
+              {cloning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+              {cloning ? "Creating…" : "Create voice"}
             </ShadButton>
-            <ShadButton
-              type="button"
-              variant="ghost"
-              disableAnimations
-              onClick={() => {
-                setShowCloneForm(false);
-                setCloneName("");
-                setCloneFile(null);
-                setConsent(false);
-              }}
-              disabled={cloning}
-              className="rounded-full text-[11px] uppercase tracking-[0.28em] text-muted"
-            >
-              Cancel
-            </ShadButton>
+            <ShadButton type="button" variant="ghost" disableAnimations disabled={cloning} onClick={resetClone} className="rounded-full text-[11px] uppercase tracking-[0.22em] text-muted">Cancel</ShadButton>
           </div>
         </form>
       )}
 
-      {/* Owned voice list */}
-      <div className="space-y-2">
-        <p className="wl-label-muted">Your cloned voices · {ownedVoices.length}</p>
-        {loading ? (
-          <div className="rounded-md border border-white/8 p-4 flex items-center gap-2 text-muted text-[12px]">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+      <section className="space-y-2">
+        <p className="wl-label-muted">Your Wireline voices · {ownedVoices.length}</p>
+        {loading ? <div className="flex items-center gap-2 rounded-md border border-white/8 p-4 text-[12px] text-muted"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div> : null}
+        {!loading && !ownedVoices.length ? <div className="rounded-md border border-dashed border-white/15 p-6 text-center text-[12px] text-muted">No voices created yet.</div> : null}
+        {!loading ? ownedVoices.map((voice) => (
+          <div key={voice.voice_id} className="flex items-center gap-3 rounded-md border border-white/10 bg-card p-3">
+            <ShadButton type="button" variant="outline" size="icon" disableAnimations onClick={() => playPreview(voice)} disabled={!voice.preview_url} className={cn("h-9 w-9 shrink-0 rounded-full", voice.preview_url ? "border-brand/20 bg-brand/10 text-brand hover:bg-brand/20" : "bg-black/5 text-muted/70")} aria-label={`Play preview of ${voice.name}`}>
+              {playingVoiceId === voice.voice_id ? <Pause className="w-4 h-4" /> : <Play className="ml-0.5 w-4 h-4" />}
+            </ShadButton>
+            <div className="min-w-0 flex-1"><p className="truncate text-[13px] font-medium text-foreground">{voice.name}</p><p className="wl-label-muted/70">Wireline voice</p></div>
+            <ShadButton type="button" variant="ghost" size="icon" disableAnimations onClick={() => void deleteClone(voice)} className="h-8 w-8 shrink-0 rounded-md text-muted hover:bg-rose-500/8 hover:text-rose-600" aria-label={`Delete ${voice.name}`}><Trash2 className="w-3.5 h-3.5" /></ShadButton>
           </div>
-        ) : ownedVoices.length === 0 ? (
-          <div className="rounded-md border border-dashed border-white/15 p-6 text-center text-[12px] text-muted">
-            No cloned voices yet. Clone your first one above.
-          </div>
-        ) : (
-          ownedVoices.map((v) => (
-            <motion.div
-              key={v.voice_id}
-              layout
-              className="rounded-md border border-white/10 bg-card p-3 flex items-center gap-3"
-            >
-              <ShadButton
-                type="button"
-                variant="outline"
-                size="icon"
-                disableAnimations
-                onClick={() => playPreview(v)}
-                disabled={!v.preview_url}
-                className={cn(
-                  "shrink-0 w-9 h-9 rounded-full",
-                  v.preview_url
-                    ? "bg-brand/10 text-brand hover:bg-brand/20 border-brand/20"
-                    : "bg-black/5 text-muted/70",
-                )}
-                aria-label={`Play preview of ${v.name}`}
-              >
-                {playingVoiceId === v.voice_id ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Play className="w-4 h-4 ml-0.5" />
-                )}
-              </ShadButton>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-foreground truncate">{v.name}</p>
-                <p className="wl-label-muted/70">Cloned voice</p>
-              </div>
-              <ShadButton
-                type="button"
-                variant="ghost"
-                size="icon"
-                disableAnimations
-                onClick={() => deleteClone(v)}
-                className="shrink-0 w-8 h-8 rounded-md text-muted hover:text-rose-600 hover:bg-rose-500/8"
-                aria-label={`Delete ${v.name}`}
-                title="Delete"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </ShadButton>
-            </motion.div>
-          ))
-        )}
-      </div>
-
-      <p className="wl-micro-meta--muted text-center mt-4 leading-relaxed">
-        Cloned voices flow through Wireline's voice engine and work on every agent + every call.
-        Delete them anytime — agents using a deleted voice fall back to a default.
-      </p>
+        )) : null}
+      </section>
     </div>
   );
 }
