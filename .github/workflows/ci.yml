@@ -6,24 +6,40 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-smoke:
+    name: Typecheck, build, and server smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
 
+      - name: Report runner toolchain
+        run: |
+          node --version
+          npm --version
+          git --version
+          echo "workflow=${GITHUB_WORKFLOW}"
+          echo "ref=${GITHUB_REF}"
+          echo "sha=${GITHUB_SHA}"
+
       # See verify-build.yml: resolve packages from the active manifest while
       # historical root entries in package-lock are being retired.
-      - name: Install dependencies
+      - name: Install dependencies from active manifest
         run: npm install
 
       - name: Professional Heritage contract
@@ -32,7 +48,7 @@ jobs:
       - name: Type check
         run: npm run lint
 
-      - name: Build
+      - name: Build client and server bundles
         run: npm run build
 
       - name: Smoke test bundled server
