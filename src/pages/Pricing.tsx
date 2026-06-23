@@ -1,28 +1,27 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  Check,
-  Play,
-  Sparkles,
   Building2,
-  ShieldCheck,
-  Wallet,
-  Gauge,
+  Check,
   Eye,
+  Gauge,
+  Play,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
 } from "lucide-react";
+import MarketingFooter from "../components/marketing/MarketingFooter";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
-import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 
-/* Conversation Balance top-up amounts — mirror conversation-balance.ts. */
 const BALANCE_PRESETS = [5, 10, 25, 50] as const;
 
 const PERSONAL_FEATURES = [
   "Build and test personal assistants for free",
   "Add $5 to handle your first live conversation",
   "Spend across voice, email, and text from one balance",
-  "Set a hard budget — no surprise charges, no auto-reload",
-  "Approve every external action, or auto-approve the ones you trust",
+  "Set a hard budget with no surprise charges or auto-reload",
+  "Approve every external action, or trust the ones you choose",
 ] as const;
 
 type BusinessTier = {
@@ -40,13 +39,13 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     name: "Front Desk",
     price: "$29",
     cadence: "/mo",
-    blurb: "Personal assistants and business agents with a number and inbox for a small team.",
+    blurb: "A number and inbox for a small team that needs reliable coverage.",
     features: [
       "Up to 4 assistants and agents",
-      "Dedicated numbers for inbound & outbound",
-      "Team handoff & shared inbox",
-      "CRM & calendar integrations",
-      "Then Conversation Balance for usage",
+      "Dedicated numbers for inbound and outbound",
+      "Team handoff and shared inbox",
+      "CRM and calendar integrations",
+      "Conversation Balance for usage",
     ],
     cta: { label: "Start Front Desk", to: "/signup?plan=business-starter" },
   },
@@ -57,9 +56,9 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     blurb: "Routing, campaigns, and a live activity view for busier teams.",
     features: [
       "Up to 8 assistants and agents",
-      "Intelligent routing & department transfers",
+      "Intelligent routing and department transfers",
       "Outbound campaign templates",
-      "Live activity dashboard & collaboration",
+      "Live activity and collaboration",
       "Lower usage rate on your balance",
     ],
     cta: { label: "Start Sales & Reception", to: "/signup?plan=starter" },
@@ -71,10 +70,10 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     cadence: "",
     blurb: "Multi-location scale, compliance, and dedicated implementation.",
     features: [
-      "Unlimited personal assistants, business agents, and lines",
-      "Full CRM deep-sync & custom webhooks",
-      "SSO, security review & compliance",
-      "Dedicated implementation & SLA support",
+      "Unlimited assistants, agents, and lines",
+      "CRM deep-sync and custom webhooks",
+      "SSO, security review, and compliance",
+      "Dedicated implementation and SLA support",
     ],
     cta: { label: "Talk to sales", to: "/contact" },
   },
@@ -84,24 +83,24 @@ const BALANCE_PROMISES = [
   {
     icon: Wallet,
     title: "One balance, every channel",
-    body: "Voice, email, and text all draw from the same Conversation Balance. Heavier work like a long hold or premium voice simply uses a little more.",
+    body: "Voice, email, and text draw from the same Conversation Balance. Heavier work such as a long hold or premium voice simply uses a little more.",
   },
   {
     icon: Gauge,
     title: "A budget you control",
-    body: "Before any live task, Wireline shows a quick estimate and pauses if it reaches your cap. You set the ceiling.",
+    body: "Wireline estimates the task, pauses at your cap, and lets you decide the ceiling.",
   },
   {
     icon: Eye,
-    title: "See what each conversation used",
-    body: "Every conversation reports exactly what it spent, so your balance is never a mystery.",
+    title: "Clear conversation receipts",
+    body: "Every conversation reports what it used, so your balance is never a mystery.",
   },
 ] as const;
 
 const FAQ = [
   [
     "Do I need a subscription to start?",
-    "No. Personal is free to build and test. When you're ready for a live conversation, add a $5 Conversation Balance — that's it.",
+    "No. Personal is free to build and test. When you are ready for a live conversation, add a $5 Conversation Balance.",
   ],
   [
     "What can $5 handle?",
@@ -109,7 +108,7 @@ const FAQ = [
   ],
   [
     "Will I get surprise charges?",
-    "No. There's no auto-reload unless you turn it on, and Wireline pauses a task before it exceeds the budget you set.",
+    "No. There is no auto-reload unless you turn it on, and Wireline pauses a task before it exceeds the budget you set.",
   ],
   [
     "When should a business pick a plan instead?",
@@ -122,139 +121,111 @@ export default function Pricing() {
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
         title="Pricing — Start free, add $5 to go live | Wireline"
-        description="Personal assistants are free to build and test. Add a $5 Conversation Balance to go live. Business plans add business agents, numbers, routing, and team tools — billed securely through Stripe."
+        description="Personal assistants are free to build and test. Add a $5 Conversation Balance to go live. Business plans add numbers, routing, and team tools."
         path="/pricing"
       />
       <PrecisionPublicHeader />
 
-      <main id="main-content" className="pt-16">
-        {/* ── Hero ─────────────────────────────────────────────────────── */}
-        <section className="border-b border-border px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="wl-measure text-center">
-            <p className="wl-stitch-label">{PRODUCT_VERSATILITY.eyebrow}</p>
-            <h1 className="mx-auto mt-4 max-w-[900px] text-balance text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.045em] text-foreground">
-              Personal assistants free. Business agents when you scale.
+      <main id="main-content" className="pt-16" tabIndex={-1}>
+        <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
+          <div className="wl-measure mx-auto text-center">
+            <p className="wl-overline text-primary">Pricing that starts where you do</p>
+            <h1 className="mx-auto mt-4 max-w-[820px] text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
+              Build free. Add $5 when you are ready to go live.
             </h1>
-            <p className="mx-auto mt-6 max-w-[640px] text-[17px] leading-7 text-muted-foreground">
-              {PRODUCT_VERSATILITY.short} Build and test for nothing, add a $5 Conversation Balance when
-              you want live work handled, then upgrade through Stripe when you need numbers, routing, and team tools.
+            <p className="mx-auto mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
+              Personal assistants are free to create and test. Add Conversation Balance for live work, then add a business plan when you need numbers, routing, and a shared team workspace.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link
-                to="/signup"
-                className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
-              >
+              <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
                 Create your assistant
               </Link>
-              <Link
-                to="/showcase"
-                className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
-              >
-                <Play size={14} /> Hear a demo
+              <Link to="/showcase" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
+                <Play size={15} /> Hear a demo
               </Link>
             </div>
           </div>
         </section>
 
-        {/* ── Personal — on-demand ─────────────────────────────────────── */}
-        <section className="px-4 py-16 sm:px-6 lg:px-8">
-          <div className="wl-measure">
+        <section className="px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="wl-measure mx-auto">
             <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr] lg:items-stretch">
-              {/* Personal plan card */}
-              <article className="wl-stitch-card relative overflow-hidden p-7 sm:p-9">
+              <article className="wl-stitch-card relative overflow-hidden p-6 sm:p-9">
                 <div className="flex items-center gap-2">
                   <Sparkles className="size-5 text-primary" />
-                  <span className="wl-stitch-eyebrow">Personal · On-demand</span>
+                  <span className="wl-overline">Personal · on-demand</span>
                 </div>
                 <div className="mt-5 flex items-baseline gap-2">
-                  <span className="text-[clamp(40px,6vw,56px)] font-semibold leading-none tracking-[-.04em] text-foreground">
-                    $0
-                  </span>
-                  <span className="text-[13px] font-medium uppercase tracking-[.1em] text-muted-foreground">
-                    / month
-                  </span>
+                  <span className="wl-metric-value text-[clamp(2.5rem,6vw,3.5rem)]">$0</span>
+                  <span className="wl-overline">/ month</span>
                 </div>
                 <p className="mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
-                  No subscription. Add a Conversation Balance only when you want live work handled.
+                  No subscription. Add Conversation Balance only when you want live work handled.
                 </p>
 
-                <div className="mt-6">
-                  <p className="wl-stitch-label mb-2">Add a Conversation Balance</p>
+                <div className="mt-7">
+                  <p className="wl-overline mb-3">Add Conversation Balance</p>
                   <div className="flex flex-wrap gap-2">
-                    {BALANCE_PRESETS.map((amount, i) => (
+                    {BALANCE_PRESETS.map((amount, index) => (
                       <span
                         key={amount}
                         className={
                           "inline-flex min-w-[64px] items-center justify-center rounded-full border px-4 py-2 text-[15px] font-semibold tabular-nums " +
-                          (i === 0
-                            ? "border-primary/40 bg-primary/10 text-primary"
-                            : "border-border bg-card text-foreground")
+                          (index === 0 ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card text-foreground")
                         }
                       >
                         ${amount}
                       </span>
                     ))}
                   </div>
-                  <p className="mt-2 text-[12px] text-muted-foreground">
-                    Start at $5. Top up more anytime — your balance never expires.
-                  </p>
+                  <p className="mt-3 text-[12px] text-muted-foreground">Start at $5. Top up any time. Your balance never expires.</p>
                 </div>
 
-                <ul className="mt-6 space-y-2.5">
-                  {PERSONAL_FEATURES.map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2.5 text-[14px] leading-6 text-foreground"
-                    >
+                <ul className="mt-7 space-y-2.5">
+                  {PERSONAL_FEATURES.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-[14px] leading-6 text-foreground">
                       <Check size={16} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
-                      <span>{f}</span>
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
                 <div className="mt-8">
-                  <Link
-                    to="/signup"
-                    className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[.05em] sm:w-auto"
-                  >
+                  <Link to="/signup" className="marketing-btn-primary w-full justify-center px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[.05em] sm:w-auto">
                     Start free <ArrowRight size={14} />
                   </Link>
                 </div>
               </article>
 
-              {/* How the balance works */}
               <aside className="flex flex-col gap-4">
                 {BALANCE_PROMISES.map(({ icon: Icon, title, body }) => (
-                  <div key={title} className="wl-stitch-card flex gap-4 p-5">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <article key={title} className="wl-stitch-card flex flex-1 gap-4 p-5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
                       <Icon size={18} />
                     </span>
                     <div>
-                      <h3 className="text-[15px] font-semibold text-foreground">{title}</h3>
+                      <h2 className="wl-card-title">{title}</h2>
                       <p className="mt-1 text-[13px] leading-6 text-muted-foreground">{body}</p>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </aside>
             </div>
           </div>
         </section>
 
-        {/* ── Business ─────────────────────────────────────────────────── */}
-        <section className="border-t border-border px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="wl-measure">
+        <section className="border-t border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="wl-measure mx-auto">
             <div className="text-center">
               <div className="inline-flex items-center gap-2">
                 <Building2 className="size-5 text-primary" />
-                <span className="wl-stitch-eyebrow">For business</span>
+                <span className="wl-overline">For business</span>
               </div>
-              <h2 className="mx-auto mt-4 max-w-[680px] text-balance text-[clamp(28px,3.6vw,40px)] font-semibold leading-tight tracking-[-.035em] text-foreground">
-                Business agents with numbers, routing, and team tools.
+              <h2 className="mx-auto mt-4 max-w-[680px] text-[clamp(28px,3.6vw,42px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
+                Add the operating system when your team needs it.
               </h2>
               <p className="mx-auto mt-4 max-w-[600px] text-[15px] leading-7 text-muted-foreground">
-                Shared inboxes, integrations, and professional lines for your business agents — plus the
-                same Conversation Balance for usage, at a lower rate as you grow. Subscriptions are
-                managed securely through Stripe.
+                Shared inboxes, professional lines, integrations, and routing for teams — plus the same Conversation Balance for usage at a lower rate as you grow.
               </p>
             </div>
 
@@ -262,52 +233,27 @@ export default function Pricing() {
               {BUSINESS_TIERS.map((tier) => (
                 <article
                   key={tier.name}
-                  className={
-                    "wl-stitch-card relative flex flex-col p-6 " +
-                    (tier.featured ? "border-primary/40 ring-1 ring-primary/20" : "")
-                  }
+                  className={"wl-stitch-card relative flex flex-col p-6 " + (tier.featured ? "border-primary/40 ring-1 ring-primary/20" : "")}
                 >
-                  {tier.featured && (
-                    <span className="absolute right-4 top-4 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.1em] text-primary">
-                      Popular
-                    </span>
-                  )}
-                  <h3 className="text-[15px] font-semibold uppercase tracking-[.08em] text-foreground">
-                    {tier.name}
-                  </h3>
-                  <div className="mt-3 flex items-baseline gap-1">
-                    <span className="text-[34px] font-semibold leading-none tracking-[-.03em] text-foreground">
-                      {tier.price}
-                    </span>
-                    {tier.cadence && (
-                      <span className="text-[12px] font-medium uppercase tracking-[.1em] text-muted-foreground">
-                        {tier.cadence}
-                      </span>
-                    )}
+                  {tier.featured ? <span className="wl-stitch-status-pill absolute right-4 top-4">Popular</span> : null}
+                  <h3 className="wl-card-title text-lg">{tier.name}</h3>
+                  <div className="mt-4 flex items-baseline gap-2">
+                    <span className="wl-metric-value text-[2rem]">{tier.price}</span>
+                    {tier.cadence ? <span className="wl-overline">{tier.cadence}</span> : null}
                   </div>
                   <p className="mt-3 text-[13px] leading-6 text-muted-foreground">{tier.blurb}</p>
                   <ul className="mt-5 flex-1 space-y-2.5">
-                    {tier.features.map((f) => (
-                      <li
-                        key={f}
-                        className="flex items-start gap-2.5 text-[13px] leading-6 text-foreground"
-                      >
-                        <Check
-                          size={15}
-                          className="mt-0.5 shrink-0 text-primary"
-                          strokeWidth={2.5}
-                        />
-                        <span>{f}</span>
+                    {tier.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-[13px] leading-6 text-foreground">
+                        <Check size={15} className="mt-0.5 shrink-0 text-primary" strokeWidth={2.5} />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
                   <div className="mt-7">
                     <Link
                       to={tier.cta.to}
-                      className={
-                        (tier.featured ? "marketing-btn-primary" : "marketing-btn-secondary") +
-                        " w-full justify-center px-5 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
-                      }
+                      className={(tier.featured ? "marketing-btn-primary" : "marketing-btn-secondary") + " w-full justify-center px-5 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"}
                     >
                       {tier.cta.label} <ArrowRight size={14} />
                     </Link>
@@ -318,29 +264,25 @@ export default function Pricing() {
           </div>
         </section>
 
-        {/* ── FAQ ──────────────────────────────────────────────────────── */}
-        <section className="border-t border-border px-4 py-16 sm:px-6 lg:px-8">
-          <div className="wl-measure">
-            <h2 className="text-center text-[clamp(24px,3vw,34px)] font-semibold tracking-[-.03em] text-foreground">
-              Questions, answered
+        <section className="border-t border-border px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="wl-measure mx-auto">
+            <p className="wl-overline text-center">Questions, answered</p>
+            <h2 className="mx-auto mt-3 max-w-xl text-center text-[clamp(26px,3vw,36px)] font-semibold leading-[1.1] tracking-[-.04em] text-foreground">
+              Straightforward from the first task onward.
             </h2>
             <div className="mx-auto mt-8 grid max-w-[820px] gap-4 sm:grid-cols-2">
-              {FAQ.map(([q, a]) => (
-                <div key={q} className="wl-stitch-card p-5">
-                  <h3 className="text-[14px] font-semibold text-foreground">{q}</h3>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{a}</p>
-                </div>
+              {FAQ.map(([question, answer]) => (
+                <article key={question} className="wl-stitch-card p-5">
+                  <h3 className="wl-card-title">{question}</h3>
+                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{answer}</p>
+                </article>
               ))}
             </div>
-            <div className="mt-10 flex flex-col items-center gap-3 text-center">
+            <div className="mt-10 flex flex-col items-center gap-4 text-center">
               <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
-                <ShieldCheck size={15} className="text-primary" />
-                Stripe-secured payments · Cancel anytime · You stay in control
+                <ShieldCheck size={15} className="text-primary" /> Stripe-secured payments · Cancel any time · You stay in control
               </p>
-              <Link
-                to="/signup"
-                className="marketing-btn-primary px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[.05em]"
-              >
+              <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
                 Create your assistant <ArrowRight size={14} />
               </Link>
             </div>
@@ -348,19 +290,7 @@ export default function Pricing() {
         </section>
       </main>
 
-      <footer className="border-t border-border px-4 py-8 text-[13px] text-muted-foreground sm:px-6">
-        <div className="wl-measure flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            <strong className="text-foreground">Wireline</strong> · voice + email + text, handled
-          </span>
-          <div className="flex gap-5">
-            <Link to="/features">Features</Link>
-            <Link to="/privacy">Privacy</Link>
-            <Link to="/terms">Terms</Link>
-            <Link to="/support">Contact</Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }
