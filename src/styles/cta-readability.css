@@ -5,6 +5,7 @@
   --wl-cta-subtle-bg: var(--wl-surface);
   --wl-cta-subtle-fg: var(--wl-ink);
   --wl-cta-hover: var(--wl-accent-hover);
+  --wl-accent-container: rgba(93, 63, 211, 0.1);
 }
 
 .marketing-btn-primary,
@@ -67,4 +68,62 @@ button:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--wl-accent);
   outline-offset: 2px;
+}
+
+/* Production responsive QA — protect every route from horizontal drift and
+   make secondary text readable wherever legacy UI uses `text-muted`. */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+.text-muted,
+[class*="text-muted/"] {
+  color: var(--muted-foreground) !important;
+}
+
+/* The Studio already had a back action, but its `text-muted` color made it
+   practically invisible on iPhone. Make it explicit without affecting desktop density. */
+button[aria-label="Back to workspace"] {
+  color: var(--foreground) !important;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+@media (max-width: 639px) {
+  button[aria-label="Back to workspace"] {
+    width: auto !important;
+    min-width: 0 !important;
+    padding-inline: 0.55rem;
+  }
+
+  button[aria-label="Back to workspace"]::after {
+    content: "Back";
+    margin-left: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  /* Long-form routes reserve header space in the frame. Reduce the duplicate
+     mobile top padding so the first headline lands in the visible viewport. */
+  .marketing-surface main[class*="pt-20"] {
+    padding-top: 2rem !important;
+  }
+
+  .marketing-surface main[class*="pt-20"] > .wl-measure > section:first-child {
+    padding-top: 2.5rem !important;
+  }
+
+  .marketing-surface footer a {
+    min-height: 40px;
+  }
 }
