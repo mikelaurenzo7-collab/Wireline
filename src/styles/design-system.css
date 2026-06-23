@@ -1,47 +1,118 @@
-/* Wireline Design System — governance, shared utilities, and runtime alignment.
+/* Wireline Design System — shared visual grammar for marketing and workspace surfaces.
+ *
+ * The system deliberately separates three text roles:
+ * - display copy: sentence case, short, decisive, never decorative by default
+ * - operational headings: sentence case, compact, information-first
+ * - metadata: the only all-caps layer, reserved for labels, status, and context
+ */
 
-CURRENT IMPLEMENTATION:
-- Runtime source of truth lives in foundation.css plus the active token/runtime bridge consumed by index.css.
-- Type-safe token guidance lives in brand-colors.ts and companion design-system manifests.
-- Components consume these tokens through Tailwind theme aliases and direct var() usage.
-- Light-mode baseline uses high-contrast semantic tokens, restrained depth, and compact operator-grade spacing.
-
-GOVERNANCE:
-1. Changes to shared tokens or primitives should be reviewed against Wireline brand direction, accessibility, and runtime consistency.
-2. The TypeScript manifest and CSS runtime layer should stay synchronized; neither should silently drift.
-3. Breaking changes should be accompanied by migration notes for affected components or routes.
-4. Keep the system lean: add primitives only when they are reused or form part of the canonical app shell.
-
-This file intentionally carries both governance notes and a small set of shared utility classes that are used across the page shell, marketing shell, and live product surfaces. */
-
+.wl-overline,
 .chrome-eyebrow,
 .text-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-family: var(--wl-font-mono);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.11em;
+  line-height: 1.2;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--primary) 78%, white);
+  color: var(--muted-foreground);
 }
 
 .wl-page-title {
   font-family: var(--wl-font-display);
-  font-size: clamp(1.75rem, 1.2rem + 2.5vw, 3.5rem);
+  font-size: clamp(1.875rem, 1.45rem + 2.1vw, 3.25rem);
   font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 0.98;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
   color: var(--foreground);
+}
+
+.wl-app-page-title {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.25rem, 1.1rem + 0.65vw, 1.625rem);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  line-height: 1.1;
+  color: var(--foreground);
+}
+
+.wl-section-title {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.25rem, 1.12rem + 0.7vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  line-height: 1.16;
+  color: var(--foreground);
+}
+
+.wl-card-title {
+  font-family: var(--wl-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+
+.wl-metric-value {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.875rem, 1.45rem + 1.4vw, 2.75rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--foreground);
+}
+
+.wl-page-copy {
+  max-width: 42rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
 }
 
 .text-muted-resolved {
   color: var(--muted-foreground);
 }
 
+/* One intentional card interaction, rather than every card lifting or scaling. */
+.wl-card-action {
+  text-decoration: none;
+  transition:
+    border-color var(--transition-base),
+    background-color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
+}
+
+.wl-card-action:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--secondary) 52%, var(--card));
+  box-shadow: var(--wl-shadow-md);
+  transform: translateY(-1px);
+}
+
+.wl-card-action:active {
+  transform: translateY(0);
+}
+
+.wl-control-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--foreground);
+}
+
 .hero-headline-glow {
-  text-shadow: 0 10px 30px rgba(93, 63, 211, 0.12);
+  text-shadow: none;
 }
 
 .touch-press {
@@ -53,7 +124,7 @@ This file intentionally carries both governance notes and a small set of shared 
 }
 
 .touch-press:active {
-  transform: scale(0.98);
+  transform: scale(0.985);
 }
 
 .wl-reveal {
@@ -110,6 +181,27 @@ This file intentionally carries both governance notes and a small set of shared 
   text-transform: uppercase;
 }
 
+/* Agent Workspace: preserve genuinely centered identity regardless of the
+   asymmetric left/back and right/clear controls. `:has()` is supported in all
+   target modern browsers, including current iOS Safari. */
+div:has(> button[aria-label="Back to workspace"]) {
+  position: relative;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 3.5rem;
+}
+
+div:has(> button[aria-label="Back to workspace"]) > button[aria-label="Back to workspace"] {
+  position: absolute;
+  left: 0.5rem;
+}
+
+div:has(> button[aria-label="Back to workspace"]) > div:last-child {
+  position: absolute;
+  right: 0.5rem;
+}
+
 @keyframes wl-reveal-in {
   from {
     opacity: 0;
@@ -132,9 +224,26 @@ This file intentionally carries both governance notes and a small set of shared 
   }
 }
 
+@media (max-width: 639px) {
+  .wl-page-title {
+    letter-spacing: -0.04em;
+    line-height: 1.08;
+  }
+
+  .wl-page-copy {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wl-reveal,
   .wl-pulse-live::after {
     animation: none;
+  }
+
+  .wl-card-action,
+  .touch-press {
+    transition: none;
   }
 }
