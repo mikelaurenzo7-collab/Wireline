@@ -15,6 +15,7 @@ export interface WorkspaceAgentSummary {
   name: string;
   role: string | null;
   channel?: "voice" | "email" | "omnichannel";
+  is_business_agent?: boolean;
 }
 
 interface AgentsContextValue {
@@ -41,6 +42,7 @@ function isAgentLike(value: unknown): value is {
   name?: string | null;
   role?: string | null;
   channel?: string | null;
+  isBusinessAgent?: boolean | null;
 } {
   return (
     typeof value === "object" &&
@@ -65,6 +67,7 @@ function parseAgentsPayload(data: unknown): WorkspaceAgentSummary[] {
     name: agent.name || "Untitled agent",
     role: agent.role ?? null,
     channel: normalizeChannel(agent.channel),
+    is_business_agent: !!agent.isBusinessAgent,
   }));
 }
 

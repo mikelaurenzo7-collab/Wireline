@@ -18,6 +18,7 @@ export interface AgentListRow {
   firstMessage: string | null;
   enabledTools: unknown;
   createdAt: Date | null;
+  isBusinessAgent: boolean;
 }
 
 const AGENT_LIST_FALLBACK_SELECT = {
@@ -30,6 +31,7 @@ const AGENT_LIST_FALLBACK_SELECT = {
   firstMessage: schema.agents.firstMessage,
   enabledTools: schema.agents.enabledTools,
   createdAt: schema.agents.createdAt,
+  isBusinessAgent: schema.agents.isBusinessAgent,
 };
 
 export async function listAgentsForUser(userId: string, limit = 500): Promise<AgentListRow[]> {
@@ -58,7 +60,14 @@ export async function listAgentsForUser(userId: string, limit = 500): Promise<Ag
 export async function listAgentSummariesForUser(
   userId: string,
   limit = 500,
-): Promise<Array<{ id: string; name: string | null; role: string | null }>> {
+): Promise<
+  Array<{ id: string; name: string | null; role: string | null; isBusinessAgent: boolean }>
+> {
   const rows = await listAgentsForUser(userId, limit);
-  return rows.map((r) => ({ id: r.id, name: r.name ?? null, role: r.role ?? null }));
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name ?? null,
+    role: r.role ?? null,
+    isBusinessAgent: r.isBusinessAgent,
+  }));
 }

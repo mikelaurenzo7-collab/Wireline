@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bot, CircleAlert, MessageSquare, Phone, Plus, Wrench, Zap } from "lucide-react";
+import { Bot, CircleAlert, MessageSquare, Phone, Plus, Wrench, Zap, Briefcase } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 
@@ -86,10 +86,18 @@ function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-[color:var(--wl-accent-container)] text-[17px] font-semibold text-primary">
           {agent.name.slice(0, 1).toUpperCase()}
         </span>
-        <span className="wl-stitch-status-pill">
-          <span className="wl-stitch-status-dot" aria-hidden />
-          Configured
-        </span>
+        <div className="flex gap-2">
+          {agent.is_business_agent && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[12px] font-medium text-primary">
+              <Briefcase size={12} />
+              Enterprise
+            </span>
+          )}
+          <span className="wl-stitch-status-pill">
+            <span className="wl-stitch-status-dot" aria-hidden />
+            Configured
+          </span>
+        </div>
       </div>
       <h2 className="mt-5 font-display text-[20px] font-semibold leading-6 tracking-[-.02em] text-primary">
         {agent.name}
