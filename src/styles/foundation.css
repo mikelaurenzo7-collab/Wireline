@@ -1,4 +1,4 @@
-/* Professional Modal & Dialog Primitives - World Class Implementation */
+/* Modal and dialog primitives kept as the first-loaded foundation layer. */
 .wl-modal {
   position: fixed;
   inset: 0;
@@ -7,15 +7,15 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1.5rem;
 }
 
 .wl-dialog {
-  background: var(--surface);
+  background: var(--card);
+  color: var(--card-foreground);
   border-radius: var(--radius-xl);
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
   max-width: 480px;
   width: 100%;
-  margin: var(--space-6);
+  margin: 0;
 }
-
-/* Clever focus trap + escape support ready for JS pairing */
