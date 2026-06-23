@@ -3,7 +3,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 
 export default function EmailPage() {
   return (
-    <WorkspaceShell eyebrow="Conversations & email" title="Inbox" contentClassName="pt-0 pb-0">
+    <WorkspaceShell eyebrow="Conversations" title="Inbox" contentClassName="pt-0 pb-0">
       <EmailInbox embedded />
     </WorkspaceShell>
   );
