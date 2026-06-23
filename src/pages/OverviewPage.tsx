@@ -25,8 +25,8 @@ export default function OverviewPage() {
 
   return (
     <WorkspaceShell
-      title="Workspace overview"
-      eyebrow={PRODUCT_VERSATILITY.eyebrow}
+      title="Overview"
+      eyebrow="Workspace"
       action={
         <Link to="/studio?create=1" className="studio-primary-button text-sm">
           <Plus size={16} />
@@ -39,33 +39,30 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,.8fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary">
             <div>
-              <p className="studio-kicker">Your coverage</p>
-              <h2 className="mt-3 max-w-[22ch] font-[var(--wl-font-display)] text-3xl font-semibold tracking-[-.03em] text-foreground sm:text-4xl">
-                {PRODUCT_VERSATILITY.hero}
+              <p className="studio-kicker">Today</p>
+              <h2 className="wl-section-title mt-3 max-w-[24ch] text-[clamp(1.75rem,1.4rem+1.6vw,2.5rem)]">
+                Put the next conversation in motion.
               </h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                Start with a personal assistant for everyday calls. Add business agents when you need
-                a professional line, policies, and connected accounts.
+              <p className="wl-page-copy mt-3">
+                Start with one useful brief. Wireline can handle the call, follow-up, or inbox task while you keep the rules and the final decision.
               </p>
             </div>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/studio?create=1" className="studio-primary-button text-sm">
                 Create an assistant <ArrowRight size={16} />
               </Link>
               <Link to="/connections" className="studio-secondary-button text-sm">
-                Connect your tools
+                Connect a tool
               </Link>
             </div>
           </div>
 
           <aside className="wl-overview-status studio-card flex flex-col justify-between">
             <div>
-              <p className="studio-kicker">Workspace status</p>
-              <div className="mt-5 flex items-baseline gap-2">
-                <span className="font-[var(--wl-font-display)] text-5xl font-semibold tracking-[-.04em] text-foreground">
-                  {loading ? "—" : agents.length}
-                </span>
-                <span className="text-sm text-muted-foreground">in your roster</span>
+              <p className="studio-kicker">Roster</p>
+              <div className="mt-5 flex items-end gap-2">
+                <span className="wl-metric-value">{loading ? "—" : agents.length}</span>
+                <span className="pb-0.5 text-sm text-muted-foreground">active</span>
               </div>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 {degraded
@@ -77,9 +74,9 @@ export default function OverviewPage() {
             </div>
             <Link
               to="/agents"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
             >
-              Review roster <ArrowRight size={15} />
+              View assistants <ArrowRight size={15} />
             </Link>
           </aside>
         </section>
@@ -88,13 +85,9 @@ export default function OverviewPage() {
           <article className="studio-card flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <User className="size-5 text-primary" />
-              <h2 className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-                Personal assistants
-              </h2>
+              <h2 className="wl-card-title">Personal assistants</h2>
             </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {PRODUCT_POSTURE.personal.emptyBody}
-            </p>
+            <p className="text-sm leading-6 text-muted-foreground">{PRODUCT_POSTURE.personal.emptyBody}</p>
             <Link to="/studio?create=1" className="studio-secondary-button mt-auto w-fit text-sm">
               {PRODUCT_POSTURE.personal.createCta}
             </Link>
@@ -102,13 +95,9 @@ export default function OverviewPage() {
           <article className="studio-card flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <Briefcase className="size-5 text-primary" />
-              <h2 className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-                Business agents
-              </h2>
+              <h2 className="wl-card-title">Business agents</h2>
             </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {PRODUCT_POSTURE.business.emptyBody}
-            </p>
+            <p className="text-sm leading-6 text-muted-foreground">{PRODUCT_POSTURE.business.emptyBody}</p>
             <Link
               to="/studio?create=1&posture=business"
               className="studio-secondary-button mt-auto w-fit text-sm"
@@ -119,11 +108,9 @@ export default function OverviewPage() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-3">
-          <Link to="/inbox" className="wl-overview-action studio-card group block text-left">
+          <Link to="/inbox" className="wl-overview-action studio-card wl-card-action group block min-h-[210px] text-left">
             <Radio className="size-5 text-primary" />
-            <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-              Review what happened
-            </h2>
+            <h2 className="wl-card-title mt-5">Review what happened</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Read conversations, handoffs, and replies from personal assistants and business agents.
             </p>
@@ -131,25 +118,21 @@ export default function OverviewPage() {
               Open inbox <ArrowRight size={15} />
             </span>
           </Link>
-          <Link to="/knowledge" className="wl-overview-action studio-card group block text-left">
+          <Link to="/knowledge" className="wl-overview-action studio-card wl-card-action group block min-h-[210px] text-left">
             <FileText className="size-5 text-primary" />
-            <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-              Keep answers current
-            </h2>
+            <h2 className="wl-card-title mt-5">Keep answers current</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Give each personal assistant and business agent the facts, policies, and boundaries they need.
+              Give each assistant the facts, policies, and boundaries it needs before the conversation starts.
             </p>
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
               Open knowledge <ArrowRight size={15} />
             </span>
           </Link>
-          <Link to="/connections" className="wl-overview-action studio-card group block text-left">
+          <Link to="/connections" className="wl-overview-action studio-card wl-card-action group block min-h-[210px] text-left">
             <Cable className="size-5 text-primary" />
-            <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-              Connect useful actions
-            </h2>
+            <h2 className="wl-card-title mt-5">Connect useful actions</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Connect calendars, inboxes, and systems only when an assistant or agent needs them.
+              Connect calendars, inboxes, and systems only when an assistant needs them to do an approved job.
             </p>
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
               Review connections <ArrowRight size={15} />
@@ -160,21 +143,18 @@ export default function OverviewPage() {
         <section className="studio-card">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
             <div>
-              <p className="studio-kicker">Roster</p>
-              <h2 className="mt-1 font-[var(--wl-font-display)] text-xl font-semibold text-foreground">
-                Personal assistants & business agents
-              </h2>
+              <p className="studio-kicker">Your roster</p>
+              <h2 className="wl-section-title mt-2">Assistants ready for work</h2>
             </div>
             <Link to="/agents" className="studio-secondary-button text-sm">
-              Manage all
+              Manage assistants
             </Link>
           </div>
           {degraded ? (
             <div className="mt-5 flex items-start gap-3 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wl-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-warning)_8%,var(--card))] p-4 text-sm text-foreground">
               <CircleAlert className="mt-0.5 size-4 shrink-0 text-[var(--wl-status-warning)]" />
               <p>
-                Workspace status is partially unavailable. Roster data shown here may be stale until
-                the connection recovers.
+                Workspace status is partially unavailable. Roster data shown here may be stale until the connection recovers.
               </p>
             </div>
           ) : null}
@@ -186,22 +166,18 @@ export default function OverviewPage() {
                 <Link
                   key={agent.id}
                   to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-                  className="group rounded-[var(--radius-lg)] border border-border bg-card p-4 transition hover:border-primary/45 hover:bg-secondary active:scale-[0.98]"
+                  className="studio-card wl-card-action group min-h-[196px] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className="grid size-9 place-items-center rounded-[var(--radius)] bg-accent text-primary">
+                    <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                       <Bot size={18} />
                     </span>
                     <div className="flex flex-col items-end gap-1.5">
-                      <span className="font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">
-                        {agent.channel || "voice"}
-                      </span>
+                      <span className="wl-overline text-[10px]">{agent.channel || "voice"}</span>
                       <PostureBadge isBusiness={Boolean(agent.is_business_agent)} compact />
                     </div>
                   </div>
-                  <h3 className="mt-5 font-[var(--wl-font-display)] text-base font-semibold text-foreground">
-                    {agent.name}
-                  </h3>
+                  <h3 className="wl-card-title mt-5">{agent.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{roleLabel(agent.role)}</p>
                   <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                     Open Studio <ArrowRight size={15} />
@@ -213,12 +189,9 @@ export default function OverviewPage() {
             <div className="flex flex-col items-start gap-3 py-10">
               <Bot className="size-6 text-primary" />
               <div>
-                <h3 className="font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-                  {PRODUCT_POSTURE.personal.emptyTitle}
-                </h3>
-                <p className="mt-1 max-w-lg text-sm leading-6 text-muted-foreground">
-                  {PRODUCT_VERSATILITY.tagline} Create a personal assistant first, then add business
-                  agents when work needs a professional line.
+                <h3 className="wl-section-title">{PRODUCT_POSTURE.personal.emptyTitle}</h3>
+                <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+                  {PRODUCT_VERSATILITY.tagline} Create a personal assistant first, then add business agents when work needs a professional line.
                 </p>
               </div>
               <Link to="/studio?create=1" className="studio-primary-button text-sm">
