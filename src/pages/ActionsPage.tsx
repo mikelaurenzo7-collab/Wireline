@@ -9,18 +9,18 @@ export default function ActionsPage() {
 
   return (
     <WorkspaceShell
-      eyebrow="Your accounts & tools"
+      eyebrow="Full versatility"
       title="Connections"
       contentClassName="pt-5"
       action={
         <div className="flex items-center gap-3">
           <Link
             to={agentId ? `/studio?agent=${encodeURIComponent(agentId)}` : "/studio"}
-            className="workspace-btn-secondary px-3 py-2.5 text-sm"
+            className="studio-secondary-button text-sm"
           >
             Back to Studio
           </Link>
-          <Link to="/studio?create=1" className="workspace-btn-primary px-4 py-2.5 text-sm">
+          <Link to="/studio?create=1" className="studio-primary-button text-sm">
             <Plus size={15} />
             New assistant
           </Link>

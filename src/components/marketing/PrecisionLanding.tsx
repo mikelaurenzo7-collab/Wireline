@@ -17,14 +17,14 @@ export default function PrecisionLanding() {
           <div className="wl-measure text-center">
             <p className="wl-stitch-label">Wireline</p>
             <h1 className="mx-auto mt-4 max-w-[980px] text-balance text-[clamp(42px,6vw,68px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
-              Personal and Business AI Assistants for your Conversations
+              Personal assistants and business agents for every conversation
             </h1>
             <p className="mt-5 text-[15px] font-semibold tracking-[.08em] text-primary sm:text-[16px]">
               Voice + Email + Text
             </p>
             <p className="mx-auto mt-5 max-w-[690px] text-[17px] leading-7 text-muted-foreground">
-              Give Wireline the conversations that matter. Your assistant handles calls, email, and
-              text under your rules, then brings you the outcome and next step.
+              Full versatility in one workspace: personal assistants for your day, business agents for
+              your company — voice, email, and text under your rules, with the outcome brought back to you.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
@@ -94,11 +94,11 @@ export default function PrecisionLanding() {
         </section>
         <section className="border-t border-border px-4 py-16 text-center sm:px-6">
           <h2 className="mx-auto max-w-2xl text-[34px] font-semibold leading-tight tracking-[-.03em] text-foreground">
-            Personal when it is your life. Business-ready when it is your work.
+            Personal assistants for your life. Business agents for your work.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-[15px] leading-7 text-muted-foreground">
-            Create one assistant, give it a clear brief, and let Wireline handle the next useful
-            conversation.
+            Start with one clear brief — pharmacy calls, scheduling, inbound support, or lead follow-up.
+            Wireline scales from a single personal assistant to a roster of business agents.
           </p>
           <div className="mt-8">
             <Link

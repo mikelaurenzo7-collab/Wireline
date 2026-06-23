@@ -4,11 +4,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
+import { PRODUCT_POSTURE } from "../lib/product-copy";
 
 const roles = [
   ["scheduler", "Personal assistant"],
   ["customer_service", "Helpful caller"],
-  ["receptionist", "Call concierge"],
+  ["receptionist", "Business receptionist"],
   ["custom", "Something else"],
 ] as const;
 
@@ -18,6 +19,7 @@ export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { agents, loading, refresh } = useAgents();
+  const wantsBusinessAgent = params.get("posture") === "business";
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("scheduler");
@@ -29,8 +31,12 @@ export default function AgentStudioHome() {
   const priorFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!loading && agents.length > 0 && params.get("create") === "1") setShowCreate(true);
-  }, [agents.length, loading, params]);
+    if (!loading && params.get("create") === "1") setShowCreate(true);
+  }, [loading, params]);
+
+  useEffect(() => {
+    if (wantsBusinessAgent) setRole("receptionist");
+  }, [wantsBusinessAgent]);
 
   useEffect(() => {
     if (!showCreate) return;
@@ -97,6 +103,13 @@ export default function AgentStudioHome() {
           body: JSON.stringify({ agentId: body.id, message: brief.trim() }),
         });
       }
+      if (wantsBusinessAgent) {
+        await authFetch(`/api/agent-config/${body.id}/business`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_business_agent: true }),
+        });
+      }
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       navigate(`/studio?agent=${encodeURIComponent(body.id)}`, { replace: true });
@@ -132,18 +145,26 @@ export default function AgentStudioHome() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="wl-stitch-label">New assistant</p>
+                <p className="wl-stitch-label">
+                  {wantsBusinessAgent
+                    ? PRODUCT_POSTURE.business.createCta
+                    : PRODUCT_POSTURE.personal.createCta}
+                </p>
                 <h2
                   id="create-assistant-title"
                   className="mt-1 text-xl font-semibold tracking-[-.04em]"
                 >
-                  Start with one useful call.
+                  {wantsBusinessAgent
+                    ? "Give your business agent one clear job."
+                    : "Start with one useful call."}
                 </h2>
                 <p
                   id="create-assistant-description"
                   className="mt-2 text-sm leading-5 text-muted-foreground"
                 >
-                  Name the help you want and teach the details in Studio.
+                  {wantsBusinessAgent
+                    ? "Name the agent, describe how it should represent your business, and refine policies in Studio."
+                    : "Name the help you want and teach the details in Studio."}
                 </p>
               </div>
               <button
@@ -184,7 +205,11 @@ export default function AgentStudioHome() {
               <textarea
                 value={brief}
                 onChange={(event) => setBrief(event.target.value)}
-                placeholder="Call my pharmacy, wait on hold, and text me when my prescription is ready."
+                placeholder={
+                  wantsBusinessAgent
+                    ? "Answer inbound calls, capture caller details, and book consultations during business hours."
+                    : "Call my pharmacy, wait on hold, and text me when my prescription is ready."
+                }
                 className="wl-stitch-input mt-1.5 min-h-[96px] resize-none"
               />
             </label>
@@ -195,7 +220,7 @@ export default function AgentStudioHome() {
             ) : null}
             <button
               disabled={!name.trim() || creating}
-              className="workspace-btn-primary mt-5 w-full justify-center px-4 py-3 disabled:opacity-40"
+              className="studio-primary-button mt-5 w-full justify-center disabled:opacity-40"
             >
               {creating ? (
                 <Loader2 className="animate-spin" size={16} />

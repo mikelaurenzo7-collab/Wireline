@@ -1,17 +1,17 @@
 import { Link } from "react-router-dom";
 import {
   Bot,
-  Briefcase,
   CircleAlert,
   MessageSquare,
   Phone,
   Plus,
-  User,
   Wrench,
   Zap,
 } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
+import PostureBadge from "../components/ui/PostureBadge";
 import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
+import { PRODUCT_POSTURE, PRODUCT_VERSATILITY, rosterSummary } from "../lib/product-copy";
 
 const ROLE_HINT: Record<string, string> = {
   sales: "Follows up with leads, books meetings, and keeps useful conversations moving.",
@@ -29,7 +29,7 @@ function agentHint(agent: WorkspaceAgentSummary) {
   return ROLE_HINT[agent.role || "custom"] || ROLE_HINT.custom;
 }
 
-function EmptyAssistants() {
+function EmptyRoster() {
   return (
     <section className="grid min-h-[430px] flex-1 place-items-center rounded-[var(--radius-lg)] border border-dashed border-border bg-card px-6 text-center">
       <div className="max-w-lg">
@@ -37,19 +37,18 @@ function EmptyAssistants() {
           <Bot size={34} strokeWidth={1.7} />
         </span>
         <h2 className="mt-7 font-[var(--wl-font-display)] text-2xl font-semibold tracking-[-.02em] text-foreground">
-          Start with one useful assistant
+          {PRODUCT_VERSATILITY.tagline}
         </h2>
         <p className="mx-auto mt-3 max-w-md text-base leading-6 text-muted-foreground">
-          Give it a name and one clear job. Wireline will help turn that brief into an assistant that
-          can handle the calls and follow-ups you do not want to chase.
+          {PRODUCT_POSTURE.personal.emptyBody}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <Link to="/studio?create=1" className="studio-primary-button">
             <Plus size={16} />
-            Create assistant
+            {PRODUCT_POSTURE.personal.createCta}
           </Link>
-          <Link to="/studio" className="studio-secondary-button">
-            Open Studio
+          <Link to="/studio?create=1&posture=business" className="studio-secondary-button">
+            {PRODUCT_POSTURE.business.createCta}
           </Link>
         </div>
       </div>
@@ -57,11 +56,11 @@ function EmptyAssistants() {
   );
 }
 
-function LoadingAssistants() {
+function LoadingRoster() {
   return (
     <section
       className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto pb-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-      aria-label="Loading assistants"
+      aria-label="Loading roster"
     >
       {Array.from({ length: 8 }, (_, index) => (
         <div key={index} className="h-[236px] rounded-[var(--radius-lg)] border border-border bg-card p-5">
@@ -82,7 +81,7 @@ function LoadingAssistants() {
   );
 }
 
-function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
+function RosterCard({ agent }: { agent: WorkspaceAgentSummary }) {
   const channel = agent.channel || "voice";
   const isVoice = channel === "voice";
   const ChannelIcon = isVoice ? Phone : MessageSquare;
@@ -94,17 +93,7 @@ function AssistantCard({ agent }: { agent: WorkspaceAgentSummary }) {
           {agent.name.slice(0, 1).toUpperCase()}
         </span>
         <div className="flex flex-wrap justify-end gap-1.5">
-          {agent.is_business_agent ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-accent px-2 py-0.5 text-[10px] font-semibold text-primary">
-              <Briefcase size={10} />
-              Business
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-semibold text-foreground">
-              <User size={10} className="text-primary" />
-              Personal
-            </span>
-          )}
+          <PostureBadge isBusiness={Boolean(agent.is_business_agent)} />
           <span className="wl-stitch-status-pill">
             <span className="wl-stitch-status-dot" aria-hidden />
             Ready
@@ -154,19 +143,56 @@ function SetupNote({ label, value, detail }: { label: string; value: string; det
   );
 }
 
+function RosterSection({
+  title,
+  agents,
+  createHref,
+  createLabel,
+}: {
+  title: string;
+  agents: WorkspaceAgentSummary[];
+  createHref: string;
+  createLabel: string;
+}) {
+  if (!agents.length) return null;
+
+  return (
+    <section className="min-h-0 flex-1">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="studio-kicker">{title}</p>
+          <h2 className="mt-1 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
+            {agents.length} ready
+          </h2>
+        </div>
+        <Link to={createHref} className="studio-secondary-button text-sm">
+          <Plus size={14} />
+          {createLabel}
+        </Link>
+      </div>
+      <div className="grid gap-4 pb-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {agents.map((agent) => (
+          <RosterCard key={agent.id} agent={agent} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function AgentsPage() {
   const { agents, loading, degraded } = useAgents();
-  const assistantCount = agents.length;
+  const personalAgents = agents.filter((agent) => !agent.is_business_agent);
+  const businessAgents = agents.filter((agent) => agent.is_business_agent);
 
   return (
     <WorkspaceShell
-      eyebrow="Your assistants"
-      title="Assistants"
+      eyebrow={PRODUCT_VERSATILITY.eyebrow}
+      title="Personal assistants & business agents"
       contentClassName="pt-6 pb-0"
       action={
         <Link to="/studio?create=1" className="studio-primary-button">
           <Plus size={16} />
-          Create assistant
+          Create an assistant
         </Link>
       }
     >
@@ -176,7 +202,7 @@ export default function AgentsPage() {
             <CircleAlert size={18} className="mt-0.5 shrink-0 text-[var(--wl-status-error)]" />
             <div>
               <p className="font-semibold text-[var(--wl-status-error)]">
-                We cannot load your assistants right now
+                We cannot load your roster right now
               </p>
               <p className="mt-1 text-sm leading-5 text-muted-foreground">
                 Your saved setup is safe. Please try again in a moment.
@@ -187,28 +213,39 @@ export default function AgentsPage() {
         {!loading && agents.length ? (
           <section className="grid shrink-0 gap-4 md:grid-cols-3">
             <SetupNote
-              label="Assistants"
-              value={String(assistantCount)}
-              detail="Configured in your workspace"
+              label="Roster"
+              value={String(agents.length)}
+              detail={rosterSummary(personalAgents.length, businessAgents.length)}
             />
-            <SetupNote label="Training" value="Studio" detail="Keep each assistant specific and current" />
             <SetupNote
-              label="Connections"
-              value="Your choice"
-              detail="Approve only the accounts and tasks they need"
+              label="Personal assistants"
+              value={String(personalAgents.length)}
+              detail="Everyday calls, scheduling, and follow-ups"
+            />
+            <SetupNote
+              label="Business agents"
+              value={String(businessAgents.length)}
+              detail="Professional lines, policies, and connected accounts"
             />
           </section>
         ) : null}
-        {!loading && !agents.length ? <EmptyAssistants /> : null}
-        {loading ? <LoadingAssistants /> : null}
+        {!loading && !agents.length ? <EmptyRoster /> : null}
+        {loading ? <LoadingRoster /> : null}
         {!loading && agents.length ? (
-          <section className="min-h-0 flex-1 overflow-y-auto pr-0.5">
-            <div className="grid gap-4 pb-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {agents.map((agent) => (
-                <AssistantCard key={agent.id} agent={agent} />
-              ))}
-            </div>
-          </section>
+          <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto pr-0.5">
+            <RosterSection
+              title="Personal assistants"
+              agents={personalAgents}
+              createHref="/studio?create=1"
+              createLabel={PRODUCT_POSTURE.personal.createCta}
+            />
+            <RosterSection
+              title="Business agents"
+              agents={businessAgents}
+              createHref="/studio?create=1&posture=business"
+              createLabel={PRODUCT_POSTURE.business.createCta}
+            />
+          </div>
         ) : null}
       </div>
     </WorkspaceShell>

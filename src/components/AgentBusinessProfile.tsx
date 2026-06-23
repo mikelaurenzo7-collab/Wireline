@@ -293,10 +293,10 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-[#C9C4D7] bg-[#FFFFFF] shadow-sm">
         <div className="min-w-0">
           <h3 className="font-display italic text-base text-[#0B1C30] leading-tight">
-            Assistant Posture
+            Personal assistant or business agent
           </h3>
           <p className="text-[11px] text-[#484554] leading-relaxed mt-0.5">
-            Configure this assistant as a personal helper or a professional business representative.
+            Choose whether this is a personal assistant for your day or a business agent for your company.
           </p>
         </div>
 
@@ -314,7 +314,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             )}
           >
             <User className="w-3.5 h-3.5 text-[#5D3FD3]" />
-            Personal
+            Personal assistant
           </ShadButton>
           <ShadButton
             type="button"
@@ -329,7 +329,7 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
             )}
           >
             <Briefcase className="w-3.5 h-3.5 text-[#5D3FD3]" />
-            Business
+            Business agent
           </ShadButton>
         </div>
       </div>
@@ -349,11 +349,10 @@ export default function AgentBusinessProfile({ value, onChange }: Props) {
 
           <div className="space-y-2">
             <h2 className="font-display italic text-xl text-[#0B1C30] tracking-tight">
-              Personal Assistant Mode
+              Personal assistant
             </h2>
             <p className="text-[12px] text-[#484554] max-w-md mx-auto leading-relaxed">
-              This assistant is dedicated to managing your daily personal tasks, scheduling, and
-              communication directly from your device.
+              This personal assistant manages your daily tasks, scheduling, and communication from your device.
             </p>
           </div>
 

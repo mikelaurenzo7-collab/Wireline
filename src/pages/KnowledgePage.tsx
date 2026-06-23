@@ -12,13 +12,13 @@ function EmptyKnowledge() {
           <Database size={30} strokeWidth={1.7} />
         </span>
         <h2 className="mt-7 text-[24px] font-semibold tracking-[-.01em] text-foreground">
-          Start with an assistant
+          Start with a personal assistant or business agent
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-[16px] leading-6 text-muted-foreground">
-          Create an assistant first, then add the facts, preferences, and rules that make it
-          genuinely useful to you.
+          Create your first assistant or agent, then add the facts, policies, and rules that make it
+          genuinely useful.
         </p>
-        <Link to="/studio?create=1" className="workspace-btn-primary mt-7 px-5 py-2.5">
+        <Link to="/studio?create=1" className="studio-primary-button mt-7">
           <WandSparkles size={16} />
           Open Studio
         </Link>
@@ -35,7 +35,7 @@ export default function KnowledgePage() {
 
   return (
     <WorkspaceShell
-      eyebrow="What your assistant knows"
+      eyebrow="What they know"
       title={populated ? "Facts & Rules" : "Knowledge"}
       contentClassName={populated ? "pt-5" : "pt-0"}
       action={

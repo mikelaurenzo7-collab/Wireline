@@ -219,17 +219,17 @@ export default function ActionsWorkspace() {
       <div className="mb-5 flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-[24px] font-semibold tracking-[-.02em] text-primary">
-            Ways your assistant can help
+            Ways your assistant or agent can help
           </h2>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            Choose only the things you would like this assistant to do.
+            Choose only the actions this personal assistant or business agent should take.
           </p>
         </div>
         <select
           value={agentId}
           onChange={(event) => setParams({ agent: event.target.value })}
           className="h-10 max-w-[240px] rounded-md border border-border bg-card px-3 text-[14px]"
-          aria-label="Choose assistant"
+          aria-label="Choose assistant or agent"
         >
           {agents.length ? (
             agents.map((agent) => (
@@ -292,7 +292,7 @@ export default function ActionsWorkspace() {
             Connected apps
           </h2>
           <p className="mt-1 text-[14px] leading-5 text-muted-foreground">
-            Connect the places that make your assistant more useful.
+            Connect the accounts and tools that make this assistant or agent more useful.
           </p>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {

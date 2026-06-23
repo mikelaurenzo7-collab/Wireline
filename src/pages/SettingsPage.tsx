@@ -21,7 +21,7 @@ const settingsDestinations = [
     href: "/connections",
     icon: Cable,
     label: "Connections",
-    description: "Review the accounts and tools your assistants can use.",
+    description: "Review the accounts and tools your personal assistants and business agents can use.",
   },
 ] as const;
 
@@ -57,7 +57,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleSignOut}
               disabled={signingOut}
-              className="workspace-btn-secondary shrink-0 px-4 py-2.5 disabled:cursor-not-allowed disabled:opacity-50"
+              className="studio-secondary-button shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <LogOut size={16} />
               {signingOut ? "Signing out…" : "Sign out"}
