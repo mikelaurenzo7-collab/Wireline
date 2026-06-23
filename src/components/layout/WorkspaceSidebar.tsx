@@ -1,37 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/**
- * WorkspaceSidebar.tsx — Collapsible workspace navigation (Phase 1 implementation).
- *
- * Respects user preference for collapsed icon rail (logos/favicons + tooltips).
- * Default: collapsed (56px) on desktop for clean builder canvas.
- * Toggle expands to 256px labeled view.
- * Perfect edge-to-edge (left-0, no gap).
- * Matches robofuturistic polish: glass, subtle glows, consistent rhythm.
- */
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Users,
   Bot,
-  BookOpen,
-  Plug,
-  Inbox,
-  Settings,
-  LifeBuoy,
-  LogOut,
-  Crown,
   ChevronLeft,
   ChevronRight,
+  Crown,
+  LayoutDashboard,
+  LifeBuoy,
+  LogOut,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../../lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/shadcn/Tooltip";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAccount } from "../../contexts/AccountContext";
 import { accountSidebarItems } from "../../lib/account-type";
 import { type NavItem } from "../../constants/navigation";
-import { BRAND } from "../../constants/brand-colors";
 import WirelineMark from "../WirelineMark";
 
 interface WorkspaceSidebarProps {
@@ -40,6 +23,13 @@ interface WorkspaceSidebarProps {
   variant?: "wide" | "rail";
 }
 
+/**
+ * Compact-first workspace navigation.
+ *
+ * The 56px desktop rail preserves maximum builder canvas while retaining a
+ * discoverable 256px labeled state. It intentionally uses Ametrine's light
+ * tonal surface hierarchy rather than dark chrome, blur, or glow treatments.
+ */
 export default function WorkspaceSidebar({
   navBadges = {},
   className,
@@ -48,11 +38,8 @@ export default function WorkspaceSidebar({
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { accountType } = useAccount();
-
-  // Phase 1: Default to collapsed (user preference: "I’ve never liked a full sidebar")
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  // Persist preference
   useEffect(() => {
     const saved = localStorage.getItem("wireline-sidebar-collapsed");
     if (saved !== null) setIsCollapsed(saved === "true");
@@ -66,10 +53,9 @@ export default function WorkspaceSidebar({
 
   const isActive = (item: NavItem) => {
     if (location.pathname === item.path) return true;
-    if (!item.matches) return false;
-    return item.matches.some(
-      (m) => location.pathname === m || location.pathname.startsWith(`${m}/`),
-    );
+    return item.matches?.some(
+      (match) => location.pathname === match || location.pathname.startsWith(`${match}/`),
+    ) ?? false;
   };
 
   const items = accountSidebarItems(accountType).filter(
@@ -79,60 +65,63 @@ export default function WorkspaceSidebar({
   const grouped = items.reduce(
     (acc, item) => {
       const section = item.section || "General";
-      if (!acc[section]) acc[section] = [];
-      acc[section].push(item);
+      (acc[section] ||= []).push(item);
       return acc;
     },
     {} as Record<string, NavItem[]>,
   );
 
-  const railWidth = isCollapsed ? 56 : 256;
-
-  if (variant === "rail") {
-    return null;
-  }
+  if (variant === "rail") return null;
 
   return (
     <TooltipProvider delayDuration={180}>
       <aside
         aria-label="Workspace navigation"
         className={cn(
-          "hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-white/[0.08] bg-[#F8F9FF] dark:bg-[#0a0a0f] transition-[width] duration-200 ease-out",
+          "relative hidden md:flex shrink-0 flex-col fixed top-0 left-0 bottom-0 z-[55] border-r border-outline-variant bg-surface transition-[width] duration-200 ease-out",
           className,
         )}
-        style={{ width: `${railWidth}px` }}
+        style={{ width: `${isCollapsed ? 56 : 256}px` }}
         data-testid="workspace-sidebar"
         data-collapsed={isCollapsed}
       >
-        {/* Top Logo / Collapse Toggle — flawless edge alignment */}
-        <div className="flex items-center justify-between px-3 h-16 border-b border-white/[0.08]">
-          <Link to="/overview" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center overflow-hidden">
-              <WirelineMark className="w-4 h-4 text-white" strokeWidth={140} />
+        <div
+          className={cn(
+            "flex h-16 items-center border-b border-outline-variant",
+            isCollapsed ? "justify-center px-2" : "justify-between px-3",
+          )}
+        >
+          <Link to="/overview" className="flex min-w-0 items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary" aria-hidden="true">
+              <WirelineMark className="size-4 text-white" strokeWidth={140} />
             </div>
             {!isCollapsed && (
-              <div>
-                <div className="font-semibold text-[17px] tracking-[-0.3px] text-on-surface">Wireline</div>
-                <div className="text-[10px] text-on-surface-variant -mt-0.5">Enterprise</div>
+              <div className="min-w-0">
+                <div className="truncate text-[17px] font-semibold tracking-[-0.3px] text-on-surface">Wireline</div>
+                <div className="-mt-0.5 text-[10px] text-on-surface-variant">Workspace</div>
               </div>
             )}
           </Link>
 
           <button
+            type="button"
             onClick={toggleCollapsed}
-            className="p-1.5 rounded-md hover:bg-white/[0.08] text-white/60 hover:text-white transition-colors"
+            className={cn(
+              "flex size-7 items-center justify-center rounded-md border border-outline-variant bg-surface-container-low text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+              isCollapsed && "absolute -right-3 top-[18px] z-10",
+            )}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {isCollapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
           </button>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-4 text-sm" aria-label="Primary navigation">
-          {Object.entries(grouped).map(([section, sectionItems], idx) => (
-            <div key={section} className={cn(idx > 0 && "mt-5")}>
+          {Object.entries(grouped).map(([section, sectionItems], index) => (
+            <div key={section} className={cn(index > 0 && "mt-5")}>
               {!isCollapsed && (
-                <div className="px-3 mb-1.5 text-[10px] font-medium tracking-[0.08em] text-on-surface-variant/70 uppercase">
+                <div className="mb-1.5 px-3 text-[10px] font-medium uppercase tracking-[0.08em] text-on-surface-variant/70">
                   {section}
                 </div>
               )}
@@ -142,33 +131,33 @@ export default function WorkspaceSidebar({
                   const active = isActive(item);
                   const badge =
                     (navBadges[item.path] ?? 0) +
-                    (item.matches?.reduce((s, m) => s + (navBadges[m] ?? 0), 0) ?? 0);
+                    (item.matches?.reduce((sum, match) => sum + (navBadges[match] ?? 0), 0) ?? 0);
 
-                  const linkContent = (
+                  const link = (
                     <Link
                       key={item.path}
                       to={item.path}
                       className={cn(
-                        "group flex items-center gap-3 px-3 py-[9px] rounded-md transition-all duration-150",
-                        "hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                        "group flex items-center gap-3 rounded-md py-[9px] text-on-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                        isCollapsed ? "justify-center px-2" : "px-3",
                         active
-                          ? "bg-primary/10 text-primary font-medium border-l-3 border-primary -ml-[1px] pl-[11px]"
-                          : "text-on-surface hover:text-on-surface",
-                        isCollapsed && "justify-center px-2"
+                          ? isCollapsed
+                            ? "bg-primary/10 text-primary"
+                            : "-ml-px border-l-[3px] border-primary bg-primary/10 pl-[11px] font-medium text-primary"
+                          : "hover:bg-surface-container-low",
                       )}
                       aria-current={active ? "page" : undefined}
                     >
                       <Icon
                         className={cn(
-                          "w-4 h-4 shrink-0 transition-colors",
-                          active ? "text-primary" : "text-on-surface-variant group-hover:text-on-surface"
+                          "size-4 shrink-0",
+                          active ? "text-primary" : "text-on-surface-variant group-hover:text-on-surface",
                         )}
                         strokeWidth={active ? 2.5 : 2}
                       />
                       {!isCollapsed && <span className="truncate text-[13.5px] tracking-[-0.1px]">{item.label}</span>}
-
                       {!isCollapsed && badge > 0 && (
-                        <span className="ml-auto min-w-[18px] h-[17px] px-1.5 rounded-full bg-error/10 text-error text-[10px] font-mono flex items-center justify-center">
+                        <span className="ml-auto flex h-[17px] min-w-[18px] items-center justify-center rounded-full bg-error/10 px-1.5 font-mono text-[10px] text-error">
                           {badge > 99 ? "99+" : badge}
                         </span>
                       )}
@@ -177,53 +166,50 @@ export default function WorkspaceSidebar({
 
                   return isCollapsed ? (
                     <Tooltip key={item.path}>
-                      <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                      <TooltipTrigger asChild>{link}</TooltipTrigger>
                       <TooltipContent side="right" className="ml-1">
-                        {item.label}
-                        {badge > 0 && ` (${badge})`}
+                        {item.label}{badge > 0 ? ` (${badge})` : ""}
                       </TooltipContent>
                     </Tooltip>
-                  ) : linkContent;
+                  ) : link;
                 })}
               </div>
             </div>
           ))}
         </nav>
 
-        {/* Bottom */}
-        <div className="shrink-0 border-t border-white/[0.08] px-2 py-3 space-y-1">
+        <div className="shrink-0 space-y-1 border-t border-outline-variant px-2 py-3">
           <Link
             to="/help"
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-white/[0.06] text-sm",
-              isCollapsed && "justify-center px-2"
+              "flex items-center gap-3 rounded-md py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface",
+              isCollapsed ? "justify-center px-2" : "px-3",
             )}
           >
-            <LifeBuoy className="w-4 h-4" />
+            <LifeBuoy className="size-4" />
             {!isCollapsed && <span>Help & Support</span>}
           </Link>
-
           {user?.is_owner && (
             <Link
               to="/founder"
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-white/[0.06] text-sm",
-                isCollapsed && "justify-center px-2"
+                "flex items-center gap-3 rounded-md py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface",
+                isCollapsed ? "justify-center px-2" : "px-3",
               )}
             >
-              <Crown className="w-4 h-4" />
+              <Crown className="size-4" />
               {!isCollapsed && <span>Founder Dashboard</span>}
             </Link>
           )}
-
           <button
+            type="button"
             onClick={signOut}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-on-surface-variant hover:bg-error/5 hover:text-error text-sm text-left",
-              isCollapsed && "justify-center px-2"
+              "flex w-full items-center gap-3 rounded-md py-2 text-left text-on-surface-variant transition-colors hover:bg-error/5 hover:text-error",
+              isCollapsed ? "justify-center px-2" : "px-3",
             )}
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="size-4" />
             {!isCollapsed && <span>Sign out</span>}
           </button>
         </div>
