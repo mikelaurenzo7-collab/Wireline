@@ -4,7 +4,7 @@
  * Uses the `RobotHead` SVG at 24–32px with a gentle bounce animation when
  * active, and stays still + slightly muted when idle.
  */
-import { RobotHead } from "../marketing/RobotHead";
+import RobotHead from "../marketing/RobotHead";
 import type { RobotPose } from "../marketing/RobotHead";
 import { cn } from "../../lib/utils";
 
