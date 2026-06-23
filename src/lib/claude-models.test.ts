@@ -7,7 +7,14 @@ import {
   resolveVapiVoiceModelSelection,
 } from "./ai-models";
 
-describe("managed voice model policy", () => {
+/**
+ * Managed PSTN / Vapi voice model policy tests.
+ * Live browser/mobile voice runs through the dedicated Grok voice-profile path
+ * covered in src/lib/voice/grok-voice-config.test.ts.
+ * This suite keeps the Vapi-managed OpenAI/Gemini/OpenRouter routing stable.
+ */
+
+describe("managed PSTN voice model policy", () => {
   it("keeps OpenAI as the managed primary and Gemini as its native fallback", () => {
     const selection = resolveVapiVoiceModelSelection();
     expect(selection.provider).toBe(VAPI_TENANT_DEFAULT_PROVIDER);
@@ -25,7 +32,7 @@ describe("managed voice model policy", () => {
     expect(selection.fallbackModels).toEqual([VAPI_TENANT_DEFAULT_MODEL]);
   });
 
-  it("passes any valid explicit OpenRouter model through unchanged", () => {
+  it("passes an explicit Grok OpenRouter override through unchanged", () => {
     const model = "x-ai/grok-4.3";
     const selection = resolveVapiVoiceModelSelection({ provider: "openrouter", model });
     expect(selection).toEqual({ provider: "openrouter", model, userSelected: true });

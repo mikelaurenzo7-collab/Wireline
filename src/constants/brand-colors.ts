@@ -1,80 +1,90 @@
+/*
+ * Wireline Design Tokens — TypeScript manifest and strategy layer.
+ *
+ * Role in token management:
+ * - Authoritative reference for token categories, scaling strategy, and usage guidance.
+ * - TypeScript DX layer paired with the live CSS custom property runtime.
+ * - Foundation for future export pipelines such as DTCG JSON or Style Dictionary.
+ *
+ * Governance:
+ * - Keep this manifest aligned with the CSS runtime token layer.
+ * - Prefer semantic naming, strong contrast, and restrained operator-grade surfaces.
+ * - When runtime values change, update this manifest so the repo does not drift.
+ */
+
 export const BRAND = {
-  signal: "#1A1C1B",
-  signalBright: "#414846",
-  signalDeep: "#451EBB",
-  signalBlue: "#5D3FD3",
-  signalBlueDeep: "#451EBB",
-  signalBlueMuted: "#0B1C30",
-  teal: "#4A635D",
-  tealBright: "#5D3FD3",
-  amber: "#B45309",
+  colors: {
+    primary: '#5D3FD3',
+    primaryVariant: '#451EBB',
+    onPrimary: '#FFFFFF',
 
-  /** @deprecated legacy route accent alias — use signalBlue */
-  purple: "#5D3FD3",
-  purpleDeep: "#451EBB",
-  purpleMid: "#5D3FD3",
-  purpleRim: "#451EBB",
-  purpleLight: "#0B1C30",
-  purpleMuted: "#484554",
-  purpleInk: "#0B1C30",
-  /** @deprecated Wireline Precision alias — use signalBlue */
-  blue: "#5D3FD3",
-  blueDeep: "#451EBB",
-  blueMid: "#5D3FD3",
-  blueRim: "#451EBB",
-  blueLight: "#0B1C30",
-  blueMuted: "#484554",
-  blueInk: "#0B1C30",
-  cream: "#F8F9FF",
-  paper: "#FFFFFF",
-  creamWarm: "#EFF4FF",
-  creamDeep: "#C9C4D7",
-  ink: "#0B1C30",
-  /** @deprecated use signalBlue */
-  velvet: "#5D3FD3",
-  chromeGlow: "#C9C4D7",
-  rose: "#BA1A1A",
+    surface: '#FFFFFF',
+    surfaceContainerLowest: '#FFFFFF',
+    surfaceContainerLow: '#F1F5F9',
+    surfaceContainer: '#E5EEFF',
+    surfaceContainerHigh: '#DCE9FF',
+    surfaceContainerHighest: '#D3E4FE',
+
+    onSurface: '#0F172A',
+    onSurfaceVariant: '#334155',
+    onSurfaceMuted: '#475569',
+
+    outline: '#94A3B8',
+    outlineVariant: '#CBD5E1',
+    line: '#CBD5E1',
+
+    success: '#166534',
+    warning: '#854D0E',
+    error: '#991B1B',
+  },
+
+  spacing: {
+    base: '4px',
+    scale: 'multiplicative + fluid clamp()',
+    strategy: 'Strict 4px rhythm with fluid scaling for layout, typography, and responsive spacing.',
+    component: '16px | 24px',
+    section: 'clamp(3rem, 2rem + 5vw, 6rem)',
+  },
+
+  typography: {
+    display: 'Hanken Grotesk — sharp display typography for Wireline headings',
+    body: 'Inter — neutral, highly legible interface copy',
+    mono: 'JetBrains Mono — metadata, status, and technical labels',
+    scale: 'Fluid modular steps with clamp() for responsive hierarchy',
+    headingStrategy: 'Short, single-layer headings only. Concise and purposeful across the app shell.',
+  },
+
+  elevation: {
+    strategy: 'Subtle tonal layering and restrained box-shadow. Avoid excessive glow, noise, or glassmorphism.',
+    card: '0 1px 3px rgba(0,0,0,0.05) + subtle border',
+    panel: '0 2px 8px rgba(93,63,211,0.06)',
+    modal: '0 10px 25px -5px rgba(93,63,211,0.08)',
+  },
+
+  radius: {
+    base: '12px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px',
+    pill: '999px',
+  },
+
+  accessibility: {
+    contrastStandard: 'WCAG 2.2 AAA (7:1 normal, 4.5:1 large)',
+    dynamicApproach: 'Static high-contrast baseline with room for future perceptual tooling.',
+    targetSize: 'Minimum 24×24px for interactive elements',
+    reducedMotion: 'Respect prefers-reduced-motion globally',
+  },
+
+  theming: {
+    current: 'Light operator-grade baseline with tonal layering',
+    planned: 'High-contrast mode plus density variants via semantic token sets',
+  },
+
+  governance: 'Changes require review against Wireline brand direction, accessibility, and runtime consistency.',
+  pipeline: 'Current: manual sync. Future: shared token source with generated CSS, TS, and design-tool outputs.',
 } as const;
 
-export type BrandAccentPair = readonly [string, string];
-export const ROUTE_ACCENT_DEFAULT: BrandAccentPair = [BRAND.signalBlue, BRAND.signalBlueDeep];
-export const ROUTE_ACCENT_VARIANTS = {
-  primary: [BRAND.signalBlue, BRAND.signalBlueDeep] as BrandAccentPair,
-  soft: [BRAND.signalBlue, BRAND.teal] as BrandAccentPair,
-  warm: [BRAND.signalBlueDeep, BRAND.creamWarm] as BrandAccentPair,
-  light: [BRAND.signalBlueMuted, BRAND.signalBlue] as BrandAccentPair,
-  cream: [BRAND.signalBlue, BRAND.creamDeep] as BrandAccentPair,
-  critical: [BRAND.signalBlue, BRAND.rose] as BrandAccentPair,
-} as const;
-export const NAV_GROUP_ACCENTS: Record<string, string> = {
-  Command: BRAND.signalBlue,
-  Channels: BRAND.signalBlueMuted,
-  Agents: BRAND.signalBlueDeep,
-  Design: BRAND.signalBlue,
-  Admin: BRAND.teal,
-};
-export const ROUTE_ACCENTS: Record<string, BrandAccentPair> = {
-  "/ops": ROUTE_ACCENT_VARIANTS.primary,
-  "/triage": ROUTE_ACCENT_VARIANTS.warm,
-  "/insights": ROUTE_ACCENT_VARIANTS.soft,
-  "/logs": ROUTE_ACCENT_VARIANTS.primary,
-  "/phone": ROUTE_ACCENT_VARIANTS.light,
-  "/inbox": ROUTE_ACCENT_VARIANTS.light,
-  "/email": ROUTE_ACCENT_VARIANTS.light,
-  "/sms": ROUTE_ACCENT_VARIANTS.light,
-  "/outbound": ROUTE_ACCENT_VARIANTS.cream,
-  "/appointments": ROUTE_ACCENT_VARIANTS.warm,
-  "/agents": ROUTE_ACCENT_VARIANTS.primary,
-  "/chat": ROUTE_ACCENT_VARIANTS.soft,
-  "/training": ROUTE_ACCENT_VARIANTS.warm,
-  "/knowledge": ROUTE_ACCENT_VARIANTS.light,
-  "/actions": ROUTE_ACCENT_VARIANTS.soft,
-  "/admin": ROUTE_ACCENT_VARIANTS.primary,
-  "/cockpit": ROUTE_ACCENT_VARIANTS.primary,
-  "/dnc": ROUTE_ACCENT_VARIANTS.critical,
-  "/audit": ROUTE_ACCENT_VARIANTS.cream,
-  "/help": ROUTE_ACCENT_VARIANTS.soft,
-  "/pipeline": ROUTE_ACCENT_VARIANTS.primary,
-  "/founder": ROUTE_ACCENT_VARIANTS.cream,
-  "/activity": ROUTE_ACCENT_VARIANTS.primary,
-};
+export type BrandTokenCategory = keyof typeof BRAND;
+export type BrandColorToken = keyof typeof BRAND.colors;

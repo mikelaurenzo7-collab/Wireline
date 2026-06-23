@@ -63,3 +63,7 @@ The app intentionally stays thin. The server owns:
 - push fan-out and stale-token pruning
 
 See `src/routes/mobile-routes.ts`, `src/lib/mobile-push.ts`, and `src/lib/fcm-push.ts` for backend behavior.
+
+## Grok realtime voice
+
+Native apps support authenticated Grok realtime voice sessions (browser + mobile) for live tests with role-tuned, distinctive personalities. Production voice remains on Vapi. This enables the most unique and capable agent experiences on device without hype in UI. See docs/GROK_LIVE_VOICE.md and grok-voice-config.ts.

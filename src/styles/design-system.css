@@ -1,267 +1,140 @@
-/* Ametrine Precision — Full Stitch Source Parity
- * Primary: #451EBB | Surface: #F8F9FF | Radius: 4px base / 8px component / 12px modal | Hanken Grotesk
- * Merged from web_design_spec + deep_dive_manifest + current foundation tokens.
- * All interactive elements use --primary. 4px grid with 4px standard controls and 8px large containers enforced.
- */
+/* Wireline Design System — governance, shared utilities, and runtime alignment.
 
-:root {
-  /* Core Ametrine Precision Palette (exact from spec) */
-  --primary: #451ebb;
-  --primary-variant: #5d3fd3;
-  --primary-container: #5d3fd3;
-  --on-primary: #ffffff;
+CURRENT IMPLEMENTATION:
+- Runtime source of truth lives in foundation.css plus the active token/runtime bridge consumed by index.css.
+- Type-safe token guidance lives in brand-colors.ts and companion design-system manifests.
+- Components consume these tokens through Tailwind theme aliases and direct var() usage.
+- Light-mode baseline uses high-contrast semantic tokens, restrained depth, and compact operator-grade spacing.
 
-  --surface: #f8f9ff;
-  --surface-dim: #cbdbf5;
-  --surface-bright: #f8f9ff;
-  --surface-container-lowest: #ffffff;
-  --surface-container-low: #eff4ff;
-  --surface-container: #e5eeff;
-  --surface-container-high: #dce9ff;
-  --surface-container-highest: #d3e4fe;
-  --on-surface: #0b1c30;
-  --on-surface-variant: #484554;
+GOVERNANCE:
+1. Changes to shared tokens or primitives should be reviewed against Wireline brand direction, accessibility, and runtime consistency.
+2. The TypeScript manifest and CSS runtime layer should stay synchronized; neither should silently drift.
+3. Breaking changes should be accompanied by migration notes for affected components or routes.
+4. Keep the system lean: add primitives only when they are reused or form part of the canonical app shell.
 
-  --outline: #797586;
-  --outline-variant: #c9c4d7;
+This file intentionally carries both governance notes and a small set of shared utility classes that are used across the page shell, marketing shell, and live product surfaces. */
 
-  --success: #2e7d32;
-  --error: #ba1a1a;
-
-  /* Typography */
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Ametrine Precision geometry */
-  --radius: 4px;
-  --radius-sm: 2px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-
-  /* Spacing (4px grid) */
-  --spacing-base: 4px;
-  --card-padding: 12px;
-  --gutter: 24px;
-}
-
-/* ============================================
-   COMPONENT TOKENS — Exact from Ametrine Precision spec
-   ============================================ */
-
-/* Cards: bg-white rounded-lg border border-outline-variant shadow-sm */
-.wl-card,
-.wl-panel,
-.wl-panel-elevated,
-.studio-card,
-.wl-proposal-card,
-.wl-director-artifacts-panel {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: var(--card-padding);
-}
-
-.wl-panel-elevated { 
-  box-shadow: 0 2px 8px rgba(93, 63, 211, 0.06); 
-}
-
-/* Primary Buttons: bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-variant */
-.wl-button-primary,
-.studio-primary-button {
-  background: var(--primary-container);
-  color: var(--on-primary);
-  border: none;
-  border-radius: var(--radius-lg);
-  padding: 8px 16px;
-  font-weight: 500;
-  font-size: 14px;
-  transition: background 0.1s ease, transform 0.1s ease;
-}
-
-.wl-button-primary:hover,
-.studio-primary-button:hover {
-  background: var(--primary);
-}
-
-.wl-button-primary:active {
-  transform: scale(0.985);
-}
-
-/* Inputs: bg-white border border-outline-variant rounded-base px-3 py-2 focus:ring-2 focus:ring-primary/20 */
-.wl-input,
-input[type="text"],
-input[type="email"],
-input[type="password"],
-textarea,
-.studio-input {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  padding: 8px 12px;
-  font-size: 14px;
-  transition: border-color 0.1s ease, box-shadow 0.1s ease;
-}
-
-.wl-input:focus,
-input:focus,
-textarea:focus {
-  border-color: var(--primary-container);
-  box-shadow: 0 0 0 2px rgba(93, 63, 211, 0.2);
-  outline: none;
-}
-
-/* Modals: Center-aligned, bg-white rounded-xl shadow-xl border border-outline-variant. Backdrop: bg-black/40 backdrop-blur-sm */
-.wl-modal,
-[role="dialog"] {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 10px 25px -5px rgba(93, 63, 211, 0.05);
-}
-
-/* Tooltips: bg-inverse-surface text-inverse-on-surface rounded-base text-xs p-2 */
-.wl-tooltip {
-  background: var(--on-surface);
-  color: var(--surface);
-  border-radius: var(--radius);
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-/* Status / Active States (from North Star) */
-.wl-active-accent {
-  border-left: 3px solid var(--primary);
-}
-
-.wl-status-pill {
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* Existing component classes preserved and enhanced for parity */
-.wl-label,
-.wl-pro-eyebrow,
-.wl-workspace-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
+.chrome-eyebrow,
+.text-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--wl-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--on-surface-variant);
+  color: color-mix(in srgb, var(--primary) 78%, white);
 }
 
-.wl-pro-title {
-  font-family: var(--font-sans);
-  font-size: 24px;
+.wl-page-title {
+  font-family: var(--wl-font-display);
+  font-size: clamp(1.75rem, 1.2rem + 2.5vw, 3.5rem);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 32px;
-  color: var(--on-surface);
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  color: var(--foreground);
 }
 
-.wl-workspace-title {
-  font-family: var(--font-sans);
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 40px;
-  color: var(--on-surface);
+.text-muted-resolved {
+  color: var(--muted-foreground);
 }
 
-/* Enforce 4px radius globally for all buttons, cards, inputs (no exceptions for pills except status) */
-button,
-.studio-primary-button,
-.studio-secondary-button,
-.wl-button-primary,
-.wl-card,
-.wl-panel,
-input,
-textarea,
-select {
-  border-radius: var(--radius) !important;
+.hero-headline-glow {
+  text-shadow: 0 10px 30px rgba(93, 63, 211, 0.12);
 }
 
-/* Sidebar wide variant support for North Star parity (256px labeled) */
-.wl-sidebar-wide {
-  width: 256px;
-  background: var(--surface);
-  border-right: 1px solid var(--outline-variant);
+.touch-press {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
-.wl-sidebar-wide .nav-item {
+.touch-press:active {
+  transform: scale(0.98);
+}
+
+.wl-reveal {
+  animation: wl-reveal-in 220ms ease-out both;
+}
+
+.wl-text-success {
+  color: var(--wl-success);
+}
+
+.wl-pulse-live {
+  position: relative;
+}
+
+.wl-pulse-live::after {
+  content: "";
+  position: absolute;
+  inset: -0.2rem;
+  border-radius: inherit;
+  border: 1px solid rgba(93, 63, 211, 0.22);
+  animation: wl-live-pulse 1.8s ease-out infinite;
+}
+
+.wl-live-feed-header,
+.wl-director-thread-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  border-radius: var(--radius);
-  color: var(--on-surface-variant);
-  transition: all 0.1s ease;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.wl-sidebar-wide .nav-item.active {
-  background: var(--primary-container);
+.wl-director-micro,
+.wl-director-meta {
+  font-family: var(--wl-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.wl-director-opus-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(93, 63, 211, 0.18);
+  background: rgba(93, 63, 211, 0.08);
   color: var(--primary);
+  font-family: var(--wl-font-mono);
+  font-size: 0.6875rem;
   font-weight: 600;
-  border-left: 3px solid var(--primary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-/* Business Outcomes card (purple metric from North Star screenshots) */
-.wl-metric-card-purple {
-  background: var(--primary);
-  color: var(--on-primary);
-  border-radius: var(--radius);
-  padding: 20px;
+@keyframes wl-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.wl-metric-card-purple .metric-value {
-  font-size: 42px;
-  font-weight: 700;
-  line-height: 1;
+@keyframes wl-live-pulse {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
 }
 
-/* Active Assistants grid cards */
-.wl-assistant-card {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  padding: 16px;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.wl-assistant-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-}
-
-/* Priority Handoffs list item */
-.wl-handoff-item {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  margin-bottom: 8px;
-}
-
-/* Agent Studio form fields */
-.wl-agent-form-field {
-  background: var(--surface-container-lowest);
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-}
-
-/* Test & Simulation chat panel alignment */
-.wl-simulation-panel {
-  background: var(--surface);
-  border-left: 1px solid var(--outline-variant);
-}
-
-/* Ametrine Precision uses Hanken Grotesk for headlines */
-.wl-headline {
-  font-family: var(--wl-font-display, "Hanken Grotesk", sans-serif);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+@media (prefers-reduced-motion: reduce) {
+  .wl-reveal,
+  .wl-pulse-live::after {
+    animation: none;
+  }
 }

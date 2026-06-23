@@ -49,7 +49,6 @@ object Brand {
 
     val Destructive = Color(0xFFBA1A1A)
     val Success = Color(0xFF2E7D32)
-    val Signal = Success
 
     val RadiusSm = 2.dp
     val RadiusMd = 4.dp

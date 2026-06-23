@@ -1,53 +1,44 @@
 # Wireline
 
-Wireline is an AI communications workspace for personal and business agents.
+Wireline is a horizontal AI voice + messaging agent platform. One fleet of agents handles inbound calls, outbound dialing, SMS, and email for businesses, with a live supervisor experience and self-improvement capabilities. It includes native iOS and Android apps focused on personal daily assistance backed by the same agents.
 
-The product workflow is simple:
+## Key capabilities
+- **Agents**: Highly customizable voice, SMS, and email agents with knowledge, instructions, tone, tools, and integrations (calendars, CRM, email).
+- **Voice**: Production calls via Vapi/Twilio. Authenticated realtime voice sessions powered by xAI Grok for low-latency interactive tests.
+- **Native mobile**: iOS (SwiftUI + CallKit + widgets + App Intents + CarPlay plans) and Android (Jetpack Compose + Telecom + FCM + widgets) as thin, high-quality personal control surfaces.
+- **Studio & Director**: Web workspace for building, training, reviewing, and operating agents at scale.
+- **Infrastructure**: Postgres + Drizzle, RLS tenant isolation, Stripe billing, strong auth, rate limiting, and verification gates.
 
-1. Build an agent.
-2. Train it with instructions, knowledge, workflows, and integrations.
-3. Run it across voice, SMS, and email.
-4. Review outcomes and improve the next interaction.
+## Tech
+- Web: React 19 + Vite, Express, TypeScript, Tailwind + Ametrine Precision design system.
+- API: Serverless-capable (Vercel), Drizzle ORM on Supabase Postgres.
+- Voice: Vapi + ElevenLabs + xAI Grok realtime.
+- Models: Managed OpenAI (primary for many paths) + Gemini fallback + OpenRouter overrides + dedicated Grok realtime.
+- Mobile: Native Kotlin/Compose and SwiftUI.
 
-## Local development
-
+## Getting started
 ```bash
 npm install
-cp .env.example .env
-npm run dev
+npm run dev          # Starts Vite + Express on http://localhost:3000
 ```
 
-Wireline requires Node 22 or newer.
-
-## Verification
-
+## Verification (required before changes land)
 ```bash
-npm run lint
-npm run runtime:policy:check
-npm run build
-npm run smoke:server
+npm run verify       # build + server smoke (fast)
+npm run verify:full  # lint + authz + csp + tests + build + smoke
 ```
 
-`npm run verify` runs the production build plus a bundled-server import smoke test.
+See:
+- `AGENTS.md` — design system rules (Ametrine Precision), implementation guidance, and contributor rules
+- `CODEBASE_HEALTH.md` — guardrails, cleanup policy, deletion rules, and health standards
+- `ARCHITECTURE.md` — system design and runtime flows
+- `docs/` — launch plans, SOC 2, SLAs, and operational references
+- `src/constants/brand-colors.ts` and `src/styles/design-system.css` — single source of visual truth
 
-## Architecture
+## Project status (as of recent commits)
+Active development on Grok realtime voice, agent customizability (including voice cloning), Ametrine Precision design standardization, native mobile foundations, and ongoing codebase health / legacy removal.
 
-- **Frontend:** React, Vite, TypeScript, Tailwind utilities, and accessible shared primitives.
-- **API:** Express server routes deployed through Vercel.
-- **Data:** Postgres with Drizzle migrations.
-- **Identity:** server-side session authentication and user-scoped authorization.
-- **Runtime:** OpenAI is the managed primary and Gemini is the automatic fallback. OpenRouter is an explicit agent-level option.
-- **Communications:** Twilio/Vapi voice execution plus connected email, SMS, calendar, contacts, and CRM workflows.
-- **Billing:** Stripe-backed server-side entitlements.
-
-Pricing, model selection, and billing behavior are defined in code-owned catalogs and runtime modules.
-
-## Product rules
-
-- Keep the product focused on Build → Train → Run → Review.
-- Preserve authorization, billing, webhook validation, rate limits, CSP, and tenant-scoped data access.
-- Keep the interface readable: warm light surfaces, graphite actions, neutral borders, visible focus states, and clear hierarchy.
+All changes must pass `npm run verify` (and full where applicable). Follow default-deny authz, Zod validation, structured logging, and source-of-truth discipline (ai-models.ts, schema, brand-colors, plan-catalog, etc.).
 
 ## License
-
-Proprietary. © 2026 Wireline. All rights reserved.
+Proprietary. © Wireline.

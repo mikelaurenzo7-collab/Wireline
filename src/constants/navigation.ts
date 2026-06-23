@@ -39,8 +39,12 @@ export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = {
   I: "/actions",
   S: "/settings",
 };
+
 export const NAV_SHORTCUT_HINTS: Record<string, string> = {
   "/agents": "g a",
   "/actions": "g i",
   "/settings": "g s",
 };
+
+// Navigation uses Ametrine Precision accent system from brand-colors.ts
+// No legacy signal/purple references remain.

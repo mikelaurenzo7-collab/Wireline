@@ -576,8 +576,9 @@ export default function AuthPortal() {
                     spellCheck={false}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="wl-stitch-input h-11 pl-10"
-                    placeholder="you@email.com"
+                    className="wl-stitch-input h-11"
+                    style={{ paddingLeft: "2.5rem" }}
+                    aria-label="Email address"
                   />
                 </div>
               </div>
@@ -615,8 +616,9 @@ export default function AuthPortal() {
                       autoComplete={isSignUp ? "new-password" : "current-password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="wl-stitch-input h-11 pl-10 pr-11"
-                      placeholder={isSignUp ? "Create a secure password" : "Enter your password"}
+                      className="wl-stitch-input h-11"
+                      style={{ paddingLeft: "2.5rem", paddingRight: "2.75rem" }}
+                      aria-label="Password"
                     />
                     <button
                       type="button"

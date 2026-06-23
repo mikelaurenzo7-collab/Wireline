@@ -1,10 +1,10 @@
 /**
- * Wireline product design system — Figma-aligned class constants.
- * Tokens: src/styles/foundation.css · Figma: Wireline Design System v1
+ * Wireline product design system — shared class constants for the web app.
+ * Tokens: src/styles/foundation.css and src/styles/design-system.css
  */
 import { WL_SIGNAL_CLASSES } from "./wireline-signal-design";
 
-/** Ametrine Purple accent — current Stitch palette (#5D3FD3) */
+/** Wireline purple accent used across shared UI surfaces. */
 export const WL_BRAND = {
   accent: "var(--primary)",
   /** Hex for SVG/canvas where CSS variables are unreliable */

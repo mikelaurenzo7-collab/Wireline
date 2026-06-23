@@ -1,296 +1,119 @@
-import {
-  ArrowRight,
-  Bot,
-  CalendarCheck2,
-  CheckCircle2,
-  Clock3,
-  Headphones,
-  MessageSquareText,
-  PhoneCall,
-  Play,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, MessageSquareText, PhoneCall, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 
-function ProductFrame() {
-  return (
-    <div className="rounded-md border border-border bg-card p-4 shadow-[0_1px_3px_rgba(93,63,211,0.04)] sm:p-6">
-      <div className="flex items-center gap-3 border-b border-border pb-4">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--wl-accent-container)] text-primary">
-          <PhoneCall size={15} strokeWidth={2} />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-foreground">
-            Inbound Front Desk / Sales Agent
-          </p>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">
-            Example Interaction · Apex Solutions
-          </p>
-        </div>
-        <span className="ml-auto shrink-0 rounded-full bg-[color:var(--wl-accent-container)] px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-primary">
-          In progress
-        </span>
-      </div>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
-        <div className="rounded-md border border-border bg-[color:var(--wl-surface-subtle)] p-5">
-          <p className="wl-stitch-label">Customer Inquiry</p>
-          <h2 className="mt-2 text-[18px] font-semibold tracking-[-.02em] text-foreground">
-            Looking for a customized pricing quote.
-          </h2>
-          <p className="mt-2 max-w-xl text-[14px] leading-6 text-muted-foreground">
-            Customer requested pricing for our Enterprise suite, verified budget is over $10k, and
-            wanted to schedule a live product demonstration tomorrow afternoon.
-          </p>
-
-          <div className="mt-5 space-y-3 border-t border-border pt-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-card text-primary ring-1 ring-border">
-                <Clock3 size={13} />
-              </span>
-              <div>
-                <p className="text-[13px] font-semibold text-foreground">Instant automated reply</p>
-                <p className="mt-0.5 text-[12px] leading-5 text-muted-foreground">
-                  Wireline answers phone call, SMS, or email instantly so you never miss a lead.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-card text-primary ring-1 ring-border">
-                <MessageSquareText size={13} />
-              </span>
-              <div>
-                <p className="text-[13px] font-semibold text-foreground">
-                  Lead Qualified & CRM Logged
-                </p>
-                <p className="mt-0.5 text-[12px] leading-5 text-muted-foreground">
-                  The agent qualifies the lead based on your custom rules and logs details directly
-                  to your CRM.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <aside className="rounded-md border border-border bg-card p-5">
-          <p className="wl-stitch-label">CRM Integration</p>
-          <div className="mt-4 grid h-12 w-12 place-items-center rounded-full bg-[color:var(--wl-accent-container)] text-primary">
-            <CalendarCheck2 size={22} />
-          </div>
-          <p className="mt-4 text-[14px] font-semibold text-foreground">
-            Demo Booked for Tomorrow, 2:00 PM
-          </p>
-          <p className="mt-2 text-[12px] leading-5 text-muted-foreground">
-            Apex Solutions · Budget verified: $15,000
-          </p>
-          <div className="mt-5 rounded-sm border border-border bg-[color:var(--wl-surface-subtle)] px-3 py-2.5">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-muted-foreground">
-              Salesforce Sync
-            </p>
-            <p className="mt-1 text-[12px] leading-5 text-foreground">
-              Contact record created & calendar invitation sent.
-            </p>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function PreferenceExample() {
-  return (
-    <div className="mt-6 space-y-2 rounded-md border border-border bg-[color:var(--wl-surface-subtle)] p-4">
-      <div className="flex items-center justify-between gap-3 rounded-sm border border-border bg-card px-3 py-2.5">
-        <span className="text-[12px] text-muted-foreground">Lead Routing Rule</span>
-        <span className="text-[12px] font-semibold text-foreground">
-          If budget &gt; $10k, transfer to Sales
-        </span>
-      </div>
-      <div className="flex items-center justify-between gap-3 rounded-sm border border-border bg-card px-3 py-2.5">
-        <span className="text-[12px] text-muted-foreground">Qualification Question</span>
-        <span className="text-[12px] font-semibold text-foreground">
-          Ask company size and current CRM
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function CallResultExample() {
-  return (
-    <div className="mt-6 rounded-md border border-border bg-[color:var(--wl-surface-subtle)] p-4">
-      <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--wl-accent-container)] text-primary">
-          <Headphones size={17} />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-foreground">Lead Qualified & Scheduled</p>
-          <p className="mt-1 text-[12px] leading-5 text-muted-foreground">
-            Apex Solutions scheduled a product demonstration. CRM updated.
-          </p>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-[11px] font-medium text-primary">
-        <CheckCircle2 size={14} />
-        CRM Synced Automatically
-      </div>
-    </div>
-  );
-}
+const channels = [
+  { label: "Voice", icon: PhoneCall },
+  { label: "Email", icon: Mail },
+  { label: "Text", icon: MessageSquareText },
+];
 
 export default function PrecisionLanding() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PrecisionPublicHeader />
       <main id="main-content" className="pt-16">
-        <section className="border-b border-border bg-background px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-          <div className="mx-auto max-w-[1120px] text-center">
-            <p className="wl-stitch-label">Wireline AI</p>
-            <h1 className="mx-auto mt-4 max-w-[820px] text-balance text-[clamp(42px,6vw,68px)] font-semibold leading-[1.05] tracking-[-.045em] text-primary">
-              Your AI Front Desk & Sales Team — Active 24/7.
+        <section className="border-b border-border px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+          <div className="wl-measure text-center">
+            <p className="wl-stitch-label">Wireline</p>
+            <h1 className="mx-auto mt-4 max-w-[980px] text-balance text-[clamp(42px,6vw,68px)] font-semibold leading-[1.04] tracking-[-.05em] text-foreground">
+              Personal and Business AI Assistants for your Conversations
             </h1>
-            <p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-7 text-muted-foreground">
-              Deploy fully customizable AI agents to answer inbound front desk lines, qualify sales
-              leads over phone, SMS, and email, schedule meetings, and sync directly with your CRM.
+            <p className="mt-5 text-[15px] font-semibold tracking-[.08em] text-primary sm:text-[16px]">
+              Voice + Email + Text
+            </p>
+            <p className="mx-auto mt-5 max-w-[690px] text-[17px] leading-7 text-muted-foreground">
+              Give Wireline the conversations that matter. Your assistant handles calls, email, and
+              text under your rules, then brings you the outcome and next step.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
-                to="/pricing"
+                to="/signup"
                 className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
               >
-                See plans
+                Create your assistant
               </Link>
               <Link
                 to="/showcase"
                 className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
               >
-                <Play size={14} />
-                Watch demo
+                <Play size={14} /> Hear a demo
               </Link>
             </div>
-            <div className="mt-4 flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {channels.map(({ label, icon: Icon }) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-semibold text-foreground shadow-sm"
+                >
+                  <Icon size={14} className="text-primary" />
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-muted-foreground">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} /> SOC2 Type II Certified
+                <CheckCircle2 size={14} className="text-primary" /> You choose the boundaries
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 size={13} /> Privacy First
+                <CheckCircle2 size={14} className="text-primary" /> You approve connected actions
               </span>
             </div>
-            <div className="mx-auto mt-16 max-w-[920px] text-left">
-              <ProductFrame />
-            </div>
           </div>
         </section>
-
-        <section className="border-b border-border px-4 py-10 text-center sm:px-6">
-          <p className="wl-stitch-label">Built for modern business operations</p>
-          <div className="mt-5 flex flex-wrap justify-center gap-x-10 gap-y-3 text-[16px] font-semibold text-muted-foreground">
-            <span>Inbound Reception</span>
-            <span>Outbound Sales</span>
-            <span>Lead Qualification</span>
-            <span>Meeting Scheduling</span>
-            <span>CRM Logging</span>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1280px] px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-[32px] font-semibold tracking-[-.02em] text-primary">
-              Enterprise-grade business agents
-            </h2>
-            <p className="mt-3 text-[16px] leading-6 text-muted-foreground">
-              Deploy specialized front desk receptionists, outbound sales reps, or fully
-              customizable AI agents that represent your brand professionally.
-            </p>
-          </div>
-          <div className="mt-12 grid gap-4 md:grid-cols-2">
+        <section className="wl-measure px-4 py-16 sm:px-6 lg:px-8">
+          <div className="grid gap-4 md:grid-cols-3">
             <article className="wl-stitch-card p-6">
-              <SlidersHorizontal size={20} className="text-primary" />
-              <h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em] text-primary">
-                Fully Customizable Agents
-              </h3>
-              <p className="mt-3 text-[14px] leading-5 text-muted-foreground">
-                Equip your agents with your company FAQs, product catalogs, custom pricing rules,
-                and specific qualification checklists in plain English.
+              <PhoneCall className="size-5 text-primary" />
+              <h2 className="mt-5 text-xl font-semibold text-foreground">
+                Voice that follows your brief
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Handle calls, gather context, and return the answer when you need it.
               </p>
-              <PreferenceExample />
             </article>
             <article className="wl-stitch-card p-6">
-              <Headphones size={20} className="text-primary" />
-              <h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em] text-primary">
-                Multi-Channel Lead Qualification
-              </h3>
-              <p className="mt-3 text-[14px] leading-5 text-muted-foreground">
-                Your agents engage with leads across phone, SMS, or email, qualifying prospects,
-                routing requests, and booking calendar callbacks seamlessly.
+              <Mail className="size-5 text-primary" />
+              <h2 className="mt-5 text-xl font-semibold text-foreground">
+                Email with a clear next step
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Keep conversations moving with your rules, context, and approval boundaries.
               </p>
-              <CallResultExample />
             </article>
-            <article className="wl-stitch-card md:col-span-2 p-6">
-              <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_300px] md:items-center">
-                <div>
-                  <Bot size={20} className="text-primary" />
-                  <h3 className="mt-5 text-[20px] font-semibold tracking-[-.02em] text-primary">
-                    Scale your digital workforce on demand
-                  </h3>
-                  <p className="mt-3 max-w-xl text-[14px] leading-5 text-muted-foreground">
-                    Launch a single front desk receptionist today, or scale to a fleet of customized
-                    inbound and outbound sales representatives. Manage scripts, billing, and
-                    integrations from one unified dashboard.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-md border border-border bg-[color:var(--wl-surface-subtle)] p-5 text-center">
-                    <Headphones size={24} className="mx-auto text-primary" />
-                    <span className="mt-3 block font-mono text-[12px] text-muted-foreground">
-                      Deploy Today
-                    </span>
-                  </div>
-                  <div className="rounded-md border border-border bg-[color:var(--wl-surface-subtle)] p-5 text-center">
-                    <Bot size={24} className="mx-auto text-primary" />
-                    <span className="mt-3 block font-mono text-[12px] text-muted-foreground">
-                      Scale Custom
-                    </span>
-                  </div>
-                </div>
-              </div>
+            <article className="wl-stitch-card p-6">
+              <MessageSquareText className="size-5 text-primary" />
+              <h2 className="mt-5 text-xl font-semibold text-foreground">
+                Text that keeps you informed
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Get concise recaps and follow-up without another inbox to manage.
+              </p>
             </article>
           </div>
         </section>
-
-        <section className="border-t border-border px-4 py-20 text-center sm:px-6">
-          <h2 className="mx-auto max-w-2xl text-[32px] font-semibold leading-tight tracking-[-.02em] text-primary">
-            Automate your front desk and outbound operations.
+        <section className="border-t border-border px-4 py-16 text-center sm:px-6">
+          <h2 className="mx-auto max-w-2xl text-[34px] font-semibold leading-tight tracking-[-.03em] text-foreground">
+            Personal when it is your life. Business-ready when it is your work.
           </h2>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              to="/pricing"
-              className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
-            >
-              Choose your plan
-            </Link>
+          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-7 text-muted-foreground">
+            Create one assistant, give it a clear brief, and let Wireline handle the next useful
+            conversation.
+          </p>
+          <div className="mt-8">
             <Link
               to="/features"
               className="marketing-btn-secondary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]"
             >
-              See features <ArrowRight size={14} />
+              Explore how it works <ArrowRight size={14} />
             </Link>
-          </div>
-          <div className="mt-6 flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={13} /> SOC2 Type II Certified
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={13} /> Privacy First
-            </span>
           </div>
         </section>
       </main>
       <footer className="border-t border-border px-4 py-8 text-[13px] text-muted-foreground sm:px-6">
-        <div className="mx-auto flex max-w-[1280px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="wl-measure flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            <strong className="text-foreground">Wireline</strong> · calls + messages, handled
+            <strong className="text-foreground">Wireline</strong> · voice + email + text, handled
           </span>
           <div className="flex gap-5">
             <Link to="/pricing">Pricing</Link>

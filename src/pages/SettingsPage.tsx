@@ -1,81 +1,122 @@
-import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, Mic, Phone, ShieldCheck, Users } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Cable, CreditCard, LogOut, ShieldCheck, UsersRound } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { useAuth } from "../contexts/AuthContext";
 
-const sections = [
+const settingsDestinations = [
   {
-    icon: CreditCard,
-    title: "Plan & billing",
-    detail: "Review your plan, payment details, invoices, and upgrades in one place.",
     href: "/settings/billing",
+    icon: CreditCard,
+    label: "Billing & usage",
+    description: "Manage your plan, conversation balance, invoices, and payment details.",
   },
   {
-    icon: Users,
-    title: "Team & roster",
-    detail: "Provision business seats, manage roles, and send workspace invitations.",
     href: "/settings/team",
+    icon: UsersRound,
+    label: "Team",
+    description: "Invite collaborators and set the right level of workspace access.",
   },
   {
-    icon: Phone,
-    title: "Numbers & calling",
-    detail: "Manage the numbers your assistants use and the phone settings that keep calls moving.",
-    href: "/admin",
-  },
-  {
-    icon: Mic,
-    title: "Voice & personality",
-    detail: "Choose how each assistant sounds and shape their personality in Studio.",
-    href: "/studio",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Connections",
-    detail: "Choose the accounts your assistants can use and what they are allowed to do.",
-    href: "/actions",
+    href: "/connections",
+    icon: Cable,
+    label: "Connections",
+    description: "Review the accounts and tools your assistants can use.",
   },
 ] as const;
 
 export default function SettingsPage() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  const displayName = user?.full_name?.trim() || user?.email || "Your account";
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    await signOut();
+    navigate("/signin", { replace: true });
+  }
+
   return (
-    <WorkspaceShell eyebrow="Your Wireline" title="Settings" contentClassName="pt-5">
-      <div className="flex h-full min-h-0 flex-col">
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {sections.map((section) => {
-            const Icon = section.icon;
-            return (
+    <WorkspaceShell eyebrow="Workspace controls" title="Settings" contentClassName="py-6">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-8">
+        <section className="studio-card">
+          <p className="studio-kicker">Account</p>
+          <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="truncate font-[var(--wl-font-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+                {displayName}
+              </h2>
+              {user?.email ? <p className="mt-1 text-sm text-muted-foreground">{user.email}</p> : null}
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Your Wireline session is protected with secure, server-managed authentication.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="workspace-btn-secondary shrink-0 px-4 py-2.5 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <LogOut size={16} />
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3">
+            <p className="studio-kicker">Workspace</p>
+            <h2 className="mt-1 font-[var(--wl-font-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
+              Keep your operating system in order
+            </h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {settingsDestinations.map(({ href, icon: Icon, label, description }) => (
               <Link
-                key={section.title}
-                to={section.href}
-                className="group flex min-h-[216px] flex-col rounded-xl border border-border bg-card p-6 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)] transition-all duration-200 hover:scale-[1.005] hover:border-[color:var(--wl-line-strong)] hover:shadow-[0_16px_40px_-8px_rgba(93,63,211,0.12),0_6px_16px_rgba(93,63,211,0.08)] active:scale-[0.98]"
+                key={href}
+                to={href}
+                className="studio-card group flex min-h-48 flex-col justify-between transition hover:border-primary/45 hover:bg-secondary active:scale-[0.99]"
               >
-                <span className="grid h-12 w-12 place-items-center rounded border border-border bg-muted text-foreground">
-                  <Icon size={20} />
+                <span className="grid size-10 place-items-center rounded-[var(--radius)] bg-accent text-primary">
+                  <Icon size={19} />
                 </span>
-                <div className="mt-auto">
-                  <h2 className="text-[20px] font-semibold tracking-[-.01em] text-foreground">
-                    {section.title}
-                  </h2>
-                  <p className="mt-2 text-[14px] leading-5 text-muted-foreground">
-                    {section.detail}
-                  </p>
-                  <span className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[.05em] text-foreground">
-                    Open <ArrowRight size={14} />
+                <div className="mt-8">
+                  <h3 className="font-[var(--wl-font-display)] text-base font-semibold text-foreground">
+                    {label}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+                  <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                    Open {label.toLowerCase()} <ArrowRight size={15} />
                   </span>
                 </div>
               </Link>
-            );
-          })}
+            ))}
+          </div>
         </section>
-        <p className="mt-5 text-[13px] text-muted-foreground">
-          Detailed account controls are available in{" "}
-          <Link
-            to="/admin"
-            className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
-          >
-            advanced settings
-          </Link>
-          .
-        </p>
+
+        <section className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
+          <div className="flex gap-3">
+            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+            <div>
+              <h2 className="font-[var(--wl-font-display)] text-base font-semibold text-foreground">
+                Built for controlled access
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Wireline keeps billing, provider credentials, webhooks, and account-level changes on the server. Only connect the systems an assistant needs to complete an approved task.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-primary">
+                <Link to="/security" className="inline-flex items-center gap-1.5 hover:text-[color:var(--wl-accent-hover)]">
+                  Security overview <ArrowRight size={14} />
+                </Link>
+                <Link to="/support" className="inline-flex items-center gap-1.5 hover:text-[color:var(--wl-accent-hover)]">
+                  Get support <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </WorkspaceShell>
   );
