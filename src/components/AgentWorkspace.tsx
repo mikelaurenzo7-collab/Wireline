@@ -20,7 +20,7 @@
 import { WL_DIRECTOR_CLASSES } from "../lib/wireline-design-system";
 import { AGENT_WORKSPACE_STARTER_PROMPTS } from "../lib/director-copy";
 import React, { useEffect, useRef, useState, useCallback, lazy, Suspense } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Send,
@@ -41,6 +41,7 @@ import {
   Brain,
   FileText,
   ArrowUpRight,
+  ArrowLeft,
   ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
@@ -301,6 +302,7 @@ export default function AgentWorkspace({
   composerSeed,
 }: AgentWorkspaceProps) {
   const { error: toastError, success: toastSuccess } = useToast();
+  const navigate = useNavigate();
   const isSharedView = !agentId || agentId === "default-agent";
   const [messages, setMessages] = useState<WorkspaceMessage[]>([]);
   const [input, setInput] = useState("");
@@ -699,38 +701,51 @@ export default function AgentWorkspace({
 
   return (
     <div className="flex flex-col h-full min-h-0 relative">
-      {/* Minimal header - identity + tabs inline */}
+      {/* Header — back nav · centered identity · action (balanced) */}
       <div className="shrink-0 border-b border-border">
-        <div className="flex items-center justify-between px-4 py-2.5">
-          <div className="flex items-center gap-3">
-            <span className="shrink-0 flex w-8 h-8 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand text-[12px] font-semibold shadow-sm shadow-brand/25">
-              {agentName.slice(0, 1).toUpperCase()}
-            </span>
-            <div>
-              <p className="text-[13px] font-semibold text-foreground leading-tight">{agentName}</p>
-              <p className="flex items-center gap-1.5 wl-micro-meta--muted leading-tight">
-                <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
-                </span>
-                Your agent
-              </p>
-            </div>
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-2 py-2.5">
+          <ShadButton
+            type="button"
+            variant="ghost"
+            size="icon"
+            disableAnimations
+            onClick={() => navigate("/overview")}
+            aria-label="Back to workspace"
+            className="shrink-0 w-9 h-9 rounded-md text-muted hover:text-foreground hover:bg-black/5"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </ShadButton>
+
+          <div className="min-w-0 text-center">
+            <p className="truncate text-[13px] font-semibold text-foreground leading-tight">
+              {agentName}
+            </p>
+            <p className="flex items-center justify-center gap-1.5 wl-micro-meta--muted leading-tight">
+              <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/60" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand" />
+              </span>
+              Your agent
+            </p>
           </div>
 
-          {messages.length > 0 && (
-            <ShadButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              disableAnimations
-              onClick={clearThread}
-              className="shrink-0 rounded-md wl-label-muted hover:text-rose-600 hover:bg-rose-500/8"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Clear</span>
-            </ShadButton>
-          )}
+          <div className="justify-self-end">
+            {messages.length > 0 ? (
+              <ShadButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                disableAnimations
+                onClick={clearThread}
+                className="shrink-0 rounded-md wl-label-muted hover:text-rose-600 hover:bg-rose-500/8"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span className="max-sm:sr-only">Clear</span>
+              </ShadButton>
+            ) : (
+              <span className="block w-9" aria-hidden="true" />
+            )}
+          </div>
         </div>
 
         {/* Tab pills - horizontal scrollable */}
@@ -782,18 +797,10 @@ export default function AgentWorkspace({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center justify-center py-16 text-center"
+                className="flex flex-col items-center justify-center py-8 text-center"
               >
-                {/* Hero avatar */}
-                <div className="relative mb-5">
-                  <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-brand/20 to-brand/5 blur-2xl scale-125" />
-                  <span className="flex w-14 h-14 items-center justify-center rounded-md bg-gradient-to-br from-brand to-brand-deep text-on-brand text-xl font-semibold shadow-lg shadow-brand/25">
-                    {agentName.slice(0, 1).toUpperCase()}
-                  </span>
-                </div>
-
-                <p className="font-mono wl-label text-brand/70 mb-2">Direct line</p>
-                <h3 className="font-display italic text-2xl text-foreground mb-2">
+                <p className="font-mono wl-label text-brand/70 mb-1.5">Direct line</p>
+                <h3 className="font-display italic text-xl text-foreground mb-1.5">
                   Chat with {agentName}
                 </h3>
                 <p className="text-[12px] text-muted leading-relaxed max-w-xs mb-5">
@@ -1065,7 +1072,7 @@ export default function AgentWorkspace({
           </div>
 
           {/* Composer - prominent at bottom */}
-          <div className="shrink-0 px-4 pb-6 pt-2">
+          <div className="shrink-0 px-4 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             <div className="relative rounded-md border border-brand/20 bg-card/95 dark:bg-velvet/80 backdrop-blur-md shadow-lg shadow-brand/5 transition-all duration-300 focus-within:border-brand/40 focus-within:shadow-xl focus-within:shadow-brand/10">
               <textarea
                 ref={inputRef}
