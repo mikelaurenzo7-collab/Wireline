@@ -4,7 +4,7 @@ import {
   CalendarClock,
   Check,
   Contact,
-  Headphones,
+  MessageSquareText,
   PhoneCall,
   Play,
   ShieldCheck,
@@ -15,10 +15,10 @@ import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import { PageMeta } from "../lib/page-meta";
 
-const VOICE_POINTS = [
-  "Calls and messages that follow the guidance you give in plain English.",
-  "A natural conversation that can wait on hold, answer routine questions, or collect details.",
-  "A short recap that tells you what happened and what needs your attention.",
+const CHANNEL_POINTS = [
+  "Inbound calls, emails, and texts that follow the guidance you give in plain English.",
+  "Answer routine questions, qualify a new lead, offer availability, and send the appropriate next message.",
+  "A clear activity record and recap that tells your team what happened and what needs attention.",
 ] as const;
 
 const BOUNDARIES = [
@@ -29,10 +29,10 @@ const BOUNDARIES = [
 
 const USE_CASES = [
   ["Personal calls", "Call a pharmacy, service desk, school, reservation line, or anyone you do not have time to wait for."],
-  ["Appointment coordination", "Confirm details, find a time, manage follow-ups, and bring you back in when a decision is needed."],
-  ["Business front desk", "Answer common questions, capture the reason for a call, and route urgent conversations to your team."],
-  ["Customer follow-up", "Reach out by phone or message, keep the conversation moving, and save a clear recap."],
-  ["Lead qualification", "Collect the details that matter before a representative spends time on the next step."],
+  ["Appointment coordination", "Offer times, book the right slot, send text confirmations and reminders, and bring your team in when a decision is needed."],
+  ["Business front desk", "Answer common questions, capture the reason for a call or text, and route urgent conversations to your team."],
+  ["SMS marketing + sales follow-up", "Reach opted-in contacts at the right moment, reply to new inquiries, keep sales conversations warm, and revive stalled opportunities."],
+  ["Lead qualification", "Reply across call, email, or text, collect the details that matter, and book qualified opportunities for your team."],
   ["Custom workflows", "Build a focused assistant around your knowledge, rules, connected accounts, and approval process."],
 ] as const;
 
@@ -40,8 +40,8 @@ export default function Features() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
-        title="AI Call & Message Assistant Features | Wireline"
-        description="Personal assistants and business agents that handle calls, messages, and follow-ups with the boundaries you define."
+        title="AI Voice, Email & SMS Agent Features | Wireline"
+        description="Personal assistants and business agents for calls, email, and SMS—qualify leads, schedule appointments, and follow up with the boundaries you define."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -54,7 +54,7 @@ export default function Features() {
               Give every conversation a clear next step.
             </h1>
             <p className="mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
-              Wireline handles the call, message, or follow-up inside the boundaries you set, then returns the outcome to you.
+              Wireline handles the original inquiry, sales conversation, appointment workflow, or customer follow-up inside the boundaries you set, then returns the outcome to you.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
@@ -70,13 +70,13 @@ export default function Features() {
         <section className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="grid gap-4 lg:grid-cols-2">
             <article className="wl-stitch-card p-6 sm:p-8">
-              <Headphones size={22} className="text-primary" />
-              <h2 className="wl-section-title mt-5">Conversations that stay on task</h2>
+              <MessageSquareText size={22} className="text-primary" />
+              <h2 className="wl-section-title mt-5">Calls and texts that stay on task</h2>
               <p className="mt-3 max-w-md text-[15px] leading-6 text-muted-foreground">
-                Wireline handles the actual call or message, not just a summary. It can ask the questions, wait on hold, confirm details, and return with a useful outcome.
+                Wireline handles the actual conversation—not just a summary. It can answer questions, qualify interest, propose availability, and drive the next approved step across phone, email, and text.
               </p>
               <ul className="mt-7 space-y-3">
-                {VOICE_POINTS.map((point) => (
+                {CHANNEL_POINTS.map((point) => (
                   <li key={point} className="flex items-start gap-3 text-[14px] leading-6 text-foreground">
                     <Check size={16} className="mt-1 shrink-0 text-primary" />
                     <span>{point}</span>
@@ -85,7 +85,7 @@ export default function Features() {
               </ul>
               <div className="mt-7 flex items-center gap-2 rounded-[var(--radius-lg)] border border-border bg-secondary px-4 py-3">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                <span className="text-xs text-muted-foreground">Call in progress · waiting on hold</span>
+                <span className="text-xs text-muted-foreground">New lead · qualified · appointment offered</span>
               </div>
             </article>
 
@@ -116,18 +116,18 @@ export default function Features() {
             </p>
 
             <div className="mt-10 grid items-stretch gap-3 md:mt-12 md:grid-cols-[1fr_auto_1.2fr_auto_1fr]">
-              <FlowNode icon={PhoneCall} label="Call or message" sub="A task you hand off" />
+              <FlowNode icon={PhoneCall} label="Call, email, or text" sub="A lead, request, or task" />
               <FlowArrow />
               <div className="grid place-items-center rounded-[var(--radius-xl)] border border-primary bg-secondary p-6 text-center">
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Workflow size={22} />
                 </span>
                 <span className="mt-4 text-[15px] font-semibold tracking-[-.01em] text-foreground">Your assistant or agent</span>
-                <span className="wl-overline mt-2">Handles · checks · recaps</span>
+                <span className="wl-overline mt-2">Handles · qualifies · books</span>
               </div>
               <FlowArrow />
               <div className="grid gap-3">
-                <FlowNode icon={CalendarClock} label="Your calendar" sub="Checks and confirms" compact />
+                <FlowNode icon={CalendarClock} label="Your calendar" sub="Checks, books, and confirms" compact />
                 <FlowNode icon={Contact} label="Your systems" sub="Only the accounts you approve" compact />
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function Features() {
               <h2 className="wl-stitch-display mt-3 text-balance">Start with the job you do not want to carry yourself.</h2>
             </div>
             <p className="max-w-xl text-[15px] leading-7 text-muted-foreground">
-              A pharmacy call, inbound support line, and lead follow-up flow all start the same way: a clear job, useful facts, and boundaries you trust.
+              A pharmacy call, inbound support line, text-back workflow, and lead follow-up flow all start the same way: a clear job, useful facts, and boundaries you trust.
             </p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
