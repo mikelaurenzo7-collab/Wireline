@@ -1,4 +1,14 @@
-import { ArrowRight, Bot, Cable, CircleAlert, FileText, Plus, Radio } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Briefcase,
+  Cable,
+  CircleAlert,
+  FileText,
+  Plus,
+  Radio,
+  User,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
@@ -147,9 +157,22 @@ export default function OverviewPage() {
                     <span className="grid size-9 place-items-center rounded-[var(--radius)] bg-accent text-primary">
                       <Bot size={18} />
                     </span>
-                    <span className="font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">
-                      {agent.channel || "voice"}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="font-mono text-[11px] font-medium uppercase tracking-[.05em] text-muted-foreground">
+                        {agent.channel || "voice"}
+                      </span>
+                      {agent.is_business_agent ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#E6DEFF] px-2 py-0.5 text-[9px] font-semibold text-[#451EBB] border border-[#C9C4D7]/40">
+                          <Briefcase size={9} className="text-[#5D3FD3]" />
+                          Business
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[#EFF4FF] px-2 py-0.5 text-[9px] font-semibold text-[#0B1C30] border border-[#C9C4D7]/30">
+                          <User size={9} className="text-[#5D3FD3]" />
+                          Personal
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <h3 className="mt-5 font-[var(--wl-font-display)] text-base font-semibold text-foreground">
                     {agent.name}
