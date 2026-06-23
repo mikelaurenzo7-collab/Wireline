@@ -55,6 +55,12 @@
    single source of truth: styles/foundation.css, loaded first. Only rules
    unique to this layer remain here. */
 
+/* HEADING DISCIPLINE (app-wide):
+   Use short, single-layer headings only.
+   No title + subtitle or header + sub-header patterns.
+   Prefer .wl-text-title, .wl-text-headline, or .wl-headline.
+   Keep every heading concise and purposeful. */
+
 /* WCAG 2.2 Target Size (Minimum) — interactive elements keep a 24×24 hit area. */
 button, a, [role="button"] {
   min-height: 24px;
@@ -70,11 +76,12 @@ button, a, [role="button"] {
   color: var(--muted-foreground);
   font-size: 14px;
 }
-/* Display utilities are fluid: the clamp min preserves the prior mobile size
-   (32 / 24 / 22px) while the max lets headings breathe on large desktops. */
+
+/* Fluid text utilities — designed for short, clear headings.
+   Use these instead of arbitrary text sizes for consistency. */
 .wl-text-display {
   font-family: var(--wl-font-display);
-  font-size: clamp(2rem, 1.4rem + 3vw, 3.25rem); /* 32 → 52 */
+  font-size: clamp(2rem, 1.4rem + 3vw, 3.25rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.08;
@@ -82,7 +89,7 @@ button, a, [role="button"] {
 }
 .wl-text-headline {
   font-family: var(--wl-font-display);
-  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem); /* 24 → 40 */
+  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.18;
@@ -90,7 +97,7 @@ button, a, [role="button"] {
 }
 .wl-text-title {
   font-family: var(--wl-font-display);
-  font-size: clamp(1.375rem, 1.22rem + 0.8vw, 1.75rem); /* 22 → 28 */
+  font-size: clamp(1.375rem, 1.22rem + 0.8vw, 1.75rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.3;
