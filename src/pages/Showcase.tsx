@@ -10,7 +10,7 @@ import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 const STEPS = [
   ["Try it", "Start a private browser conversation."],
   ["Ask normally", "Say what you need help with."],
-  ["Hear the result", "Get a feel for how Wireline listens and responds."],
+  ["Hear the result", "Get a feel for how Wireline listens, responds, and moves to the next step."],
 ] as const;
 
 export default function Showcase() {
@@ -24,7 +24,7 @@ export default function Showcase() {
     <MarketingPageFrame mainClassName="!px-0 pb-0 pt-20 sm:pt-24">
       <PageMeta
         title="Try Wireline"
-        description="Hear Wireline in your browser before you create your AI call assistant."
+        description="Hear the AI call assistant your customers will meet first, then build a Wireline agent for voice, email, and SMS."
         path="/showcase"
       />
 
@@ -32,10 +32,10 @@ export default function Showcase() {
         <div className="max-w-3xl">
           <p className="wl-stitch-eyebrow">Try Wireline</p>
           <h1 className="wl-stitch-marketing-hero mt-4 text-balance">
-            Hear a call assistant before you need one.
+            Hear the assistant your customer meets first.
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
-            Try a short conversation in your browser. No account required.
+            Try a short browser conversation. The same brief can carry across your voice line, inbox, and approved SMS workflows.
           </p>
         </div>
 
@@ -49,8 +49,7 @@ export default function Showcase() {
                 </div>
                 <h2 className="wl-stitch-display mt-5 text-balance">Talk to an assistant.</h2>
                 <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                  Ask a simple question, describe a task, or just say hello. Your microphone only
-                  turns on after you choose to start.
+                  Ask a simple question, describe a task, or just say hello. Your microphone only turns on after you choose to start.
                 </p>
               </div>
               <div className="mt-10">
@@ -69,15 +68,13 @@ export default function Showcase() {
                   </span>
                   <span>
                     <strong className="block text-sm font-semibold text-foreground">{title}</strong>
-                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                      {copy}
-                    </span>
+                    <span className="mt-1 block text-sm leading-6 text-muted-foreground">{copy}</span>
                   </span>
                 </li>
               ))}
             </ol>
             <p className="mt-9 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">
-              A demo is just a preview. In Studio, you choose the task, rules, and handoff limits.
+              A demo is only the first impression. In Studio, you set the job, policies, connected actions, and handoff limits.
             </p>
           </aside>
         </div>
@@ -95,24 +92,16 @@ export default function Showcase() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
-                <a
-                  key={agent.tel}
-                  href={`tel:${agent.tel}`}
-                  className="group wl-stitch-card wl-stitch-card-hover p-5"
-                >
+                <a key={agent.tel} href={`tel:${agent.tel}`} className="group wl-stitch-card wl-stitch-card-hover p-5">
                   <div className="flex items-start justify-between gap-4">
                     <span className="grid h-9 w-9 place-items-center rounded bg-muted text-primary">
                       <Phone className="h-4 w-4" />
                     </span>
                     <ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
                   </div>
-                  <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">
-                    {agent.name}
-                  </h3>
+                  <h3 className="mt-6 text-lg font-semibold tracking-[-.025em] text-foreground">{agent.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{agent.role}</p>
-                  <p className="mt-4 font-mono text-sm font-semibold text-foreground">
-                    {agent.display}
-                  </p>
+                  <p className="mt-4 font-mono text-sm font-semibold text-foreground">{agent.display}</p>
                 </a>
               ))}
             </div>
@@ -129,24 +118,17 @@ export default function Showcase() {
                 Your assistant starts as a private draft.
               </div>
               <h2 className="mt-4 text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-                Ready to make the routine call disappear?
+                Ready to put the next conversation in motion?
               </h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-primary-foreground/75 sm:text-base">
-                Start with a browser preview, or go straight to setup and make your own assistant in
-                a few minutes.
+                Build one assistant for your life or a business agent for lead response, scheduling, and customer coverage—then refine it from a real conversation.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-none">
-              <Link
-                to="/pricing"
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary"
-              >
+              <Link to="/pricing" className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-white px-5 text-sm font-semibold text-primary">
                 See plans <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
-                to="/signin"
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded border border-white/35 bg-transparent px-5 text-sm font-semibold text-white hover:bg-white/10"
-              >
+              <Link to="/signup" className="inline-flex min-h-12 items-center justify-center gap-3 rounded border border-white/35 bg-transparent px-5 text-sm font-semibold text-white hover:bg-white/10">
                 Create account <MessageSquare className="h-4 w-4" />
               </Link>
             </div>

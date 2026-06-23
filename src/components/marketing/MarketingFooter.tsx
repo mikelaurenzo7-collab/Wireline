@@ -3,12 +3,13 @@ import { cn } from "../../lib/utils";
 
 const PRODUCT_LINKS = [
   { to: "/for/personal", label: "For you" },
-  { to: "/solutions/support", label: "For business" },
+  { to: "/solutions/sales", label: "For business" },
+  { to: "/features", label: "Voice, email & text" },
   { to: "/pricing", label: "Pricing" },
-  { to: "/showcase", label: "Demos" },
 ] as const;
 
 const RESOURCE_LINKS = [
+  { to: "/showcase", label: "Demos" },
   { to: "/security", label: "Security" },
   { to: "/support", label: "Support" },
   { to: "/status", label: "Status" },
@@ -35,11 +36,11 @@ export default function MarketingFooter({
       )}
     >
       <div className="wl-measure mx-auto">
-        <div className="grid gap-8 sm:grid-cols-[minmax(0,1.2fr)_auto_auto] sm:items-start sm:gap-10">
+        <div className="grid gap-8 sm:grid-cols-[minmax(0,1.25fr)_auto_auto] sm:items-start sm:gap-12">
           <div className="max-w-sm">
             <p className="wl-overline">Wireline</p>
             <p className="mt-3 text-[15px] leading-6 text-muted-foreground">
-              Personal and business AI assistants for the conversations you do not have time to chase.
+              An assistant for your life or an operating line for your business—voice, email, and text working from the same brief.
             </p>
           </div>
           <nav aria-label="Product" className="flex flex-col items-start gap-1">
@@ -48,7 +49,7 @@ export default function MarketingFooter({
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition hover:text-foreground"
+                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -60,7 +61,7 @@ export default function MarketingFooter({
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition hover:text-foreground"
+                className="inline-flex min-h-9 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -68,7 +69,7 @@ export default function MarketingFooter({
           </nav>
         </div>
         <div className="mt-8 flex flex-col gap-3 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>Voice + email + text, handled under your rules.</span>
+          <span>Clear rules. Useful outcomes. No conversation left to chase.</span>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <Link to="/privacy" className="hover:text-foreground">
               Privacy
