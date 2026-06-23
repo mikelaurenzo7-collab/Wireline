@@ -1,10 +1,7 @@
-/* Wireline Design System — shared visual grammar for marketing and workspace surfaces.
+/* Wireline Design System — shared visual grammar for public and authenticated surfaces.
  *
- * The system deliberately separates three text roles:
- * - display copy: sentence case, short, decisive, never decorative by default
- * - operational headings: sentence case, compact, information-first
- * - metadata: the only all-caps layer, reserved for labels, status, and context
- */
+ * Display copy is sentence case. Operational headings are compact. All-caps mono
+ * is reserved for labels, status, and context where scanning benefits from it. */
 
 .wl-overline,
 .chrome-eyebrow,
@@ -15,7 +12,7 @@
   font-family: var(--wl-font-mono);
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.1em;
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--muted-foreground);
@@ -35,7 +32,7 @@
   font-size: clamp(1.25rem, 1.1rem + 0.65vw, 1.625rem);
   font-weight: 600;
   letter-spacing: -0.032em;
-  line-height: 1.1;
+  line-height: 1.12;
   color: var(--foreground);
 }
 
@@ -78,7 +75,7 @@
   color: var(--muted-foreground);
 }
 
-/* One intentional card interaction, rather than every card lifting or scaling. */
+/* Only objects that navigate or trigger an action should elevate. */
 .wl-card-action {
   text-decoration: none;
   transition:
@@ -89,8 +86,8 @@
 }
 
 .wl-card-action:hover {
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
-  background: color-mix(in srgb, var(--secondary) 52%, var(--card));
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: color-mix(in srgb, var(--secondary) 48%, var(--card));
   box-shadow: var(--wl-shadow-md);
   transform: translateY(-1px);
 }
@@ -109,6 +106,16 @@
   border-radius: var(--radius-md);
   background: var(--card);
   color: var(--foreground);
+  transition: background-color var(--transition-base), border-color var(--transition-base), transform var(--transition-fast);
+}
+
+.wl-control-icon:hover {
+  border-color: var(--wl-line-strong);
+  background: var(--secondary);
+}
+
+.wl-control-icon:active {
+  transform: translateY(1px);
 }
 
 .hero-headline-glow {
@@ -124,7 +131,7 @@
 }
 
 .touch-press:active {
-  transform: scale(0.985);
+  transform: translateY(1px);
 }
 
 .wl-reveal {
@@ -143,8 +150,8 @@
   content: "";
   position: absolute;
   inset: -0.2rem;
+  border: 1px solid rgba(91, 59, 209, 0.22);
   border-radius: inherit;
-  border: 1px solid rgba(93, 63, 211, 0.22);
   animation: wl-live-pulse 1.8s ease-out infinite;
 }
 
@@ -170,9 +177,9 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(91, 59, 209, 0.18);
   border-radius: 999px;
-  border: 1px solid rgba(93, 63, 211, 0.18);
-  background: rgba(93, 63, 211, 0.08);
+  background: var(--wl-accent-container);
   color: var(--primary);
   font-family: var(--wl-font-mono);
   font-size: 0.6875rem;
@@ -181,25 +188,22 @@
   text-transform: uppercase;
 }
 
-/* Agent Workspace: preserve genuinely centered identity regardless of the
-   asymmetric left/back and right/clear controls. `:has()` is supported in all
-   target modern browsers, including current iOS Safari. */
-div:has(> button[aria-label="Back to workspace"]) {
-  position: relative;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 3.5rem;
+/* The Studio header has asymmetric controls but its identity must be genuinely
+   centered. Equal outer tracks keep it centered without absolute positioning. */
+div.grid:has(> button[aria-label="Back to workspace"]) {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
 }
 
-div:has(> button[aria-label="Back to workspace"]) > button[aria-label="Back to workspace"] {
-  position: absolute;
-  left: 0.5rem;
+div.grid:has(> button[aria-label="Back to workspace"]) > button[aria-label="Back to workspace"] {
+  justify-self: start;
 }
 
-div:has(> button[aria-label="Back to workspace"]) > div:last-child {
-  position: absolute;
-  right: 0.5rem;
+div.grid:has(> button[aria-label="Back to workspace"]) > div:last-child {
+  justify-self: end;
+}
+
+.wl-workspace-header-actions {
+  min-width: 0;
 }
 
 @keyframes wl-reveal-in {
@@ -215,12 +219,12 @@ div:has(> button[aria-label="Back to workspace"]) > div:last-child {
 
 @keyframes wl-live-pulse {
   0% {
-    opacity: 0.85;
-    transform: scale(0.96);
+    opacity: 0.8;
+    transform: scale(0.97);
   }
   100% {
     opacity: 0;
-    transform: scale(1.08);
+    transform: scale(1.07);
   }
 }
 
@@ -234,6 +238,14 @@ div:has(> button[aria-label="Back to workspace"]) > div:last-child {
     font-size: 0.9375rem;
     line-height: 1.55;
   }
+
+  .wl-workspace-header-actions {
+    width: 100%;
+  }
+
+  .wl-workspace-header-actions > * {
+    max-width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -243,7 +255,8 @@ div:has(> button[aria-label="Back to workspace"]) > div:last-child {
   }
 
   .wl-card-action,
-  .touch-press {
+  .touch-press,
+  .wl-control-icon {
     transition: none;
   }
 }

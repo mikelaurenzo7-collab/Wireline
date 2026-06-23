@@ -1,30 +1,39 @@
-/* Guided assistant setup — Precision Account Holder geometry. */
+/* Guided assistant setup — consistent with the workspace's compact control grammar. */
 .studio-blueprint-card > svg {
   color: var(--wl-muted);
 }
+
 .studio-blueprint-trigger {
   display: flex;
-  min-height: 40px;
+  min-height: 42px;
   width: 100%;
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--wl-surface-subtle);
   color: var(--wl-ink);
   font-size: 14px;
   font-weight: 600;
   text-align: left;
+  transition: background-color var(--transition-base), border-color var(--transition-base), transform var(--transition-fast);
 }
-.studio-blueprint-trigger:hover {
+
+.studio-blueprint-trigger:hover:not(:disabled) {
   border-color: var(--wl-line-strong);
   background: var(--wl-surface-container);
 }
+
+.studio-blueprint-trigger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .studio-blueprint-trigger:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
+
 .studio-blueprint-backdrop {
   position: fixed;
   z-index: 90;
@@ -32,8 +41,9 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(29, 29, 31, 0.24);
+  background: rgba(17, 28, 50, 0.42);
 }
+
 .studio-blueprint-dialog {
   width: min(100%, 760px);
   max-height: min(790px, calc(100dvh - 40px));
@@ -42,23 +52,27 @@
   border: 1px solid var(--wl-line);
   border-radius: var(--radius-xl);
   background: var(--wl-surface);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--wl-shadow-lg);
 }
+
 .studio-blueprint-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
+
 .studio-blueprint-heading h2 {
   max-width: 550px;
   margin: 4px 0 8px;
   color: var(--wl-ink);
+  font-family: var(--wl-font-display);
   font-size: 24px;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 32px;
+  letter-spacing: -0.03em;
+  line-height: 1.18;
 }
+
 .studio-blueprint-heading p:not(.studio-kicker) {
   max-width: 610px;
   margin: 0;
@@ -66,6 +80,7 @@
   font-size: 14px;
   line-height: 20px;
 }
+
 .studio-blueprint-close {
   display: grid;
   flex: 0 0 auto;
@@ -73,81 +88,107 @@
   height: 40px;
   place-items: center;
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--wl-surface);
   color: var(--wl-muted);
   font-size: 21px;
   line-height: 1;
+  transition: background-color var(--transition-base), border-color var(--transition-base), color var(--transition-base), transform var(--transition-fast);
 }
+
 .studio-blueprint-close:hover {
+  border-color: var(--wl-line-strong);
   background: var(--wl-surface-subtle);
   color: var(--wl-ink);
 }
+
+.studio-blueprint-close:active {
+  transform: translateY(1px);
+}
+
 .studio-blueprint-templates {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   margin-top: 24px;
 }
+
 .studio-blueprint-templates button {
-  min-height: 72px;
+  min-height: 76px;
   padding: 12px;
   border: 1px solid var(--wl-line);
   border-radius: var(--radius-lg);
   background: var(--wl-surface);
   color: var(--wl-ink);
   text-align: left;
+  transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
 }
+
 .studio-blueprint-templates button:hover {
   border-color: var(--wl-line-strong);
   background: var(--wl-surface-subtle);
+  box-shadow: var(--wl-shadow-sm);
 }
+
+.studio-blueprint-templates button:active {
+  transform: translateY(1px);
+}
+
 .studio-blueprint-templates button.is-selected {
   border-color: var(--wl-accent);
   background: var(--wl-accent);
   color: #fff;
 }
+
 .studio-blueprint-templates strong,
 .studio-blueprint-templates small {
   display: block;
 }
+
 .studio-blueprint-templates strong {
   font-size: 14px;
   font-weight: 600;
 }
+
 .studio-blueprint-templates small {
   padding-top: 4px;
   color: var(--wl-muted);
   font-size: 12px;
   line-height: 16px;
 }
+
 .studio-blueprint-templates .is-selected small {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.78);
 }
+
 .studio-blueprint-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 24px;
 }
+
 .studio-blueprint-form label {
   display: grid;
   gap: 8px;
   color: var(--wl-muted);
+  font-family: var(--wl-font-mono);
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
 .studio-blueprint-form label.is-wide {
   grid-column: 1/-1;
 }
+
 .studio-blueprint-form textarea,
 .studio-blueprint-form select {
   width: 100%;
   border: 1px solid var(--wl-line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   outline: none;
   background: var(--wl-surface);
   color: var(--wl-ink);
@@ -155,84 +196,105 @@
   font-weight: 400;
   line-height: 20px;
 }
+
 .studio-blueprint-form textarea {
   min-height: 96px;
   padding: 10px 12px;
   resize: vertical;
 }
+
 .studio-blueprint-form select {
-  height: 40px;
+  height: 42px;
   padding: 0 12px;
 }
+
 .studio-blueprint-form textarea:focus,
 .studio-blueprint-form select:focus {
   border-color: var(--wl-accent);
-  box-shadow: 0 0 0 2px var(--wl-focus);
+  box-shadow: 0 0 0 3px var(--wl-accent-container);
 }
+
 .studio-blueprint-selected {
   display: flex;
-  min-height: 40px;
+  min-height: 42px;
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   background: var(--wl-surface-subtle);
   color: var(--wl-muted);
   font-size: 14px;
 }
+
 .studio-blueprint-preview {
   display: grid;
   gap: 4px;
   margin-top: 20px;
-  padding: 12px;
+  padding: 14px;
   border: 1px solid var(--wl-line);
   border-radius: var(--radius-lg);
   background: var(--wl-surface-subtle);
 }
+
 .studio-blueprint-preview span {
   color: var(--wl-muted);
   font-size: 12px;
 }
+
 .studio-blueprint-preview strong {
   color: var(--wl-ink);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
+
 .studio-blueprint-notice {
   margin: 16px 0 0;
   color: var(--destructive);
   font-size: 12px;
   line-height: 16px;
 }
+
 .studio-blueprint-notice.is-success {
   color: var(--wl-status-active);
 }
+
 @media (max-width: 700px) {
   .studio-blueprint-backdrop {
     align-items: end;
     padding: 0;
   }
+
   .studio-blueprint-dialog {
     width: 100%;
     max-height: calc(100dvh - 12px);
     padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
   }
+
   .studio-blueprint-heading h2 {
-    font-size: 24px;
-    line-height: 32px;
+    font-size: 22px;
+    line-height: 28px;
   }
+
   .studio-blueprint-templates {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
   .studio-blueprint-form {
     grid-template-columns: 1fr;
   }
+
   .studio-blueprint-form label.is-wide {
     grid-column: auto;
   }
-  .studio-blueprint-selected {
-    min-height: 40px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-blueprint-trigger,
+  .studio-blueprint-close,
+  .studio-blueprint-templates button {
+    transition: none;
   }
 }
