@@ -75,6 +75,30 @@
   color: var(--muted-foreground);
 }
 
+/* Present a usable keyboard route into every product surface without affecting visual flow. */
+.wl-skip-link {
+  position: fixed;
+  z-index: 300;
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: translateY(-160%);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  padding: 0.625rem 0.875rem;
+  color: var(--primary-foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--wl-shadow-md);
+  transition: transform var(--transition-fast);
+}
+
+.wl-skip-link:focus {
+  transform: translateY(0);
+  outline: none;
+}
+
 /* Only objects that navigate or trigger an action should elevate. */
 .wl-card-action {
   text-decoration: none;
@@ -206,6 +230,10 @@ div.grid:has(> button[aria-label="Back to workspace"]) > div:last-child {
   min-width: 0;
 }
 
+.wl-workspace-header-actions :is(.studio-primary-button, .studio-secondary-button) {
+  white-space: nowrap;
+}
+
 @keyframes wl-reveal-in {
   from {
     opacity: 0;
@@ -246,12 +274,18 @@ div.grid:has(> button[aria-label="Back to workspace"]) > div:last-child {
   .wl-workspace-header-actions > * {
     max-width: 100%;
   }
+
+  .wl-workspace-header-actions :is(.studio-primary-button, .studio-secondary-button) {
+    flex: 1 1 auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .wl-skip-link,
   .wl-reveal,
   .wl-pulse-live::after {
     animation: none;
+    transition: none;
   }
 
   .wl-card-action,
