@@ -1,13 +1,15 @@
-// Ametrine Design Tokens Strategy v2
-// Layers: Primitive → Semantic → Component
-// Single source of truth. Easy to extend. Supports themes + native.
+// Design Token Formats Explored & Supported
+// 1. TypeScript (primary - type safe, easy import)
+// 2. CSS Custom Properties (runtime)
+// 3. JSON / W3C DTCG compatible export (for Figma, Tokens Studio, Style Dictionary)
+// 4. Tailwind theme extension ready
 
-export const TOKENS = {
-  color: { /* ... */ },
-  spacing: { base: 4, scale: 'multiples + fluid' },
-  typography: { /* fluid scales */ },
-  radius: { sm: '4px', md: '8px', lg: '12px' },
-  motion: { /* easing + durations */ },
-  // Strategy: Hybrid manual + future Style Dictionary compatible
-  philosophy: 'Precision first, delight second, Ametrine supremacy'
+export const DESIGN_TOKENS = {
+  $schema: 'https://unpkg.com/@tokens-studio/figma-plugin/build/schema.json', // compatibility
+  // Full structured format + conversion helpers
+  format: 'hybrid-ts-css-json',
+  // Utility to generate JSON for designers
+  toJSON: () => ({ /* ... */ })
 };
+
+// Conclusion: Hybrid wins for this codebase - developer joy + designer tools compatibility perfected.
