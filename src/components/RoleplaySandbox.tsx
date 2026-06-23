@@ -1,9 +1,11 @@
 import { MessageSquareText, ShieldCheck } from "lucide-react";
 import LiveVoiceSandbox from "./LiveVoiceSandbox";
+import WirelineLiveVoiceProfile from "./WirelineLiveVoiceProfile";
 
 export default function RoleplaySandbox({ agentId }: { agentId: string }) {
   return (
     <div className="space-y-4">
+      <WirelineLiveVoiceProfile agentId={agentId} />
       <LiveVoiceSandbox agentId={agentId} agentName="your assistant" />
       <div className="grid gap-3 rounded-xl border border-border bg-secondary p-4 sm:grid-cols-2">
         <div className="flex gap-3">
