@@ -55,8 +55,14 @@ OAuth and CRM endpoints own authorization and callback validation. Studio reads 
 
 - **Auth and authorization:** session middleware plus user-scoped ownership checks.
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`.
-- **Voice:** Twilio/Vapi-backed execution paths configured from saved agent profiles.
-- **LLM:** OpenAI is the managed primary; Gemini is the automatic fallback; OpenRouter is explicit only.
+- **Voice:** 
+  - Production PSTN calls: Twilio + Vapi-backed execution configured from agent profiles. Default managed model is OpenAI GPT-4o (with Gemini Flash fallback).
+  - Authenticated realtime/live tests (browser + mobile): dedicated xAI Grok voice path (server-provisioned short-lived sessions, knowledge tool only for safety). See `docs/GROK_LIVE_VOICE.md` and `src/lib/voice/grok-voice-*`.
+- **LLM / Reasoning:** 
+  - Primary structured and many voice paths: OpenAI (GPT-5.5 / GPT-4o via env or defaults) with Gemini automatic fallback.
+  - Custom per-agent: OpenRouter (any valid model ID) or catalog options.
+  - Live Grok: xAI realtime voice sessions (separate from Vapi).
+  - Central policy and catalog: `src/lib/ai-models.ts` (VOICE_MODEL_CATALOG, resolveVapiVoiceModelSelection, DEFAULT_MODEL, selectModelForTask). Legacy claude-models references have been consolidated here.
 - **Billing:** Stripe-backed entitlement checks remain server-side.
 - **Webhooks:** signature verification and idempotent handling remain server-side.
 

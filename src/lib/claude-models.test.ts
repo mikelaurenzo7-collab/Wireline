@@ -7,6 +7,13 @@ import {
   resolveVapiVoiceModelSelection,
 } from "./ai-models";
 
+/**
+ * Policy tests for managed voice model selection.
+ * Note: file retains historical name "claude-models.test.ts" during consolidation
+ * into ai-models.ts (the active source of truth per ARCHITECTURE.md).
+ * Tests cover OpenAI primary + Gemini fallback + OpenRouter custom (incl. Grok IDs).
+ */
+
 describe("managed voice model policy", () => {
   it("keeps OpenAI as the managed primary and Gemini as its native fallback", () => {
     const selection = resolveVapiVoiceModelSelection();

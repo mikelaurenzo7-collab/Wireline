@@ -122,13 +122,13 @@ export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
   },
   {
     provider: "openrouter",
-    model: "openai/gpt-4o",
+    model: "x-ai/grok-4.3",
     label: "OpenRouter — choose a model",
     speed: "balanced",
     envKey: "OPENROUTER_API_KEY",
     latencyWarning: true,
     acceptsCustomModelId: true,
-    note: "Advanced override. Wireline sends the exact valid provider/model ID selected.",
+    note: "Advanced override. Wireline forwards the exact provider/model ID (e.g. x-ai/grok-4.3 enables distinctive Grok strengths when needed).",
   },
 ] as const;
 
@@ -154,6 +154,7 @@ export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_5) return "GPT-5.5";
   if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";
   if (model.toLowerCase().includes("gemini")) return "Gemini";
+  if (model.toLowerCase().includes("grok")) return "Grok";
   return model;
 }
 export type AdaptiveEffort = "low" | "medium" | "high";

@@ -18,6 +18,14 @@ export const WIRELINE_LIVE_VOICE_PROFILES: ReadonlyArray<{
   { id: "direct", label: "Direct", description: "Decisive, focused, and authoritative." },
 ] as const;
 
+/**
+ * World-class live voice personality mapping.
+ * Role-tuned profiles + Grok realtime reasoning deliver distinctive,
+ * context-aware voices while keeping all vendor details and hype
+ * out of the customer experience. Profiles are resolved server-side
+ * and paired with safe knowledge tools only.
+ */
+
 const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, string> = {
   bright: "eve",
   warm: "ara",
@@ -38,8 +46,26 @@ const ROLE_TO_PROFILE: Record<string, WirelineVoiceProfile> = {
 };
 
 const SUPPORTED_LANGUAGE_HINTS = new Set([
-  "en", "ar-EG", "ar-SA", "ar-AE", "bn", "zh", "fr", "de", "hi", "id",
-  "it", "ja", "ko", "pt-BR", "pt-PT", "ru", "es-MX", "es-ES", "tr", "vi",
+  "en",
+  "ar-EG",
+  "ar-SA",
+  "ar-AE",
+  "bn",
+  "zh",
+  "fr",
+  "de",
+  "hi",
+  "id",
+  "it",
+  "ja",
+  "ko",
+  "pt-BR",
+  "pt-PT",
+  "ru",
+  "es-MX",
+  "es-ES",
+  "tr",
+  "vi",
 ]);
 
 export type GrokRealtimeFunction = {
@@ -58,11 +84,15 @@ export const WIRELINE_GROK_REALTIME_TOOLS: readonly GrokRealtimeFunction[] = [
   {
     type: "function",
     name: "search_agent_knowledge",
-    description: "Search the selected assistant's approved facts, policies, and operating rules before answering a specific question.",
+    description:
+      "Search the selected assistant's approved facts, policies, and operating rules before answering a specific question.",
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "The exact question or fact to look up in approved assistant knowledge." },
+        query: {
+          type: "string",
+          description: "The exact question or fact to look up in approved assistant knowledge.",
+        },
       },
       required: ["query"],
       additionalProperties: false,
@@ -83,14 +113,14 @@ export function resolveWirelineVoiceProfile(
 ): WirelineVoiceProfile {
   const explicit = normalizeWirelineVoiceProfile(requestedProfile);
   if (explicit) return explicit;
-  const normalizedRole = String(role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const normalizedRole = String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
   return ROLE_TO_PROFILE[normalizedRole] || "balanced";
 }
 
-export function resolveWirelineGrokVoice(
-  role?: string | null,
-  requestedProfile?: unknown,
-): string {
+export function resolveWirelineGrokVoice(role?: string | null, requestedProfile?: unknown): string {
   return PROFILE_TO_VOICE[resolveWirelineVoiceProfile(role, requestedProfile)];
 }
 
@@ -100,7 +130,9 @@ export function normalizeGrokLanguageHint(value: unknown): string | undefined {
 }
 
 export function resolveGrokReasoningEffort(): "high" | "none" {
-  return process.env.XAI_GROK_VOICE_REASONING_EFFORT?.trim().toLowerCase() === "none" ? "none" : "high";
+  return process.env.XAI_GROK_VOICE_REASONING_EFFORT?.trim().toLowerCase() === "none"
+    ? "none"
+    : "high";
 }
 
 export function resolveGrokVoiceSpeed(): number {
