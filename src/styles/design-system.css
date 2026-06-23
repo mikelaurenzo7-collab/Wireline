@@ -1,31 +1,18 @@
-/* Ametrine Precision Design Tokens — Management & Governance (Professional Enterprise Standard)
+/* Wireline Design System — governance, shared utilities, and runtime alignment.
 
-CURRENT IMPLEMENTATION (Post-Audit & Purge):
-- Single Source of Truth: CSS Custom Properties in foundation.css + design-system.css :root (runtime authoritative).
-- Type Safety & DX: brand-colors.ts for scaling strategy notes and TypeScript alignment (values synchronized manually to CSS).
-- Consumption: Tailwind theme inline (index.css) + direct var() usage in components.
-- Formats: CSS vars (primary), TS constants (dev), documented for future JSON/DTCG export.
-- Theming: Light baseline with high-contrast AAA tokens; subtle tonal layering via color-mix().
-- Scaling: 4px mathematical base + fluid clamp() + semantic t-shirt sizes (perfected).
+CURRENT IMPLEMENTATION:
+- Runtime source of truth lives in foundation.css plus the active token/runtime bridge consumed by index.css.
+- Type-safe token guidance lives in brand-colors.ts and companion design-system manifests.
+- Components consume these tokens through Tailwind theme aliases and direct var() usage.
+- Light-mode baseline uses high-contrast semantic tokens, restrained depth, and compact operator-grade spacing.
 
-MANAGEMENT STRATEGY (Recommended & Partially Implemented):
-1. Governance: Design system owner (CTO/Design) approves all token changes. Changes documented in this file and committed with clear messages.
-2. Workflow: Designer proposes in Figma (Tokens Studio or Variables) → Dev implements in CSS/TS → Audit for AAA contrast, professional tone, and consistency → Merge to main.
-3. Versioning: Tokens versioned with design system releases. Breaking changes require migration notes.
-4. Documentation: This file + Storybook/MDX (future) as living spec. All tokens include usage examples and contrast notes.
-5. Tooling (Current vs. Ideal):
-   - Current: Manual sync (lean, low overhead for solo founder + small team).
-   - Ideal future: Style Dictionary or custom script to generate CSS, TS types, JSON (DTCG spec), and native theme files from a single source JSON/YAML.
-   - Dynamic contrast: APCA for perceptual validation in tooling; static AAA hex baseline enforced here.
+GOVERNANCE:
+1. Changes to shared tokens or primitives should be reviewed against Wireline brand direction, accessibility, and runtime consistency.
+2. The TypeScript manifest and CSS runtime layer should stay synchronized; neither should silently drift.
+3. Breaking changes should be accompanied by migration notes for affected components or routes.
+4. Keep the system lean: add primitives only when they are reused or form part of the canonical app shell.
 
-PROFESSIONAL TONE & AAA ENFORCEMENT:
-- All token names and descriptions use precise, enterprise-appropriate language.
-- Contrast: Explicit AAA hex pairs maintained (see foundation.css). No low-contrast combinations permitted.
-- Bloat: Purged. System remains minimal and focused.
-
-This establishes a scalable, auditable, professional token management foundation while keeping overhead appropriate for current stage. Future pipeline additions will build on this structure without disruption.
-
-Last updated: Professional tone + AAA + management investigation pass. */
+This file intentionally carries both governance notes and a small set of shared utility classes that are used across the page shell, marketing shell, and live product surfaces. */
 
 .chrome-eyebrow,
 .text-eyebrow {
