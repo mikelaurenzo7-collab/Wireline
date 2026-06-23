@@ -134,7 +134,7 @@ export default function WorkspaceShell({
           data-wireline-route={location.pathname}
           className="wl-workspace-main flex h-full min-h-0 min-w-0 flex-col overflow-hidden px-4 pb-5 pt-0 sm:px-7 sm:pb-6 lg:px-10 lg:pb-8 xl:px-12"
         >
-          <header className="wl-workspace-header flex shrink-0 items-center justify-between gap-4 border-b border-border">
+          <header className="wl-workspace-header flex shrink-0 flex-col items-stretch gap-2 border-b border-border sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 aria-label="Open navigation"
