@@ -18,10 +18,10 @@ const BALANCE_PRESETS = [5, 10, 25, 50] as const;
 
 const PERSONAL_FEATURES = [
   "Build and test personal assistants for free",
-  "Add $5 to handle your first live conversation",
-  "Spend across voice, email, and text from one balance",
-  "Set a hard budget with no surprise charges or auto-reload",
-  "Approve every external action, or trust the ones you choose",
+  "Add $5 when you are ready to put one to work",
+  "Keep personal usage on a prepaid Conversation Balance",
+  "Choose when to add more — no automatic reload",
+  "Set rules and approvals before an assistant acts externally",
 ] as const;
 
 type BusinessTier = {
@@ -39,13 +39,13 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     name: "Front Desk",
     price: "$29",
     cadence: "/mo",
-    blurb: "A number and inbox for a small team that needs reliable coverage.",
+    blurb: "A real operating layer for a small team that needs reliable coverage.",
     features: [
       "Up to 4 assistants and agents",
       "Dedicated numbers for inbound and outbound",
       "Team handoff and shared inbox",
-      "CRM and calendar integrations",
-      "Conversation Balance for usage",
+      "CRM and calendar connections",
+      "Conversation Balance for live work",
     ],
     cta: { label: "Start Front Desk", to: "/signup?plan=business-starter" },
   },
@@ -53,22 +53,22 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     name: "Sales & Reception",
     price: "$59",
     cadence: "/mo",
-    blurb: "Routing, campaigns, and a live activity view for busier teams.",
+    blurb: "Routing, campaigns, and shared execution for busier teams.",
     features: [
       "Up to 8 assistants and agents",
       "Intelligent routing and department transfers",
       "Outbound campaign templates",
       "Live activity and collaboration",
-      "Lower usage rate on your balance",
+      "Conversation Balance alongside the platform plan",
     ],
     cta: { label: "Start Sales & Reception", to: "/signup?plan=starter" },
     featured: true,
   },
   {
     name: "Custom Enterprise",
-    price: "Let's talk",
+    price: "Let’s talk",
     cadence: "",
-    blurb: "Multi-location scale, compliance, and dedicated implementation.",
+    blurb: "Multi-location scale, custom controls, and dedicated implementation.",
     features: [
       "Unlimited assistants, agents, and lines",
       "CRM deep-sync and custom webhooks",
@@ -82,37 +82,37 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
 const BALANCE_PROMISES = [
   {
     icon: Wallet,
-    title: "One balance, every channel",
-    body: "Voice, email, and text draw from the same Conversation Balance. Heavier work such as a long hold or premium voice simply uses a little more.",
+    title: "Start with $5",
+    body: "Personal assistants stay free to build and test. Add only the amount you want when you are ready for live work.",
   },
   {
     icon: Gauge,
-    title: "A budget you control",
-    body: "Wireline estimates the task, pauses at your cap, and lets you decide the ceiling.",
+    title: "No forced reload",
+    body: "Conversation Balance never reloads itself. You decide when the next top-up makes sense for your work.",
   },
   {
     icon: Eye,
-    title: "Clear conversation receipts",
-    body: "Every conversation reports what it used, so your balance is never a mystery.",
+    title: "See the money clearly",
+    body: "Your Billing workspace keeps your current balance and recent activity in one place, alongside any business plan.",
   },
 ] as const;
 
 const FAQ = [
   [
     "Do I need a subscription to start?",
-    "No. Personal is free to build and test. When you are ready for a live conversation, add a $5 Conversation Balance.",
+    "No. Personal is free to build and test. Add a $5 Conversation Balance only when you are ready to start live work.",
   ],
   [
-    "What can $5 handle?",
-    "A real task: drafting and sending email, a text follow-up, a short voice call or voicemail workflow, and a recap of what happened.",
+    "Will Wireline auto-reload my balance?",
+    "No. Personal balance does not automatically reload. You decide when and how much to add.",
   ],
   [
-    "Will I get surprise charges?",
-    "No. There is no auto-reload unless you turn it on, and Wireline pauses a task before it exceeds the budget you set.",
+    "What does Conversation Balance do?",
+    "It is your prepaid live-work balance. Billing shows what is available and the recent movement of money in and out of your account.",
   ],
   [
-    "When should a business pick a plan instead?",
-    "When you need numbers, shared inboxes, routing, team members, and integrations. Business plans add the operating system; usage still runs on your balance.",
+    "When should a business choose a platform plan?",
+    "Choose one when you need professional numbers, shared inboxes, routing, team members, or business integrations. The plan adds the operating layer; balance keeps live work funded.",
   ],
 ] as const;
 
@@ -121,7 +121,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
         title="Pricing — Start free, add $5 to go live | Wireline"
-        description="Personal assistants are free to build and test. Add a $5 Conversation Balance to go live. Business plans add numbers, routing, and team tools."
+        description="Personal assistants are free to build and test. Add a $5 Conversation Balance for live work. Business plans add numbers, routing, and team tools."
         path="/pricing"
       />
       <PrecisionPublicHeader />
@@ -134,7 +134,7 @@ export default function Pricing() {
               Build free. Add $5 when you are ready to go live.
             </h1>
             <p className="mx-auto mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
-              Personal assistants are free to create and test. Add Conversation Balance for live work, then add a business plan when you need numbers, routing, and a shared team workspace.
+              Personal assistants are free to create and test. Add Conversation Balance before live work, then add a business plan when you need numbers, routing, and a shared team workspace.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
@@ -160,7 +160,7 @@ export default function Pricing() {
                   <span className="wl-overline">/ month</span>
                 </div>
                 <p className="mt-3 max-w-md text-[15px] leading-7 text-muted-foreground">
-                  No subscription. Add Conversation Balance only when you want live work handled.
+                  No personal subscription. Add Conversation Balance only when you are ready to move from testing into live work.
                 </p>
 
                 <div className="mt-7">
@@ -178,7 +178,7 @@ export default function Pricing() {
                       </span>
                     ))}
                   </div>
-                  <p className="mt-3 text-[12px] text-muted-foreground">Start at $5. Top up any time. Your balance never expires.</p>
+                  <p className="mt-3 text-[12px] text-muted-foreground">Start at $5. Add more only when it makes sense for you.</p>
                 </div>
 
                 <ul className="mt-7 space-y-2.5">
@@ -225,7 +225,7 @@ export default function Pricing() {
                 Add the operating system when your team needs it.
               </h2>
               <p className="mx-auto mt-4 max-w-[600px] text-[15px] leading-7 text-muted-foreground">
-                Shared inboxes, professional lines, integrations, and routing for teams — plus the same Conversation Balance for usage at a lower rate as you grow.
+                Shared inboxes, professional lines, integrations, and routing for teams — with the same direct control over when live work is funded.
               </p>
             </div>
 
