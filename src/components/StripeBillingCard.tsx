@@ -20,6 +20,7 @@ import UsageMeter from "./UsageMeter";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
+import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 
 type BillingPlanId = "personal" | "personal-plus" | "business-starter" | "starter" | "scale";
 
@@ -205,7 +206,7 @@ export default function StripeBillingCard() {
     return (
       <div className="wl-panel flex items-center gap-4 p-10">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        <span className="text-[14px] text-muted-foreground">Loading billing state…</span>
+        <span className="text-[14px] text-muted-foreground">Loading your plan and balance…</span>
       </div>
     );
   }
@@ -382,8 +383,8 @@ function PlanPicker({
       <div className="border-b border-border pb-6">
         <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Choose a plan</h3>
         <p className="text-[13px] leading-5 text-muted-foreground mt-1.5 max-w-lg">
-          Start small, prove the channel, then scale into more agents and minutes. No setup fees.
-          Cancel anytime.
+          {PRODUCT_VERSATILITY.short} Start with personal assistants on a Conversation Balance, then
+          add a business plan when you need numbers, routing, and team tools. Stripe-secured. Cancel anytime.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 stagger-children">
@@ -425,7 +426,7 @@ function PlanPicker({
                   <Icon className="w-6 h-6 wl-accent-text" />
                 </div>
                 <span className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                  {plan.max_agents} {plan.max_agents === 1 ? "agent" : "agents"}
+                  {plan.max_agents} {plan.max_agents === 1 ? "slot" : "slots"}
                 </span>
               </div>
               <div>
@@ -554,7 +555,8 @@ function ActiveSubCard({
             <p className="text-[11px] font-mono uppercase tracking-[.05em] text-muted-foreground">
               {sub.max_agents ? (
                 <span className={agentCount >= sub.max_agents ? "text-amber-600" : ""}>
-                  {agentCount} / {sub.max_agents} agents
+                  {agentCount} / {sub.max_agents}{" "}
+                  {sub.max_agents === 1 ? "roster slot" : "roster slots"} in use
                 </span>
               ) : (
                 ""

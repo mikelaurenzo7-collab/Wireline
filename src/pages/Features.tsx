@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
+import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 
 const VOICE_POINTS = [
   "Calls and messages that follow the guidance you give in plain English.",
@@ -41,7 +42,7 @@ export default function Features() {
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
         title="AI Call & Message Assistant Features | Wireline"
-        description="Wireline handles useful calls, messages, follow-ups, and business workflows with the boundaries you define."
+        description="Personal assistants and business agents that handle calls, messages, and follow-ups with the boundaries you define."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -49,13 +50,13 @@ export default function Features() {
       <main id="main-content" className="pt-16">
         <section className="border-b border-border bg-background px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="mx-auto max-w-[1040px]">
-            <p className="wl-stitch-eyebrow">Calls, messages, and follow-up</p>
+            <p className="wl-stitch-eyebrow">{PRODUCT_VERSATILITY.eyebrow}</p>
             <h1 className="mt-4 max-w-[800px] text-balance text-[clamp(38px,5.4vw,60px)] font-semibold leading-[1.04] tracking-[-.045em] text-foreground">
-              An assistant for the conversations you should not have to chase.
+              Personal assistants and business agents for every conversation you should not chase.
             </h1>
             <p className="mt-6 max-w-[650px] text-[17px] leading-7 text-muted-foreground">
-              Start with a personal task. Add useful tools and business context as needed. Wireline handles
-              the conversation, follows your boundaries, and brings the result back to you.
+              {PRODUCT_VERSATILITY.tagline} Start with a personal assistant for everyday calls. Add business
+              agents when work needs a professional line, policies, and connected accounts.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/signup" className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]">
@@ -132,7 +133,7 @@ export default function Features() {
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground">
                   <Workflow size={22} />
                 </span>
-                <span className="mt-4 text-[15px] font-semibold tracking-[-.01em] text-foreground">Your assistant</span>
+                <span className="mt-4 text-[15px] font-semibold tracking-[-.01em] text-foreground">Your assistant or agent</span>
                 <span className="mt-1 font-mono text-[11px] uppercase tracking-[.06em] text-muted-foreground">Handles · checks · recaps</span>
               </div>
               <FlowArrow />
@@ -153,8 +154,8 @@ export default function Features() {
               </h2>
             </div>
             <p className="max-w-xl text-[15px] leading-7 text-muted-foreground">
-              A personal assistant, a business front desk, and a lead follow-up system all start the same
-              way: a clear job, useful facts, and boundaries you trust.
+              A personal assistant for pharmacy calls, a business agent for inbound support, and a lead
+              follow-up agent all start the same way: a clear job, useful facts, and boundaries you trust.
             </p>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -170,7 +171,7 @@ export default function Features() {
 
         <section className="border-t border-border px-4 py-16 text-center sm:px-6">
           <h2 className="mx-auto max-w-2xl text-[30px] font-semibold leading-tight tracking-[-.03em] text-foreground sm:text-[36px]">
-            Build an assistant around your day, then let it do the next useful thing.
+            Build personal assistants and business agents in one workspace, then let them handle the next useful thing.
           </h2>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link to="/signup" className="marketing-btn-primary px-6 py-3 text-[12px] font-semibold uppercase tracking-[.05em]">
@@ -185,7 +186,7 @@ export default function Features() {
 
       <footer className="border-t border-border px-4 py-8 text-[13px] text-muted-foreground sm:px-6">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <span><strong className="text-foreground">Wireline</strong> · calls + messages, handled</span>
+          <span><strong className="text-foreground">Wireline</strong> · personal assistants · business agents</span>
           <div className="flex gap-5">
             <Link to="/pricing">Pricing</Link>
             <Link to="/privacy">Privacy</Link>

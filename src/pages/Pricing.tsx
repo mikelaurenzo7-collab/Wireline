@@ -12,12 +12,13 @@ import {
 } from "lucide-react";
 import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
 import { PageMeta } from "../lib/page-meta";
+import { PRODUCT_VERSATILITY } from "../lib/product-copy";
 
 /* Conversation Balance top-up amounts — mirror conversation-balance.ts. */
 const BALANCE_PRESETS = [5, 10, 25, 50] as const;
 
 const PERSONAL_FEATURES = [
-  "Build and test your assistant for free",
+  "Build and test personal assistants for free",
   "Add $5 to handle your first live conversation",
   "Spend across voice, email, and text from one balance",
   "Set a hard budget — no surprise charges, no auto-reload",
@@ -39,9 +40,9 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     name: "Front Desk",
     price: "$29",
     cadence: "/mo",
-    blurb: "One live assistant with a number and inbox, ready for a small team.",
+    blurb: "Personal assistants and business agents with a number and inbox for a small team.",
     features: [
-      "Up to 4 assistants",
+      "Up to 4 assistants and agents",
       "Dedicated numbers for inbound & outbound",
       "Team handoff & shared inbox",
       "CRM & calendar integrations",
@@ -55,7 +56,7 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     cadence: "/mo",
     blurb: "Routing, campaigns, and a live activity view for busier teams.",
     features: [
-      "Up to 8 assistants",
+      "Up to 8 assistants and agents",
       "Intelligent routing & department transfers",
       "Outbound campaign templates",
       "Live activity dashboard & collaboration",
@@ -70,7 +71,7 @@ const BUSINESS_TIERS: readonly BusinessTier[] = [
     cadence: "",
     blurb: "Multi-location scale, compliance, and dedicated implementation.",
     features: [
-      "Unlimited assistants & lines",
+      "Unlimited personal assistants, business agents, and lines",
       "Full CRM deep-sync & custom webhooks",
       "SSO, security review & compliance",
       "Dedicated implementation & SLA support",
@@ -121,7 +122,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background text-foreground">
       <PageMeta
         title="Pricing — Start free, add $5 to go live | Wireline"
-        description="Wireline Personal is free to build and test. Add a $5 Conversation Balance to handle live calls, email, and text. Business plans add numbers, routing, and team tools."
+        description="Personal assistants are free to build and test. Add a $5 Conversation Balance to go live. Business plans add business agents, numbers, routing, and team tools — billed securely through Stripe."
         path="/pricing"
       />
       <PrecisionPublicHeader />
@@ -130,14 +131,13 @@ export default function Pricing() {
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="border-b border-border px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-measure text-center">
-            <p className="wl-stitch-label">Pricing</p>
+            <p className="wl-stitch-label">{PRODUCT_VERSATILITY.eyebrow}</p>
             <h1 className="mx-auto mt-4 max-w-[900px] text-balance text-[clamp(38px,5.6vw,64px)] font-semibold leading-[1.04] tracking-[-.045em] text-foreground">
-              Start free. Add $5 when you're ready to go live.
+              Personal assistants free. Business agents when you scale.
             </h1>
             <p className="mx-auto mt-6 max-w-[640px] text-[17px] leading-7 text-muted-foreground">
-              Build and test your assistant for nothing. When you have a conversation worth
-              handling, top up a small balance and let Wireline take it from there — across voice,
-              email, and text.
+              {PRODUCT_VERSATILITY.short} Build and test for nothing, add a $5 Conversation Balance when
+              you want live work handled, then upgrade through Stripe when you need numbers, routing, and team tools.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
@@ -249,11 +249,12 @@ export default function Pricing() {
                 <span className="wl-stitch-eyebrow">For business</span>
               </div>
               <h2 className="mx-auto mt-4 max-w-[680px] text-balance text-[clamp(28px,3.6vw,40px)] font-semibold leading-tight tracking-[-.035em] text-foreground">
-                The operating system for your team's conversations.
+                Business agents with numbers, routing, and team tools.
               </h2>
               <p className="mx-auto mt-4 max-w-[600px] text-[15px] leading-7 text-muted-foreground">
-                Numbers, shared inboxes, routing, and integrations — plus the same Conversation
-                Balance for usage, at a lower rate as you grow.
+                Shared inboxes, integrations, and professional lines for your business agents — plus the
+                same Conversation Balance for usage, at a lower rate as you grow. Subscriptions are
+                managed securely through Stripe.
               </p>
             </div>
 
