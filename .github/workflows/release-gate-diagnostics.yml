@@ -1,0 +1,74 @@
+name: Release gate diagnostics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/**"
+      - "server.ts"
+      - "src/**"
+      - "shared/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runner-manifest-and-migration-gate:
+    name: Runner, Node 22, and Vercel migration gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Print toolchain
+        run: |
+          node --version
+          npm --version
+
+      - name: Validate package manifest release gates
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          if (pkg.engines?.node !== '22.x') {
+            throw new Error(`Expected package.json engines.node to be 22.x, received ${pkg.engines?.node ?? '<missing>'}`);
+          }
+          if (pkg.scripts?.['vercel-build'] !== 'node scripts/vercel-build.mjs') {
+            throw new Error(`Expected vercel-build to use scripts/vercel-build.mjs, received ${pkg.scripts?.['vercel-build'] ?? '<missing>'}`);
+          }
+          console.log('package.json release gates are aligned.');
+          NODE
+
+      - name: Validate Vercel preview migration guard
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const wrapper = fs.readFileSync('scripts/vercel-build.mjs', 'utf8');
+          const requiredFragments = [
+            'process.env.VERCEL_ENV',
+            'process.env.WIRELINE_RUN_MIGRATIONS === "true"',
+            'environment === "production"',
+            'run("npm", ["run", "db:migrate"])',
+            'Skipping database migrations',
+          ];
+          const missing = requiredFragments.filter((fragment) => !wrapper.includes(fragment));
+          if (missing.length > 0) {
+            throw new Error(`Vercel migration guard is missing expected fragment(s): ${missing.join(', ')}`);
+          }
+          console.log('Vercel migration guard keeps preview builds migration-safe by default.');
+          NODE
