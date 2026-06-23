@@ -422,7 +422,7 @@ export default function KnowledgeWorkspace() {
                 setEntry("");
                 setTags("");
               }}
-              className="workspace-btn-secondary px-4 py-2.5 text-sm"
+              className="studio-secondary-button text-sm"
             >
               <Trash2 size={14} />
               Clear
@@ -431,7 +431,7 @@ export default function KnowledgeWorkspace() {
               type="button"
               disabled={!entry.trim() || saving}
               onClick={() => void save()}
-              className="workspace-btn-primary px-4 py-2.5 text-sm disabled:opacity-40"
+              className="studio-primary-button text-sm disabled:opacity-40"
             >
               {saving ? <Loader2 className="animate-spin" size={15} /> : <Plus size={15} />}Save{" "}
               {kind === "knowledge" ? "fact" : "rule"}

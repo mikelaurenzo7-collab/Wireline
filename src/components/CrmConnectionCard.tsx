@@ -294,7 +294,7 @@ export default function CrmConnectionCard() {
   const disconnect = (provider: ProviderKey) => async () => {
     if (
       !confirm(
-        `Disconnect ${PROVIDERS.find((p) => p.key === provider)?.label}? Your agents will lose access to this integration.`,
+        `Disconnect ${PROVIDERS.find((p) => p.key === provider)?.label}? Your personal assistants and business agents will lose access to this integration.`,
       )
     )
       return;

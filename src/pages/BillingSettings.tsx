@@ -10,7 +10,7 @@ export default function BillingSettings() {
       title="Enterprise Billing & Plan"
       contentClassName="pt-6"
       action={
-        <Link to="/settings" className="workspace-btn-secondary px-4 py-2.5">
+        <Link to="/settings" className="studio-secondary-button">
           <ArrowLeft size={16} />
           Back to Settings
         </Link>

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Input } from "../ui/shadcn/Input";
 import { SegmentStrip } from "../ui/SegmentStrip";
+import { PRODUCT_POSTURE } from "../../lib/product-copy";
 
 interface Props {
   isCreating: boolean;
@@ -47,7 +48,7 @@ export default function CreateAgentSection({
     <motion.div layout className="pt-4 mt-4 border-t border-white/8 border-dashed space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="wl-label text-foreground normal-case tracking-[0.18em]">
-          {isPersonal ? "Create your assistant" : "Create a new agent"}
+          {isPersonal ? PRODUCT_POSTURE.personal.createCta : "Add to roster"}
         </h3>
         <div className="flex items-center gap-1.5">
           <ClaudeRecipeButton recipe="agent-forge" label="Forge" variant="ghost" />
@@ -67,7 +68,7 @@ export default function CreateAgentSection({
       </div>
 
       <SegmentStrip
-        aria-label="Agent channel"
+        aria-label="Channel"
         variant="soft"
         fullWidth
         className="w-full wl-panel border border-white/10"
@@ -83,7 +84,7 @@ export default function CreateAgentSection({
         <div className="space-y-1.5">
           <label className="wl-label-muted flex items-center gap-1.5">
             <Briefcase className="w-2.5 h-2.5 text-brand" />{" "}
-            {isPersonal ? "What it handles" : "Business role"}
+            {isPersonal ? "What it handles" : "Role"}
           </label>
           <div className="relative">
             <Select value={newAgentRole} onValueChange={(v) => setNewAgentRole(v as RoleValue)}>
@@ -108,7 +109,7 @@ export default function CreateAgentSection({
         </div>
         <div className="space-y-1.5">
           <label className="wl-label-muted">
-            Agent ID{" "}
+            ID{" "}
             <span className="text-foreground/55 normal-case tracking-normal">
               (lowercase, no spaces)
             </span>
@@ -123,7 +124,7 @@ export default function CreateAgentSection({
         </div>
         <div className="space-y-1.5">
           <label className="wl-label-muted">
-            Agent name{" "}
+            Name{" "}
             <span className="text-foreground/55 normal-case tracking-normal">
               (what callers will hear)
             </span>
@@ -151,7 +152,7 @@ export default function CreateAgentSection({
         ) : (
           <Plus className="w-3.5 h-3.5" />
         )}
-        Create agent
+        {isPersonal ? "Create personal assistant" : "Create assistant or agent"}
       </ShadButton>
     </motion.div>
   );

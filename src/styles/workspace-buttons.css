@@ -1,11 +1,12 @@
 /* Wireline workspace controls: compact, high-legibility, and source-aligned.
- * Aligned to the shared Wireline token manifest and live runtime primitives.
- * Uses semantic tokens for colors, radius, elevation, spacing, and interaction states.
- * All components are intended to preserve strong contrast, restrained motion, and consistent operator-grade UI behavior.
+ * Canonical classes: .studio-primary-button / .studio-secondary-button (precision-studio.css).
+ * These aliases remain for legacy markup and external references.
  */
 
 .workspace-btn-primary,
-.workspace-btn-secondary {
+.workspace-btn-secondary,
+.studio-primary-button,
+.studio-secondary-button {
   display: inline-flex;
   min-height: 40px;
   align-items: center;
