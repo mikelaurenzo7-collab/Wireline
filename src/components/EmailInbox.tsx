@@ -30,6 +30,18 @@ function normalizeThread(row: Record<string, unknown>): EmailThread {
   };
 }
 
+function formatTimestamp(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export default function EmailInbox({ embedded = false }: { embedded?: boolean }) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,8 +82,8 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
   };
 
   const frameClass = embedded
-    ? "flex h-full min-h-0 flex-col bg-surface"
-    : "min-h-screen bg-surface px-6 py-8";
+    ? "flex h-full min-h-0 flex-col bg-background"
+    : "min-h-screen bg-background px-5 py-8 sm:px-6";
 
   if (loading) {
     return (
@@ -83,26 +95,26 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   if (threads.length === 0) {
     return (
-      <section className={`${frameClass} grid place-items-center px-6 text-center`}>
-        <div className="max-w-md">
-          <span className="mx-auto grid size-12 place-items-center rounded-xl bg-surface-container-low text-primary">
+      <section className={`${frameClass} grid place-items-center px-5 text-center`}>
+        <div className="studio-card w-full max-w-md px-6 py-10 sm:px-8">
+          <span className="mx-auto grid size-12 place-items-center rounded-[var(--radius-xl)] bg-muted text-primary">
             <Mail className="size-5" />
           </span>
-          <p className="mt-5 wl-label">Email</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-on-surface">No threads yet</h2>
-          <p className="mt-3 text-sm leading-6 text-on-surface-variant">
+          <p className="studio-kicker mt-5">Email</p>
+          <h2 className="wl-section-title mt-2">No threads yet</h2>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
             Connect an email account, then Wireline can bring conversations, recaps, and follow-ups into one place.
           </p>
-          {error ? <p className="mt-3 text-sm text-error">{error}</p> : null}
+          {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link to="/actions" className="inline-flex min-h-10 items-center rounded-md bg-primary px-4 text-sm font-semibold text-white">
+            <Link to="/connections" className="studio-primary-button">
               Open connections
             </Link>
             <button
               type="button"
               onClick={() => void syncInbox()}
               disabled={syncing}
-              className="inline-flex min-h-10 items-center gap-2 rounded-md border border-outline-variant bg-surface px-4 text-sm font-medium text-on-surface disabled:opacity-60"
+              className="studio-secondary-button"
             >
               {syncing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
               Sync inbox
@@ -115,33 +127,34 @@ export default function EmailInbox({ embedded = false }: { embedded?: boolean })
 
   return (
     <section className={`${frameClass} min-h-0`}>
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-outline-variant px-5 py-4">
-        <div>
-          <p className="wl-label">Conversations</p>
-          <h2 className="mt-1 text-lg font-semibold text-on-surface">Inbox</h2>
-        </div>
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <p className="text-sm text-muted-foreground">
+          {threads.length} conversation{threads.length === 1 ? "" : "s"}
+        </p>
         <button
           type="button"
           onClick={() => void syncInbox()}
           disabled={syncing}
-          className="inline-flex min-h-9 items-center gap-2 rounded-md border border-outline-variant bg-surface px-3 text-sm font-medium text-on-surface disabled:opacity-60"
+          className="studio-secondary-button min-h-9 px-3 text-sm"
         >
           {syncing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Sync
         </button>
       </header>
-      {error ? <p className="px-5 pt-4 text-sm text-error">{error}</p> : null}
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      {error ? <p className="px-5 pt-4 text-sm text-destructive">{error}</p> : null}
+      <div className="wl-scroll min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
         <ul className="space-y-2" aria-label="Email threads">
           {threads.map((thread) => (
             <li key={thread.id}>
-              <article className="rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="truncate text-sm font-semibold text-on-surface">{thread.subject}</p>
-                  {thread.lastMessageAt ? <time className="shrink-0 text-xs text-on-surface-variant">{thread.lastMessageAt}</time> : null}
+              <article className="studio-card px-4 py-3.5 sm:px-5">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 truncate text-sm font-semibold text-foreground">{thread.subject}</p>
+                  {thread.lastMessageAt ? (
+                    <time className="shrink-0 text-xs text-muted-foreground">{formatTimestamp(thread.lastMessageAt)}</time>
+                  ) : null}
                 </div>
-                <p className="mt-1 text-xs font-medium text-on-surface-variant">{thread.sender}</p>
-                <p className="mt-2 line-clamp-2 text-sm leading-5 text-on-surface-variant">{thread.summary}</p>
+                <p className="mt-1 text-xs font-medium text-muted-foreground">{thread.sender}</p>
+                <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">{thread.summary}</p>
               </article>
             </li>
           ))}
