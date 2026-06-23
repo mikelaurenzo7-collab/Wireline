@@ -18,8 +18,8 @@ const channels = [
   },
   {
     label: "Text",
-    title: "The update when it matters",
-    body: "Receive concise recaps, confirmations, and next steps without creating another inbox to manage.",
+    title: "Text that turns interest into action",
+    body: "Reply to inbound leads, qualify interest, book and confirm appointments, re-engage customers, and keep your team in the loop.",
     icon: MessageSquareText,
   },
 ];
@@ -38,8 +38,8 @@ export default function PrecisionLanding() {
             <p className="mt-5 text-[14px] font-semibold tracking-[.08em] text-primary sm:text-[16px]">
               Voice + Email + Text
             </p>
-            <p className="mx-auto mt-5 max-w-[620px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
-              Give Wireline the brief. It handles calls, inboxes, and follow-ups under your rules, then brings the outcome back to you.
+            <p className="mx-auto mt-5 max-w-[650px] text-[17px] leading-7 text-muted-foreground sm:text-[18px] sm:leading-8">
+              Give Wireline the brief. It handles calls, inboxes, and texts—from personal errands to leads, appointments, and customer follow-up—under your rules.
             </p>
             <div className="mx-auto mt-8 grid max-w-md gap-3 sm:max-w-none sm:grid-cols-2 sm:justify-center">
               <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
@@ -81,7 +81,7 @@ export default function PrecisionLanding() {
               Delegate the conversation. Keep the decision.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[16px] leading-7 text-muted-foreground">
-              Start with a pharmacy call, appointment scheduling, customer coverage, or lead follow-up. Expand when the job earns it.
+              Start with a pharmacy call, a text-back workflow for new leads, appointment confirmation, or customer coverage. Expand when the job earns it.
             </p>
             <div className="mt-7">
               <Link to="/for/personal" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
