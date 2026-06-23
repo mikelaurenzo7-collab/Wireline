@@ -2,13 +2,13 @@ import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Bot,
+  Cable,
   Database,
   Inbox,
   LayoutDashboard,
   Menu,
   PenLine,
   Settings,
-  Workflow,
   X,
 } from "lucide-react";
 import WirelineMark from "./brand/WirelineMark";
@@ -18,7 +18,7 @@ const primaryNavigation = [
   { href: "/agents", label: "Assistants", icon: Bot },
   { href: "/studio", label: "Studio", icon: PenLine },
   { href: "/knowledge", label: "Knowledge", icon: Database },
-  { href: "/actions", label: "Connections", icon: Workflow },
+  { href: "/connections", label: "Connections", icon: Cable },
   { href: "/inbox", label: "Inbox", icon: Inbox },
 ] as const;
 
