@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, CreditCard, Mic, Phone, ShieldCheck } from "lucide-react";
+import { ArrowRight, CreditCard, Mic, Phone, ShieldCheck, Users } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 
 const sections = [
@@ -8,6 +8,12 @@ const sections = [
     title: "Plan & billing",
     detail: "Review your plan, payment details, invoices, and upgrades in one place.",
     href: "/settings/billing",
+  },
+  {
+    icon: Users,
+    title: "Team & roster",
+    detail: "Provision business seats, manage roles, and send workspace invitations.",
+    href: "/settings/team",
   },
   {
     icon: Phone,
