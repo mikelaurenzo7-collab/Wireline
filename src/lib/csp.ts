@@ -1,33 +1,10 @@
-/**
- * Content Security Policy utilities.
- *
- * Shared between server.ts (sets headers) and the test suite (assertions).
- * Keep logic here — never duplicate in individual route files.
- */
 import { randomBytes } from "node:crypto";
 
-/**
- * SHA-256 hashes of the static inline <script> blocks in index.html.
- * Production CSP is nonce-less for the static SPA shell (Vercel serves a
- * static index.html — there is no per-request SSR to inject a nonce), so the
- * inline boot scripts are allowlisted by content hash instead. If you edit any
- * of these inline scripts, recompute the hash (the browser console prints the
- * expected `sha256-…` on mismatch) and update it here — `csp.test.ts` and the
- * `csp-inventory` baseline guard against silent drift.
- *
- *   1. Plausible custom-event helper (`window.plausible` queue shim)
- *   2. Meta Pixel + Google Tag Manager production loader
- */
 export const INLINE_SCRIPT_HASHES = [
   "'sha256-LTkUOuO/95lht1SHJYGSEJ8IcO6rX2Pf7vdiXrzQWq4='",
   "'sha256-Vcsf9wxY50I2SDxzI15Jg/dr+K5+UQ99CH+PegNnoCo='",
 ] as const;
 
-/**
- * Marketing/analytics script origins the Meta Pixel + GTM loader injects.
- * Required on script-src so the tags GTM/Meta append at runtime are not
- * blocked (the inline loader itself is covered by INLINE_SCRIPT_HASHES).
- */
 export const MARKETING_SCRIPT_SRCS = [
   "https://plausible.io",
   "https://connect.facebook.net",
@@ -37,18 +14,12 @@ export const MARKETING_SCRIPT_SRCS = [
   "https://*.google-analytics.com",
 ] as const;
 
-/**
- * Build the CSP connect-src origins for the runtime.
- * fetch() is allowed to reach OpenAI, Vapi, Google, Microsoft Graph, and Stripe.
- *
- * In dev mode we also allow Vite's HMR transport (ws + http to any localhost
- * port) — Vite picks a random HMR port at boot, so the CSP can't pin a single
- * one. Production never reaches this branch.
- */
 export function buildConnectSrcs(isDev: boolean = false): string {
   const base = [
     "'self'",
     "https://api.openai.com",
+    "https://api.x.ai",
+    "wss://api.x.ai",
     "https://api.vapi.ai",
     "wss://api.vapi.ai",
     "https://accounts.google.com",
@@ -57,13 +28,7 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://login.microsoftonline.com",
     "https://graph.microsoft.com",
     "https://api.stripe.com",
-    // Plausible analytics beacons — the script loaded from plausible.io
-    // (see index.html) POSTs pageview/event data back to this origin.
-    // Without it every page logs a blocked-request CSP error.
     "https://plausible.io",
-    // Meta Pixel + Google Tag Manager / GA4 telemetry beacons. The pixel
-    // POSTs events to facebook.com; GA4 sends to *.google-analytics.com and
-    // *.analytics.google.com. img-src https: already covers tracking pixels.
     "https://connect.facebook.net",
     "https://www.facebook.com",
     "https://www.googletagmanager.com",
@@ -71,80 +36,34 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "https://*.analytics.google.com",
     "https://stats.g.doubleclick.net",
   ];
-  if (isDev) {
-    // Vite HMR opens a WebSocket on a port it picks at startup. Allow the
-    // dev origin (and ws://) so the dev shell doesn't spam CSP warnings.
-    base.push("ws://localhost:*", "http://localhost:*", "ws://127.0.0.1:*");
-  }
+  if (isDev) base.push("ws://localhost:*", "http://localhost:*", "ws://127.0.0.1:*");
   return base.join(" ");
 }
 
-/**
- * Build a complete CSP header string.
- *
- * @param isDev    - When true (Vite dev mode), include `'unsafe-inline'` and
- *                   `'unsafe-eval'` on `script-src` for HMR. Never pass true
- *                   in production.
- * @param nonce    - Optional per-request URL-safe base64 nonce. When supplied
- *                   in prod mode, `script-src` becomes `'self' 'nonce-{nonce}'`
- *                   instead of just `'self'`. Callers must also add
- *                   `nonce="${nonce}"` to every inline `<script>` tag.
- * @param connectSrcs - Pre-built connect-src string. Defaults to a minimal
- *                      self-only value if not provided (useful in tests).
- */
 export function buildCSP(isDev: boolean, nonce?: string, connectSrcs = "'self'"): string {
-  // In dev keep 'unsafe-inline' + 'unsafe-eval' for Vite HMR.
-  // In prod, OAuth callback pages receive a per-request nonce so their one
-  // inline postMessage script is allowed without 'unsafe-inline' being global.
-  // plausible.io is allowlisted in both modes so the analytics script in
-  // index.html loads instead of being blocked with a CSP console error.
-  // Inline boot-script hashes + marketing tag origins are allowed in every
-  // production branch so the static SPA shell, OAuth callback pages, and
-  // marketing pages all execute the same index.html inline scripts cleanly.
   const inlineHashes = INLINE_SCRIPT_HASHES.join(" ");
   const marketingSrcs = MARKETING_SCRIPT_SRCS.join(" ");
-  const scriptSrc = isDev
-    ? `'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io`
-    : nonce
-      ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}`
-      : `'self' ${inlineHashes} ${marketingSrcs}`;
-
-  // style-src-elem blocks injected <style> tags (XSS). style-src-attr allows
-  // library-generated style="" attributes (Framer Motion, Recharts) without
-  // permitting arbitrary inline <style> blocks in HTML.
-  const styleSrcElem = isDev
-    ? "'self' 'unsafe-inline' https://fonts.googleapis.com"
-    : "'self' https://fonts.googleapis.com";
-  const styleSrcAttr = "'unsafe-inline'";
-
+  const scriptSrc = isDev ? "'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io" : nonce ? `'self' 'nonce-${nonce}' ${inlineHashes} ${marketingSrcs}` : `'self' ${inlineHashes} ${marketingSrcs}`;
+  const styleSrcElem = isDev ? "'self' 'unsafe-inline' https://fonts.googleapis.com" : "'self' https://fonts.googleapis.com";
   return [
-    `default-src 'self'`,
+    "default-src 'self'",
     `script-src ${scriptSrc}`,
     `style-src-elem ${styleSrcElem}`,
-    `style-src-attr ${styleSrcAttr}`,
-    `img-src 'self' data: blob: https:`,
-    `font-src 'self' data: https://fonts.gstatic.com`,
+    "style-src-attr 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src ${connectSrcs}`,
-    `media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io`,
-    `worker-src 'self' blob:`,
-    `frame-src 'self' blob:`,
-    `frame-ancestors 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
+    "media-src 'self' blob: https://api.elevenlabs.io https://cdn.elevenlabs.io",
+    "worker-src 'self' blob:",
+    "frame-src 'self' blob:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
   ].join("; ");
 }
 
-/**
- * Generate a cryptographically random URL-safe base64 nonce for CSP script
- * tags. Uses base64url encoding (RFC 4648 §5) so the nonce contains only
- * A-Z, a-z, 0-9, `-`, and `_` — safe for HTML attributes and HTTP headers
- * without additional escaping.
- */
 export function generateCspNonce(): string {
   const nonce = randomBytes(16).toString("base64url");
-  // Defensive: base64url output must only contain URL-safe characters.
-  if (!/^[A-Za-z0-9_-]+$/.test(nonce)) {
-    throw new Error("generateCspNonce: unexpected character in nonce — this is a bug");
-  }
+  if (!/^[A-Za-z0-9_-]+$/.test(nonce)) throw new Error("generateCspNonce: unexpected character");
   return nonce;
 }
