@@ -21,7 +21,7 @@ const settingsDestinations = [
     href: "/connections",
     icon: Cable,
     label: "Connections",
-    description: "Review the accounts and tools your personal assistants and business agents can use.",
+    description: "Review the accounts and tools your assistants can use.",
   },
 ] as const;
 
@@ -39,17 +39,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell eyebrow="Workspace controls" title="Settings" contentClassName="py-6">
+    <WorkspaceShell eyebrow="Workspace" title="Settings" contentClassName="py-6">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-8">
         <section className="studio-card">
           <p className="studio-kicker">Account</p>
           <div className="mt-4 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <h2 className="truncate font-[var(--wl-font-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
-                {displayName}
-              </h2>
+              <h2 className="wl-section-title truncate">{displayName}</h2>
               {user?.email ? <p className="mt-1 text-sm text-muted-foreground">{user.email}</p> : null}
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              <p className="wl-page-copy mt-3">
                 Your Wireline session is protected with secure, server-managed authentication.
               </p>
             </div>
@@ -57,7 +55,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleSignOut}
               disabled={signingOut}
-              className="studio-secondary-button shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+              className="studio-secondary-button shrink-0"
             >
               <LogOut size={16} />
               {signingOut ? "Signing out…" : "Sign out"}
@@ -66,26 +64,22 @@ export default function SettingsPage() {
         </section>
 
         <section>
-          <div className="mb-3">
-            <p className="studio-kicker">Workspace</p>
-            <h2 className="mt-1 font-[var(--wl-font-display)] text-xl font-semibold tracking-[-.03em] text-foreground">
-              Keep your operating system in order
-            </h2>
+          <div className="mb-4">
+            <p className="studio-kicker">Workspace controls</p>
+            <h2 className="wl-section-title mt-2">The essentials, in one place.</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {settingsDestinations.map(({ href, icon: Icon, label, description }) => (
               <Link
                 key={href}
                 to={href}
-                className="studio-card group flex min-h-48 flex-col justify-between transition hover:border-primary/45 hover:bg-secondary active:scale-[0.99]"
+                className="studio-card wl-card-action group flex min-h-48 flex-col justify-between"
               >
-                <span className="grid size-10 place-items-center rounded-[var(--radius)] bg-accent text-primary">
+                <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                   <Icon size={19} />
                 </span>
                 <div className="mt-8">
-                  <h3 className="font-[var(--wl-font-display)] text-base font-semibold text-foreground">
-                    {label}
-                  </h3>
+                  <h3 className="wl-card-title">{label}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
                   <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                     Open {label.toLowerCase()} <ArrowRight size={15} />
@@ -96,15 +90,13 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
+        <section className="studio-card">
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
             <div>
-              <h2 className="font-[var(--wl-font-display)] text-base font-semibold text-foreground">
-                Built for controlled access
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Wireline keeps billing, provider credentials, webhooks, and account-level changes on the server. Only connect the systems an assistant needs to complete an approved task.
+              <h2 className="wl-card-title">Built for controlled access</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Wireline keeps billing, provider credentials, webhooks, and account-level changes on the server. Connect only the systems an assistant needs for an approved task.
               </p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-primary">
                 <Link to="/security" className="inline-flex items-center gap-1.5 hover:text-[color:var(--wl-accent-hover)]">
