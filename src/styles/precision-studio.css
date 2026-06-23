@@ -1,4 +1,9 @@
-/* Precision Account Holder Studio composition. */
+/* Precision Account Holder Studio composition.
+ * Aligned to Ametrine Precision token manifest (brand-colors.ts) and professional enterprise standards.
+ * Uses tonal layering and restrained elevation. No frosted or glowing treatments.
+ * All values reference design system tokens for consistency, AAA contrast, and governance.
+ */
+
 .wl-stitch-studio-glow {
   display: none;
 }
