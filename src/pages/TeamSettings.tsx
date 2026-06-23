@@ -73,8 +73,7 @@ export default function TeamSettings() {
 
   return (
     <WorkspaceShell
-      eyebrow="Administration"
-      title="Team & roster"
+      title="Team"
       contentClassName="pt-6"
       action={
         <Link to="/settings" className="workspace-btn-secondary px-4 py-2.5">

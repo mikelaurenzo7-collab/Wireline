@@ -51,7 +51,7 @@ export default function Compare() {
               to="/pricing"
               className="marketing-btn-primary min-h-12 px-6 text-[15px] font-semibold"
             >
-              Start at $9 <ArrowRight className="h-4 w-4" />
+              Start free <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/showcase"

@@ -56,7 +56,7 @@ export default function WorkspaceShell({
   contentClassName = "py-6",
 }: {
   title: string;
-  eyebrow: string;
+  eyebrow?: string;
   action?: ReactNode;
   children: ReactNode;
   contentClassName?: string;

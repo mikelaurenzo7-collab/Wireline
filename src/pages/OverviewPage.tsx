@@ -21,8 +21,7 @@ export default function OverviewPage() {
 
   return (
     <WorkspaceShell
-      title="Workspace overview"
-      eyebrow="Your day"
+      title="Overview"
       action={
         <Link to="/studio?create=1" className="studio-primary-button text-sm">
           <Plus size={16} />
@@ -35,8 +34,7 @@ export default function OverviewPage() {
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,.8fr)]">
           <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary">
             <div>
-              <p className="studio-kicker">Your coverage</p>
-              <h2 className="mt-3 max-w-[18ch] font-[var(--wl-font-display)] text-3xl font-semibold tracking-[-.03em] text-foreground sm:text-4xl">
+              <h2 className="max-w-[18ch] font-[var(--wl-font-display)] text-3xl font-semibold tracking-[-.03em] text-foreground sm:text-4xl">
                 Give Wireline the calls and messages that should not wait.
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
@@ -123,12 +121,9 @@ export default function OverviewPage() {
 
         <section className="studio-card">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
-            <div>
-              <p className="studio-kicker">Assistants</p>
-              <h2 className="mt-1 font-[var(--wl-font-display)] text-xl font-semibold text-foreground">
-                Ready to work
-              </h2>
-            </div>
+            <h2 className="font-[var(--wl-font-display)] text-xl font-semibold text-foreground">
+              Assistants
+            </h2>
             <Link to="/agents" className="studio-secondary-button text-sm">
               Manage all
             </Link>
@@ -137,8 +132,8 @@ export default function OverviewPage() {
             <div className="mt-5 flex items-start gap-3 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wl-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-warning)_8%,var(--card))] p-4 text-sm text-foreground">
               <CircleAlert className="mt-0.5 size-4 shrink-0 text-[var(--wl-status-warning)]" />
               <p>
-                Workspace status is partially unavailable. Assistant data shown here may be stale until
-                the connection recovers.
+                Workspace status is partially unavailable. Assistant data shown here may be stale
+                until the connection recovers.
               </p>
             </div>
           ) : null}

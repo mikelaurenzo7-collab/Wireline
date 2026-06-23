@@ -16,8 +16,7 @@ export default function SalesforceIntegrationPage() {
 
   return (
     <WorkspaceShell
-      eyebrow="Connections"
-      title="Salesforce Integration"
+      title="Salesforce"
       contentClassName="pt-5"
       action={
         <div className="flex items-center gap-3">

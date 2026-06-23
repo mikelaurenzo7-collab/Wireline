@@ -9,7 +9,6 @@ export default function ActionsPage() {
 
   return (
     <WorkspaceShell
-      eyebrow="Your accounts & tools"
       title="Connections"
       contentClassName="pt-5"
       action={

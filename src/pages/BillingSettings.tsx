@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, Receipt, ShieldCheck, Banknote, Building2 } from "lucide-react";
+import { ArrowLeft, Receipt, ShieldCheck, Banknote, Building2 } from "lucide-react";
 import WorkspaceShell from "../components/WorkspaceShell";
 import StripeBillingCard from "../components/StripeBillingCard";
 
 export default function BillingSettings() {
   return (
     <WorkspaceShell
-      eyebrow="Administration"
-      title="Enterprise Billing & Plan"
+      title="Billing"
       contentClassName="pt-6"
       action={
         <Link to="/settings" className="workspace-btn-secondary px-4 py-2.5">
@@ -56,11 +55,6 @@ export default function BillingSettings() {
 
         {/* Primary Stripe Controller */}
         <div className="mx-auto max-w-[1080px]">
-          <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
-            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-brand" /> Active Subscription
-            </h2>
-          </div>
           <StripeBillingCard />
         </div>
 
