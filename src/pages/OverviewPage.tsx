@@ -22,7 +22,7 @@ export default function OverviewPage() {
   return (
     <WorkspaceShell
       title="Workspace overview"
-      eyebrow="Wireline"
+      eyebrow="Your day"
       action={
         <Link to="/studio?create=1" className="studio-primary-button text-sm">
           <Plus size={16} />
@@ -31,18 +31,17 @@ export default function OverviewPage() {
       }
       contentClassName="py-6"
     >
-      <div className="flex w-full max-w-none flex-col gap-6 pb-8">
+      <div className="flex w-full max-w-none flex-col gap-5 pb-8">
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,.8fr)]">
-          <div className="studio-card flex min-h-[220px] flex-col justify-between border-primary/25 bg-secondary">
+          <div className="wl-overview-hero studio-card flex flex-col justify-between border-primary/20 bg-secondary">
             <div>
-              <p className="studio-kicker">Communications, covered</p>
+              <p className="studio-kicker">Your coverage</p>
               <h2 className="mt-3 max-w-[18ch] font-[var(--wl-font-display)] text-3xl font-semibold tracking-[-.03em] text-foreground sm:text-4xl">
-                See what Wireline is handling and what needs you.
+                Give Wireline the calls and messages that should not wait.
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                Start with the calls and messages that interrupt your day. Add business setup,
-                connected accounts, and specialist assistants only when they make the outcome
-                clearer.
+                Start with one useful task. Add knowledge, connected accounts, and deeper business
+                setup only when they make the outcome better.
               </p>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -50,12 +49,12 @@ export default function OverviewPage() {
                 Create an assistant <ArrowRight size={16} />
               </Link>
               <Link to="/actions" className="studio-secondary-button text-sm">
-                Connect your tools
+                Connect an account
               </Link>
             </div>
           </div>
 
-          <aside className="studio-card flex min-h-[220px] flex-col justify-between">
+          <aside className="wl-overview-status studio-card flex flex-col justify-between">
             <div>
               <p className="studio-kicker">Workspace status</p>
               <div className="mt-5 flex items-baseline gap-2">
@@ -68,56 +67,56 @@ export default function OverviewPage() {
               </div>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 {degraded
-                  ? "Some workspace data could not be refreshed. Check connections before depending on an assistant."
+                  ? "Some workspace data could not be refreshed. Check your connections before depending on an assistant."
                   : agents.length
-                    ? "Your active configuration is ready to review, improve, and run."
-                    : "Start with one useful use case. You can keep it personal or represent a business."}
+                    ? "Your assistants are ready to review, improve, and use."
+                    : "Start with one useful task. You can keep it personal or add business context later."}
               </p>
             </div>
             <Link
               to="/agents"
               className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[color:var(--wl-accent-hover)]"
             >
-              View assistants <ArrowRight size={15} />
+              Review assistants <ArrowRight size={15} />
             </Link>
           </aside>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-3">
-          <Link to="/inbox" className="studio-card group block text-left">
+          <Link to="/inbox" className="wl-overview-action studio-card group block text-left">
             <Radio className="size-5 text-primary" />
             <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-              Review activity
+              Review what happened
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              See conversations, handoffs, and replies without losing the surrounding context.
+              Read conversations, handoffs, and replies without losing their context.
             </p>
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
               Open inbox <ArrowRight size={15} />
             </span>
           </Link>
-          <Link to="/knowledge" className="studio-card group block text-left">
+          <Link to="/knowledge" className="wl-overview-action studio-card group block text-left">
             <FileText className="size-5 text-primary" />
             <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-              Strengthen knowledge
+              Keep answers current
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Give assistants current facts, documents, policies, and useful boundaries.
+              Give assistants facts, documents, policies, and boundaries they can rely on.
             </p>
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
               Open knowledge <ArrowRight size={15} />
             </span>
           </Link>
-          <Link to="/actions" className="studio-card group block text-left">
+          <Link to="/actions" className="wl-overview-action studio-card group block text-left">
             <Cable className="size-5 text-primary" />
             <h2 className="mt-5 font-[var(--wl-font-display)] text-lg font-semibold text-foreground">
-              Connect actions
+              Connect useful actions
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Securely connect the calendars, inboxes, and systems that make each assistant useful.
+              Connect calendars, inboxes, and systems only when an assistant needs them.
             </p>
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-              Open connections <ArrowRight size={15} />
+              Review connections <ArrowRight size={15} />
             </span>
           </Link>
         </section>
@@ -127,7 +126,7 @@ export default function OverviewPage() {
             <div>
               <p className="studio-kicker">Assistants</p>
               <h2 className="mt-1 font-[var(--wl-font-display)] text-xl font-semibold text-foreground">
-                Your active configurations
+                Ready to work
               </h2>
             </div>
             <Link to="/agents" className="studio-secondary-button text-sm">
@@ -138,7 +137,7 @@ export default function OverviewPage() {
             <div className="mt-5 flex items-start gap-3 rounded-[var(--radius-lg)] border border-[color:color-mix(in_srgb,var(--wl-status-warning)_35%,var(--border))] bg-[color:color-mix(in_srgb,var(--wl-status-warning)_8%,var(--card))] p-4 text-sm text-foreground">
               <CircleAlert className="mt-0.5 size-4 shrink-0 text-[var(--wl-status-warning)]" />
               <p>
-                Workspace status is partially unavailable. Agent data shown here may be stale until
+                Workspace status is partially unavailable. Assistant data shown here may be stale until
                 the connection recovers.
               </p>
             </div>
@@ -162,13 +161,13 @@ export default function OverviewPage() {
                         {agent.channel || "voice"}
                       </span>
                       {agent.is_business_agent ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#E6DEFF] px-2 py-0.5 text-[9px] font-semibold text-[#451EBB] border border-[#C9C4D7]/40">
-                          <Briefcase size={9} className="text-[#5D3FD3]" />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-accent px-2 py-0.5 text-[9px] font-semibold text-primary">
+                          <Briefcase size={9} />
                           Business
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#EFF4FF] px-2 py-0.5 text-[9px] font-semibold text-[#0B1C30] border border-[#C9C4D7]/30">
-                          <User size={9} className="text-[#5D3FD3]" />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 text-[9px] font-semibold text-foreground">
+                          <User size={9} className="text-primary" />
                           Personal
                         </span>
                       )}
