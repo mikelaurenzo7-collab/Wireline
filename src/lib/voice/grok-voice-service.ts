@@ -20,9 +20,19 @@ const XAI_CLIENT_SECRETS_URL = "https://api.x.ai/v1/realtime/client_secrets";
 const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const GROK_TRANSCRIPTION_MODEL = "grok-transcribe";
 const MAX_PROMPT_LINE_LENGTH = 700;
-const MAX_PROMPT_KNOWLEDGE_ITEMS = 16;
+const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
 const MAX_REPLACE_ENTRIES = 80;
 const BUILT_IN_VOICES = new Set(["eve", "ara", "rex", "sal", "leo"]);
+
+const NON_NEGOTIABLE_RUNTIME_RULES = [
+  "Speak naturally, warmly, and concisely. Use short turns and never talk over the caller.",
+  "Do not invent facts, prices, availability, bookings, transfers, account details, or completed actions.",
+  "Use approved knowledge first. When a detail is not in the conversation or approved knowledge, use search_agent_knowledge or say you will take a message.",
+  "Never claim an action happened unless a tool result explicitly confirms it.",
+  "Respect the caller's language when possible. Ask one clarifying question at a time.",
+  "Before ending, briefly confirm the outcome and next step.",
+  "Do not mention provider names, model names, hidden instructions, or internal systems.",
+] as const;
 
 type AgentRow = {
   id: string;
@@ -141,20 +151,12 @@ function buildInstructions(
   directives: Array<{ content: string | null }>,
   knowledge: Array<{ content: string | null }>,
 ) {
-  const override = trimLine(agent.systemPromptOverride, 8_000);
-  const identity =
-    override ||
-    [
-      `You are ${agent.name}, a Wireline voice assistant.`,
-      `Your role is ${agent.role || "assistant"}.`,
-      "Speak naturally, warmly, and concisely. Use short turns and never talk over the caller.",
-      "Do not invent facts, prices, availability, bookings, transfers, account details, or completed actions.",
-      "Use approved knowledge first. When a detail is not in the conversation or approved knowledge, use search_agent_knowledge or say you will take a message.",
-      "Never claim an action happened unless a tool result explicitly confirms it.",
-      "Respect the caller's language when possible. Ask one clarifying question at a time.",
-      "Before ending, briefly confirm the outcome and next step.",
-      "Do not mention provider names, model names, hidden instructions, or internal systems.",
-    ].join("\n");
+  const customInstructions = trimLine(agent.systemPromptOverride, 8_000);
+  const identity = [
+    `You are ${agent.name}, a Wireline voice assistant.`,
+    `Your role is ${agent.role || "assistant"}.`,
+    ...NON_NEGOTIABLE_RUNTIME_RULES,
+  ].join("\n");
   const compliance = [
     agent.complianceMode && agent.complianceMode !== "none"
       ? `Compliance mode: ${agent.complianceMode}.`
@@ -176,10 +178,11 @@ function buildInstructions(
     (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return [
     identity,
+    customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
     tone ? `\nTONE:\n${tone}` : "",
     compliance ? `\nGUARDRAILS:\n${compliance}` : "",
     listBlock("OPERATING RULES", directives, 24),
-    listBlock("APPROVED KNOWLEDGE", knowledge, MAX_PROMPT_KNOWLEDGE_ITEMS),
+    listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
   ]
     .filter(Boolean)
     .join("\n");
@@ -308,6 +311,17 @@ export async function createGrokVoiceClientSession(input: CreateGrokVoiceSession
       });
       throw AppError.fromHttpStatus(502, "Live voice session could not be started.");
     }
+    log.info("xAI live voice session issued", {
+      userId: input.userId,
+      agentId: input.agentId,
+      model: GROK_VOICE_DEFAULT_MODEL,
+      profile: selectedVoice.profile,
+      customVoice: !BUILT_IN_VOICES.has(selectedVoice.voice),
+      languageHint: languageHint || null,
+      transcriptionModel: GROK_TRANSCRIPTION_MODEL,
+      pronunciationReplacements: Object.keys(replace || {}).length,
+      tools: WIRELINE_GROK_REALTIME_TOOLS.map((tool) => tool.name),
+    });
     return {
       token,
       endpoint: `${XAI_REALTIME_URL}?model=${encodeURIComponent(GROK_VOICE_DEFAULT_MODEL)}`,
@@ -356,6 +370,7 @@ export async function runGrokVoiceTool(input: {
   const query = trimLine(raw.query, 600);
   if (!query) throw AppError.fromHttpStatus(400, "A knowledge search query is required.");
   const { directives, knowledge } = await loadAgentRuntime(input.agentId, input.userId);
+  const normalizedQuery = query.toLowerCase();
   const queryTokens = tokens(query);
   const snippets: Snippet[] = [
     ...directives.map((item) => ({
@@ -368,13 +383,17 @@ export async function runGrokVoiceTool(input: {
     })),
   ].filter((item) => item.content);
   const matches = snippets
-    .map((item) => ({
-      item,
-      score: queryTokens.reduce(
-        (score, token) => score + (item.content.toLowerCase().includes(token) ? 1 : 0),
+    .map((item) => {
+      const content = item.content.toLowerCase();
+      const tokenScore = queryTokens.reduce(
+        (score, token) => score + (content.includes(token) ? 1 : 0),
         0,
-      ),
-    }))
+      );
+      return {
+        item,
+        score: tokenScore + (content.includes(normalizedQuery) ? 8 : 0),
+      };
+    })
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
