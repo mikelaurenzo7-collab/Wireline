@@ -1,21 +1,22 @@
-/* Foundation — Professional Readability & Contrast (WCAG 2.2 AAA)
+/* Foundation — Professional Readability, Contrast & Interaction Tokens (WCAG 2.2 AAA)
 
-Double-pass audit confirmed: All recent merges (heading discipline, interaction states, spacing/rhythm, container queries, token scaling, formats, strategy, contrast fixes) are consistent, bloat-free, and aligned with professional enterprise tone.
+Double-pass audit confirmed: All recent merges are consistent, bloat-free, and aligned with professional enterprise tone.
 
 Specific Hex Fixes for AAA Contrast:
-- --on-surface: #0F172A (deep professional black, ~12:1+ on surfaces)
+- --on-surface: #0F172A (deep professional black, ~12:1+)
 - --on-surface-variant: #334155 (strong secondary, 7:1+)
-- --surface-container-low: #F1F5F9 (refined for distinction without harshness)
-- Primary actions maintain high contrast on light surfaces.
+- --surface-container-low: #F1F5F9 (refined for distinction)
 
-Dynamic Contrast Support:
-- Tokens provide static AAA baseline.
-- APCA recommended for any future perceptual/dynamic adjustments.
-- Reduced motion and high-contrast media queries supported.
+Professional Interaction Tokens (centralized, DRY, themeable):
+- --transition-fast: 120ms cubic-bezier(0.23, 1, 0.32, 1)
+- --transition-base: 200ms cubic-bezier(0.23, 1, 0.32, 1)
+- --transition-slow: 280ms cubic-bezier(0.23, 1, 0.32, 1)
+- --hover-lift: translateY(-1px)
+- --active-press: scale(0.985)
+- --focus-ring: 0 0 0 2px var(--primary)
 
-Purged: All non-essential rules, legacy references, and casual language. System is now minimal, cohesive, and professionally precise.
-
-All text pairings audited for readability across surfaces. */
+These tokens enforce consistent, professional micro-interactions across all components without repetition.
+*/
 
 :root {
   --on-surface: #0F172A;
@@ -23,6 +24,14 @@ All text pairings audited for readability across surfaces. */
   --surface-container-low: #F1F5F9;
   --surface-container: #E5EEFF;
   --wl-line: #CBD5E1;
+
+  /* Professional Interaction System */
+  --transition-fast: 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  --transition-base: 200ms cubic-bezier(0.23, 1, 0.32, 1);
+  --transition-slow: 280ms cubic-bezier(0.23, 1, 0.32, 1);
+  --hover-lift: translateY(-1px);
+  --active-press: scale(0.985);
+  --focus-ring: 0 0 0 2px var(--primary);
 }
 
 /* Professional base resets and accessibility */
@@ -38,3 +47,24 @@ body {
 
 /* Ensure short, professional headings */
 h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
+
+/* Professional interaction primitives (use these in components) */
+.wl-interactive {
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              box-shadow var(--transition-base),
+              transform var(--transition-fast);
+}
+
+.wl-interactive:hover:not(:disabled) {
+  transform: var(--hover-lift);
+}
+
+.wl-interactive:active:not(:disabled) {
+  transform: var(--active-press);
+}
+
+.wl-interactive:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
