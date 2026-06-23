@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2, Mail, MessageSquareText, PhoneCall, Play } from "lucide-react";
 import { Link } from "react-router-dom";
+import MarketingFooter from "./MarketingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 
 const channels = [
@@ -30,7 +31,7 @@ export default function PrecisionLanding() {
       <main id="main-content" className="pt-16" tabIndex={-1}>
         <section className="border-b border-border px-5 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="wl-measure mx-auto text-center">
-            <p className="wl-stitch-label text-primary">Personal &amp; business AI assistants</p>
+            <p className="wl-overline text-primary">Personal + business AI assistants</p>
             <h1 className="mx-auto mt-4 max-w-[780px] text-[clamp(38px,7vw,68px)] font-semibold leading-[1.02] tracking-[-.055em] text-foreground sm:mt-5">
               Every conversation, handled.
             </h1>
@@ -41,17 +42,11 @@ export default function PrecisionLanding() {
               Give Wireline the brief. It handles calls, inboxes, and follow-ups under your rules, then brings the outcome back to you.
             </p>
             <div className="mx-auto mt-8 grid max-w-md gap-3 sm:max-w-none sm:grid-cols-2 sm:justify-center">
-              <Link
-                to="/signup"
-                className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
-              >
+              <Link to="/signup" className="marketing-btn-primary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
                 Create your assistant
                 <ArrowRight size={16} />
               </Link>
-              <Link
-                to="/showcase"
-                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
-              >
+              <Link to="/showcase" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
                 <Play size={15} /> Hear a demo
               </Link>
             </div>
@@ -71,10 +66,8 @@ export default function PrecisionLanding() {
             {channels.map(({ label, title, body, icon: Icon }) => (
               <article key={label} className="wl-stitch-card flex min-h-[220px] flex-col p-6 sm:p-7">
                 <Icon className="size-5 text-primary" aria-hidden="true" />
-                <p className="mt-5 text-[11px] font-semibold uppercase tracking-[.08em] text-primary">{label}</p>
-                <h2 className="mt-2 text-[clamp(22px,4vw,26px)] font-semibold leading-tight tracking-[-.03em] text-foreground">
-                  {title}
-                </h2>
+                <p className="wl-overline mt-5 text-primary">{label}</p>
+                <h2 className="wl-section-title mt-2 text-[clamp(22px,4vw,26px)]">{title}</h2>
                 <p className="mt-3 text-[15px] leading-6 text-muted-foreground">{body}</p>
               </article>
             ))}
@@ -83,7 +76,7 @@ export default function PrecisionLanding() {
 
         <section className="border-t border-border px-5 py-12 text-center sm:px-6 sm:py-16">
           <div className="wl-measure mx-auto">
-            <p className="wl-stitch-label">Start with one clear brief</p>
+            <p className="wl-overline">Start with one clear brief</p>
             <h2 className="mx-auto mt-3 max-w-2xl text-[clamp(28px,5vw,42px)] font-semibold leading-[1.08] tracking-[-.04em] text-foreground">
               Delegate the conversation. Keep the decision.
             </h2>
@@ -91,29 +84,14 @@ export default function PrecisionLanding() {
               Start with a pharmacy call, appointment scheduling, customer coverage, or lead follow-up. Expand when the job earns it.
             </p>
             <div className="mt-7">
-              <Link
-                to="/for/personal"
-                className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]"
-              >
+              <Link to="/for/personal" className="marketing-btn-secondary min-h-12 px-6 text-[13px] font-semibold uppercase tracking-[.05em]">
                 Explore how it works <ArrowRight size={15} />
               </Link>
             </div>
           </div>
         </section>
       </main>
-      <footer className="border-t border-border px-5 py-7 text-[13px] text-muted-foreground sm:px-6 sm:py-8">
-        <div className="wl-measure mx-auto flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
-          <span>
-            <strong className="text-foreground">Wireline</strong> · voice + email + text, handled
-          </span>
-          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 sm:justify-end">
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/privacy">Privacy</Link>
-            <Link to="/terms">Terms</Link>
-            <Link to="/support">Contact</Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

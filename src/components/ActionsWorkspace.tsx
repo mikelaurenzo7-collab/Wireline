@@ -99,14 +99,12 @@ function ToolGroup({
   onToggle: (tool: AgentToolName) => void;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
+    <section className="studio-card p-5">
       <header className="flex items-center gap-3 border-b border-border pb-4">
-        <span className="grid h-8 w-8 place-items-center rounded-sm bg-muted text-muted-foreground">
+        <span className="grid h-8 w-8 place-items-center rounded-[var(--radius-md)] bg-muted text-muted-foreground">
           <CircleDot size={16} />
         </span>
-        <h3 className="font-display text-[20px] font-semibold tracking-[-.01em] text-primary">
-          {title}
-        </h3>
+        <h3 className="wl-card-title text-base">{title}</h3>
       </header>
       <div className="mt-5 space-y-2">
         {tools.map((tool) => {
@@ -119,17 +117,13 @@ function ToolGroup({
               aria-pressed={active}
               disabled={disabled}
               onClick={() => onToggle(tool.name)}
-              className="wl-stitch-tool-row flex w-full items-start gap-3 rounded-md px-2 py-3 text-left disabled:opacity-50"
+              className="wl-stitch-tool-row flex w-full items-start gap-3 rounded-[var(--radius-md)] px-2 py-3 text-left disabled:opacity-50"
             >
-              <span
-                className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`}
-              >
+              <span className={`wl-stitch-tool-check mt-0.5 ${active ? "text-primary-foreground" : ""}`}>
                 {active ? <Check size={11} strokeWidth={3} /> : null}
               </span>
               <span>
-                <strong className="block text-[15px] font-medium text-foreground">
-                  {copy?.label || tool.label}
-                </strong>
+                <strong className="block text-[15px] font-medium text-foreground">{copy?.label || tool.label}</strong>
                 <small className="mt-1 block text-[14px] leading-5 text-muted-foreground">
                   {copy?.description || tool.description}
                 </small>
@@ -161,19 +155,19 @@ export default function ActionsWorkspace() {
             : Promise.resolve(null),
         ]);
         const statusBody = await safeJson(status);
-        if (!cancelled && status.ok && statusBody && typeof statusBody === "object")
+        if (!cancelled && status.ok && statusBody && typeof statusBody === "object") {
           setConnections(statusBody as ConnectionStatus);
+        }
         if (agentResponse) {
           const agentBody = (await safeJson(agentResponse)) as {
             agent?: { enabledTools?: AgentToolName[] };
           } | null;
-          if (!cancelled && agentResponse.ok)
-            setEnabledTools(
-              Array.isArray(agentBody?.agent?.enabledTools) ? agentBody.agent.enabledTools : [],
-            );
+          if (!cancelled && agentResponse.ok) {
+            setEnabledTools(Array.isArray(agentBody?.agent?.enabledTools) ? agentBody.agent.enabledTools : []);
+          }
         }
       } catch {
-        // Connection availability should never block editing the assistant's setup.
+        // Connection availability should not block editing an assistant's setup.
       }
     }
     void load();
@@ -216,19 +210,18 @@ export default function ActionsWorkspace() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="mb-5 flex shrink-0 flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-[24px] font-semibold tracking-[-.02em] text-primary">
-            Ways your assistant or agent can help
-          </h2>
-          <p className="mt-1 text-[14px] text-muted-foreground">
-            Choose only the actions this personal assistant or business agent should take.
+          <p className="studio-kicker">Assistant permissions</p>
+          <h2 className="wl-section-title mt-2">Choose how this assistant can help.</h2>
+          <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+            Turn on only the actions this assistant should take. You can change them at any time.
           </p>
         </div>
         <select
           value={agentId}
           onChange={(event) => setParams({ agent: event.target.value })}
-          className="h-10 max-w-[240px] rounded-md border border-border bg-card px-3 text-[14px]"
+          className="wl-agent-select max-w-[240px]"
           aria-label="Choose assistant or agent"
         >
           {agents.length ? (
@@ -258,10 +251,8 @@ export default function ActionsWorkspace() {
             ))}
           </div>
           {Object.keys(businessGroups).length ? (
-            <details className="mt-5 rounded-xl border border-border bg-card p-5 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]">
-              <summary className="cursor-pointer text-[15px] font-semibold text-foreground">
-                Business tools
-              </summary>
+            <details className="studio-card mt-5 p-5">
+              <summary className="cursor-pointer text-[15px] font-semibold text-foreground">Business tools</summary>
               <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
                 Optional controls for sales, customer records, teams, and commerce.
               </p>
@@ -280,7 +271,7 @@ export default function ActionsWorkspace() {
             </details>
           ) : null}
           {busy ? (
-            <p className="mt-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">
+            <p className="mt-4 inline-flex items-center gap-2 wl-overline">
               <Loader2 size={14} className="animate-spin" />
               Saving your choices
             </p>
@@ -288,11 +279,10 @@ export default function ActionsWorkspace() {
         </section>
 
         <aside className="mt-6 min-h-0 lg:mt-0">
-          <h2 className="font-display text-[24px] font-semibold tracking-[-.02em] text-primary">
-            Connected apps
-          </h2>
-          <p className="mt-1 text-[14px] leading-5 text-muted-foreground">
-            Connect the accounts and tools that make this assistant or agent more useful.
+          <p className="studio-kicker">Connected apps</p>
+          <h2 className="wl-section-title mt-2">Add context when it helps.</h2>
+          <p className="mt-2 text-[14px] leading-6 text-muted-foreground">
+            Connect only the accounts and tools that make this assistant more useful.
           </p>
           <div className="mt-5 space-y-3">
             {WORKSPACE_INTEGRATION_CATALOG.map((integration) => {
@@ -308,19 +298,12 @@ export default function ActionsWorkspace() {
                   ? "Available"
                   : "Connect";
               return (
-                <article
-                  className="flex min-h-[78px] items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-[0_12px_32px_-4px_rgba(93,63,211,0.08),0_4px_12px_rgba(93,63,211,0.04)]"
-                  key={integration.id}
-                >
+                <article className="studio-card flex min-h-[78px] items-center justify-between gap-3 p-4" key={integration.id}>
                   <div className="min-w-0">
-                    <h3 className="text-[15px] font-semibold">{integration.label}</h3>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[.05em] text-muted-foreground">
-                      {integration.detail}
-                    </p>
+                    <h3 className="wl-card-title">{integration.label}</h3>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{integration.detail}</p>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-sm px-2 py-1 font-mono text-[10px] uppercase tracking-[.05em] ${connected ? "bg-[color:var(--wl-accent-container)] text-[color:var(--wl-status-active)]" : "bg-muted text-muted-foreground"}`}
-                  >
+                  <span className={connected ? "wl-stitch-status-pill" : "inline-flex shrink-0 rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[.06em] text-muted-foreground"}>
                     {state}
                   </span>
                 </article>
