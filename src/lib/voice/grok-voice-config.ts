@@ -58,7 +58,8 @@ export const WIRELINE_GROK_REALTIME_TOOLS: readonly GrokRealtimeFunction[] = [
 ] as const;
 
 export function resolveWirelineVoiceProfile(role?: string | null): WirelineVoiceProfile {
-  return ROLE_TO_PROFILE[String(role || "").trim().toLowerCase()] || "balanced";
+  const normalizedRole = String(role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return ROLE_TO_PROFILE[normalizedRole] || "balanced";
 }
 
 export function resolveWirelineGrokVoice(role?: string | null): string {
