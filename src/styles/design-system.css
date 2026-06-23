@@ -59,6 +59,59 @@
 }
 
 /* ============================================
+   INTERACTION STATES — Unified across all components
+   ============================================ */
+
+/* Consistent focus for accessibility and clarity */
+:focus-visible {
+  outline: 2px solid var(--primary-container);
+  outline-offset: 2px;
+}
+
+/* Button & interactive element base behavior */
+button,
+.wl-button-primary,
+.studio-primary-button,
+.studio-secondary-button,
+.wl-input,
+input,
+textarea,
+select {
+  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+              background-color 0.15s ease,
+              border-color 0.15s ease,
+              box-shadow 0.15s ease;
+}
+
+/* Hover states - subtle lift + glow where appropriate */
+.wl-button-primary:hover,
+.studio-primary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-purple);
+}
+
+.wl-assistant-card:hover,
+.wl-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Active / pressed states */
+.wl-button-primary:active,
+.studio-primary-button:active,
+.wl-card:active {
+  transform: scale(0.985);
+}
+
+/* Input focus enhancement */
+.wl-input:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--primary-container);
+  box-shadow: 0 0 0 3px rgba(93, 63, 211, 0.12);
+}
+
+/* ============================================
    COMPONENT TOKENS — Ametrine Precision (Enhanced)
    ============================================ */
 
