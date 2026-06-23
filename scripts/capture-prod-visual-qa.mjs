@@ -1,5 +1,5 @@
 import { chromium } from "@playwright/test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://trywireline.com").replace(/\/$/, "");
@@ -145,6 +145,29 @@ async function signUp(page, viewportName, issues) {
   }
 }
 
+async function completeOnboardingIfNecessary(page, viewportName, issues) {
+  await page.waitForURL(/\/(overview|agents|studio|onboarding)(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
+  const url = page.url();
+  if (url.includes("/onboarding")) {
+    console.log("[Onboarding Bypass] Onboarding page detected, selecting default Front Desk template...");
+    const frontDeskBtn = page.getByRole("button", { name: /Select Front Desk/i }).first();
+    if (await frontDeskBtn.isVisible().catch(() => false)) {
+      await frontDeskBtn.click();
+      await page.waitForURL(/\/(overview|ops|studio|agents)(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
+      console.log("[Onboarding Bypass] Workspace template selection complete. Current URL:", page.url());
+      await settle(page);
+    } else {
+      issues.push({
+        viewport: viewportName,
+        route: "/onboarding",
+        mode: "authenticated",
+        kind: "flow",
+        detail: "Onboarding selection buttons not visible.",
+      });
+    }
+  }
+}
+
 function attachDiagnostics(page, viewportName, mode, issues) {
   page.on("console", (message) => {
     if (message.type() === "error" && !isBenignConsoleError(message.text())) {
@@ -193,25 +216,239 @@ const browser = await chromium.launch({ headless: true });
 const issues = [];
 let storageState = null;
 
+let currentTurn = 1;
+try {
+  const loopStateStr = await readFile("artifacts/qa-loop-state.json", "utf8");
+  const loopState = JSON.parse(loopStateStr);
+  if (loopState && typeof loopState.currentTurn === "number") {
+    currentTurn = loopState.currentTurn;
+  }
+} catch (e) {
+  // Ignore error if loop state file doesn't exist
+}
+
+let qaFocus = (process.env.WIRELINE_QA_FOCUS || "").trim().toLowerCase();
+if (!qaFocus || qaFocus === "auto") {
+  const focuses = ["onboarding", "create-assistant", "knowledge-base", "studio-compose", "billing-checkout"];
+  const turnMod = (currentTurn - 1) % 5;
+  qaFocus = focuses[turnMod];
+  console.log(`[Evolving QA] Turn ${currentTurn} detected. Auto-selecting focus: '${qaFocus}' (highest-leverage check)`);
+} else {
+  console.log(`[Explicit QA] Using explicit focus override: '${qaFocus}'`);
+}
+
 try {
   const desktop = viewports[0];
-  await captureMarketing(browser, desktop, issues);
 
-  const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
-  const signupPage = await signupContext.newPage();
-  attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+  if (qaFocus === "onboarding") {
+    console.log("Running onboarding flow focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
-  if (await signUp(signupPage, desktop.name, issues)) {
-    storageState = await signupContext.storageState();
-    for (const route of authenticatedRoutes) {
-      await captureRoute(signupPage, desktop.name, route, issues, "authenticated");
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await signupPage.waitForURL(/\/onboarding(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
+      console.log("Onboarding URL reached:", signupPage.url());
+
+      const frontDeskBtn = signupPage.getByRole("button", { name: /Select Front Desk/i });
+      if (await frontDeskBtn.isVisible().catch(() => false)) {
+        await frontDeskBtn.click();
+        await signupPage.waitForURL(/\/(overview|ops|studio)(?:\?|$)/, { timeout: 15_000 }).catch(() => {});
+        console.log("After onboarding selection URL:", signupPage.url());
+      } else {
+        issues.push({
+          viewport: desktop.name,
+          route: "/onboarding",
+          mode: "authenticated",
+          kind: "flow",
+          detail: "Onboarding selection buttons not visible.",
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-onboarding`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
     }
-  }
-  await signupContext.close();
+    await signupContext.close();
+  } else if (qaFocus === "create-assistant") {
+    console.log("Running create-assistant flow focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
 
-  for (const viewport of viewports.slice(1)) {
-    await captureMarketing(browser, viewport, issues);
-    if (storageState) await captureAuthenticated(browser, viewport, storageState, issues);
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /agents
+      await signupPage.goto(`${baseUrl}/agents`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      // Click "Create assistant" button or go to /studio?create=1
+      const createBtn = signupPage.getByRole("link", { name: /Create assistant/i }).first();
+      if (await createBtn.isVisible().catch(() => false)) {
+        await createBtn.click();
+      } else {
+        await signupPage.goto(`${baseUrl}/studio?create=1`, { waitUntil: "domcontentloaded" });
+      }
+      await settle(signupPage);
+
+      // Fill Name and select role
+      const nameInput = signupPage.locator("input[placeholder*='Casey']").first();
+      if (await nameInput.isVisible().catch(() => false)) {
+        await nameInput.fill("Receptionist Pro");
+        const roleSelect = signupPage.locator("select").first();
+        if (await roleSelect.isVisible().catch(() => false)) {
+          await roleSelect.selectOption("receptionist");
+        }
+        const briefTextarea = signupPage.locator("textarea[placeholder*='Call my pharmacy']").first();
+        if (await briefTextarea.isVisible().catch(() => false)) {
+          await briefTextarea.fill("Greet incoming business callers, answer office FAQs, and capture lead callback details.");
+        }
+        const submitBtn = signupPage.getByRole("button", { name: /Create and open Studio/i }).first();
+        if (await submitBtn.isVisible().catch(() => false)) {
+          await submitBtn.click();
+          await signupPage.waitForURL(/\/studio\?agent=/, { timeout: 15_000 }).catch(() => {});
+          console.log("New assistant created successfully! Current URL:", signupPage.url());
+          await settle(signupPage);
+        }
+      } else {
+        issues.push({
+          viewport: desktop.name,
+          route: "/studio?create=1",
+          mode: "authenticated",
+          kind: "flow",
+          detail: "New assistant modal or inputs not visible.",
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-create-assistant`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "knowledge-base") {
+    console.log("Running knowledge-base flow focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /knowledge
+      await signupPage.goto(`${baseUrl}/knowledge`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      const titleInput = signupPage.locator("input[placeholder*='Preferred pharmacy']").first();
+      const contentTextarea = signupPage.locator("textarea[placeholder*='Describe a fact']").first();
+      const saveBtn = signupPage.getByRole("button", { name: /Save fact/i }).first();
+
+      if (await contentTextarea.isVisible().catch(() => false)) {
+        if (await titleInput.isVisible().catch(() => false)) {
+          await titleInput.fill("Pricing & Packages");
+        }
+        await contentTextarea.fill("Our standard business subscription starts at $49/month and includes 1000 minutes of receptionist calls.");
+        if (await saveBtn.isVisible().catch(() => false)) {
+          await saveBtn.click();
+          await signupPage.waitForTimeout(1500);
+          console.log("New business fact added successfully to the Knowledge Base.");
+        }
+      } else {
+        issues.push({
+          viewport: desktop.name,
+          route: "/knowledge",
+          mode: "authenticated",
+          kind: "flow",
+          detail: "Add detail input elements not found on /knowledge.",
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-knowledge-base`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "studio-compose") {
+    console.log("Running studio composer focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      // Navigate to /studio
+      await signupPage.goto(`${baseUrl}/studio`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      const composer = signupPage.locator("textarea#studio-training-composer").first();
+      if (await composer.isVisible().catch(() => false)) {
+        await composer.fill("When a customer calls for sales, ask for their email address and phone number, and offer to schedule a callback.");
+        const saveBtn = signupPage.getByRole("button", { name: /Save|Deploy|Update/i }).first();
+        if (await saveBtn.isVisible().catch(() => false)) {
+          await saveBtn.click();
+          await signupPage.waitForTimeout(1500);
+          console.log("Studio composer training instructions updated successfully.");
+        }
+      } else {
+        issues.push({
+          viewport: desktop.name,
+          route: "/studio",
+          mode: "authenticated",
+          kind: "layout",
+          detail: "Studio composer not found.",
+        });
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-studio-compose`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else if (qaFocus === "billing-checkout") {
+    console.log("Running billing checkout focused QA...");
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+
+      await signupPage.goto(`${baseUrl}/settings/billing`, { waitUntil: "domcontentloaded" });
+      await settle(signupPage);
+
+      const changePlanBtn = signupPage.getByRole("button", { name: /Change Plan|Upgrade|Subscribe/i }).first();
+      if (await changePlanBtn.isVisible().catch(() => false)) {
+        await changePlanBtn.click();
+        await signupPage.waitForTimeout(1000);
+      }
+
+      const prefix = path.join(outputDir, `${desktop.name}-flow-billing-checkout`);
+      await signupPage.screenshot({ path: `${prefix}-success-viewport.png`, fullPage: false });
+      await signupPage.screenshot({ path: `${prefix}-success-full.png`, fullPage: true });
+    }
+    await signupContext.close();
+  } else {
+    console.log("Running complete multi-viewport standard visual QA sweep...");
+    await captureMarketing(browser, desktop, issues);
+
+    const signupContext = await browser.newContext({ viewport: { width: desktop.width, height: desktop.height }, deviceScaleFactor: 1 });
+    const signupPage = await signupContext.newPage();
+    attachDiagnostics(signupPage, desktop.name, "authenticated", issues);
+
+    if (await signUp(signupPage, desktop.name, issues)) {
+      await completeOnboardingIfNecessary(signupPage, desktop.name, issues);
+      storageState = await signupContext.storageState();
+      for (const route of authenticatedRoutes) {
+        await captureRoute(signupPage, desktop.name, route, issues, "authenticated");
+      }
+    }
+    await signupContext.close();
+
+    for (const viewport of viewports.slice(1)) {
+      await captureMarketing(browser, viewport, issues);
+      if (storageState) await captureAuthenticated(browser, viewport, storageState, issues);
+    }
   }
 } finally {
   await browser.close();
