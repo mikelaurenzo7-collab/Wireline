@@ -1,9 +1,24 @@
-/* Ametrine Precision Design Tokens Strategy — 3-Layer Architecture (2026 Best Practice)
+/* Ametrine Precision Design Tokens Strategy — Professional Enterprise Standard (2026)
 
-1. Primitive/Base: Raw values (brand-colors.ts + --base-*)
-2. Semantic: Purpose ( --on-surface, --primary-container )
-3. Component: Specific use (--wl-button-bg, .studio-card styles)
+Layered Architecture (Industry Best Practice):
+1. Primitive: Raw brand values (brand-colors.ts)
+2. Semantic: Purpose-driven tokens (--on-surface, --primary-container)
+3. Component: Usage-specific implementations
 
-Benefits: Easy theming, native sync, maintainability, designer-dev alignment.
+Professional Tone Guidelines:
+- Clarity and precision above ornamentation.
+- Subtle depth via tonal layering and restrained elevation; avoid excessive glow or glassmorphism.
+- Typography: Hanken Grotesk for display (sharp, professional), Inter for body (highly legible).
+- All UI text and microcopy must be concise, purposeful, and professional.
 
-This file now serves as the living reference. Strategy locked and documented. */
+WCAG 2.2 AAA Compliance:
+- Normal text: minimum 7:1 contrast ratio.
+- Large text (≥24px or 19px bold): minimum 4.5:1.
+- Interactive targets: minimum 24×24px.
+
+Dynamic Contrast:
+- Static tokens achieve AAA baseline.
+- For advanced implementations, APCA (Advanced Perceptual Contrast Algorithm) is recommended for perceptual accuracy over simple luminance ratios.
+- Future: High-contrast mode support via additional semantic tokens.
+
+This file is the authoritative reference. All changes must align with professional tone and AAA standards. */
