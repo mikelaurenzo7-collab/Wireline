@@ -94,3 +94,4 @@ Thumbs.db
 /public/og-image.png
 /public/apple-touch-icon.png
 /public/wireline-icon-192.png
+.env*
