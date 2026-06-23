@@ -1,11 +1,9 @@
-/* Final Polish Pass — Micro-interactions + Accessibility + Zero Drift */
-.wl-card:hover, .studio-card:hover {
-  transform: translateY(-3px) scale(1.01);
-  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
-}
+/* Ametrine Precision Design Tokens Strategy — 3-Layer Architecture (2026 Best Practice)
 
-:focus-visible {
-  box-shadow: 0 0 0 3px var(--wl-focus);
-}
+1. Primitive/Base: Raw values (brand-colors.ts + --base-*)
+2. Semantic: Purpose ( --on-surface, --primary-container )
+3. Component: Specific use (--wl-button-bg, .studio-card styles)
 
-/* All pages audited. System immaculate. */
+Benefits: Easy theming, native sync, maintainability, designer-dev alignment.
+
+This file now serves as the living reference. Strategy locked and documented. */
