@@ -6,6 +6,18 @@ export const GROK_VOICE_SAMPLE_RATE = 24_000;
 
 export type WirelineVoiceProfile = "bright" | "warm" | "clear" | "balanced" | "direct";
 
+export const WIRELINE_LIVE_VOICE_PROFILES: ReadonlyArray<{
+  id: WirelineVoiceProfile;
+  label: string;
+  description: string;
+}> = [
+  { id: "bright", label: "Bright", description: "Upbeat, energetic, and personable." },
+  { id: "warm", label: "Warm", description: "Friendly, patient, and conversational." },
+  { id: "clear", label: "Clear", description: "Confident, crisp, and business-ready." },
+  { id: "balanced", label: "Balanced", description: "Neutral, composed, and versatile." },
+  { id: "direct", label: "Direct", description: "Decisive, focused, and authoritative." },
+] as const;
+
 const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, string> = {
   bright: "eve",
   warm: "ara",
@@ -16,6 +28,7 @@ const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, string> = {
 
 const ROLE_TO_PROFILE: Record<string, WirelineVoiceProfile> = {
   sales: "clear",
+  lead_qualifier: "clear",
   scheduler: "warm",
   appointment_scheduler: "warm",
   receptionist: "balanced",
@@ -57,13 +70,28 @@ export const WIRELINE_GROK_REALTIME_TOOLS: readonly GrokRealtimeFunction[] = [
   },
 ] as const;
 
-export function resolveWirelineVoiceProfile(role?: string | null): WirelineVoiceProfile {
+export function normalizeWirelineVoiceProfile(value: unknown): WirelineVoiceProfile | undefined {
+  const candidate = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return WIRELINE_LIVE_VOICE_PROFILES.some((profile) => profile.id === candidate)
+    ? (candidate as WirelineVoiceProfile)
+    : undefined;
+}
+
+export function resolveWirelineVoiceProfile(
+  role?: string | null,
+  requestedProfile?: unknown,
+): WirelineVoiceProfile {
+  const explicit = normalizeWirelineVoiceProfile(requestedProfile);
+  if (explicit) return explicit;
   const normalizedRole = String(role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
   return ROLE_TO_PROFILE[normalizedRole] || "balanced";
 }
 
-export function resolveWirelineGrokVoice(role?: string | null): string {
-  return PROFILE_TO_VOICE[resolveWirelineVoiceProfile(role)];
+export function resolveWirelineGrokVoice(
+  role?: string | null,
+  requestedProfile?: unknown,
+): string {
+  return PROFILE_TO_VOICE[resolveWirelineVoiceProfile(role, requestedProfile)];
 }
 
 export function normalizeGrokLanguageHint(value: unknown): string | undefined {
