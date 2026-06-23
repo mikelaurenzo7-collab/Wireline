@@ -452,19 +452,22 @@ try {
       await signupPage.goto(`${baseUrl}/actions`, { waitUntil: "domcontentloaded" });
       await settle(signupPage);
 
-      // Toggle first tool row if available
+      // Toggle first tool row if available and enabled
       const toolRow = signupPage.locator(".wl-stitch-tool-row").first();
-      if (await toolRow.isVisible().catch(() => false)) {
+      const isVisible = await toolRow.isVisible().catch(() => false);
+      const isEnabled = isVisible && await toolRow.isEnabled().catch(() => false);
+      if (isEnabled) {
         await toolRow.click();
         await signupPage.waitForTimeout(1500);
         console.log("Toggled an integration tool in Actions workspace successfully.");
       } else {
+        console.log(`[QA Note] First tool row is visible: ${isVisible}, enabled: ${isEnabled}. Skipping toggle click.`);
         issues.push({
           viewport: desktop.name,
           route: "/actions",
           mode: "authenticated",
           kind: "flow",
-          detail: "No interactive tool rows found under Actions.",
+          detail: `Tool row under Actions was not clickable (visible=${isVisible}, enabled=${isEnabled}).`,
         });
       }
 
