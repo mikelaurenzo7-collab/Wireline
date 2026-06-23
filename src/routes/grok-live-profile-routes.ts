@@ -41,7 +41,11 @@ async function loadProfile(userId: string, agentId: string) {
   const stored = normalizeWirelineVoiceProfile(
     variables.wirelineLiveVoiceProfile || nested.wirelineLiveVoiceProfile,
   );
-  return { agent, profile: resolveWirelineVoiceProfile(agent.role, stored) };
+  return {
+    agent,
+    profile: resolveWirelineVoiceProfile(agent.role, stored),
+    customVoiceConfigured: variables.wirelineLiveCustomVoice === true,
+  };
 }
 
 router.get("/api/voice/live/profile", authenticateUser, limiter, async (req: AuthenticatedRequest, res) => {
@@ -50,7 +54,11 @@ router.get("/api/voice/live/profile", authenticateUser, limiter, async (req: Aut
   const selected = await loadProfile(req.user.id, agentId);
   if (!selected) return res.status(404).json({ error: "Assistant not found" });
   res.setHeader("Cache-Control", "no-store");
-  res.json({ profile: selected.profile, profiles: WIRELINE_LIVE_VOICE_PROFILES });
+  res.json({
+    profile: selected.profile,
+    profiles: WIRELINE_LIVE_VOICE_PROFILES,
+    customVoiceConfigured: selected.customVoiceConfigured,
+  });
 });
 
 router.patch("/api/voice/live/profile", authenticateUser, limiter, validateBody(profileSchema), async (req: AuthenticatedRequest, res) => {
@@ -63,11 +71,12 @@ router.patch("/api/voice/live/profile", authenticateUser, limiter, validateBody(
       businessVariables: {
         ...asRecord(selected.agent.businessVariables),
         wirelineLiveVoiceProfile: profile,
+        wirelineLiveCustomVoice: false,
         grokVoiceId: resolveWirelineGrokVoice(selected.agent.role, profile),
       },
     })
     .where(and(eq(schema.agents.id, req.body.agentId), eq(schema.agents.userId, req.user.id)));
-  res.json({ profile, profiles: WIRELINE_LIVE_VOICE_PROFILES });
+  res.json({ profile, profiles: WIRELINE_LIVE_VOICE_PROFILES, customVoiceConfigured: false });
 });
 
 export default router;
