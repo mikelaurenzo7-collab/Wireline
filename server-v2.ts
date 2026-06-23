@@ -23,6 +23,7 @@ import qaRouter from "./src/routes/qa-routes";
 import vapiRouter from "./src/routes/vapi-v2";
 import healthRouter from "./src/routes/health-routes";
 import openaiRealtimeRouter from "./src/routes/openai-realtime-routes";
+import grokVoiceRouter from "./src/routes/grok-voice-routes";
 import voicesRouter from "./src/routes/voices-routes";
 import pronunciationRouter from "./src/routes/pronunciation-routes";
 import elevenlabsWebhookRouter from "./src/routes/webhooks-elevenlabs-routes";
@@ -48,8 +49,6 @@ const origins = (process.env.CORS_ORIGINS || "").split(",").map((item) => item.t
 if (IS_PROD && !origins.length && process.env.APP_URL) origins.push(process.env.APP_URL);
 app.use(cors({ origin: (origin, callback) => !origin || !origins.length || origins.includes(origin) ? callback(null, true) : callback(null, false), credentials: true }));
 installWebhookBodyParsers(app);
-// Studio accepts text and image assets. The UI limits raw files to 3 MB; 6 MB
-// safely accommodates base64 JSON overhead while retaining a bounded API body.
 app.use(express.json({ limit: "6mb" }));
 app.use(assertSameOrigin);
 app.use((req, res, next) => { const incoming = String(req.headers["x-request-id"] || "").slice(0, 64); const requestId = /^[A-Za-z0-9._-]+$/.test(incoming) ? incoming : randomUUID(); res.locals.requestId = requestId; res.setHeader("X-Request-Id", requestId); next(); });
@@ -60,6 +59,7 @@ startMemoryCleanup();
 
 app.use("/api/health", healthRouter);
 app.use(openaiRealtimeRouter);
+app.use(grokVoiceRouter);
 app.use(authOAuthRouter);
 app.use(authRouter);
 app.use(oauthRouter);
