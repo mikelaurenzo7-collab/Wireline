@@ -1,7 +1,7 @@
-/* Precision Account Holder controls: compact, high-legibility, and source-aligned.
- * Fully aligned to Ametrine Precision token manifest (brand-colors.ts) and professional enterprise standards.
+/* Wireline workspace controls: compact, high-legibility, and source-aligned.
+ * Aligned to the shared Wireline token manifest and live runtime primitives.
  * Uses semantic tokens for colors, radius, elevation, spacing, and interaction states.
- * All components audited for WCAG 2.2 AAA contrast, professional tone, and consistency with design system governance.
+ * All components are intended to preserve strong contrast, restrained motion, and consistent operator-grade UI behavior.
  */
 
 .workspace-btn-primary,
